@@ -6,7 +6,7 @@ const globals = Object.fromEntries([
 ].map((name) => [name, 'readonly']))
 
 export default [
-  { ignores: ['dist/**', 'coverage/**'] },
+  { ignores: ['.venv/**', 'dist/**', 'coverage/**', 'node_modules/**'] },
   {
     files: ['**/*.{js,jsx}'],
     ...js.configs.recommended,

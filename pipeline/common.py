@@ -10,7 +10,7 @@ import time
 from datetime import datetime, date, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(HERE, "..", "site", "public", "data")
+DATA_DIR = os.path.join(HERE, "..", "public", "data")
 STORE_DIR = os.path.join(HERE, "data")
 CONFIG_DIR = os.path.join(HERE, "config")
 LOG_DIR = os.path.join(HERE, "logs")
