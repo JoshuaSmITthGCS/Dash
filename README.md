@@ -1,7 +1,7 @@
 # PolitiTrade — Signal Terminal
 
 Personal financial-intelligence dashboard. Tracks congressional trades + executive/policy
-catalysts, layers a valuation screen (P/S, Forward P/E, PEG), and ranks everything into a
+catalysts, layers a sector-aware fundamental screen, and ranks everything into a
 daily watchlist and three research buckets (short-term / long-term / retirement-broad).
 
 **Runs at ~$0/month.** No server or paid database. The static React site reads versioned JSON
@@ -35,19 +35,33 @@ npm run build    # -> dist (Netlify publishes this)
 Each disclosed **buy** gets a 0–100 political signal from six weighted factors
 (track record 25, committee relevance 20, cluster detection 20, trade size 15,
 direction+recency 10, policy catalyst 10). Separately, each single stock gets a 0–100
-**valuation score** from PEG (45%), Forward P/E (35%), P/S (20%).
+**fundamental score**. The stored field remains `valuation_score` for compatibility, but the
+calculation now covers four categories:
+
+- 40% valuation: PEG, sector-aware forward P/E, sector-aware P/S, and P/B.
+- 25% profitability and cash: ROE, free-cash-flow yield, and profit margin.
+- 20% financial health: debt-to-equity and current ratio.
+- 15% growth: year-over-year revenue and earnings growth.
+
+Available metrics are reweighted within each category, then the result is confidence-adjusted by
+data coverage. A suspiciously low positive P/E receives a value-trap penalty rather than an
+automatic maximum. ETFs remain unscored because company accounting ratios are not comparable to
+fund holdings. Bank D/E and current ratios are displayed but excluded from scoring because their
+balance sheets are structurally different. PEG uses the provider's reported PEG rather than
+mixing forward P/E with trailing growth. All cutoffs and sector ranges live in
+`pipeline/config/settings.json`.
 
 The three buckets blend those two scores differently:
-| Bucket | Signal | Valuation | Third factor |
+| Bucket | Signal | Fundamentals | Third factor |
 |---|---|---|---|
 | Short term | 70% | 15% | 15% momentum |
-| Long term | 40% | 45% | 15% quality (PEG/growth) |
+| Long term | 40% | 45% | 15% profitability/growth quality |
 | Retirement/broad | 15% | 20% | 65% stability (ETF diversification anchors) |
 
 All weights and thresholds live in `pipeline/config/settings.json` — tune without touching code.
 
 ## Config
-- `pipeline/config/settings.json` — weights, valuation bands, bucket blends, feature flags
+- `pipeline/config/settings.json` — signal weights, sector/fundamental bands, bucket blends, feature flags
 - `pipeline/config/committees.json` — politician → committee → sector map
 - `pipeline/config/policy_map.json` — news keyword → sector → tickers
 - `pipeline/config/universe.json` — ETF classification + retirement core holdings

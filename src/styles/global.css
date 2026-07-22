@@ -119,7 +119,7 @@ button { font-family: inherit; cursor: pointer; }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
 .bar-val { font-family: var(--font-mono); text-align: right; color: var(--text-dim); }
 
-/* metric pills for valuation */
+/* metric pills for valuation, profitability, cash, and balance-sheet health */
 .metrics { display: flex; gap: 8px; flex-wrap: wrap; }
 .metric { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--r-sm); min-width: 62px; }
 .metric b { font-family: var(--font-mono); font-size: 14px; font-weight: 600; }

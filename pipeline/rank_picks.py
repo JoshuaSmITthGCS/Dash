@@ -6,7 +6,7 @@ print a ranked list. Writes picks.json for the dashboard's Picks page.
 Buckets:
   SHORT TERM   -> catalyst/momentum driven. Weights the political signal + recent price move.
                   Valuation matters least; a hot policy catalyst can run regardless of PEG.
-  LONG TERM    -> quality at a fair price. Weights valuation (PEG/FwdPE/PS) + political signal.
+  LONG TERM    -> quality at a fair price. Weights broad fundamentals + political signal.
   RETIREMENT   -> broad/low-maintenance. ETFs and large-cap stability first. Political signal
      / BROAD      barely matters; this bucket is about diversification and cost.
 
@@ -70,17 +70,12 @@ def stability_score(sig):
 
 
 def quality_score(sig):
-    """Reasonable PEG + positive growth = quality. Used in the long-term blend."""
-    q = 50.0
-    peg = sig.get("peg")
-    if peg is not None:
-        if 0 < peg <= 1.0: q += 25
-        elif peg <= 1.5: q += 15
-        elif peg <= 2.0: q += 5
-        else: q -= 10
-    fpe = sig.get("forward_pe")
-    if fpe is not None and 0 < fpe <= 25: q += 10
-    return clamp(q)
+    """Profitability and growth quality used in the long-term blend."""
+    categories = sig.get("fundamental_categories") or {}
+    available = [categories.get(k) for k in ("profitability", "growth") if categories.get(k) is not None]
+    if available:
+        return round(sum(available) / len(available), 1)
+    return 50.0
 
 
 def val_or(sig, default=50.0):
@@ -124,9 +119,19 @@ def enrich(sig, bucket, score):
         "tier": tier(score),
         "political_score": sig.get("political_score"),
         "valuation_score": sig.get("valuation_score"),
+        "fundamental_categories": sig.get("fundamental_categories", {}),
+        "fundamental_coverage": sig.get("fundamental_coverage"),
         "peg": sig.get("peg"),
         "forward_pe": sig.get("forward_pe"),
         "price_to_sales": sig.get("price_to_sales"),
+        "price_to_book": sig.get("price_to_book"),
+        "return_on_equity": sig.get("return_on_equity"),
+        "free_cash_flow_yield": sig.get("free_cash_flow_yield"),
+        "debt_to_equity": sig.get("debt_to_equity"),
+        "current_ratio": sig.get("current_ratio"),
+        "profit_margin": sig.get("profit_margin"),
+        "revenue_growth": sig.get("revenue_growth"),
+        "earnings_growth": sig.get("earnings_growth"),
         "pct_30d": sig.get("pct_30d"),
         "dividend_yield": sig.get("dividend_yield"),
         "price": sig.get("price"),
@@ -145,6 +150,9 @@ def reason(sig, bucket):
     peg = sig.get("peg")
     if bucket in ("long_term",) and peg is not None and 0 < peg <= 1.5:
         bits.append(f"PEG {peg}")
+    roe = sig.get("return_on_equity")
+    if bucket == "long_term" and roe is not None and roe >= 0.15:
+        bits.append(f"ROE {roe*100:.0f}%")
     if bucket == "short_term" and sig.get("pct_30d") is not None:
         bits.append(f"{sig['pct_30d']:+.1f}% 30d")
     if bucket == "retirement" and sig.get("is_etf"):
@@ -168,7 +176,11 @@ def add_retirement_core(signals_by_ticker, prices):
             "is_etf": True,
             "political_score": signals_by_ticker.get(tk, {}).get("political_score", 0),
             "valuation_score": None,
-            "peg": None, "forward_pe": None, "price_to_sales": None,
+            "peg": None, "forward_pe": None, "price_to_sales": None, "price_to_book": None,
+            "return_on_equity": None, "free_cash_flow_yield": None,
+            "debt_to_equity": None, "current_ratio": None,
+            "profit_margin": None, "revenue_growth": None, "earnings_growth": None,
+            "fundamental_categories": {}, "fundamental_coverage": None,
             "pct_30d": snap.get("pct_30d"),
             "dividend_yield": snap.get("dividend_yield"),
             "price": snap.get("price"),

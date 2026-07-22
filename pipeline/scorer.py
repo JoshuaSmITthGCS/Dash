@@ -4,7 +4,7 @@ Turn normalized trades + prices + news into a ranked signal list.
 
 Two independent scores per ticker:
   political_score (0-100)  -- from the 6-factor weight table (settings.json)
-  valuation_score (0-100)  -- from P/S, Forward P/E, PEG   (the added screen)
+  valuation_score (0-100)  -- broad fundamental score retained under the legacy field name
 
 The ranker (rank_picks.py) blends these differently per bucket.
 Also emits a cooling list: tickers with heavy congressional selling.
@@ -84,7 +84,7 @@ def score_policy(ticker, ticker_sector, flagged_sectors, flagged_tickers, w):
     return 0.0
 
 
-# ---------------- valuation factor (added) ----------------
+# ---------------- fundamental factor ----------------
 
 def band_score(value, bands, lower_is_better=True):
     """Map a metric to 0-100 across ordered bands. Returns None if value missing."""
@@ -100,23 +100,81 @@ def band_score(value, bands, lower_is_better=True):
     return 10.0 if lower_is_better else 100.0
 
 
+def higher_is_better_score(value, bands):
+    """Score decimal ratios/growth where more is generally better."""
+    if value is None:
+        return None
+    for key, score in (("excellent_min", 100), ("good_min", 80),
+                       ("fair_min", 55), ("weak_min", 30)):
+        if value >= bands[key]:
+            return float(score)
+    return 10.0
+
+
+def multiple_score(value, bands):
+    """Score a positive valuation multiple while flagging unusually low P/E as possible value-trap risk."""
+    if value is None:
+        return None
+    if value <= 0:
+        return 5.0
+    if bands.get("suspicious_below") and value < bands["suspicious_below"]:
+        return 60.0
+    if value <= bands["cheap_max"]:
+        return 100.0
+    if value <= bands["healthy_max"]:
+        return 80.0
+    if value <= bands["elevated_max"]:
+        return 45.0
+    return 15.0
+
+
+def weighted_available(scores, weights):
+    available = [(scores[k], weights[k]) for k in weights if scores.get(k) is not None]
+    if not available:
+        return None
+    return sum(score * weight for score, weight in available) / sum(weight for _, weight in available)
+
+
 def valuation_score(snap):
-    """Blend P/S, Forward P/E, PEG into 0-100. ETFs get a neutral pass (metrics N/A)."""
+    """Score valuation, profitability, solvency, cash generation, and growth.
+
+    ETFs remain unscored because corporate accounting ratios are not comparable to fund holdings.
+    Missing values are reweighted, then the final score is confidence-adjusted for data coverage.
+    """
     if not snap or snap.get("is_etf"):
         return None, {}
-    v = SETTINGS["valuation"]
-    peg = band_score(snap.get("peg"), v["peg"])
-    fpe = band_score(snap.get("forward_pe"), v["forward_pe"])
-    ps = band_score(snap.get("price_to_sales"), v["price_to_sales"])
+    cfg = SETTINGS["fundamentals"]
+    sector = snap.get("sector") or "default"
+    is_financial = sector in ("Financial Services", "Financials")
+    pe_bands = cfg["forward_pe_by_sector"].get(sector, cfg["forward_pe_by_sector"]["default"])
+    ps_bands = cfg["price_to_sales_by_sector"].get(sector, cfg["price_to_sales_by_sector"]["default"])
 
-    parts, weights = [], []
-    if peg is not None: parts.append(peg); weights.append(0.45)
-    if fpe is not None: parts.append(fpe); weights.append(0.35)
-    if ps is not None:  parts.append(ps); weights.append(0.20)
-    if not parts:
-        return None, {"peg": None, "forward_pe": None, "price_to_sales": None}
-    total = sum(p * w for p, w in zip(parts, weights)) / sum(weights)
-    return round(total, 1), {"peg": peg, "forward_pe": fpe, "price_to_sales": ps}
+    metrics = {
+        "peg": band_score(snap.get("peg"), cfg["peg"]),
+        "forward_pe": multiple_score(snap.get("forward_pe"), pe_bands),
+        "price_to_sales": multiple_score(snap.get("price_to_sales"), ps_bands),
+        "price_to_book": band_score(snap.get("price_to_book"), cfg["price_to_book"]),
+        "return_on_equity": higher_is_better_score(snap.get("return_on_equity"), cfg["return_on_equity"]),
+        "free_cash_flow_yield": higher_is_better_score(snap.get("free_cash_flow_yield"), cfg["free_cash_flow_yield"]),
+        "profit_margin": higher_is_better_score(snap.get("profit_margin"), cfg["profit_margin"]),
+        # Bank balance sheets are structurally leveraged; these industrial-company cutoffs do not apply.
+        "debt_to_equity": None if is_financial else band_score(snap.get("debt_to_equity"), cfg["debt_to_equity"]),
+        "current_ratio": None if is_financial else higher_is_better_score(snap.get("current_ratio"), cfg["current_ratio"]),
+        "revenue_growth": higher_is_better_score(snap.get("revenue_growth"), cfg["revenue_growth"]),
+        "earnings_growth": higher_is_better_score(snap.get("earnings_growth"), cfg["earnings_growth"]),
+    }
+    categories = {}
+    for category, weights in cfg["metric_weights"].items():
+        value = weighted_available(metrics, weights)
+        categories[category] = round(value, 1) if value is not None else None
+    raw = weighted_available(categories, cfg["category_weights"])
+    if raw is None:
+        return None, {**metrics, "categories": categories, "coverage": 0.0}
+    coverage = sum(value is not None for value in metrics.values()) / len(metrics)
+    confidence_multiplier = 0.65 + (0.35 * coverage)
+    total = round(raw * confidence_multiplier, 1)
+    return total, {**metrics, "categories": categories, "coverage": round(coverage, 2),
+                   "raw_score": round(raw, 1), "sector": sector}
 
 
 # ---------------- assembly ----------------
@@ -200,12 +258,23 @@ def run():
                 "top_buyer": t["politician"],
                 "filing_lag_days": t.get("filing_lag_days"),
                 "amount_range": t.get("amount_range"),
-                # valuation
+                # broad fundamentals (legacy valuation_score name kept for data compatibility)
                 "valuation_score": val_score,
                 "valuation_parts": val_parts,
+                "fundamental_categories": val_parts.get("categories", {}),
+                "fundamental_coverage": val_parts.get("coverage", 0.0),
                 "peg": snap.get("peg"),
                 "forward_pe": snap.get("forward_pe"),
                 "price_to_sales": snap.get("price_to_sales"),
+                "price_to_book": snap.get("price_to_book"),
+                "return_on_equity": snap.get("return_on_equity"),
+                "free_cash_flow": snap.get("free_cash_flow"),
+                "free_cash_flow_yield": snap.get("free_cash_flow_yield"),
+                "debt_to_equity": snap.get("debt_to_equity"),
+                "current_ratio": snap.get("current_ratio"),
+                "profit_margin": snap.get("profit_margin"),
+                "revenue_growth": snap.get("revenue_growth"),
+                "earnings_growth": snap.get("earnings_growth"),
                 "pct_30d": snap.get("pct_30d"),
                 "dividend_yield": snap.get("dividend_yield"),
                 "market_cap": snap.get("market_cap"),

@@ -10,11 +10,23 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["ticker", "price", "is_etf"],
+        "required": ["ticker", "price", "is_etf", "forward_pe", "peg", "price_to_sales", "price_to_book", "return_on_equity", "free_cash_flow", "free_cash_flow_yield", "debt_to_equity", "current_ratio", "profit_margin", "revenue_growth", "earnings_growth"],
         "properties": {
           "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
           "price": {"type": ["number", "null"]},
-          "is_etf": {"type": "boolean"}
+          "is_etf": {"type": "boolean"},
+          "forward_pe": {"type": ["number", "null"]},
+          "peg": {"type": ["number", "null"]},
+          "price_to_sales": {"type": ["number", "null"]},
+          "price_to_book": {"type": ["number", "null"]},
+          "return_on_equity": {"type": ["number", "null"]},
+          "free_cash_flow": {"type": ["number", "null"]},
+          "free_cash_flow_yield": {"type": ["number", "null"]},
+          "debt_to_equity": {"type": ["number", "null"]},
+          "current_ratio": {"type": ["number", "null"]},
+          "profit_margin": {"type": ["number", "null"]},
+          "revenue_growth": {"type": ["number", "null"]},
+          "earnings_growth": {"type": ["number", "null"]}
         }
       }
     }

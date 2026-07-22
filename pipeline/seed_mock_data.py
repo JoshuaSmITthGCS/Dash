@@ -113,6 +113,22 @@ def make_trades():
 def make_prices():
     prices = {}
     for tk, f in FUND.items():
+        is_etf = f.get("etf", False)
+        if is_etf:
+            pb = roe = fcf_yield = debt_to_equity = current_ratio = profit_margin = revenue_growth = None
+            free_cash_flow = None
+        else:
+            pb = round(max(0.7, min(18, (f["ps"] or 2) * random.uniform(0.7, 1.6))), 2)
+            roe = round(random.uniform(0.07, 0.30), 4)
+            fcf_yield = round(random.uniform(0.015, 0.085), 4)
+            debt_to_equity = round(random.uniform(0.15, 1.8), 2)
+            current_ratio = round(random.uniform(0.85, 2.4), 2)
+            profit_margin = round(random.uniform(0.05, 0.28), 4)
+            revenue_growth = round(f["gr"] if f["gr"] is not None else random.uniform(-0.08, 0.12), 4)
+            free_cash_flow = round(f["mc"] * fcf_yield) if f["mc"] else None
+        if tk in ("DJT", "MSTR"):
+            roe, fcf_yield, profit_margin = -0.12, -0.03, -0.18
+            free_cash_flow = round(f["mc"] * fcf_yield)
         prices[tk] = {
             "ticker": tk,
             "name": f"{tk}",
@@ -121,11 +137,19 @@ def make_prices():
             "sector": f["sector"],
             "market_cap": f["mc"],
             "dividend_yield": f["dy"],
-            "is_etf": f.get("etf", False),
+            "is_etf": is_etf,
             "price_to_sales": f["ps"],
+            "price_to_book": pb,
             "forward_pe": f["fpe"],
             "trailing_pe": f["fpe"] * 1.15 if f["fpe"] else None,
             "peg": f["peg"],
+            "return_on_equity": roe,
+            "free_cash_flow": free_cash_flow,
+            "free_cash_flow_yield": fcf_yield,
+            "debt_to_equity": debt_to_equity,
+            "current_ratio": current_ratio,
+            "profit_margin": profit_margin,
+            "revenue_growth": revenue_growth,
             "earnings_growth": f["gr"],
         }
     # engineer some momentum for short-term demo

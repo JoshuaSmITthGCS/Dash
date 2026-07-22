@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-07-22T23:30:41.597760+00:00",
+  "generated_at": "2026-07-22T23:51:22.421735+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
       "status": "degraded",
-      "checked_at": "2026-07-22T23:30:41.495870+00:00",
+      "checked_at": "2026-07-22T23:51:22.281381+00:00",
       "source": "generated demo fixtures",
       "message": "Demo data is active; live deployment is blocked"
     },
     "scoring": {
       "status": "healthy",
-      "checked_at": "2026-07-22T23:30:41.540667+00:00",
+      "checked_at": "2026-07-22T23:51:22.343152+00:00",
       "source": "local scoring engine",
       "details": {
         "signals": 11,
@@ -19,7 +19,7 @@
     },
     "ranking": {
       "status": "healthy",
-      "checked_at": "2026-07-22T23:30:41.597750+00:00",
+      "checked_at": "2026-07-22T23:51:22.421730+00:00",
       "source": "local ranking engine",
       "details": {
         "short_term": 8,

@@ -11,10 +11,18 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["ticker", "political_score", "breakdown", "label"],
+        "required": ["ticker", "political_score", "breakdown", "label", "valuation_score", "fundamental_categories", "fundamental_coverage", "price_to_book", "return_on_equity", "free_cash_flow_yield", "debt_to_equity", "current_ratio"],
         "properties": {
           "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
           "political_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "valuation_score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+          "fundamental_categories": {"type": "object"},
+          "fundamental_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+          "price_to_book": {"type": ["number", "null"]},
+          "return_on_equity": {"type": ["number", "null"]},
+          "free_cash_flow_yield": {"type": ["number", "null"]},
+          "debt_to_equity": {"type": ["number", "null"]},
+          "current_ratio": {"type": ["number", "null"]},
           "breakdown": {"type": "object", "minProperties": 6},
           "label": {"enum": ["HIGH CONVICTION", "WATCH", "NEUTRAL", "LOW"]}
         }

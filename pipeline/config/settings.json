@@ -26,28 +26,50 @@
     "high_min": 250000
   },
 
-  "valuation": {
-    "_comment": "Objective screens layered on top of the political signal. Lower is cheaper. Bands are general defaults; tune per sector as needed.",
+  "fundamentals": {
+    "_comment": "Fundamental score: sector-aware valuation plus profitability, balance-sheet health, cash generation, and growth. Percentages are decimals (15% = 0.15).",
+    "category_weights": { "valuation": 0.40, "profitability": 0.25, "financial_health": 0.20, "growth": 0.15 },
+    "metric_weights": {
+      "valuation": { "peg": 0.30, "forward_pe": 0.30, "price_to_sales": 0.20, "price_to_book": 0.20 },
+      "profitability": { "return_on_equity": 0.40, "free_cash_flow_yield": 0.35, "profit_margin": 0.25 },
+      "financial_health": { "debt_to_equity": 0.60, "current_ratio": 0.40 },
+      "growth": { "revenue_growth": 0.50, "earnings_growth": 0.50 }
+    },
     "peg": {
       "excellent_max": 1.0,
       "good_max": 1.5,
       "fair_max": 2.0,
       "poor_max": 3.0
     },
-    "forward_pe": {
-      "cheap_max": 15,
-      "fair_max": 25,
-      "elevated_max": 40
+    "forward_pe_by_sector": {
+      "Technology": { "suspicious_below": 8, "cheap_max": 25, "healthy_max": 35, "elevated_max": 50 },
+      "Consumer Defensive": { "suspicious_below": 6, "cheap_max": 15, "healthy_max": 20, "elevated_max": 28 },
+      "Utilities": { "suspicious_below": 6, "cheap_max": 15, "healthy_max": 20, "elevated_max": 28 },
+      "Financial Services": { "suspicious_below": 5, "cheap_max": 12, "healthy_max": 18, "elevated_max": 25 },
+      "Financials": { "suspicious_below": 5, "cheap_max": 12, "healthy_max": 18, "elevated_max": 25 },
+      "Healthcare": { "suspicious_below": 6, "cheap_max": 16, "healthy_max": 25, "elevated_max": 38 },
+      "default": { "suspicious_below": 5, "cheap_max": 15, "healthy_max": 25, "elevated_max": 40 }
     },
-    "price_to_sales": {
-      "cheap_max": 2.0,
-      "moderate_max": 5.0,
-      "elevated_max": 10.0
-    }
+    "price_to_sales_by_sector": {
+      "Technology": { "cheap_max": 5.0, "healthy_max": 15.0, "elevated_max": 25.0 },
+      "Healthcare": { "cheap_max": 2.0, "healthy_max": 5.0, "elevated_max": 10.0 },
+      "Industrials": { "cheap_max": 1.0, "healthy_max": 2.5, "elevated_max": 5.0 },
+      "Consumer Cyclical": { "cheap_max": 1.0, "healthy_max": 3.0, "elevated_max": 6.0 },
+      "Consumer Defensive": { "cheap_max": 1.0, "healthy_max": 2.5, "elevated_max": 4.0 },
+      "default": { "cheap_max": 1.0, "healthy_max": 3.0, "elevated_max": 8.0 }
+    },
+    "price_to_book": { "excellent_max": 1.0, "good_max": 3.0, "fair_max": 6.0, "poor_max": 10.0 },
+    "return_on_equity": { "excellent_min": 0.20, "good_min": 0.15, "fair_min": 0.10, "weak_min": 0.05 },
+    "free_cash_flow_yield": { "excellent_min": 0.08, "good_min": 0.05, "fair_min": 0.02, "weak_min": 0.0 },
+    "profit_margin": { "excellent_min": 0.20, "good_min": 0.12, "fair_min": 0.06, "weak_min": 0.0 },
+    "debt_to_equity": { "excellent_max": 0.5, "good_max": 1.0, "fair_max": 2.0, "poor_max": 3.0 },
+    "current_ratio": { "excellent_min": 2.0, "good_min": 1.5, "fair_min": 1.0, "weak_min": 0.75 },
+    "revenue_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 },
+    "earnings_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 }
   },
 
   "bucket_weights": {
-    "_comment": "How each pick bucket blends the political signal score vs the valuation score.",
+    "_comment": "The valuation input is the broad fundamental score (valuation, profitability, health, and growth).",
     "short_term": { "signal": 0.70, "valuation": 0.15, "momentum": 0.15 },
     "long_term":  { "signal": 0.40, "valuation": 0.45, "quality": 0.15 },
     "retirement": { "signal": 0.15, "valuation": 0.20, "stability": 0.65 }

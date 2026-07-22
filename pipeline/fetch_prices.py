@@ -51,7 +51,7 @@ def safe(info, *keys):
 
 
 def fetch_snapshot(ticker, yf, etf_ids):
-    """Return a per-ticker dict with price + valuation metrics."""
+    """Return price plus valuation, profitability, balance-sheet, cash, and growth metrics."""
     try:
         tk = yf.Ticker(ticker)
         info = tk.info or {}
@@ -71,6 +71,9 @@ def fetch_snapshot(ticker, yf, etf_ids):
             pct_30d = round((last - first) / first * 100, 2)
 
     is_etf = ticker in etf_ids or (info.get("quoteType") == "ETF")
+    market_cap = safe(info, "marketCap")
+    free_cash_flow = safe(info, "freeCashflow")
+    debt_to_equity_percent = _round(safe(info, "debtToEquity"))
 
     snap = {
         "ticker": ticker,
@@ -78,14 +81,23 @@ def fetch_snapshot(ticker, yf, etf_ids):
         "price": round(price, 2) if price else None,
         "pct_30d": pct_30d,
         "sector": safe(info, "sector") or ("ETF" if is_etf else None),
-        "market_cap": safe(info, "marketCap"),
+        "market_cap": market_cap,
         "dividend_yield": safe(info, "dividendYield"),
         "is_etf": is_etf,
         # ----- valuation metrics -----
         "price_to_sales": _round(safe(info, "priceToSalesTrailing12Months")),
+        "price_to_book": _round(safe(info, "priceToBook")),
         "forward_pe": _round(safe(info, "forwardPE")),
         "trailing_pe": _round(safe(info, "trailingPE")),
         "peg": _round(safe(info, "trailingPegRatio", "pegRatio")),
+        # Yahoo reports debtToEquity as a percentage (e.g. 80 means 0.8x).
+        "debt_to_equity": _round(debt_to_equity_percent / 100) if debt_to_equity_percent is not None else None,
+        "current_ratio": _round(safe(info, "currentRatio")),
+        "return_on_equity": _round(safe(info, "returnOnEquity"), 4),
+        "profit_margin": _round(safe(info, "profitMargins"), 4),
+        "free_cash_flow": _round(free_cash_flow, 0),
+        "free_cash_flow_yield": _round(free_cash_flow / market_cap, 4) if free_cash_flow is not None and market_cap else None,
+        "revenue_growth": _round(safe(info, "revenueGrowth"), 4),
         "earnings_growth": _round(safe(info, "earningsGrowth")),
     }
     return snap

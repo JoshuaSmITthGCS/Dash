@@ -4,7 +4,7 @@ import { Tier, Move, Loading, Empty } from '../components/Bits.jsx'
 
 const BUCKETS = [
   { key: 'short_term', mark: '01', title: 'Short term', blurb: 'Catalyst + momentum. Weighted toward the political signal and recent price move. Highest noise, shortest shelf life.' },
-  { key: 'long_term', mark: '02', title: 'Long term', blurb: 'Quality at a fair price. Weighted toward valuation — PEG, forward P/E, P/S — combined with the signal.' },
+  { key: 'long_term', mark: '02', title: 'Long term', blurb: 'Quality at a fair price. Weighted toward sector-aware valuation, profitability, cash generation, balance-sheet health, and growth.' },
   { key: 'retirement', mark: '03', title: 'Retirement / broad', blurb: 'Diversification first. Broad-market and dividend ETFs anchor; single stocks only appear as stable satellites.' },
 ]
 
@@ -30,7 +30,7 @@ export default function Picks() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Best <span className="accent">picks</span></h1>
-          <p className="page-sub">Signals re-ranked into three horizons. Each blends the congressional signal with the valuation screen differently — see how the same ticker moves between buckets.</p>
+          <p className="page-sub">Signals re-ranked into three horizons. Each blends the congressional signal with the fundamental screen differently — see how the same ticker moves between buckets.</p>
         </div>
       </div>
 
@@ -53,7 +53,8 @@ export default function Picks() {
               <th>Tier</th>
               <th className="num">Bucket</th>
               <th className="num">Signal</th>
-              <th className="num">Val</th>
+              <th className="num">Fund.</th>
+              <th className="num">Coverage</th>
               <th className="num">PEG</th>
               <th className="num">Fwd P/E</th>
               <th className="num">P/S</th>
@@ -73,9 +74,10 @@ export default function Picks() {
                 <td className="mono num" style={{ color: 'var(--accent)', fontWeight: 600 }}>{r.bucket_score}</td>
                 <td className="mono num">{r.political_score ?? '—'}</td>
                 <td className="mono num">{r.valuation_score ?? '—'}</td>
+                <td className="mono num">{r.fundamental_coverage == null ? '—' : `${Math.round(r.fundamental_coverage * 100)}%`}</td>
                 <td className="num"><Val v={r.peg} good={1.5} rich={2.5} /></td>
-                <td className="num"><Val v={r.forward_pe} good={15} rich={40} /></td>
-                <td className="num"><Val v={r.price_to_sales} good={2} rich={12} /></td>
+                <td className="num"><Val v={r.forward_pe} /></td>
+                <td className="num"><Val v={r.price_to_sales} /></td>
                 <td className="num"><Move pct={r.pct_30d} /></td>
                 <td style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>{r.why}</td>
               </tr>
@@ -84,7 +86,7 @@ export default function Picks() {
         </table>
       </div>
 
-      <div className="disclaimer">{data.disclaimer} — Green = attractive on that metric, red = rich/expensive. Buckets differ only in how they weight the signal vs. valuation vs. stability; nothing here is a recommendation to buy.</div>
+      <div className="disclaimer">{data.disclaimer} — Metric labels accompany every color state. Forward P/E and P/S are scored against sector ranges; low multiples can still be value traps. Nothing here is a recommendation to buy.</div>
     </>
   )
 }

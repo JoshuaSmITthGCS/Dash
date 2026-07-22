@@ -65,7 +65,7 @@ export default function Dashboard() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <MetricPills peg={s.peg} forward_pe={s.forward_pe} price_to_sales={s.price_to_sales} isEtf={s.is_etf} />
+              <MetricPills {...s} isEtf={s.is_etf} />
               <Lag days={s.filing_lag_days} />
             </div>
 

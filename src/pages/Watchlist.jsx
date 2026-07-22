@@ -53,7 +53,7 @@ export default function Watchlist() {
                   <button className="chip" onClick={() => remove(t)} style={{ cursor: 'pointer' }}>remove</button>
                 </div>
               </div>
-              {s && <MetricPills peg={s.peg} forward_pe={s.forward_pe} price_to_sales={s.price_to_sales} isEtf={s.is_etf} />}
+              {s && <MetricPills {...s} isEtf={s.is_etf} />}
             </div>
           )
         })}

@@ -24,6 +24,10 @@ class RankPicksTests(unittest.TestCase):
         self.assertEqual(rank_picks.tier(90), "HIGH CONVICTION")
         self.assertEqual(rank_picks.tier(0), "LOW")
 
+    def test_quality_uses_profitability_and_growth_categories(self):
+        score = rank_picks.quality_score({"fundamental_categories": {"profitability": 90, "growth": 70}})
+        self.assertEqual(score, 80.0)
+
 
 if __name__ == "__main__":
     unittest.main()
