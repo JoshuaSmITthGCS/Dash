@@ -15,7 +15,7 @@ NOTHING here is a buy instruction. Labels are research tiers. Congressional data
 
 from datetime import datetime, timezone
 
-from common import LOG, load_json, save_json
+from common import LOG, data_mode, load_json, save_json, update_pipeline_status
 
 SETTINGS = load_json("settings.json", from_config=True) or {}
 UNIVERSE = load_json("universe.json", from_config=True) or {}
@@ -183,7 +183,8 @@ def add_retirement_core(signals_by_ticker, prices):
 def build():
     sig_payload = load_json("signals.json") or {}
     signals = sig_payload.get("signals", [])
-    prices = (load_json("prices.json") or {}).get("prices", {})
+    price_payload = load_json("prices.json") or {}
+    prices = price_payload.get("prices", {})
     by_ticker = {s["ticker"]: s for s in signals}
 
     # SHORT: signal-driven, needs a real political signal to qualify
@@ -214,6 +215,7 @@ def build():
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": data_mode(sig_payload, price_payload),
         "disclaimer": "Research candidates only. Not financial advice. Congressional disclosures lag 30-45 days.",
         "buckets": {
             "short_term": short,
@@ -222,6 +224,8 @@ def build():
         },
     }
     save_json("picks.json", payload)
+    update_pipeline_status("ranking", status="healthy", source="local ranking engine",
+                           details={k: len(v) for k, v in payload["buckets"].items()})
     return payload
 
 

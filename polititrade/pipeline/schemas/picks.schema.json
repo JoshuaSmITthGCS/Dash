@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "data_mode", "disclaimer", "buckets"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "disclaimer": {"type": "string", "minLength": 20},
+    "buckets": {
+      "type": "object",
+      "required": ["short_term", "long_term", "retirement"],
+      "properties": {
+        "short_term": {"type": "array"},
+        "long_term": {"type": "array"},
+        "retirement": {"type": "array"}
+      }
+    }
+  }
+}

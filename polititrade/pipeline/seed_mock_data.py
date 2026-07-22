@@ -139,7 +139,11 @@ def make_prices():
 def make_news():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "count": 5,
+        "data_mode": "demo",
+        "count": 3,
+        "feed_health": [
+            {"name": "Demo feed", "url": "", "status": "demo", "entries": 3},
+        ],
         "flagged_sectors": {"semiconductors": 4, "defense": 3, "crypto": 2, "energy_oil": 1},
         "flagged_tickers": {
             "NVDA": "semiconductors", "AMD": "semiconductors", "MU": "semiconductors", "SMH": "semiconductors",
@@ -148,12 +152,12 @@ def make_news():
             "XOM": "energy_oil", "XLE": "energy_oil",
         },
         "items": [
-            {"title": "New export controls tighten chip bans to China", "source": "Reuters",
-             "url": "#", "published": d(1), "flags": [{"sector": "semiconductors", "keyword": "export control", "tickers": ["NVDA", "AMD", "MU"]}]},
-            {"title": "Defense budget markup adds funding for missile programs", "source": "Politico",
-             "url": "#", "published": d(2), "flags": [{"sector": "defense", "keyword": "defense budget", "tickers": ["LMT", "RTX"]}]},
-            {"title": "SEC signals movement on digital asset ETF approvals", "source": "MarketWatch",
-             "url": "#", "published": d(2), "flags": [{"sector": "crypto", "keyword": "etf approval", "tickers": ["COIN"]}]},
+            {"title": "Demo: export controls tighten chip bans", "source": "Demo feed",
+             "url": "", "published": d(1), "flags": [{"sector": "semiconductors", "keyword": "export control", "tickers": ["NVDA", "AMD", "MU"]}]},
+            {"title": "Demo: defense budget adds missile funding", "source": "Demo feed",
+             "url": "", "published": d(2), "flags": [{"sector": "defense", "keyword": "defense budget", "tickers": ["LMT", "RTX"]}]},
+            {"title": "Demo: digital asset ETF policy moves", "source": "Demo feed",
+             "url": "", "published": d(2), "flags": [{"sector": "crypto", "keyword": "etf approval", "tickers": ["COIN"]}]},
         ],
     }
 
@@ -175,16 +179,32 @@ def make_politicians():
     n = len(lb)
     for i, row in enumerate(lb):
         row["percentile"] = round(100 * (n - i) / n, 1)
-    return {"generated_at": datetime.now(timezone.utc).isoformat(), "count": n, "leaderboard": lb}
+    return {"generated_at": datetime.now(timezone.utc).isoformat(), "data_mode": "demo",
+            "count": n, "leaderboard": lb}
 
 
 def main():
+    trades = make_trades()
     save_json("trades.json", {"generated_at": datetime.now(timezone.utc).isoformat(),
-                              "lookback_days": 90, "count": 0, "trades": make_trades()})
+                              "data_mode": "demo", "source": "generated demo fixtures",
+                              "lookback_days": 90, "history_count": len(trades),
+                              "count": len(trades), "trades": trades})
     save_json("prices.json", {"generated_at": datetime.now(timezone.utc).isoformat(),
-                              "count": len(FUND), "prices": make_prices()})
+                              "data_mode": "demo", "count": len(FUND), "prices": make_prices()})
     save_json("news.json", make_news())
     save_json("politicians.json", make_politicians())
+    now = datetime.now(timezone.utc).isoformat()
+    save_json("status.json", {
+        "generated_at": now,
+        "status": "degraded",
+        "stages": {
+            "demo_seed": {
+                "status": "degraded", "checked_at": now,
+                "source": "generated demo fixtures",
+                "message": "Demo data is active; live deployment is blocked",
+            },
+        },
+    })
     print("Mock data written: trades.json, prices.json, news.json, politicians.json")
 
 

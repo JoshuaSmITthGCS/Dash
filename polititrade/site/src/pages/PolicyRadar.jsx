@@ -29,8 +29,11 @@ export default function PolicyRadar() {
 
       <div className="sec-label">Flagged headlines</div>
       <div className="grid" style={{ gridTemplateColumns: '1fr' }}>
-        {(data.items || []).map((item, i) => (
-          <a className="card card-pad" key={i} href={item.url} target="_blank" rel="noreferrer"
+        {(data.items || []).map((item, i) => {
+          const Tag = item.url ? 'a' : 'article'
+          const linkProps = item.url ? { href: item.url, target: '_blank', rel: 'noreferrer' } : {}
+          return (
+          <Tag className="card card-pad" key={i} {...linkProps}
             style={{ display: 'grid', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
               <strong style={{ fontSize: 15 }}>{item.title}</strong>
@@ -43,8 +46,8 @@ export default function PolicyRadar() {
                 </span>
               ))}
             </div>
-          </a>
-        ))}
+          </Tag>
+        )})}
       </div>
     </>
   )

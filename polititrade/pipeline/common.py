@@ -5,20 +5,23 @@ No external dependencies beyond `requests` (and stdlib). Keeps every script cons
 
 import json
 import os
+import tempfile
 import time
 from datetime import datetime, date, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "..", "site", "public", "data")
+STORE_DIR = os.path.join(HERE, "data")
 CONFIG_DIR = os.path.join(HERE, "config")
 LOG_DIR = os.path.join(HERE, "logs")
 
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(STORE_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
 class _Log:
-    """Tiny logger that prints and appends to a dated logfile (committed to repo so silent failures are visible)."""
+    """Tiny logger that prints and appends to a local dated logfile."""
 
     def __init__(self):
         self.path = os.path.join(LOG_DIR, f"pipeline-{date.today().isoformat()}.log")
@@ -42,7 +45,7 @@ LOG = _Log()
 
 # ---------- HTTP ----------
 
-def http_get_json(url, params=None, retries=3, backoff=2.0, timeout=30):
+def http_get_json(url, params=None, headers=None, retries=3, backoff=2.0, timeout=30):
     """GET JSON with exponential backoff. Returns parsed JSON or None on failure."""
     try:
         import requests
@@ -50,10 +53,10 @@ def http_get_json(url, params=None, retries=3, backoff=2.0, timeout=30):
         LOG.error("requests not installed. pip install -r requirements.txt")
         return None
 
-    headers = {"User-Agent": "PolitiTrade/1.0 (personal research dashboard)"}
+    request_headers = {"User-Agent": "PolitiTrade/2.0 (personal research dashboard)", **(headers or {})}
     for attempt in range(1, retries + 1):
         try:
-            resp = requests.get(url, params=params, headers=headers, timeout=timeout)
+            resp = requests.get(url, params=params, headers=request_headers, timeout=timeout)
             if resp.status_code == 200:
                 return resp.json()
             LOG.warn(f"{url} -> HTTP {resp.status_code} (attempt {attempt}/{retries})")
@@ -76,11 +79,58 @@ def load_json(name, from_config=False):
         return json.load(f)
 
 
-def save_json(name, obj, to_config=False):
-    base = CONFIG_DIR if to_config else DATA_DIR
+def save_json(name, obj, to_config=False, to_store=False):
+    """Atomically write JSON so readers never observe a partially-written payload."""
+    base = STORE_DIR if to_store else (CONFIG_DIR if to_config else DATA_DIR)
     path = os.path.join(base, name)
-    with open(path, "w") as f:
-        json.dump(obj, f, indent=2, default=str)
+    fd, tmp = tempfile.mkstemp(prefix=f".{name}.", dir=base, text=True)
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(obj, f, indent=2, default=str)
+            f.write("\n")
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def load_store_json(name):
+    path = os.path.join(STORE_DIR, name)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return json.load(f)
+
+
+def data_mode(*payloads):
+    """Return demo if any input is explicitly demo or contains mock-sourced trades."""
+    for payload in payloads:
+        if not payload:
+            continue
+        if payload.get("data_mode") == "demo":
+            return "demo"
+        if any(row.get("source") == "mock" for row in payload.get("trades", [])):
+            return "demo"
+    return "live"
+
+
+def update_pipeline_status(stage, *, status, source=None, message=None, details=None):
+    """Publish stage/source health for the site and scheduled-run diagnostics."""
+    payload = load_json("status.json") or {"stages": {}}
+    payload.setdefault("stages", {})[stage] = {
+        "status": status,
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        **({"source": source} if source else {}),
+        **({"message": message} if message else {}),
+        **({"details": details} if details is not None else {}),
+    }
+    payload["generated_at"] = datetime.now(timezone.utc).isoformat()
+    stages = payload["stages"].values()
+    payload["status"] = "error" if any(s["status"] == "error" for s in stages) else (
+        "degraded" if any(s["status"] == "degraded" for s in stages) else "healthy"
+    )
+    save_json("status.json", payload)
+    return payload
 
 
 # ---------- Dates / names ----------

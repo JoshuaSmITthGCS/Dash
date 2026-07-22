@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "data_mode", "count", "lookback_days", "trades"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "count": {"type": "integer", "minimum": 0},
+    "history_count": {"type": "integer", "minimum": 0},
+    "history_oldest_trade_date": {"type": ["string", "null"], "format": "date"},
+    "lookback_days": {"type": "integer", "minimum": 1},
+    "trades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["politician", "chamber", "ticker", "type", "amount_mid", "trade_date", "filing_date", "source"],
+        "properties": {
+          "politician": {"type": "string", "minLength": 1},
+          "chamber": {"enum": ["House", "Senate", "Unknown"]},
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
+          "type": {"enum": ["buy", "sell", "exchange", "unknown"]},
+          "amount_mid": {"type": "number", "minimum": 0},
+          "trade_date": {"type": "string", "format": "date"},
+          "filing_date": {"type": "string", "format": "date"},
+          "filing_lag_days": {"type": ["integer", "null"]},
+          "source": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

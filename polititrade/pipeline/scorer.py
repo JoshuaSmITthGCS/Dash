@@ -16,7 +16,8 @@ Output labels are research tiers, never 'BUY':
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from common import LOG, load_json, save_json, days_between, today_iso, normalize_name
+from common import (LOG, data_mode, load_json, save_json, days_between, today_iso,
+                    normalize_name, update_pipeline_status)
 
 SETTINGS = load_json("settings.json", from_config=True) or {}
 COMMITTEES = (load_json("committees.json", from_config=True) or {}).get("politicians", {})
@@ -141,8 +142,10 @@ def label_for(score):
 
 
 def run():
-    trades = (load_json("trades.json") or {}).get("trades", [])
-    prices = (load_json("prices.json") or {}).get("prices", {})
+    trade_payload = load_json("trades.json") or {}
+    price_payload = load_json("prices.json") or {}
+    trades = trade_payload.get("trades", [])
+    prices = price_payload.get("prices", {})
     news = load_json("news.json") or {}
     track = (load_json("politicians.json") or {}).get("leaderboard", [])
     policy = load_json("policy_map.json", from_config=True) or {}
@@ -229,12 +232,15 @@ def run():
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": data_mode(trade_payload, price_payload, news),
         "count": len(signals),
         "hot_sectors": flagged_sectors,
         "signals": signals,
         "cooling": cooling,
     }
     save_json("signals.json", payload)
+    update_pipeline_status("scoring", status="healthy", source="local scoring engine",
+                           details={"signals": len(signals), "cooling": len(cooling)})
     LOG.info(f"Wrote signals.json: {len(signals)} signals, {len(cooling)} cooling")
     return payload
 

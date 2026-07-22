@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-07-22T23:19:17.315387+00:00",
+  "status": "degraded",
+  "stages": {
+    "demo_seed": {
+      "status": "degraded",
+      "checked_at": "2026-07-22T23:19:17.207981+00:00",
+      "source": "generated demo fixtures",
+      "message": "Demo data is active; live deployment is blocked"
+    },
+    "scoring": {
+      "status": "healthy",
+      "checked_at": "2026-07-22T23:19:17.274902+00:00",
+      "source": "local scoring engine",
+      "details": {
+        "signals": 11,
+        "cooling": 1
+      }
+    },
+    "ranking": {
+      "status": "healthy",
+      "checked_at": "2026-07-22T23:19:17.315383+00:00",
+      "source": "local ranking engine",
+      "details": {
+        "short_term": 8,
+        "long_term": 8,
+        "retirement": 6
+      }
+    }
+  }
+}

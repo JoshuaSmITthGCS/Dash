@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "status", "stages"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["healthy", "degraded", "error"]},
+    "stages": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "checked_at"],
+        "properties": {
+          "status": {"enum": ["healthy", "degraded", "error"]},
+          "checked_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  }
+}

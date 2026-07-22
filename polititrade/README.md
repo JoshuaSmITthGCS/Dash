@@ -4,7 +4,7 @@ Personal financial-intelligence dashboard. Tracks congressional trades + executi
 catalysts, layers a valuation screen (P/S, Forward P/E, PEG), and ranks everything into a
 daily watchlist and three research buckets (short-term / long-term / retirement-broad).
 
-**Runs at ~$0/month.** No server, no database, no paid APIs. GitHub Actions runs Python on a
+**Runs at ~$0/month.** No server or paid database. GitHub Actions runs Python on a
 schedule → writes JSON into `site/public/data/` → commits → Netlify redeploys → the static
 React site reads local JSON.
 
@@ -16,24 +16,26 @@ React site reads local JSON.
 
 ### Pipeline (Python)
 ```bash
-cd pipeline
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r pipeline/requirements.txt
 
 # Live run (needs open network — works on GitHub Actions / your machine):
-python fetch_congress.py      # -> trades.json
-python fetch_prices.py        # -> prices.json (+ valuation metrics) + politicians.json
-python fetch_news.py          # -> news.json
-python scorer.py              # -> signals.json
-python rank_picks.py          # -> picks.json + prints the ranked buckets
+python pipeline/fetch_congress.py  # -> append-only history + recent trades.json
+python pipeline/fetch_prices.py    # -> prices.json + politicians.json
+python pipeline/fetch_news.py      # -> news.json + per-feed health
+python pipeline/scorer.py          # -> signals.json
+python pipeline/rank_picks.py      # -> picks.json
+python pipeline/validate_data.py --production
 
 # Offline demo (no network — fills every JSON with realistic mock data):
-python seed_mock_data.py && python scorer.py && python rank_picks.py
+python pipeline/seed_mock_data.py && python pipeline/scorer.py && python pipeline/rank_picks.py
 ```
 
 ### Site (React + Vite)
 ```bash
 cd site
-npm install
+npm ci
 npm run dev      # local preview at localhost:5173
 npm run build    # -> site/dist (Netlify publishes this)
 ```
@@ -59,16 +61,42 @@ All weights and thresholds live in `pipeline/config/settings.json` — tune with
 - `config/policy_map.json` — news keyword → sector → tickers
 - `config/universe.json` — ETF classification + retirement core holdings
 
-## Deploy
-1. Push this repo to GitHub.
-2. Netlify → New site → pick the repo (`netlify.toml` is preconfigured: base `site`, publish `dist`).
-3. Actions tab → enable workflows. They commit fresh JSON on schedule and Netlify auto-redeploys.
+## Data reliability
 
-## Optional (feature-flagged in settings.json)
-- Daily Haiku morning brief (~$0.30/mo)
-- Webhook alert when a signal scores 80+
-- Paper-trade backtester (build before ever acting on signals)
+- Congressional disclosures come from the Bargo Congress API, which normalizes House Clerk and
+  Senate eFD filings and preserves the official filing-portal URL. `pipeline/data/trades_history.json`
+  is append-only across successful runs; `trades.json` is only the recent 90-day UI/scoring view.
+- A source response with fewer than the configured minimum records, failed pagination, or an
+  unhealthy news-feed quorum fails the job and preserves the last known-good public file.
+- Every public payload declares `data_mode`. Demo fixtures display a persistent warning, and
+  `validate_data.py --production` rejects them.
+- `status.json` exposes source/stage health. The site marks data stale after 36 hours.
+
+## Deploy
+1. Push the repository to GitHub and enable Actions. Both workflows declare their contents
+   permission explicitly; the scheduled workflow needs repository **Workflow permissions → Read
+   and write permissions** to push generated data.
+2. Create a free Bargo key and add it as the Actions repository secret `BARGO_API_KEY`. Anonymous
+   runs safely accumulate the newest page, but an authenticated run is required to backfill enough
+   history for the 90-day leaderboard. Production validation enforces a minimum 95-day span.
+3. Netlify → **Add new site → Import an existing project** → choose this repository. The root
+   `netlify.toml` sets base `polititrade/site`, publish `dist`, and Node 22.
+4. Run **Refresh data and score** manually once. Confirm its bot commit appears on `main`, then
+   confirm Netlify creates a deploy for that commit. Do not mark the site production-ready until
+   this end-to-end check succeeds.
+
+The schedule is `11:17 UTC` on weekdays. GitHub schedules are fixed in UTC, so this runs at
+**6:17 a.m. Eastern Standard Time** and **7:17 a.m. Eastern Daylight Time**; it does not remain at
+one Eastern wall-clock time across daylight-saving changes.
+
+## Feature flags without implementations
+
+The Haiku morning brief and webhook alert flags are placeholders only. Enabling them currently
+does nothing. There is no paper-trade backtester yet.
 
 ## Roadmap
-- Phase 3 stretch: parse official House Clerk / Senate eFD PDFs as ground truth.
+- Parse official House Clerk / Senate eFD filings directly instead of relying on a normalizing API.
 - Backtester to validate whether the scoring weights are actually predictive.
+
+Recharts 2 was unused and has been removed. See `docs/RECHARTS_3.md` for the adoption plan if a
+chart is added later.

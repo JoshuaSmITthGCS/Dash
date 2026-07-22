@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "data_mode", "count", "feed_health", "flagged_sectors", "flagged_tickers", "items"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "count": {"type": "integer", "minimum": 0},
+    "feed_health": {"type": "array", "minItems": 1},
+    "flagged_sectors": {"type": "object"},
+    "flagged_tickers": {"type": "object"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "source", "url", "flags"],
+        "properties": {
+          "title": {"type": "string", "minLength": 1},
+          "source": {"type": "string", "minLength": 1},
+          "url": {"type": "string"},
+          "flags": {"type": "array"}
+        }
+      }
+    }
+  }
+}

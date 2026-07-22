@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "data_mode", "count", "leaderboard"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "count": {"type": "integer", "minimum": 0},
+    "leaderboard": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["politician", "n_buys_scored", "avg_90d_alpha", "percentile"],
+        "properties": {
+          "politician": {"type": "string", "minLength": 1},
+          "n_buys_scored": {"type": "integer", "minimum": 1},
+          "avg_90d_alpha": {"type": "number"},
+          "percentile": {"type": "number", "minimum": 0, "maximum": 100}
+        }
+      }
+    }
+  }
+}

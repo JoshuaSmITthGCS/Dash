@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "data_mode", "count", "hot_sectors", "signals", "cooling"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "count": {"type": "integer", "minimum": 0},
+    "hot_sectors": {"type": "object"},
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "political_score", "breakdown", "label"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
+          "political_score": {"type": "number", "minimum": 0, "maximum": 100},
+          "breakdown": {"type": "object", "minProperties": 6},
+          "label": {"enum": ["HIGH CONVICTION", "WATCH", "NEUTRAL", "LOW"]}
+        }
+      }
+    },
+    "cooling": {"type": "array"}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["generated_at", "data_mode", "count", "prices"],
+  "properties": {
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "count": {"type": "integer", "minimum": 0},
+    "prices": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["ticker", "price", "is_etf"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
+          "price": {"type": ["number", "null"]},
+          "is_etf": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

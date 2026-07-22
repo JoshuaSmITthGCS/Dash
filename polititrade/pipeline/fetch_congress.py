@@ -1,30 +1,35 @@
 """
 fetch_congress.py
-Pull recent congressional trades, normalize to one schema, dedupe, write trades.json.
+Pull congressional trades, normalize them, merge an append-only historical store,
+and publish a recent view to trades.json.
 
-Primary source:  Lambda Finance API (House + Senate, normalized)
-Backup source:   Senate Stock Watcher S3 JSON (Senate only)
-Dead source:     House Stock Watcher S3 (403s since early 2026) -- do not add.
+Source: Bargo Congress API (House + Senate, derived from official STOCK Act filings)
 
 Normalized schema per record:
 { politician, chamber, party, state, ticker, asset, type, amount_range,
   amount_mid, trade_date, filing_date, filing_lag_days, source }
 """
 
-import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from common import (
-    DATA_DIR, LOG,
-    http_get_json, load_json, save_json, days_between, today_iso, normalize_name
+    DATA_DIR, LOG, load_store_json,
+    http_get_json, save_json, days_between, today_iso, normalize_name,
+    update_pipeline_status,
 )
 
-LAMBDA_URL = "https://api.lambda.finance/api/congressional/recent"  # dev account / free tier
-SENATE_BACKUP_URL = "https://senate-stock-watcher-data.s3.amazonaws.com/aggregate/all_transactions.json"
+BARGO_URL = "https://www.bargo.ai/free-apis/congress/v1/trades"
+BARGO_HEALTH_URL = "https://www.bargo.ai/free-apis/congress/v1/health"
 
 LOOKBACK_DAYS = 90
+HISTORY_FETCH_DAYS = int(os.getenv("CONGRESS_HISTORY_DAYS", "400"))
+BARGO_API_KEY = os.getenv("BARGO_API_KEY", "").strip()
+PAGE_SIZE = 250 if BARGO_API_KEY else 100
+MAX_PAGES = int(os.getenv("CONGRESS_MAX_PAGES", "100"))
+MIN_SOURCE_RECORDS = int(os.getenv("CONGRESS_MIN_RECORDS", "10"))
+HISTORY_FILE = "trades_history.json"
 
 
 def parse_amount_range(raw):
@@ -56,45 +61,30 @@ def norm_type(raw):
     return r or "unknown"
 
 
-def normalize_lambda(rec):
+def normalize_bargo(rec):
     trade_date = rec.get("transaction_date") or rec.get("trade_date")
     filing_date = rec.get("disclosure_date") or rec.get("filing_date")
-    amount_label, amount_mid = parse_amount_range(rec.get("amount"))
+    amount_label = rec.get("amount_range") or "unknown"
+    low, high = rec.get("amount_low"), rec.get("amount_high")
+    if isinstance(low, (int, float)) and isinstance(high, (int, float)):
+        amount_mid = int((low + high) / 2)
+    else:
+        amount_label, amount_mid = parse_amount_range(amount_label)
     return {
-        "politician": normalize_name(rec.get("representative") or rec.get("senator") or rec.get("name", "")),
-        "chamber": rec.get("chamber", "unknown"),
+        "politician": normalize_name(rec.get("member", "").removeprefix("Hon. ")),
+        "chamber": str(rec.get("chamber", "unknown")).title(),
         "party": rec.get("party", "unknown"),
         "state": rec.get("state", ""),
         "ticker": (rec.get("ticker") or "").upper().strip(),
-        "asset": rec.get("asset_description") or rec.get("asset", ""),
+        "asset": rec.get("asset", ""),
         "type": norm_type(rec.get("type") or rec.get("transaction_type")),
         "amount_range": amount_label,
         "amount_mid": amount_mid,
         "trade_date": trade_date,
         "filing_date": filing_date,
         "filing_lag_days": days_between(trade_date, filing_date),
-        "source": "lambda",
-    }
-
-
-def normalize_senate(rec):
-    trade_date = rec.get("transaction_date")
-    filing_date = rec.get("disclosure_date")
-    amount_label, amount_mid = parse_amount_range(rec.get("amount"))
-    return {
-        "politician": normalize_name(rec.get("senator", "")),
-        "chamber": "Senate",
-        "party": rec.get("party", "unknown"),
-        "state": rec.get("state", ""),
-        "ticker": (rec.get("ticker") or "").upper().strip(),
-        "asset": rec.get("asset_description", ""),
-        "type": norm_type(rec.get("type")),
-        "amount_range": amount_label,
-        "amount_mid": amount_mid,
-        "trade_date": trade_date,
-        "filing_date": filing_date,
-        "filing_lag_days": days_between(trade_date, filing_date),
-        "source": "senate_stock_watcher",
+        "source": "bargo_official_filings",
+        "source_url": rec.get("filing_portal", ""),
     }
 
 
@@ -110,7 +100,7 @@ def dedupe(records):
     seen = set()
     out = []
     for r in records:
-        key = (r["politician"], r["ticker"], r["trade_date"], r["amount_mid"])
+        key = trade_key(r)
         if key in seen:
             continue
         seen.add(key)
@@ -118,45 +108,84 @@ def dedupe(records):
     return out
 
 
+def trade_key(r):
+    return (r.get("politician"), r.get("ticker"), r.get("trade_date"),
+            r.get("filing_date"), r.get("type"), r.get("amount_mid"))
+
+
 def fetch():
+    fetch_days = HISTORY_FETCH_DAYS if BARGO_API_KEY else LOOKBACK_DAYS
+    start = (date.today() - timedelta(days=fetch_days)).isoformat()
     records = []
+    page_limit = MAX_PAGES if BARGO_API_KEY else 1
+    for page in range(page_limit):
+        data = http_get_json(BARGO_URL, params={
+            "from": start, "to": today_iso(), "limit": PAGE_SIZE, "page": page,
+        }, headers={"X-API-Key": BARGO_API_KEY} if BARGO_API_KEY else None)
+        if not data:
+            raise RuntimeError(f"Bargo page {page} failed")
+        rows = data.get("trades", [])
+        records.extend(normalize_bargo(r) for r in rows)
+        if len(rows) < PAGE_SIZE:
+            break
+    else:
+        if not BARGO_API_KEY:
+            LOG.warn("Anonymous Bargo mode fetched one incremental page; set BARGO_API_KEY for historical backfill")
+        elif rows and len(rows) >= PAGE_SIZE:
+            raise RuntimeError(f"Bargo pagination exceeded safety limit ({MAX_PAGES} pages)")
 
-    # Primary: Lambda Finance
-    data = http_get_json(LAMBDA_URL, params={"days": LOOKBACK_DAYS})
-    if data:
-        rows = data if isinstance(data, list) else data.get("data", [])
-        records = [normalize_lambda(r) for r in rows]
-        LOG.info(f"Lambda Finance: {len(records)} records")
-
-    # Backup: Senate Stock Watcher (only if primary failed or looks empty)
-    if len(records) < 10:
-        LOG.warn("Primary source thin/failed -- falling back to Senate Stock Watcher")
-        data = http_get_json(SENATE_BACKUP_URL)
-        if data:
-            rows = data if isinstance(data, list) else data.get("transactions", [])
-            records = [normalize_senate(r) for r in rows]
-            LOG.info(f"Senate Stock Watcher: {len(records)} records")
-
-    records = [r for r in records if r["ticker"] and within_lookback(r)]
+    records = [r for r in records if r["ticker"] and r["trade_date"]]
     records = dedupe(records)
-    records.sort(key=lambda r: (r.get("filing_date") or ""), reverse=True)
+    if len(records) < MIN_SOURCE_RECORDS:
+        raise RuntimeError(f"Bargo returned only {len(records)} valid records")
+    LOG.info(f"Bargo: {len(records)} normalized records since {start}")
     return records
 
 
-def main():
-    records = fetch()
-    if not records:
-        LOG.error("No congressional records fetched. Keeping previous trades.json if present.")
-        if os.path.exists(os.path.join(DATA_DIR, "trades.json")):
-            sys.exit(0)
-        records = []
+def merge_history(fetched):
+    previous = load_store_json(HISTORY_FILE) or {}
+    prior_rows = previous.get("trades", []) if previous.get("data_mode") != "demo" else []
+    merged = {trade_key(r): r for r in prior_rows}
+    for row in fetched:
+        merged[trade_key(row)] = row
+    rows = sorted(merged.values(), key=lambda r: (r.get("filing_date") or "", r.get("trade_date") or ""), reverse=True)
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": "live",
+        "source": "Bargo Congress API / official STOCK Act filing portals",
+        "count": len(rows),
+        "trades": rows,
+    }
+    save_json(HISTORY_FILE, payload, to_store=True)
+    return payload
+
+
+def main():
+    try:
+        health = http_get_json(BARGO_HEALTH_URL, retries=2)
+        history = merge_history(fetch())
+    except RuntimeError as exc:
+        LOG.error(f"Congress source rejected: {exc}. Keeping previous trades.json.")
+        update_pipeline_status("congress", status="error", source="Bargo Congress API", message=str(exc))
+        sys.exit(1)
+    records = [r for r in history["trades"] if within_lookback(r)]
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": "live",
+        "source": "Bargo Congress API / official STOCK Act filing portals",
+        "source_latest_disclosure": (health or {}).get("latest_disclosure"),
         "lookback_days": LOOKBACK_DAYS,
+        "history_count": history["count"],
+        "history_oldest_trade_date": min((r["trade_date"] for r in history["trades"] if r.get("trade_date")), default=None),
         "count": len(records),
         "trades": records,
     }
     save_json("trades.json", payload)
+    update_pipeline_status("congress", status="healthy", source="Bargo Congress API",
+                           details={"recent_records": len(records), "history_records": history["count"],
+                                    "source_latest_disclosure": (health or {}).get("latest_disclosure")})
+    update_pipeline_status("demo_seed", status="healthy", source="production guard",
+                           message="Live congressional data replaced demo fixtures")
     LOG.info(f"Wrote trades.json with {len(records)} trades")
 
 

@@ -13,9 +13,11 @@ Writes:
 
 import json
 import os
+import sys
 from datetime import datetime, timezone, timedelta
 
-from common import DATA_DIR, LOG, load_json, save_json, normalize_name
+from common import (DATA_DIR, LOG, data_mode, load_json, load_store_json, save_json,
+                    normalize_name, update_pipeline_status)
 
 TRACK_RECORD_CACHE = os.path.join(DATA_DIR, "politicians.json")
 TRACK_REFRESH_DAYS = 7
@@ -101,7 +103,7 @@ def build_prices():
         import yfinance as yf
     except ImportError:
         LOG.error("yfinance not installed. pip install -r requirements.txt")
-        return
+        return None
 
     universe = load_json("universe.json", from_config=True) or {}
     etf_ids = set(universe.get("etfs", {}).keys())
@@ -119,11 +121,21 @@ def build_prices():
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": data_mode(load_json("trades.json") or {}),
         "count": len(prices),
         "prices": prices,
     }
+    minimum = max(1, len(tickers) // 2)
+    if len(prices) < minimum:
+        message = f"Only {len(prices)}/{len(tickers)} price snapshots fetched"
+        LOG.error(f"{message}; refusing to replace prices.json")
+        update_pipeline_status("prices", status="error", source="Yahoo Finance", message=message)
+        return None
     save_json("prices.json", payload)
+    update_pipeline_status("prices", status="healthy", source="Yahoo Finance",
+                           details={"requested": len(tickers), "received": len(prices)})
     LOG.info(f"Wrote prices.json with {len(prices)} tickers")
+    return payload
 
 
 # ---------- Politician track record ----------
@@ -131,6 +143,9 @@ def build_prices():
 def needs_track_refresh():
     cache = load_json("politicians.json")
     if not cache:
+        return True
+    history = load_store_json("trades_history.json") or load_json("trades.json") or {}
+    if cache.get("data_mode") != data_mode(history):
         return True
     gen = cache.get("generated_at")
     if not gen:
@@ -157,7 +172,7 @@ def build_track_record():
         LOG.error("yfinance missing; cannot build track record.")
         return
 
-    trades = load_json("trades.json") or {}
+    trades = load_store_json("trades_history.json") or load_json("trades.json") or {}
     buys_by_pol = {}
     for t in trades.get("trades", []):
         if t.get("type") == "buy" and t.get("ticker") and t.get("trade_date"):
@@ -192,10 +207,15 @@ def build_track_record():
 
     save_json("politicians.json", {
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": data_mode(trades),
+        "history_count": len(trades.get("trades", [])),
         "count": len(leaderboard),
         "leaderboard": leaderboard,
     })
     LOG.info(f"Wrote politicians.json with {len(leaderboard)} scored politicians")
+    update_pipeline_status("track_record", status="healthy", source="historical trade store + Yahoo Finance",
+                           details={"history_records": len(trades.get("trades", [])),
+                                    "politicians_scored": len(leaderboard)})
 
 
 def _fwd_return_vs_spy(ticker, trade_date, yf, spy):
@@ -224,9 +244,11 @@ def _fwd_return_vs_spy(ticker, trade_date, yf, spy):
 
 
 def main():
-    build_prices()
+    if build_prices() is None:
+        return 1
     build_track_record()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

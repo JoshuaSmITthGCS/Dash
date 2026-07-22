@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useData, fmtPct } from '../lib/useData'
+import { useData } from '../lib/useData'
 import { Tier, Move, Loading, Empty } from '../components/Bits.jsx'
 
 const BUCKETS = [

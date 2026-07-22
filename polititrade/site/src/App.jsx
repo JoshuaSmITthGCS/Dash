@@ -5,6 +5,7 @@ import Trades from './pages/Trades.jsx'
 import Politicians from './pages/Politicians.jsx'
 import PolicyRadar from './pages/PolicyRadar.jsx'
 import Watchlist from './pages/Watchlist.jsx'
+import { DataStatus } from './components/DataStatus.jsx'
 
 const NAV = [
   { to: '/', label: 'Dashboard', end: true },
@@ -34,6 +35,7 @@ export default function App() {
         </div>
       </aside>
       <main className="content">
+        <DataStatus />
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/picks" element={<Picks />} />
