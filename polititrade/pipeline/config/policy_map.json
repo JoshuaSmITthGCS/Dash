@@ -1,0 +1,46 @@
+{
+  "_comment": "News keyword engine. Headline matches a keyword -> maps to a sector -> flags tickers. Case-insensitive substring match. Congress overlap on a flagged sector is the strongest signal in the system.",
+
+  "sectors": {
+    "defense": {
+      "keywords": ["defense budget", "defense spending", "military aid", "weapons", "pentagon", "nato", "arms deal", "missile", "national security"],
+      "tickers": ["LMT", "RTX", "NOC", "GD", "ITA", "LHX", "HII"]
+    },
+    "energy_oil": {
+      "keywords": ["drilling", "oil", "opec", "pipeline", "energy independence", "lng", "offshore lease", "gas prices"],
+      "tickers": ["XLE", "XOM", "CVX", "COP", "OXY", "SLB"]
+    },
+    "clean_energy": {
+      "keywords": ["clean energy", "solar", "wind", "ev credit", "climate bill", "renewable", "battery"],
+      "tickers": ["ICLN", "ENPH", "FSLR", "TAN", "NEE"]
+    },
+    "crypto": {
+      "keywords": ["crypto", "bitcoin", "digital asset", "stablecoin", "sec crypto", "etf approval", "blockchain"],
+      "tickers": ["COIN", "MSTR", "MARA", "RIOT", "IBIT"]
+    },
+    "tariffs_manufacturing": {
+      "keywords": ["tariff", "trade war", "import duty", "steel", "aluminum", "reshoring", "supply chain", "china trade"],
+      "tickers": ["NUE", "STLD", "X", "CAT", "DE"]
+    },
+    "private_prisons": {
+      "keywords": ["immigration", "border", "detention", "deportation", "ice contract"],
+      "tickers": ["GEO", "CXW"]
+    },
+    "semiconductors": {
+      "keywords": ["chips act", "semiconductor", "export control", "chip ban", "fab", "taiwan"],
+      "tickers": ["SMH", "NVDA", "AMD", "INTC", "TSM", "MU"]
+    },
+    "healthcare_pharma": {
+      "keywords": ["drug pricing", "medicare", "fda approval", "medicaid", "vaccine", "health policy"],
+      "tickers": ["XLV", "UNH", "PFE", "LLY", "JNJ"]
+    },
+    "financials_regulation": {
+      "keywords": ["fed", "interest rate", "rate cut", "rate hike", "bank regulation", "basel", "deregulation"],
+      "tickers": ["XLF", "JPM", "GS", "BAC", "MS"]
+    },
+    "trump_proxy": {
+      "keywords": ["truth social", "trump media", "djt"],
+      "tickers": ["DJT"]
+    }
+  }
+}

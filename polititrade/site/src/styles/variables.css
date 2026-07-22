@@ -1,0 +1,40 @@
+:root {
+  /* --- surfaces: layered near-black, warm-cool neutral --- */
+  --bg:        #0a0c0e;
+  --bg-elev:   #101318;
+  --bg-card:   #14181e;
+  --bg-hover:  #1a1f27;
+  --border:    #232a33;
+  --border-lit:#333c47;
+
+  /* --- text --- */
+  --text:      #e9ecf0;
+  --text-dim:  #8b929c;
+  --text-faint:#565d67;
+
+  /* --- one dominant accent: acid lime = "conviction" --- */
+  --accent:    #c2f731;
+  --accent-dim:#8aa82a;
+  --accent-glow: rgba(194, 247, 49, 0.14);
+
+  /* --- signal tiers --- */
+  --tier-high: #c2f731;
+  --tier-watch:#f5b13d;
+  --tier-neutral: #7d8590;
+  --tier-cool: #ff5f56;
+
+  /* --- movement --- */
+  --up:   #3ddc84;
+  --down: #ff5f56;
+
+  /* --- type --- */
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+
+  /* --- rhythm --- */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+  --shadow: 0 1px 0 rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6);
+}

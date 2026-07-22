@@ -1,0 +1,74 @@
+{
+  "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
+
+  "signal_weights": {
+    "track_record": 25,
+    "committee_relevance": 20,
+    "cluster_detection": 20,
+    "trade_size": 15,
+    "direction_recency": 10,
+    "policy_catalyst": 10
+  },
+
+  "cluster": {
+    "window_days": 30,
+    "min_politicians_for_max": 3
+  },
+
+  "recency": {
+    "hot_filing_days": 7,
+    "warm_filing_days": 30
+  },
+
+  "trade_size_bands": {
+    "low_max": 15000,
+    "mid_max": 100000,
+    "high_min": 250000
+  },
+
+  "valuation": {
+    "_comment": "Objective screens layered on top of the political signal. Lower is cheaper. Bands are general defaults; tune per sector as needed.",
+    "peg": {
+      "excellent_max": 1.0,
+      "good_max": 1.5,
+      "fair_max": 2.0,
+      "poor_max": 3.0
+    },
+    "forward_pe": {
+      "cheap_max": 15,
+      "fair_max": 25,
+      "elevated_max": 40
+    },
+    "price_to_sales": {
+      "cheap_max": 2.0,
+      "moderate_max": 5.0,
+      "elevated_max": 10.0
+    }
+  },
+
+  "bucket_weights": {
+    "_comment": "How each pick bucket blends the political signal score vs the valuation score.",
+    "short_term": { "signal": 0.70, "valuation": 0.15, "momentum": 0.15 },
+    "long_term":  { "signal": 0.40, "valuation": 0.45, "quality": 0.15 },
+    "retirement": { "signal": 0.15, "valuation": 0.20, "stability": 0.65 }
+  },
+
+  "bucket_limits": {
+    "short_term": 8,
+    "long_term": 8,
+    "retirement": 6
+  },
+
+  "labels": {
+    "_comment": "Composite score -> label. Never 'BUY'. Research candidates only.",
+    "high_conviction_min": 75,
+    "watch_min": 55,
+    "neutral_min": 35
+  },
+
+  "feature_flags": {
+    "haiku_morning_brief": false,
+    "webhook_alerts": false,
+    "signal_alert_threshold": 80
+  }
+}

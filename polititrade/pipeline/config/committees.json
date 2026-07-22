@@ -1,0 +1,26 @@
+{
+  "_comment": "Politician -> committees -> relevant sectors. Seed with high-volume traders. A politician buying in a sector their committee oversees scores max committee-relevance points. Names must match the normalized 'politician' field from fetch_congress (lowercase, single spaces). Expand from Capitol Trades volume leaders.",
+
+  "politicians": {
+    "nancy pelosi":        { "committees": ["Intelligence"], "sectors": ["semiconductors", "financials_regulation"] },
+    "dan crenshaw":        { "committees": ["Energy and Commerce"], "sectors": ["energy_oil", "healthcare_pharma"] },
+    "michael mccaul":      { "committees": ["Foreign Affairs", "Homeland Security"], "sectors": ["defense", "semiconductors"] },
+    "josh gottheimer":     { "committees": ["Financial Services"], "sectors": ["financials_regulation", "crypto"] },
+    "ro khanna":           { "committees": ["Armed Services"], "sectors": ["defense", "semiconductors"] },
+    "marjorie taylor greene": { "committees": ["Homeland Security"], "sectors": ["private_prisons", "energy_oil"] },
+    "tommy tuberville":    { "committees": ["Armed Services", "Agriculture"], "sectors": ["defense", "tariffs_manufacturing"] },
+    "sheldon whitehouse":  { "committees": ["Environment and Public Works"], "sectors": ["clean_energy", "energy_oil"] },
+    "markwayne mullin":    { "committees": ["Armed Services"], "sectors": ["defense", "energy_oil"] },
+    "john boozman":        { "committees": ["Agriculture", "Appropriations"], "sectors": ["tariffs_manufacturing"] },
+    "shelley moore capito":{ "committees": ["Environment and Public Works", "Appropriations"], "sectors": ["energy_oil"] },
+    "thomas carper":       { "committees": ["Finance"], "sectors": ["financials_regulation"] },
+    "rick scott":          { "committees": ["Armed Services", "Homeland Security"], "sectors": ["defense", "healthcare_pharma"] },
+    "susan collins":       { "committees": ["Appropriations", "Intelligence"], "sectors": ["defense", "healthcare_pharma"] },
+    "virginia foxx":       { "committees": ["Education and Workforce"], "sectors": ["financials_regulation"] },
+    "kathy manning":       { "committees": ["Foreign Affairs"], "sectors": ["defense", "healthcare_pharma"] },
+    "earl blumenauer":     { "committees": ["Ways and Means"], "sectors": ["financials_regulation", "crypto"] },
+    "brian higgins":       { "committees": ["Ways and Means"], "sectors": ["financials_regulation"] },
+    "seth moulton":        { "committees": ["Armed Services"], "sectors": ["defense"] },
+    "debbie wasserman schultz": { "committees": ["Appropriations"], "sectors": ["defense", "healthcare_pharma"] }
+  }
+}

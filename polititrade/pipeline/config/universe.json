@@ -1,0 +1,24 @@
+{
+  "_comment": "Classifies tickers so the ranker treats ETFs differently from single stocks (PEG/PS don't apply cleanly to funds). 'retirement_core' seeds the broad/retirement bucket regardless of congressional activity — these are diversified low-maintenance holdings, not signals.",
+
+  "etfs": {
+    "SPY":  { "name": "S&P 500", "category": "broad_market", "expense_ratio": 0.0945 },
+    "VOO":  { "name": "Vanguard S&P 500", "category": "broad_market", "expense_ratio": 0.03 },
+    "VTI":  { "name": "Total US Market", "category": "broad_market", "expense_ratio": 0.03 },
+    "QQQ":  { "name": "Nasdaq 100", "category": "growth", "expense_ratio": 0.20 },
+    "SCHD": { "name": "Schwab US Dividend", "category": "dividend", "expense_ratio": 0.06 },
+    "VYM":  { "name": "Vanguard High Dividend", "category": "dividend", "expense_ratio": 0.06 },
+    "VXUS": { "name": "Total International", "category": "international", "expense_ratio": 0.05 },
+    "BND":  { "name": "Total Bond Market", "category": "bonds", "expense_ratio": 0.03 },
+    "ITA":  { "name": "Aerospace & Defense", "category": "sector", "expense_ratio": 0.40 },
+    "XLE":  { "name": "Energy Select", "category": "sector", "expense_ratio": 0.09 },
+    "XLF":  { "name": "Financials Select", "category": "sector", "expense_ratio": 0.09 },
+    "XLV":  { "name": "Health Care Select", "category": "sector", "expense_ratio": 0.09 },
+    "SMH":  { "name": "Semiconductor ETF", "category": "sector", "expense_ratio": 0.35 },
+    "ICLN": { "name": "Clean Energy", "category": "sector", "expense_ratio": 0.41 },
+    "TAN":  { "name": "Solar", "category": "sector", "expense_ratio": 0.68 },
+    "IBIT": { "name": "iShares Bitcoin Trust", "category": "crypto", "expense_ratio": 0.25 }
+  },
+
+  "retirement_core": ["VTI", "VOO", "SCHD", "VXUS", "QQQ", "BND"]
+}

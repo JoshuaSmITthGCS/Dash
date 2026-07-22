@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-07-22T22:29:11.182100+00:00",
+  "count": 5,
+  "flagged_sectors": {
+    "semiconductors": 4,
+    "defense": 3,
+    "crypto": 2,
+    "energy_oil": 1
+  },
+  "flagged_tickers": {
+    "NVDA": "semiconductors",
+    "AMD": "semiconductors",
+    "MU": "semiconductors",
+    "SMH": "semiconductors",
+    "LMT": "defense",
+    "RTX": "defense",
+    "ITA": "defense",
+    "COIN": "crypto",
+    "MSTR": "crypto",
+    "XOM": "energy_oil",
+    "XLE": "energy_oil"
+  },
+  "items": [
+    {
+      "title": "New export controls tighten chip bans to China",
+      "source": "Reuters",
+      "url": "#",
+      "published": "2026-07-21",
+      "flags": [
+        {
+          "sector": "semiconductors",
+          "keyword": "export control",
+          "tickers": [
+            "NVDA",
+            "AMD",
+            "MU"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Defense budget markup adds funding for missile programs",
+      "source": "Politico",
+      "url": "#",
+      "published": "2026-07-20",
+      "flags": [
+        {
+          "sector": "defense",
+          "keyword": "defense budget",
+          "tickers": [
+            "LMT",
+            "RTX"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "SEC signals movement on digital asset ETF approvals",
+      "source": "MarketWatch",
+      "url": "#",
+      "published": "2026-07-20",
+      "flags": [
+        {
+          "sector": "crypto",
+          "keyword": "etf approval",
+          "tickers": [
+            "COIN"
+          ]
+        }
+      ]
+    }
+  ]
+}
