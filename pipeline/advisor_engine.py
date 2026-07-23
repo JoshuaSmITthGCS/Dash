@@ -4,6 +4,8 @@ from math import sqrt
 
 from scorer import valuation_score
 
+RANKING_WEIGHTS = {"fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.10}
+
 
 def clamp(value, low=0.0, high=100.0):
     return max(low, min(high, value))
@@ -74,7 +76,9 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items):
     technical, technical_parts = technical_factors(closes, benchmark_closes)
     sentiment, sentiment_parts = sentiment_score(news_items, symbol)
     components = {"fundamentals": fundamental, "market_behavior": technical, "news_sentiment": sentiment}
-    weights = {"fundamentals": 0.60, "market_behavior": 0.25, "news_sentiment": 0.15}
+    # Fundamentals deliberately dominate the ranking. Price and headlines confirm; they cannot
+    # rescue a company with weak valuation/quality evidence.
+    weights = RANKING_WEIGHTS
     available = [(components[k], weights[k]) for k in weights if components[k] is not None]
     raw = sum(v * w for v, w in available) / sum(w for _, w in available) if available else 0
     fundamental_coverage = fundamental_parts.get("coverage", 0.0)
@@ -104,4 +108,3 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items):
         "fundamental_detail": fundamental_parts, "technical_detail": technical_parts,
         "sentiment_detail": sentiment_parts, "strengths": strengths[:3], "risks": risks[:3],
     }
-

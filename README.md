@@ -1,7 +1,7 @@
 # ValueSignal — fundamentals-first investment research
 
 ValueSignal is a static React research dashboard backed by a Python data pipeline. It ranks a
-configurable 50-company equity universe using company fundamentals first, then adds price behavior,
+configurable 120-company equity universe using company fundamentals first, then adds price behavior,
 market context, news sentiment, and corporate-insider activity. Congressional trading is not an
 input to the advisor score.
 
@@ -12,9 +12,9 @@ input to the advisor score.
 
 The overall research score is:
 
-- 60% fundamentals
-- 25% market behavior: trend, volatility, drawdown, and 20-day relative strength versus SPY
-- 15% company news sentiment
+- 75% fundamentals
+- 15% market behavior: trend, volatility, drawdown, and 20-day relative strength versus SPY
+- 10% company news sentiment
 
 The fundamental score implements this framework:
 
@@ -57,8 +57,9 @@ npm run build
 npm run dev
 ```
 
-`ADVISOR_SYMBOLS` defines the candidate universe and the pipeline publishes its top 20. To respect
-the free plan, `ALPHA_ENRICH_LIMIT` caps Alpha Vantage company/news/insider enrichment at five;
+`pipeline/config/advisor_universe.json` defines the default 120-stock candidate universe and the
+pipeline publishes its top 20. `ADVISOR_SYMBOLS` can override it without imposing an application
+hard cap. To respect the free plan, `ALPHA_ENRICH_LIMIT` caps Alpha Vantage company/news/insider enrichment at five;
 Yahoo Finance supplies the full-universe fundamentals and history. The committed `advisor.json`
 contains derived public data only; it never contains the API key.
 

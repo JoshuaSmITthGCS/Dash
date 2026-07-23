@@ -4,18 +4,12 @@ import os
 import time
 from datetime import datetime, timezone
 
-from advisor_engine import build_research
+from advisor_engine import RANKING_WEIGHTS, build_research
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
-from common import LOG, save_json, update_pipeline_status
+from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 
-DEFAULT_SYMBOLS = (
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "ORCL", "CRM", "ADBE",
-    "JPM", "BAC", "GS", "V", "MA", "JNJ", "UNH", "LLY", "MRK", "ABBV",
-    "WMT", "COST", "HD", "MCD", "NKE", "XOM", "CVX", "CAT", "GE", "NEE",
-    "KO", "PEP", "PG", "PM", "TMO", "ABT", "DHR", "LIN", "HON", "UPS",
-    "LOW", "SBUX", "DIS", "NFLX", "AMD", "QCOM", "TXN", "AMAT", "COP", "SLB",
-)
+DEFAULT_SYMBOLS = tuple((load_json("advisor_universe.json", from_config=True) or {}).get("symbols", ()))
 
 
 def number(value, digits=4):
@@ -142,7 +136,9 @@ def macro_context(client):
 
 def run():
     load_local_env()
-    symbols = tuple(dict.fromkeys(s.strip().upper() for s in os.getenv("ADVISOR_SYMBOLS", ",".join(DEFAULT_SYMBOLS)).split(",") if s.strip()))
+    configured = os.getenv("ADVISOR_SYMBOLS")
+    requested_symbols = configured.split(",") if configured else DEFAULT_SYMBOLS
+    symbols = tuple(dict.fromkeys(str(s).strip().upper() for s in requested_symbols if str(s).strip()))
     alpha_limit = max(0, min(5, int(os.getenv("ALPHA_ENRICH_LIMIT", "5"))))
     requested_enrichment = tuple(s.strip().upper() for s in os.getenv("ALPHA_ENRICH_SYMBOLS", "").split(",") if s.strip())
     enrichment_order = requested_enrichment or symbols
@@ -208,7 +204,7 @@ def run():
         "schema_version": 1, "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols), "benchmark": "SPY",
         "methodology": {
-            "weights": {"fundamentals": 0.60, "market_behavior": 0.25, "news_sentiment": 0.15},
+            "weights": RANKING_WEIGHTS,
             "fundamental_weights": {"valuation": 0.40, "profitability": 0.25, "financial_health": 0.20, "growth": 0.15},
             "principle": "Fundamentals lead. Price behavior and news modify confidence; they do not replace business quality.",
         },

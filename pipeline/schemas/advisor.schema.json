@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["schema_version", "generated_at", "data_mode", "count", "research", "market", "source_status", "disclaimer"],
+  "required": ["schema_version", "generated_at", "data_mode", "count", "universe_count", "methodology", "research", "market", "source_status", "disclaimer"],
   "properties": {
     "schema_version": { "const": 1 },
     "generated_at": { "type": "string", "format": "date-time" },
@@ -21,11 +21,28 @@
           "score": { "type": "number", "minimum": 0, "maximum": 100 },
           "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
           "stance": { "enum": ["ATTRACTIVE", "PROMISING", "MIXED", "CAUTION", "INSUFFICIENT DATA"] },
-          "components": { "type": "object" },
+          "components": {
+            "type": "object",
+            "required": ["fundamentals", "market_behavior", "news_sentiment"],
+            "properties": {
+              "fundamentals": { "type": "number", "minimum": 0, "maximum": 100 },
+              "market_behavior": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+              "news_sentiment": { "type": "number", "minimum": 0, "maximum": 100 }
+            }
+          },
           "strengths": { "type": "array", "items": { "type": "string" } },
           "risks": { "type": "array", "items": { "type": "string" } }
         },
         "additionalProperties": true
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "required": ["weights", "fundamental_weights"],
+      "properties": {
+        "weights": {
+          "const": { "fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.1 }
+        }
       }
     },
     "market": { "type": "object" },

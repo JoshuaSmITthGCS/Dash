@@ -44,6 +44,19 @@ def validate(production=False):
     advisor = payloads.get("advisor", {})
     if advisor and advisor.get("count") != len(advisor.get("research", [])):
         errors.append("advisor.json: count does not match research length")
+    expected_weights = {"fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.10}
+    if advisor and advisor.get("methodology", {}).get("weights") != expected_weights:
+        errors.append("advisor.json: ranking weights must remain 75% fundamentals, 15% market behavior, 10% news")
+    scores = [row.get("score", -1) for row in advisor.get("research", [])]
+    if scores != sorted(scores, reverse=True):
+        errors.append("advisor.json: research rows are not ranked by descending score")
+    if advisor.get("universe_count", 0) >= 20 and advisor.get("count") != 20:
+        errors.append("advisor.json: a universe of 20+ companies must publish exactly 20 rankings")
+    for index, row in enumerate(advisor.get("research", [])):
+        if row.get("components", {}).get("fundamentals") is None:
+            errors.append(f"advisor.json:research.{index}: ranked company lacks a fundamental score")
+        if all(row.get(metric) is None for metric in ("peg", "forward_pe", "price_to_sales", "price_to_book")):
+            errors.append(f"advisor.json:research.{index}: ranked company lacks every valuation metric")
 
     # Legacy political fixtures stay explicitly demo while the independent advisor dataset is live.
     modes = {p.get("data_mode") for key, p in payloads.items() if key not in ("status", "advisor")}
