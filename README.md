@@ -1,97 +1,87 @@
-# PolitiTrade — Signal Terminal
+# ValueSignal — fundamentals-first investment research
 
-Personal financial-intelligence dashboard. Tracks congressional trades + executive/policy
-catalysts, layers a sector-aware fundamental screen, and ranks everything into a
-daily watchlist and three research buckets (short-term / long-term / retirement-broad).
+ValueSignal is a static React research dashboard backed by a Python data pipeline. It ranks a
+small, configurable equity universe using company fundamentals first, then adds price behavior,
+market context, news sentiment, and corporate-insider activity. Congressional trading is not an
+input to the advisor score.
 
-**Runs at ~$0/month.** No server or paid database. The static React site reads versioned JSON
-from `public/data/` and Netlify builds directly from the repository root.
+> General research only—not individualized financial advice. A high score is a prompt for deeper
+> research, not a buy order or return forecast.
 
-> Informational only. Not financial advice. STOCK Act disclosures lag trades 30–45 days, so
-> nothing here front-runs anyone. The edge is pattern detection. Output labels are research
-> tiers (HIGH CONVICTION / WATCH / NEUTRAL / COOLING), never "buy."
+## Scoring model
 
-## Quick start
+The overall research score is:
 
-### Pipeline (Python)
+- 60% fundamentals
+- 25% market behavior: trend, volatility, drawdown, and 20-day relative strength versus SPY
+- 15% company news sentiment
+
+The fundamental score implements this framework:
+
+- 40% valuation: PEG, sector-aware forward P/E, sector-aware P/S, and P/B
+- 25% profitability and cash: ROE, free-cash-flow yield, and profit margin
+- 20% financial health: debt-to-equity and current ratio
+- 15% growth: year-over-year revenue and earnings growth
+
+Metrics are reweighted only within their category when unavailable, then missing coverage reduces
+the final confidence. Suspiciously low P/E values receive a possible value-trap penalty. Banks do
+not use industrial-company leverage cutoffs. PEG is taken from a provider-consistent calculation
+rather than combining trailing and forward periods.
+
+## Data sources
+
+One refresh uses the Alpha Vantage free allowance deliberately (25 calls): company overview,
+100-day daily history, company news sentiment, corporate-insider transactions, SPY history, global
+market status, 10-year Treasury yield, federal-funds rate, and inflation. Yahoo Finance fills deeper
+fundamental fields that are absent from the overview response. Raw provider responses are cached
+locally and never published.
+
+The direct major-index endpoints in the supplied documentation are premium-only. SPY serves as the
+free benchmark instead. Alpha Vantage documents the free key as limited to 25 calls per day and one
+request per second; the client centrally enforces 1.1 seconds between uncached requests.
+
+## Local setup
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r pipeline/requirements.txt
-
-# Offline demo (no network — fills every JSON with realistic mock data):
-python pipeline/seed_mock_data.py && python pipeline/scorer.py && python pipeline/rank_picks.py
+cp .env.example .env.local
+# Put the real ALPHA_VANTAGE_API_KEY in .env.local; this file is ignored by Git.
+python pipeline/fetch_advisor.py
 python pipeline/validate_data.py
-```
 
-### Site (React + Vite)
-```bash
 npm ci
-npm run dev      # local preview at localhost:5173
-npm run build    # -> dist (Netlify publishes this)
+npm test
+npm run build
+npm run dev
 ```
 
-## How the score works
-Each disclosed **buy** gets a 0–100 political signal from six weighted factors
-(track record 25, committee relevance 20, cluster detection 20, trade size 15,
-direction+recency 10, policy catalyst 10). Separately, each single stock gets a 0–100
-**fundamental score**. The stored field remains `valuation_score` for compatibility, but the
-calculation now covers four categories:
+Set `ADVISOR_SYMBOLS` to at most five comma-separated symbols on the free plan. The committed
+`advisor.json` contains derived public data only; it never contains the API key.
 
-- 40% valuation: PEG, sector-aware forward P/E, sector-aware P/S, and P/B.
-- 25% profitability and cash: ROE, free-cash-flow yield, and profit margin.
-- 20% financial health: debt-to-equity and current ratio.
-- 15% growth: year-over-year revenue and earnings growth.
+## Deployment
 
-Available metrics are reweighted within each category, then the result is confidence-adjusted by
-data coverage. A suspiciously low positive P/E receives a value-trap penalty rather than an
-automatic maximum. ETFs remain unscored because company accounting ratios are not comparable to
-fund holdings. Bank D/E and current ratios are displayed but excluded from scoring because their
-balance sheets are structurally different. PEG uses the provider's reported PEG rather than
-mixing forward P/E with trailing growth. All cutoffs and sector ranges live in
-`pipeline/config/settings.json`.
+The app lives at the repository root. Netlify should leave its base directory empty; root
+`netlify.toml` builds with `npm run build` and publishes `dist`.
 
-The three buckets blend those two scores differently:
-| Bucket | Signal | Fundamentals | Third factor |
-|---|---|---|---|
-| Short term | 70% | 15% | 15% momentum |
-| Long term | 40% | 45% | 15% profitability/growth quality |
-| Retirement/broad | 15% | 20% | 65% stability (ETF diversification anchors) |
+For scheduled refreshes, add `ALPHA_VANTAGE_API_KEY` under GitHub repository
+**Settings → Secrets and variables → Actions**. `refresh-advisor.yml` fetches, scores, validates,
+and commits data in one job. It has explicit `contents: write`, shared push concurrency, and three
+push retries.
 
-All weights and thresholds live in `pipeline/config/settings.json` — tune without touching code.
+The weekday cron is fixed at 11:00 UTC. That is 07:00 Eastern during daylight time and 06:00
+Eastern during standard time; GitHub cron does not automatically follow daylight-saving changes.
 
-## Config
-- `pipeline/config/settings.json` — signal weights, sector/fundamental bands, bucket blends, feature flags
-- `pipeline/config/committees.json` — politician → committee → sector map
-- `pipeline/config/policy_map.json` — news keyword → sector → tickers
-- `pipeline/config/universe.json` — ETF classification + retirement core holdings
+## Quality controls
 
-## Data reliability
+```bash
+python -m unittest discover -s pipeline/tests -v
+python pipeline/validate_data.py
+npm run lint
+npm test
+npm run build
+```
 
-- Live congressional ingestion is paused while provider access is under review. Actions do not
-  call the live adapter and there is no scheduled production refresh.
-- Every public payload declares `data_mode`. Demo fixtures display a persistent warning, and
-  `validate_data.py --production` rejects them.
-- `status.json` exposes source/stage health. The site marks data stale after 36 hours.
-
-## Deploy
-1. Netlify → **Add new site → Import an existing project** → choose this repository.
-2. Leave the base directory empty. The root `netlify.toml` runs `npm run build`, publishes `dist`,
-   and selects Node 22.
-3. Deploy. `index.html`, `package.json`, `src/`, and `public/` are all at the repository root, so
-   no monorepo or nested-folder settings are required.
-4. GitHub Actions CI runs on every push. **Rebuild demo data** is manual only and retains the
-   visible demo-data guard.
-
-## Feature flags without implementations
-
-The Haiku morning brief and webhook alert flags are placeholders only. Enabling them currently
-does nothing. There is no paper-trade backtester yet.
-
-## Roadmap
-- Select and integrate the live congressional data source after provider access is approved.
-- Parse official House Clerk / Senate eFD filings directly instead of relying on a normalizing API.
-- Backtester to validate whether the scoring weights are actually predictive.
-
-Recharts 2 was unused and has been removed. See `docs/RECHARTS_3.md` for the adoption plan if a
-chart is added later.
+The UI exposes provider health and marks research stale after 36 hours. CI runs Python tests, JSON
+contract validation, React tests, linting, and a production build on every push.

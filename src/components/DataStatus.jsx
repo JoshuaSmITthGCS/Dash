@@ -1,12 +1,7 @@
 import { useData, fmtDate } from '../lib/useData'
 
 const SOURCE_LABELS = {
-  congress: 'Congress',
-  prices: 'Prices',
-  news: 'News',
-  scoring: 'Scoring',
-  ranking: 'Ranking',
-  track_record: 'Track record',
+  advisor: 'Advisor engine',
 }
 
 export function freshness(generatedAt, now = Date.now()) {
@@ -17,15 +12,17 @@ export function freshness(generatedAt, now = Date.now()) {
 }
 
 export function DataStatus() {
-  const { data: signals } = useData('signals.json')
+  const { data: advisor } = useData('advisor.json')
   const { data: status } = useData('status.json')
-  if (!signals && !status) return null
+  if (!advisor && !status) return null
 
-  const mode = signals?.data_mode || 'unknown'
-  const age = freshness(signals?.generated_at || status?.generated_at)
+  const mode = advisor?.data_mode || 'unknown'
+  const age = freshness(advisor?.generated_at || status?.generated_at)
   const stages = Object.entries(status?.stages || {})
     .filter(([key]) => SOURCE_LABELS[key])
-  const unhealthy = status?.status === 'error' || status?.status === 'degraded'
+  const advisorStage = status?.stages?.advisor
+  const unhealthy = advisorStage?.status === 'error' || advisorStage?.status === 'degraded' ||
+    advisor?.source_status?.alpha_vantage?.status === 'degraded'
   const level = mode === 'demo' ? 'demo' : (age.stale || unhealthy ? 'warning' : 'live')
 
   return (
@@ -33,9 +30,12 @@ export function DataStatus() {
       <div className="data-status-main">
         <strong>{mode === 'demo' ? 'Demo data' : level === 'live' ? 'Live data' : 'Data needs attention'}</strong>
         <span>{mode === 'demo'
-          ? 'Generated fixtures are active. Do not use these signals for decisions.'
-          : `Last scored ${fmtDate(signals?.generated_at)} · ${age.label}`}</span>
+          ? 'Generated fixtures are active. Do not use them for decisions.'
+          : `Last researched ${fmtDate(advisor?.generated_at)} · ${age.label}`}</span>
       </div>
+      {advisor?.source_status && <div className="source-health" aria-label="Provider health">
+        {Object.entries(advisor.source_status).map(([key, source]) => <span className={`source-pill ${source.status}`} key={key}><span aria-hidden="true" className="source-dot" />{key.replace(/_/g, ' ')}</span>)}
+      </div>}
       {stages.length > 0 && (
         <div className="source-health" aria-label="Source health">
           {stages.map(([key, stage]) => (

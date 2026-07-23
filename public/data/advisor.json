@@ -1,0 +1,1099 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-23T00:03:04.864205+00:00",
+  "data_mode": "live",
+  "count": 4,
+  "universe": [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "JNJ",
+    "JPM"
+  ],
+  "benchmark": "SPY",
+  "methodology": {
+    "weights": {
+      "fundamentals": 0.6,
+      "market_behavior": 0.25,
+      "news_sentiment": 0.15
+    },
+    "fundamental_weights": {
+      "valuation": 0.4,
+      "profitability": 0.25,
+      "financial_health": 0.2,
+      "growth": 0.15
+    },
+    "principle": "Fundamentals lead. Price behavior and news modify confidence; they do not replace business quality."
+  },
+  "market": {
+    "status": [
+      {
+        "market_type": "Equity",
+        "region": "United States",
+        "primary_exchanges": "NASDAQ, NYSE, AMEX, BATS",
+        "local_open": "09:30",
+        "local_close": "16:15",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Canada",
+        "primary_exchanges": "Toronto, Toronto Ventures",
+        "local_open": "09:30",
+        "local_close": "16:00",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "United Kingdom",
+        "primary_exchanges": "London",
+        "local_open": "08:00",
+        "local_close": "16:30",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Germany",
+        "primary_exchanges": "XETRA, Berlin, Frankfurt, Munich, Stuttgart",
+        "local_open": "08:00",
+        "local_close": "20:00",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "France",
+        "primary_exchanges": "Paris",
+        "local_open": "09:00",
+        "local_close": "17:30",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Spain",
+        "primary_exchanges": "Barcelona, Madrid",
+        "local_open": "09:00",
+        "local_close": "17:30",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Portugal",
+        "primary_exchanges": "Lisbon",
+        "local_open": "08:00",
+        "local_close": "16:30",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Japan",
+        "primary_exchanges": "Tokyo",
+        "local_open": "09:00",
+        "local_close": "15:00",
+        "current_status": "open",
+        "notes": "Noon trading break from 11:30 to 12:30 local time"
+      },
+      {
+        "market_type": "Equity",
+        "region": "India",
+        "primary_exchanges": "NSE, BSE",
+        "local_open": "09:15",
+        "local_close": "15:30",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Mainland China",
+        "primary_exchanges": "Shanghai, Shenzhen",
+        "local_open": "09:30",
+        "local_close": "15:00",
+        "current_status": "closed",
+        "notes": "Noon trading break from 11:30 to 13:00 local time"
+      },
+      {
+        "market_type": "Equity",
+        "region": "Hong Kong",
+        "primary_exchanges": "Hong Kong",
+        "local_open": "09:30",
+        "local_close": "16:00",
+        "current_status": "closed",
+        "notes": "Noon trading break from 12:00 to 13:00 local time"
+      },
+      {
+        "market_type": "Equity",
+        "region": "Brazil",
+        "primary_exchanges": "Sao Paolo",
+        "local_open": "10:00",
+        "local_close": "17:30",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "Mexico",
+        "primary_exchanges": "Mexico",
+        "local_open": "08:30",
+        "local_close": "15:00",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Equity",
+        "region": "South Africa",
+        "primary_exchanges": "Johannesburg",
+        "local_open": "09:00",
+        "local_close": "17:00",
+        "current_status": "closed",
+        "notes": ""
+      },
+      {
+        "market_type": "Forex",
+        "region": "Global",
+        "primary_exchanges": "Global",
+        "local_open": "00:00",
+        "local_close": "23:59",
+        "current_status": "open",
+        "notes": "The forex market is open 24 hours a day, EXCEPT between 16:00 EST on Friday and 17:00 EST on Sunday"
+      },
+      {
+        "market_type": "Cryptocurrency",
+        "region": "Global",
+        "primary_exchanges": "Global",
+        "local_open": "00:00",
+        "local_close": "23:59",
+        "current_status": "open",
+        "notes": "The cryptocurrency market is open 24 hours a day"
+      }
+    ],
+    "macro": {
+      "treasury_10y": {
+        "value": null,
+        "date": null,
+        "unit": null
+      },
+      "federal_funds_rate": {
+        "value": 3.63,
+        "date": "2026-06-01",
+        "unit": "percent"
+      },
+      "inflation": {
+        "value": null,
+        "date": null,
+        "unit": null
+      }
+    }
+  },
+  "research": [
+    {
+      "ticker": "JPM",
+      "name": "JPMorgan Chase & Co",
+      "description": "JPMorgan Chase & Co. is an American multinational investment bank and financial services holding company headquartered in New York City. JPMorgan Chase is incorporated in Delaware. As a Bulge Bracket bank, it is a major provider of various investment banking and financial services. It is one of America's Big Four banks, along with Bank of America, Citigroup, and Wells Fargo. JPMorgan Chase is considered to be a universal bank and a custodian bank. The J.P. Morgan brand is used by the investment banking, asset management, private banking, private wealth management, and treasury services divisions.",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "FINANCIAL SERVICES",
+      "industry": "BANKS - DIVERSIFIED",
+      "price": 348.21,
+      "market_cap": 900784259000.0,
+      "dividend_yield": 0.0177,
+      "is_etf": false,
+      "price_to_sales": 4.75,
+      "price_to_book": 2.548,
+      "forward_pe": 15.02,
+      "trailing_pe": 14.51,
+      "peg": 1.746,
+      "return_on_equity": 0.178,
+      "profit_margin": 0.349,
+      "revenue_growth": 0.304,
+      "earnings_growth": 0.469,
+      "analyst_target_price": 367.45,
+      "week_52_high": 351.24,
+      "week_52_low": 276.44,
+      "pct_30d": 4.21,
+      "debt_to_equity": null,
+      "current_ratio": null,
+      "free_cash_flow": null,
+      "free_cash_flow_yield": null,
+      "score": 67.0,
+      "stance": "PROMISING",
+      "confidence": 0.82,
+      "components": {
+        "fundamentals": 70.2,
+        "market_behavior": 68.3,
+        "news_sentiment": 69.0
+      },
+      "fundamental_categories": {
+        "valuation": 63.0,
+        "profitability": 87.7,
+        "financial_health": null,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 50.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 80.0,
+        "free_cash_flow_yield": null,
+        "profit_margin": 100.0,
+        "debt_to_equity": null,
+        "current_ratio": null,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 63.0,
+          "profitability": 87.7,
+          "financial_health": null,
+          "growth": 100.0
+        },
+        "coverage": 0.73,
+        "raw_score": 77.7,
+        "sector": "FINANCIAL SERVICES"
+      },
+      "technical_detail": {
+        "return_20d": 4.21,
+        "return_60d": 12.95,
+        "annualized_volatility": 22.37,
+        "drawdown_60d": 0.0,
+        "relative_strength_20d": 2.33,
+        "trend": 64.9,
+        "risk": 79.3,
+        "relative_strength": 57.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": 0.19,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (88/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 36,
+        "recent_disposals": 64,
+        "records_reviewed": 100
+      }
+    },
+    {
+      "ticker": "GOOGL",
+      "name": "Alphabet Inc Class A",
+      "description": "Alphabet Inc. is an American multinational conglomerate headquartered in Mountain View, California. It was created through a restructuring of Google on October 2, 2015, and became the parent company of Google and several former Google subsidiaries. The two co-founders of Google remained as controlling shareholders, board members, and employees at Alphabet. Alphabet is the world's fourth-largest technology company by revenue and one of the world's most valuable companies.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "COMMUNICATION SERVICES",
+      "industry": "INTERNET CONTENT & INFORMATION",
+      "price": 342.09,
+      "market_cap": 4236123046000.0,
+      "dividend_yield": 0.0024,
+      "is_etf": false,
+      "price_to_sales": 10.03,
+      "price_to_book": 8.97,
+      "forward_pe": 24.94,
+      "trailing_pe": 26.89,
+      "peg": 1.386,
+      "return_on_equity": 0.389,
+      "profit_margin": 0.379,
+      "revenue_growth": 0.218,
+      "earnings_growth": 0.82,
+      "analyst_target_price": 433.51,
+      "week_52_high": 408.37,
+      "week_52_low": 187.29,
+      "pct_30d": -1.17,
+      "debt_to_equity": 0.2,
+      "current_ratio": 1.92,
+      "free_cash_flow": 27921750016.0,
+      "free_cash_flow_yield": 0.0067,
+      "score": 65.4,
+      "stance": "PROMISING",
+      "confidence": 1.0,
+      "components": {
+        "fundamentals": 74.1,
+        "market_behavior": 39.5,
+        "news_sentiment": 74.1
+      },
+      "fundamental_categories": {
+        "valuation": 54.5,
+        "profitability": 75.5,
+        "financial_health": 92.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 15.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 80.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 54.5,
+          "profitability": 75.5,
+          "financial_health": 92.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 74.1,
+        "sector": "COMMUNICATION SERVICES"
+      },
+      "technical_detail": {
+        "return_20d": -1.17,
+        "return_60d": -0.67,
+        "annualized_volatility": 36.39,
+        "drawdown_60d": -15.03,
+        "relative_strength_20d": -3.05,
+        "trend": 47.3,
+        "risk": 28.7,
+        "relative_strength": 40.8,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": 0.241,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (92/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "Down 15.0% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 34,
+        "recent_disposals": 66,
+        "records_reviewed": 100
+      }
+    },
+    {
+      "ticker": "JNJ",
+      "name": "Johnson & Johnson",
+      "description": "Johnson & Johnson (J&J) is an American multinational corporation founded in 1886 that develops medical devices, pharmaceuticals, and consumer packaged goods. Its common stock is a component of the Dow Jones Industrial Average and the company is ranked No. 36 on the 2021 Fortune 500 list of the largest United States corporations by total revenue. Johnson & Johnson is one of the world's most valuable companies, and is one of only two U.S.-based companies that has a prime credit rating of AAA, higher than that of the United States government.",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "HEALTHCARE",
+      "industry": "DRUG MANUFACTURERS - GENERAL",
+      "price": 255.63,
+      "market_cap": 603272643000.0,
+      "dividend_yield": 0.0211,
+      "is_etf": false,
+      "price_to_sales": 6.16,
+      "price_to_book": 7.38,
+      "forward_pe": 21.41,
+      "trailing_pe": 28.91,
+      "peg": 4.114,
+      "return_on_equity": 0.264,
+      "profit_margin": 0.215,
+      "revenue_growth": 0.066,
+      "earnings_growth": -0.01,
+      "analyst_target_price": 269.95,
+      "week_52_high": 269.43,
+      "week_52_low": 160.21,
+      "pct_30d": 6.92,
+      "debt_to_equity": 0.68,
+      "current_ratio": null,
+      "free_cash_flow": null,
+      "free_cash_flow_yield": null,
+      "score": 63.3,
+      "stance": "PROMISING",
+      "confidence": 0.88,
+      "components": {
+        "fundamentals": 57.4,
+        "market_behavior": 68.4,
+        "news_sentiment": 88.9
+      },
+      "fundamental_categories": {
+        "valuation": 41.0,
+        "profitability": 100.0,
+        "financial_health": 75.0,
+        "growth": 32.5
+      },
+      "fundamental_detail": {
+        "peg": 10.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": null,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": null,
+        "revenue_growth": 55.0,
+        "earnings_growth": 10.0,
+        "categories": {
+          "valuation": 41.0,
+          "profitability": 100.0,
+          "financial_health": 75.0,
+          "growth": 32.5
+        },
+        "coverage": 0.82,
+        "raw_score": 61.3,
+        "sector": "HEALTHCARE"
+      },
+      "technical_detail": {
+        "return_20d": 6.92,
+        "return_60d": 12.36,
+        "annualized_volatility": 24.6,
+        "drawdown_60d": -4.34,
+        "relative_strength_20d": 5.04,
+        "trend": 70.0,
+        "risk": 68.3,
+        "relative_strength": 65.1,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": 0.389,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (100/100)",
+        "Strong balance-sheet health score (75/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Weak valuation score (41/100)",
+        "Weak growth score (32/100)"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 51,
+        "recent_disposals": 49,
+        "records_reviewed": 100
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "name": "Microsoft Corporation",
+      "description": "Microsoft Corporation is an American multinational technology company which produces computer software, consumer electronics, personal computers, and related services. Its best known software products are the Microsoft Windows line of operating systems, the Microsoft Office suite, and the Internet Explorer and Edge web browsers. Its flagship hardware products are the Xbox video game consoles and the Microsoft Surface lineup of touchscreen personal computers. Microsoft ranked No. 21 in the 2020 Fortune 500 rankings of the largest United States corporations by total revenue; it was the world's largest software maker by revenue as of 2016. It is considered one of the Big Five companies in the U.S. information technology industry, along with Google, Apple, Amazon, and Facebook.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "TECHNOLOGY",
+      "industry": "SOFTWARE - INFRASTRUCTURE",
+      "price": 390.34,
+      "market_cap": 2954659889000.0,
+      "dividend_yield": 0.0088,
+      "is_etf": false,
+      "price_to_sales": 9.28,
+      "price_to_book": 7.21,
+      "forward_pe": 20.7,
+      "trailing_pe": 23.7,
+      "peg": 1.241,
+      "return_on_equity": 0.34,
+      "profit_margin": 0.393,
+      "revenue_growth": 0.183,
+      "earnings_growth": 0.234,
+      "analyst_target_price": 557.79,
+      "week_52_high": 551.05,
+      "week_52_low": 349.2,
+      "pct_30d": 4.39,
+      "debt_to_equity": 0.3,
+      "current_ratio": 1.28,
+      "free_cash_flow": 37011251200.0,
+      "free_cash_flow_yield": 0.0128,
+      "score": 61.2,
+      "stance": "PROMISING",
+      "confidence": 1.0,
+      "components": {
+        "fundamentals": 70.6,
+        "market_behavior": 48.2,
+        "news_sentiment": 45.5
+      },
+      "fundamental_categories": {
+        "valuation": 54.5,
+        "profitability": 75.5,
+        "financial_health": 82.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 15.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 54.5,
+          "profitability": 75.5,
+          "financial_health": 82.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 70.6,
+        "sector": "TECHNOLOGY"
+      },
+      "technical_detail": {
+        "return_20d": 4.39,
+        "return_60d": -8.07,
+        "annualized_volatility": 33.28,
+        "drawdown_60d": -15.24,
+        "relative_strength_20d": 2.5,
+        "trend": 54.7,
+        "risk": 34.6,
+        "relative_strength": 57.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": -0.045,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Down 15.2% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 65,
+        "recent_disposals": 35,
+        "records_reviewed": 100
+      }
+    }
+  ],
+  "news": [
+    {
+      "title": "Battery Mineral Resources' ESI Subsidiary Secures Strategic Financing with JPMorgan Chase",
+      "url": "https://investingnews.com/battery-mineral-resources-esi-subsidiary-secures-strategic-financing-with-jpmorgan-chase/",
+      "source": "Investing News Network",
+      "published_at": "20260722T230121",
+      "summary": "Battery Mineral Resources Corp.'s wholly owned subsidiary, ESI Energy Services Inc. (operating as Ozzies), has secured a new senior secured financing arrangement with JPMorgan Chase Bank, N.A. This financing includes a US$6.0 million term loan, a US$1.0 million revolving line of credit, and an additional US$5.0 million equipment financing facility, totaling up to US$12.0 million, to support ESI's growth and operations. The company also announced the grant of 13,193,431 restricted share units to certain directors and executive officers.",
+      "overall_sentiment_score": 0.315,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.892556",
+          "ticker_sentiment_score": "0.320412",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "US Bancorp vice chair Stephen Philipson sells $2.3m in shares",
+      "url": "https://www.investing.com/news/insider-trading-news/us-bancorp-vice-chair-stephen-philipson-sells-23m-in-shares-93CH-4807213",
+      "source": "Investing.com",
+      "published_at": "20260722T225615",
+      "summary": "Stephen L. Philipson, Vice Chair at US Bancorp, sold 36,906 shares of the company's common stock on July 20, 2026, for a total of $2,327,919. Following this transaction, Philipson directly holds 74,969 shares and indirectly 509 shares. The sale occurred as USB stock approached its 52-week high, with shares up 45% over the past year, and despite an InvestingPro analysis suggesting the stock is undervalued with a Fair Value of $76.03.",
+      "overall_sentiment_score": 0.217,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.612189",
+          "ticker_sentiment_score": "0.249534",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "Earnings call transcript: Alphabet beats Q2 2026 estimates, shares fall on capex surge",
+      "url": "https://www.investing.com/news/transcripts/earnings-call-transcript-alphabet-beats-q2-2026-estimates-shares-fall-on-capex-surge-93CH-4807140",
+      "source": "Investing.com",
+      "published_at": "20260722T220206",
+      "summary": "Alphabet reported stronger-than-expected Q2 2026 results with EPS of $9.11 and revenue of $119.8 billion, surpassing analyst forecasts. Despite the earnings beat, shares fell after hours due to the company's increased capital expenditure guidance for 2026, now projected at $195 billion-$205 billion, and anticipated near-term margin pressure. The growth was significantly driven by Google Cloud and AI-related products, with management expressing confidence in long-term AI opportunities despite rising investment costs and supply constraints.",
+      "overall_sentiment_score": 0.124,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.885432",
+          "ticker_sentiment_score": "0.139374",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "First Look: J&J unveils its Ottava surgical robotics system",
+      "url": "https://www.medicaldesignandoutsourcing.com/first-look-jj-medtech-ottava-surgical-robotics-system/",
+      "source": "Medical Design & Outsourcing",
+      "published_at": "20260722T215622",
+      "summary": "Johnson & Johnson MedTech has unveiled its Ottava surgical robotics system, which recently received FDA de novo authorization. The system features four robotic arms integrated into the operating table, designed to save space in the operating room. Key innovations include a two-in-one needle driver and a patented scissor design for improved precision and consistency during soft-tissue surgeries.",
+      "overall_sentiment_score": 0.186,
+      "ticker_sentiment": [
+        {
+          "ticker": "JNJ",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.432921",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "JNJ"
+    },
+    {
+      "title": "JPMorgan Chase & Co. (NYSE:JPM) Trading 1% Higher - Still a Buy?",
+      "url": "https://www.marketbeat.com/instant-alerts/jpmorgan-chase-co-nysejpm-trading-1-higher-still-a-buy-2026-07-22/",
+      "source": "MarketBeat",
+      "published_at": "20260722T213216",
+      "summary": "JPMorgan Chase & Co. (NYSE:JPM) is trading 1% higher and is on track for an eighth consecutive weekly gain, driven by strong Q2 results that exceeded expectations in EPS and revenue. Analysts generally maintain \"Buy\" or \"Outperform\" ratings with elevated price targets, reflecting positive sentiment. However, CEO Jamie Dimon's warnings about potential market and credit risks indicate some caution, despite the bank's potential gains from AI efficiencies and international deals.",
+      "overall_sentiment_score": 0.433,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.418896",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "International Business Machines (NYSE:IBM) Trading Down 2.1% Following Weak Earnings",
+      "url": "https://www.marketbeat.com/instant-alerts/international-business-machines-nyseibm-trading-down-21-following-weak-earnings-2026-07-22/",
+      "source": "MarketBeat",
+      "published_at": "20260722T211605",
+      "summary": "International Business Machines (IBM) stock fell 2.1% after announcing weaker-than-expected earnings, missing EPS and revenue estimates. The disappointing report led to increased trading volume and exacerbated recent volatility, following a previous guidance cut. Despite a \"Moderate Buy\" consensus from analysts, some firms downgraded the stock, and investors are looking to upcoming Q2 commentary for signs of recovery and AI momentum.",
+      "overall_sentiment_score": -0.045,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.569983",
+          "ticker_sentiment_score": "0.114928",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "US Judge Casts Doubt on 69,000 Cases Alleging J&J Talc Caused Cancer",
+      "url": "https://www.usnews.com/news/us/articles/2026-07-22/us-judge-casts-doubt-on-69-000-cases-alleging-j-j-talc-caused-cancer",
+      "source": "U.S. News & World Report",
+      "published_at": "20260722T204314",
+      "summary": "A federal judge has questioned the validity of approximately 69,000 lawsuits claiming Johnson & Johnson's talc products caused ovarian cancer, demanding plaintiffs provide more specific evidence. U.S. Magistrate Judge Rukhsanah Singh expressed doubt after expert testimony indicated an inability to definitively link talcum powder use to specific cancer cases. Plaintiffs have until November 19 to demonstrate why their cases should not be dismissed due to insufficient expert opinions on causation.",
+      "overall_sentiment_score": 0.443,
+      "ticker_sentiment": [
+        {
+          "ticker": "JNJ",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.420862",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "JNJ"
+    },
+    {
+      "title": "Earnings Flash (RJF) Raymond James Financial, Inc. Posts Q3 Adjusted EPS $3.14 per Share, vs. FactSet Est of $2.93",
+      "url": "https://www.marketscreener.com/news/earnings-flash-rjf-raymond-james-financial-inc-posts-q3-adjusted-eps-3-14-per-share-vs-factse-ce7f51d9df81f723",
+      "source": "www.marketscreener.com",
+      "published_at": "20260722T203905",
+      "summary": "Raymond James Financial, Inc. (RJF) announced Q3 adjusted EPS of $3.14 per share, significantly exceeding the FactSet estimate of $2.93. The company also reported Q3 revenue of $3.93 billion, surpassing the FactSet estimate of $3.87 billion. This positive earnings flash comes amidst other news indicating a rise in Raymond James' profit driven by capital markets strength.",
+      "overall_sentiment_score": 0.284,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.644286",
+          "ticker_sentiment_score": "0.250528",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "Google Q2 Cloud Revenue Surges 82%: Net Profit Soars 298% YoY, 26% QoQ Capital Expenditure Growth Sparks Sharp Bull-Bear Divide",
+      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262048041-google-earnings-report-q2-2026-goog-googl-services-cloud-search-capital-expenditures-tradingkey",
+      "source": "TradingKey",
+      "published_at": "20260722T203700",
+      "summary": "Alphabet reported strong Q2 2026 financial results, with total revenue reaching $119.796 billion, a 24% year-over-year increase, driven largely by Google Cloud's 82% surge due to enterprise AI demand. While GAAP net income jumped 298% due to one-time equity gains, core operating income still grew a robust 30%. The company's significant capital expenditure of $44.9 billion underscores its continued investment in its full-stack AI strategy.",
+      "overall_sentiment_score": 0.522,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.598666",
+          "ticker_sentiment_score": "0.209798",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Google Q2 Cloud Revenue Surges 82%: Net Profit Soars 298% YoY, 26% QoQ Capital Expenditure Growth Sparks Sharp Bull-Bear Divide",
+      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262048041-google-earnings-report-q2-2026-goog-googl-services-cloud-search-capital-expenditures-tradingkey",
+      "source": "TradingKey",
+      "published_at": "20260722T203700",
+      "summary": "Alphabet reported strong Q2 2026 financial results, with total revenue reaching $119.796 billion, a 24% year-over-year increase, driven largely by Google Cloud's 82% surge due to enterprise AI demand. While GAAP net income jumped 298% due to one-time equity gains, core operating income still grew a robust 30%. The company's significant capital expenditure of $44.9 billion underscores its continued investment in its full-stack AI strategy.",
+      "overall_sentiment_score": 0.539,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.944419",
+          "ticker_sentiment_score": "0.749557",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "US judge casts doubt on 69,000 cases alleging J&J talc caused cancer",
+      "url": "https://www.yahoo.com/news/us/articles/us-judge-casts-doubt-69-203714110.html",
+      "source": "Yahoo",
+      "published_at": "20260722T203700",
+      "summary": "A federal judge in New Jersey has expressed significant doubt regarding approximately 69,000 lawsuits against Johnson & Johnson, which claim its talc products caused ovarian cancer. The judge indicated that plaintiffs must provide more specific evidence or face dismissal, citing expert testimony that could not definitively link talc to specific ovarian cancer cases. J&J maintains its talc products are safe and asbestos-free.",
+      "overall_sentiment_score": 0.309,
+      "ticker_sentiment": [
+        {
+          "ticker": "JNJ",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.301934",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JNJ"
+    },
+    {
+      "title": "Alphabet Q2 2026 earnings: revenue up 24%, Cloud surges 82%",
+      "url": "https://qz.com/alphabet-google-second-quarter-earnings-revenue-cloud-072226",
+      "source": "Quartz",
+      "published_at": "20260722T203201",
+      "summary": "Alphabet (GOOGL) reported strong second-quarter 2026 earnings with a 24% year-over-year revenue increase to $119.8 billion, surpassing analyst expectations. The significant growth was driven by Google Cloud, which surged 82% to $24.8 billion, largely due to demand for AI infrastructure and solutions. The company's net income also saw a substantial increase, boosted by a large investment gain.",
+      "overall_sentiment_score": 0.833,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.859886",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Prudential Advisors Welcomes J.P. Morgan Advisor to Mid America Financial Group",
+      "url": "https://www.advisorhub.com/resources/prudential-advisors-welcomes-j-p-morgan-advisor-to-mid-america-financial-group/",
+      "source": "AdvisorHub",
+      "published_at": "20260722T202903",
+      "summary": "Prudential Advisors has announced the addition of David Bellamy, a former J.P. Morgan Wealth Management advisor, to its Mid America Financial Group. Bellamy, who managed over $140 million in client assets, brings 20 years of experience and will leverage Prudential's resources to grow his practice. This move highlights Prudential's strategy to attract experienced wealth managers and offer comprehensive support and an open-architecture platform.",
+      "overall_sentiment_score": 0.318,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.814796",
+          "ticker_sentiment_score": "0.148987",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "Google\u2019s Red-Hot Cloud Growth Drives Second-Quarter Revenue Gains",
+      "url": "https://www.wsj.com/tech/ai/alphabet-googl-q2-earnings-report-2026-stock-f6bdd223",
+      "source": "WSJ",
+      "published_at": "20260722T202501",
+      "summary": "Alphabet (Google's parent company) reported 24% revenue growth in the second quarter, driven by an 82% jump in its cloud division. Despite exceeding analyst expectations with $119.8 billion in sales and $112.1 billion in net income, the company's free cash flow turned negative due to heavy investments in AI-related data centers. Google is spending up to $190 billion in capital expenditures this year to support its AI efforts and recently announced an $85 billion equity raise.",
+      "overall_sentiment_score": -0.22,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "-0.218609",
+          "ticker_sentiment_label": "Somewhat-Bearish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Alphabet Posts Cloud Sales Beat, Slight Miss on Search Revenue",
+      "url": "https://www.bloomberg.com/news/articles/2026-07-22/alphabet-posts-cloud-sales-beat-slight-miss-on-search-revenue",
+      "source": "Bloomberg.com",
+      "published_at": "20260722T201000",
+      "summary": "Alphabet Inc. reported second-quarter cloud revenue that exceeded Wall Street's expectations, totaling $24.77 billion, an 82% increase year-over-year. The company also announced strong growth in the usage of its Gemini AI system, with monthly active users reaching 950 million, surpassing estimates. These results suggest that Alphabet's significant investments in artificial intelligence are starting to yield positive returns.",
+      "overall_sentiment_score": 0.454,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.495909",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Earnings Flash (LVS) Las Vegas Sands Corp. Reports Q2 Revenue $3.15B, vs. FactSet Est of $3.31B",
+      "url": "https://www.marketscreener.com/news/earnings-flash-lvs-las-vegas-sands-corp-reports-q2-revenue-3-15b-vs-factset-est-of-3-31b-ce7f51d9df8ff62c",
+      "source": "www.marketscreener.com",
+      "published_at": "20260722T200821",
+      "summary": "Las Vegas Sands Corp. (LVS) reported Q2 revenue of $3.15 billion, falling short of the FactSet estimate of $3.31 billion. The casino operator's quarterly profit and revenue slipped due to weak business performance in Macau. This financial update indicates a challenging quarter for the company, primarily impacted by its operations in the Macau market.",
+      "overall_sentiment_score": -0.203,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.628397",
+          "ticker_sentiment_score": "-0.127007",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "Anthropic to buy up to two gigawatts of GPU capacity from AMD",
+      "url": "https://siliconangle.com/2026/07/22/anthropic-buy-two-gigawatts-gpu-capacity-amd/",
+      "source": "SiliconANGLE",
+      "published_at": "20260722T200706",
+      "summary": "Anthropic has announced a multibillion-dollar deal to purchase up to two gigawatts of GPU capacity from AMD, specifically the MI450 series. This partnership includes AMD investing up to $5 billion in Anthropic and utilizing Anthropic's Claude AI to accelerate its software development, particularly for the ROCm platform. The deal highlights a growing trend among major AI players to diversify chip suppliers to avoid supply chain bottlenecks and underscores AMD's increasing competitiveness in the AI hardware market.",
+      "overall_sentiment_score": 0.317,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.644813",
+          "ticker_sentiment_score": "0.276194",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Jamie Dimon's JPMorgan Posted a Record $21.2 Billion Quarterly Profit, Up 41%",
+      "url": "https://www.fool.com/investing/2026/07/22/jamie-dimon-jpmorgan-record-billion-profit/",
+      "source": "The Motley Fool",
+      "published_at": "20260722T193908",
+      "summary": "JPMorgan Chase achieved a historic quarterly profit of $21.2 billion, marking a 41% increase year-over-year, driven by a significant surge in equity trading revenue and investment banking fees, including gains from the SpaceX IPO. Despite these record-breaking results, CEO Jamie Dimon cautioned that these conditions are \"as good as it gets\" and unlikely to be sustainable, advising investors not to expect similar performance in future quarters. The article highlights that while JPMorgan's execution is extraordinary, this peak is due to one-time events rather than a new earnings baseline.",
+      "overall_sentiment_score": 0.151,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.220193",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "Alphabet Q2 Preview: Stock on Sale? Analyst Says \u2018Attractive Entry\u2019 Ahead of Earnings",
+      "url": "https://www.sahmcapital.com/news/content/alphabet-q2-preview-stock-on-sale-analyst-says-attractive-entry-ahead-of-earnings-2026-07-21",
+      "source": "Sahm",
+      "published_at": "20260722T193806",
+      "summary": "Alphabet Inc. is set to report its Q2 earnings, with analysts expecting revenue of $113.6 billion and EPS of $2.87. A Guggenheim analyst maintains a Buy rating, viewing a recent delay in the Gemini AI product as a potential \"attractive entry point\" for investors. Key areas to watch include updates on Gemini, Google Search, YouTube, and Cloud revenue, especially given significant AI spending.",
+      "overall_sentiment_score": 0.288,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.956967",
+          "ticker_sentiment_score": "0.253227",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "IBM Q2 2026 earnings call: Live updates on $IBM earnings & outlook",
+      "url": "https://www.thestreet.com/latest-news/ibm-q2-2026-earnings-call-updates",
+      "source": "TheStreet",
+      "published_at": "20260722T193446",
+      "summary": "IBM reported its Q2 2026 earnings, with revenue slightly below preliminary estimates but adjusted EPS matching. The stock rose slightly after-hours despite a significant 25% drop a week prior due to preliminary earnings missing internal targets and analyst expectations, driven by clients shifting spending from software to AI infrastructure. The company's future stock volatility will depend on its guidance regarding this industry-wide shift.",
+      "overall_sentiment_score": 0.078,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.609766",
+          "ticker_sentiment_score": "0.122376",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Samsara Inc Stock (IOT) Moved Down by 7.54% on Jul 22: Facts Behind the Movement",
+      "url": "https://www.tradingkey.com/news/market-movers/262047916-market-movers-iot-20260722",
+      "source": "TradingKey",
+      "published_at": "20260722T191129",
+      "summary": "Samsara Inc. (IOT) stock dropped 7.54% on July 22nd due to concerns over decelerating enterprise growth, extended sales cycles, macroeconomic headwinds, and cautious capital expenditure from its core customer base. Analyst downgrades and a broader rotation out of high-growth software sectors also contributed to the decline. The company's high valuation multiples, decelerating annual recurring revenue, escalating litigation costs, and insider selling have flagged specific risks for investors despite a recent earnings beat.",
+      "overall_sentiment_score": -0.429,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.555088",
+          "ticker_sentiment_score": "-0.281655",
+          "ticker_sentiment_label": "Somewhat-Bearish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "J&J gets a big win on its new robotic surgical system \u2014 plus, a flood of earnings",
+      "url": "https://www.cnbc.com/2026/07/22/jj-gets-a-big-win-on-its-new-robotic-surgical-system-plus-a-flood-of-earnings.html",
+      "source": "CNBC",
+      "published_at": "20260722T190822",
+      "summary": "Johnson & Johnson received early FDA approval for its Ottava Robotic surgical system, boosting its stock despite a weak MedTech quarter and positioning it to challenge Intuitive Surgical. Meanwhile, tech earnings are set to flood in, with Alphabet, Tesla, ServiceNow, and Texas Instruments reporting, while Goldman Sachs launched a new platform for wealthy clients to invest in pre-IPO private companies. Cybersecurity stocks, including CrowdStrike and Palo Alto Networks, saw a mixed reaction following an OpenAI security incident, which is seen by some as highlighting their critical role.",
+      "overall_sentiment_score": 0.3,
+      "ticker_sentiment": [
+        {
+          "ticker": "JNJ",
+          "relevance_score": "0.952912",
+          "ticker_sentiment_score": "0.444982",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "JNJ"
+    },
+    {
+      "title": "Morgan Stanley Issues Positive Forecast for Elanco Animal Health (NYSE:ELAN) Stock Price",
+      "url": "https://www.marketbeat.com/instant-alerts/morgan-stanley-issues-positive-forecast-for-elanco-animal-health-nyseelan-stock-price-2026-07-22/",
+      "source": "MarketBeat",
+      "published_at": "20260722T184810",
+      "summary": "Morgan Stanley raised its price target for Elanco Animal Health (NYSE:ELAN) to $26 from $23, maintaining an \"equal weight\" rating. Other analysts also show a constructive outlook, with the stock holding a consensus \"Moderate Buy\" rating and an average price target of $28.73. Elanco recently reported stronger-than-expected quarterly results, beating EPS and revenue estimates, and provided positive guidance for fiscal year 2026.",
+      "overall_sentiment_score": 0.406,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.578342",
+          "ticker_sentiment_score": "0.300357",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "DELL Stock Rallies As AI Server Boom Fuels Upgrades",
+      "url": "https://timothysykes.com/news/dell-technologies-inc-class-c-dell-news-2026_07_22/",
+      "source": "timothysykes.com",
+      "published_at": "20260722T183810",
+      "summary": "Dell Technologies (DELL) stock rallied 8.67% due to strong AI server demand, with Q1 FY2027 AI-optimized server revenue hitting $16.1 billion, a 757% increase year-over-year. The company has a significant AI order backlog of $51.3 billion and announced critical partnerships and new product launches, such as the PowerEdge XE8812 AI server. Analysts from JPMorgan, Evercore ISI, and Morgan Stanley have raised their price targets for DELL, reflecting confidence in its AI infrastructure positioning.",
+      "overall_sentiment_score": 0.311,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.612126",
+          "ticker_sentiment_score": "0.207978",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "JPMorgan Chase & Co. (MCD) reports 30.96M McDonald's shares in 13G/A",
+      "url": "https://www.stocktitan.net/sec-filings/MCD/schedule-13g-a-mcdonalds-corp-amended-passive-investment-disclosure-17c3f959bf0b.html",
+      "source": "Stock Titan",
+      "published_at": "20260722T174626",
+      "summary": "JPMorgan Chase & Co. has filed an amended Schedule 13G/A report disclosing beneficial ownership of 30,960,253 shares of McDonald's Corporation common stock as of June 30, 2026. This represents a 4.3% stake in the company. The filing details JPMorgan's sole and shared voting and dispositive powers over these shares, identifying various subsidiaries as holding and investment management entities.",
+      "overall_sentiment_score": 0.026,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.747412",
+          "ticker_sentiment_score": "0.030819",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "JPMorgan Chase & Co. (HAYW) reports 10.46M Hayward Holdings shares in 13G/A",
+      "url": "https://www.stocktitan.net/sec-filings/HAYW/schedule-13g-a-hayward-holdings-inc-amended-passive-investment-disclo-c26e1eff9d68.html",
+      "source": "Stock Titan",
+      "published_at": "20260722T174334",
+      "summary": "JPMorgan Chase & Co. has filed an amended Schedule 13G, disclosing beneficial ownership of 10,458,642 shares of Hayward Holdings, Inc. common stock, which represents 4.8% of the class. The filing indicates JPMorgan holds sole voting power over 10,062,253 shares and sole dispositive power over all 10,458,642 shares. This updated disclosure confirms JPMorgan's passive investment in Hayward Holdings, remaining below the 5% ownership threshold.",
+      "overall_sentiment_score": 0.127,
+      "ticker_sentiment": [
+        {
+          "ticker": "JPM",
+          "relevance_score": "0.898527",
+          "ticker_sentiment_score": "0.140808",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "JPM"
+    },
+    {
+      "title": "Monday.com lays off hundreds to focus on AI",
+      "url": "https://techcrunch.com/2026/07/22/monday-com-lays-off-hundreds-to-focuses-on-ai/",
+      "source": "TechCrunch",
+      "published_at": "20260722T174112",
+      "summary": "Monday.com is laying off 20% of its workforce, approximately 630 employees, as part of a restructuring to intensify its focus on AI projects and a leaner operating model. The company previously redesigned its product around an AI Work Platform for enterprise customers. This move aligns with a broader trend in the tech industry where numerous companies are cutting jobs to redirect investments toward artificial intelligence.",
+      "overall_sentiment_score": -0.173,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.641111",
+          "ticker_sentiment_score": "-0.101953",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "NetEase Inc Stock (NTES) Moved Down by 6.64% on Jul 22: A Full Analysis",
+      "url": "https://www.tradingkey.com/news/market-movers/262047768-market-movers-ntes-20260722",
+      "source": "TradingKey",
+      "published_at": "20260722T174030",
+      "summary": "NetEase Inc. (NTES) stock fell by 6.64% on July 22, driven by regulatory concerns in China, increased competition in the gaming sector leading to higher user acquisition costs, and broader macroeconomic headwinds. Investment banks have lowered price targets due to margin pressure from rising R&D and marketing expenses. The company's immediate technical outlook is bearish, and investors await clearer regulatory guidance or a significant new game launch to improve sentiment.",
+      "overall_sentiment_score": -0.293,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.622388",
+          "ticker_sentiment_score": "-0.335456",
+          "ticker_sentiment_label": "Somewhat-Bearish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "NetEase Inc Stock (NTES) Moved Down by 6.64% on Jul 22: A Full Analysis",
+      "url": "https://www.tradingkey.com/news/market-movers/262047768-market-movers-ntes-20260722",
+      "source": "TradingKey",
+      "published_at": "20260722T174030",
+      "summary": "NetEase Inc. (NTES) stock fell by 6.64% on July 22, driven by regulatory concerns in China, increased competition in the gaming sector leading to higher user acquisition costs, and broader macroeconomic headwinds. Investment banks have lowered price targets due to margin pressure from rising R&D and marketing expenses. The company's immediate technical outlook is bearish, and investors await clearer regulatory guidance or a significant new game launch to improve sentiment.",
+      "overall_sentiment_score": -0.289,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.604332",
+          "ticker_sentiment_score": "0.240009",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Microsoft Signs Multi-Billion-Dollar Deal to Rent Mistral's European AI Data Centers",
+      "url": "https://mlq.ai/news/microsoft-signs-multi-billion-dollar-deal-to-rent-mistrals-european-ai-data-centers/",
+      "source": "MLQ.ai",
+      "published_at": "20260722T173432",
+      "summary": "Microsoft has signed a multi-billion-dollar agreement to rent computing capacity from Mistral's European data centers, allowing Azure customers to access European-hosted AI infrastructure. This deal enhances data sovereignty for regulated industries in Europe and expands Mistral's infrastructure build-out, aiming for 1 gigawatt by 2030, while not increasing Microsoft's equity stake in Mistral. The partnership positions Mistral as a significant player in the European AI landscape and provides a guaranteed revenue stream as it scales.",
+      "overall_sentiment_score": 0.033,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.341988",
+          "ticker_sentiment_score": "0.043883",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    }
+  ],
+  "source_status": {
+    "alpha_vantage": {
+      "status": "degraded",
+      "failed_symbols": [
+        "AAPL"
+      ]
+    },
+    "yahoo_fundamentals": {
+      "status": "healthy"
+    }
+  },
+  "disclaimer": "General research, not individualized investment advice. Verify filings, estimates, valuation context, and suitability before acting."
+}

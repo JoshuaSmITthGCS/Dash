@@ -10,21 +10,21 @@ vi.mock('../lib/useData', async () => {
 
 describe('DataStatus', () => {
   it('makes demo fixtures unmistakable', () => {
-    useData.mockImplementation((file) => file === 'signals.json'
+    useData.mockImplementation((file) => file === 'advisor.json'
       ? { data: { data_mode: 'demo', generated_at: new Date().toISOString() } }
       : { data: { status: 'degraded', stages: {} } })
     render(<DataStatus />)
     expect(screen.getByText('Demo data')).toBeVisible()
-    expect(screen.getByText(/Do not use these signals/)).toBeVisible()
+    expect(screen.getByText(/Do not use them/)).toBeVisible()
   })
 
   it('shows source-level failures', () => {
-    useData.mockImplementation((file) => file === 'signals.json'
+    useData.mockImplementation((file) => file === 'advisor.json'
       ? { data: { data_mode: 'live', generated_at: new Date().toISOString() } }
-      : { data: { status: 'error', stages: { news: { status: 'error', message: 'feed failure' } } } })
+      : { data: { status: 'error', stages: { advisor: { status: 'error', message: 'provider failure' } } } })
     render(<DataStatus />)
     expect(screen.getByText('Data needs attention')).toBeVisible()
-    expect(screen.getByText('News')).toHaveAttribute('title', 'feed failure')
+    expect(screen.getByText('Advisor engine')).toHaveAttribute('title', 'provider failure')
   })
 })
 

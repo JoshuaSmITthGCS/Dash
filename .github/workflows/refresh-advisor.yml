@@ -1,7 +1,10 @@
-name: Rebuild demo data
+name: Refresh advisor data
 
 on:
   workflow_dispatch:
+  schedule:
+    # Fixed UTC: 07:00 Eastern during daylight time, 06:00 during standard time.
+    - cron: '0 11 * * 1-5'
 
 permissions:
   contents: write
@@ -11,10 +14,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  rebuild:
+  refresh:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    env:
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      ADVISOR_SYMBOLS: AAPL,MSFT,GOOGL,JNJ,JPM
+      ALPHA_VANTAGE_CALL_DELAY: '0'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,23 +32,18 @@ jobs:
           cache: pip
           cache-dependency-path: pipeline/requirements.txt
       - run: pip install -r pipeline/requirements.txt
-      - name: Generate and validate demo data
-        run: |
-          python pipeline/seed_mock_data.py
-          python pipeline/scorer.py
-          python pipeline/rank_picks.py
-          python pipeline/validate_data.py
-      - name: Commit demo data
+      - name: Fetch, score, and validate in one chain
+        run: python pipeline/fetch_advisor.py && python pipeline/validate_data.py
+      - name: Commit refreshed data with retry
         shell: bash
         run: |
-          git config user.name "polititrade-data-bot"
+          git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add public/data
+          git add public/data/advisor.json public/data/status.json
           git diff --cached --quiet && exit 0
-          git commit -m "chore(data): rebuild demo signals"
+          git commit -m "chore(data): refresh advisor research"
           for attempt in 1 2 3; do
             git pull --rebase origin main && git push origin HEAD:main && exit 0
-            echo "Push attempt ${attempt}/3 conflicted; retrying"
             git rebase --abort 2>/dev/null || true
             sleep $((attempt * 10))
           done

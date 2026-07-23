@@ -1,92 +1,23 @@
 import { useState } from 'react'
 import { useData } from '../lib/useData'
-import { Tier, Move, Loading, Empty } from '../components/Bits.jsx'
-
-const BUCKETS = [
-  { key: 'short_term', mark: '01', title: 'Short term', blurb: 'Catalyst + momentum. Weighted toward the political signal and recent price move. Highest noise, shortest shelf life.' },
-  { key: 'long_term', mark: '02', title: 'Long term', blurb: 'Quality at a fair price. Weighted toward sector-aware valuation, profitability, cash generation, balance-sheet health, and growth.' },
-  { key: 'retirement', mark: '03', title: 'Retirement / broad', blurb: 'Diversification first. Broad-market and dividend ETFs anchor; single stocks only appear as stable satellites.' },
-]
-
-function Val({ v, good, rich }) {
-  if (v == null) return <span className="mono" style={{ color: 'var(--text-faint)' }}>—</span>
-  let cls = ''
-  if (good && v > 0 && v <= good) cls = 'pos'
-  else if (rich && v > rich) cls = 'neg'
-  return <span className={`mono ${cls}`}>{v}</span>
-}
+import { Tier, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
 
 export default function Picks() {
-  const { data, loading } = useData('picks.json')
-  const [tab, setTab] = useState('short_term')
+  const { data, loading } = useData('advisor.json')
+  const [sector, setSector] = useState('all')
   if (loading) return <Loading />
-  if (!data) return <Empty />
-
-  const rows = data.buckets[tab] || []
-  const meta = BUCKETS.find((b) => b.key === tab)
-
-  return (
-    <>
-      <div className="page-head">
-        <div>
-          <h1 className="page-title">Best <span className="accent">picks</span></h1>
-          <p className="page-sub">Signals re-ranked into three horizons. Each blends the congressional signal with the fundamental screen differently — see how the same ticker moves between buckets.</p>
-        </div>
-      </div>
-
-      <div className="tabs">
-        {BUCKETS.map((b) => (
-          <button key={b.key} className={`tab${tab === b.key ? ' active' : ''}`} onClick={() => setTab(b.key)}>
-            <span className="tabmark">{b.mark}</span>{b.title}
-          </button>
-        ))}
-      </div>
-
-      <p className="page-sub" style={{ margin: '0 0 18px', maxWidth: 640 }}>{meta.blurb}</p>
-
-      <div className="card card-pad">
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: 34 }}>#</th>
-              <th>Ticker</th>
-              <th>Tier</th>
-              <th className="num">Bucket</th>
-              <th className="num">Signal</th>
-              <th className="num">Fund.</th>
-              <th className="num">Coverage</th>
-              <th className="num">PEG</th>
-              <th className="num">Fwd P/E</th>
-              <th className="num">P/S</th>
-              <th className="num">30d</th>
-              <th>Why it's here</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.ticker}>
-                <td className="mono" style={{ color: 'var(--text-faint)' }}>{i + 1}</td>
-                <td className="tick-cell">
-                  {r.ticker}
-                  {r.is_etf && <span className="chip" style={{ marginLeft: 6, fontSize: 9 }}>ETF</span>}
-                </td>
-                <td><Tier label={r.tier} /></td>
-                <td className="mono num" style={{ color: 'var(--accent)', fontWeight: 600 }}>{r.bucket_score}</td>
-                <td className="mono num">{r.political_score ?? '—'}</td>
-                <td className="mono num">{r.valuation_score ?? '—'}</td>
-                <td className="mono num">{r.fundamental_coverage == null ? '—' : `${Math.round(r.fundamental_coverage * 100)}%`}</td>
-                <td className="num"><Val v={r.peg} good={1.5} rich={2.5} /></td>
-                <td className="num"><Val v={r.forward_pe} /></td>
-                <td className="num"><Val v={r.price_to_sales} /></td>
-                <td className="num"><Move pct={r.pct_30d} /></td>
-                <td style={{ color: 'var(--text-dim)', fontSize: 12.5 }}>{r.why}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="disclaimer">{data.disclaimer} — Metric labels accompany every color state. Forward P/E and P/S are scored against sector ranges; low multiples can still be value traps. Nothing here is a recommendation to buy.</div>
-    </>
-  )
+  if (!data?.research) return <Empty />
+  const sectors = [...new Set(data.research.map(x => x.sector).filter(Boolean))].sort()
+  const rows = data.research.filter(x => sector === 'all' || x.sector === sector)
+  return <>
+    <div className="page-head"><div><h1 className="page-title">Company <span className="accent">research</span></h1><p className="page-sub">Compare the evidence, not just the headline score. Sector-aware multiples prevent a bank, grocer, and software company from being judged by one arbitrary P/E cutoff.</p></div></div>
+    <div className="filters"><label className="sr-only" htmlFor="sector">Filter by sector</label><select id="sector" value={sector} onChange={e => setSector(e.target.value)}><option value="all">All sectors</option>{sectors.map(s => <option key={s}>{s}</option>)}</select></div>
+    <div className="grid">{rows.map(row => <article className="card card-pad research-card" key={row.ticker}>
+      <div className="sig-top"><div><div className="sig-tick">{row.ticker}</div><div className="sig-name">{row.name} · {row.industry || row.sector || '—'}</div></div><div className="score-lockup"><Move pct={row.pct_30d} /><Tier label={row.stance} /><span className="sig-score">{row.score}</span></div></div>
+      <div className="component-scores">{Object.entries(row.components).map(([key, value]) => <div key={key}><span>{key.replace(/_/g, ' ')}</span><b>{value == null ? '—' : Math.round(value)}</b><i><em style={{ width: `${value || 0}%` }} /></i></div>)}</div>
+      <MetricPills {...row} fundamental_coverage={row.fundamental_detail?.coverage} />
+      <details><summary>Evidence and risks</summary><div className="evidence-grid"><div><b>Evidence for</b><ul>{row.strengths.map(x => <li key={x}>{x}</li>)}</ul></div><div><b>Risks / gaps</b><ul>{row.risks.map(x => <li key={x}>{x}</li>)}</ul></div></div></details>
+    </article>)}</div>
+    <div className="disclaimer">Scores rank this configured five-company research universe only. They do not imply expected return, suitability, or portfolio allocation.</div>
+  </>
 }

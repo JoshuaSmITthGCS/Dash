@@ -10,7 +10,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from common import DATA_DIR
 
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
-FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status")
+FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status", "advisor")
 
 
 def load(path):
@@ -41,7 +41,12 @@ def validate(production=False):
         if collection is not None and payload.get("count") != len(collection):
             errors.append(f"{name}.json: count does not match collection length")
 
-    modes = {p.get("data_mode") for key, p in payloads.items() if key != "status"}
+    advisor = payloads.get("advisor", {})
+    if advisor and advisor.get("count") != len(advisor.get("research", [])):
+        errors.append("advisor.json: count does not match research length")
+
+    # Legacy political fixtures stay explicitly demo while the independent advisor dataset is live.
+    modes = {p.get("data_mode") for key, p in payloads.items() if key not in ("status", "advisor")}
     if len(modes) > 1:
         errors.append(f"data_mode mismatch across payloads: {sorted(modes)}")
     if production and modes != {"live"}:
