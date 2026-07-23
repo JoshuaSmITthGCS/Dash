@@ -1,14 +1,60 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-23T00:03:04.864205+00:00",
+  "generated_at": "2026-07-23T00:18:47.860263+00:00",
   "data_mode": "live",
-  "count": 4,
+  "count": 20,
+  "universe_count": 50,
   "universe": [
     "AAPL",
     "MSFT",
     "GOOGL",
+    "AMZN",
+    "META",
+    "NVDA",
+    "AVGO",
+    "ORCL",
+    "CRM",
+    "ADBE",
+    "JPM",
+    "BAC",
+    "GS",
+    "V",
+    "MA",
     "JNJ",
-    "JPM"
+    "UNH",
+    "LLY",
+    "MRK",
+    "ABBV",
+    "WMT",
+    "COST",
+    "HD",
+    "MCD",
+    "NKE",
+    "XOM",
+    "CVX",
+    "CAT",
+    "GE",
+    "NEE",
+    "KO",
+    "PEP",
+    "PG",
+    "PM",
+    "TMO",
+    "ABT",
+    "DHR",
+    "LIN",
+    "HON",
+    "UPS",
+    "LOW",
+    "SBUX",
+    "DIS",
+    "NFLX",
+    "AMD",
+    "QCOM",
+    "TXN",
+    "AMAT",
+    "COP",
+    "SLB"
   ],
   "benchmark": "SPY",
   "methodology": {
@@ -174,9 +220,9 @@
     ],
     "macro": {
       "treasury_10y": {
-        "value": null,
-        "date": null,
-        "unit": null
+        "value": 4.47,
+        "date": "2026-06-01",
+        "unit": "percent"
       },
       "federal_funds_rate": {
         "value": 3.63,
@@ -184,13 +230,191 @@
         "unit": "percent"
       },
       "inflation": {
-        "value": null,
-        "date": null,
-        "unit": null
+        "value": 2.9495,
+        "date": "2024-01-01",
+        "unit": "percent"
       }
     }
   },
   "research": [
+    {
+      "ticker": "META",
+      "name": "Meta Platforms, Inc.",
+      "price": 627.17,
+      "pct_30d": 11.56,
+      "sector": "Communication Services",
+      "market_cap": 1592022925312,
+      "dividend_yield": 0.33,
+      "is_etf": false,
+      "price_to_sales": 7.41,
+      "price_to_book": 6.53,
+      "forward_pe": 16.95,
+      "trailing_pe": 22.81,
+      "peg": 0.94,
+      "debt_to_equity": 0.36,
+      "current_ratio": 2.35,
+      "return_on_equity": 0.3293,
+      "profit_margin": 0.3284,
+      "free_cash_flow": 25558249472.0,
+      "free_cash_flow_yield": 0.0161,
+      "revenue_growth": 0.331,
+      "earnings_growth": 0.62,
+      "score": 68.5,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 81.1,
+        "market_behavior": 55.0,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 68.0,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 68.0,
+          "profitability": 75.5,
+          "financial_health": 100.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 81.1,
+        "sector": "Communication Services"
+      },
+      "technical_detail": {
+        "return_20d": 11.56,
+        "return_60d": -7.09,
+        "annualized_volatility": 44.7,
+        "drawdown_60d": -7.95,
+        "relative_strength_20d": 9.67,
+        "trend": 69.6,
+        "risk": 22.7,
+        "relative_strength": 79.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (100/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA Corporation",
+      "price": 212.06,
+      "pct_30d": 6.01,
+      "sector": "Technology",
+      "market_cap": 5136305356800,
+      "dividend_yield": 0.48,
+      "is_etf": false,
+      "price_to_sales": 20.26,
+      "price_to_book": 26.28,
+      "forward_pe": 16.48,
+      "trailing_pe": 32.47,
+      "peg": 0.57,
+      "debt_to_equity": 0.07,
+      "current_ratio": 3.44,
+      "return_on_equity": 1.1429,
+      "profit_margin": 0.6297,
+      "free_cash_flow": 46335873024.0,
+      "free_cash_flow_yield": 0.009,
+      "revenue_growth": 0.852,
+      "earnings_growth": 2.15,
+      "score": 68.0,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 82.3,
+        "market_behavior": 50.0,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 71.0,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 10.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 71.0,
+          "profitability": 75.5,
+          "financial_health": 100.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 82.3,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 6.01,
+        "return_60d": 1.82,
+        "annualized_volatility": 41.35,
+        "drawdown_60d": -10.04,
+        "relative_strength_20d": 4.12,
+        "trend": 62.9,
+        "risk": 26.2,
+        "relative_strength": 62.4,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (71/100)",
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (100/100)"
+      ],
+      "risks": [
+        "Down 10.0% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
     {
       "ticker": "JPM",
       "name": "JPMorgan Chase & Co",
@@ -283,7 +507,97 @@
         "recent_acquisitions": 36,
         "recent_disposals": 64,
         "records_reviewed": 100
-      }
+      },
+      "alpha_enriched": true
+    },
+    {
+      "ticker": "AAPL",
+      "name": "Apple Inc.",
+      "price": 325.89,
+      "pct_30d": 10.73,
+      "sector": "Technology",
+      "market_cap": 4786462654464,
+      "dividend_yield": 0.33,
+      "is_etf": false,
+      "price_to_sales": 10.6,
+      "price_to_book": 44.89,
+      "forward_pe": 33.81,
+      "trailing_pe": 39.45,
+      "peg": 2.64,
+      "debt_to_equity": 0.8,
+      "current_ratio": 1.07,
+      "return_on_equity": 1.4147,
+      "profit_margin": 0.2715,
+      "free_cash_flow": 101090746368.0,
+      "free_cash_flow_yield": 0.0211,
+      "revenue_growth": 0.166,
+      "earnings_growth": 0.22,
+      "score": 65.5,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 67.8,
+        "market_behavior": 74.7,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 49.5,
+        "profitability": 84.2,
+        "financial_health": 67.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 25.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 80.0,
+        "price_to_book": 10.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 55.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 49.5,
+          "profitability": 84.2,
+          "financial_health": 67.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 67.8,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 10.73,
+        "return_60d": 20.23,
+        "annualized_volatility": 27.84,
+        "drawdown_60d": -2.35,
+        "relative_strength_20d": 8.85,
+        "trend": 81.6,
+        "risk": 64.8,
+        "relative_strength": 76.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (84/100)",
+        "Strong growth score (90/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
     },
     {
       "ticker": "GOOGL",
@@ -378,7 +692,97 @@
         "recent_acquisitions": 34,
         "recent_disposals": 66,
         "records_reviewed": 100
-      }
+      },
+      "alpha_enriched": true
+    },
+    {
+      "ticker": "BAC",
+      "name": "Bank of America Corporation",
+      "price": 61.62,
+      "pct_30d": 6.41,
+      "sector": "Financial Services",
+      "market_cap": 437291909120,
+      "dividend_yield": 1.83,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 1.57,
+      "forward_pe": 11.72,
+      "trailing_pe": 14.23,
+      "peg": 1.06,
+      "debt_to_equity": null,
+      "current_ratio": null,
+      "return_on_equity": 0.112,
+      "profit_margin": 0.2952,
+      "free_cash_flow": null,
+      "free_cash_flow_yield": null,
+      "revenue_growth": 0.214,
+      "earnings_growth": 0.36,
+      "score": 65.2,
+      "stance": "PROMISING",
+      "confidence": 0.67,
+      "components": {
+        "fundamentals": 72.9,
+        "market_behavior": 74.2,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 84.4,
+        "profitability": 72.3,
+        "financial_health": null,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 100.0,
+        "price_to_sales": null,
+        "price_to_book": 75.0,
+        "return_on_equity": 55.0,
+        "free_cash_flow_yield": null,
+        "profit_margin": 100.0,
+        "debt_to_equity": null,
+        "current_ratio": null,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 84.4,
+          "profitability": 72.3,
+          "financial_health": null,
+          "growth": 100.0
+        },
+        "coverage": 0.64,
+        "raw_score": 83.5,
+        "sector": "Financial Services"
+      },
+      "technical_detail": {
+        "return_20d": 6.41,
+        "return_60d": 18.39,
+        "annualized_volatility": 20.41,
+        "drawdown_60d": 0.0,
+        "relative_strength_20d": 4.52,
+        "trend": 72.0,
+        "risk": 83.2,
+        "relative_strength": 63.6,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (84/100)",
+        "Strong profitability and cash generation score (72/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
     },
     {
       "ticker": "JNJ",
@@ -474,7 +878,629 @@
         "recent_acquisitions": 51,
         "recent_disposals": 49,
         "records_reviewed": 100
-      }
+      },
+      "alpha_enriched": true
+    },
+    {
+      "ticker": "ADBE",
+      "name": "Adobe Inc.",
+      "price": 218.36,
+      "pct_30d": 10.6,
+      "sector": "Technology",
+      "market_cap": 86798098432,
+      "dividend_yield": null,
+      "is_etf": false,
+      "price_to_sales": 3.44,
+      "price_to_book": 7.56,
+      "forward_pe": 7.94,
+      "trailing_pe": 12.48,
+      "peg": 0.62,
+      "debt_to_equity": 0.61,
+      "current_ratio": 0.75,
+      "return_on_equity": 0.6295,
+      "profit_margin": 0.2869,
+      "free_cash_flow": 9218374656.0,
+      "free_cash_flow_yield": 0.1062,
+      "revenue_growth": 0.127,
+      "earnings_growth": 0.08,
+      "score": 63.1,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 75.7,
+        "market_behavior": 45.8,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 73.0,
+        "profitability": 100.0,
+        "financial_health": 57.0,
+        "growth": 67.5
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 60.0,
+        "price_to_sales": 100.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 30.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 55.0,
+        "categories": {
+          "valuation": 73.0,
+          "profitability": 100.0,
+          "financial_health": 57.0,
+          "growth": 67.5
+        },
+        "coverage": 1.0,
+        "raw_score": 75.7,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 10.6,
+        "return_60d": -11.03,
+        "annualized_volatility": 45.25,
+        "drawdown_60d": -20.32,
+        "relative_strength_20d": 8.72,
+        "trend": 65.7,
+        "risk": 3.0,
+        "relative_strength": 76.1,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (73/100)",
+        "Strong profitability and cash generation score (100/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Down 20.3% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "UNH",
+      "name": "UnitedHealth Group Incorporated",
+      "price": 431.31,
+      "pct_30d": 5.39,
+      "sector": "Healthcare",
+      "market_cap": 391691763712,
+      "dividend_yield": 2.13,
+      "is_etf": false,
+      "price_to_sales": 0.87,
+      "price_to_book": 3.74,
+      "forward_pe": 19.22,
+      "trailing_pe": 32.5,
+      "peg": 1.43,
+      "debt_to_equity": 0.69,
+      "current_ratio": 0.78,
+      "return_on_equity": 0.1415,
+      "profit_margin": 0.0314,
+      "free_cash_flow": 22759749632.0,
+      "free_cash_flow_yield": 0.0581,
+      "revenue_growth": 0.004,
+      "earnings_growth": 0.61,
+      "score": 63.1,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 66.1,
+        "market_behavior": 69.1,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 76.5,
+        "profitability": 57.5,
+        "financial_health": 57.0,
+        "growth": 65.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 100.0,
+        "price_to_book": 50.0,
+        "return_on_equity": 55.0,
+        "free_cash_flow_yield": 80.0,
+        "profit_margin": 30.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 30.0,
+        "revenue_growth": 30.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 76.5,
+          "profitability": 57.5,
+          "financial_health": 57.0,
+          "growth": 65.0
+        },
+        "coverage": 1.0,
+        "raw_score": 66.1,
+        "sector": "Healthcare"
+      },
+      "technical_detail": {
+        "return_20d": 5.39,
+        "return_60d": 21.52,
+        "annualized_volatility": 25.69,
+        "drawdown_60d": -1.16,
+        "relative_strength_20d": 3.51,
+        "trend": 71.5,
+        "risk": 70.9,
+        "relative_strength": 60.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (76/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "COP",
+      "name": "ConocoPhillips",
+      "price": 118.79,
+      "pct_30d": 8.02,
+      "sector": "Energy",
+      "market_cap": 144721149952,
+      "dividend_yield": 2.86,
+      "is_etf": false,
+      "price_to_sales": 2.44,
+      "price_to_book": 2.24,
+      "forward_pe": 13.25,
+      "trailing_pe": 20.13,
+      "peg": 1.0,
+      "debt_to_equity": 0.36,
+      "current_ratio": 1.29,
+      "return_on_equity": 0.1128,
+      "profit_margin": 0.1233,
+      "free_cash_flow": 5289124864.0,
+      "free_cash_flow_yield": 0.0365,
+      "revenue_growth": -0.053,
+      "earnings_growth": -0.2,
+      "score": 63.1,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 69.6,
+        "market_behavior": 60.6,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 91.0,
+        "profitability": 61.2,
+        "financial_health": 82.0,
+        "growth": 10.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 80.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 55.0,
+        "free_cash_flow_yield": 55.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 10.0,
+        "earnings_growth": 10.0,
+        "categories": {
+          "valuation": 91.0,
+          "profitability": 61.2,
+          "financial_health": 82.0,
+          "growth": 10.0
+        },
+        "coverage": 1.0,
+        "raw_score": 69.6,
+        "sector": "Energy"
+      },
+      "technical_detail": {
+        "return_20d": 8.02,
+        "return_60d": -2.44,
+        "annualized_volatility": 31.04,
+        "drawdown_60d": -7.38,
+        "relative_strength_20d": 6.14,
+        "trend": 64.8,
+        "risk": 50.9,
+        "relative_strength": 68.4,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (91/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Weak growth score (10/100)"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "AMZN",
+      "name": "Amazon.com, Inc.",
+      "price": 244.85,
+      "pct_30d": 4.59,
+      "sector": "Consumer Cyclical",
+      "market_cap": 2633878470656,
+      "dividend_yield": null,
+      "is_etf": false,
+      "price_to_sales": 3.55,
+      "price_to_book": 5.96,
+      "forward_pe": 24.69,
+      "trailing_pe": 29.25,
+      "peg": 1.3,
+      "debt_to_equity": 0.53,
+      "current_ratio": 1.18,
+      "return_on_equity": 0.2429,
+      "profit_margin": 0.1222,
+      "free_cash_flow": 9806624768.0,
+      "free_cash_flow_yield": 0.0037,
+      "revenue_growth": 0.166,
+      "earnings_growth": 0.75,
+      "score": 62.3,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 70.7,
+        "market_behavior": 54.7,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 65.5,
+        "profitability": 70.5,
+        "financial_health": 67.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 50.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 65.5,
+          "profitability": 70.5,
+          "financial_health": 67.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 70.7,
+        "sector": "Consumer Cyclical"
+      },
+      "technical_detail": {
+        "return_20d": 4.59,
+        "return_60d": -7.25,
+        "annualized_volatility": 27.92,
+        "drawdown_60d": -10.96,
+        "relative_strength_20d": 2.7,
+        "trend": 55.6,
+        "risk": 51.7,
+        "relative_strength": 58.1,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (70/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Down 11.0% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "CVX",
+      "name": "Chevron Corporation",
+      "price": 192.98,
+      "pct_30d": 9.66,
+      "sector": "Energy",
+      "market_cap": 384338526208,
+      "dividend_yield": 3.73,
+      "is_etf": false,
+      "price_to_sales": 2.07,
+      "price_to_book": 2.08,
+      "forward_pe": 15.43,
+      "trailing_pe": 33.68,
+      "peg": 0.79,
+      "debt_to_equity": 0.24,
+      "current_ratio": 1.09,
+      "return_on_equity": 0.0664,
+      "profit_margin": 0.0593,
+      "free_cash_flow": 11776499712.0,
+      "free_cash_flow_yield": 0.0306,
+      "revenue_growth": 0.023,
+      "earnings_growth": -0.45,
+      "score": 61.8,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 63.1,
+        "market_behavior": 71.0,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 85.0,
+        "profitability": 38.8,
+        "financial_health": 82.0,
+        "growth": 20.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 80.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 30.0,
+        "free_cash_flow_yield": 55.0,
+        "profit_margin": 30.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 30.0,
+        "earnings_growth": 10.0,
+        "categories": {
+          "valuation": 85.0,
+          "profitability": 38.8,
+          "financial_health": 82.0,
+          "growth": 20.0
+        },
+        "coverage": 1.0,
+        "raw_score": 63.1,
+        "sector": "Energy"
+      },
+      "technical_detail": {
+        "return_20d": 9.66,
+        "return_60d": 4.2,
+        "annualized_volatility": 25.8,
+        "drawdown_60d": -2.16,
+        "relative_strength_20d": 7.77,
+        "trend": 71.4,
+        "risk": 69.1,
+        "relative_strength": 73.3,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (85/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Weak profitability and cash generation score (39/100)",
+        "Weak growth score (20/100)"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "TMO",
+      "name": "Thermo Fisher Scientific Inc",
+      "price": 526.46,
+      "pct_30d": 12.17,
+      "sector": "Healthcare",
+      "market_cap": 195643850752,
+      "dividend_yield": 0.36,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 3.77,
+      "forward_pe": 19.32,
+      "trailing_pe": 28.99,
+      "peg": 1.73,
+      "debt_to_equity": 0.83,
+      "current_ratio": 1.53,
+      "return_on_equity": 0.1352,
+      "profit_margin": 0.1515,
+      "free_cash_flow": 5520625152.0,
+      "free_cash_flow_yield": 0.0282,
+      "revenue_growth": 0.062,
+      "earnings_growth": 0.11,
+      "score": 61.6,
+      "stance": "PROMISING",
+      "confidence": 0.84,
+      "components": {
+        "fundamentals": 63.2,
+        "market_behavior": 72.7,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 61.2,
+        "profitability": 61.2,
+        "financial_health": 77.0,
+        "growth": 67.5
+      },
+      "fundamental_detail": {
+        "peg": 50.0,
+        "forward_pe": 80.0,
+        "price_to_sales": null,
+        "price_to_book": 50.0,
+        "return_on_equity": 55.0,
+        "free_cash_flow_yield": 55.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 80.0,
+        "revenue_growth": 55.0,
+        "earnings_growth": 80.0,
+        "categories": {
+          "valuation": 61.2,
+          "profitability": 61.2,
+          "financial_health": 77.0,
+          "growth": 67.5
+        },
+        "coverage": 0.91,
+        "raw_score": 65.3,
+        "sector": "Healthcare"
+      },
+      "technical_detail": {
+        "return_20d": 12.17,
+        "return_60d": 12.08,
+        "annualized_volatility": 30.54,
+        "drawdown_60d": -3.08,
+        "relative_strength_20d": 10.28,
+        "trend": 80.4,
+        "risk": 58.3,
+        "relative_strength": 80.8,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong balance-sheet health score (77/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "AVGO",
+      "name": "Broadcom Inc.",
+      "price": 396.81,
+      "pct_30d": 4.38,
+      "sector": "Technology",
+      "market_cap": 1887855443968,
+      "dividend_yield": 0.67,
+      "is_etf": false,
+      "price_to_sales": 25.02,
+      "price_to_book": 21.53,
+      "forward_pe": 20.39,
+      "trailing_pe": 66.25,
+      "peg": 0.43,
+      "debt_to_equity": 0.74,
+      "current_ratio": 2.24,
+      "return_on_equity": 0.3728,
+      "profit_margin": 0.3885,
+      "free_cash_flow": 27212249088.0,
+      "free_cash_flow_yield": 0.0144,
+      "revenue_growth": 0.479,
+      "earnings_growth": 0.85,
+      "score": 61.5,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 76.9,
+        "market_behavior": 36.6,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 65.0,
+        "profitability": 75.5,
+        "financial_health": 85.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 15.0,
+        "price_to_book": 10.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 65.0,
+          "profitability": 75.5,
+          "financial_health": 85.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 76.9,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 4.38,
+        "return_60d": -6.14,
+        "annualized_volatility": 53.97,
+        "drawdown_60d": -17.6,
+        "relative_strength_20d": 2.5,
+        "trend": 55.7,
+        "risk": 0.0,
+        "relative_strength": 57.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (85/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "Down 17.6% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
     },
     {
       "ticker": "MSFT",
@@ -569,7 +1595,455 @@
         "recent_acquisitions": 65,
         "recent_disposals": 35,
         "records_reviewed": 100
-      }
+      },
+      "alpha_enriched": true
+    },
+    {
+      "ticker": "CRM",
+      "name": "Salesforce, Inc.",
+      "price": 163.0,
+      "pct_30d": 6.24,
+      "sector": "Technology",
+      "market_cap": 133497004032,
+      "dividend_yield": 1.03,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 3.9,
+      "forward_pe": 10.51,
+      "trailing_pe": 18.91,
+      "peg": 0.71,
+      "debt_to_equity": 1.24,
+      "current_ratio": 0.79,
+      "return_on_equity": 0.1691,
+      "profit_margin": 0.1873,
+      "free_cash_flow": 16552999936.0,
+      "free_cash_flow_yield": 0.124,
+      "revenue_growth": 0.133,
+      "earnings_growth": 0.52,
+      "score": 60.8,
+      "stance": "PROMISING",
+      "confidence": 0.84,
+      "components": {
+        "fundamentals": 76.1,
+        "market_behavior": 38.8,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 87.5,
+        "profitability": 87.0,
+        "financial_health": 42.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": null,
+        "price_to_book": 50.0,
+        "return_on_equity": 80.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 50.0,
+        "current_ratio": 30.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 87.5,
+          "profitability": 87.0,
+          "financial_health": 42.0,
+          "growth": 90.0
+        },
+        "coverage": 0.91,
+        "raw_score": 78.7,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 6.24,
+        "return_60d": -8.51,
+        "annualized_volatility": 46.92,
+        "drawdown_60d": -22.23,
+        "relative_strength_20d": 4.36,
+        "trend": 58.2,
+        "risk": 0.0,
+        "relative_strength": 63.1,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (88/100)",
+        "Strong profitability and cash generation score (87/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Weak balance-sheet health score (42/100)",
+        "Down 22.2% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "QCOM",
+      "name": "QUALCOMM Incorporated",
+      "price": 175.63,
+      "pct_30d": -13.96,
+      "sector": "Technology",
+      "market_cap": 185114017792,
+      "dividend_yield": 2.12,
+      "is_etf": false,
+      "price_to_sales": 4.16,
+      "price_to_book": 6.82,
+      "forward_pe": 16.01,
+      "trailing_pe": 18.88,
+      "peg": 0.55,
+      "debt_to_equity": 0.56,
+      "current_ratio": 2.37,
+      "return_on_equity": 0.3608,
+      "profit_margin": 0.2231,
+      "free_cash_flow": 9589624832.0,
+      "free_cash_flow_yield": 0.0518,
+      "revenue_growth": -0.035,
+      "earnings_growth": 1.73,
+      "score": 59.4,
+      "stance": "MIXED",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 82.5,
+        "market_behavior": 14.5,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 85.0,
+        "profitability": 93.0,
+        "financial_health": 85.0,
+        "growth": 55.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 100.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 80.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 10.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 85.0,
+          "profitability": 93.0,
+          "financial_health": 85.0,
+          "growth": 55.0
+        },
+        "coverage": 1.0,
+        "raw_score": 82.5,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": -13.96,
+        "return_60d": 17.99,
+        "annualized_volatility": 84.73,
+        "drawdown_60d": -30.03,
+        "relative_strength_20d": -15.85,
+        "trend": 31.1,
+        "risk": 0.0,
+        "relative_strength": 2.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (85/100)",
+        "Strong profitability and cash generation score (93/100)",
+        "Strong balance-sheet health score (85/100)"
+      ],
+      "risks": [
+        "Down 30.0% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "AMAT",
+      "name": "Applied Materials, Inc.",
+      "price": 553.92,
+      "pct_30d": -5.46,
+      "sector": "Technology",
+      "market_cap": 439789977600,
+      "dividend_yield": 0.38,
+      "is_etf": false,
+      "price_to_sales": 15.15,
+      "price_to_book": 18.39,
+      "forward_pe": 33.08,
+      "trailing_pe": 52.21,
+      "peg": 1.43,
+      "debt_to_equity": 0.3,
+      "current_ratio": 2.51,
+      "return_on_equity": 0.3969,
+      "profit_margin": 0.2931,
+      "free_cash_flow": 3040375040.0,
+      "free_cash_flow_yield": 0.0069,
+      "revenue_growth": 0.114,
+      "earnings_growth": 0.34,
+      "score": 59.2,
+      "stance": "MIXED",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 75.4,
+        "market_behavior": 30.6,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 57.5,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 10.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 57.5,
+          "profitability": 75.5,
+          "financial_health": 100.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 75.4,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": -5.46,
+        "return_60d": 32.82,
+        "annualized_volatility": 77.95,
+        "drawdown_60d": -23.39,
+        "relative_strength_20d": -7.34,
+        "trend": 55.5,
+        "risk": 0.0,
+        "relative_strength": 28.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (100/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Down 23.4% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "TXN",
+      "name": "Texas Instruments Incorporated",
+      "price": 294.19,
+      "pct_30d": -3.34,
+      "sector": "Technology",
+      "market_cap": 267740200960,
+      "dividend_yield": 1.95,
+      "is_etf": false,
+      "price_to_sales": 14.52,
+      "price_to_book": 15.96,
+      "forward_pe": 30.71,
+      "trailing_pe": 50.2,
+      "peg": 1.4,
+      "debt_to_equity": 0.84,
+      "current_ratio": 4.46,
+      "return_on_equity": 0.3235,
+      "profit_margin": 0.2911,
+      "free_cash_flow": 1068249984.0,
+      "free_cash_flow_yield": 0.004,
+      "revenue_growth": 0.186,
+      "earnings_growth": 0.31,
+      "score": 58.9,
+      "stance": "MIXED",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 75.2,
+        "market_behavior": 29.9,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 64.5,
+        "profitability": 75.5,
+        "financial_health": 85.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 80.0,
+        "price_to_book": 10.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 64.5,
+          "profitability": 75.5,
+          "financial_health": 85.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 75.2,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": -3.34,
+        "return_60d": 6.15,
+        "annualized_volatility": 50.37,
+        "drawdown_60d": -11.46,
+        "relative_strength_20d": -5.23,
+        "trend": 46.4,
+        "risk": 6.1,
+        "relative_strength": 34.3,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (85/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Down 11.5% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "XOM",
+      "name": "ExxonMobil Holdings Corporation",
+      "price": 154.45,
+      "pct_30d": 10.53,
+      "sector": "Energy",
+      "market_cap": 640187105280,
+      "dividend_yield": 2.72,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 2.52,
+      "forward_pe": 14.56,
+      "trailing_pe": 25.96,
+      "peg": 1.29,
+      "debt_to_equity": 0.18,
+      "current_ratio": 1.04,
+      "return_on_equity": 0.0987,
+      "profit_margin": 0.0776,
+      "free_cash_flow": 11630499840.0,
+      "free_cash_flow_yield": 0.0182,
+      "revenue_growth": 0.026,
+      "earnings_growth": -0.43,
+      "score": 58.8,
+      "stance": "MIXED",
+      "confidence": 0.84,
+      "components": {
+        "fundamentals": 60.2,
+        "market_behavior": 68.6,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 84.4,
+        "profitability": 36.2,
+        "financial_health": 82.0,
+        "growth": 20.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 100.0,
+        "price_to_sales": null,
+        "price_to_book": 75.0,
+        "return_on_equity": 30.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 55.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 30.0,
+        "earnings_growth": 10.0,
+        "categories": {
+          "valuation": 84.4,
+          "profitability": 36.2,
+          "financial_health": 82.0,
+          "growth": 20.0
+        },
+        "coverage": 0.91,
+        "raw_score": 62.2,
+        "sector": "Energy"
+      },
+      "technical_detail": {
+        "return_20d": 10.53,
+        "return_60d": 3.72,
+        "annualized_volatility": 28.86,
+        "drawdown_60d": -4.98,
+        "relative_strength_20d": 8.65,
+        "trend": 72.9,
+        "risk": 58.8,
+        "relative_strength": 75.9,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (84/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Weak profitability and cash generation score (36/100)",
+        "Weak growth score (20/100)"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
     }
   ],
   "news": [
@@ -1086,13 +2560,21 @@
   ],
   "source_status": {
     "alpha_vantage": {
-      "status": "degraded",
-      "failed_symbols": [
-        "AAPL"
-      ]
+      "status": "healthy",
+      "failed_symbols": [],
+      "enriched_symbols": [
+        "GOOGL",
+        "JNJ",
+        "JPM",
+        "MSFT"
+      ],
+      "quota_strategy": "up to five symbols per refresh"
     },
     "yahoo_fundamentals": {
-      "status": "healthy"
+      "status": "degraded",
+      "failed_symbols": [
+        "PG"
+      ]
     }
   },
   "disclaimer": "General research, not individualized investment advice. Verify filings, estimates, valuation context, and suitability before acting."

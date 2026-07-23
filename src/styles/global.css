@@ -133,6 +133,8 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- Table ---------- */
 table { width: 100%; border-collapse: collapse; }
+.table-wrap { overflow-x: auto; }
+.score-cell { color: var(--accent); font-weight: 700; }
 thead th { font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-weight: 500; }
 tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 tbody tr:hover { background: var(--bg-hover); }

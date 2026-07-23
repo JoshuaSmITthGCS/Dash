@@ -1,5 +1,5 @@
 import { useData, fmtDate } from '../lib/useData'
-import { Tier, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
+import { Tier, Move, Loading, Empty } from '../components/Bits.jsx'
 
 function Macro({ label, point, suffix = '' }) {
   return <div className="card kpi"><div className="kpi-label">{label}</div><div className="kpi-value">{point?.value ?? '—'}{point?.value != null ? suffix : ''}</div><div className="kpi-note">{point?.date || 'unavailable'}</div></div>
@@ -9,12 +9,12 @@ export default function Dashboard() {
   const { data, loading } = useData('advisor.json')
   if (loading) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset yet — run python pipeline/fetch_advisor.py." />
-  const top = data.research.slice(0, 3)
+  const top = data.research.slice(0, 20)
   const macro = data.market?.macro || {}
   return <>
     <div className="page-head"><div>
-      <h1 className="page-title">Invest with <span className="accent">context</span></h1>
-      <p className="page-sub">A fundamentals-first research desk. Valuation, profitability, cash flow, balance-sheet risk, growth, price behavior, and news sentiment—scored without political-trade inputs.</p>
+      <h1 className="page-title">Top 20 <span className="accent">stocks to research</span></h1>
+      <p className="page-sub">The highest-ranked companies from a diversified {data.universe_count || data.universe?.length}-stock universe, using valuation, profitability, cash flow, balance-sheet risk, growth, price behavior, and news sentiment.</p>
     </div><div className="stamp">updated<br />{fmtDate(data.generated_at)}</div></div>
 
     <div className="callout"><strong>How to read this:</strong> a high score is a research priority, not a buy order. Confidence falls when important financial data is missing.</div>
@@ -26,16 +26,12 @@ export default function Dashboard() {
       <Macro label="Inflation" point={macro.inflation} suffix="%" />
     </div>
 
-    <div className="sec-label">Highest research priority</div>
-    <div className="grid">
-      {top.map((row, index) => <article className="card sig" key={row.ticker}>
-        <div className="sig-top"><div className="company-line"><span className="rank">0{index + 1}</span><div><div className="sig-tick">{row.ticker}</div><div className="sig-name">{row.name} · {row.sector || 'Sector unavailable'}</div></div></div>
-          <div className="score-lockup"><Move pct={row.pct_30d} /><Tier label={row.stance} /><div><div className="sig-score">{row.score}</div><div className="score-caption">RESEARCH</div></div></div>
-        </div>
-        <MetricPills {...row} fundamental_coverage={row.confidence} />
-        <div className="evidence-grid"><div><b>Evidence for</b><ul>{row.strengths.map(x => <li key={x}>{x}</li>)}</ul></div><div><b>Risks / gaps</b><ul>{row.risks.map(x => <li key={x}>{x}</li>)}</ul></div></div>
-      </article>)}
+    <div className="sec-label">Ranked 1–20</div>
+    <div className="card card-pad table-wrap">
+      <table><thead><tr><th>#</th><th>Company</th><th>View</th><th className="num">Score</th><th className="num">Fund.</th><th className="num">PEG</th><th className="num">Fwd P/E</th><th className="num">20d</th><th className="num">Confidence</th></tr></thead>
+        <tbody>{top.map((row, index) => <tr key={row.ticker}><td className="rank">{String(index + 1).padStart(2, '0')}</td><td><div className="tick-cell">{row.ticker}</div><div className="sig-name">{row.name} · {row.sector || '—'}</div></td><td><Tier label={row.stance} /></td><td className="mono num score-cell">{row.score}</td><td className="mono num">{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</td><td className="mono num">{row.peg ?? '—'}</td><td className="mono num">{row.forward_pe ?? '—'}</td><td className="num"><Move pct={row.technical_detail?.return_20d} /></td><td className="mono num">{Math.round(row.confidence * 100)}%</td></tr>)}</tbody>
+      </table>
     </div>
-    <div className="disclaimer">{data.disclaimer}</div>
+    <div className="disclaimer">{data.disclaimer} Rankings are relative to this configured universe and can change as prices, estimates, and financial statements update.</div>
   </>
 }

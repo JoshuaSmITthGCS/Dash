@@ -6,10 +6,12 @@
     "schema_version": { "const": 1 },
     "generated_at": { "type": "string", "format": "date-time" },
     "data_mode": { "const": "live" },
-    "count": { "type": "integer", "minimum": 1 },
+    "count": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "universe_count": { "type": "integer", "minimum": 20 },
     "research": {
       "type": "array",
       "minItems": 1,
+      "maxItems": 20,
       "items": {
         "type": "object",
         "required": ["ticker", "name", "score", "stance", "confidence", "components", "strengths", "risks"],
