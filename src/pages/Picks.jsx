@@ -16,6 +16,7 @@ export default function Picks() {
       <div className="sig-top"><div><div className="sig-tick">{row.ticker}</div><div className="sig-name">{row.name} · {row.industry || row.sector || '—'}</div></div><div className="score-lockup"><Move pct={row.pct_30d} /><Tier label={row.stance} /><span className="sig-score">{row.score}</span></div></div>
       <div className="component-scores">{Object.entries(row.components).map(([key, value]) => <div key={key}><span>{key.replace(/_/g, ' ')}</span><b>{value == null ? '—' : Math.round(value)}</b><i><em style={{ width: `${value || 0}%` }} /></i></div>)}</div>
       <MetricPills {...row} fundamental_coverage={row.fundamental_detail?.coverage} />
+      {row.insider_activity && <div className="insider-line"><span>Corporate-insider context</span><b>{row.insider_activity.recent_acquisitions} acquisitions</b><b>{row.insider_activity.recent_disposals} disposals</b><small>{row.insider_activity.records_reviewed} records reviewed · context only, not scored</small></div>}
       <details><summary>Evidence and risks</summary><div className="evidence-grid"><div><b>Evidence for</b><ul>{row.strengths.map(x => <li key={x}>{x}</li>)}</ul></div><div><b>Risks / gaps</b><ul>{row.risks.map(x => <li key={x}>{x}</li>)}</ul></div></div></details>
     </article>)}</div>
     <div className="disclaimer">Scores rank this configured five-company research universe only. They do not imply expected return, suitability, or portfolio allocation.</div>

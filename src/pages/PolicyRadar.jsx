@@ -5,8 +5,10 @@ export default function PolicyRadar() {
   const { data, loading } = useData('advisor.json')
   if (loading) return <Loading />
   if (!data) return <Empty />
+  const usMarket = data.market?.status?.find(row => row.region === 'United States' && row.market_type === 'Equity')
   return <>
     <div className="page-head"><div><h1 className="page-title">Market <span className="accent">pulse</span></h1><p className="page-sub">Company news and sentiment are supporting evidence—not a substitute for earnings, cash flow, or balance-sheet quality.</p></div></div>
+    {usMarket && <div className="callout"><strong>U.S. equities: {usMarket.current_status}</strong> · {usMarket.primary_exchanges} · regular session {usMarket.local_open}–{usMarket.local_close} local exchange time</div>}
     <div className="sec-label">Latest sourced coverage</div>
     <div className="grid">{(data.news || []).map((item, index) => <a className="card card-pad news-card" href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${index}`}>
       <div><span className="chip">{item.ticker}</span> <span className="chip">{item.source || 'Unknown source'}</span></div>
