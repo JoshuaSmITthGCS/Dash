@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-23T00:52:14.910939+00:00",
+  "generated_at": "2026-07-23T12:25:26.784713+00:00",
   "data_mode": "live",
   "count": 20,
   "universe_count": 120,
@@ -167,7 +167,7 @@
         "primary_exchanges": "London",
         "local_open": "08:00",
         "local_close": "16:30",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -176,7 +176,7 @@
         "primary_exchanges": "XETRA, Berlin, Frankfurt, Munich, Stuttgart",
         "local_open": "08:00",
         "local_close": "20:00",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -185,7 +185,7 @@
         "primary_exchanges": "Paris",
         "local_open": "09:00",
         "local_close": "17:30",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -194,7 +194,7 @@
         "primary_exchanges": "Barcelona, Madrid",
         "local_open": "09:00",
         "local_close": "17:30",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -203,7 +203,7 @@
         "primary_exchanges": "Lisbon",
         "local_open": "08:00",
         "local_close": "16:30",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -212,7 +212,7 @@
         "primary_exchanges": "Tokyo",
         "local_open": "09:00",
         "local_close": "15:00",
-        "current_status": "open",
+        "current_status": "closed",
         "notes": "Noon trading break from 11:30 to 12:30 local time"
       },
       {
@@ -248,7 +248,7 @@
         "primary_exchanges": "Sao Paolo",
         "local_open": "10:00",
         "local_close": "17:30",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -266,7 +266,7 @@
         "primary_exchanges": "Johannesburg",
         "local_open": "09:00",
         "local_close": "17:00",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -314,12 +314,12 @@
       "pct_30d": 10.24,
       "sector": "Technology",
       "market_cap": 77813071872,
-      "dividend_yield": 1.66,
+      "dividend_yield": 1.69,
       "is_etf": false,
       "price_to_sales": 3.72,
       "price_to_book": 3.78,
       "forward_pe": 10.41,
-      "trailing_pe": 17.37,
+      "trailing_pe": 17.36,
       "peg": 0.75,
       "debt_to_equity": 0.33,
       "current_ratio": 1.45,
@@ -403,11 +403,11 @@
       "pct_30d": 6.75,
       "sector": "Energy",
       "market_cap": 76698509312,
-      "dividend_yield": 2.84,
+      "dividend_yield": 2.83,
       "is_etf": false,
       "price_to_sales": 3.25,
       "price_to_book": 2.49,
-      "forward_pe": 9.74,
+      "forward_pe": 9.82,
       "trailing_pe": 14.16,
       "peg": 1.15,
       "debt_to_equity": 0.27,
@@ -486,18 +486,114 @@
       "alpha_enriched": false
     },
     {
+      "ticker": "META",
+      "name": "Meta Platforms Inc.",
+      "description": "Meta Platforms, Inc. develops products that enable people to connect and share with friends and family through mobile devices, PCs, virtual reality headsets, wearables and home devices around the world. The company is headquartered in Menlo Park, California.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "COMMUNICATION SERVICES",
+      "industry": "INTERNET CONTENT & INFORMATION",
+      "price": 627.17,
+      "market_cap": 1592022925000.0,
+      "dividend_yield": 0.0033,
+      "is_etf": false,
+      "price_to_sales": 7.41,
+      "price_to_book": 6.71,
+      "forward_pe": 20.66,
+      "trailing_pe": 23.42,
+      "peg": 0.939,
+      "return_on_equity": 0.329,
+      "profit_margin": 0.328,
+      "revenue_growth": 0.331,
+      "earnings_growth": 0.624,
+      "analyst_target_price": 826.01,
+      "week_52_high": 793.65,
+      "week_52_low": 519.78,
+      "pct_30d": 11.56,
+      "debt_to_equity": 0.36,
+      "current_ratio": 2.35,
+      "free_cash_flow": 25558249472.0,
+      "free_cash_flow_yield": 0.0161,
+      "score": 73.0,
+      "stance": "PROMISING",
+      "confidence": 1.0,
+      "components": {
+        "fundamentals": 81.1,
+        "market_behavior": 55.0,
+        "news_sentiment": 39.3
+      },
+      "fundamental_categories": {
+        "valuation": 68.0,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 68.0,
+          "profitability": 75.5,
+          "financial_health": 100.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 81.1,
+        "sector": "COMMUNICATION SERVICES"
+      },
+      "technical_detail": {
+        "return_20d": 11.56,
+        "return_60d": -7.09,
+        "annualized_volatility": 44.7,
+        "drawdown_60d": -7.95,
+        "relative_strength_20d": 9.67,
+        "trend": 69.6,
+        "risk": 22.7,
+        "relative_strength": 79.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": -0.107,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (100/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 31,
+        "recent_disposals": 69,
+        "records_reviewed": 100
+      },
+      "alpha_enriched": true
+    },
+    {
       "ticker": "NVDA",
       "name": "NVIDIA Corporation",
       "price": 212.06,
       "pct_30d": 6.01,
       "sector": "Technology",
       "market_cap": 5136305356800,
-      "dividend_yield": 0.48,
+      "dividend_yield": 0.47,
       "is_etf": false,
       "price_to_sales": 20.26,
       "price_to_book": 26.28,
       "forward_pe": 16.48,
-      "trailing_pe": 31.75,
+      "trailing_pe": 32.47,
       "peg": 0.57,
       "debt_to_equity": 0.07,
       "current_ratio": 3.44,
@@ -665,72 +761,72 @@
       "alpha_enriched": false
     },
     {
-      "ticker": "META",
-      "name": "Meta Platforms, Inc.",
-      "price": 627.17,
-      "pct_30d": 11.56,
-      "sector": "Communication Services",
-      "market_cap": 1592022925312,
-      "dividend_yield": 0.33,
+      "ticker": "ACN",
+      "name": "Accenture plc",
+      "price": 140.09,
+      "pct_30d": 10.3,
+      "sector": "Technology",
+      "market_cap": 85726961664,
+      "dividend_yield": 4.65,
       "is_etf": false,
-      "price_to_sales": 7.41,
-      "price_to_book": 6.53,
-      "forward_pe": 16.95,
-      "trailing_pe": 22.81,
-      "peg": 0.94,
-      "debt_to_equity": 0.36,
-      "current_ratio": 2.35,
-      "return_on_equity": 0.3293,
-      "profit_margin": 0.3284,
-      "free_cash_flow": 25558249472.0,
-      "free_cash_flow_yield": 0.0161,
-      "revenue_growth": 0.331,
-      "earnings_growth": 0.62,
-      "score": 72.6,
+      "price_to_sales": 1.17,
+      "price_to_book": 2.69,
+      "forward_pe": 9.54,
+      "trailing_pe": 11.19,
+      "peg": 1.02,
+      "debt_to_equity": 0.25,
+      "current_ratio": 1.34,
+      "return_on_equity": 0.2441,
+      "profit_margin": 0.1066,
+      "free_cash_flow": 12089380864.0,
+      "free_cash_flow_yield": 0.141,
+      "revenue_growth": 0.056,
+      "earnings_growth": 0.09,
+      "score": 71.2,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
-        "fundamentals": 81.1,
-        "market_behavior": 55.0,
+        "fundamentals": 81.8,
+        "market_behavior": 42.0,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
-        "valuation": 68.0,
-        "profitability": 75.5,
-        "financial_health": 100.0,
-        "growth": 100.0
+        "valuation": 87.5,
+        "profitability": 88.8,
+        "financial_health": 82.0,
+        "growth": 55.0
       },
       "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 45.0,
-        "price_to_book": 25.0,
+        "peg": 75.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 100.0,
+        "price_to_book": 75.0,
         "return_on_equity": 100.0,
-        "free_cash_flow_yield": 30.0,
-        "profit_margin": 100.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 55.0,
         "debt_to_equity": 100.0,
-        "current_ratio": 100.0,
-        "revenue_growth": 100.0,
-        "earnings_growth": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 55.0,
+        "earnings_growth": 55.0,
         "categories": {
-          "valuation": 68.0,
-          "profitability": 75.5,
-          "financial_health": 100.0,
-          "growth": 100.0
+          "valuation": 87.5,
+          "profitability": 88.8,
+          "financial_health": 82.0,
+          "growth": 55.0
         },
         "coverage": 1.0,
-        "raw_score": 81.1,
-        "sector": "Communication Services"
+        "raw_score": 81.8,
+        "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": 11.56,
-        "return_60d": -7.09,
-        "annualized_volatility": 44.7,
-        "drawdown_60d": -7.95,
-        "relative_strength_20d": 9.67,
-        "trend": 69.6,
-        "risk": 22.7,
-        "relative_strength": 79.0,
+        "return_20d": 10.3,
+        "return_60d": -21.46,
+        "annualized_volatility": 57.21,
+        "drawdown_60d": -28.74,
+        "relative_strength_20d": 8.41,
+        "trend": 59.9,
+        "risk": 0.0,
+        "relative_strength": 75.2,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -739,12 +835,12 @@
         "coverage": 0.0
       },
       "strengths": [
-        "Strong profitability and cash generation score (76/100)",
-        "Strong balance-sheet health score (100/100)",
-        "Strong growth score (100/100)"
+        "Strong valuation score (88/100)",
+        "Strong profitability and cash generation score (89/100)",
+        "Strong balance-sheet health score (82/100)"
       ],
       "risks": [
-        "No major quantitative red flag; qualitative risks still require review"
+        "Down 28.7% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -760,12 +856,12 @@
       "pct_30d": 0.63,
       "sector": "Healthcare",
       "market_cap": 75352055808,
-      "dividend_yield": 2.15,
+      "dividend_yield": 2.19,
       "is_etf": false,
       "price_to_sales": 0.27,
       "price_to_book": 1.79,
       "forward_pe": 8.51,
-      "trailing_pe": 12.32,
+      "trailing_pe": 12.08,
       "peg": 0.87,
       "debt_to_equity": 0.73,
       "current_ratio": 0.82,
@@ -841,102 +937,6 @@
         "records_reviewed": 0
       },
       "alpha_enriched": false
-    },
-    {
-      "ticker": "GOOGL",
-      "name": "Alphabet Inc Class A",
-      "description": "Alphabet Inc. is an American multinational conglomerate headquartered in Mountain View, California. It was created through a restructuring of Google on October 2, 2015, and became the parent company of Google and several former Google subsidiaries. The two co-founders of Google remained as controlling shareholders, board members, and employees at Alphabet. Alphabet is the world's fourth-largest technology company by revenue and one of the world's most valuable companies.",
-      "exchange": "NASDAQ",
-      "currency": "USD",
-      "sector": "COMMUNICATION SERVICES",
-      "industry": "INTERNET CONTENT & INFORMATION",
-      "price": 342.09,
-      "market_cap": 4236123046000.0,
-      "dividend_yield": 0.0024,
-      "is_etf": false,
-      "price_to_sales": 10.03,
-      "price_to_book": 8.97,
-      "forward_pe": 24.94,
-      "trailing_pe": 26.89,
-      "peg": 1.386,
-      "return_on_equity": 0.389,
-      "profit_margin": 0.379,
-      "revenue_growth": 0.218,
-      "earnings_growth": 0.82,
-      "analyst_target_price": 433.51,
-      "week_52_high": 408.37,
-      "week_52_low": 187.29,
-      "pct_30d": -1.17,
-      "debt_to_equity": 0.2,
-      "current_ratio": 1.92,
-      "free_cash_flow": 27921750016.0,
-      "free_cash_flow_yield": 0.0067,
-      "score": 68.9,
-      "stance": "PROMISING",
-      "confidence": 1.0,
-      "components": {
-        "fundamentals": 74.1,
-        "market_behavior": 39.5,
-        "news_sentiment": 74.1
-      },
-      "fundamental_categories": {
-        "valuation": 54.5,
-        "profitability": 75.5,
-        "financial_health": 92.0,
-        "growth": 100.0
-      },
-      "fundamental_detail": {
-        "peg": 75.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 15.0,
-        "price_to_book": 25.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 30.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 80.0,
-        "revenue_growth": 100.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 54.5,
-          "profitability": 75.5,
-          "financial_health": 92.0,
-          "growth": 100.0
-        },
-        "coverage": 1.0,
-        "raw_score": 74.1,
-        "sector": "COMMUNICATION SERVICES"
-      },
-      "technical_detail": {
-        "return_20d": -1.17,
-        "return_60d": -0.67,
-        "annualized_volatility": 36.39,
-        "drawdown_60d": -15.03,
-        "relative_strength_20d": -3.05,
-        "trend": 47.3,
-        "risk": 28.7,
-        "relative_strength": 40.8,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 12,
-        "average": 0.241,
-        "coverage": 1.0
-      },
-      "strengths": [
-        "Strong profitability and cash generation score (76/100)",
-        "Strong balance-sheet health score (92/100)",
-        "Strong growth score (100/100)"
-      ],
-      "risks": [
-        "Down 15.0% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 34,
-        "recent_disposals": 66,
-        "records_reviewed": 100
-      },
-      "alpha_enriched": true
     },
     {
       "ticker": "BSX",
@@ -1039,7 +1039,7 @@
       "price_to_sales": 2.6,
       "price_to_book": 5.74,
       "forward_pe": 12.31,
-      "trailing_pe": 14.58,
+      "trailing_pe": 14.6,
       "peg": 1.28,
       "debt_to_equity": 0.15,
       "current_ratio": 3.54,
@@ -1118,18 +1118,114 @@
       "alpha_enriched": false
     },
     {
+      "ticker": "GOOGL",
+      "name": "Alphabet Inc Class A",
+      "description": "Alphabet Inc. is an American multinational conglomerate headquartered in Mountain View, California. It was created through a restructuring of Google on October 2, 2015, and became the parent company of Google and several former Google subsidiaries. The two co-founders of Google remained as controlling shareholders, board members, and employees at Alphabet. Alphabet is the world's fourth-largest technology company by revenue and one of the world's most valuable companies.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "COMMUNICATION SERVICES",
+      "industry": "INTERNET CONTENT & INFORMATION",
+      "price": 342.09,
+      "market_cap": 4174378172000.0,
+      "dividend_yield": 0.0024,
+      "is_etf": false,
+      "price_to_sales": 9.88,
+      "price_to_book": 8.85,
+      "forward_pe": 24.63,
+      "trailing_pe": 26.46,
+      "peg": 1.367,
+      "return_on_equity": 0.389,
+      "profit_margin": 0.379,
+      "revenue_growth": 0.218,
+      "earnings_growth": 0.82,
+      "analyst_target_price": 433.55,
+      "week_52_high": 408.37,
+      "week_52_low": 187.29,
+      "pct_30d": -1.17,
+      "debt_to_equity": 0.18,
+      "current_ratio": 2.72,
+      "free_cash_flow": 25521500160.0,
+      "free_cash_flow_yield": 0.0061,
+      "score": 67.8,
+      "stance": "PROMISING",
+      "confidence": 1.0,
+      "components": {
+        "fundamentals": 75.7,
+        "market_behavior": 39.5,
+        "news_sentiment": 51.0
+      },
+      "fundamental_categories": {
+        "valuation": 54.5,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 15.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 54.5,
+          "profitability": 75.5,
+          "financial_health": 100.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 75.7,
+        "sector": "COMMUNICATION SERVICES"
+      },
+      "technical_detail": {
+        "return_20d": -1.17,
+        "return_60d": -0.67,
+        "annualized_volatility": 36.39,
+        "drawdown_60d": -15.03,
+        "relative_strength_20d": -3.05,
+        "trend": 47.3,
+        "risk": 28.7,
+        "relative_strength": 40.8,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": 0.01,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (100/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "Down 15.0% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 34,
+        "recent_disposals": 66,
+        "records_reviewed": 100
+      },
+      "alpha_enriched": true
+    },
+    {
       "ticker": "SCHW",
       "name": "Charles Schwab Corporation (The",
       "price": 100.8,
       "pct_30d": 8.19,
       "sector": "Financial Services",
       "market_cap": 175304867840,
-      "dividend_yield": 1.28,
+      "dividend_yield": 1.27,
       "is_etf": false,
       "price_to_sales": 6.74,
       "price_to_book": 4.13,
       "forward_pe": 13.11,
-      "trailing_pe": 20.04,
+      "trailing_pe": 18.36,
       "peg": 1.19,
       "debt_to_equity": 0.74,
       "current_ratio": 0.64,
@@ -1213,12 +1309,12 @@
       "pct_30d": -13.96,
       "sector": "Technology",
       "market_cap": 185114017792,
-      "dividend_yield": 2.12,
+      "dividend_yield": 2.1,
       "is_etf": false,
       "price_to_sales": 4.16,
       "price_to_book": 6.82,
       "forward_pe": 16.01,
-      "trailing_pe": 18.88,
+      "trailing_pe": 18.86,
       "peg": 0.55,
       "debt_to_equity": 0.56,
       "current_ratio": 2.37,
@@ -1287,6 +1383,95 @@
       ],
       "risks": [
         "Down 30.0% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "MU",
+      "name": "Micron Technology, Inc.",
+      "price": 959.48,
+      "pct_30d": -8.77,
+      "sector": "Technology",
+      "market_cap": null,
+      "dividend_yield": 0.06,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 10.75,
+      "forward_pe": 6.24,
+      "trailing_pe": 21.69,
+      "peg": 0.14,
+      "debt_to_equity": 0.06,
+      "current_ratio": 3.42,
+      "return_on_equity": 0.6664,
+      "profit_margin": 0.5591,
+      "free_cash_flow": 7639499776.0,
+      "free_cash_flow_yield": null,
+      "revenue_growth": 3.457,
+      "earnings_growth": 13.69,
+      "score": 67.5,
+      "stance": "PROMISING",
+      "confidence": 0.78,
+      "components": {
+        "fundamentals": 79.6,
+        "market_behavior": 39.2,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 62.5,
+        "profitability": 100.0,
+        "financial_health": 100.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 60.0,
+        "price_to_sales": null,
+        "price_to_book": 10.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": null,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 62.5,
+          "profitability": 100.0,
+          "financial_health": 100.0,
+          "growth": 100.0
+        },
+        "coverage": 0.82,
+        "raw_score": 85.0,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": -8.77,
+        "return_60d": 93.16,
+        "annualized_volatility": 108.63,
+        "drawdown_60d": -20.94,
+        "relative_strength_20d": -10.66,
+        "trend": 79.0,
+        "risk": 0.0,
+        "relative_strength": 18.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (100/100)",
+        "Strong balance-sheet health score (100/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "Down 20.9% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -1385,113 +1570,18 @@
       "alpha_enriched": false
     },
     {
-      "ticker": "JPM",
-      "name": "JPMorgan Chase & Co",
-      "description": "JPMorgan Chase & Co. is an American multinational investment bank and financial services holding company headquartered in New York City. JPMorgan Chase is incorporated in Delaware. As a Bulge Bracket bank, it is a major provider of various investment banking and financial services. It is one of America's Big Four banks, along with Bank of America, Citigroup, and Wells Fargo. JPMorgan Chase is considered to be a universal bank and a custodian bank. The J.P. Morgan brand is used by the investment banking, asset management, private banking, private wealth management, and treasury services divisions.",
-      "exchange": "NYSE",
-      "currency": "USD",
-      "sector": "FINANCIAL SERVICES",
-      "industry": "BANKS - DIVERSIFIED",
-      "price": 348.21,
-      "market_cap": 900784259000.0,
-      "dividend_yield": 0.0177,
-      "is_etf": false,
-      "price_to_sales": 4.75,
-      "price_to_book": 2.548,
-      "forward_pe": 15.02,
-      "trailing_pe": 14.51,
-      "peg": 1.746,
-      "return_on_equity": 0.178,
-      "profit_margin": 0.349,
-      "revenue_growth": 0.304,
-      "earnings_growth": 0.469,
-      "analyst_target_price": 367.45,
-      "week_52_high": 351.24,
-      "week_52_low": 276.44,
-      "pct_30d": 4.21,
-      "debt_to_equity": null,
-      "current_ratio": null,
-      "free_cash_flow": null,
-      "free_cash_flow_yield": null,
-      "score": 67.3,
-      "stance": "PROMISING",
-      "confidence": 0.82,
-      "components": {
-        "fundamentals": 70.2,
-        "market_behavior": 68.3,
-        "news_sentiment": 69.0
-      },
-      "fundamental_categories": {
-        "valuation": 63.0,
-        "profitability": 87.7,
-        "financial_health": null,
-        "growth": 100.0
-      },
-      "fundamental_detail": {
-        "peg": 50.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 45.0,
-        "price_to_book": 75.0,
-        "return_on_equity": 80.0,
-        "free_cash_flow_yield": null,
-        "profit_margin": 100.0,
-        "debt_to_equity": null,
-        "current_ratio": null,
-        "revenue_growth": 100.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 63.0,
-          "profitability": 87.7,
-          "financial_health": null,
-          "growth": 100.0
-        },
-        "coverage": 0.73,
-        "raw_score": 77.7,
-        "sector": "FINANCIAL SERVICES"
-      },
-      "technical_detail": {
-        "return_20d": 4.21,
-        "return_60d": 12.95,
-        "annualized_volatility": 22.37,
-        "drawdown_60d": 0.0,
-        "relative_strength_20d": 2.33,
-        "trend": 64.9,
-        "risk": 79.3,
-        "relative_strength": 57.0,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 12,
-        "average": 0.19,
-        "coverage": 1.0
-      },
-      "strengths": [
-        "Strong profitability and cash generation score (88/100)",
-        "Strong growth score (100/100)"
-      ],
-      "risks": [
-        "No major quantitative red flag; qualitative risks still require review"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 36,
-        "recent_disposals": 64,
-        "records_reviewed": 100
-      },
-      "alpha_enriched": true
-    },
-    {
       "ticker": "OXY",
       "name": "Occidental Petroleum Corporatio",
       "price": 57.5,
       "pct_30d": 10.09,
       "sector": "Energy",
       "market_cap": 57191493632,
-      "dividend_yield": 1.84,
+      "dividend_yield": 1.81,
       "is_etf": false,
       "price_to_sales": 2.71,
       "price_to_book": 1.86,
-      "forward_pe": 14.6,
-      "trailing_pe": 77.7,
+      "forward_pe": 14.52,
+      "trailing_pe": 76.67,
       "peg": 1.19,
       "debt_to_equity": 0.42,
       "current_ratio": 1.21,
@@ -1575,7 +1665,7 @@
       "pct_30d": 4.38,
       "sector": "Technology",
       "market_cap": 1887855443968,
-      "dividend_yield": 0.67,
+      "dividend_yield": 0.66,
       "is_etf": false,
       "price_to_sales": 25.02,
       "price_to_book": 21.53,
@@ -1658,13 +1748,109 @@
       "alpha_enriched": false
     },
     {
+      "ticker": "MSFT",
+      "name": "Microsoft Corporation",
+      "description": "Microsoft Corporation is an American multinational technology company which produces computer software, consumer electronics, personal computers, and related services. Its best known software products are the Microsoft Windows line of operating systems, the Microsoft Office suite, and the Internet Explorer and Edge web browsers. Its flagship hardware products are the Xbox video game consoles and the Microsoft Surface lineup of touchscreen personal computers. Microsoft ranked No. 21 in the 2020 Fortune 500 rankings of the largest United States corporations by total revenue; it was the world's largest software maker by revenue as of 2016. It is considered one of the Big Five companies in the U.S. information technology industry, along with Google, Apple, Amazon, and Facebook.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "TECHNOLOGY",
+      "industry": "SOFTWARE - INFRASTRUCTURE",
+      "price": 390.34,
+      "market_cap": 2899615154000.0,
+      "dividend_yield": 0.009,
+      "is_etf": false,
+      "price_to_sales": 9.11,
+      "price_to_book": 7.13,
+      "forward_pe": 20.49,
+      "trailing_pe": 23.7,
+      "peg": 1.227,
+      "return_on_equity": 0.34,
+      "profit_margin": 0.393,
+      "revenue_growth": 0.183,
+      "earnings_growth": 0.234,
+      "analyst_target_price": 556.75,
+      "week_52_high": 551.05,
+      "week_52_low": 349.2,
+      "pct_30d": 4.39,
+      "debt_to_equity": 0.3,
+      "current_ratio": 1.28,
+      "free_cash_flow": 37011251200.0,
+      "free_cash_flow_yield": 0.0128,
+      "score": 66.4,
+      "stance": "PROMISING",
+      "confidence": 1.0,
+      "components": {
+        "fundamentals": 70.6,
+        "market_behavior": 48.2,
+        "news_sentiment": 62.1
+      },
+      "fundamental_categories": {
+        "valuation": 54.5,
+        "profitability": 75.5,
+        "financial_health": 82.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 15.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 54.5,
+          "profitability": 75.5,
+          "financial_health": 82.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 70.6,
+        "sector": "TECHNOLOGY"
+      },
+      "technical_detail": {
+        "return_20d": 4.39,
+        "return_60d": -8.07,
+        "annualized_volatility": 33.28,
+        "drawdown_60d": -15.24,
+        "relative_strength_20d": 2.5,
+        "trend": 54.7,
+        "risk": 34.6,
+        "relative_strength": 57.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": 0.121,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Down 15.2% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 65,
+        "recent_disposals": 35,
+        "records_reviewed": 100
+      },
+      "alpha_enriched": true
+    },
+    {
       "ticker": "BAC",
       "name": "Bank of America Corporation",
       "price": 61.62,
       "pct_30d": 6.41,
       "sector": "Financial Services",
-      "market_cap": 437291909120,
-      "dividend_yield": 1.83,
+      "market_cap": null,
+      "dividend_yield": 1.82,
       "is_etf": false,
       "price_to_sales": null,
       "price_to_book": 1.57,
@@ -1747,72 +1933,161 @@
       "alpha_enriched": false
     },
     {
-      "ticker": "MU",
-      "name": "Micron Technology, Inc.",
-      "price": 959.48,
-      "pct_30d": -8.77,
-      "sector": "Technology",
-      "market_cap": 1083630092288,
-      "dividend_yield": 0.05,
+      "ticker": "COP",
+      "name": "ConocoPhillips",
+      "price": 118.79,
+      "pct_30d": 8.02,
+      "sector": "Energy",
+      "market_cap": 144721149952,
+      "dividend_yield": 2.83,
       "is_etf": false,
-      "price_to_sales": null,
-      "price_to_book": 10.75,
-      "forward_pe": 6.24,
-      "trailing_pe": 21.93,
-      "peg": 0.14,
-      "debt_to_equity": 0.06,
-      "current_ratio": 3.42,
-      "return_on_equity": 0.6664,
-      "profit_margin": 0.5591,
-      "free_cash_flow": 7639499776.0,
-      "free_cash_flow_yield": 0.007,
-      "revenue_growth": 3.457,
-      "earnings_growth": 13.69,
-      "score": 66.0,
+      "price_to_sales": 2.44,
+      "price_to_book": 2.24,
+      "forward_pe": 13.25,
+      "trailing_pe": 20.13,
+      "peg": 1.0,
+      "debt_to_equity": 0.36,
+      "current_ratio": 1.29,
+      "return_on_equity": 0.1128,
+      "profit_margin": 0.1233,
+      "free_cash_flow": 5289124864.0,
+      "free_cash_flow_yield": 0.0365,
+      "revenue_growth": -0.053,
+      "earnings_growth": -0.2,
+      "score": 65.0,
       "stance": "PROMISING",
-      "confidence": 0.84,
+      "confidence": 0.9,
       "components": {
-        "fundamentals": 76.4,
-        "market_behavior": 39.2,
+        "fundamentals": 69.6,
+        "market_behavior": 60.6,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
-        "valuation": 62.5,
-        "profitability": 75.5,
-        "financial_health": 100.0,
-        "growth": 100.0
+        "valuation": 91.0,
+        "profitability": 61.2,
+        "financial_health": 82.0,
+        "growth": 10.0
       },
       "fundamental_detail": {
         "peg": 100.0,
-        "forward_pe": 60.0,
-        "price_to_sales": null,
+        "forward_pe": 100.0,
+        "price_to_sales": 80.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 55.0,
+        "free_cash_flow_yield": 55.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 10.0,
+        "earnings_growth": 10.0,
+        "categories": {
+          "valuation": 91.0,
+          "profitability": 61.2,
+          "financial_health": 82.0,
+          "growth": 10.0
+        },
+        "coverage": 1.0,
+        "raw_score": 69.6,
+        "sector": "Energy"
+      },
+      "technical_detail": {
+        "return_20d": 8.02,
+        "return_60d": -2.44,
+        "annualized_volatility": 31.04,
+        "drawdown_60d": -7.38,
+        "relative_strength_20d": 6.14,
+        "trend": 64.8,
+        "risk": 50.9,
+        "relative_strength": 68.4,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (91/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Weak growth score (10/100)"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "AMAT",
+      "name": "Applied Materials, Inc.",
+      "price": 553.92,
+      "pct_30d": -5.46,
+      "sector": "Technology",
+      "market_cap": 439789977600,
+      "dividend_yield": 0.38,
+      "is_etf": false,
+      "price_to_sales": 15.15,
+      "price_to_book": 18.39,
+      "forward_pe": 33.08,
+      "trailing_pe": 52.06,
+      "peg": 1.43,
+      "debt_to_equity": 0.3,
+      "current_ratio": 2.51,
+      "return_on_equity": 0.3969,
+      "profit_margin": 0.2931,
+      "free_cash_flow": 3040375040.0,
+      "free_cash_flow_yield": 0.0069,
+      "revenue_growth": 0.114,
+      "earnings_growth": 0.34,
+      "score": 64.8,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 75.4,
+        "market_behavior": 30.6,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 57.5,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
         "price_to_book": 10.0,
         "return_on_equity": 100.0,
         "free_cash_flow_yield": 30.0,
         "profit_margin": 100.0,
         "debt_to_equity": 100.0,
         "current_ratio": 100.0,
-        "revenue_growth": 100.0,
+        "revenue_growth": 80.0,
         "earnings_growth": 100.0,
         "categories": {
-          "valuation": 62.5,
+          "valuation": 57.5,
           "profitability": 75.5,
           "financial_health": 100.0,
-          "growth": 100.0
+          "growth": 90.0
         },
-        "coverage": 0.91,
-        "raw_score": 78.9,
+        "coverage": 1.0,
+        "raw_score": 75.4,
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": -8.77,
-        "return_60d": 93.16,
-        "annualized_volatility": 108.63,
-        "drawdown_60d": -20.94,
-        "relative_strength_20d": -10.66,
-        "trend": 79.0,
+        "return_20d": -5.46,
+        "return_60d": 32.82,
+        "annualized_volatility": 77.95,
+        "drawdown_60d": -23.39,
+        "relative_strength_20d": -7.34,
+        "trend": 55.5,
         "risk": 0.0,
-        "relative_strength": 18.0,
+        "relative_strength": 28.0,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1823,278 +2098,10 @@
       "strengths": [
         "Strong profitability and cash generation score (76/100)",
         "Strong balance-sheet health score (100/100)",
-        "Strong growth score (100/100)"
-      ],
-      "risks": [
-        "Down 20.9% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
-      "ticker": "NOW",
-      "name": "ServiceNow, Inc.",
-      "price": 95.46,
-      "pct_30d": -0.5,
-      "sector": "Technology",
-      "market_cap": 98448662528,
-      "dividend_yield": null,
-      "is_etf": false,
-      "price_to_sales": 7.05,
-      "price_to_book": 8.39,
-      "forward_pe": 19.01,
-      "trailing_pe": 56.82,
-      "peg": 0.89,
-      "debt_to_equity": 0.21,
-      "current_ratio": 0.84,
-      "return_on_equity": 0.1607,
-      "profit_margin": 0.1259,
-      "free_cash_flow": 5108125184.0,
-      "free_cash_flow_yield": 0.0519,
-      "revenue_growth": 0.221,
-      "earnings_growth": 0.02,
-      "score": 65.8,
-      "stance": "PROMISING",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 76.5,
-        "market_behavior": 31.9,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 81.0,
-        "profitability": 80.0,
-        "financial_health": 72.0,
-        "growth": 65.0
-      },
-      "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 100.0,
-        "price_to_sales": 80.0,
-        "price_to_book": 25.0,
-        "return_on_equity": 80.0,
-        "free_cash_flow_yield": 80.0,
-        "profit_margin": 80.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 30.0,
-        "revenue_growth": 100.0,
-        "earnings_growth": 30.0,
-        "categories": {
-          "valuation": 81.0,
-          "profitability": 80.0,
-          "financial_health": 72.0,
-          "growth": 65.0
-        },
-        "coverage": 1.0,
-        "raw_score": 76.5,
-        "sector": "Technology"
-      },
-      "technical_detail": {
-        "return_20d": -0.5,
-        "return_60d": 5.87,
-        "annualized_volatility": 67.24,
-        "drawdown_60d": -29.74,
-        "relative_strength_20d": -2.39,
-        "trend": 51.9,
-        "risk": 0.0,
-        "relative_strength": 42.8,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong valuation score (81/100)",
-        "Strong profitability and cash generation score (80/100)",
-        "Strong balance-sheet health score (72/100)"
-      ],
-      "risks": [
-        "Down 29.7% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
-      "ticker": "AAPL",
-      "name": "Apple Inc.",
-      "price": 325.89,
-      "pct_30d": 10.73,
-      "sector": "Technology",
-      "market_cap": 4786462654464,
-      "dividend_yield": 0.33,
-      "is_etf": false,
-      "price_to_sales": 10.6,
-      "price_to_book": 44.89,
-      "forward_pe": 33.81,
-      "trailing_pe": 39.45,
-      "peg": 2.64,
-      "debt_to_equity": 0.8,
-      "current_ratio": 1.07,
-      "return_on_equity": 1.4147,
-      "profit_margin": 0.2715,
-      "free_cash_flow": 101090746368.0,
-      "free_cash_flow_yield": 0.0211,
-      "revenue_growth": 0.166,
-      "earnings_growth": 0.22,
-      "score": 65.7,
-      "stance": "PROMISING",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 67.8,
-        "market_behavior": 74.7,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 49.5,
-        "profitability": 84.2,
-        "financial_health": 67.0,
-        "growth": 90.0
-      },
-      "fundamental_detail": {
-        "peg": 25.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 80.0,
-        "price_to_book": 10.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 55.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 75.0,
-        "current_ratio": 55.0,
-        "revenue_growth": 80.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 49.5,
-          "profitability": 84.2,
-          "financial_health": 67.0,
-          "growth": 90.0
-        },
-        "coverage": 1.0,
-        "raw_score": 67.8,
-        "sector": "Technology"
-      },
-      "technical_detail": {
-        "return_20d": 10.73,
-        "return_60d": 20.23,
-        "annualized_volatility": 27.84,
-        "drawdown_60d": -2.35,
-        "relative_strength_20d": 8.85,
-        "trend": 81.6,
-        "risk": 64.8,
-        "relative_strength": 76.5,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong profitability and cash generation score (84/100)",
-        "Strong growth score (90/100)",
-        "Outperforming SPY over 20 trading days"
-      ],
-      "risks": [
-        "No major quantitative red flag; qualitative risks still require review"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
-      "ticker": "CRM",
-      "name": "Salesforce, Inc.",
-      "price": 163.0,
-      "pct_30d": 6.24,
-      "sector": "Technology",
-      "market_cap": 133497004032,
-      "dividend_yield": 1.03,
-      "is_etf": false,
-      "price_to_sales": null,
-      "price_to_book": 3.9,
-      "forward_pe": 10.51,
-      "trailing_pe": 18.91,
-      "peg": 0.71,
-      "debt_to_equity": 1.24,
-      "current_ratio": 0.79,
-      "return_on_equity": 0.1691,
-      "profit_margin": 0.1873,
-      "free_cash_flow": 16552999936.0,
-      "free_cash_flow_yield": 0.124,
-      "revenue_growth": 0.133,
-      "earnings_growth": 0.52,
-      "score": 65.7,
-      "stance": "PROMISING",
-      "confidence": 0.84,
-      "components": {
-        "fundamentals": 76.1,
-        "market_behavior": 38.8,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 87.5,
-        "profitability": 87.0,
-        "financial_health": 42.0,
-        "growth": 90.0
-      },
-      "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 100.0,
-        "price_to_sales": null,
-        "price_to_book": 50.0,
-        "return_on_equity": 80.0,
-        "free_cash_flow_yield": 100.0,
-        "profit_margin": 80.0,
-        "debt_to_equity": 50.0,
-        "current_ratio": 30.0,
-        "revenue_growth": 80.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 87.5,
-          "profitability": 87.0,
-          "financial_health": 42.0,
-          "growth": 90.0
-        },
-        "coverage": 0.91,
-        "raw_score": 78.7,
-        "sector": "Technology"
-      },
-      "technical_detail": {
-        "return_20d": 6.24,
-        "return_60d": -8.51,
-        "annualized_volatility": 46.92,
-        "drawdown_60d": -22.23,
-        "relative_strength_20d": 4.36,
-        "trend": 58.2,
-        "risk": 0.0,
-        "relative_strength": 63.1,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong valuation score (88/100)",
-        "Strong profitability and cash generation score (87/100)",
         "Strong growth score (90/100)"
       ],
       "risks": [
-        "Weak balance-sheet health score (42/100)",
-        "Down 22.2% from its 60-day high"
+        "Down 23.4% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -2106,514 +2113,514 @@
   ],
   "news": [
     {
-      "title": "Battery Mineral Resources' ESI Subsidiary Secures Strategic Financing with JPMorgan Chase",
-      "url": "https://investingnews.com/battery-mineral-resources-esi-subsidiary-secures-strategic-financing-with-jpmorgan-chase/",
-      "source": "Investing News Network",
-      "published_at": "20260722T230121",
-      "summary": "Battery Mineral Resources Corp.'s wholly owned subsidiary, ESI Energy Services Inc. (operating as Ozzies), has secured a new senior secured financing arrangement with JPMorgan Chase Bank, N.A. This financing includes a US$6.0 million term loan, a US$1.0 million revolving line of credit, and an additional US$5.0 million equipment financing facility, totaling up to US$12.0 million, to support ESI's growth and operations. The company also announced the grant of 13,193,431 restricted share units to certain directors and executive officers.",
-      "overall_sentiment_score": 0.315,
+      "title": "Does Your ETF Portfolio Reflect Your Goals? A Look at the SPDR Global Stock Market ETF vs. the Climate Paris Aligned ETF.",
+      "url": "https://www.fool.com/coverage/etfs/2026/07/23/does-your-etf-portfolio-reflect-your-goals-a-look-at-the-spdr-global-stock-market-etf-vs-the-climate-paris-aligned-etf/",
+      "source": "The Motley Fool",
+      "published_at": "20260723T113420",
+      "summary": "This article compares two ETFs from State Street: the SPDR Global Stock Market ETF (SPGM) and the Climate Paris Aligned ETF (NZAC). SPGM offers broad, low-cost global equity exposure with nearly 3,000 holdings, while NZAC provides specialized, ESG-screened global exposure focused on climate transition risks and opportunities with fewer holdings. Investors choose between these based on whether they prioritize maximum diversification and lower costs (SPGM) or a climate-conscious investment strategy (NZAC).",
+      "overall_sentiment_score": 0.228,
       "ticker_sentiment": [
         {
-          "ticker": "JPM",
-          "relevance_score": "0.892556",
-          "ticker_sentiment_score": "0.320412",
+          "ticker": "AAPL",
+          "relevance_score": "0.568563",
+          "ticker_sentiment_score": "0.251665",
           "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
-      "ticker": "JPM"
+      "ticker": "AAPL"
     },
     {
-      "title": "US Bancorp vice chair Stephen Philipson sells $2.3m in shares",
-      "url": "https://www.investing.com/news/insider-trading-news/us-bancorp-vice-chair-stephen-philipson-sells-23m-in-shares-93CH-4807213",
-      "source": "Investing.com",
-      "published_at": "20260722T225615",
-      "summary": "Stephen L. Philipson, Vice Chair at US Bancorp, sold 36,906 shares of the company's common stock on July 20, 2026, for a total of $2,327,919. Following this transaction, Philipson directly holds 74,969 shares and indirectly 509 shares. The sale occurred as USB stock approached its 52-week high, with shares up 45% over the past year, and despite an InvestingPro analysis suggesting the stock is undervalued with a Fair Value of $76.03.",
-      "overall_sentiment_score": 0.217,
+      "title": "Amazon's Bezos pushes Prime Video redesign focused on AI: Reuters",
+      "url": "https://www.cnbc.com/2026/07/23/amazons-bezos-pushes-prime-video-redesign-focused-on-ai.html",
+      "source": "CNBC",
+      "published_at": "20260723T110702",
+      "summary": "Jeff Bezos is reportedly pushing for a major AI-focused redesign of Amazon's Prime Video streaming service, codenamed \"Lighthouse.\" This initiative aims to showcase Amazon's significant investments in artificial intelligence by improving recommendations, search capabilities, and overall personalization for Prime Video's more than 200 million users. The redesign stemmed from Bezos's dissatisfaction with a previous proposal that failed to sufficiently emphasize AI, highlighting the company's efforts to enhance its AI stature amidst competition.",
+      "overall_sentiment_score": 0.089,
       "ticker_sentiment": [
         {
-          "ticker": "JPM",
-          "relevance_score": "0.612189",
-          "ticker_sentiment_score": "0.249534",
+          "ticker": "AMZN",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.400538",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "AMZN"
+    },
+    {
+      "title": "Arista Networks, Inc. $ANET Shares Sold by Mizuho Markets Cayman LP",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-arista-networks-inc-anet-shares-sold-by-mizuho-markets-cayman-lp-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T103704",
+      "summary": "Mizuho Markets Cayman LP significantly reduced its stake in Arista Networks (NYSE:ANET) during the first quarter, selling over 25,000 shares to end with holdings worth about $733,000. Despite this sell-off, Wall Street analysts maintain a \"Buy\" rating for Arista Networks, with an average price target of $189.74, reflecting confidence after the company's strong first-quarter earnings that surpassed EPS and revenue estimates. However, the article also highlights notable insider selling by CEO Jayshree Ullal and Kenneth Duda, alongside an array of institutional investors either adding to or reducing their positions in the technology company.",
+      "overall_sentiment_score": 0.32,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.602358",
+          "ticker_sentiment_score": "0.316607",
           "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
-      "ticker": "JPM"
+      "ticker": "MSFT"
     },
     {
-      "title": "Earnings call transcript: Alphabet beats Q2 2026 estimates, shares fall on capex surge",
-      "url": "https://www.investing.com/news/transcripts/earnings-call-transcript-alphabet-beats-q2-2026-estimates-shares-fall-on-capex-surge-93CH-4807140",
-      "source": "Investing.com",
-      "published_at": "20260722T220206",
-      "summary": "Alphabet reported stronger-than-expected Q2 2026 results with EPS of $9.11 and revenue of $119.8 billion, surpassing analyst forecasts. Despite the earnings beat, shares fell after hours due to the company's increased capital expenditure guidance for 2026, now projected at $195 billion-$205 billion, and anticipated near-term margin pressure. The growth was significantly driven by Google Cloud and AI-related products, with management expressing confidence in long-term AI opportunities despite rising investment costs and supply constraints.",
-      "overall_sentiment_score": 0.124,
+      "title": "Palo Alto Networks (PANW) Moves To Buy Embrace And Pushes Into Digital Experience Monitoring",
+      "url": "https://simplywall.st/stocks/us/software/nasdaq-panw/palo-alto-networks/news/palo-alto-networks-panw-moves-to-buy-embrace-and-pushes-into",
+      "source": "Simply Wall Street",
+      "published_at": "20260723T103443",
+      "summary": "Palo Alto Networks announced its intention to acquire Embrace, a move aimed at expanding its Observability platform into Digital Experience Monitoring (DEM). This acquisition will integrate high-fidelity Real User Monitoring and proactive application performance validation tools, broadening Palo Alto Networks' focus beyond traditional cybersecurity to include user-centric performance data. This strategic shift positions the company to compete more directly with observability specialists like Datadog and Dynatrace, offering a unified platform for both security and performance across cloud and application environments.",
+      "overall_sentiment_score": 0.183,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.643755",
+          "ticker_sentiment_score": "0.100892",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Apple Could Seize a Quarter of the Foldable Phone Market in Year One",
+      "url": "https://www.benzinga.com/analyst-stock-ratings/analyst-color/26/07/60631352/apple-could-seize-a-quarter-of-the-foldable-phone-market-in-year-one",
+      "source": "Benzinga",
+      "published_at": "20260723T102758",
+      "summary": "Counterpoint Research predicts that the global foldable smartphone market will grow significantly in 2026, with Apple expected to capture a 25% market share in its first year. While Samsung is projected to maintain its leading position with 32%, Apple's entry is anticipated to boost consumer awareness and competitiveness in the premium foldable segment. The increasing relevance of AI and larger displays is seen as a key driver for foldable adoption.",
+      "overall_sentiment_score": 0.293,
+      "ticker_sentiment": [
+        {
+          "ticker": "AAPL",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.273220",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "AAPL"
+    },
+    {
+      "title": "Alphabet Shares Drop 3% Breaking Key Support, Technical Breakdown Risks Further 18% Decline",
+      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262049528-alphabet-google-goog-googl-ai-cloud-tradingkey",
+      "source": "TradingKey",
+      "published_at": "20260723T094755",
+      "summary": "Alphabet's stock price dropped 3.5% after the company raised its full-year capital expenditure guidance despite strong Q2 earnings, sparking concerns about cash flow. This technical breakdown saw the stock fall below the $333 support level, with analysts suggesting a potential further decline to $270. Major investment banks, however, maintain \"Buy\" ratings, citing robust AI monetization and cloud growth as justification for high infrastructure spending, making the stock's ability to reclaim the $333 mark a critical watchpoint.",
+      "overall_sentiment_score": -0.446,
       "ticker_sentiment": [
         {
           "ticker": "GOOGL",
-          "relevance_score": "0.885432",
-          "ticker_sentiment_score": "0.139374",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "-0.407099",
+          "ticker_sentiment_label": "Bearish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Levin Capital Strategies L.P. Invests $4.35 Million in Vail Resorts, Inc. $MTN",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-levin-capital-strategies-lp-invests-435-million-in-vail-resorts-inc-mtn-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T094020",
+      "summary": "Levin Capital Strategies L.P. initiated a new position in Vail Resorts, Inc. (NYSE:MTN) during the first quarter, acquiring 33,910 shares valued at approximately $4.35 million. Despite this investment, Vail Resorts reported quarterly earnings of $8.81 per share, missing analyst expectations, although revenue of $1.21 billion slightly exceeded estimates but was down 7% year-over-year. Wall Street analysts currently maintain a \"Hold\" consensus rating for MTN with a target price of $151.45, while the stock recently traded around $144.81 after a slight decline.",
+      "overall_sentiment_score": 0.081,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.637398",
+          "ticker_sentiment_score": "0.226813",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "NewEdge Wealth LLC Cuts Stake in Salesforce Inc. $CRM",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-newedge-wealth-llc-cuts-stake-in-salesforce-inc-crm-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T093727",
+      "summary": "NewEdge Wealth LLC significantly reduced its stake in Salesforce Inc. ($CRM) by 7.5% in the first quarter, selling 18,014 shares and retaining 222,098 shares valued at over $41 million. This comes as Salesforce exhibits a solid financial performance, exceeding analyst earnings and revenue estimates in its latest quarter, and recently announced a quarterly dividend. The article also provides an overview of recent institutional investor activity, stock performance metrics, dividend details, and varying analyst sentiments ranging from positive to negative regarding Salesforce's future prospects and competitive landscape.",
+      "overall_sentiment_score": -0.142,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.615641",
+          "ticker_sentiment_score": "0.111360",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "PNC Financial Services Group Inc. Boosts Stake in Advanced Micro Devices, Inc. $AMD",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-pnc-financial-services-group-inc-boosts-stake-in-advanced-micro-devices-inc-amd-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T093243",
+      "summary": "PNC Financial Services Group Inc. increased its stake in Advanced Micro Devices (AMD) by 5.6% in the first quarter, acquiring an additional 21,176 shares, bringing its total holdings to 398,119 shares valued at approximately $80.99 million. This increased investment comes as AMD gains investor attention due to its partnership with Anthropic, which includes deploying up to 2GW of Instinct MI450 GPUs, and strong Wall Street support with analysts raising price targets after AMD's recent earnings beat expectations with a 37.8% year-over-year revenue increase. The company's stock has shown strong performance with a 1-year low of $149.22 and a high of $584.73, and analysts anticipate 6.25 EPS for the current fiscal year.",
+      "overall_sentiment_score": 0.207,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.619164",
+          "ticker_sentiment_score": "0.110542",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "T. Rowe Price Has Increased Its Dividend for 40 Consecutive Years and Yields 4.4%. Is the Payout a Bargain or a Value Trap?",
+      "url": "https://finance.yahoo.com/markets/stocks/articles/t-rowe-price-increased-dividend-085000381.html",
+      "source": "Yahoo Finance",
+      "published_at": "20260723T090922",
+      "summary": "T. Rowe Price, a mutual fund manager, boasts a 40-year streak of dividend growth and a 4.4% yield, but its stock has stagnated since mid-2022 due to investor focus on AI stocks. The article argues that while the stock appears cheap, it's not a value trap, as the company has continued to expand its assets under management. It suggests that once the AI mania subsides, T. Rowe Price's reliable dividend and long-term value will appeal to defensive investors.",
+      "overall_sentiment_score": 0.12,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.573423",
+          "ticker_sentiment_score": "0.028107",
           "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "GOOGL"
     },
     {
-      "title": "First Look: J&J unveils its Ottava surgical robotics system",
-      "url": "https://www.medicaldesignandoutsourcing.com/first-look-jj-medtech-ottava-surgical-robotics-system/",
-      "source": "Medical Design & Outsourcing",
-      "published_at": "20260722T215622",
-      "summary": "Johnson & Johnson MedTech has unveiled its Ottava surgical robotics system, which recently received FDA de novo authorization. The system features four robotic arms integrated into the operating table, designed to save space in the operating room. Key innovations include a two-in-one needle driver and a patented scissor design for improved precision and consistency during soft-tissue surgeries.",
-      "overall_sentiment_score": 0.186,
+      "title": "Amazon under Senate investigation over China influence concerns - report",
+      "url": "https://seekingalpha.com/news/4617148-amazon-under-senate-investigation-over-china-influence-concerns---report",
+      "source": "Seeking Alpha",
+      "published_at": "20260723T090807",
+      "summary": "Amazon (AMZN) is reportedly facing an investigation by the U.S. Senate Small Business Committee. The probe centers on allegations that the company permitted Chinese influence to impact its online marketplace. This information comes from a Bloomberg report, citing individuals interviewed during the investigation.",
+      "overall_sentiment_score": -0.275,
       "ticker_sentiment": [
         {
-          "ticker": "JNJ",
+          "ticker": "AMZN",
           "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.432921",
-          "ticker_sentiment_label": "Bullish"
+          "ticker_sentiment_score": "-0.251779",
+          "ticker_sentiment_label": "Somewhat-Bearish"
         }
       ],
-      "ticker": "JNJ"
+      "ticker": "AMZN"
     },
     {
-      "title": "JPMorgan Chase & Co. (NYSE:JPM) Trading 1% Higher - Still a Buy?",
-      "url": "https://www.marketbeat.com/instant-alerts/jpmorgan-chase-co-nysejpm-trading-1-higher-still-a-buy-2026-07-22/",
+      "title": "Amazon.com, Inc. $AMZN is Villere ST Denis J & Co. LLC's 6th Largest Position",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-amazoncom-inc-amzn-is-villere-st-denis-j-co-llcs-6th-largest-position-2026-07-23/",
       "source": "MarketBeat",
-      "published_at": "20260722T213216",
-      "summary": "JPMorgan Chase & Co. (NYSE:JPM) is trading 1% higher and is on track for an eighth consecutive weekly gain, driven by strong Q2 results that exceeded expectations in EPS and revenue. Analysts generally maintain \"Buy\" or \"Outperform\" ratings with elevated price targets, reflecting positive sentiment. However, CEO Jamie Dimon's warnings about potential market and credit risks indicate some caution, despite the bank's potential gains from AI efficiencies and international deals.",
+      "published_at": "20260723T084805",
+      "summary": "Villere ST Denis J & Co. LLC reduced its stake in Amazon by 5.5% in Q1, yet Amazon remains its 6th largest holding, comprising 3.6% of its portfolio. Amazon reported strong quarterly results, exceeding revenue and EPS expectations, with continued analyst bullishness driven by AWS, AI demand, and expanding Amazon Business sales. Despite some concerns about heavy AI spending and recent insider stock sales, the company's financial performance and market sentiment remain positive.",
+      "overall_sentiment_score": 0.291,
+      "ticker_sentiment": [
+        {
+          "ticker": "AMZN",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.267491",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "AMZN"
+    },
+    {
+      "title": "What is Apple? The company behind iPhone, Mac, and the App Store",
+      "url": "https://qz.com/what-is-apple-company",
+      "source": "qz.com",
+      "published_at": "20260723T083400",
+      "summary": "Apple Inc. designs and sells consumer electronics, software, and digital services, including the iPhone, Mac, iPad, and its various operating systems and service platforms like the App Store and Apple Music. Founded in 1976, Apple operates a highly integrated ecosystem and is known for its global retail stores and recent expansion into artificial intelligence under the Apple Intelligence brand. The company is publicly traded on Nasdaq under the ticker AAPL.",
+      "overall_sentiment_score": 0.22,
+      "ticker_sentiment": [
+        {
+          "ticker": "AAPL",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.303673",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "AAPL"
+    },
+    {
+      "title": "How Will NextEra Energy Stock React To Its Upcoming Earnings?",
+      "url": "https://www.trefis.com/stock/nee/articles/608559/how-will-nextera-energy-stock-react-to-its-upcoming-earnings/2026-07-23",
+      "source": "Trefis",
+      "published_at": "20260723T083333",
+      "summary": "NextEra Energy (NEE) is scheduled to report earnings on July 24, 2026. The article analyzes historical post-earnings stock reactions, finding that NEE has shown positive one-day returns 65% of the time over the past five years. It also provides a detailed table of historical 1D, 5D, and 21D returns and correlations to help event-driven traders assess potential short-to-medium term movements.",
+      "overall_sentiment_score": 0.07,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.627994",
+          "ticker_sentiment_score": "0.044684",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "International Business Machines Corporation $IBM Stock Position Raised by CI Investments Inc.",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-international-business-machines-corporation-ibm-stock-position-raised-by-ci-investments-inc-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T082708",
+      "summary": "CI Investments Inc. increased its stake in International Business Machines Corporation (IBM) by 26.5% in the first quarter, now holding 118,132 shares worth over $28 million. Other institutional investors like Vanguard Group, State Street Corp, and Capital World Investors also significantly boosted their positions in IBM. The article also touches on recent analyst ratings, IBM's stock performance, and mixed sentiment surrounding its earnings, AI initiatives, and growth outlook.",
+      "overall_sentiment_score": 0.135,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.559692",
+          "ticker_sentiment_score": "0.124388",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "First Citizens Bank & Trust Co. Buys 12,597 Shares of Salesforce Inc. $CRM",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-first-citizens-bank-trust-co-buys-12597-shares-of-salesforce-inc-crm-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T082629",
+      "summary": "First Citizens Bank & Trust Co. significantly increased its stake in Salesforce Inc. (NYSE:CRM) by 355% in the first quarter, acquiring an additional 12,597 shares to bring its total holdings to 16,145 shares valued at approximately $3.0 million. This move comes as Salesforce reported strong quarterly results, exceeding EPS and revenue expectations. Wall Street analysts maintain a \"Moderate Buy\" consensus rating for Salesforce, despite some recent price target adjustments and downgrades.",
+      "overall_sentiment_score": 0.017,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.579604",
+          "ticker_sentiment_score": "-0.100149",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "First Trust Advisors LP Has $178.82 Million Stock Holdings in VeriSign, Inc. $VRSN",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-first-trust-advisors-lp-has-17882-million-stock-holdings-in-verisign-inc-vrsn-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T082616",
+      "summary": "First Trust Advisors LP increased its stake in VeriSign, Inc. by 20.6% during the first quarter, now holding 719,987 shares valued at $178.82 million. Other institutional investors like DV Equities LLC and Sunbelt Securities Inc. also adjusted their holdings. The article also details recent analyst ratings, with an average \"Moderate Buy\" consensus, and recent insider selling activity from VeriSign executives.",
+      "overall_sentiment_score": 0.158,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.620760",
+          "ticker_sentiment_score": "0.141175",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Bowie Capital Management LLC Invests $14.84 Million in MKS Inc. $MKSI",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-bowie-capital-management-llc-invests-1484-million-in-mks-inc-mksi-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T081041",
+      "summary": "Bowie Capital Management LLC has invested $14.84 million in MKS Inc. (NASDAQ:MKSI), acquiring 64,593 shares, making it their 22nd-largest holding. Institutional ownership of MKS Inc. stands at 99.79%, with several other hedge funds also adjusting their positions. Despite recent insider share sales, analysts maintain a \"Moderate Buy\" rating with an average price target of $380.00 for MKS Inc., following strong quarterly earnings.",
+      "overall_sentiment_score": 0.162,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.627613",
+          "ticker_sentiment_score": "0.145857",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Conning Inc. Has $9.18 Million Stake in Amazon.com, Inc. $AMZN",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-conning-inc-has-918-million-stake-in-amazoncom-inc-amzn-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T073620",
+      "summary": "Conning Inc. has reduced its stake in Amazon.com by 13.9% in the first quarter, now holding 44,072 shares valued at approximately $9.18 million. Despite this, Wall Street analysts maintain a broadly bullish outlook on Amazon, with a consensus \"Moderate Buy\" rating and a price target of $312.91, following strong Q1 earnings that surpassed estimates. However, the company also faces scrutiny over its AI-related spending and recent layoffs within its AI division.",
       "overall_sentiment_score": 0.433,
       "ticker_sentiment": [
         {
-          "ticker": "JPM",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.418896",
+          "ticker": "AMZN",
+          "relevance_score": "0.991511",
+          "ticker_sentiment_score": "0.400622",
           "ticker_sentiment_label": "Bullish"
         }
       ],
-      "ticker": "JPM"
+      "ticker": "AMZN"
     },
     {
-      "title": "International Business Machines (NYSE:IBM) Trading Down 2.1% Following Weak Earnings",
-      "url": "https://www.marketbeat.com/instant-alerts/international-business-machines-nyseibm-trading-down-21-following-weak-earnings-2026-07-22/",
+      "title": "Andra AP fonden Has $3.88 Million Stock Holdings in VeriSign, Inc. $VRSN",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-andra-ap-fonden-has-388-million-stock-holdings-in-verisign-inc-vrsn-2026-07-23/",
       "source": "MarketBeat",
-      "published_at": "20260722T211605",
-      "summary": "International Business Machines (IBM) stock fell 2.1% after announcing weaker-than-expected earnings, missing EPS and revenue estimates. The disappointing report led to increased trading volume and exacerbated recent volatility, following a previous guidance cut. Despite a \"Moderate Buy\" consensus from analysts, some firms downgraded the stock, and investors are looking to upcoming Q2 commentary for signs of recovery and AI momentum.",
-      "overall_sentiment_score": -0.045,
+      "published_at": "20260723T072830",
+      "summary": "Andra AP fonden significantly reduced its stake in VeriSign, Inc. (NASDAQ:VRSN) by 88.4% in the first quarter, now holding 15,619 shares valued at $3.88 million. This comes as other institutional investors have either increased their positions or initiated coverage, with analysts generally rating VRSN as a \"Moderate Buy\" with an average price target of $325.25. Additionally, VeriSign executives have recently sold shares, while the company reported strong Q1 earnings, beating analyst estimates for both EPS and revenue.",
+      "overall_sentiment_score": 0.116,
       "ticker_sentiment": [
         {
-          "ticker": "JPM",
-          "relevance_score": "0.569983",
-          "ticker_sentiment_score": "0.114928",
+          "ticker": "AAPL",
+          "relevance_score": "0.771349",
+          "ticker_sentiment_score": "0.147271",
           "ticker_sentiment_label": "Neutral"
         }
       ],
-      "ticker": "JPM"
+      "ticker": "AAPL"
     },
     {
-      "title": "US Judge Casts Doubt on 69,000 Cases Alleging J&J Talc Caused Cancer",
-      "url": "https://www.usnews.com/news/us/articles/2026-07-22/us-judge-casts-doubt-on-69-000-cases-alleging-j-j-talc-caused-cancer",
-      "source": "U.S. News & World Report",
-      "published_at": "20260722T204314",
-      "summary": "A federal judge has questioned the validity of approximately 69,000 lawsuits claiming Johnson & Johnson's talc products caused ovarian cancer, demanding plaintiffs provide more specific evidence. U.S. Magistrate Judge Rukhsanah Singh expressed doubt after expert testimony indicated an inability to definitively link talcum powder use to specific cancer cases. Plaintiffs have until November 19 to demonstrate why their cases should not be dismissed due to insufficient expert opinions on causation.",
-      "overall_sentiment_score": 0.443,
-      "ticker_sentiment": [
-        {
-          "ticker": "JNJ",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.420862",
-          "ticker_sentiment_label": "Bullish"
-        }
-      ],
-      "ticker": "JNJ"
-    },
-    {
-      "title": "Earnings Flash (RJF) Raymond James Financial, Inc. Posts Q3 Adjusted EPS $3.14 per Share, vs. FactSet Est of $2.93",
-      "url": "https://www.marketscreener.com/news/earnings-flash-rjf-raymond-james-financial-inc-posts-q3-adjusted-eps-3-14-per-share-vs-factse-ce7f51d9df81f723",
-      "source": "www.marketscreener.com",
-      "published_at": "20260722T203905",
-      "summary": "Raymond James Financial, Inc. (RJF) announced Q3 adjusted EPS of $3.14 per share, significantly exceeding the FactSet estimate of $2.93. The company also reported Q3 revenue of $3.93 billion, surpassing the FactSet estimate of $3.87 billion. This positive earnings flash comes amidst other news indicating a rise in Raymond James' profit driven by capital markets strength.",
-      "overall_sentiment_score": 0.284,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.644286",
-          "ticker_sentiment_score": "0.250528",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "Google Q2 Cloud Revenue Surges 82%: Net Profit Soars 298% YoY, 26% QoQ Capital Expenditure Growth Sparks Sharp Bull-Bear Divide",
-      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262048041-google-earnings-report-q2-2026-goog-googl-services-cloud-search-capital-expenditures-tradingkey",
-      "source": "TradingKey",
-      "published_at": "20260722T203700",
-      "summary": "Alphabet reported strong Q2 2026 financial results, with total revenue reaching $119.796 billion, a 24% year-over-year increase, driven largely by Google Cloud's 82% surge due to enterprise AI demand. While GAAP net income jumped 298% due to one-time equity gains, core operating income still grew a robust 30%. The company's significant capital expenditure of $44.9 billion underscores its continued investment in its full-stack AI strategy.",
-      "overall_sentiment_score": 0.522,
-      "ticker_sentiment": [
-        {
-          "ticker": "MSFT",
-          "relevance_score": "0.598666",
-          "ticker_sentiment_score": "0.209798",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "Google Q2 Cloud Revenue Surges 82%: Net Profit Soars 298% YoY, 26% QoQ Capital Expenditure Growth Sparks Sharp Bull-Bear Divide",
-      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262048041-google-earnings-report-q2-2026-goog-googl-services-cloud-search-capital-expenditures-tradingkey",
-      "source": "TradingKey",
-      "published_at": "20260722T203700",
-      "summary": "Alphabet reported strong Q2 2026 financial results, with total revenue reaching $119.796 billion, a 24% year-over-year increase, driven largely by Google Cloud's 82% surge due to enterprise AI demand. While GAAP net income jumped 298% due to one-time equity gains, core operating income still grew a robust 30%. The company's significant capital expenditure of $44.9 billion underscores its continued investment in its full-stack AI strategy.",
-      "overall_sentiment_score": 0.539,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "0.944419",
-          "ticker_sentiment_score": "0.749557",
-          "ticker_sentiment_label": "Bullish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "US judge casts doubt on 69,000 cases alleging J&J talc caused cancer",
-      "url": "https://www.yahoo.com/news/us/articles/us-judge-casts-doubt-69-203714110.html",
-      "source": "Yahoo",
-      "published_at": "20260722T203700",
-      "summary": "A federal judge in New Jersey has expressed significant doubt regarding approximately 69,000 lawsuits against Johnson & Johnson, which claim its talc products caused ovarian cancer. The judge indicated that plaintiffs must provide more specific evidence or face dismissal, citing expert testimony that could not definitively link talc to specific ovarian cancer cases. J&J maintains its talc products are safe and asbestos-free.",
-      "overall_sentiment_score": 0.309,
-      "ticker_sentiment": [
-        {
-          "ticker": "JNJ",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.301934",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "JNJ"
-    },
-    {
-      "title": "Alphabet Q2 2026 earnings: revenue up 24%, Cloud surges 82%",
-      "url": "https://qz.com/alphabet-google-second-quarter-earnings-revenue-cloud-072226",
-      "source": "Quartz",
-      "published_at": "20260722T203201",
-      "summary": "Alphabet (GOOGL) reported strong second-quarter 2026 earnings with a 24% year-over-year revenue increase to $119.8 billion, surpassing analyst expectations. The significant growth was driven by Google Cloud, which surged 82% to $24.8 billion, largely due to demand for AI infrastructure and solutions. The company's net income also saw a substantial increase, boosted by a large investment gain.",
-      "overall_sentiment_score": 0.833,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.859886",
-          "ticker_sentiment_label": "Bullish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Prudential Advisors Welcomes J.P. Morgan Advisor to Mid America Financial Group",
-      "url": "https://www.advisorhub.com/resources/prudential-advisors-welcomes-j-p-morgan-advisor-to-mid-america-financial-group/",
-      "source": "AdvisorHub",
-      "published_at": "20260722T202903",
-      "summary": "Prudential Advisors has announced the addition of David Bellamy, a former J.P. Morgan Wealth Management advisor, to its Mid America Financial Group. Bellamy, who managed over $140 million in client assets, brings 20 years of experience and will leverage Prudential's resources to grow his practice. This move highlights Prudential's strategy to attract experienced wealth managers and offer comprehensive support and an open-architecture platform.",
-      "overall_sentiment_score": 0.318,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.814796",
-          "ticker_sentiment_score": "0.148987",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "Google\u2019s Red-Hot Cloud Growth Drives Second-Quarter Revenue Gains",
-      "url": "https://www.wsj.com/tech/ai/alphabet-googl-q2-earnings-report-2026-stock-f6bdd223",
-      "source": "WSJ",
-      "published_at": "20260722T202501",
-      "summary": "Alphabet (Google's parent company) reported 24% revenue growth in the second quarter, driven by an 82% jump in its cloud division. Despite exceeding analyst expectations with $119.8 billion in sales and $112.1 billion in net income, the company's free cash flow turned negative due to heavy investments in AI-related data centers. Google is spending up to $190 billion in capital expenditures this year to support its AI efforts and recently announced an $85 billion equity raise.",
-      "overall_sentiment_score": -0.22,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "-0.218609",
-          "ticker_sentiment_label": "Somewhat-Bearish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Alphabet Posts Cloud Sales Beat, Slight Miss on Search Revenue",
-      "url": "https://www.bloomberg.com/news/articles/2026-07-22/alphabet-posts-cloud-sales-beat-slight-miss-on-search-revenue",
-      "source": "Bloomberg.com",
-      "published_at": "20260722T201000",
-      "summary": "Alphabet Inc. reported second-quarter cloud revenue that exceeded Wall Street's expectations, totaling $24.77 billion, an 82% increase year-over-year. The company also announced strong growth in the usage of its Gemini AI system, with monthly active users reaching 950 million, surpassing estimates. These results suggest that Alphabet's significant investments in artificial intelligence are starting to yield positive returns.",
-      "overall_sentiment_score": 0.454,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.495909",
-          "ticker_sentiment_label": "Bullish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Earnings Flash (LVS) Las Vegas Sands Corp. Reports Q2 Revenue $3.15B, vs. FactSet Est of $3.31B",
-      "url": "https://www.marketscreener.com/news/earnings-flash-lvs-las-vegas-sands-corp-reports-q2-revenue-3-15b-vs-factset-est-of-3-31b-ce7f51d9df8ff62c",
-      "source": "www.marketscreener.com",
-      "published_at": "20260722T200821",
-      "summary": "Las Vegas Sands Corp. (LVS) reported Q2 revenue of $3.15 billion, falling short of the FactSet estimate of $3.31 billion. The casino operator's quarterly profit and revenue slipped due to weak business performance in Macau. This financial update indicates a challenging quarter for the company, primarily impacted by its operations in the Macau market.",
-      "overall_sentiment_score": -0.203,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.628397",
-          "ticker_sentiment_score": "-0.127007",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "Anthropic to buy up to two gigawatts of GPU capacity from AMD",
-      "url": "https://siliconangle.com/2026/07/22/anthropic-buy-two-gigawatts-gpu-capacity-amd/",
-      "source": "SiliconANGLE",
-      "published_at": "20260722T200706",
-      "summary": "Anthropic has announced a multibillion-dollar deal to purchase up to two gigawatts of GPU capacity from AMD, specifically the MI450 series. This partnership includes AMD investing up to $5 billion in Anthropic and utilizing Anthropic's Claude AI to accelerate its software development, particularly for the ROCm platform. The deal highlights a growing trend among major AI players to diversify chip suppliers to avoid supply chain bottlenecks and underscores AMD's increasing competitiveness in the AI hardware market.",
-      "overall_sentiment_score": 0.317,
-      "ticker_sentiment": [
-        {
-          "ticker": "MSFT",
-          "relevance_score": "0.644813",
-          "ticker_sentiment_score": "0.276194",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "Jamie Dimon's JPMorgan Posted a Record $21.2 Billion Quarterly Profit, Up 41%",
-      "url": "https://www.fool.com/investing/2026/07/22/jamie-dimon-jpmorgan-record-billion-profit/",
-      "source": "The Motley Fool",
-      "published_at": "20260722T193908",
-      "summary": "JPMorgan Chase achieved a historic quarterly profit of $21.2 billion, marking a 41% increase year-over-year, driven by a significant surge in equity trading revenue and investment banking fees, including gains from the SpaceX IPO. Despite these record-breaking results, CEO Jamie Dimon cautioned that these conditions are \"as good as it gets\" and unlikely to be sustainable, advising investors not to expect similar performance in future quarters. The article highlights that while JPMorgan's execution is extraordinary, this peak is due to one-time events rather than a new earnings baseline.",
-      "overall_sentiment_score": 0.151,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.220193",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "Alphabet Q2 Preview: Stock on Sale? Analyst Says \u2018Attractive Entry\u2019 Ahead of Earnings",
-      "url": "https://www.sahmcapital.com/news/content/alphabet-q2-preview-stock-on-sale-analyst-says-attractive-entry-ahead-of-earnings-2026-07-21",
-      "source": "Sahm",
-      "published_at": "20260722T193806",
-      "summary": "Alphabet Inc. is set to report its Q2 earnings, with analysts expecting revenue of $113.6 billion and EPS of $2.87. A Guggenheim analyst maintains a Buy rating, viewing a recent delay in the Gemini AI product as a potential \"attractive entry point\" for investors. Key areas to watch include updates on Gemini, Google Search, YouTube, and Cloud revenue, especially given significant AI spending.",
-      "overall_sentiment_score": 0.288,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "0.956967",
-          "ticker_sentiment_score": "0.253227",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "IBM Q2 2026 earnings call: Live updates on $IBM earnings & outlook",
-      "url": "https://www.thestreet.com/latest-news/ibm-q2-2026-earnings-call-updates",
-      "source": "TheStreet",
-      "published_at": "20260722T193446",
-      "summary": "IBM reported its Q2 2026 earnings, with revenue slightly below preliminary estimates but adjusted EPS matching. The stock rose slightly after-hours despite a significant 25% drop a week prior due to preliminary earnings missing internal targets and analyst expectations, driven by clients shifting spending from software to AI infrastructure. The company's future stock volatility will depend on its guidance regarding this industry-wide shift.",
-      "overall_sentiment_score": 0.078,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "0.609766",
-          "ticker_sentiment_score": "0.122376",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Samsara Inc Stock (IOT) Moved Down by 7.54% on Jul 22: Facts Behind the Movement",
-      "url": "https://www.tradingkey.com/news/market-movers/262047916-market-movers-iot-20260722",
-      "source": "TradingKey",
-      "published_at": "20260722T191129",
-      "summary": "Samsara Inc. (IOT) stock dropped 7.54% on July 22nd due to concerns over decelerating enterprise growth, extended sales cycles, macroeconomic headwinds, and cautious capital expenditure from its core customer base. Analyst downgrades and a broader rotation out of high-growth software sectors also contributed to the decline. The company's high valuation multiples, decelerating annual recurring revenue, escalating litigation costs, and insider selling have flagged specific risks for investors despite a recent earnings beat.",
-      "overall_sentiment_score": -0.429,
-      "ticker_sentiment": [
-        {
-          "ticker": "MSFT",
-          "relevance_score": "0.555088",
-          "ticker_sentiment_score": "-0.281655",
-          "ticker_sentiment_label": "Somewhat-Bearish"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "J&J gets a big win on its new robotic surgical system \u2014 plus, a flood of earnings",
-      "url": "https://www.cnbc.com/2026/07/22/jj-gets-a-big-win-on-its-new-robotic-surgical-system-plus-a-flood-of-earnings.html",
-      "source": "CNBC",
-      "published_at": "20260722T190822",
-      "summary": "Johnson & Johnson received early FDA approval for its Ottava Robotic surgical system, boosting its stock despite a weak MedTech quarter and positioning it to challenge Intuitive Surgical. Meanwhile, tech earnings are set to flood in, with Alphabet, Tesla, ServiceNow, and Texas Instruments reporting, while Goldman Sachs launched a new platform for wealthy clients to invest in pre-IPO private companies. Cybersecurity stocks, including CrowdStrike and Palo Alto Networks, saw a mixed reaction following an OpenAI security incident, which is seen by some as highlighting their critical role.",
-      "overall_sentiment_score": 0.3,
-      "ticker_sentiment": [
-        {
-          "ticker": "JNJ",
-          "relevance_score": "0.952912",
-          "ticker_sentiment_score": "0.444982",
-          "ticker_sentiment_label": "Bullish"
-        }
-      ],
-      "ticker": "JNJ"
-    },
-    {
-      "title": "Morgan Stanley Issues Positive Forecast for Elanco Animal Health (NYSE:ELAN) Stock Price",
-      "url": "https://www.marketbeat.com/instant-alerts/morgan-stanley-issues-positive-forecast-for-elanco-animal-health-nyseelan-stock-price-2026-07-22/",
+      "title": "Andra AP fonden Has $3.88 Million Stock Holdings in VeriSign, Inc. $VRSN",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-andra-ap-fonden-has-388-million-stock-holdings-in-verisign-inc-vrsn-2026-07-23/",
       "source": "MarketBeat",
-      "published_at": "20260722T184810",
-      "summary": "Morgan Stanley raised its price target for Elanco Animal Health (NYSE:ELAN) to $26 from $23, maintaining an \"equal weight\" rating. Other analysts also show a constructive outlook, with the stock holding a consensus \"Moderate Buy\" rating and an average price target of $28.73. Elanco recently reported stronger-than-expected quarterly results, beating EPS and revenue estimates, and provided positive guidance for fiscal year 2026.",
-      "overall_sentiment_score": 0.406,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.578342",
-          "ticker_sentiment_score": "0.300357",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "DELL Stock Rallies As AI Server Boom Fuels Upgrades",
-      "url": "https://timothysykes.com/news/dell-technologies-inc-class-c-dell-news-2026_07_22/",
-      "source": "timothysykes.com",
-      "published_at": "20260722T183810",
-      "summary": "Dell Technologies (DELL) stock rallied 8.67% due to strong AI server demand, with Q1 FY2027 AI-optimized server revenue hitting $16.1 billion, a 757% increase year-over-year. The company has a significant AI order backlog of $51.3 billion and announced critical partnerships and new product launches, such as the PowerEdge XE8812 AI server. Analysts from JPMorgan, Evercore ISI, and Morgan Stanley have raised their price targets for DELL, reflecting confidence in its AI infrastructure positioning.",
-      "overall_sentiment_score": 0.311,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.612126",
-          "ticker_sentiment_score": "0.207978",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "JPMorgan Chase & Co. (MCD) reports 30.96M McDonald's shares in 13G/A",
-      "url": "https://www.stocktitan.net/sec-filings/MCD/schedule-13g-a-mcdonalds-corp-amended-passive-investment-disclosure-17c3f959bf0b.html",
-      "source": "Stock Titan",
-      "published_at": "20260722T174626",
-      "summary": "JPMorgan Chase & Co. has filed an amended Schedule 13G/A report disclosing beneficial ownership of 30,960,253 shares of McDonald's Corporation common stock as of June 30, 2026. This represents a 4.3% stake in the company. The filing details JPMorgan's sole and shared voting and dispositive powers over these shares, identifying various subsidiaries as holding and investment management entities.",
-      "overall_sentiment_score": 0.026,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.747412",
-          "ticker_sentiment_score": "0.030819",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "JPMorgan Chase & Co. (HAYW) reports 10.46M Hayward Holdings shares in 13G/A",
-      "url": "https://www.stocktitan.net/sec-filings/HAYW/schedule-13g-a-hayward-holdings-inc-amended-passive-investment-disclo-c26e1eff9d68.html",
-      "source": "Stock Titan",
-      "published_at": "20260722T174334",
-      "summary": "JPMorgan Chase & Co. has filed an amended Schedule 13G, disclosing beneficial ownership of 10,458,642 shares of Hayward Holdings, Inc. common stock, which represents 4.8% of the class. The filing indicates JPMorgan holds sole voting power over 10,062,253 shares and sole dispositive power over all 10,458,642 shares. This updated disclosure confirms JPMorgan's passive investment in Hayward Holdings, remaining below the 5% ownership threshold.",
-      "overall_sentiment_score": 0.127,
-      "ticker_sentiment": [
-        {
-          "ticker": "JPM",
-          "relevance_score": "0.898527",
-          "ticker_sentiment_score": "0.140808",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "JPM"
-    },
-    {
-      "title": "Monday.com lays off hundreds to focus on AI",
-      "url": "https://techcrunch.com/2026/07/22/monday-com-lays-off-hundreds-to-focuses-on-ai/",
-      "source": "TechCrunch",
-      "published_at": "20260722T174112",
-      "summary": "Monday.com is laying off 20% of its workforce, approximately 630 employees, as part of a restructuring to intensify its focus on AI projects and a leaner operating model. The company previously redesigned its product around an AI Work Platform for enterprise customers. This move aligns with a broader trend in the tech industry where numerous companies are cutting jobs to redirect investments toward artificial intelligence.",
-      "overall_sentiment_score": -0.173,
+      "published_at": "20260723T072830",
+      "summary": "Andra AP fonden significantly reduced its stake in VeriSign, Inc. (NASDAQ:VRSN) by 88.4% in the first quarter, now holding 15,619 shares valued at $3.88 million. This comes as other institutional investors have either increased their positions or initiated coverage, with analysts generally rating VRSN as a \"Moderate Buy\" with an average price target of $325.25. Additionally, VeriSign executives have recently sold shares, while the company reported strong Q1 earnings, beating analyst estimates for both EPS and revenue.",
+      "overall_sentiment_score": 0.102,
       "ticker_sentiment": [
         {
           "ticker": "MSFT",
-          "relevance_score": "0.641111",
-          "ticker_sentiment_score": "-0.101953",
+          "relevance_score": "0.573161",
+          "ticker_sentiment_score": "0.148016",
           "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "MSFT"
     },
     {
-      "title": "NetEase Inc Stock (NTES) Moved Down by 6.64% on Jul 22: A Full Analysis",
-      "url": "https://www.tradingkey.com/news/market-movers/262047768-market-movers-ntes-20260722",
-      "source": "TradingKey",
-      "published_at": "20260722T174030",
-      "summary": "NetEase Inc. (NTES) stock fell by 6.64% on July 22, driven by regulatory concerns in China, increased competition in the gaming sector leading to higher user acquisition costs, and broader macroeconomic headwinds. Investment banks have lowered price targets due to margin pressure from rising R&D and marketing expenses. The company's immediate technical outlook is bearish, and investors await clearer regulatory guidance or a significant new game launch to improve sentiment.",
-      "overall_sentiment_score": -0.293,
-      "ticker_sentiment": [
-        {
-          "ticker": "MSFT",
-          "relevance_score": "0.622388",
-          "ticker_sentiment_score": "-0.335456",
-          "ticker_sentiment_label": "Somewhat-Bearish"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "NetEase Inc Stock (NTES) Moved Down by 6.64% on Jul 22: A Full Analysis",
-      "url": "https://www.tradingkey.com/news/market-movers/262047768-market-movers-ntes-20260722",
-      "source": "TradingKey",
-      "published_at": "20260722T174030",
-      "summary": "NetEase Inc. (NTES) stock fell by 6.64% on July 22, driven by regulatory concerns in China, increased competition in the gaming sector leading to higher user acquisition costs, and broader macroeconomic headwinds. Investment banks have lowered price targets due to margin pressure from rising R&D and marketing expenses. The company's immediate technical outlook is bearish, and investors await clearer regulatory guidance or a significant new game launch to improve sentiment.",
-      "overall_sentiment_score": -0.289,
+      "title": "Andra AP fonden Has $3.88 Million Stock Holdings in VeriSign, Inc. $VRSN",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-andra-ap-fonden-has-388-million-stock-holdings-in-verisign-inc-vrsn-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T072830",
+      "summary": "Andra AP fonden significantly reduced its stake in VeriSign, Inc. (NASDAQ:VRSN) by 88.4% in the first quarter, now holding 15,619 shares valued at $3.88 million. This comes as other institutional investors have either increased their positions or initiated coverage, with analysts generally rating VRSN as a \"Moderate Buy\" with an average price target of $325.25. Additionally, VeriSign executives have recently sold shares, while the company reported strong Q1 earnings, beating analyst estimates for both EPS and revenue.",
+      "overall_sentiment_score": 0.133,
       "ticker_sentiment": [
         {
           "ticker": "GOOGL",
-          "relevance_score": "0.604332",
-          "ticker_sentiment_score": "0.240009",
-          "ticker_sentiment_label": "Somewhat-Bullish"
+          "relevance_score": "0.619140",
+          "ticker_sentiment_score": "0.118802",
+          "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "GOOGL"
     },
     {
-      "title": "Microsoft Signs Multi-Billion-Dollar Deal to Rent Mistral's European AI Data Centers",
-      "url": "https://mlq.ai/news/microsoft-signs-multi-billion-dollar-deal-to-rent-mistrals-european-ai-data-centers/",
-      "source": "MLQ.ai",
-      "published_at": "20260722T173432",
-      "summary": "Microsoft has signed a multi-billion-dollar agreement to rent computing capacity from Mistral's European data centers, allowing Azure customers to access European-hosted AI infrastructure. This deal enhances data sovereignty for regulated industries in Europe and expands Mistral's infrastructure build-out, aiming for 1 gigawatt by 2030, while not increasing Microsoft's equity stake in Mistral. The partnership positions Mistral as a significant player in the European AI landscape and provides a guaranteed revenue stream as it scales.",
-      "overall_sentiment_score": 0.033,
+      "title": "Why Arista Networks Stock Rocketed 30% Higher in the First Half of 2026 and Why There's Likely More to Come",
+      "url": "https://www.theglobeandmail.com/investing/markets/stocks/ANET/pressreleases/3419696/why-arista-networks-stock-rocketed-30-higher-in-the-first-half-of-2026-and-why-theres-likely-more-to-come/",
+      "source": "The Globe and Mail",
+      "published_at": "20260723T072311",
+      "summary": "Arista Networks (NYSE: ANET) saw its stock surge by nearly 30% in the first half of 2026, significantly outperforming the S&P 500, due to strong demand for its networking hardware driven by the proliferation of AI. The company delivered impressive Q4 2025 and Q1 2026 results, reporting record revenues and operating cash flow, and has raised its annual revenue outlook twice. Analysts widely rate Arista Networks as a \"buy\" or \"strong buy,\" anticipating further upside, as the company is a leader in crucial data center technologies and expects to add more major customers.",
+      "overall_sentiment_score": 0.326,
       "ticker_sentiment": [
         {
           "ticker": "MSFT",
-          "relevance_score": "0.341988",
-          "ticker_sentiment_score": "0.043883",
+          "relevance_score": "0.709255",
+          "ticker_sentiment_score": "0.348697",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Why Arista Networks Stock Rocketed 30% Higher in the First Half of 2026 and Why There's Likely More to Come",
+      "url": "https://www.theglobeandmail.com/investing/markets/stocks/ANET/pressreleases/3419696/why-arista-networks-stock-rocketed-30-higher-in-the-first-half-of-2026-and-why-theres-likely-more-to-come/",
+      "source": "The Globe and Mail",
+      "published_at": "20260723T072311",
+      "summary": "Arista Networks (NYSE: ANET) saw its stock surge by nearly 30% in the first half of 2026, significantly outperforming the S&P 500, due to strong demand for its networking hardware driven by the proliferation of AI. The company delivered impressive Q4 2025 and Q1 2026 results, reporting record revenues and operating cash flow, and has raised its annual revenue outlook twice. Analysts widely rate Arista Networks as a \"buy\" or \"strong buy,\" anticipating further upside, as the company is a leader in crucial data center technologies and expects to add more major customers.",
+      "overall_sentiment_score": 0.326,
+      "ticker_sentiment": [
+        {
+          "ticker": "META",
+          "relevance_score": "0.652683",
+          "ticker_sentiment_score": "0.292934",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "META"
+    },
+    {
+      "title": "IBM's Q2 Deal Slippage Is a 'Temporary Speed Bump,' Says Michael Lee as CEO Arvind Krishna Says Delayed D",
+      "url": "https://www.benzinga.com/markets/earnings/26/07/60629046/ibms-q2-deal-slippage-is-a-temporary-speed-bump-says-michael-lee-as-ceo-arvind-krishna-says-delayed-deals-are-closing",
+      "source": "Benzinga",
+      "published_at": "20260723T070814",
+      "summary": "Michael Lee of Michael Lee Strategy considers IBM's Q2 earnings miss a \"temporary speed bump,\" a view echoed by CEO Arvind Krishna, who stated that about a third of delayed deals closed in early July. Despite a revenue shortfall, IBM maintains its profitability targets, adjusting full-year revenue growth guidance to 4-5% while emphasizing the strong demand for AI. The company's significant investment in AI infrastructure, however, is impacting its stock performance and weighing on the Dow 30.",
+      "overall_sentiment_score": -0.085,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.608544",
+          "ticker_sentiment_score": "-0.125286",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "IBM's Q2 Deal Slippage Is a 'Temporary Speed Bump,' Says Michael Lee as CEO Arvind Krishna Says Delayed D",
+      "url": "https://www.benzinga.com/markets/earnings/26/07/60629046/ibms-q2-deal-slippage-is-a-temporary-speed-bump-says-michael-lee-as-ceo-arvind-krishna-says-delayed-deals-are-closing",
+      "source": "Benzinga",
+      "published_at": "20260723T070814",
+      "summary": "Michael Lee of Michael Lee Strategy considers IBM's Q2 earnings miss a \"temporary speed bump,\" a view echoed by CEO Arvind Krishna, who stated that about a third of delayed deals closed in early July. Despite a revenue shortfall, IBM maintains its profitability targets, adjusting full-year revenue growth guidance to 4-5% while emphasizing the strong demand for AI. The company's significant investment in AI infrastructure, however, is impacting its stock performance and weighing on the Dow 30.",
+      "overall_sentiment_score": -0.061,
+      "ticker_sentiment": [
+        {
+          "ticker": "META",
+          "relevance_score": "0.624629",
+          "ticker_sentiment_score": "-0.115301",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "META"
+    },
+    {
+      "title": "Stryker\u2019s Tens of Thousands of Wiped Devices: Iran Shifts From Espionage to Destruction",
+      "url": "https://securityboulevard.com/2026/07/strykers-tens-of-thousands-of-wiped-devices-iran-shifts-from-espionage-to-destruction/",
+      "source": "Security Boulevard",
+      "published_at": "20260723T064919",
+      "summary": "In March 2026, Iranian hackers executed a destructive cyberattack on Stryker, a U.S. medical technology company, wiping tens of thousands of employee devices. This incident signifies a significant shift in Iranian cyber operations from traditional espionage to direct destructive attacks, likely in retaliation for geopolitical conflicts. The article emphasizes the need for organizations, especially in critical sectors, to update their threat models to include destructive scenarios and implement resilient defenses like offline backups and segmented administrative access.",
+      "overall_sentiment_score": -0.483,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.633050",
+          "ticker_sentiment_score": "-0.130454",
           "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "MSFT"
+    },
+    {
+      "title": "e.l.f. Beauty (NYSE:ELF) Receives Average Recommendation of \"Moderate Buy\" from Analysts",
+      "url": "https://www.marketbeat.com/instant-alerts/elf-beauty-nyseelf-receives-average-recommendation-of-moderate-buy-from-analysts-2026-07-23/",
+      "source": "MarketBeat",
+      "published_at": "20260723T061900",
+      "summary": "e.l.f. Beauty (NYSE:ELF) has received a consensus \"Moderate Buy\" rating from analysts, with an average 1-year price target of $80.38. The company recently exceeded quarterly earnings and revenue expectations, showing a 35.1% year-over-year revenue increase. Despite positive analyst outlooks, there has been notable insider selling, although institutional investors maintain significant holdings.",
+      "overall_sentiment_score": 0.173,
+      "ticker_sentiment": [
+        {
+          "ticker": "AMZN",
+          "relevance_score": "0.554447",
+          "ticker_sentiment_score": "0.111487",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "AMZN"
+    },
+    {
+      "title": "MEDP: Medpace Holdings Inc Latest Stock Price, Analysis, News and Trading Ideas",
+      "url": "https://stocktwits.com/symbol/MEDP",
+      "source": "Stocktwits",
+      "published_at": "20260723T051013",
+      "summary": "This article provides the latest stock information for Medpace Holdings Inc (MEDP), including its pre-market price, market capitalization, and key financial metrics. It also highlights recent news, such as Medpace beating Q2 earnings and revenue estimates, and identifies it as a top growth stock. The report includes related discussions on other trending stocks like GOOGL, SMCI, and RKLB.",
+      "overall_sentiment_score": 0.175,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.643486",
+          "ticker_sentiment_score": "-0.051983",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Life360 (ASX:360): Family Safety App Falls Sharply as US Tech Sentiment Weighs",
+      "url": "https://kalkine.com.au/news/technology/life360-asx360-family-safety-app-falls-sharply-as-us-tech-sentiment-weighs",
+      "source": "Kalkine",
+      "published_at": "20260723T034013",
+      "summary": "Life360 Inc (ASX:360) shares dropped 5.61% to $24.08 during afternoon trading on July 23, 2026, amid a broader decline in Australian and US technology indices. The S&P/ASX 200 Information Technology Index (ASX: XIJ) was down 2.71%, and the NASDAQ closed 0.57% lower the prior session, indicating a cautious sentiment weighing on tech stocks. Despite the short-term dip, the company, a global family safety and location-sharing platform, is evaluated by investors based on long-term metrics such as monthly active user growth, subscription conversion rates, and operational efficiency rather than daily price fluctuations.",
+      "overall_sentiment_score": -0.253,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.599845",
+          "ticker_sentiment_score": "-0.204243",
+          "ticker_sentiment_label": "Somewhat-Bearish"
+        }
+      ],
+      "ticker": "GOOGL"
     }
   ],
   "source_status": {
@@ -2621,9 +2628,10 @@
       "status": "healthy",
       "failed_symbols": [],
       "enriched_symbols": [
+        "AAPL",
+        "AMZN",
         "GOOGL",
-        "JNJ",
-        "JPM",
+        "META",
         "MSFT"
       ],
       "quota_strategy": "up to five symbols per refresh"
