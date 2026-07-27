@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-24T12:19:07.630053+00:00",
+  "generated_at": "2026-07-27T13:39:08.459049+00:00",
   "data_mode": "live",
   "count": 20,
   "universe_count": 120,
@@ -149,7 +149,7 @@
         "primary_exchanges": "NASDAQ, NYSE, AMEX, BATS",
         "local_open": "09:30",
         "local_close": "16:15",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -158,7 +158,7 @@
         "primary_exchanges": "Toronto, Toronto Ventures",
         "local_open": "09:30",
         "local_close": "16:00",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -257,7 +257,7 @@
         "primary_exchanges": "Mexico",
         "local_open": "08:30",
         "local_close": "15:00",
-        "current_status": "closed",
+        "current_status": "open",
         "notes": ""
       },
       {
@@ -308,218 +308,33 @@
   },
   "research": [
     {
-      "ticker": "META",
-      "name": "Meta Platforms Inc.",
-      "description": "Meta Platforms, Inc. develops products that enable people to connect and share with friends and family through mobile devices, PCs, virtual reality headsets, wearables and home devices around the world. The company is headquartered in Menlo Park, California.",
-      "exchange": "NASDAQ",
-      "currency": "USD",
-      "sector": "COMMUNICATION SERVICES",
-      "industry": "INTERNET CONTENT & INFORMATION",
-      "price": 606.1,
-      "market_cap": 1538538340000.0,
-      "dividend_yield": 0.0033,
-      "is_etf": false,
-      "price_to_sales": 7.16,
-      "price_to_book": 6.53,
-      "forward_pe": 20.12,
-      "trailing_pe": 22.83,
-      "peg": 0.915,
-      "return_on_equity": 0.329,
-      "profit_margin": 0.328,
-      "revenue_growth": 0.331,
-      "earnings_growth": 0.624,
-      "analyst_target_price": 826.01,
-      "week_52_high": 793.65,
-      "week_52_low": 519.78,
-      "pct_30d": 8.68,
-      "debt_to_equity": 0.36,
-      "current_ratio": 2.35,
-      "free_cash_flow": 25558249472.0,
-      "free_cash_flow_yield": 0.0166,
-      "score": 75.2,
-      "stance": "ATTRACTIVE",
-      "confidence": 1.0,
-      "components": {
-        "fundamentals": 81.1,
-        "market_behavior": 48.7,
-        "news_sentiment": 70.6
-      },
-      "fundamental_categories": {
-        "valuation": 68.0,
-        "profitability": 75.5,
-        "financial_health": 100.0,
-        "growth": 100.0
-      },
-      "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 45.0,
-        "price_to_book": 25.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 30.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 100.0,
-        "revenue_growth": 100.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 68.0,
-          "profitability": 75.5,
-          "financial_health": 100.0,
-          "growth": 100.0
-        },
-        "coverage": 1.0,
-        "raw_score": 81.1,
-        "sector": "COMMUNICATION SERVICES"
-      },
-      "technical_detail": {
-        "return_20d": 8.68,
-        "return_60d": -10.69,
-        "annualized_volatility": 45.17,
-        "drawdown_60d": -11.04,
-        "relative_strength_20d": 8.01,
-        "trend": 62.0,
-        "risk": 17.1,
-        "relative_strength": 74.0,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 12,
-        "average": 0.206,
-        "coverage": 1.0
-      },
-      "strengths": [
-        "Strong profitability and cash generation score (76/100)",
-        "Strong balance-sheet health score (100/100)",
-        "Strong growth score (100/100)"
-      ],
-      "risks": [
-        "Down 11.0% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 31,
-        "recent_disposals": 69,
-        "records_reviewed": 100
-      },
-      "alpha_enriched": true
-    },
-    {
-      "ticker": "EOG",
-      "name": "EOG Resources, Inc.",
-      "price": 145.49,
-      "pct_30d": 8.21,
-      "sector": "Energy",
-      "market_cap": 77492133888,
-      "dividend_yield": 2.8,
-      "is_etf": false,
-      "price_to_sales": 3.29,
-      "price_to_book": 2.52,
-      "forward_pe": 9.92,
-      "trailing_pe": 14.17,
-      "peg": 1.16,
-      "debt_to_equity": 0.27,
-      "current_ratio": 1.72,
-      "return_on_equity": 0.182,
-      "profit_margin": 0.2332,
-      "free_cash_flow": 2864250112.0,
-      "free_cash_flow_yield": 0.037,
-      "revenue_growth": 0.156,
-      "earnings_growth": 0.4,
-      "score": 75.0,
-      "stance": "ATTRACTIVE",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 81.6,
-        "market_behavior": 69.1,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 76.5,
-        "profitability": 76.2,
-        "financial_health": 92.0,
-        "growth": 90.0
-      },
-      "fundamental_detail": {
-        "peg": 75.0,
-        "forward_pe": 100.0,
-        "price_to_sales": 45.0,
-        "price_to_book": 75.0,
-        "return_on_equity": 80.0,
-        "free_cash_flow_yield": 55.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 80.0,
-        "revenue_growth": 80.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 76.5,
-          "profitability": 76.2,
-          "financial_health": 92.0,
-          "growth": 90.0
-        },
-        "coverage": 1.0,
-        "raw_score": 81.6,
-        "sector": "Energy"
-      },
-      "technical_detail": {
-        "return_20d": 8.21,
-        "return_60d": 9.21,
-        "annualized_volatility": 29.73,
-        "drawdown_60d": 0.0,
-        "relative_strength_20d": 7.54,
-        "trend": 71.0,
-        "risk": 64.5,
-        "relative_strength": 72.6,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong valuation score (76/100)",
-        "Strong profitability and cash generation score (76/100)",
-        "Strong balance-sheet health score (92/100)"
-      ],
-      "risks": [
-        "No major quantitative red flag; qualitative risks still require review"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
       "ticker": "INTU",
       "name": "Intuit Inc.",
-      "price": 281.53,
-      "pct_30d": 7.36,
+      "price": 302.99,
+      "pct_30d": 13.17,
       "sector": "Technology",
-      "market_cap": 77008871424,
-      "dividend_yield": 1.7,
+      "market_cap": 82878971904,
+      "dividend_yield": 1.62,
       "is_etf": false,
-      "price_to_sales": 3.68,
-      "price_to_book": 3.74,
-      "forward_pe": 10.3,
-      "trailing_pe": 17.18,
-      "peg": 0.73,
+      "price_to_sales": 3.96,
+      "price_to_book": 4.03,
+      "forward_pe": 11.09,
+      "trailing_pe": 18.49,
+      "peg": 0.77,
       "debt_to_equity": 0.33,
       "current_ratio": 1.45,
       "return_on_equity": 0.225,
       "profit_margin": 0.2191,
       "free_cash_flow": 5232000000.0,
-      "free_cash_flow_yield": 0.0679,
+      "free_cash_flow_yield": 0.0631,
       "revenue_growth": 0.104,
       "earnings_growth": 0.11,
-      "score": 74.8,
-      "stance": "PROMISING",
+      "score": 76.2,
+      "stance": "ATTRACTIVE",
       "confidence": 0.9,
       "components": {
         "fundamentals": 87.7,
-        "market_behavior": 36.9,
+        "market_behavior": 46.6,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -551,14 +366,14 @@
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": 7.36,
-        "return_60d": -27.8,
-        "annualized_volatility": 63.71,
-        "drawdown_60d": -30.83,
-        "relative_strength_20d": 6.68,
-        "trend": 50.8,
+        "return_20d": 13.17,
+        "return_60d": -23.31,
+        "annualized_volatility": 64.65,
+        "drawdown_60d": -25.55,
+        "relative_strength_20d": 12.54,
+        "trend": 64.7,
         "risk": 0.0,
-        "relative_strength": 70.0,
+        "relative_strength": 87.6,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -572,7 +387,7 @@
         "Strong balance-sheet health score (82/100)"
       ],
       "risks": [
-        "Down 30.8% from its 60-day high"
+        "Down 25.6% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -582,33 +397,218 @@
       "alpha_enriched": false
     },
     {
+      "ticker": "EOG",
+      "name": "EOG Resources, Inc.",
+      "price": 144.14,
+      "pct_30d": 8.7,
+      "sector": "Energy",
+      "market_cap": 76773081088,
+      "dividend_yield": 2.79,
+      "is_etf": false,
+      "price_to_sales": 3.26,
+      "price_to_book": 2.49,
+      "forward_pe": 9.82,
+      "trailing_pe": 14.17,
+      "peg": 1.17,
+      "debt_to_equity": 0.27,
+      "current_ratio": 1.72,
+      "return_on_equity": 0.182,
+      "profit_margin": 0.2332,
+      "free_cash_flow": 2864250112.0,
+      "free_cash_flow_yield": 0.0373,
+      "revenue_growth": 0.156,
+      "earnings_growth": 0.4,
+      "score": 74.9,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 81.6,
+        "market_behavior": 68.1,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 76.5,
+        "profitability": 76.2,
+        "financial_health": 92.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 80.0,
+        "free_cash_flow_yield": 55.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 80.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 76.5,
+          "profitability": 76.2,
+          "financial_health": 92.0,
+          "growth": 90.0
+        },
+        "coverage": 1.0,
+        "raw_score": 81.6,
+        "sector": "Energy"
+      },
+      "technical_detail": {
+        "return_20d": 8.7,
+        "return_60d": 3.61,
+        "annualized_volatility": 29.32,
+        "drawdown_60d": -1.54,
+        "relative_strength_20d": 8.07,
+        "trend": 69.2,
+        "risk": 63.1,
+        "relative_strength": 74.2,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (76/100)",
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (92/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms Inc.",
+      "description": "Meta Platforms, Inc. develops products that enable people to connect and share with friends and family through mobile devices, PCs, virtual reality headsets, wearables and home devices around the world. The company is headquartered in Menlo Park, California.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "COMMUNICATION SERVICES",
+      "industry": "INTERNET CONTENT & INFORMATION",
+      "price": 595.19,
+      "market_cap": 1510844137000.0,
+      "dividend_yield": 0.0035,
+      "is_etf": false,
+      "price_to_sales": 7.03,
+      "price_to_book": 6.2,
+      "forward_pe": 19.08,
+      "trailing_pe": 21.64,
+      "peg": 0.868,
+      "return_on_equity": 0.329,
+      "profit_margin": 0.328,
+      "revenue_growth": 0.331,
+      "earnings_growth": 0.624,
+      "analyst_target_price": 825.84,
+      "week_52_high": 793.65,
+      "week_52_low": 519.78,
+      "pct_30d": 9.64,
+      "debt_to_equity": 0.36,
+      "current_ratio": 2.35,
+      "free_cash_flow": 25558249472.0,
+      "free_cash_flow_yield": 0.0166,
+      "score": 74.8,
+      "stance": "PROMISING",
+      "confidence": 1.0,
+      "components": {
+        "fundamentals": 81.1,
+        "market_behavior": 49.1,
+        "news_sentiment": 65.9
+      },
+      "fundamental_categories": {
+        "valuation": 68.0,
+        "profitability": 75.5,
+        "financial_health": 100.0,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 45.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 30.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 68.0,
+          "profitability": 75.5,
+          "financial_health": 100.0,
+          "growth": 100.0
+        },
+        "coverage": 1.0,
+        "raw_score": 81.1,
+        "sector": "COMMUNICATION SERVICES"
+      },
+      "technical_detail": {
+        "return_20d": 9.64,
+        "return_60d": -11.34,
+        "annualized_volatility": 45.26,
+        "drawdown_60d": -12.64,
+        "relative_strength_20d": 9.01,
+        "trend": 63.6,
+        "risk": 14.5,
+        "relative_strength": 77.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 12,
+        "average": 0.159,
+        "coverage": 1.0
+      },
+      "strengths": [
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (100/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "Down 12.6% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 29,
+        "recent_disposals": 71,
+        "records_reviewed": 100
+      },
+      "alpha_enriched": true
+    },
+    {
       "ticker": "NVDA",
       "name": "NVIDIA Corporation",
-      "price": 208.76,
-      "pct_30d": 4.9,
+      "price": 206.0,
+      "pct_30d": 7.03,
       "sector": "Technology",
-      "market_cap": 5056375554048,
+      "market_cap": 4990979014656,
       "dividend_yield": 0.48,
       "is_etf": false,
-      "price_to_sales": 19.95,
-      "price_to_book": 25.87,
-      "forward_pe": 16.22,
-      "trailing_pe": 31.97,
+      "price_to_sales": 19.68,
+      "price_to_book": 25.53,
+      "forward_pe": 16.01,
+      "trailing_pe": 31.51,
       "peg": 0.57,
       "debt_to_equity": 0.07,
       "current_ratio": 3.44,
       "return_on_equity": 1.1429,
       "profit_margin": 0.6297,
       "free_cash_flow": 46335873024.0,
-      "free_cash_flow_yield": 0.0092,
+      "free_cash_flow_yield": 0.0093,
       "revenue_growth": 0.852,
       "earnings_growth": 2.15,
-      "score": 72.4,
+      "score": 72.9,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 82.3,
-        "market_behavior": 47.6,
+        "market_behavior": 50.8,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -640,14 +640,14 @@
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": 4.9,
-        "return_60d": -3.62,
-        "annualized_volatility": 40.66,
-        "drawdown_60d": -11.44,
-        "relative_strength_20d": 4.23,
-        "trend": 58.0,
-        "risk": 25.5,
-        "relative_strength": 62.7,
+        "return_20d": 7.03,
+        "return_60d": -1.52,
+        "annualized_volatility": 40.41,
+        "drawdown_60d": -12.59,
+        "relative_strength_20d": 6.4,
+        "trend": 63.3,
+        "risk": 24.3,
+        "relative_strength": 69.2,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -661,186 +661,7 @@
         "Strong balance-sheet health score (100/100)"
       ],
       "risks": [
-        "Down 11.4% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
-      "ticker": "CI",
-      "name": "The Cigna Group",
-      "price": 286.29,
-      "pct_30d": 2.44,
-      "sector": "Healthcare",
-      "market_cap": 75732983808,
-      "dividend_yield": 2.18,
-      "is_etf": false,
-      "price_to_sales": 0.27,
-      "price_to_book": 1.79,
-      "forward_pe": 8.55,
-      "trailing_pe": 12.14,
-      "peg": 0.86,
-      "debt_to_equity": 0.73,
-      "current_ratio": 0.82,
-      "return_on_equity": 0.1627,
-      "profit_margin": 0.0226,
-      "free_cash_flow": 6923375104.0,
-      "free_cash_flow_yield": 0.0914,
-      "revenue_growth": 0.046,
-      "earnings_growth": 0.29,
-      "score": 71.7,
-      "stance": "PROMISING",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 79.7,
-        "market_behavior": 56.0,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 95.0,
-        "profitability": 74.5,
-        "financial_health": 57.0,
-        "growth": 77.5
-      },
-      "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 100.0,
-        "price_to_sales": 100.0,
-        "price_to_book": 75.0,
-        "return_on_equity": 80.0,
-        "free_cash_flow_yield": 100.0,
-        "profit_margin": 30.0,
-        "debt_to_equity": 75.0,
-        "current_ratio": 30.0,
-        "revenue_growth": 55.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 95.0,
-          "profitability": 74.5,
-          "financial_health": 57.0,
-          "growth": 77.5
-        },
-        "coverage": 1.0,
-        "raw_score": 79.7,
-        "sector": "Healthcare"
-      },
-      "technical_detail": {
-        "return_20d": 2.44,
-        "return_60d": 1.31,
-        "annualized_volatility": 29.06,
-        "drawdown_60d": -5.98,
-        "relative_strength_20d": 1.77,
-        "trend": 55.5,
-        "risk": 56.9,
-        "relative_strength": 55.3,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong valuation score (95/100)",
-        "Strong profitability and cash generation score (74/100)",
-        "Strong growth score (78/100)"
-      ],
-      "risks": [
-        "No major quantitative red flag; qualitative risks still require review"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
-      "ticker": "LULU",
-      "name": "lululemon athletica inc.",
-      "price": 110.63,
-      "pct_30d": -2.18,
-      "sector": "Consumer Cyclical",
-      "market_cap": 12562469888,
-      "dividend_yield": null,
-      "is_etf": false,
-      "price_to_sales": 1.12,
-      "price_to_book": 2.62,
-      "forward_pe": 9.82,
-      "trailing_pe": 8.96,
-      "peg": 0.85,
-      "debt_to_equity": 0.44,
-      "current_ratio": 2.23,
-      "return_on_equity": 0.3203,
-      "profit_margin": 0.1303,
-      "free_cash_flow": 1133960960.0,
-      "free_cash_flow_yield": 0.0903,
-      "revenue_growth": 0.043,
-      "earnings_growth": -0.35,
-      "score": 71.3,
-      "stance": "PROMISING",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 85.0,
-        "market_behavior": 26.8,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 91.0,
-        "profitability": 95.0,
-        "financial_health": 100.0,
-        "growth": 32.5
-      },
-      "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 100.0,
-        "price_to_sales": 80.0,
-        "price_to_book": 75.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 100.0,
-        "profit_margin": 80.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 100.0,
-        "revenue_growth": 55.0,
-        "earnings_growth": 10.0,
-        "categories": {
-          "valuation": 91.0,
-          "profitability": 95.0,
-          "financial_health": 100.0,
-          "growth": 32.5
-        },
-        "coverage": 1.0,
-        "raw_score": 85.0,
-        "sector": "Consumer Cyclical"
-      },
-      "technical_detail": {
-        "return_20d": -2.18,
-        "return_60d": -24.71,
-        "annualized_volatility": 40.25,
-        "drawdown_60d": -22.3,
-        "relative_strength_20d": -2.85,
-        "trend": 33.3,
-        "risk": 10.1,
-        "relative_strength": 41.5,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong valuation score (91/100)",
-        "Strong profitability and cash generation score (95/100)",
-        "Strong balance-sheet health score (100/100)"
-      ],
-      "risks": [
-        "Weak growth score (32/100)",
-        "Down 22.3% from its 60-day high"
+        "Down 12.6% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -852,31 +673,31 @@
     {
       "ticker": "ACN",
       "name": "Accenture plc",
-      "price": 138.74,
-      "pct_30d": 7.43,
+      "price": 150.75,
+      "pct_30d": 16.88,
       "sector": "Technology",
-      "market_cap": 84900847616,
-      "dividend_yield": 4.7,
+      "market_cap": 92253331456,
+      "dividend_yield": 4.44,
       "is_etf": false,
-      "price_to_sales": 1.16,
-      "price_to_book": 2.66,
-      "forward_pe": 9.45,
-      "trailing_pe": 11.09,
-      "peg": 1.01,
+      "price_to_sales": 1.26,
+      "price_to_book": 2.89,
+      "forward_pe": 10.27,
+      "trailing_pe": 12.04,
+      "peg": 1.07,
       "debt_to_equity": 0.25,
       "current_ratio": 1.34,
       "return_on_equity": 0.2441,
       "profit_margin": 0.1066,
       "free_cash_flow": 12089380864.0,
-      "free_cash_flow_yield": 0.1424,
+      "free_cash_flow_yield": 0.131,
       "revenue_growth": 0.056,
       "earnings_growth": 0.09,
-      "score": 70.7,
+      "score": 72.9,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 81.8,
-        "market_behavior": 38.4,
+        "market_behavior": 53.8,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -908,14 +729,14 @@
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": 7.43,
-        "return_60d": -21.6,
-        "annualized_volatility": 57.21,
-        "drawdown_60d": -29.43,
-        "relative_strength_20d": 6.75,
-        "trend": 54.0,
+        "return_20d": 16.88,
+        "return_60d": -16.37,
+        "annualized_volatility": 58.79,
+        "drawdown_60d": -23.32,
+        "relative_strength_20d": 16.25,
+        "trend": 75.6,
         "risk": 0.0,
-        "relative_strength": 70.3,
+        "relative_strength": 98.8,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -929,7 +750,275 @@
         "Strong balance-sheet health score (82/100)"
       ],
       "risks": [
-        "Down 29.4% from its 60-day high"
+        "Down 23.3% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "LULU",
+      "name": "lululemon athletica inc.",
+      "price": 116.5,
+      "pct_30d": -0.91,
+      "sector": "Consumer Cyclical",
+      "market_cap": 13229031424,
+      "dividend_yield": null,
+      "is_etf": false,
+      "price_to_sales": 1.18,
+      "price_to_book": 2.76,
+      "forward_pe": 10.34,
+      "trailing_pe": 9.43,
+      "peg": 0.88,
+      "debt_to_equity": 0.44,
+      "current_ratio": 2.23,
+      "return_on_equity": 0.3203,
+      "profit_margin": 0.1303,
+      "free_cash_flow": 1133960960.0,
+      "free_cash_flow_yield": 0.0857,
+      "revenue_growth": 0.043,
+      "earnings_growth": -0.35,
+      "score": 72.4,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 85.0,
+        "market_behavior": 34.2,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 91.0,
+        "profitability": 95.0,
+        "financial_health": 100.0,
+        "growth": 32.5
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 80.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 100.0,
+        "current_ratio": 100.0,
+        "revenue_growth": 55.0,
+        "earnings_growth": 10.0,
+        "categories": {
+          "valuation": 91.0,
+          "profitability": 95.0,
+          "financial_health": 100.0,
+          "growth": 32.5
+        },
+        "coverage": 1.0,
+        "raw_score": 85.0,
+        "sector": "Consumer Cyclical"
+      },
+      "technical_detail": {
+        "return_20d": -0.91,
+        "return_60d": -15.68,
+        "annualized_volatility": 40.46,
+        "drawdown_60d": -15.4,
+        "relative_strength_20d": -1.54,
+        "trend": 40.3,
+        "risk": 20.0,
+        "relative_strength": 45.4,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (91/100)",
+        "Strong profitability and cash generation score (95/100)",
+        "Strong balance-sheet health score (100/100)"
+      ],
+      "risks": [
+        "Weak growth score (32/100)",
+        "Down 15.4% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "ADBE",
+      "name": "Adobe Inc.",
+      "price": 231.57,
+      "pct_30d": 14.36,
+      "sector": "Technology",
+      "market_cap": 92049080320,
+      "dividend_yield": null,
+      "is_etf": false,
+      "price_to_sales": 3.65,
+      "price_to_book": 8.02,
+      "forward_pe": 8.42,
+      "trailing_pe": 13.24,
+      "peg": 0.62,
+      "debt_to_equity": 0.61,
+      "current_ratio": 0.75,
+      "return_on_equity": 0.6295,
+      "profit_margin": 0.2869,
+      "free_cash_flow": 9218374656.0,
+      "free_cash_flow_yield": 0.1001,
+      "revenue_growth": 0.127,
+      "earnings_growth": 0.08,
+      "score": 72.1,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 80.5,
+        "market_behavior": 54.7,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 85.0,
+        "profitability": 100.0,
+        "financial_health": 57.0,
+        "growth": 67.5
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 100.0,
+        "price_to_book": 25.0,
+        "return_on_equity": 100.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 100.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 30.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 55.0,
+        "categories": {
+          "valuation": 85.0,
+          "profitability": 100.0,
+          "financial_health": 57.0,
+          "growth": 67.5
+        },
+        "coverage": 1.0,
+        "raw_score": 80.5,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 14.36,
+        "return_60d": -4.81,
+        "annualized_volatility": 47.37,
+        "drawdown_60d": -15.39,
+        "relative_strength_20d": 13.73,
+        "trend": 76.3,
+        "risk": 6.2,
+        "relative_strength": 91.2,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (85/100)",
+        "Strong profitability and cash generation score (100/100)",
+        "Outperforming SPY over 20 trading days"
+      ],
+      "risks": [
+        "Down 15.4% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "CI",
+      "name": "The Cigna Group",
+      "price": 290.68,
+      "pct_30d": 2.79,
+      "sector": "Healthcare",
+      "market_cap": 76894273536,
+      "dividend_yield": 2.15,
+      "is_etf": false,
+      "price_to_sales": 0.28,
+      "price_to_book": 1.82,
+      "forward_pe": 8.68,
+      "trailing_pe": 12.32,
+      "peg": 0.87,
+      "debt_to_equity": 0.73,
+      "current_ratio": 0.82,
+      "return_on_equity": 0.1627,
+      "profit_margin": 0.0226,
+      "free_cash_flow": 6923375104.0,
+      "free_cash_flow_yield": 0.09,
+      "revenue_growth": 0.046,
+      "earnings_growth": 0.29,
+      "score": 71.9,
+      "stance": "PROMISING",
+      "confidence": 0.9,
+      "components": {
+        "fundamentals": 79.7,
+        "market_behavior": 57.2,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 95.0,
+        "profitability": 74.5,
+        "financial_health": 57.0,
+        "growth": 77.5
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": 100.0,
+        "price_to_book": 75.0,
+        "return_on_equity": 80.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 30.0,
+        "debt_to_equity": 75.0,
+        "current_ratio": 30.0,
+        "revenue_growth": 55.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 95.0,
+          "profitability": 74.5,
+          "financial_health": 57.0,
+          "growth": 77.5
+        },
+        "coverage": 1.0,
+        "raw_score": 79.7,
+        "sector": "Healthcare"
+      },
+      "technical_detail": {
+        "return_20d": 2.79,
+        "return_60d": -0.56,
+        "annualized_volatility": 28.63,
+        "drawdown_60d": -4.54,
+        "relative_strength_20d": 2.16,
+        "trend": 55.3,
+        "risk": 59.9,
+        "relative_strength": 56.5,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (95/100)",
+        "Strong profitability and cash generation score (74/100)",
+        "Strong growth score (78/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -941,31 +1030,31 @@
     {
       "ticker": "BSX",
       "name": "Boston Scientific Corporation",
-      "price": 43.58,
-      "pct_30d": -1.98,
+      "price": 45.59,
+      "pct_30d": 3.07,
       "sector": "Healthcare",
-      "market_cap": 64775360512,
+      "market_cap": 67762933760,
       "dividend_yield": null,
       "is_etf": false,
-      "price_to_sales": 3.14,
-      "price_to_book": 2.5,
-      "forward_pe": 11.74,
-      "trailing_pe": 18.23,
-      "peg": 0.54,
+      "price_to_sales": 3.29,
+      "price_to_book": 2.62,
+      "forward_pe": 12.28,
+      "trailing_pe": 19.08,
+      "peg": 0.55,
       "debt_to_equity": 0.42,
       "current_ratio": 1.9,
       "return_on_equity": 0.1466,
       "profit_margin": 0.1729,
       "free_cash_flow": 2807124992.0,
-      "free_cash_flow_yield": 0.0433,
+      "free_cash_flow_yield": 0.0414,
       "revenue_growth": 0.116,
       "earnings_growth": 1.0,
-      "score": 70.1,
+      "score": 71.7,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 83.6,
-        "market_behavior": 25.3,
+        "market_behavior": 36.5,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -997,14 +1086,14 @@
         "sector": "Healthcare"
       },
       "technical_detail": {
-        "return_20d": -1.98,
-        "return_60d": -27.31,
-        "annualized_volatility": 39.62,
-        "drawdown_60d": -25.44,
-        "relative_strength_20d": -2.65,
-        "trend": 32.4,
-        "risk": 6.6,
-        "relative_strength": 42.0,
+        "return_20d": 3.07,
+        "return_60d": -20.23,
+        "annualized_volatility": 40.05,
+        "drawdown_60d": -21.1,
+        "relative_strength_20d": 2.44,
+        "trend": 46.0,
+        "risk": 12.3,
+        "relative_strength": 57.3,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1018,7 +1107,7 @@
         "Strong growth score (90/100)"
       ],
       "risks": [
-        "Down 25.4% from its 60-day high"
+        "Down 21.1% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -1030,17 +1119,17 @@
     {
       "ticker": "SCHW",
       "name": "Charles Schwab Corporation (The",
-      "price": 101.61,
-      "pct_30d": 11.18,
+      "price": 103.47,
+      "pct_30d": 14.12,
       "sector": "Financial Services",
-      "market_cap": 176713564160,
+      "market_cap": 179948355584,
       "dividend_yield": 1.26,
       "is_etf": false,
-      "price_to_sales": 6.79,
-      "price_to_book": 4.16,
-      "forward_pe": 13.04,
-      "trailing_pe": 18.34,
-      "peg": 1.08,
+      "price_to_sales": 6.91,
+      "price_to_book": 4.23,
+      "forward_pe": 13.23,
+      "trailing_pe": 18.85,
+      "peg": 1.05,
       "debt_to_equity": 0.74,
       "current_ratio": 0.64,
       "return_on_equity": 0.2028,
@@ -1049,12 +1138,12 @@
       "free_cash_flow_yield": null,
       "revenue_growth": 0.209,
       "earnings_growth": 0.43,
-      "score": 68.6,
+      "score": 69.3,
       "stance": "PROMISING",
       "confidence": 0.72,
       "components": {
         "fundamentals": 74.9,
-        "market_behavior": 76.3,
+        "market_behavior": 81.8,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -1086,14 +1175,14 @@
         "sector": "Financial Services"
       },
       "technical_detail": {
-        "return_20d": 11.18,
-        "return_60d": 11.95,
-        "annualized_volatility": 25.54,
-        "drawdown_60d": -1.46,
-        "relative_strength_20d": 10.51,
-        "trend": 78.3,
-        "risk": 70.7,
-        "relative_strength": 81.5,
+        "return_20d": 14.12,
+        "return_60d": 13.5,
+        "annualized_volatility": 25.67,
+        "drawdown_60d": 0.0,
+        "relative_strength_20d": 13.49,
+        "trend": 85.0,
+        "risk": 72.7,
+        "relative_strength": 90.5,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1119,31 +1208,31 @@
     {
       "ticker": "AVGO",
       "name": "Broadcom Inc.",
-      "price": 392.47,
-      "pct_30d": 2.72,
+      "price": 388.02,
+      "pct_30d": 6.3,
       "sector": "Technology",
-      "market_cap": 1867207540736,
-      "dividend_yield": 0.66,
+      "market_cap": 1845322579968,
+      "dividend_yield": 0.68,
       "is_etf": false,
-      "price_to_sales": 24.74,
-      "price_to_book": 21.3,
-      "forward_pe": 20.17,
-      "trailing_pe": 65.41,
-      "peg": 0.44,
+      "price_to_sales": 24.46,
+      "price_to_book": 21.05,
+      "forward_pe": 19.88,
+      "trailing_pe": 64.64,
+      "peg": 0.43,
       "debt_to_equity": 0.74,
       "current_ratio": 2.24,
       "return_on_equity": 0.3728,
       "profit_margin": 0.3885,
       "free_cash_flow": 27212249088.0,
-      "free_cash_flow_yield": 0.0146,
+      "free_cash_flow_yield": 0.0147,
       "revenue_growth": 0.479,
       "earnings_growth": 0.85,
-      "score": 68.3,
+      "score": 69.2,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 79.3,
-        "market_behavior": 34.8,
+        "market_behavior": 40.6,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -1175,14 +1264,14 @@
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": 2.72,
-        "return_60d": -6.15,
-        "annualized_volatility": 53.97,
-        "drawdown_60d": -18.5,
-        "relative_strength_20d": 2.05,
-        "trend": 52.4,
+        "return_20d": 6.3,
+        "return_60d": -4.3,
+        "annualized_volatility": 53.53,
+        "drawdown_60d": -19.43,
+        "relative_strength_20d": 5.67,
+        "trend": 60.5,
         "risk": 0.0,
-        "relative_strength": 56.1,
+        "relative_strength": 67.0,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1196,7 +1285,7 @@
         "Strong balance-sheet health score (85/100)"
       ],
       "risks": [
-        "Down 18.5% from its 60-day high"
+        "Down 19.4% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -1206,122 +1295,129 @@
       "alpha_enriched": false
     },
     {
-      "ticker": "MU",
-      "name": "Micron Technology, Inc.",
-      "price": 990.21,
-      "pct_30d": -5.56,
-      "sector": "Technology",
-      "market_cap": null,
-      "dividend_yield": 0.05,
+      "ticker": "MSFT",
+      "name": "Microsoft Corporation",
+      "description": "Microsoft Corporation is an American multinational technology company which produces computer software, consumer electronics, personal computers, and related services. Its best known software products are the Microsoft Windows line of operating systems, the Microsoft Office suite, and the Internet Explorer and Edge web browsers. Its flagship hardware products are the Xbox video game consoles and the Microsoft Surface lineup of touchscreen personal computers. Microsoft ranked No. 21 in the 2020 Fortune 500 rankings of the largest United States corporations by total revenue; it was the world's largest software maker by revenue as of 2016. It is considered one of the Big Five companies in the U.S. information technology industry, along with Google, Apple, Amazon, and Facebook.",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "TECHNOLOGY",
+      "industry": "SOFTWARE - INFRASTRUCTURE",
+      "price": 381.7,
+      "market_cap": 2835433652000.0,
+      "dividend_yield": 0.0093,
       "is_etf": false,
-      "price_to_sales": null,
-      "price_to_book": 11.1,
-      "forward_pe": 6.44,
-      "trailing_pe": 22.37,
-      "peg": 0.15,
-      "debt_to_equity": 0.06,
-      "current_ratio": 3.42,
-      "return_on_equity": 0.6664,
-      "profit_margin": 0.5591,
-      "free_cash_flow": 7639499776.0,
-      "free_cash_flow_yield": null,
-      "revenue_growth": 3.457,
-      "earnings_growth": 13.69,
-      "score": 68.1,
+      "price_to_sales": 8.91,
+      "price_to_book": 6.84,
+      "forward_pe": 19.72,
+      "trailing_pe": 22.73,
+      "peg": 1.181,
+      "return_on_equity": 0.34,
+      "profit_margin": 0.393,
+      "revenue_growth": 0.183,
+      "earnings_growth": 0.234,
+      "analyst_target_price": 556.75,
+      "week_52_high": 551.05,
+      "week_52_low": 349.2,
+      "pct_30d": 8.18,
+      "debt_to_equity": 0.3,
+      "current_ratio": 1.28,
+      "free_cash_flow": 37011251200.0,
+      "free_cash_flow_yield": 0.0127,
+      "score": 68.3,
       "stance": "PROMISING",
-      "confidence": 0.78,
+      "confidence": 1.0,
       "components": {
-        "fundamentals": 79.6,
-        "market_behavior": 43.7,
-        "news_sentiment": 50.0
+        "fundamentals": 70.6,
+        "market_behavior": 52.9,
+        "news_sentiment": 74.0
       },
       "fundamental_categories": {
-        "valuation": 62.5,
-        "profitability": 100.0,
-        "financial_health": 100.0,
-        "growth": 100.0
+        "valuation": 54.5,
+        "profitability": 75.5,
+        "financial_health": 82.0,
+        "growth": 90.0
       },
       "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 60.0,
-        "price_to_sales": null,
-        "price_to_book": 10.0,
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": 15.0,
+        "price_to_book": 25.0,
         "return_on_equity": 100.0,
-        "free_cash_flow_yield": null,
+        "free_cash_flow_yield": 30.0,
         "profit_margin": 100.0,
         "debt_to_equity": 100.0,
-        "current_ratio": 100.0,
-        "revenue_growth": 100.0,
+        "current_ratio": 55.0,
+        "revenue_growth": 80.0,
         "earnings_growth": 100.0,
         "categories": {
-          "valuation": 62.5,
-          "profitability": 100.0,
-          "financial_health": 100.0,
-          "growth": 100.0
+          "valuation": 54.5,
+          "profitability": 75.5,
+          "financial_health": 82.0,
+          "growth": 90.0
         },
-        "coverage": 0.82,
-        "raw_score": 85.0,
-        "sector": "Technology"
+        "coverage": 1.0,
+        "raw_score": 70.6,
+        "sector": "TECHNOLOGY"
       },
       "technical_detail": {
-        "return_20d": -5.56,
-        "return_60d": 88.77,
-        "annualized_volatility": 108.35,
-        "drawdown_60d": -18.4,
-        "relative_strength_20d": -6.23,
-        "trend": 83.3,
-        "risk": 0.0,
-        "relative_strength": 31.3,
+        "return_20d": 8.18,
+        "return_60d": -11.08,
+        "annualized_volatility": 33.47,
+        "drawdown_60d": -17.12,
+        "relative_strength_20d": 7.55,
+        "trend": 60.8,
+        "risk": 31.4,
+        "relative_strength": 72.7,
         "coverage": 1.0
       },
       "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
+        "article_count": 12,
+        "average": 0.24,
+        "coverage": 1.0
       },
       "strengths": [
-        "Strong profitability and cash generation score (100/100)",
-        "Strong balance-sheet health score (100/100)",
-        "Strong growth score (100/100)"
+        "Strong profitability and cash generation score (76/100)",
+        "Strong balance-sheet health score (82/100)",
+        "Strong growth score (90/100)"
       ],
       "risks": [
-        "Down 18.4% from its 60-day high"
+        "Down 17.1% from its 60-day high"
       ],
       "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
+        "recent_acquisitions": 65,
+        "recent_disposals": 35,
+        "records_reviewed": 100
       },
-      "alpha_enriched": false
+      "alpha_enriched": true
     },
     {
       "ticker": "QCOM",
       "name": "QUALCOMM Incorporated",
-      "price": 171.11,
-      "pct_30d": -13.32,
+      "price": 169.68,
+      "pct_30d": -10.41,
       "sector": "Technology",
-      "market_cap": 180349943808,
-      "dividend_yield": 2.15,
+      "market_cap": 178842714112,
+      "dividend_yield": 2.2,
       "is_etf": false,
-      "price_to_sales": 4.05,
-      "price_to_book": 6.64,
-      "forward_pe": 15.59,
-      "trailing_pe": 18.38,
-      "peg": 0.54,
+      "price_to_sales": 4.02,
+      "price_to_book": 6.59,
+      "forward_pe": 15.43,
+      "trailing_pe": 18.25,
+      "peg": 0.53,
       "debt_to_equity": 0.56,
       "current_ratio": 2.37,
       "return_on_equity": 0.3608,
       "profit_margin": 0.2231,
       "free_cash_flow": 9589624832.0,
-      "free_cash_flow_yield": 0.0532,
+      "free_cash_flow_yield": 0.0536,
       "revenue_growth": -0.035,
       "earnings_growth": 1.73,
-      "score": 67.8,
+      "score": 68.3,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 82.5,
-        "market_behavior": 15.2,
+        "market_behavior": 18.5,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -1353,14 +1449,14 @@
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": -13.32,
-        "return_60d": 13.88,
-        "annualized_volatility": 84.94,
-        "drawdown_60d": -31.83,
-        "relative_strength_20d": -14.0,
-        "trend": 30.3,
+        "return_20d": -10.41,
+        "return_60d": 8.77,
+        "annualized_volatility": 84.83,
+        "drawdown_60d": -32.4,
+        "relative_strength_20d": -11.04,
+        "trend": 33.6,
         "risk": 0.0,
-        "relative_strength": 8.0,
+        "relative_strength": 16.9,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1374,7 +1470,7 @@
         "Strong balance-sheet health score (85/100)"
       ],
       "risks": [
-        "Down 31.8% from its 60-day high"
+        "Down 32.4% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -1386,31 +1482,31 @@
     {
       "ticker": "OXY",
       "name": "Occidental Petroleum Corporatio",
-      "price": 57.6,
-      "pct_30d": 12.74,
+      "price": 56.06,
+      "pct_30d": 12.22,
       "sector": "Energy",
-      "market_cap": 57290956800,
-      "dividend_yield": 1.81,
+      "market_cap": 55759220736,
+      "dividend_yield": 1.82,
       "is_etf": false,
-      "price_to_sales": 2.71,
-      "price_to_book": 1.86,
-      "forward_pe": 14.55,
-      "trailing_pe": 77.84,
+      "price_to_sales": 2.64,
+      "price_to_book": 1.81,
+      "forward_pe": 14.08,
+      "trailing_pe": 75.76,
       "peg": 1.21,
       "debt_to_equity": 0.42,
       "current_ratio": 1.21,
       "return_on_equity": 0.0405,
       "profit_margin": 0.2242,
       "free_cash_flow": 3033374976.0,
-      "free_cash_flow_yield": 0.0529,
+      "free_cash_flow_yield": 0.0544,
       "revenue_growth": -0.083,
       "earnings_growth": 3.16,
-      "score": 67.7,
+      "score": 67.2,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 72.3,
-        "market_behavior": 65.8,
+        "market_behavior": 62.5,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -1442,14 +1538,14 @@
         "sector": "Energy"
       },
       "technical_detail": {
-        "return_20d": 12.74,
-        "return_60d": 0.58,
-        "annualized_volatility": 37.51,
-        "drawdown_60d": -5.2,
-        "relative_strength_20d": 12.07,
-        "trend": 75.8,
-        "risk": 41.2,
-        "relative_strength": 86.2,
+        "return_20d": 12.22,
+        "return_60d": -7.67,
+        "annualized_volatility": 36.67,
+        "drawdown_60d": -7.58,
+        "relative_strength_20d": 11.59,
+        "trend": 70.6,
+        "risk": 39.3,
+        "relative_strength": 84.8,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1473,191 +1569,6 @@
       "alpha_enriched": false
     },
     {
-      "ticker": "MSFT",
-      "name": "Microsoft Corporation",
-      "description": "Microsoft Corporation is an American multinational technology company which produces computer software, consumer electronics, personal computers, and related services. Its best known software products are the Microsoft Windows line of operating systems, the Microsoft Office suite, and the Internet Explorer and Edge web browsers. Its flagship hardware products are the Xbox video game consoles and the Microsoft Surface lineup of touchscreen personal computers. Microsoft ranked No. 21 in the 2020 Fortune 500 rankings of the largest United States corporations by total revenue; it was the world's largest software maker by revenue as of 2016. It is considered one of the Big Five companies in the U.S. information technology industry, along with Google, Apple, Amazon, and Facebook.",
-      "exchange": "NASDAQ",
-      "currency": "USD",
-      "sector": "TECHNOLOGY",
-      "industry": "SOFTWARE - INFRASTRUCTURE",
-      "price": 381.58,
-      "market_cap": 2834542100000.0,
-      "dividend_yield": 0.0091,
-      "is_etf": false,
-      "price_to_sales": 8.91,
-      "price_to_book": 7.0,
-      "forward_pe": 20.08,
-      "trailing_pe": 23.25,
-      "peg": 1.204,
-      "return_on_equity": 0.34,
-      "profit_margin": 0.393,
-      "revenue_growth": 0.183,
-      "earnings_growth": 0.234,
-      "analyst_target_price": 556.75,
-      "week_52_high": 551.05,
-      "week_52_low": 349.2,
-      "pct_30d": 4.41,
-      "debt_to_equity": 0.3,
-      "current_ratio": 1.28,
-      "free_cash_flow": 37011251200.0,
-      "free_cash_flow_yield": 0.0131,
-      "score": 66.9,
-      "stance": "PROMISING",
-      "confidence": 1.0,
-      "components": {
-        "fundamentals": 70.6,
-        "market_behavior": 47.3,
-        "news_sentiment": 68.6
-      },
-      "fundamental_categories": {
-        "valuation": 54.5,
-        "profitability": 75.5,
-        "financial_health": 82.0,
-        "growth": 90.0
-      },
-      "fundamental_detail": {
-        "peg": 75.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 15.0,
-        "price_to_book": 25.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 30.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 55.0,
-        "revenue_growth": 80.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 54.5,
-          "profitability": 75.5,
-          "financial_health": 82.0,
-          "growth": 90.0
-        },
-        "coverage": 1.0,
-        "raw_score": 70.6,
-        "sector": "TECHNOLOGY"
-      },
-      "technical_detail": {
-        "return_20d": 4.41,
-        "return_60d": -10.18,
-        "annualized_volatility": 33.56,
-        "drawdown_60d": -17.14,
-        "relative_strength_20d": 3.74,
-        "trend": 53.7,
-        "risk": 31.2,
-        "relative_strength": 61.2,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 12,
-        "average": 0.186,
-        "coverage": 1.0
-      },
-      "strengths": [
-        "Strong profitability and cash generation score (76/100)",
-        "Strong balance-sheet health score (82/100)",
-        "Strong growth score (90/100)"
-      ],
-      "risks": [
-        "Down 17.1% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 65,
-        "recent_disposals": 35,
-        "records_reviewed": 100
-      },
-      "alpha_enriched": true
-    },
-    {
-      "ticker": "ADBE",
-      "name": "Adobe Inc.",
-      "price": 212.17,
-      "pct_30d": 7.94,
-      "sector": "Technology",
-      "market_cap": 84337573888,
-      "dividend_yield": null,
-      "is_etf": false,
-      "price_to_sales": 3.35,
-      "price_to_book": 7.35,
-      "forward_pe": 7.72,
-      "trailing_pe": 12.14,
-      "peg": 0.58,
-      "debt_to_equity": 0.61,
-      "current_ratio": 0.75,
-      "return_on_equity": 0.6295,
-      "profit_margin": 0.2869,
-      "free_cash_flow": 9218374656.0,
-      "free_cash_flow_yield": 0.1093,
-      "revenue_growth": 0.127,
-      "earnings_growth": 0.08,
-      "score": 66.6,
-      "stance": "PROMISING",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 75.7,
-        "market_behavior": 41.4,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 73.0,
-        "profitability": 100.0,
-        "financial_health": 57.0,
-        "growth": 67.5
-      },
-      "fundamental_detail": {
-        "peg": 100.0,
-        "forward_pe": 60.0,
-        "price_to_sales": 100.0,
-        "price_to_book": 25.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 100.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 75.0,
-        "current_ratio": 30.0,
-        "revenue_growth": 80.0,
-        "earnings_growth": 55.0,
-        "categories": {
-          "valuation": 73.0,
-          "profitability": 100.0,
-          "financial_health": 57.0,
-          "growth": 67.5
-        },
-        "coverage": 1.0,
-        "raw_score": 75.7,
-        "sector": "Technology"
-      },
-      "technical_detail": {
-        "return_20d": 7.94,
-        "return_60d": -11.34,
-        "annualized_volatility": 45.33,
-        "drawdown_60d": -22.57,
-        "relative_strength_20d": 7.26,
-        "trend": 60.2,
-        "risk": 0.0,
-        "relative_strength": 71.8,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong valuation score (73/100)",
-        "Strong profitability and cash generation score (100/100)",
-        "Outperforming SPY over 20 trading days"
-      ],
-      "risks": [
-        "Down 22.6% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
       "ticker": "GOOGL",
       "name": "Alphabet Inc Class A",
       "description": "Alphabet Inc. is an American multinational conglomerate headquartered in Mountain View, California. It was created through a restructuring of Google on October 2, 2015, and became the parent company of Google and several former Google subsidiaries. The two co-founders of Google remained as controlling shareholders, board members, and employees at Alphabet. Alphabet is the world's fourth-largest technology company by revenue and one of the world's most valuable companies.",
@@ -1665,34 +1576,34 @@
       "currency": "USD",
       "sector": "COMMUNICATION SERVICES",
       "industry": "INTERNET CONTENT & INFORMATION",
-      "price": 317.69,
-      "market_cap": 3885328237000.0,
-      "dividend_yield": 0.0012,
+      "price": 319.74,
+      "market_cap": 3910399427000.0,
+      "dividend_yield": 0.0027,
       "is_etf": false,
-      "price_to_sales": 8.71,
-      "price_to_book": 6.71,
-      "forward_pe": 24.27,
-      "trailing_pe": 17.15,
-      "peg": 1.347,
+      "price_to_sales": 8.77,
+      "price_to_book": 6.28,
+      "forward_pe": 22.68,
+      "trailing_pe": 16.05,
+      "peg": 1.259,
       "return_on_equity": 0.487,
       "profit_margin": 0.548,
       "revenue_growth": 0.242,
-      "earnings_growth": 2.941,
-      "analyst_target_price": 433.55,
+      "earnings_growth": 2.94,
+      "analyst_target_price": 428.12,
       "week_52_high": 408.37,
       "week_52_low": 187.29,
-      "pct_30d": -7.99,
-      "debt_to_equity": 0.18,
+      "pct_30d": -6.97,
+      "debt_to_equity": 0.19,
       "current_ratio": 2.72,
-      "free_cash_flow": 28715499520.0,
-      "free_cash_flow_yield": 0.0074,
-      "score": 66.3,
+      "free_cash_flow": 22665000960.0,
+      "free_cash_flow_yield": 0.0056,
+      "score": 66.9,
       "stance": "PROMISING",
       "confidence": 1.0,
       "components": {
         "fundamentals": 75.7,
-        "market_behavior": 23.0,
-        "news_sentiment": 60.9
+        "market_behavior": 25.0,
+        "news_sentiment": 63.8
       },
       "fundamental_categories": {
         "valuation": 54.5,
@@ -1723,19 +1634,19 @@
         "sector": "COMMUNICATION SERVICES"
       },
       "technical_detail": {
-        "return_20d": -7.99,
-        "return_60d": -9.32,
-        "annualized_volatility": 39.0,
-        "drawdown_60d": -21.09,
-        "relative_strength_20d": -8.67,
-        "trend": 29.4,
-        "risk": 14.4,
-        "relative_strength": 24.0,
+        "return_20d": -6.97,
+        "return_60d": -8.59,
+        "annualized_volatility": 39.04,
+        "drawdown_60d": -20.59,
+        "relative_strength_20d": -7.6,
+        "trend": 31.8,
+        "risk": 15.0,
+        "relative_strength": 27.2,
         "coverage": 1.0
       },
       "sentiment_detail": {
         "article_count": 12,
-        "average": 0.109,
+        "average": 0.138,
         "coverage": 1.0
       },
       "strengths": [
@@ -1744,11 +1655,11 @@
         "Strong growth score (100/100)"
       ],
       "risks": [
-        "Down 21.1% from its 60-day high"
+        "Down 20.6% from its 60-day high"
       ],
       "insider_activity": {
-        "recent_acquisitions": 34,
-        "recent_disposals": 66,
+        "recent_acquisitions": 25,
+        "recent_disposals": 75,
         "records_reviewed": 100
       },
       "alpha_enriched": true
@@ -1756,17 +1667,17 @@
     {
       "ticker": "BAC",
       "name": "Bank of America Corporation",
-      "price": 61.28,
-      "pct_30d": 6.15,
+      "price": 62.84,
+      "pct_30d": 8.57,
       "sector": "Financial Services",
-      "market_cap": null,
-      "dividend_yield": 1.83,
+      "market_cap": 445949771776,
+      "dividend_yield": 2.06,
       "is_etf": false,
       "price_to_sales": null,
-      "price_to_book": 1.56,
-      "forward_pe": 11.65,
-      "trailing_pe": 14.15,
-      "peg": 1.06,
+      "price_to_book": 1.6,
+      "forward_pe": 11.95,
+      "trailing_pe": 14.51,
+      "peg": 1.07,
       "debt_to_equity": null,
       "current_ratio": null,
       "return_on_equity": 0.112,
@@ -1775,12 +1686,12 @@
       "free_cash_flow_yield": null,
       "revenue_growth": 0.214,
       "earnings_growth": 0.36,
-      "score": 66.1,
+      "score": 66.7,
       "stance": "PROMISING",
       "confidence": 0.67,
       "components": {
         "fundamentals": 72.9,
-        "market_behavior": 73.8,
+        "market_behavior": 78.2,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -1812,14 +1723,14 @@
         "sector": "Financial Services"
       },
       "technical_detail": {
-        "return_20d": 6.15,
-        "return_60d": 16.44,
-        "annualized_volatility": 20.41,
-        "drawdown_60d": -0.55,
-        "relative_strength_20d": 5.48,
-        "trend": 70.5,
-        "risk": 82.4,
-        "relative_strength": 66.4,
+        "return_20d": 8.57,
+        "return_60d": 18.84,
+        "annualized_volatility": 20.6,
+        "drawdown_60d": 0.0,
+        "relative_strength_20d": 7.94,
+        "trend": 76.6,
+        "risk": 82.8,
+        "relative_strength": 73.8,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -1843,107 +1754,18 @@
       "alpha_enriched": false
     },
     {
-      "ticker": "AMAT",
-      "name": "Applied Materials, Inc.",
-      "price": 562.8,
-      "pct_30d": -4.44,
-      "sector": "Technology",
-      "market_cap": 446840340480,
-      "dividend_yield": 0.38,
-      "is_etf": false,
-      "price_to_sales": 15.4,
-      "price_to_book": 18.69,
-      "forward_pe": 33.4,
-      "trailing_pe": 52.89,
-      "peg": 1.42,
-      "debt_to_equity": 0.3,
-      "current_ratio": 2.51,
-      "return_on_equity": 0.3969,
-      "profit_margin": 0.2931,
-      "free_cash_flow": 3040375040.0,
-      "free_cash_flow_yield": 0.0068,
-      "revenue_growth": 0.114,
-      "earnings_growth": 0.34,
-      "score": 65.3,
-      "stance": "PROMISING",
-      "confidence": 0.9,
-      "components": {
-        "fundamentals": 75.4,
-        "market_behavior": 34.2,
-        "news_sentiment": 50.0
-      },
-      "fundamental_categories": {
-        "valuation": 57.5,
-        "profitability": 75.5,
-        "financial_health": 100.0,
-        "growth": 90.0
-      },
-      "fundamental_detail": {
-        "peg": 75.0,
-        "forward_pe": 80.0,
-        "price_to_sales": 45.0,
-        "price_to_book": 10.0,
-        "return_on_equity": 100.0,
-        "free_cash_flow_yield": 30.0,
-        "profit_margin": 100.0,
-        "debt_to_equity": 100.0,
-        "current_ratio": 100.0,
-        "revenue_growth": 80.0,
-        "earnings_growth": 100.0,
-        "categories": {
-          "valuation": 57.5,
-          "profitability": 75.5,
-          "financial_health": 100.0,
-          "growth": 90.0
-        },
-        "coverage": 1.0,
-        "raw_score": 75.4,
-        "sector": "Technology"
-      },
-      "technical_detail": {
-        "return_20d": -4.44,
-        "return_60d": 39.01,
-        "annualized_volatility": 77.64,
-        "drawdown_60d": -22.16,
-        "relative_strength_20d": -5.12,
-        "trend": 60.6,
-        "risk": 0.0,
-        "relative_strength": 34.6,
-        "coverage": 1.0
-      },
-      "sentiment_detail": {
-        "article_count": 0,
-        "average": null,
-        "coverage": 0.0
-      },
-      "strengths": [
-        "Strong profitability and cash generation score (76/100)",
-        "Strong balance-sheet health score (100/100)",
-        "Strong growth score (90/100)"
-      ],
-      "risks": [
-        "Down 22.2% from its 60-day high"
-      ],
-      "insider_activity": {
-        "recent_acquisitions": 0,
-        "recent_disposals": 0,
-        "records_reviewed": 0
-      },
-      "alpha_enriched": false
-    },
-    {
       "ticker": "DECK",
       "name": "Deckers Outdoor Corporation",
-      "price": 96.23,
-      "pct_30d": -8.96,
+      "price": 99.29,
+      "pct_30d": -5.04,
       "sector": "Consumer Cyclical",
-      "market_cap": 13364514816,
+      "market_cap": 13789490176,
       "dividend_yield": null,
       "is_etf": false,
-      "price_to_sales": 2.42,
-      "price_to_book": 5.39,
-      "forward_pe": 11.53,
-      "trailing_pe": 14.6,
+      "price_to_sales": 2.49,
+      "price_to_book": 5.96,
+      "forward_pe": 11.88,
+      "trailing_pe": 14.12,
       "peg": 1.19,
       "debt_to_equity": 0.21,
       "current_ratio": 2.75,
@@ -1953,12 +1775,12 @@
       "free_cash_flow_yield": null,
       "revenue_growth": 0.057,
       "earnings_growth": 0.01,
-      "score": 65.1,
+      "score": 66.4,
       "stance": "PROMISING",
       "confidence": 0.84,
       "components": {
         "fundamentals": 78.3,
-        "market_behavior": 23.3,
+        "market_behavior": 32.7,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -1990,14 +1812,14 @@
         "sector": "Consumer Cyclical"
       },
       "technical_detail": {
-        "return_20d": -8.96,
-        "return_60d": -9.87,
-        "annualized_volatility": 40.29,
-        "drawdown_60d": -15.86,
-        "relative_strength_20d": -9.63,
-        "trend": 27.1,
-        "risk": 19.6,
-        "relative_strength": 21.1,
+        "return_20d": -5.04,
+        "return_60d": -2.02,
+        "annualized_volatility": 39.85,
+        "drawdown_60d": -13.19,
+        "relative_strength_20d": -5.67,
+        "trend": 38.9,
+        "risk": 24.5,
+        "relative_strength": 33.0,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -2012,7 +1834,97 @@
       ],
       "risks": [
         "Weak growth score (42/100)",
-        "Down 15.9% from its 60-day high"
+        "Down 13.2% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "CRM",
+      "name": "Salesforce, Inc.",
+      "price": 168.92,
+      "pct_30d": 6.66,
+      "sector": "Technology",
+      "market_cap": 138222632960,
+      "dividend_yield": 1.08,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 4.04,
+      "forward_pe": 10.88,
+      "trailing_pe": 19.58,
+      "peg": 0.68,
+      "debt_to_equity": 1.24,
+      "current_ratio": 0.79,
+      "return_on_equity": 0.1691,
+      "profit_margin": 0.1873,
+      "free_cash_flow": 16552999936.0,
+      "free_cash_flow_yield": 0.1198,
+      "revenue_growth": 0.133,
+      "earnings_growth": 0.52,
+      "score": 66.0,
+      "stance": "PROMISING",
+      "confidence": 0.84,
+      "components": {
+        "fundamentals": 76.1,
+        "market_behavior": 40.6,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 87.5,
+        "profitability": 87.0,
+        "financial_health": 42.0,
+        "growth": 90.0
+      },
+      "fundamental_detail": {
+        "peg": 100.0,
+        "forward_pe": 100.0,
+        "price_to_sales": null,
+        "price_to_book": 50.0,
+        "return_on_equity": 80.0,
+        "free_cash_flow_yield": 100.0,
+        "profit_margin": 80.0,
+        "debt_to_equity": 50.0,
+        "current_ratio": 30.0,
+        "revenue_growth": 80.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 87.5,
+          "profitability": 87.0,
+          "financial_health": 42.0,
+          "growth": 90.0
+        },
+        "coverage": 0.91,
+        "raw_score": 78.7,
+        "sector": "Technology"
+      },
+      "technical_detail": {
+        "return_20d": 6.66,
+        "return_60d": -6.79,
+        "annualized_volatility": 48.73,
+        "drawdown_60d": -19.41,
+        "relative_strength_20d": 6.02,
+        "trend": 59.9,
+        "risk": 0.0,
+        "relative_strength": 68.1,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (88/100)",
+        "Strong profitability and cash generation score (87/100)",
+        "Strong growth score (90/100)"
+      ],
+      "risks": [
+        "Weak balance-sheet health score (42/100)",
+        "Down 19.4% from its 60-day high"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -2024,31 +1936,31 @@
     {
       "ticker": "TXN",
       "name": "Texas Instruments Incorporated",
-      "price": 284.99,
-      "pct_30d": -5.98,
+      "price": 282.8,
+      "pct_30d": -0.92,
       "sector": "Technology",
-      "market_cap": 260222304256,
-      "dividend_yield": 1.99,
+      "market_cap": 258222637056,
+      "dividend_yield": 2.03,
       "is_etf": false,
-      "price_to_sales": 13.38,
-      "price_to_book": 15.46,
-      "forward_pe": 27.21,
-      "trailing_pe": 48.8,
-      "peg": 1.37,
+      "price_to_sales": 13.27,
+      "price_to_book": 14.34,
+      "forward_pe": 27.0,
+      "trailing_pe": 43.04,
+      "peg": 1.24,
       "debt_to_equity": 0.78,
       "current_ratio": 4.86,
       "return_on_equity": 0.3518,
       "profit_margin": 0.3111,
-      "free_cash_flow": 3674874880.0,
-      "free_cash_flow_yield": 0.0141,
+      "free_cash_flow": 3545250048.0,
+      "free_cash_flow_yield": 0.0137,
       "revenue_growth": 0.228,
       "earnings_growth": 0.52,
-      "score": 64.9,
+      "score": 66.0,
       "stance": "PROMISING",
       "confidence": 0.9,
       "components": {
         "fundamentals": 76.7,
-        "market_behavior": 25.0,
+        "market_behavior": 32.1,
         "news_sentiment": 50.0
       },
       "fundamental_categories": {
@@ -2080,14 +1992,14 @@
         "sector": "Technology"
       },
       "technical_detail": {
-        "return_20d": -5.98,
-        "return_60d": 5.75,
+        "return_20d": -0.92,
+        "return_60d": 5.04,
         "annualized_volatility": 50.46,
-        "drawdown_60d": -14.23,
-        "relative_strength_20d": -6.65,
-        "trend": 40.9,
-        "risk": 1.7,
-        "relative_strength": 30.0,
+        "drawdown_60d": -14.89,
+        "relative_strength_20d": -1.55,
+        "trend": 50.7,
+        "risk": 0.8,
+        "relative_strength": 45.3,
         "coverage": 1.0
       },
       "sentiment_detail": {
@@ -2101,7 +2013,96 @@
         "Strong growth score (100/100)"
       ],
       "risks": [
-        "Down 14.2% from its 60-day high"
+        "Down 14.9% from its 60-day high"
+      ],
+      "insider_activity": {
+        "recent_acquisitions": 0,
+        "recent_disposals": 0,
+        "records_reviewed": 0
+      },
+      "alpha_enriched": false
+    },
+    {
+      "ticker": "BLK",
+      "name": "BlackRock, Inc.",
+      "price": 1067.16,
+      "pct_30d": 10.62,
+      "sector": "Financial Services",
+      "market_cap": 173522878464,
+      "dividend_yield": 2.17,
+      "is_etf": false,
+      "price_to_sales": null,
+      "price_to_book": 2.92,
+      "forward_pe": 16.58,
+      "trailing_pe": 25.59,
+      "peg": 1.14,
+      "debt_to_equity": 0.24,
+      "current_ratio": null,
+      "return_on_equity": null,
+      "profit_margin": 0.2409,
+      "free_cash_flow": null,
+      "free_cash_flow_yield": null,
+      "revenue_growth": 0.306,
+      "earnings_growth": 0.2,
+      "score": 65.7,
+      "stance": "PROMISING",
+      "confidence": 0.61,
+      "components": {
+        "fundamentals": 74.4,
+        "market_behavior": 69.7,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 76.9,
+        "profitability": 100.0,
+        "financial_health": null,
+        "growth": 100.0
+      },
+      "fundamental_detail": {
+        "peg": 75.0,
+        "forward_pe": 80.0,
+        "price_to_sales": null,
+        "price_to_book": 75.0,
+        "return_on_equity": null,
+        "free_cash_flow_yield": null,
+        "profit_margin": 100.0,
+        "debt_to_equity": null,
+        "current_ratio": null,
+        "revenue_growth": 100.0,
+        "earnings_growth": 100.0,
+        "categories": {
+          "valuation": 76.9,
+          "profitability": 100.0,
+          "financial_health": null,
+          "growth": 100.0
+        },
+        "coverage": 0.55,
+        "raw_score": 88.5,
+        "sector": "Financial Services"
+      },
+      "technical_detail": {
+        "return_20d": 10.62,
+        "return_60d": 2.67,
+        "annualized_volatility": 29.41,
+        "drawdown_60d": -3.34,
+        "relative_strength_20d": 9.99,
+        "trend": 72.6,
+        "risk": 60.2,
+        "relative_strength": 80.0,
+        "coverage": 1.0
+      },
+      "sentiment_detail": {
+        "article_count": 0,
+        "average": null,
+        "coverage": 0.0
+      },
+      "strengths": [
+        "Strong valuation score (77/100)",
+        "Strong profitability and cash generation score (100/100)",
+        "Strong growth score (100/100)"
+      ],
+      "risks": [
+        "No major quantitative red flag; qualitative risks still require review"
       ],
       "insider_activity": {
         "recent_acquisitions": 0,
@@ -2113,514 +2114,514 @@
   ],
   "news": [
     {
-      "title": "SLB Announces Second-Quarter 2026 Results",
-      "url": "https://www.slb.com/newsroom/press-release/2026/pr-2026-0724-q2-2026-earnings-results",
-      "source": "SLB",
-      "published_at": "20260724T111047",
-      "summary": "SLB announced its second-quarter 2026 results, reporting revenue of $8.97 billion, a 3% sequential and 5% year-on-year increase. GAAP EPS was $0.52, and adjusted EBITDA reached $1.90 billion, rising 7% sequentially. The company highlighted strong sequential growth in international markets, driven by offshore activity and a rebound in U.S. unconventionals, which largely offset disruptions in the Middle East.",
-      "overall_sentiment_score": 0.237,
+      "title": "Gartner: Global IT Spending Surge to Hit $6.37 Trillion in 2026",
+      "url": "https://cxotoday.com/hardware/gartner-global-it-spending-surge-to-hit-6-37-trillion-in-2026/",
+      "source": "CXOToday.com",
+      "published_at": "20260727T132300",
+      "summary": "Gartner forecasts global IT spending to reach $6.37 trillion in 2026, marking a 14.2% increase from 2025. This surge is primarily driven by massive investments in AI infrastructure, cloud platforms, and intelligent applications, with data center systems and Infrastructure as a Service (IaaS) identified as the leading growth segments. Despite this overall growth, Gartner notes that technology budgets face pressures from inflation, supply shortages, and rising hardware costs, leading to a market trend where growth is concentrated in AI-related areas rather than across all segments.",
+      "overall_sentiment_score": 0.331,
       "ticker_sentiment": [
         {
-          "ticker": "META",
-          "relevance_score": "0.607918",
-          "ticker_sentiment_score": "0.321489",
+          "ticker": "MSFT",
+          "relevance_score": "0.737254",
+          "ticker_sentiment_score": "0.326256",
           "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
-      "ticker": "META"
+      "ticker": "MSFT"
     },
     {
-      "title": "Why T-Mobile Stock Dropped 11% Despite a Q2 Earnings Beat",
-      "url": "https://www.tikr.com/blog/why-t-mobile-stock-dropped-11-despite-a-q2-earnings-beat",
-      "source": "TIKR.com",
-      "published_at": "20260724T110954",
-      "summary": "T-Mobile's stock dropped 11% despite beating Q2 earnings estimates on key profit metrics, primarily due to a warning about elevated Q3 net postpaid account churn. Management attributes this temporary churn to a strategic rate plan modernization, which they expect will lead to long-term pricing power and customer lifetime value improvements through 2027. TIKR's model projects a significant 80% return for TMUS stock by 2030, based on expanding margins, disciplined capital return, and anticipated recovery from the current strategic reset.",
-      "overall_sentiment_score": 0.066,
+      "title": "Gartner: Global IT Spending Surge to Hit $6.37 Trillion in 2026",
+      "url": "https://cxotoday.com/hardware/gartner-global-it-spending-surge-to-hit-6-37-trillion-in-2026/",
+      "source": "CXOToday.com",
+      "published_at": "20260727T132300",
+      "summary": "Gartner forecasts global IT spending to reach $6.37 trillion in 2026, marking a 14.2% increase from 2025. This surge is primarily driven by massive investments in AI infrastructure, cloud platforms, and intelligent applications, with data center systems and Infrastructure as a Service (IaaS) identified as the leading growth segments. Despite this overall growth, Gartner notes that technology budgets face pressures from inflation, supply shortages, and rising hardware costs, leading to a market trend where growth is concentrated in AI-related areas rather than across all segments.",
+      "overall_sentiment_score": 0.379,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.626155",
+          "ticker_sentiment_score": "0.306132",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Gartner: Global IT Spending Surge to Hit $6.37 Trillion in 2026",
+      "url": "https://cxotoday.com/hardware/gartner-global-it-spending-surge-to-hit-6-37-trillion-in-2026/",
+      "source": "CXOToday.com",
+      "published_at": "20260727T132300",
+      "summary": "Gartner forecasts global IT spending to reach $6.37 trillion in 2026, marking a 14.2% increase from 2025. This surge is primarily driven by massive investments in AI infrastructure, cloud platforms, and intelligent applications, with data center systems and Infrastructure as a Service (IaaS) identified as the leading growth segments. Despite this overall growth, Gartner notes that technology budgets face pressures from inflation, supply shortages, and rising hardware costs, leading to a market trend where growth is concentrated in AI-related areas rather than across all segments.",
+      "overall_sentiment_score": 0.338,
       "ticker_sentiment": [
         {
           "ticker": "AMZN",
-          "relevance_score": "0.608916",
-          "ticker_sentiment_score": "0.049326",
+          "relevance_score": "0.615455",
+          "ticker_sentiment_score": "0.300413",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "AMZN"
+    },
+    {
+      "title": "Synopsys Advances Agentic AI Chip Design with AMD and Microsoft",
+      "url": "https://www.prnewswire.com/news-releases/synopsys-advances-agentic-ai-chip-design-with-amd-and-microsoft-302834852.html",
+      "source": "PR Newswire",
+      "published_at": "20260727T125957",
+      "summary": "Synopsys has announced new autonomous agentic AI workflows for chip design, developed in collaboration with Microsoft and available for evaluation on Microsoft Discovery. These workflows, which are also being utilized by AMD, aim to accelerate engineering from specification to silicon. Key innovations include fully-autonomous debug closure and implementation/closure workflows, demonstrating significant reductions in cycle time and improved quality of results.",
+      "overall_sentiment_score": 0.464,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.906354",
+          "ticker_sentiment_score": "0.496210",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Capital One\u2019s MLB partnership is turning fan experiences into long-term customer value",
+      "url": "https://fortune.com/2026/07/27/capital-one-mlb-partnership-turning-fan-experiences-into-long-term-customer-value/",
+      "source": "Fortune",
+      "published_at": "20260727T124239",
+      "summary": "Capital One's MLB partnership leverages exclusive experiences and cardholder perks to attract and retain customers, exemplified by the successful All-Star Village event that drew over 111,000 attendees. This sponsorship is a long-duration customer acquisition strategy for Capital One, tying card perks directly to MLB and mapping fan journeys to customer lifetime value. The initiative comes as Capital One integrates Discover Financial Services and reports strong financial results, underscoring its capital deployment for long-term growth.",
+      "overall_sentiment_score": 0.213,
+      "ticker_sentiment": [
+        {
+          "ticker": "AAPL",
+          "relevance_score": "0.586307",
+          "ticker_sentiment_score": "0.089605",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "AAPL"
+    },
+    {
+      "title": "Why Is Alphabet (GOOGL) Still Falling After a Record Q2 Beat?",
+      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262055789-alphabet-googl-price-forecast-july-28-2026-capex-recovery-fed-tradingkey",
+      "source": "TradingKey",
+      "published_at": "20260727T120542",
+      "summary": "Alphabet's shares have fallen despite a strong Q2 earnings report primarily due to a massive $44.9 billion quarterly capital expenditure and the realization that reported EPS included significant unrealized investment gains, rather than operational income. Concerns about long-term free cash flow and credit quality, highlighted by Moody's, have overshadowed robust revenue growth and a new $1 billion Verizon deal. Despite the sell-off, analysts maintain a strong buy rating with a consensus price target of $417.70, viewing the current valuation as attractive given the company's growth and cloud margin recovery.",
+      "overall_sentiment_score": -0.158,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "-0.222417",
+          "ticker_sentiment_label": "Somewhat-Bearish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Why Is Alphabet (GOOGL) Still Falling After a Record Q2 Beat?",
+      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262055789-alphabet-googl-price-forecast-july-28-2026-capex-recovery-fed-tradingkey",
+      "source": "TradingKey",
+      "published_at": "20260727T120542",
+      "summary": "Alphabet's shares have fallen despite a strong Q2 earnings report primarily due to a massive $44.9 billion quarterly capital expenditure and the realization that reported EPS included significant unrealized investment gains, rather than operational income. Concerns about long-term free cash flow and credit quality, highlighted by Moody's, have overshadowed robust revenue growth and a new $1 billion Verizon deal. Despite the sell-off, analysts maintain a strong buy rating with a consensus price target of $417.70, viewing the current valuation as attractive given the company's growth and cloud margin recovery.",
+      "overall_sentiment_score": -0.144,
+      "ticker_sentiment": [
+        {
+          "ticker": "AMZN",
+          "relevance_score": "0.634387",
+          "ticker_sentiment_score": "-0.116736",
           "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "AMZN"
     },
     {
-      "title": "Inceptionr LLC Purchases 23,020 Shares of Bank of America Corporation $BAC",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-inceptionr-llc-purchases-23020-shares-of-bank-of-america-corporation-bac-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T105130",
-      "summary": "Inceptionr LLC significantly increased its holdings in Bank of America Corporation (NYSE:BAC) by 215.2% during the first quarter, purchasing an additional 23,020 shares. The firm now owns 33,718 shares valued at $1,644,000. Other institutional investors like Norges Bank and Vanguard Group Inc. have also made substantial moves in BAC stock, with notable insider selling by Geoffrey S. Greener also reported.",
-      "overall_sentiment_score": 0.232,
+      "title": "Why Is Alphabet (GOOGL) Still Falling After a Record Q2 Beat?",
+      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262055789-alphabet-googl-price-forecast-july-28-2026-capex-recovery-fed-tradingkey",
+      "source": "TradingKey",
+      "published_at": "20260727T120542",
+      "summary": "Alphabet's shares have fallen despite a strong Q2 earnings report primarily due to a massive $44.9 billion quarterly capital expenditure and the realization that reported EPS included significant unrealized investment gains, rather than operational income. Concerns about long-term free cash flow and credit quality, highlighted by Moody's, have overshadowed robust revenue growth and a new $1 billion Verizon deal. Despite the sell-off, analysts maintain a strong buy rating with a consensus price target of $417.70, viewing the current valuation as attractive given the company's growth and cloud margin recovery.",
+      "overall_sentiment_score": -0.174,
+      "ticker_sentiment": [
+        {
+          "ticker": "META",
+          "relevance_score": "0.633086",
+          "ticker_sentiment_score": "-0.137400",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "META"
+    },
+    {
+      "title": "Zacks.com featured highlights include Alphabet, MasTec and Goldman Sachs",
+      "url": "https://www.theglobeandmail.com/investing/markets/stocks/GS/pressreleases/3476577/zackscom-featured-highlights-include-alphabet-mastec-and-goldman-sachs/",
+      "source": "The Globe and Mail",
+      "published_at": "20260727T113926",
+      "summary": "Zacks Investment Research has identified Alphabet Inc. (GOOGL), MasTec, Inc. (MTZ), and The Goldman Sachs Group, Inc. (GS) as top high-momentum stocks to buy now, based on Richard Driehaus's \"buy high and sell higher\" strategy. These companies exhibit strong momentum scores, impressive trailing earnings surprises, and high expected earnings growth rates for the current year. The strategy prioritizes stocks trading above their 50-day moving average, with positive relative strength, and strong earnings growth and projections.",
+      "overall_sentiment_score": 0.461,
       "ticker_sentiment": [
         {
           "ticker": "GOOGL",
-          "relevance_score": "0.622764",
-          "ticker_sentiment_score": "0.416370",
+          "relevance_score": "0.901750",
+          "ticker_sentiment_score": "0.400941",
           "ticker_sentiment_label": "Bullish"
         }
       ],
       "ticker": "GOOGL"
     },
     {
-      "title": "Public Employees Retirement System of Ohio Reduces Stake in Welltower Inc. $WELL",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-public-employees-retirement-system-of-ohio-reduces-stake-in-welltower-inc-well-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T104535",
-      "summary": "The Public Employees Retirement System of Ohio reduced its stake in Welltower Inc. (NYSE:WELL) by 12.3% in the first quarter, selling 149,580 shares but still holding over 1 million shares. This comes as Welltower reported strong quarterly results, beating analyst expectations for EPS and revenue, and reaffirmed its FY 2026 EPS guidance. Analysts generally maintain a \"Moderate Buy\" rating for Welltower, with several firms raising price targets.",
-      "overall_sentiment_score": 0.169,
+      "title": "Weekly Recap: AWS revenue/AI spending focus and $2.5B FTC settlement",
+      "url": "https://www.tradingview.com/news/tradingview:8e4fcad2116fc:0-weekly-recap-aws-revenue-ai-spending-focus-and-2-5b-ftc-settlement/",
+      "source": "TradingView",
+      "published_at": "20260727T112510",
+      "summary": "This weekly recap highlights Amazon's upcoming Q2 report, focusing on AWS revenue and AI spending. The company is also dealing with a $2.5 billion FTC settlement, AI-related hiring adjustments, and advances in its Nova and Bedrock models. Amazon is expanding its business, redesigning Prime Video, and addressing AI data center costs and EU gatekeeper critiques.",
+      "overall_sentiment_score": 0.147,
       "ticker_sentiment": [
         {
           "ticker": "AMZN",
-          "relevance_score": "0.642770",
-          "ticker_sentiment_score": "0.100596",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.102333",
           "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "AMZN"
     },
     {
-      "title": "Mizuho Markets Americas LLC Sells 94,274 Shares of Analog Devices, Inc. $ADI",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-mizuho-markets-americas-llc-sells-94274-shares-of-analog-devices-inc-adi-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T100857",
-      "summary": "Mizuho Markets Americas LLC has significantly reduced its stake in Analog Devices, Inc. by selling 94,274 shares, decreasing its holdings by 29.9% to 220,726 shares valued at $70.22 million. Other institutional investors have also adjusted their positions, while company insiders, including CEO Vincent Roche and SVP Martin Cotter, have sold substantial amounts of their stock. Analysts maintain a \"Moderate Buy\" rating for ADI with a consensus price target of $441.00.",
-      "overall_sentiment_score": 0.014,
+      "title": "Weekly Recap: Q2 2026 results timing and analysts raise price targets",
+      "url": "https://www.tradingview.com/news/tradingview:b272f8b4e6415:0-weekly-recap-q2-2026-results-timing-and-analysts-raise-price-targets/",
+      "source": "TradingView",
+      "published_at": "20260727T112458",
+      "summary": "Manulife Financial Corp (MFC) is set to report its Q2 2026 results on August 5th, with a live call on August 6th. Analysts have subsequently increased their price targets for MFC to C$65\u2013C$70. This comes after Manulife expanded its five-year Microsoft deal to deploy various Microsoft tools, including Frontier Suite, Agent 365, and Copilot, to over 30,000 employees.",
+      "overall_sentiment_score": 0.413,
       "ticker_sentiment": [
         {
           "ticker": "MSFT",
-          "relevance_score": "0.610858",
-          "ticker_sentiment_score": "0.148621",
+          "relevance_score": "0.732094",
+          "ticker_sentiment_score": "0.310049",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "Welch & Forbes LLC Has $326.34 Million Stake in Microsoft Corporation $MSFT",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-welch-forbes-llc-has-32634-million-stake-in-microsoft-corporation-msft-2026-07-27/",
+      "source": "MarketBeat",
+      "published_at": "20260727T104432",
+      "summary": "Welch & Forbes LLC reduced its stake in Microsoft Corporation by 0.7% in the first quarter, now holding 881,583 shares valued at $326.34 million, making it their 4th largest position. Other institutional investors like Vanguard Group and State Street Corp increased their holdings significantly. Microsoft's stock performance shows a market capitalization of $2.84 trillion and a P/E ratio of 22.72, with analysts giving it a \"Moderate Buy\" rating.",
+      "overall_sentiment_score": 0.105,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.117222",
           "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "MSFT"
     },
     {
-      "title": "Amazon FTC settlement deadline is just days away. How to file claim",
-      "url": "https://www.usatoday.com/story/money/2026/07/24/amazon-ftc-settlement-deadline-claim/91023569007/",
-      "source": "USA Today",
-      "published_at": "20260724T100405",
-      "summary": "Eligible Amazon customers have until Monday, July 27, to file a claim in the $2.5 billion settlement with the Federal Trade Commission. This settlement addresses allegations that Amazon coerced consumers into Prime subscriptions and made cancellations difficult. Customers who signed up for Prime between June 23, 2019, and June 23, 2025, and unsuccessfully tried to cancel or enrolled through \"challenged enrollment flows,\" may receive up to $51, with payments expected by September.",
-      "overall_sentiment_score": -0.338,
+      "title": "Uber Technologies, Inc. $UBER Shares Acquired by Hound Partners LLC",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-uber-technologies-inc-uber-shares-acquired-by-hound-partners-llc-2026-07-27/",
+      "source": "MarketBeat",
+      "published_at": "20260727T103046",
+      "summary": "Hound Partners LLC increased its stake in Uber Technologies, Inc. (NYSE:UBER) by 68.1% in the first quarter, now owning 92,698 shares valued at $6.67 million. Other institutional investors also adjusted their holdings in UBER, which currently faces negative sentiment due to potential Waymo partnership issues and customer service job cuts, alongside a recent court injunction win in New York. Analysts maintain a \"Moderate Buy\" consensus rating for UBER, with an average target price of $104.65.",
+      "overall_sentiment_score": 0.023,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.613992",
+          "ticker_sentiment_score": "0.108265",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Uber-Backed EV Firm Says Iran War Is Accelerating Electric Vehicle Adoption in South Africa",
+      "url": "https://www.benzinga.com/markets/emerging-markets/26/07/60689488/uber-backed-ev-firm-says-iran-war-is-accelerating-electric-vehicle-adoption-in-south-africa",
+      "source": "Benzinga",
+      "published_at": "20260727T102946",
+      "summary": "Valternative, an Uber-backed EV fleet manager in South Africa, states that the ongoing Iran war is accelerating EV adoption in the region due to high fuel costs. While infrastructure remains a challenge, the company plans to expand charging stations and its fleet, aiming to replace traditional fossil-fueled vehicles. This development comes as Uber simultaneously expands its food delivery services and faces potential changes in its partnership with Waymo.",
+      "overall_sentiment_score": 0.104,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.723093",
+          "ticker_sentiment_score": "0.018935",
+          "ticker_sentiment_label": "Neutral"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Sculptor Capital LP Grows Position in Bank of America Corporation $BAC",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-sculptor-capital-lp-grows-position-in-bank-of-america-corporation-bac-2026-07-27/",
+      "source": "MarketBeat",
+      "published_at": "20260727T101614",
+      "summary": "Sculptor Capital LP increased its stake in Bank of America (BAC) by 4.7% in the first quarter, now owning over 2.2 million shares valued at $108.8 million. Several other institutional investors also adjusted their positions in BAC. Bank of America recently raised its quarterly dividend by 14% to $0.32 per share and reported strong quarterly earnings, beating analyst estimates.",
+      "overall_sentiment_score": 0.326,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.595876",
+          "ticker_sentiment_score": "0.286008",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "MercadoLibre Stock: Why This E-Commerce Leader Can Outperform the Market Over the Next 5 Years",
+      "url": "https://www.theglobeandmail.com/investing/markets/markets-news/motley/3474723/mercadolibre-stock-why-this-e-commerce-leader-can-outperform-the-market-over-the-next-5-years/",
+      "source": "The Globe and Mail",
+      "published_at": "20260727T101338",
+      "summary": "MercadoLibre stock has dropped 31% from its peak due to concerns over margin pressure and competition, yet its business growth remains strong in Latin America's e-commerce market. The company is investing heavily in its logistics and fintech operations, which are driving faster delivery, lower costs, and increased customer engagement. Despite current margin dips due to infrastructure spending, this e-commerce and fintech leader is projected to double in value within five years due to significant growth potential in underpenetrated markets.",
+      "overall_sentiment_score": 0.392,
       "ticker_sentiment": [
         {
           "ticker": "AMZN",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "-0.310375",
-          "ticker_sentiment_label": "Somewhat-Bearish"
+          "relevance_score": "0.637170",
+          "ticker_sentiment_score": "0.347310",
+          "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
       "ticker": "AMZN"
     },
     {
-      "title": "The Walt Disney Company $DIS Shares Acquired by Sei Investments Co.",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-the-walt-disney-company-dis-shares-acquired-by-sei-investments-co-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T100344",
-      "summary": "Sei Investments Co. significantly increased its stake in The Walt Disney Company, acquiring an additional 304,662 shares, bringing its total to over 1 million shares valued at approximately $97.7 million. Despite general positive sentiment from Wall Street with a \"Moderate Buy\" rating, Disney's stock is near its 52-week low due to recent layoffs, analyst caution, and weak share performance, even though its latest quarterly results surpassed earnings and revenue expectations. Other institutional investors have also adjusted their holdings in Disney, reflecting ongoing market dynamics for the entertainment giant.",
-      "overall_sentiment_score": 0.069,
+      "title": "European Fund Returns to Nio with $19M Stake in First Major Q2 2026 Filing",
+      "url": "https://eletric-vehicles.com/nio/european-fund-returns-to-nio-with-19m-stake-in-first-major-q2-2026-filing/",
+      "source": "Electric Vehicles",
+      "published_at": "20260727T101252",
+      "summary": "Assenagon Asset Management, a European fund managing approximately \u20ac83 billion, has re-established a significant position in Nio, acquiring 3,756,576 American depositary shares valued at over $19 million as of June 30, 2026. This move marks Assenagon's largest investment in Nio to date, 55 times greater than its previous peak holding, following a complete exit in late 2024. The filing provides the first insight into institutional investment activity in Nio for Q2 2026, with more updates expected from other major holders in the coming weeks.",
+      "overall_sentiment_score": 0.337,
       "ticker_sentiment": [
         {
           "ticker": "AAPL",
-          "relevance_score": "0.712195",
-          "ticker_sentiment_score": "0.145832",
-          "ticker_sentiment_label": "Neutral"
+          "relevance_score": "0.575504",
+          "ticker_sentiment_score": "0.374032",
+          "ticker_sentiment_label": "Bullish"
         }
       ],
       "ticker": "AAPL"
     },
     {
-      "title": "Lido Advisors LLC Purchases 24,281 Shares of Texas Pacific Land Corporation $TPL",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-lido-advisors-llc-purchases-24281-shares-of-texas-pacific-land-corporation-tpl-2026-07-24/",
+      "title": "European Fund Returns to Nio with $19M Stake in First Major Q2 2026 Filing",
+      "url": "https://eletric-vehicles.com/nio/european-fund-returns-to-nio-with-19m-stake-in-first-major-q2-2026-filing/",
+      "source": "Electric Vehicles",
+      "published_at": "20260727T101252",
+      "summary": "Assenagon Asset Management, a European fund managing approximately \u20ac83 billion, has re-established a significant position in Nio, acquiring 3,756,576 American depositary shares valued at over $19 million as of June 30, 2026. This move marks Assenagon's largest investment in Nio to date, 55 times greater than its previous peak holding, following a complete exit in late 2024. The filing provides the first insight into institutional investment activity in Nio for Q2 2026, with more updates expected from other major holders in the coming weeks.",
+      "overall_sentiment_score": 0.353,
+      "ticker_sentiment": [
+        {
+          "ticker": "MSFT",
+          "relevance_score": "0.578256",
+          "ticker_sentiment_score": "0.356048",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "MSFT"
+    },
+    {
+      "title": "European Fund Returns to Nio with $19M Stake in First Major Q2 2026 Filing",
+      "url": "https://eletric-vehicles.com/nio/european-fund-returns-to-nio-with-19m-stake-in-first-major-q2-2026-filing/",
+      "source": "Electric Vehicles",
+      "published_at": "20260727T101252",
+      "summary": "Assenagon Asset Management, a European fund managing approximately \u20ac83 billion, has re-established a significant position in Nio, acquiring 3,756,576 American depositary shares valued at over $19 million as of June 30, 2026. This move marks Assenagon's largest investment in Nio to date, 55 times greater than its previous peak holding, following a complete exit in late 2024. The filing provides the first insight into institutional investment activity in Nio for Q2 2026, with more updates expected from other major holders in the coming weeks.",
+      "overall_sentiment_score": 0.345,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.591840",
+          "ticker_sentiment_score": "0.373870",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "European Fund Returns to Nio with $19M Stake in First Major Q2 2026 Filing",
+      "url": "https://eletric-vehicles.com/nio/european-fund-returns-to-nio-with-19m-stake-in-first-major-q2-2026-filing/",
+      "source": "Electric Vehicles",
+      "published_at": "20260727T101252",
+      "summary": "Assenagon Asset Management, a European fund managing approximately \u20ac83 billion, has re-established a significant position in Nio, acquiring 3,756,576 American depositary shares valued at over $19 million as of June 30, 2026. This move marks Assenagon's largest investment in Nio to date, 55 times greater than its previous peak holding, following a complete exit in late 2024. The filing provides the first insight into institutional investment activity in Nio for Q2 2026, with more updates expected from other major holders in the coming weeks.",
+      "overall_sentiment_score": 0.378,
+      "ticker_sentiment": [
+        {
+          "ticker": "AMZN",
+          "relevance_score": "0.560771",
+          "ticker_sentiment_score": "0.375834",
+          "ticker_sentiment_label": "Bullish"
+        }
+      ],
+      "ticker": "AMZN"
+    },
+    {
+      "title": "Church & Dwight Co., Inc. $CHD Stock Holdings Boosted by Healthcare of Ontario Pension Plan Trust Fund",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-church-dwight-co-inc-chd-stock-holdings-boosted-by-healthcare-of-ontario-pension-plan-trust-fund-2026-07-27/",
       "source": "MarketBeat",
-      "published_at": "20260724T095416",
-      "summary": "Lido Advisors LLC significantly increased its stake in Texas Pacific Land Corporation, purchasing an additional 24,281 shares to bring its total holding to 44,013 shares valued at approximately $20.9 million. This increase follows strong quarterly results from Texas Pacific Land, which exceeded analyst expectations for EPS and revenue. Despite the positive financial performance and a declared dividend, analysts maintain a \"Reduce\" consensus rating for the stock with a target price of $639.00.",
+      "published_at": "20260727T100528",
+      "summary": "Healthcare of Ontario Pension Plan Trust Fund significantly increased its stake in Church & Dwight Co., Inc. (NYSE:CHD) by 113.5% in the first quarter, now owning 361,872 shares valued at $33.77 million. Other institutional investors also adjusted their holdings, while company insiders recently sold a substantial number of shares. Analysts have a mixed view on Church & Dwight, with an average \"Hold\" rating and a price target of $103.82, following recent earnings that topped estimates and a declared quarterly dividend.",
       "overall_sentiment_score": 0.155,
       "ticker_sentiment": [
         {
-          "ticker": "MSFT",
-          "relevance_score": "0.649518",
-          "ticker_sentiment_score": "0.125589",
+          "ticker": "GOOGL",
+          "relevance_score": "0.612899",
+          "ticker_sentiment_score": "0.147253",
           "ticker_sentiment_label": "Neutral"
         }
       ],
-      "ticker": "MSFT"
+      "ticker": "GOOGL"
     },
     {
-      "title": "PNC Financial Services Group Inc. Has $51.02 Million Stock Holdings in Analog Devices, Inc. $ADI",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-pnc-financial-services-group-inc-has-5102-million-stock-holdings-in-analog-devices-inc-adi-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T093259",
-      "summary": "PNC Financial Services Group Inc. increased its stake in Analog Devices, Inc. by 2.8% in the first quarter, holding 160,374 shares valued at over $51 million. This increase follows strong quarterly results from Analog Devices, which surpassed EPS and revenue estimates, and the company continues to receive positive analyst ratings and a regular quarterly dividend. Several other institutional investors also modified their positions in Analog Devices, with some insiders selling shares.",
-      "overall_sentiment_score": 0.275,
+      "title": "MoneyHero Ltd (MNY) Earnings Forecast: Future EPS & Revenue Growth Estimates",
+      "url": "https://www.tradingkey.com/markets/stocks/mny/earnings",
+      "source": "TradingKey",
+      "published_at": "20260727T094357",
+      "summary": "MoneyHero Ltd (MNY) has an earnings forecast score of 8.00, placing it 109th in the Software & IT Services industry. Analysts have set an average price target of $4.10, with one analyst rating the stock as \"Buy.\" The company's expected revenue for the next quarter is $21.53M, and the EPS expected for the next quarter is -$0.02.",
+      "overall_sentiment_score": 0.364,
       "ticker_sentiment": [
         {
-          "ticker": "MSFT",
-          "relevance_score": "0.567882",
-          "ticker_sentiment_score": "0.211051",
+          "ticker": "GOOGL",
+          "relevance_score": "0.559073",
+          "ticker_sentiment_score": "0.313413",
           "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "PNC Financial Services Group Inc. Sells 6,143 Shares of Texas Pacific Land Corporation $TPL",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-pnc-financial-services-group-inc-sells-6143-shares-of-texas-pacific-land-corporation-tpl-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T092241",
-      "summary": "PNC Financial Services Group Inc. reduced its stake in Texas Pacific Land Corporation by 4.0% in the first quarter, selling 6,143 shares and retaining 146,982 shares valued at approximately $69.8 million. Despite a recent earnings beat and dividend payment, the company holds a consensus \"Reduce\" rating from analysts with an average target price of $639. The article also details other institutional investor activity and recent insider stock sales.",
-      "overall_sentiment_score": 0.049,
-      "ticker_sentiment": [
-        {
-          "ticker": "MSFT",
-          "relevance_score": "0.612671",
-          "ticker_sentiment_score": "0.015661",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "Meeder Asset Management Inc. Buys 4,641 Shares of Alphabet Inc. $GOOG",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-meeder-asset-management-inc-buys-4641-shares-of-alphabet-inc-goog-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T091904",
-      "summary": "Meeder Asset Management Inc. increased its stake in Alphabet Inc. (NASDAQ:GOOG) by 1.4% in the first quarter, purchasing an additional 4,641 shares to bring its total holdings to 339,260 shares, valued at approximately $97.3 million. This makes Alphabet its third-largest holding. The company reported strong Q2 earnings, beating revenue and EPS expectations, though the stock saw a decline despite a consensus \"Buy\" rating from analysts.",
-      "overall_sentiment_score": 0.064,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "0.974410",
-          "ticker_sentiment_score": "0.055852",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
       "ticker": "GOOGL"
     },
     {
-      "title": "SEB Asset Management AB Makes New Investment in monday.com Ltd. $MNDY",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-seb-asset-management-ab-makes-new-investment-in-mondaycom-ltd-mndy-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T091134",
-      "summary": "SEB Asset Management AB has acquired a new position in monday.com Ltd. (NASDAQ:MNDY), purchasing 23,710 shares valued at approximately $1,639,000 during the first quarter. Other institutional investors like Swiss National Bank, Aurora Investment Counsel, Aware Super Pty Ltd, Sequoia Financial Advisors LLC, and Hsbc Holdings PLC have also adjusted their holdings in the company. The article also provides an overview of monday.com's recent trading performance, earnings, and analyst sentiment, noting the company's recent restructuring around AI and related workforce reductions.",
-      "overall_sentiment_score": 0.048,
-      "ticker_sentiment": [
-        {
-          "ticker": "MSFT",
-          "relevance_score": "0.560546",
-          "ticker_sentiment_score": "-0.055890",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "Why Is Alphabet (GOOGL) Still Falling After a Record Q2 Beat?",
-      "url": "https://www.tradingkey.com/analysis/stocks/us-stocks/262052134-why-alphabet-googl-still-falling-after-record-q2-beat-july-24-2026-tradingkey",
+      "title": "MoneyHero Ltd (MNY) Earnings Forecast: Future EPS & Revenue Growth Estimates",
+      "url": "https://www.tradingkey.com/markets/stocks/mny/earnings",
       "source": "TradingKey",
-      "published_at": "20260724T090804",
-      "summary": "Alphabet's shares have fallen despite a strong Q2 earnings beat, driven by record capital expenditure in AI infrastructure, a new $1 billion EU regulatory fine, and headline EPS inflation from one-time investment gains. Despite these concerns, 63 analysts maintain a \"Buy\" rating with an average $417 target, citing solid fundamental performance and an oversold technical position. The market remains divided on whether the massive AI investments will yield sufficient future operating margins.",
-      "overall_sentiment_score": 0.053,
+      "published_at": "20260727T094357",
+      "summary": "MoneyHero Ltd (MNY) has an earnings forecast score of 8.00, placing it 109th in the Software & IT Services industry. Analysts have set an average price target of $4.10, with one analyst rating the stock as \"Buy.\" The company's expected revenue for the next quarter is $21.53M, and the EPS expected for the next quarter is -$0.02.",
+      "overall_sentiment_score": 0.363,
       "ticker_sentiment": [
         {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.047985",
-          "ticker_sentiment_label": "Neutral"
+          "ticker": "META",
+          "relevance_score": "0.601465",
+          "ticker_sentiment_score": "0.348813",
+          "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
-      "ticker": "GOOGL"
+      "ticker": "META"
     },
     {
-      "title": "Torren Management LLC Sells 3,414 Shares of Apple Inc. $AAPL",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-torren-management-llc-sells-3414-shares-of-apple-inc-aapl-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T090714",
-      "summary": "Torren Management LLC significantly reduced its stake in Apple Inc. ($AAPL) by 78.8% in the first quarter, selling 3,414 shares and retaining 918 shares valued at approximately $233,000. Despite this sale, Apple reported strong quarterly earnings, beating analyst expectations with an EPS of $2.01 and revenue of $111.18 billion, and also increased its quarterly dividend to $0.27 per share. Analyst sentiment remains largely positive, maintaining a \"Moderate Buy\" consensus rating with an average price target of $326.83, even as some market notes point to a rich valuation.",
-      "overall_sentiment_score": 0.25,
+      "title": "FEUS ETF Profile: Dividends, Returns (BOATS:FEUS)",
+      "url": "https://www.tradingview.com/symbols/BOATS-FEUS/profile/",
+      "source": "TradingView",
+      "published_at": "20260727T094021",
+      "summary": "The FEUS ETF (FlexShares ESG & Climate US Large Cap Core Index Fund) provides exposure to US companies with strong environmental, social, and governance attributes. It tracks the Northern Trust ESG & Climate US Large Cap Core Index and invests primarily in stocks, with major holdings in Electronic Technology and Technology Services. The ETF has an expense ratio of 0.09% and pays quarterly dividends, with its last dividend showing a 23.59% increase.",
+      "overall_sentiment_score": 0.222,
       "ticker_sentiment": [
         {
           "ticker": "AAPL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.264465",
+          "relevance_score": "0.741397",
+          "ticker_sentiment_score": "0.320054",
           "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
       "ticker": "AAPL"
     },
     {
-      "title": "Compound Planning Inc. Sells 13,231 Shares of Bank of America Corporation $BAC",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-compound-planning-inc-sells-13231-shares-of-bank-of-america-corporation-bac-2026-07-24/",
+      "title": "Apple Inc. $AAPL is International Assets Investment Management LLC's 5th Largest Position",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-apple-inc-aapl-is-international-assets-investment-management-llcs-5th-largest-position-2026-07-27/",
       "source": "MarketBeat",
-      "published_at": "20260724T085510",
-      "summary": "Compound Planning Inc. has reduced its stake in Bank of America Corporation (NYSE:BAC) by 7.5% in the first quarter, selling 13,231 shares and now owning 163,030 shares valued at $7.95 million. Despite this reduction, several other institutional investors, including Vanguard Group Inc., Norges Bank, and Bank of New York Mellon Corp, increased their holdings in Bank of America during the fourth quarter. Analysts have issued \"Buy\" or \"Overweight\" ratings for BAC, with a consensus price target of $63.77.",
-      "overall_sentiment_score": 0.169,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "0.634289",
-          "ticker_sentiment_score": "0.321066",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Campbell's swaps red labels for green on new soups",
-      "url": "https://www.courierpostonline.com/story/money/business/biz-buzz/2026/07/24/campbells-protein-soups-red-green-and-white-labels/90984841007/",
-      "source": "Courier-Post",
-      "published_at": "20260724T085125",
-      "summary": "Campbell's is introducing a new line of five protein-rich soups with green-and-white labels, a significant change from their traditional red-and-white design used for over 125 years. This shift aims to capitalize on the growing consumer demand for high-protein foods, with the new soups featuring slow-simmered bone broth and other protein sources. The soups are currently available on Amazon.com and are rolling out to retailers nationwide.",
-      "overall_sentiment_score": 0.225,
-      "ticker_sentiment": [
-        {
-          "ticker": "AMZN",
-          "relevance_score": "0.604578",
-          "ticker_sentiment_score": "0.114095",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "AMZN"
-    },
-    {
-      "title": "Why this money manager added to his Paycom position and sold a Japanese consumer review stock",
-      "url": "https://www.theglobeandmail.com/investing/globe-advisor/advisor-funds/article-why-this-money-manager-added-to-his-paycom-position-and-sold-a/",
-      "source": "The Globe and Mail",
-      "published_at": "20260724T084432",
-      "summary": "Money manager Jason Del Vicario, overseeing $280-million in assets for Hillside Wealth Management, has been actively finding investment opportunities despite market overvaluation. He focuses on high-quality companies with strong management and consistent returns, adding to positions like Copart, Kinsale Capital Group, and Paycom Software, while selling Kakaku.com Inc. due to a private equity takeover. Del Vicario's strategy emphasizes long-term holdings and buying when prices are favorable, even if it means underperforming AI-driven market surges in the short term.",
-      "overall_sentiment_score": 0.379,
-      "ticker_sentiment": [
-        {
-          "ticker": "META",
-          "relevance_score": "0.625872",
-          "ticker_sentiment_score": "0.001847",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "META"
-    },
-    {
-      "title": "Nwam LLC Buys 8,055 Shares of Alphabet Inc. $GOOGL",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-nwam-llc-buys-8055-shares-of-alphabet-inc-googl-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T084054",
-      "summary": "Nwam LLC increased its stake in Alphabet Inc. (NASDAQ:GOOGL) by 19.6% in the first quarter, adding 8,055 shares to hold a total of 49,128 shares valued at $14.1 million. Despite a strong earnings beat with significant revenue and EPS growth, investors are wary of Alphabet's rising capital expenditures for AI infrastructure and regulatory pressures, including a new \u20ac890 million EU antitrust fine. The company also recently declared a quarterly dividend of $0.22 per share.",
-      "overall_sentiment_score": -0.125,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "-0.121958",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Alphabet Inc. $GOOGL Shares Sold by Legacy Capital Group California Inc.",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-alphabet-inc-googl-shares-sold-by-legacy-capital-group-california-inc-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T083758",
-      "summary": "Legacy Capital Group California Inc. reduced its stake in Alphabet (GOOGL) by 26.8% in the first quarter, selling 3,724 shares but still holding over 10,000 shares valued at $2.93 million. This comes despite strong earnings for Alphabet, which reported revenue of $119.8 billion and EPS of $9.11, both exceeding expectations. However, investor concerns about increased AI-related capital spending, negative free cash flow, and a new \u20ac890 million EU antitrust fine are putting pressure on the stock.",
-      "overall_sentiment_score": -0.204,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "-0.232573",
-          "ticker_sentiment_label": "Somewhat-Bearish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "Microsoft And Meta Earnings Previews",
-      "url": "https://seekingalpha.com/article/4925183-microsoft-meta-earnings-previews?source=feed_all_articles",
-      "source": "Seeking Alpha",
-      "published_at": "20260724T082940",
-      "summary": "The article discusses the earnings previews for Microsoft and Meta Platforms, focusing on their capital expenditure (CapEx) for AI infrastructure. Consensus projections indicate a significant increase in CapEx for 2026, with Microsoft's CapEx expected to nearly triple by FY 2027 and Meta's rising by over $10 billion for FY 2026. The market is keenly watching whether these companies can maintain their CapEx guidance while ensuring profitability amidst aggressive AI investments.",
+      "published_at": "20260727T093700",
+      "summary": "International Assets Investment Management LLC (IAIM) has maintained Apple Inc. as its fifth-largest holding despite a slight reduction in its stake, valuing its position at $81.4 million. Other major institutional investors have also significantly increased their holdings in Apple. The article highlights Apple's strong financial performance, positive analyst sentiment, and recent dividend increase, alongside a discussion of both positive and negative news impacting the company.",
       "overall_sentiment_score": 0.259,
       "ticker_sentiment": [
         {
-          "ticker": "MSFT",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.281050",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "MSFT"
-    },
-    {
-      "title": "Microsoft And Meta Earnings Previews",
-      "url": "https://seekingalpha.com/article/4925183-microsoft-meta-earnings-previews?source=feed_all_articles",
-      "source": "Seeking Alpha",
-      "published_at": "20260724T082940",
-      "summary": "The article discusses the earnings previews for Microsoft and Meta Platforms, focusing on their capital expenditure (CapEx) for AI infrastructure. Consensus projections indicate a significant increase in CapEx for 2026, with Microsoft's CapEx expected to nearly triple by FY 2027 and Meta's rising by over $10 billion for FY 2026. The market is keenly watching whether these companies can maintain their CapEx guidance while ensuring profitability amidst aggressive AI investments.",
-      "overall_sentiment_score": 0.248,
-      "ticker_sentiment": [
-        {
-          "ticker": "META",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.216867",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "META"
-    },
-    {
-      "title": "The Walt Disney Company $DIS Stock Holdings Increased by Gibbs Wealth Management",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-the-walt-disney-company-dis-stock-holdings-increased-by-gibbs-wealth-management-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T081633",
-      "summary": "Gibbs Wealth Management significantly increased its stake in The Walt Disney Company by 111.8% in the first quarter, now holding 26,143 shares valued at over $2.5 million. Other institutional investors also raised their positions, indicating sustained large-scale interest, despite the stock trading near its 52-week low amidst layoffs and analyst price target adjustments. Analysts currently rate DIS as a \"Moderate Buy\" with a consensus price target of $129.00.",
-      "overall_sentiment_score": -0.065,
-      "ticker_sentiment": [
-        {
           "ticker": "AAPL",
-          "relevance_score": "0.597241",
-          "ticker_sentiment_score": "0.104631",
-          "ticker_sentiment_label": "Neutral"
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "0.302511",
+          "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
       "ticker": "AAPL"
     },
     {
-      "title": "PANW|Palo Alto Networks Inc|Price:325.630|Chg%:-9.650",
-      "url": "https://www.tradingkey.com/markets/stocks/panw",
-      "source": "TradingKey",
-      "published_at": "20260724T080851",
-      "summary": "Palo Alto Networks Inc. (PANW) stock experienced a 2.88% dip on July 23rd, trading at $325.630. Despite this recent dip, the company shows healthy fundamentals, high growth potential, and strong institutional ownership, with multiple analysts rating it as a \"Buy.\" However, technical indicators suggest the stock is currently trading sideways, suitable for range-bound swing trading, while its valuation is considered fair within the Software & IT Services industry.",
-      "overall_sentiment_score": 0.13,
+      "title": "Pennington Partners & CO. LLC Acquires 14,386 Shares of Alphabet Inc. $GOOG",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-pennington-partners-co-llc-acquires-14386-shares-of-alphabet-inc-goog-2026-07-27/",
+      "source": "MarketBeat",
+      "published_at": "20260727T092414",
+      "summary": "Pennington Partners & CO. LLC significantly increased its holdings in Alphabet Inc. (NASDAQ:GOOG) by 397.6% in Q1, acquiring an additional 14,386 shares, bringing their total to 18,004 shares valued at $5.16 million. Alphabet now constitutes 1.8% of their portfolio. The article also highlights recent insider stock sales, positive analyst ratings with an average target price of $410.09, strong Q2 earnings that surpassed estimates, and the company's recent dividend announcement.",
+      "overall_sentiment_score": 0.308,
       "ticker_sentiment": [
         {
-          "ticker": "MSFT",
-          "relevance_score": "0.598094",
-          "ticker_sentiment_score": "0.119324",
-          "ticker_sentiment_label": "Neutral"
+          "ticker": "GOOGL",
+          "relevance_score": "0.911771",
+          "ticker_sentiment_score": "0.319199",
+          "ticker_sentiment_label": "Somewhat-Bullish"
         }
       ],
-      "ticker": "MSFT"
+      "ticker": "GOOGL"
     },
     {
-      "title": "PANW|Palo Alto Networks Inc|Price:325.630|Chg%:-9.650",
-      "url": "https://www.tradingkey.com/markets/stocks/panw",
-      "source": "TradingKey",
-      "published_at": "20260724T080851",
-      "summary": "Palo Alto Networks Inc. (PANW) stock experienced a 2.88% dip on July 23rd, trading at $325.630. Despite this recent dip, the company shows healthy fundamentals, high growth potential, and strong institutional ownership, with multiple analysts rating it as a \"Buy.\" However, technical indicators suggest the stock is currently trading sideways, suitable for range-bound swing trading, while its valuation is considered fair within the Software & IT Services industry.",
-      "overall_sentiment_score": 0.136,
+      "title": "Apple Inc. (NASDAQ:AAPL) Shares Approach High Ahead of July 30 Earnings as Focus Turns to Lean AI Approach",
+      "url": "https://ts2.tech/en/apple-inc-nasdaqaapl-shares-approach-high-ahead-of-july-30-earnings-as-focus-turns-to-lean-ai-approach/",
+      "source": "TechStock\u00b2",
+      "published_at": "20260727T091659",
+      "summary": "Apple Inc. (NASDAQ:AAPL) is nearing its all-time high as investors anticipate its July 30 earnings report, focusing on its lean AI approach compared to capital-intensive rivals like Alphabet. Apple's minimal capital expenditure and high R&D spending, alongside strong iPhone sales and services growth, are key highlights. The upcoming earnings call will address memory costs, iPhone demand, margin guidance, and capital allocation, especially given the impending CEO transition.",
+      "overall_sentiment_score": -0.166,
+      "ticker_sentiment": [
+        {
+          "ticker": "AAPL",
+          "relevance_score": "0.967226",
+          "ticker_sentiment_score": "0.308636",
+          "ticker_sentiment_label": "Somewhat-Bullish"
+        }
+      ],
+      "ticker": "AAPL"
+    },
+    {
+      "title": "Apple Inc. (NASDAQ:AAPL) Shares Approach High Ahead of July 30 Earnings as Focus Turns to Lean AI Approach",
+      "url": "https://ts2.tech/en/apple-inc-nasdaqaapl-shares-approach-high-ahead-of-july-30-earnings-as-focus-turns-to-lean-ai-approach/",
+      "source": "TechStock\u00b2",
+      "published_at": "20260727T091659",
+      "summary": "Apple Inc. (NASDAQ:AAPL) is nearing its all-time high as investors anticipate its July 30 earnings report, focusing on its lean AI approach compared to capital-intensive rivals like Alphabet. Apple's minimal capital expenditure and high R&D spending, alongside strong iPhone sales and services growth, are key highlights. The upcoming earnings call will address memory costs, iPhone demand, margin guidance, and capital allocation, especially given the impending CEO transition.",
+      "overall_sentiment_score": -0.181,
+      "ticker_sentiment": [
+        {
+          "ticker": "GOOGL",
+          "relevance_score": "0.721345",
+          "ticker_sentiment_score": "-0.402688",
+          "ticker_sentiment_label": "Bearish"
+        }
+      ],
+      "ticker": "GOOGL"
+    },
+    {
+      "title": "Last day to claim some of Amazon's $2.5B settlement money",
+      "url": "https://www.mysanantonio.com/business/article/amazon-prime-settlement-how-to-claim-22199876.php",
+      "source": "MySA",
+      "published_at": "20260727T091109",
+      "summary": "Today, July 27, 2026, is the last day for Texans to file a claim in a $2.5 billion settlement against Amazon. The lawsuit alleges that Amazon used deceptive practices, known as \"dark patterns,\" to trick customers into unwanted Prime memberships. Eligible consumers can claim up to $51 in membership fee refunds, with payments expected by September 2026 via PayPal, Venmo, or mailed check.",
+      "overall_sentiment_score": -0.218,
       "ticker_sentiment": [
         {
           "ticker": "AMZN",
-          "relevance_score": "0.575801",
-          "ticker_sentiment_score": "0.113331",
-          "ticker_sentiment_label": "Neutral"
+          "relevance_score": "1.000000",
+          "ticker_sentiment_score": "-0.226311",
+          "ticker_sentiment_label": "Somewhat-Bearish"
         }
       ],
       "ticker": "AMZN"
     },
     {
-      "title": "META|Meta Platforms Inc|Price:606.040|Chg%:-21.130",
-      "url": "https://www.tradingkey.com/markets/stocks/meta",
-      "source": "TradingKey",
-      "published_at": "20260724T080848",
-      "summary": "Meta Platforms Inc. (META) experienced a 3.37% decline, closing at $606.04, with a market cap of $1.54 trillion. Despite healthy fundamentals and high growth potential, its stock price is expected to trend down in the medium term, trading sideways between support and resistance levels. Analysts currently rate META as a \"Buy\" with a target price of $823.55, indicating significant upside potential.",
-      "overall_sentiment_score": 0.228,
+      "title": "13,752 Shares in NRG Energy, Inc. $NRG Acquired by Clough Capital Partners L P",
+      "url": "https://www.marketbeat.com/instant-alerts/filing-13752-shares-in-nrg-energy-inc-nrg-acquired-by-clough-capital-partners-l-p-2026-07-27/",
+      "source": "MarketBeat",
+      "published_at": "20260727T090803",
+      "summary": "Clough Capital Partners L P has acquired a new stake of 13,752 shares in NRG Energy, Inc. (NYSE:NRG) worth approximately $2.01 million during the first quarter. Several other institutional investors have also adjusted their positions in NRG, with 97.72% of the stock owned by institutional investors. Analysts currently rate NRG Energy as a \"Moderate Buy\" with an average target price of $199.93, despite a recent earnings miss and a high P/E ratio.",
+      "overall_sentiment_score": 0.05,
       "ticker_sentiment": [
         {
           "ticker": "MSFT",
-          "relevance_score": "0.629134",
-          "ticker_sentiment_score": "0.318939",
-          "ticker_sentiment_label": "Somewhat-Bullish"
+          "relevance_score": "0.597233",
+          "ticker_sentiment_score": "-0.058368",
+          "ticker_sentiment_label": "Neutral"
         }
       ],
       "ticker": "MSFT"
-    },
-    {
-      "title": "META|Meta Platforms Inc|Price:606.040|Chg%:-21.130",
-      "url": "https://www.tradingkey.com/markets/stocks/meta",
-      "source": "TradingKey",
-      "published_at": "20260724T080848",
-      "summary": "Meta Platforms Inc. (META) experienced a 3.37% decline, closing at $606.04, with a market cap of $1.54 trillion. Despite healthy fundamentals and high growth potential, its stock price is expected to trend down in the medium term, trading sideways between support and resistance levels. Analysts currently rate META as a \"Buy\" with a target price of $823.55, indicating significant upside potential.",
-      "overall_sentiment_score": 0.244,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "0.726914",
-          "ticker_sentiment_score": "0.342519",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "META|Meta Platforms Inc|Price:606.040|Chg%:-21.130",
-      "url": "https://www.tradingkey.com/markets/stocks/meta",
-      "source": "TradingKey",
-      "published_at": "20260724T080848",
-      "summary": "Meta Platforms Inc. (META) experienced a 3.37% decline, closing at $606.04, with a market cap of $1.54 trillion. Despite healthy fundamentals and high growth potential, its stock price is expected to trend down in the medium term, trading sideways between support and resistance levels. Analysts currently rate META as a \"Buy\" with a target price of $823.55, indicating significant upside potential.",
-      "overall_sentiment_score": 0.256,
-      "ticker_sentiment": [
-        {
-          "ticker": "AMZN",
-          "relevance_score": "0.633864",
-          "ticker_sentiment_score": "0.346719",
-          "ticker_sentiment_label": "Somewhat-Bullish"
-        }
-      ],
-      "ticker": "AMZN"
-    },
-    {
-      "title": "META|Meta Platforms Inc|Price:606.040|Chg%:-21.130",
-      "url": "https://www.tradingkey.com/markets/stocks/meta",
-      "source": "TradingKey",
-      "published_at": "20260724T080848",
-      "summary": "Meta Platforms Inc. (META) experienced a 3.37% decline, closing at $606.04, with a market cap of $1.54 trillion. Despite healthy fundamentals and high growth potential, its stock price is expected to trend down in the medium term, trading sideways between support and resistance levels. Analysts currently rate META as a \"Buy\" with a target price of $823.55, indicating significant upside potential.",
-      "overall_sentiment_score": 0.253,
-      "ticker_sentiment": [
-        {
-          "ticker": "META",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.129837",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "META"
-    },
-    {
-      "title": "Alphabet Inc. $GOOGL Shares Purchased by Bleakley Financial Group LLC",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-alphabet-inc-googl-shares-purchased-by-bleakley-financial-group-llc-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T075605",
-      "summary": "Bleakley Financial Group LLC increased its stake in Alphabet Inc. (NASDAQ:GOOGL) by 8.7% in the first quarter, bringing their total holdings to $57,855,000. This comes as insider activity shows some selling, but analysts have largely maintained \"Buy\" or \"Strong Buy\" ratings with increased price targets. Despite strong earnings, increased capital spending and an EU antitrust fine have introduced some negative sentiment around the stock.",
-      "overall_sentiment_score": 0.007,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "0.045408",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "GOOGL"
-    },
-    {
-      "title": "ABC Arbitrage SA Acquires Shares of 4,494 Alphabet Inc. $GOOGL",
-      "url": "https://www.marketbeat.com/instant-alerts/filing-abc-arbitrage-sa-acquires-shares-of-4494-alphabet-inc-googl-2026-07-24/",
-      "source": "MarketBeat",
-      "published_at": "20260724T070801",
-      "summary": "ABC Arbitrage SA recently purchased a new position of 4,494 shares in Alphabet Inc. (NASDAQ:GOOGL) during the first quarter, valued at approximately $1.29 million. Alphabet reported strong quarterly earnings, beating analyst estimates, but also announced increased capital spending for 2026 and faces a new EU antitrust fine. The company also declared a quarterly dividend of $0.22 per share.",
-      "overall_sentiment_score": -0.114,
-      "ticker_sentiment": [
-        {
-          "ticker": "GOOGL",
-          "relevance_score": "1.000000",
-          "ticker_sentiment_score": "-0.137365",
-          "ticker_sentiment_label": "Neutral"
-        }
-      ],
-      "ticker": "GOOGL"
     }
   ],
   "source_status": {
