@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T13:39:08.462522+00:00",
+  "generated_at": "2026-07-28T12:53:06.086804+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -28,14 +28,16 @@
       }
     },
     "advisor": {
-      "status": "healthy",
-      "checked_at": "2026-07-27T13:39:08.462511+00:00",
+      "status": "degraded",
+      "checked_at": "2026-07-28T12:53:06.086791+00:00",
       "source": "Alpha Vantage + Yahoo Finance",
       "details": {
         "universe": 120,
         "scored": 120,
         "ranked": 20,
-        "failed": []
+        "failed": [
+          "META"
+        ]
       }
     }
   }
