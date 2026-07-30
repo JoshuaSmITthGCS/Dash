@@ -9,6 +9,7 @@ import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
 import { benchmarkAlternative, portfolioGrowthSeries, portfolioVsBenchmark } from '../lib/portfolioPerformance'
 import Icon from '../components/Icons'
+import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -24,14 +25,23 @@ function Move({ value, digits = 1 }) {
 
 export default function Portfolio() {
   const { logout } = useAuth()
-  const { data, loading: dataLoading } = useData('advisor.json')
-  const { positions, loading: portfolioLoading, addPosition, removePosition, exportPortfolio, syncReferencePortfolio } = useFirebasePortfolio()
+  const { data, loading: dataLoading, reload } = useData('advisor.json')
+  const {
+    positions,
+    loading: portfolioLoading,
+    addPosition,
+    removePosition,
+    updatePosition,
+    exportPortfolio,
+    syncReferencePortfolio,
+  } = useFirebasePortfolio()
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', purchaseDate: new Date().toISOString().split('T')[0] })
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
+  const refresh = useAdvisorRefresh(data?.generated_at, reload)
 
   if (dataLoading || portfolioLoading) return <Loading />
 
@@ -39,16 +49,19 @@ export default function Portfolio() {
   const portfolioCoverage = data?.portfolio_coverage || []
   const benchmarkHistory = data?.benchmark_history
   const priceData = Object.fromEntries([...research, ...portfolioCoverage]
-    .filter((row) => row.ticker).map((row) => [row.ticker, row]))
+    .filter((row) => row.ticker && row.price != null)
+    .map((row) => [String(row.ticker).trim().toUpperCase(), row]))
 
   const portfolioStats = positions.reduce((acc, pos) => {
-    const current = priceData[pos.ticker]
+    const ticker = String(pos.ticker || '').trim().toUpperCase()
+    const current = priceData[ticker]
     const currentPrice = current?.price ?? pos.snapshotPrice ?? null
     const totalCost = pos.shares * pos.costBasis
     const currentValue = currentPrice == null ? null : pos.shares * currentPrice
     const gain = currentValue == null ? null : currentValue - totalCost
     const enriched = {
       ...pos,
+      ticker,
       currentPrice,
       totalCost,
       currentValue,
@@ -95,6 +108,11 @@ export default function Portfolio() {
       : `Sync failed: ${result.error}`)
   }
 
+  const handlePurchaseDateChange = async (positionId, purchaseDate) => {
+    const result = await updatePosition(positionId, { purchaseDate })
+    setSyncMessage(result?.success ? 'Purchase date saved' : `Could not save date: ${result?.error || 'Unknown error'}`)
+  }
+
   const basis = data?.hypothetical_basis || 500
 
   return (
@@ -108,12 +126,21 @@ export default function Portfolio() {
           </p>
         </div>
         <div className="page-actions">
-          <button className="secondary-button" onClick={handleReferenceSync}><Icon name="sync" size={17} /> Sync 19 holdings</button>
+          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}>
+            <Icon name="sync" size={17} className={refresh.refreshing ? 'refresh-spin' : ''} />
+            {refresh.refreshing ? 'Refreshing…' : 'Refresh prices'}
+          </button>
+          <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
           <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
           <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
         </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
+      {refresh.message && (
+        <div className={`sync-message refresh-message ${refresh.status}`} role="status" aria-live="polite">
+          {refresh.message}
+        </div>
+      )}
 
       <div className="portfolio-summary">
         <div className="portfolio-value-card">
@@ -336,7 +363,15 @@ export default function Portfolio() {
               {portfolioStats.positions.map((pos) => (
                 <tr key={pos.id || pos.ticker}>
                   <td className="mono">{pos.ticker}</td>
-                  <td className="mono num">{pos.purchaseDate || '—'}</td>
+                  <td className="mono num">
+                    <input
+                      className="portfolio-date-input"
+                      type="date"
+                      value={pos.purchaseDate || ''}
+                      aria-label={`${pos.ticker} purchase date`}
+                      onChange={(event) => handlePurchaseDateChange(pos.id, event.target.value)}
+                    />
+                  </td>
                   <td className="mono num">{money(pos.totalCost)}</td>
                   <td className="mono num">{money(pos.currentValue)}</td>
                   <td className="num"><Move value={pos.gainPct} /></td>
@@ -368,8 +403,9 @@ export default function Portfolio() {
             </tbody>
           </table>
           <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 12 }}>
-            Positions bought before the published benchmark window show “—” rather than being
-            compared against the wrong entry price.
+            Add or correct a purchase date above to calculate the same-day comparison. Positions
+            bought before the published benchmark window show “—” rather than being compared
+            against the wrong entry price.
           </p>
         </div>
       )}

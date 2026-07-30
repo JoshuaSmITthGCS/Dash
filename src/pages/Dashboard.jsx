@@ -8,6 +8,7 @@ import StockDetailModal from '../components/StockDetailModal.jsx'
 import { getRecommendation } from '../lib/recommendation'
 import { humanDate } from '../lib/formatters'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
+import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 
@@ -56,31 +57,32 @@ function CandidateCard({ row, rank, onOpen }) {
   )
 }
 
+function TrendCard({ row, direction, onOpen }) {
+  const return20d = row.technical_detail?.return_20d
+  const relative = row.technical_detail?.relative_strength_20d
+  return (
+    <button className="trend-card" onClick={() => onOpen(row)}
+      aria-label={`Open ${row.name}; ${direction} trend, ${return20d?.toFixed(1)} percent over 20 days`}>
+      <div className="trend-card-head">
+        <div><strong>{row.ticker}</strong><span>{row.name}</span></div>
+        <span className={`trend-direction ${direction === 'Strengthening' ? 'positive' : 'negative'}`}>
+          {direction}
+        </span>
+      </div>
+      <Sparkline values={historyValues(row).slice(-21)} label={`${row.ticker} 20-day price trend`} height={78} />
+      <div className="trend-card-stats">
+        <div><span>20-day</span><Move pct={return20d} /></div>
+        <div><span>Vs SPY</span><Move pct={relative} /></div>
+      </div>
+    </button>
+  )
+}
+
 export default function Dashboard() {
-  const { data, loading } = useData('advisor.json')
+  const { data, loading, reload } = useData('advisor.json')
   const { currentUser } = useAuth()
   const [selectedStock, setSelectedStock] = useState(null)
-  const [refreshState, setRefreshState] = useState({ status: 'idle', message: '' })
-
-  const requestRefresh = async () => {
-    if (!currentUser || refreshState.status === 'pending') return
-    setRefreshState({ status: 'pending', message: 'Starting data refresh…' })
-    try {
-      const idToken = await currentUser.getIdToken()
-      const response = await fetch('/.netlify/functions/refresh-data', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${idToken}` },
-      })
-      const payload = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(payload.error || 'The refresh could not be started.')
-      setRefreshState({
-        status: 'success',
-        message: 'Refresh started. Rankings will update after the workflow finishes.',
-      })
-    } catch (error) {
-      setRefreshState({ status: 'error', message: error.message })
-    }
-  }
+  const refresh = useAdvisorRefresh(data?.generated_at, reload)
 
   const watchlist = useMemo(() => {
     try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || ['AAPL', 'MSFT'] }
@@ -101,6 +103,11 @@ export default function Dashboard() {
   const topSector = Object.entries(sectorCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unavailable'
   const averageConfidence = rows.reduce((sum, row) => sum + (row.confidence || 0), 0) / rows.length
   const watchRows = watchlist.map((ticker) => rows.find((row) => row.ticker === ticker)).filter(Boolean).slice(0, 3)
+  const trendRows = [...rows]
+    .filter((row) => Number.isFinite(row.technical_detail?.return_20d) && historyValues(row).length > 1)
+    .sort((left, right) => right.technical_detail.return_20d - left.technical_detail.return_20d)
+  const strengthening = trendRows.slice(0, 2)
+  const cooling = trendRows.slice(-2).reverse()
 
   return (
     <>
@@ -112,16 +119,16 @@ export default function Dashboard() {
         <div className="refresh-control">
           <div className="stamp">Refreshed {humanDate(data.generated_at)}</div>
           {currentUser && (
-            <button className="secondary-button compact refresh-button" onClick={requestRefresh}
-              disabled={refreshState.status === 'pending'}>
+            <button className="secondary-button compact refresh-button" onClick={refresh.requestRefresh}
+              disabled={refresh.refreshing}>
               <Icon name="sync" size={17}
-                className={refreshState.status === 'pending' ? 'refresh-spin' : ''} />
-              {refreshState.status === 'pending' ? 'Starting…' : 'Refresh data'}
+                className={refresh.refreshing ? 'refresh-spin' : ''} />
+              {refresh.refreshing ? 'Refreshing…' : 'Refresh data'}
             </button>
           )}
-          {refreshState.message && (
-            <span className={`refresh-message ${refreshState.status}`} role="status" aria-live="polite">
-              {refreshState.message}
+          {refresh.message && (
+            <span className={`refresh-message ${refresh.status}`} role="status" aria-live="polite">
+              {refresh.message}
             </span>
           )}
         </div>
@@ -166,6 +173,23 @@ export default function Dashboard() {
           <CandidateCard key={row.ticker} row={row} rank={index + 2} onOpen={setSelectedStock} />
         ))}
       </section>
+
+      {trendRows.length >= 4 && (
+        <>
+          <div className="section-heading">
+            <div><span className="eyebrow">Price momentum</span><h2>Market trends</h2></div>
+            <Link to="/market">Open market pulse <Icon name="arrow" size={17} /></Link>
+          </div>
+          <section className="trend-grid" aria-label="Strongest and weakest 20-day market trends">
+            {strengthening.map((row) => (
+              <TrendCard key={row.ticker} row={row} direction="Strengthening" onOpen={setSelectedStock} />
+            ))}
+            {cooling.map((row) => (
+              <TrendCard key={row.ticker} row={row} direction="Cooling" onOpen={setSelectedStock} />
+            ))}
+          </section>
+        </>
+      )}
 
       <section className="summary-grid" aria-label="Research summary">
         <article><span>Universe analyzed</span><strong>{universeSize}</strong><small>configured companies</small></article>

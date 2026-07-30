@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["schema_version", "generated_at", "data_mode", "count", "universe_count", "methodology", "research", "market", "source_status", "disclaimer"],
+  "required": ["schema_version", "generated_at", "data_mode", "count", "universe_count", "methodology", "research", "benchmark_history", "hypothetical_basis", "portfolio_coverage", "market", "source_status", "disclaimer"],
   "properties": {
     "schema_version": { "const": 1 },
     "generated_at": { "type": "string", "format": "date-time" },
@@ -15,7 +15,7 @@
       "maxItems": 100,
       "items": {
         "type": "object",
-        "required": ["ticker", "name", "score", "stance", "confidence", "components", "strengths", "risks"],
+        "required": ["ticker", "name", "score", "stance", "confidence", "components", "strengths", "risks", "history", "hypothetical"],
         "properties": {
           "ticker": { "type": "string", "minLength": 1 },
           "name": { "type": "string", "minLength": 1 },
@@ -55,17 +55,21 @@
             "type": "object",
             "required": ["dates", "closes", "growth"],
             "properties": {
-              "dates": { "type": "array", "items": { "type": "string" } },
-              "closes": { "type": "array", "items": { "type": ["number", "null"] } },
-              "growth": { "type": "array", "items": { "type": ["number", "null"] } }
+              "dates": { "type": "array", "minItems": 8, "items": { "type": "string" } },
+              "closes": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } },
+              "growth": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } }
             }
           },
           "hypothetical": {
-            "type": ["object", "null"],
+            "type": "object",
+            "required": ["basis", "stock_value", "benchmark_value", "stock_return_pct", "benchmark_return_pct", "excess_return_pct", "dollars_ahead"],
             "properties": {
               "basis": { "type": "number", "exclusiveMinimum": 0 },
               "stock_value": { "type": "number" },
               "benchmark_value": { "type": "number" },
+              "stock_return_pct": { "type": "number" },
+              "benchmark_return_pct": { "type": "number" },
+              "dollars_ahead": { "type": "number" },
               "excess_return_pct": { "type": "number" }
             }
           },
@@ -78,10 +82,25 @@
     },
     "benchmark_history": {
       "type": "object",
+      "required": ["symbol", "dates", "closes", "growth"],
       "properties": {
-        "symbol": { "type": "string" },
-        "dates": { "type": "array", "items": { "type": "string" } },
-        "growth": { "type": "array", "items": { "type": ["number", "null"] } }
+        "symbol": { "const": "SPY" },
+        "dates": { "type": "array", "minItems": 8, "items": { "type": "string" } },
+        "closes": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } },
+        "growth": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } }
+      }
+    },
+    "hypothetical_basis": { "type": "number", "exclusiveMinimum": 0 },
+    "portfolio_coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "name", "price"],
+        "properties": {
+          "ticker": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "price": { "type": ["number", "null"] }
+        }
       }
     },
     "methodology": {

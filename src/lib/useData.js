@@ -1,21 +1,40 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Loads a JSON file the pipeline committed into /public/data.
-// Static fetch -> no backend. Returns { data, loading, error }.
+// Static fetch -> no backend. Returns { data, loading, error, reload }.
 export function useData(file) {
   const [state, setState] = useState({ data: null, loading: true, error: null })
-  useEffect(() => {
-    let alive = true
-    fetch(`${import.meta.env.BASE_URL}data/${file}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`${file}: ${r.status}`)
-        return r.json()
-      })
-      .then((data) => alive && setState({ data, loading: false, error: null }))
-      .catch((error) => alive && setState({ data: null, loading: false, error }))
-    return () => { alive = false }
+  const mounted = useRef(false)
+
+  const load = useCallback(async ({ initial = false } = {}) => {
+    if (initial && mounted.current) {
+      setState((current) => ({ ...current, loading: true, error: null }))
+    }
+    try {
+      const separator = file.includes('?') ? '&' : '?'
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}data/${file}${separator}v=${Date.now()}`,
+        { cache: 'no-store' }
+      )
+      if (!response.ok) throw new Error(`${file}: ${response.status}`)
+      const data = await response.json()
+      if (mounted.current) setState({ data, loading: false, error: null })
+      return data
+    } catch (error) {
+      if (mounted.current) {
+        setState((current) => ({ data: current.data, loading: false, error }))
+      }
+      throw error
+    }
   }, [file])
-  return state
+
+  useEffect(() => {
+    mounted.current = true
+    load({ initial: true }).catch(() => {})
+    return () => { mounted.current = false }
+  }, [load])
+
+  return { ...state, reload: load }
 }
 
 export const fmtPct = (v) =>

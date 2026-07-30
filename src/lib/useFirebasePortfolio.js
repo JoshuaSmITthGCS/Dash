@@ -5,8 +5,6 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  query,
-  orderBy
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
@@ -87,13 +85,19 @@ export function useFirebasePortfolio() {
   const loadPositions = async (userId) => {
     try {
       const positionsRef = collection(db, 'portfolios', userId, 'positions')
-      const q = query(positionsRef, orderBy('purchaseDate', 'desc'))
-      const snapshot = await getDocs(q)
+      // Firestore orderBy excludes documents where the ordered field is missing. Some
+      // migrated and brokerage-synced positions predate purchaseDate, so ordering in the
+      // query made otherwise valid holdings disappear from the portfolio.
+      const snapshot = await getDocs(positionsRef)
 
       const loadedPositions = []
       snapshot.forEach((doc) => {
         loadedPositions.push({ id: doc.id, ...doc.data() })
       })
+      loadedPositions.sort((left, right) =>
+        String(right.purchaseDate || right.addedAt || '').localeCompare(
+          String(left.purchaseDate || left.addedAt || '')
+        ))
 
       setPositions(loadedPositions)
       return loadedPositions

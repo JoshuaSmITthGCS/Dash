@@ -4,8 +4,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_advisor import (compact_news, curate_candidate_news, latest_unique_news,
-                           select_enrichment_priority)
+from fetch_advisor import (build_portfolio_coverage, compact_news, curate_candidate_news,
+                           latest_unique_news, select_enrichment_priority)
 
 
 class EnrichmentPriorityTests(unittest.TestCase):
@@ -31,6 +31,21 @@ class EnrichmentPriorityTests(unittest.TestCase):
 
         self.assertEqual(preliminary[:20], incumbents)
         self.assertEqual(preliminary[20:25], challengers)
+
+
+class PortfolioCoverageTests(unittest.TestCase):
+    def test_every_configured_holding_gets_a_coverage_row(self):
+        research = [{"ticker": "LIVE", "name": "Live", "price": 10}]
+        previous = [{"ticker": "STALE", "name": "Stale", "price": 8}]
+
+        rows = build_portfolio_coverage(
+            research, ("LIVE", "STALE", "MISSING"), previous
+        )
+
+        self.assertEqual([row["ticker"] for row in rows], ["LIVE", "STALE", "MISSING"])
+        self.assertEqual(rows[1]["coverage_status"], "stale_provider_unavailable")
+        self.assertEqual(rows[2]["coverage_status"], "provider_unavailable")
+        self.assertIsNone(rows[2]["price"])
 
 
 class NewsMatchingTests(unittest.TestCase):

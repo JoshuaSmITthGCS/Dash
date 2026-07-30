@@ -397,6 +397,33 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
     return incumbents, challengers, priority
 
 
+def build_portfolio_coverage(research, portfolio_symbols, previous=()):
+    """Keep configured holdings visible even when a quote provider drops a symbol."""
+    research_by_ticker = {row["ticker"]: row for row in research}
+    previous_by_ticker = {
+        row.get("ticker", "").upper(): row
+        for row in previous
+        if row.get("ticker")
+    }
+    coverage = []
+    for symbol in portfolio_symbols:
+        if symbol in research_by_ticker:
+            coverage.append(research_by_ticker[symbol])
+        elif symbol in previous_by_ticker:
+            coverage.append({
+                **previous_by_ticker[symbol],
+                "coverage_status": "stale_provider_unavailable",
+            })
+        else:
+            coverage.append({
+                "ticker": symbol,
+                "name": symbol,
+                "price": None,
+                "coverage_status": "provider_unavailable",
+            })
+    return coverage
+
+
 def attach_history(row, context, grid, benchmark_growth):
     """Weekly series plus the equal-dollar comparison against the S&P 500."""
     history = context["history"]
@@ -540,7 +567,14 @@ def run():
 
     research.sort(key=lambda row: row["score"], reverse=True)
     ranked = research[:publish_limit]
-    portfolio_coverage = [row for row in research if row["ticker"] in PORTFOLIO_SYMBOLS]
+    # Publish every configured holding explicitly. A provider can temporarily stop resolving
+    # a symbol (for example, an expired structured product); omitting that row made the UI look
+    # as if the user's holding itself had disappeared. A stale prior row is preferable, and a
+    # price-less placeholder still lets the portfolio use its brokerage snapshot.
+    previous_coverage = (load_json("advisor.json") or {}).get("portfolio_coverage", [])
+    portfolio_coverage = build_portfolio_coverage(
+        research, PORTFOLIO_SYMBOLS, previous_coverage
+    )
     research_context = {
         row["ticker"]: {
             "research_score": row["score"],
