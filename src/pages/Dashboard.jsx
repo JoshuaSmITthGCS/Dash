@@ -16,6 +16,12 @@ function historyValues(row) {
   return row?.history?.closes || row?.history?.growth || []
 }
 
+function recentReturn(values, points = 5) {
+  const clean = values.filter(Number.isFinite).slice(-points)
+  if (clean.length < 2 || !clean[0]) return null
+  return (clean.at(-1) / clean[0] - 1) * 100
+}
+
 function Freshness({ date }) {
   const parsed = Date.parse(date)
   const stale = !Number.isFinite(parsed) || Date.now() - parsed > 1000 * 60 * 60 * 24 * 45
@@ -58,20 +64,20 @@ function CandidateCard({ row, rank, onOpen }) {
 }
 
 function TrendCard({ row, direction, onOpen }) {
-  const return20d = row.technical_detail?.return_20d
-  const relative = row.technical_detail?.relative_strength_20d
+  const trendReturn = row.trendReturn
+  const relative = row.trendRelative
   return (
     <button className="trend-card" onClick={() => onOpen(row)}
-      aria-label={`Open ${row.name}; ${direction} trend, ${return20d?.toFixed(1)} percent over 20 days`}>
+      aria-label={`Open ${row.name}; ${direction} trend, ${trendReturn?.toFixed(1)} percent over one month`}>
       <div className="trend-card-head">
         <div><strong>{row.ticker}</strong><span>{row.name}</span></div>
         <span className={`trend-direction ${direction === 'Strengthening' ? 'positive' : 'negative'}`}>
           {direction}
         </span>
       </div>
-      <Sparkline values={historyValues(row).slice(-21)} label={`${row.ticker} 20-day price trend`} height={78} />
+      <Sparkline values={historyValues(row).slice(-5)} label={`${row.ticker} one-month price trend`} height={78} />
       <div className="trend-card-stats">
-        <div><span>20-day</span><Move pct={return20d} /></div>
+        <div><span>1-month</span><Move pct={trendReturn} /></div>
         <div><span>Vs SPY</span><Move pct={relative} /></div>
       </div>
     </button>
@@ -103,9 +109,18 @@ export default function Dashboard() {
   const topSector = Object.entries(sectorCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Unavailable'
   const averageConfidence = rows.reduce((sum, row) => sum + (row.confidence || 0), 0) / rows.length
   const watchRows = watchlist.map((ticker) => rows.find((row) => row.ticker === ticker)).filter(Boolean).slice(0, 3)
-  const trendRows = [...rows]
-    .filter((row) => Number.isFinite(row.technical_detail?.return_20d) && historyValues(row).length > 1)
-    .sort((left, right) => right.technical_detail.return_20d - left.technical_detail.return_20d)
+  const benchmarkTrend = recentReturn(data.benchmark_history?.closes || [])
+  const trendRows = rows
+    .map((row) => {
+      const trendReturn = recentReturn(historyValues(row))
+      return {
+        ...row,
+        trendReturn,
+        trendRelative: trendReturn == null || benchmarkTrend == null ? null : trendReturn - benchmarkTrend,
+      }
+    })
+    .filter((row) => Number.isFinite(row.trendReturn))
+    .sort((left, right) => right.trendReturn - left.trendReturn)
   const strengthening = trendRows.slice(0, 2)
   const cooling = trendRows.slice(-2).reverse()
 
