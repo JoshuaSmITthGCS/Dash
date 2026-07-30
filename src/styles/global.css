@@ -218,6 +218,9 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .sync-message { margin: -14px 0 20px; color: var(--text-dim); font-size: 12px; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }.tab { min-height: 44px; padding: 0 15px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); color: var(--text-dim); }.tab.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .portfolio-mobile-list { display: none; }.portfolio-table { overflow-x: auto; }.portfolio-table table { min-width: 1120px; }
+.portfolio-trend-cell { width: 112px; min-width: 112px; }
+.portfolio-trend-cell .sparkline { width: 76px; margin: 0 0 3px auto; }
+.portfolio-trend-cell .mono { display: block; font-size: 10px; }
 .action-panel { display: grid; gap: 10px; padding: 16px; border: 1px solid; border-radius: 18px; }.action-panel ul { padding-left: 18px; color: var(--text-dim); }.action-impact { display: flex; gap: 16px; flex-wrap: wrap; color: var(--text-dim); font: 11px var(--font-mono); }
 .portfolio-comparison { margin-bottom: 20px; padding-top: 0; overflow: hidden; }
 .portfolio-comparison > summary { min-height: 94px; padding: 18px 22px; justify-content: space-between; gap: 18px; list-style: none; color: var(--text); transition: background .2s ease; }
@@ -284,6 +287,9 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .research-toolbar { grid-template-columns: 1fr 1fr; }.research-toolbar .search-field { grid-column: 1 / -1; }
   .portfolio-mobile-list { display: grid; gap: 12px; }.portfolio-table { display: none; }
   .holding-card { padding: 18px; border: 1px solid var(--border); border-radius: 22px; background: var(--bg-card); }.holding-card-head, .holding-value, .holding-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.holding-card-head strong, .holding-card-head span, .holding-value span, .holding-value strong { display: block; }.holding-card-head strong { font-size: 20px; }.holding-card-head span { color: var(--text-faint); font-size: 10px; }.holding-value { margin: 20px 0 14px; }.holding-value span { color: var(--text-faint); font-size: 9px; }.holding-value strong { font: 730 28px var(--font-display); }.holding-meta { display: flex; gap: 7px; flex-wrap: wrap; }.holding-meta span { padding: 5px 8px; border-radius: 999px; background: var(--bg-elev); color: var(--text-faint); font-size: 9px; }.holding-actions { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .holding-trend { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 12px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: var(--bg-elev); }
+  .holding-trend > div > span { display: block; color: var(--text-faint); font-size: 9px; }
+  .holding-trend .mono { font-size: 12px; }
   .grid-3, .grid-2 { grid-template-columns: 1fr; }.component-scores { grid-template-columns: repeat(2, 1fr); }
 }
 
