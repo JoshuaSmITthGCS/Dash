@@ -202,14 +202,14 @@ export default function Portfolio() {
         </div>
         <div className="card kpi">
           <div className="kpi-label">Vs S&P 500</div>
-          <div className="kpi-value" style={{ color: moveColor(versusIndex?.dollarsAhead) }}>
+          <div className="kpi-value" style={{ color: moveColor(versusIndex?.excessReturnPct) }}>
             {versusIndex
-              ? `${versusIndex.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(versusIndex.dollarsAhead))}`
+              ? signedPct(versusIndex.excessReturnPct)
               : '—'}
           </div>
           <div className="kpi-note">
             {versusIndex
-              ? `${signedPct(versusIndex.excessReturnPct)} against the index on ${versusIndex.comparable} position${versusIndex.comparable === 1 ? '' : 's'}`
+              ? `${versusIndex.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(versusIndex.dollarsAhead))} versus the index · ${versusIndex.comparable} compared position${versusIndex.comparable === 1 ? '' : 's'}`
               : 'Add a purchase date inside the charted window'}
           </div>
         </div>
@@ -261,7 +261,14 @@ export default function Portfolio() {
               <strong>What if I chose the S&amp;P 500—or did not invest?</strong>
               <small>Same contributions, added on your recorded purchase dates</small>
             </div>
-            <span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span>
+            <div className="comparison-summary-side">
+              {versusIndex && (
+                <span className="comparison-edge" style={{ color: moveColor(versusIndex.excessReturnPct) }}>
+                  {signedPct(versusIndex.excessReturnPct)} vs S&amp;P
+                </span>
+              )}
+              <span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span>
+            </div>
           </summary>
           <div className="portfolio-comparison-chart">
             <GrowthChart
@@ -273,6 +280,7 @@ export default function Portfolio() {
               ]}
               title="One-to-one performance from your investment dates"
               caption={`Each holding starts with its exact cost-basis dollars on its recorded purchase date, then follows that stock’s price return. The S&P receives the identical dollars on the identical date; cash holds the same deposits. Jumps show new money entering, not investment gains. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `; ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
+              zoomable
             />
           </div>
         </details>

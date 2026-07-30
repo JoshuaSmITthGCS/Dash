@@ -262,10 +262,16 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .portfolio-comparison > summary strong, .portfolio-comparison > summary small { display: block; }
 .portfolio-comparison > summary strong { font: 720 18px/1.25 var(--font-display); letter-spacing: -.02em; }
 .portfolio-comparison > summary small { margin-top: 4px; color: var(--text-faint); font-size: 11px; }
+.comparison-summary-side { display: flex; align-items: center; gap: 10px; }.comparison-edge { white-space: nowrap; font: 700 11px var(--font-mono); }
 .comparison-toggle { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--text-dim); transition: transform .2s ease, background .2s ease; }
 .portfolio-comparison[open] .comparison-toggle { transform: rotate(90deg); }
 .portfolio-comparison-chart { padding: 2px 22px 22px; border-top: 1px solid var(--border); }
 .portfolio-comparison-chart figure { padding-top: 20px; }
+.chart-heading { min-height: 44px; display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.chart-heading figcaption { padding-top: 8px; color: var(--text-faint); font: 600 11px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.chart-zoom { display: flex; align-items: center; gap: 3px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); }
+.chart-zoom button { min-width: 42px; min-height: 36px; padding: 0 9px; border: 0; border-radius: 999px; background: transparent; color: var(--text-faint); font: 650 9px var(--font-mono); }
+.chart-zoom button:hover { color: var(--text); }.chart-zoom button.active { background: var(--accent); color: var(--accent-ink); }
 .portfolio-date-input { min-width: 132px; padding: 7px 8px; font: 600 11px var(--font-mono); }
 
 /* Watchlist, market, methodology, legacy detail components */
@@ -352,6 +358,7 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .page-head { align-items: flex-start; }.page-title { font-size: 38px; }.result-count { display: none; }.page-actions { width: 100%; flex-wrap: wrap; }
   .portfolio-summary { grid-template-columns: 1fr 1fr; }.portfolio-value-card { grid-column: 1 / -1; min-height: 170px; }.portfolio-summary > :last-child { grid-column: auto; }.portfolio-summary .kpi { min-height: 150px; padding: 17px; }.portfolio-summary .kpi-value { font-size: 27px; }
   .portfolio-comparison > summary { min-height: 106px; padding: 16px; }.portfolio-comparison > summary strong { font-size: 16px; }.portfolio-comparison-chart { padding: 2px 14px 18px; }
+  .comparison-summary-side { align-self: center; }.comparison-edge { display: none; }.chart-heading { align-items: stretch; flex-direction: column; }.chart-zoom { align-self: flex-start; max-width: 100%; overflow-x: auto; }
   .portfolio-sort-toolbar { align-items: stretch; flex-direction: column; }.portfolio-sort-direction { width: 100%; }
   .watchlist-grid { grid-template-columns: 1fr; }.watchlist-add { align-items: stretch; flex-direction: column; }.watchlist-add .primary-button { align-self: flex-start; }.watchlist-sizing { grid-template-columns: 1fr; }.watchlist-sizing > div { grid-column: auto; }
   .research-toolbar { grid-template-columns: 1fr; }.research-toolbar .search-field { grid-column: auto; }
