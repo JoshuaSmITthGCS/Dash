@@ -11,6 +11,12 @@ import { getRecommendation } from '../lib/recommendation'
 import { benchmarkAlternative, portfolioGrowthSeries, portfolioVsBenchmark } from '../lib/portfolioPerformance'
 import Icon from '../components/Icons'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
+import OutlookPill from '../components/OutlookPill'
+import {
+  nextPortfolioSort,
+  PORTFOLIO_SORT_OPTIONS,
+  sortPortfolioPositions,
+} from '../lib/portfolioSort'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -28,6 +34,25 @@ function recentReturn(values, points = 5) {
   const clean = (values || []).filter(Number.isFinite).slice(-points)
   if (clean.length < 2 || !clean[0]) return null
   return (clean.at(-1) / clean[0] - 1) * 100
+}
+
+function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
+  const active = sort.key === sortKey
+  return (
+    <th
+      scope="col"
+      className={numeric ? 'num' : undefined}
+      aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
+    >
+      <button
+        className={`sort-header ${active ? 'active' : ''}`}
+        onClick={() => onSort(sortKey)}
+      >
+        {children}
+        <span aria-hidden="true">{active ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}</span>
+      </button>
+    </th>
+  )
 }
 
 export default function Portfolio() {
@@ -48,6 +73,7 @@ export default function Portfolio() {
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
+  const [portfolioSort, setPortfolioSort] = useState({ key: 'ticker', direction: 'asc' })
   const refresh = useAdvisorRefresh(
     data?.generated_at,
     reload,
@@ -102,6 +128,13 @@ export default function Portfolio() {
   const growth = portfolioGrowthSeries(portfolioStats.positions, priceData, benchmarkHistory)
   const actionable = portfolioStats.positions.filter(
     (pos) => pos.recommendation && pos.recommendation.action !== 'HOLD')
+  const sortedPositions = sortPortfolioPositions(
+    portfolioStats.positions,
+    portfolioSort.key,
+    portfolioSort.direction,
+  )
+  const setSortKey = (key) => setPortfolioSort((current) => nextPortfolioSort(current, key))
+  const selectedSort = PORTFOLIO_SORT_OPTIONS.find((option) => option.key === portfolioSort.key)
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -289,12 +322,35 @@ export default function Portfolio() {
 
       {viewMode === 'holdings' && (
         <>
+        <div className="portfolio-sort-toolbar" aria-label="Portfolio sorting controls">
+          <label>
+            <span>Sort holdings</span>
+            <select
+              value={portfolioSort.key}
+              onChange={(event) => setSortKey(event.target.value)}
+            >
+              {PORTFOLIO_SORT_OPTIONS.map((option) => (
+                <option key={option.key} value={option.key}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="secondary-button portfolio-sort-direction"
+            onClick={() => setPortfolioSort((current) => ({
+              ...current,
+              direction: current.direction === 'asc' ? 'desc' : 'asc',
+            }))}
+            aria-label={`Reverse ${selectedSort?.label || 'portfolio'} sort order`}
+          >
+            {portfolioSort.direction === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
+          </button>
+        </div>
         <div className="portfolio-mobile-list">
-          {portfolioStats.positions.map((pos) => (
+          {sortedPositions.map((pos) => (
             <article className="holding-card" key={pos.id || pos.ticker}>
               <div className="holding-card-head">
                 <div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span></div>
-                <ActionPill recommendation={pos.recommendation} />
+                <OutlookPill score={pos.priceInfo?.score} />
               </div>
               <div className="holding-value">
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
@@ -321,18 +377,26 @@ export default function Portfolio() {
           <table>
             <thead>
               <tr>
-                <th>Ticker</th><th>Company</th><th>Signal</th>
-                <th className="num">Shares</th><th className="num">Cost</th><th className="num">Price</th>
-                <th className="num">Value</th><th className="num">Gain/Loss</th><th className="num">Return</th>
-                <th className="num">Score</th><th className="num">1M trend</th><th>Action</th>
+                <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
+                <SortableHeader sortKey="company" sort={portfolioSort} onSort={setSortKey}>Company</SortableHeader>
+                <SortableHeader sortKey="outlook" sort={portfolioSort} onSort={setSortKey}>Outlook</SortableHeader>
+                <SortableHeader numeric sortKey="shares" sort={portfolioSort} onSort={setSortKey}>Shares</SortableHeader>
+                <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Cost</SortableHeader>
+                <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
+                <SortableHeader numeric sortKey="value" sort={portfolioSort} onSort={setSortKey}>Value</SortableHeader>
+                <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>
+                <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
+                <SortableHeader numeric sortKey="score" sort={portfolioSort} onSort={setSortKey}>Score</SortableHeader>
+                <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}>1M trend</SortableHeader>
+                <th scope="col">Action</th>
               </tr>
             </thead>
             <tbody>
-              {portfolioStats.positions.map((pos) => (
+              {sortedPositions.map((pos) => (
                 <tr key={pos.id || pos.ticker}>
                   <td className="mono">{pos.ticker}</td>
                   <td>{pos.priceInfo?.name || '—'}</td>
-                  <td><ActionPill recommendation={pos.recommendation} /></td>
+                  <td><OutlookPill score={pos.priceInfo?.score} /></td>
                   <td className="mono num">{pos.shares}</td>
                   <td className="mono num">${pos.costBasis.toFixed(2)}</td>
                   <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
@@ -387,7 +451,7 @@ export default function Portfolio() {
               </tr>
             </thead>
             <tbody>
-              {portfolioStats.positions.map((pos) => (
+              {sortedPositions.map((pos) => (
                 <tr key={pos.id || pos.ticker}>
                   <td className="mono">{pos.ticker}</td>
                   <td className="mono num">
