@@ -186,6 +186,7 @@ class MarketStructureTests(unittest.TestCase):
         self.assertEqual(structure["average_dollar_volume"], 300_000_000)
         self.assertAlmostEqual(structure["pct_from_52w_high"], -25.0, places=1)
         self.assertAlmostEqual(structure["pct_above_52w_low"], 50.0, places=1)
+        self.assertEqual(structure["analyst_consensus_target"], 180)
         self.assertAlmostEqual(structure["analyst_target_upside"], 20.0, places=1)
 
     def test_missing_quote_fields_stay_missing(self):

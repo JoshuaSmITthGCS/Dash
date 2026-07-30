@@ -104,12 +104,12 @@ export default function Dashboard() {
   const { data, loading, reload } = useData('advisor.json')
   const { currentUser } = useAuth()
   const [selectedStock, setSelectedStock] = useState(null)
-  const refresh = useAdvisorRefresh(data?.generated_at, reload)
 
   const watchlist = useMemo(() => {
     try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || ['AAPL', 'MSFT'] }
     catch { return ['AAPL', 'MSFT'] }
   }, [])
+  const refresh = useAdvisorRefresh(data?.generated_at, reload, watchlist)
 
   if (loading) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset yet — run python pipeline/fetch_advisor.py." />
