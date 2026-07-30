@@ -64,11 +64,29 @@ def validate(production=False):
         if all(row.get(metric) is None for metric in ("peg", "forward_pe", "price_to_sales", "price_to_book")):
             errors.append(f"advisor.json:research.{index}: ranked company lacks every valuation metric")
         history = row.get("history")
-        if history and len(history.get("dates", [])) != len(history.get("growth", [])):
-            errors.append(f"advisor.json:research.{index}: price history dates and growth series disagree")
+        for key in ("closes", "growth"):
+            if history and len(history.get("dates", [])) != len(history.get(key, [])):
+                errors.append(f"advisor.json:research.{index}: price history dates and {key} series disagree")
         recommendation = row.get("recommendation")
         if recommendation and recommendation.get("action") in ("TRIM", "SELL") and recommendation.get("agreement_count", 0) < 2:
             errors.append(f"advisor.json:research.{index}: sell guidance requires two agreeing factors")
+    benchmark_history = advisor.get("benchmark_history", {})
+    benchmark_dates = benchmark_history.get("dates", [])
+    for key in ("closes", "growth"):
+        if advisor and len(benchmark_history.get(key, [])) != len(benchmark_dates):
+            errors.append(f"advisor.json: benchmark dates and {key} series disagree")
+    configured_portfolio = {
+        symbol.upper()
+        for symbol in (load(os.path.join(os.path.dirname(__file__), "config", "advisor_universe.json"))
+                       .get("portfolio_symbols", []))
+    }
+    covered_portfolio = {
+        row.get("ticker", "").upper()
+        for row in advisor.get("portfolio_coverage", [])
+    }
+    if advisor and configured_portfolio - covered_portfolio:
+        missing = ", ".join(sorted(configured_portfolio - covered_portfolio))
+        errors.append(f"advisor.json: portfolio coverage missing configured symbols: {missing}")
 
     # Legacy political fixtures stay explicitly demo while the independent advisor dataset is live.
     modes = {p.get("data_mode") for key, p in payloads.items() if key not in ("status", "advisor")}
