@@ -32,7 +32,12 @@ CHALLENGER_ENRICH_LIMIT = 5
 NEWS_DISCOVERY_LIMIT = 50
 
 
-def resolve_refresh_symbols(requested_symbols, configured_portfolio, portfolio_override=""):
+def resolve_refresh_symbols(
+    requested_symbols,
+    configured_portfolio,
+    portfolio_override="",
+    previous_portfolio=(),
+):
     """Include every valid current holding in Yahoo fetches and portfolio coverage."""
     dynamic_portfolio = portfolio_override.split(",") if portfolio_override else ()
 
@@ -45,7 +50,11 @@ def resolve_refresh_symbols(requested_symbols, configured_portfolio, portfolio_o
         return normalized
 
     portfolio_symbols = tuple(dict.fromkeys(
-        (*valid_symbols(configured_portfolio), *valid_symbols(dynamic_portfolio))
+        (
+            *valid_symbols(configured_portfolio),
+            *valid_symbols(previous_portfolio),
+            *valid_symbols(dynamic_portfolio),
+        )
     ))
     symbols = tuple(dict.fromkeys(
         (*valid_symbols(requested_symbols), *portfolio_symbols)
@@ -458,12 +467,20 @@ def attach_history(row, context, grid, benchmark_growth):
 
 def run():
     load_local_env()
+    previous_payload = load_json("advisor.json") or {}
+    previous_coverage = previous_payload.get("portfolio_coverage", [])
+    previous_portfolio = tuple(
+        row.get("ticker", "")
+        for row in previous_coverage
+        if row.get("ticker")
+    )
     configured = os.getenv("ADVISOR_SYMBOLS")
     requested_symbols = configured.split(",") if configured else DEFAULT_SYMBOLS
     symbols, portfolio_symbols = resolve_refresh_symbols(
         requested_symbols,
         PORTFOLIO_SYMBOLS,
         os.getenv("ADVISOR_PORTFOLIO_SYMBOLS", ""),
+        previous_portfolio,
     )
     publish_limit = max(1, int(os.getenv("ADVISOR_PUBLISH_LIMIT", PUBLISH_LIMIT)))
     extended_limit = max(publish_limit, int(os.getenv("ADVISOR_EXTENDED_LIMIT", EXTENDED_LIMIT)))
@@ -597,7 +614,6 @@ def run():
     # a symbol (for example, an expired structured product); omitting that row made the UI look
     # as if the user's holding itself had disappeared. A stale prior row is preferable, and a
     # price-less placeholder still lets the portfolio use its brokerage snapshot.
-    previous_coverage = (load_json("advisor.json") or {}).get("portfolio_coverage", [])
     portfolio_coverage = build_portfolio_coverage(
         research, portfolio_symbols, previous_coverage
     )
