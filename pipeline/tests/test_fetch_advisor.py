@@ -4,7 +4,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_advisor import compact_news, latest_unique_news, select_enrichment_priority
+from fetch_advisor import (compact_news, curate_candidate_news, latest_unique_news,
+                           select_enrichment_priority)
 
 
 class EnrichmentPriorityTests(unittest.TestCase):
@@ -74,6 +75,25 @@ class NewsMatchingTests(unittest.TestCase):
         article = {"url": "https://example.com/story", "ticker": "JPM", "published_at": "20260730T120000"}
 
         self.assertEqual(latest_unique_news([article, dict(article)]), [article])
+
+    def test_reserves_space_for_broader_research_candidates(self):
+        leaders = [
+            {"url": f"https://example.com/top-{index}", "ticker": "TOP", "published_at": f"20260730T12{index:02d}00"}
+            for index in range(10)
+        ]
+        discovery = [
+            {"url": f"https://example.com/next-{index}", "ticker": "NEXT", "published_at": f"20260729T12{index:02d}00"}
+            for index in range(5)
+        ]
+        context = {
+            "TOP": {"published_research": True, "research_rank": 1},
+            "NEXT": {"published_research": False, "research_rank": 41},
+        }
+
+        rows = curate_candidate_news(leaders + discovery, context, limit=10, discovery_slots=3)
+
+        self.assertEqual(sum(not row["published_research"] for row in rows), 3)
+        self.assertEqual(len(rows), 10)
 
 
 if __name__ == "__main__":

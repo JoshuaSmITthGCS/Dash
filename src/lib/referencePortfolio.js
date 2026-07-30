@@ -13,3 +13,33 @@ export const REFERENCE_PORTFOLIO = [
 ].map(([ticker, shares, costBasis, snapshotPrice]) => ({
   ticker, shares, costBasis, snapshotPrice, snapshotSource: 'User-provided brokerage snapshot',
 }))
+
+export function planReferencePortfolioSync(positions, reference = REFERENCE_PORTFOLIO) {
+  const normalizeTicker = (ticker = '') => String(ticker).trim().toUpperCase()
+  const existingByTicker = new Map(
+    positions.map((position) => [normalizeTicker(position.ticker), position])
+  )
+
+  return reference.map((snapshot) => {
+    const ticker = normalizeTicker(snapshot.ticker)
+    const existing = existingByTicker.get(ticker)
+    if (!existing) {
+      return {
+        kind: 'add',
+        id: `${ticker}-reference`,
+        record: { ...snapshot, ticker },
+      }
+    }
+
+    return {
+      kind: 'update',
+      id: existing.id,
+      record: {
+        ...existing,
+        ticker,
+        snapshotPrice: snapshot.snapshotPrice,
+        snapshotSource: snapshot.snapshotSource,
+      },
+    }
+  })
+}

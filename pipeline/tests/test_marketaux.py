@@ -5,7 +5,8 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from marketaux import MarketauxClient, MarketauxError, advisor_articles
+from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
+                       advisor_articles_for_symbols)
 
 
 class MarketauxTests(unittest.TestCase):
@@ -55,6 +56,26 @@ class MarketauxTests(unittest.TestCase):
 
     def test_advisor_articles_ignores_articles_without_requested_symbol(self):
         self.assertEqual(advisor_articles({"data": [{"entities": [{"symbol": "MSFT"}]}]}, "AAPL"), [])
+
+    def test_advisor_articles_for_symbols_keeps_strong_primary_candidates(self):
+        payload = {"data": [
+            {
+                "title": "Adobe launches a new product",
+                "entities": [{"symbol": "ADBE", "sentiment_score": 0.3, "match_score": 52}],
+            },
+            {
+                "title": "ServiceNow expands",
+                "entities": [{"symbol": "NOW", "sentiment_score": 0.2, "match_score": 45}],
+            },
+            {
+                "title": "Unrelated company",
+                "entities": [{"symbol": "OTHER", "sentiment_score": 0.4, "match_score": 70}],
+            },
+        ]}
+
+        rows = advisor_articles_for_symbols(payload, ("ADBE", "NOW"))
+
+        self.assertEqual([row["ticker"] for row in rows], ["ADBE", "NOW"])
 
     @patch("marketaux.requests.get")
     def test_http_error_does_not_expose_token(self, get):

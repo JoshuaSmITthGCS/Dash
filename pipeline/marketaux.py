@@ -67,8 +67,9 @@ class MarketauxClient:
         return payload
 
 
-def advisor_articles(payload, symbol):
-    """Convert articles only when the requested symbol is the strong primary entity."""
+def advisor_articles_for_symbols(payload, symbols):
+    """Convert articles whose strong primary entity is in the requested symbol set."""
+    allowed = {str(symbol).strip().upper() for symbol in symbols if str(symbol).strip()}
     result = []
     for article in payload.get("data", []):
         entities = []
@@ -83,7 +84,7 @@ def advisor_articles(payload, symbol):
         if not entities:
             continue
         match_score, primary_ticker, primary_entity = max(entities, key=lambda item: item[0])
-        if primary_ticker != symbol.upper() or match_score < MIN_PRIMARY_MATCH_SCORE:
+        if primary_ticker not in allowed or match_score < MIN_PRIMARY_MATCH_SCORE:
             continue
         matching = [primary_entity]
         scores = [
@@ -111,3 +112,8 @@ def advisor_articles(payload, symbol):
             ],
         })
     return result
+
+
+def advisor_articles(payload, symbol):
+    """Convert articles only when the requested symbol is the strong primary entity."""
+    return advisor_articles_for_symbols(payload, (symbol,))

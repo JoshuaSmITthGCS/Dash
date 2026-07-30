@@ -14,7 +14,8 @@ from fundamentals_extended import derive_extended, extended_inputs
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload, weekly_grid)
-from marketaux import MarketauxClient, MarketauxError, advisor_articles
+from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
+                       advisor_articles_for_symbols)
 from scorer import SETTINGS, valuation_score
 from sec_edgar import SecEdgarClient
 
@@ -27,6 +28,7 @@ EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
 PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
+NEWS_DISCOVERY_LIMIT = 50
 
 
 def number(value, digits=4):
@@ -218,6 +220,39 @@ def latest_unique_news(items, limit=30):
         if len(result) == limit:
             break
     return result
+
+
+def fetch_discovery_news(client, symbols, limit=NEWS_DISCOVERY_LIMIT):
+    """Fetch one broader company-news batch for strong candidates beyond the leaders."""
+    if not client:
+        return []
+    selected = tuple(dict.fromkeys(symbols))[:limit]
+    if not selected:
+        return []
+    payload = client.news(
+        symbols=",".join(selected),
+        filter_entities="true",
+        language="en",
+        group_similar="true",
+        limit=limit,
+    )
+    return advisor_articles_for_symbols(payload, selected)
+
+
+def curate_candidate_news(items, research_context, limit=40, discovery_slots=15):
+    """Reserve room for broader candidates so leader coverage cannot crowd them out."""
+    annotated = [
+        {**item, **research_context.get(item.get("ticker"), {})}
+        for item in latest_unique_news(items, limit=max(limit * 3, limit))
+    ]
+    leaders = [item for item in annotated if item.get("published_research")]
+    discovery = [item for item in annotated if not item.get("published_research")]
+    selected_discovery = discovery[:min(discovery_slots, limit)]
+    selected_leaders = leaders[:limit - len(selected_discovery)]
+    remaining = limit - len(selected_leaders) - len(selected_discovery)
+    if remaining:
+        selected_discovery.extend(discovery[len(selected_discovery):len(selected_discovery) + remaining])
+    return [*selected_leaders, *selected_discovery]
 
 
 def insider_summary(payload):
@@ -458,6 +493,26 @@ def run():
 
     available = {context["symbol"] for context in contexts}
     preliminary_symbols = tuple(row["ticker"] for row in preliminary)
+    discovery_limit = max(0, min(
+        NEWS_DISCOVERY_LIMIT,
+        int(os.getenv("ADVISOR_NEWS_DISCOVERY_LIMIT", str(NEWS_DISCOVERY_LIMIT))),
+    ))
+    try:
+        discovery_news = fetch_discovery_news(
+            marketaux_client, preliminary_symbols, discovery_limit
+        )
+    except (MarketauxError, OSError, ValueError) as exc:
+        discovery_news = []
+        LOG.warn(f"Broader candidate news unavailable ({type(exc).__name__}: {exc})")
+    discovery_by_ticker = {}
+    for item in discovery_news:
+        discovery_by_ticker.setdefault(item["ticker"], []).append(item)
+    for context in contexts:
+        additions = discovery_by_ticker.get(context["symbol"], [])
+        if additions:
+            context["news"] = latest_unique_news([*context["news"], *additions], limit=12)
+    all_news.extend(discovery_news)
+
     incumbents, challengers, statement_priority = select_enrichment_priority(
         previous_top, preliminary_symbols, available, PORTFOLIO_SYMBOLS
     )
@@ -486,6 +541,16 @@ def run():
     research.sort(key=lambda row: row["score"], reverse=True)
     ranked = research[:publish_limit]
     portfolio_coverage = [row for row in research if row["ticker"] in PORTFOLIO_SYMBOLS]
+    research_context = {
+        row["ticker"]: {
+            "research_score": row["score"],
+            "research_stance": row["stance"],
+            "research_rank": index + 1,
+            "published_research": index < publish_limit,
+        }
+        for index, row in enumerate(research)
+    }
+    published_news = curate_candidate_news(all_news, research_context)
 
     # SEC Form 4 is the free source-of-record fallback for genuine open-market insider
     # purchases/sales. It runs only for published names to respect SEC fair-access limits.
@@ -536,7 +601,7 @@ def run():
         "hypothetical_basis": BASIS,
         "research": ranked,
         "portfolio_coverage": portfolio_coverage,
-        "news": latest_unique_news(all_news),
+        "news": published_news,
         "capability_status": {
             "form4_insider_transactions": {
                 "status": "available" if sec.available else "configuration_required",

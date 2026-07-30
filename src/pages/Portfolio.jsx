@@ -91,7 +91,7 @@ export default function Portfolio() {
     setSyncMessage('Syncing…')
     const result = await syncReferencePortfolio()
     setSyncMessage(result.success
-      ? `${result.added} holding${result.added === 1 ? '' : 's'} added · ${result.skipped} already present`
+      ? `${result.added} holding${result.added === 1 ? '' : 's'} added · ${result.updated} refreshed`
       : `Sync failed: ${result.error}`)
   }
 
