@@ -11,7 +11,6 @@ import { getRecommendation } from '../lib/recommendation'
 import { benchmarkAlternative, portfolioGrowthSeries, portfolioVsBenchmark } from '../lib/portfolioPerformance'
 import Icon from '../components/Icons'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
-import OutlookPill from '../components/OutlookPill'
 import {
   nextPortfolioSort,
   PORTFOLIO_SORT_OPTIONS,
@@ -350,7 +349,7 @@ export default function Portfolio() {
             <article className="holding-card" key={pos.id || pos.ticker}>
               <div className="holding-card-head">
                 <div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span></div>
-                <OutlookPill score={pos.priceInfo?.score} />
+                <ActionPill recommendation={pos.recommendation} />
               </div>
               <div className="holding-value">
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
@@ -379,7 +378,7 @@ export default function Portfolio() {
               <tr>
                 <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
                 <SortableHeader sortKey="company" sort={portfolioSort} onSort={setSortKey}>Company</SortableHeader>
-                <SortableHeader sortKey="outlook" sort={portfolioSort} onSort={setSortKey}>Outlook</SortableHeader>
+                <th scope="col">Signal</th>
                 <SortableHeader numeric sortKey="shares" sort={portfolioSort} onSort={setSortKey}>Shares</SortableHeader>
                 <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Cost</SortableHeader>
                 <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
@@ -396,7 +395,7 @@ export default function Portfolio() {
                 <tr key={pos.id || pos.ticker}>
                   <td className="mono">{pos.ticker}</td>
                   <td>{pos.priceInfo?.name || '—'}</td>
-                  <td><OutlookPill score={pos.priceInfo?.score} /></td>
+                  <td><ActionPill recommendation={pos.recommendation} /></td>
                   <td className="mono num">{pos.shares}</td>
                   <td className="mono num">${pos.costBasis.toFixed(2)}</td>
                   <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>

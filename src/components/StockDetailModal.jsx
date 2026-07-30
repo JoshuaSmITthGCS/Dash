@@ -4,6 +4,7 @@ import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
 import MetricSections from './MetricSections'
 import { getRecommendation } from '../lib/recommendation'
+import { bullBearScore } from '../lib/bullBearScore'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -41,6 +42,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const technical = stock.technical_detail || {}
   const hypothetical = stock.hypothetical
   const categories = stock.fundamental_categories || {}
+  const thesis = bullBearScore(stock)
 
   const chartSeries = []
   if (stock.history?.growth) {
@@ -80,6 +82,34 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           <Kpi label="20-day move" value={signed(technical.return_20d)} color={moveColor(technical.return_20d)} />
           <Kpi label="1-year move" value={signed(technical.return_252d)} color={moveColor(technical.return_252d)} />
         </div>
+
+        {thesis && (
+          <section className="bull-bear-detail" aria-label={`Bull bear thesis score ${thesis.score} out of 5`}>
+            <div>
+              <span>Bull / bear thesis</span>
+              <strong className="mono" style={{
+                color: thesis.score === 0 ? 'var(--text-dim)' : moveColor(thesis.score),
+              }}>
+                {thesis.score > 0 ? '+' : ''}{thesis.score}
+              </strong>
+              <small>−5 bearish · 0 neutral · +5 bullish</small>
+            </div>
+            <div className="bull-bear-track" aria-hidden="true">
+              <span className="bull-bear-zero" />
+              <span
+                className={thesis.score >= 0 ? 'positive' : 'negative'}
+                style={{
+                  left: thesis.score >= 0 ? '50%' : `${50 + thesis.score * 10}%`,
+                  width: `${Math.abs(thesis.score) * 10}%`,
+                }}
+              />
+            </div>
+            <p>
+              40% fundamentals · 30% price behavior · 20% news sentiment · 10% risk quality.
+              {' '}{thesis.coverage}% of those inputs were available.
+            </p>
+          </section>
+        )}
 
         <div className="tabs">
           {TABS.map(([key, label]) => (

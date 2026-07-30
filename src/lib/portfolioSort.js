@@ -1,9 +1,6 @@
-import { getOutlook } from './outlook'
-
 export const PORTFOLIO_SORT_OPTIONS = [
   { key: 'ticker', label: 'Ticker' },
   { key: 'company', label: 'Company' },
-  { key: 'outlook', label: 'Outlook' },
   { key: 'value', label: 'Position value' },
   { key: 'gain', label: 'Gain/loss ($)' },
   { key: 'return', label: 'Total return (%)' },
@@ -18,7 +15,6 @@ export const PORTFOLIO_SORT_OPTIONS = [
 const VALUE_FOR = {
   ticker: (position) => position.ticker,
   company: (position) => position.priceInfo?.name,
-  outlook: (position) => getOutlook(position.priceInfo?.score)?.rank,
   value: (position) => position.currentValue,
   gain: (position) => position.gain,
   return: (position) => position.gainPct,
@@ -59,4 +55,3 @@ export function nextPortfolioSort(current, key) {
   const descendingByDefault = !['ticker', 'company', 'purchaseDate'].includes(key)
   return { key, direction: descendingByDefault ? 'desc' : 'asc' }
 }
-

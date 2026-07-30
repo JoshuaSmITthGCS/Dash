@@ -9,6 +9,7 @@ import { getRecommendation } from '../lib/recommendation'
 import { humanDate } from '../lib/formatters'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
+import { rankMomentum, rankValueTurnarounds } from '../lib/researchScreens'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 
@@ -86,6 +87,19 @@ function TrendCard({ row, direction, onOpen }) {
   )
 }
 
+function ScreenRow({ row, rank, type, onOpen }) {
+  const isValue = type === 'value'
+  return (
+    <button onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}>
+      <span className="screen-rank">#{rank}</span>
+      <span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span>
+      <span><small>{isValue ? 'Above 52w low' : 'This week'}</small><Move pct={isValue ? row.screen.aboveLow : row.screen.weekReturn} /></span>
+      <span><small>{isValue ? 'This week' : '20 days'}</small><Move pct={isValue ? row.screen.weekReturn : row.screen.monthReturn} /></span>
+      <Icon name="chevron" size={17} />
+    </button>
+  )
+}
+
 export default function Dashboard() {
   const { data, loading, reload } = useData('advisor.json')
   const { currentUser } = useAuth()
@@ -127,6 +141,8 @@ export default function Dashboard() {
     .sort((left, right) => right.trendReturn - left.trendReturn)
   const strengthening = trendRows.slice(0, 2)
   const cooling = trendRows.slice(-2).reverse()
+  const valueTurnarounds = rankValueTurnarounds(rows)
+  const momentumLeaders = rankMomentum(rows)
 
   return (
     <>
@@ -192,6 +208,41 @@ export default function Dashboard() {
           <CandidateCard key={row.ticker} row={row} rank={index + 2} onOpen={setSelectedStock} />
         ))}
       </section>
+
+      <div className="section-heading">
+        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds and momentum</h2></div>
+        <Link to="/research">Compare research <Icon name="arrow" size={17} /></Link>
+      </div>
+      <section className="stock-screen-grid" aria-label="Focused stock research screens">
+        <article className="stock-screen-panel">
+          <header>
+            <div><span>Top 5</span><h3>Value near 52-week lows</h3></div>
+            <small>Strong fundamentals · positive latest week</small>
+          </header>
+          <div className="stock-screen-list">
+            {valueTurnarounds.map((row, index) => (
+              <ScreenRow key={row.ticker} row={row} rank={index + 1} type="value" onOpen={setSelectedStock} />
+            ))}
+            {!valueTurnarounds.length && <div className="inline-empty">No published stock currently clears every value-turnaround requirement.</div>}
+          </div>
+        </article>
+        <article className="stock-screen-panel">
+          <header>
+            <div><span>Top 5</span><h3>Recent momentum</h3></div>
+            <small>Positive week and month · relative strength ranked</small>
+          </header>
+          <div className="stock-screen-list">
+            {momentumLeaders.map((row, index) => (
+              <ScreenRow key={row.ticker} row={row} rank={index + 1} type="momentum" onOpen={setSelectedStock} />
+            ))}
+            {!momentumLeaders.length && <div className="inline-empty">No published stock currently clears every momentum requirement.</div>}
+          </div>
+        </article>
+      </section>
+      <p className="screen-disclaimer">
+        Research screens, not trade instructions. Prices can gap before the open; confirm the current quote,
+        liquidity, news, and your order limits before acting.
+      </p>
 
       {trendRows.length >= 4 && (
         <>
