@@ -29,6 +29,17 @@ class RefreshSymbolTests(unittest.TestCase):
         self.assertEqual(portfolio, ("MU", "VOO"))
         self.assertEqual(symbols, ("AAPL", "MU", "VOO"))
 
+    def test_discovered_holdings_persist_into_scheduled_refreshes(self):
+        symbols, portfolio = resolve_refresh_symbols(
+            ("AAPL",),
+            ("MU",),
+            "",
+            ("NTNX", "VOO"),
+        )
+
+        self.assertEqual(portfolio, ("MU", "NTNX", "VOO"))
+        self.assertEqual(symbols, ("AAPL", "MU", "NTNX", "VOO"))
+
 
 class EnrichmentPriorityTests(unittest.TestCase):
     def test_previous_twenty_and_next_five_are_first(self):
