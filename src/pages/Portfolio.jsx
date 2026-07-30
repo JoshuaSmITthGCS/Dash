@@ -220,7 +220,7 @@ export default function Portfolio() {
             <div>
               <span className="eyebrow">Opportunity cost</span>
               <strong>What if I chose the S&amp;P 500—or did not invest?</strong>
-              <small>Compare the same starting dollars across all three paths</small>
+              <small>Same contributions, added on your recorded purchase dates</small>
             </div>
             <span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span>
           </summary>
@@ -229,11 +229,11 @@ export default function Portfolio() {
               dates={growth.dates}
               series={[
                 { label: 'My holdings', values: growth.holdings, color: 'var(--series-stock)', emphasis: true },
-                { label: 'S&P 500 instead', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
-                { label: 'Not invested (cash)', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
+                { label: 'S&P 500, same deposits', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
+                { label: 'Deposits held as cash', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
               ]}
-              title="Portfolio value over time"
-              caption={`All three lines start from the value of your tracked holdings at the beginning of the window. “Not invested” holds that amount as cash with no interest or inflation adjustment. Covers ${growth.trackedTickers.length} position${growth.trackedTickers.length === 1 ? '' : 's'} with published price history${growth.untrackedCount ? `; ${growth.untrackedCount} not in the current research universe` : ''}.`}
+              title="Portfolio value from your investment dates"
+              caption={`Each holding enters on its recorded purchase date. The S&P line receives the same cost-basis dollars on those dates; cash holds those deposits with no interest or inflation adjustment. Jumps show new money entering the portfolio. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `; ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
             />
           </div>
         </details>

@@ -42,6 +42,8 @@ function MacroCard({ label, point, suffix = '', detail }) {
 
 function CandidateCard({ row, rank, onOpen }) {
   const recommendation = getRecommendation(row)
+  const trendValues = historyValues(row).filter(Number.isFinite).slice(-5)
+  const trendReturn = recentReturn(trendValues)
   return (
     <button className="candidate-card" onClick={() => onOpen(row)}
       aria-label={`Open research for ${row.name}`}>
@@ -53,10 +55,10 @@ function CandidateCard({ row, rank, onOpen }) {
         <strong className="candidate-ticker">{row.ticker}</strong>
         <span className="candidate-name">{row.name}</span>
       </div>
-      <Sparkline values={historyValues(row)} label={`${row.ticker} trend`} height={54} />
+      <Sparkline values={trendValues} label={`${row.ticker} one-month trend`} height={54} />
       <div className="candidate-metrics">
         <div><span>Score</span><b>{row.score}</b></div>
-        <div><span>20-day return</span><Move pct={row.technical_detail?.return_20d} /></div>
+        <div><span>1-month return</span><Move pct={trendReturn} /></div>
       </div>
       <div className="candidate-action">{recommendation?.label || 'Research'}<Icon name="chevron" size={17} /></div>
     </button>
@@ -100,6 +102,8 @@ export default function Dashboard() {
 
   const rows = data.research
   const leader = rows[0]
+  const leaderTrendValues = historyValues(leader).filter(Number.isFinite).slice(-5)
+  const leaderTrendReturn = recentReturn(leaderTrendValues)
   const macro = data.market?.macro || {}
   const regime = macro.regime
   const universeSize = data.universe_count || data.universe?.length || 0
@@ -166,7 +170,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="hero-stat-row">
-            <div><span>20-day return</span><Move pct={leader.technical_detail?.return_20d} /></div>
+            <div><span>1-month return</span><Move pct={leaderTrendReturn} /></div>
             <div><span>Research rating</span><b>{leader.stance}</b></div>
           </div>
           <button className="primary-button" onClick={() => setSelectedStock(leader)}>
@@ -174,8 +178,8 @@ export default function Dashboard() {
           </button>
         </div>
         <div className="hero-chart">
-          <div className="chart-caption"><span>Market trend</span><span>Available history only</span></div>
-          <Sparkline values={historyValues(leader)} label={`${leader.name} price trend`} height={230} />
+          <div className="chart-caption"><span>One-month trend</span><span>Five weekly observations</span></div>
+          <Sparkline values={leaderTrendValues} label={`${leader.name} one-month price trend`} height={230} />
         </div>
       </section>
 
@@ -195,7 +199,7 @@ export default function Dashboard() {
             <div><span className="eyebrow">Price momentum</span><h2>Market trends</h2></div>
             <Link to="/market">Open market pulse <Icon name="arrow" size={17} /></Link>
           </div>
-          <section className="trend-grid" aria-label="Strongest and weakest 20-day market trends">
+          <section className="trend-grid" aria-label="Strongest and weakest one-month market trends">
             {strengthening.map((row) => (
               <TrendCard key={row.ticker} row={row} direction="Strengthening" onOpen={setSelectedStock} />
             ))}

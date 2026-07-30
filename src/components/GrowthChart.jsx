@@ -1,9 +1,9 @@
 /**
- * Growth-of-a-fixed-investment line chart, drawn as inline SVG.
+ * Dollar-value comparison line chart, drawn as inline SVG.
  *
- * The point of the chart is the comparison: the same dollars in this holding versus the
- * same dollars in the S&P 500 over the same window. No chart library, so it inherits the
- * page's theme tokens and works in both light and dark without a second implementation.
+ * It supports both a fixed starting investment and dated contributions. No chart library,
+ * so it inherits the page's theme tokens and works in both light and dark without a second
+ * implementation.
  */
 
 const PAD = { top: 16, right: 14, bottom: 26, left: 52 }
