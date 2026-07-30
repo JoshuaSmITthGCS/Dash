@@ -271,8 +271,8 @@ export default function Portfolio() {
                 { label: 'S&P 500, same deposits', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
                 { label: 'Deposits held as cash', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
               ]}
-              title="Portfolio value from your investment dates"
-              caption={`Each holding enters on its recorded purchase date. The S&P line receives the same cost-basis dollars on those dates; cash holds those deposits with no interest or inflation adjustment. Jumps show new money entering the portfolio. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `; ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
+              title="One-to-one performance from your investment dates"
+              caption={`Each holding starts with its exact cost-basis dollars on its recorded purchase date, then follows that stock’s price return. The S&P receives the identical dollars on the identical date; cash holds the same deposits. Jumps show new money entering, not investment gains. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `; ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
             />
           </div>
         </details>

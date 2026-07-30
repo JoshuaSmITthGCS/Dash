@@ -269,9 +269,14 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .portfolio-date-input { min-width: 132px; padding: 7px 8px; font: 600 11px var(--font-mono); }
 
 /* Watchlist, market, methodology, legacy detail components */
-.watchlist-add { display: flex; align-items: flex-end; gap: 10px; max-width: 560px; margin-bottom: 22px; }.watchlist-add label { flex: 1; }.watchlist-add label > span { display: block; margin-bottom: 6px; color: var(--text-dim); font-size: 11px; }
+.watchlist-add { display: flex; align-items: flex-end; gap: 10px; max-width: 560px; margin-bottom: 14px; }.watchlist-add label { flex: 1; }.watchlist-add label > span, .watchlist-sizing label > span { display: block; margin-bottom: 6px; color: var(--text-dim); font-size: 11px; }
+.watchlist-sizing { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(150px, .5fr) minmax(150px, .5fr); gap: 14px; align-items: end; margin-bottom: 22px; padding: 17px 18px; }
+.watchlist-sizing .eyebrow { margin-bottom: 4px; }.watchlist-sizing strong, .watchlist-sizing small { display: block; }.watchlist-sizing small { margin-top: 3px; color: var(--text-faint); font-size: 9px; }
+.watchlist-sizing input { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-lit); border-radius: 13px; background: var(--bg-elev); color: var(--text); }
 .watchlist-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }.watchlist-card { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 23px; background: var(--bg-card); }.watchlist-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.watchlist-card-head strong, .watchlist-card-head span { display: block; }.watchlist-card-head strong { font: 750 23px var(--font-display); }.watchlist-card-head span { color: var(--text-faint); font-size: 10px; }
 .watchlist-card .sparkline, .watchlist-card .sparkline-empty { margin: 18px 0; }.watchlist-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 14px; }.watchlist-stats span, .watchlist-stats b { display: block; }.watchlist-stats span { color: var(--text-faint); font-size: 8px; }.watchlist-stats b, .watchlist-stats .mono { font: 650 12px var(--font-mono); }
+.watchlist-verdict { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border: 1px solid currentColor; border-radius: 13px; }.watchlist-verdict.buy { color: var(--pos); }.watchlist-verdict.wait { color: var(--neg); }.watchlist-verdict strong { font: 750 10px var(--font-mono); }.watchlist-verdict span { font-size: 9px; }
+.watchlist-plan { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 8px 0 12px; }.watchlist-plan > div { min-width: 0; padding: 10px; border-radius: 13px; background: var(--bg-elev); }.watchlist-plan span, .watchlist-plan b, .watchlist-plan small { display: block; }.watchlist-plan span, .watchlist-plan small { color: var(--text-faint); font-size: 8px; }.watchlist-plan b { margin: 4px 0 2px; font: 700 14px var(--font-mono); }
 .empty-state { min-height: 260px; display: grid; place-content: center; justify-items: center; text-align: center; color: var(--text-dim); }.empty-state h2 { margin-top: 12px; }.empty-state p { margin-top: 5px; color: var(--text-faint); }
 .news-card { display: grid; gap: 10px; }.news-card p, .body-copy { color: var(--text-dim); }.news-context { color: var(--text-faint); font: 9px var(--font-mono); }.news-discovery-note { margin: -4px 0 14px; font-size: 11px; }.sec-label { display: flex; align-items: center; gap: 10px; margin: 22px 0 14px; color: var(--text-faint); font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: .12em; }.sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 .callout { margin: 0 0 22px; padding: 15px 17px; border-left: 3px solid var(--accent); border-radius: 0 14px 14px 0; background: var(--bg-elev); color: var(--text-dim); }.callout strong { color: var(--text); }
@@ -293,6 +298,7 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .stock-screen-grid { grid-template-columns: 1fr; }
   .dashboard-columns { grid-template-columns: 1fr; }
   .watchlist-grid { grid-template-columns: repeat(2, 1fr); }
+  .watchlist-sizing { grid-template-columns: 1fr 1fr; }.watchlist-sizing > div { grid-column: 1 / -1; }
   .portfolio-summary { grid-template-columns: 1.25fr 1fr; }.portfolio-summary > :last-child { grid-column: 1 / -1; }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .capability-grid { grid-template-columns: repeat(2, 1fr); }
@@ -347,7 +353,7 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .portfolio-summary { grid-template-columns: 1fr 1fr; }.portfolio-value-card { grid-column: 1 / -1; min-height: 170px; }.portfolio-summary > :last-child { grid-column: auto; }.portfolio-summary .kpi { min-height: 150px; padding: 17px; }.portfolio-summary .kpi-value { font-size: 27px; }
   .portfolio-comparison > summary { min-height: 106px; padding: 16px; }.portfolio-comparison > summary strong { font-size: 16px; }.portfolio-comparison-chart { padding: 2px 14px 18px; }
   .portfolio-sort-toolbar { align-items: stretch; flex-direction: column; }.portfolio-sort-direction { width: 100%; }
-  .watchlist-grid { grid-template-columns: 1fr; }.watchlist-add { align-items: stretch; flex-direction: column; }.watchlist-add .primary-button { align-self: flex-start; }
+  .watchlist-grid { grid-template-columns: 1fr; }.watchlist-add { align-items: stretch; flex-direction: column; }.watchlist-add .primary-button { align-self: flex-start; }.watchlist-sizing { grid-template-columns: 1fr; }.watchlist-sizing > div { grid-column: auto; }
   .research-toolbar { grid-template-columns: 1fr; }.research-toolbar .search-field { grid-column: auto; }
   .evidence-grid { grid-template-columns: 1fr; }.modal-overlay { padding: 0; align-items: end; }.modal { max-height: 92dvh; border-radius: 26px 26px 0 0; padding: 20px; }.stock-modal h2 { font-size: 25px; }
   .auth-overlay { align-items: center; padding: 12px; }.login-modal { max-height: calc(100dvh - 24px); border-radius: 24px; padding: 22px; }.auth-brand { margin-bottom: 28px; }.profile-grid { grid-template-columns: 1fr; }.profile-card.main-profile-card { grid-column: auto; }

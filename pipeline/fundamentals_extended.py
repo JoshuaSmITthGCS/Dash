@@ -418,6 +418,7 @@ def derive_market_structure(info, price, closes=(), volumes=()):
         "pct_above_52w_low": rounded(None if not (low and price) else (price / low - 1) * 100, 2),
         "analyst_count": info.get("numberOfAnalystOpinions"),
         "analyst_rating": rounded(info.get("recommendationMean"), 2),
+        "analyst_consensus_target": rounded(target, 2),
         "analyst_target_upside": rounded(None if not (target and price) else (target / price - 1) * 100, 2),
         "payout_ratio": rounded(info.get("payoutRatio")),
     }
