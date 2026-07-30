@@ -1,0 +1,45 @@
+# ValueSignal
+
+> Fundamentals-first investment research platform providing explainable company analysis across valuation, quality, financial health, growth, and market behavior.
+
+## Key Pages
+
+- [Homepage](https://valuesignal.com/): Overview of top research candidates ranked by fundamentals
+- [Investment Research](https://valuesignal.com/research): Top 20 stocks with detailed scoring
+- [Market Pulse](https://valuesignal.com/market): Congressional trading and policy impact analysis
+- [Methodology](https://valuesignal.com/methodology): Complete scoring framework and data sources
+- [Watchlist](https://valuesignal.com/watchlist): Personal stock tracking
+
+## Scoring Model
+
+ValueSignal ranks stocks using a transparent, fundamentals-first model:
+- 75% Fundamentals: Valuation (40%), Profitability (25%), Financial Health (20%), Growth (15%)
+- 15% Market Behavior: Trend, volatility, drawdown, 20-day relative strength vs SPY
+- 10% News Sentiment: Company-specific news analysis
+
+### Valuation Metrics
+- PEG ratio, sector-aware forward P/E, P/S ratio, P/B ratio
+- Value trap detection for suspiciously low P/E
+
+### Quality Indicators
+- ROE, free cash flow yield, profit margin
+- Bank-specific leverage adjustments
+
+### Financial Health
+- Debt-to-equity ratio, current ratio
+- Industry-specific benchmarks
+
+## Data Sources
+
+- **Alpha Vantage**: Company fundamentals, news sentiment, insider transactions, market data
+- **Yahoo Finance**: Extended fundamental fields, deeper historical data
+- **Update Frequency**: Daily scheduled refresh, weekdays 07:00 ET
+- **Freshness Guarantee**: Research marked stale after 36 hours
+
+## Target Universe
+
+120-company configurable universe, publishes top 20 ranked by fundamentals.
+
+## Disclaimers
+
+General research only — not individualized financial advice. A high score is a prompt for deeper research, not a buy order or return forecast.
