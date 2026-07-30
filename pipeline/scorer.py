@@ -111,6 +111,32 @@ def higher_is_better_score(value, bands):
     return 10.0
 
 
+def lower_is_better_score(value, bands):
+    """Score a metric where less is better and negative readings are genuinely good.
+
+    Unlike band_score this never penalizes a negative value, so net cash (negative net
+    debt) or a cash-backed negative accrual scores as the strength it actually is.
+    """
+    if value is None:
+        return None
+    for key, score in (("excellent_max", 100), ("good_max", 80),
+                       ("fair_max", 55), ("poor_max", 30)):
+        if value <= bands[key]:
+            return float(score)
+    return 10.0
+
+
+def range_score(value, bands):
+    """Score a metric where both extremes are bad - under-investment and empire-building alike."""
+    if value is None:
+        return None
+    if bands["ideal_min"] <= value <= bands["ideal_max"]:
+        return 100.0
+    if bands["acceptable_min"] <= value <= bands["acceptable_max"]:
+        return 65.0
+    return 25.0
+
+
 def multiple_score(value, bands):
     """Score a positive valuation multiple while flagging unusually low P/E as possible value-trap risk."""
     if value is None:
@@ -135,8 +161,33 @@ def weighted_available(scores, weights):
     return sum(score * weight for score, weight in available) / sum(weight for _, weight in available)
 
 
+# Metrics whose accounting cutoffs are meaningless for banks and insurers. They are skipped
+# for those sectors and excluded from coverage rather than counted as missing evidence.
+FINANCIAL_EXEMPT = ("price_to_book", "debt_to_equity", "current_ratio", "net_debt_to_ebitda",
+                    "ev_to_ebitda", "ev_to_fcf", "capex_to_depreciation", "inventory_days_trend")
+
+
+def weighted_coverage(metrics, cfg, exempt=()):
+    """Fraction of the total metric weight that was actually answered.
+
+    Weight-aware so a missing minor input barely moves confidence while a missing
+    headline input moves it a lot. Sector-exempt metrics leave the denominator entirely.
+    """
+    answered = total = 0.0
+    for category, weights in cfg["metric_weights"].items():
+        category_weight = cfg["category_weights"].get(category, 0)
+        for metric, weight in weights.items():
+            if metric in exempt:
+                continue
+            share = category_weight * weight
+            total += share
+            if metrics.get(metric) is not None:
+                answered += share
+    return answered / total if total else 0.0
+
+
 def valuation_score(snap):
-    """Score valuation, profitability, solvency, cash generation, and growth.
+    """Score valuation, profitability, solvency, growth, capital allocation, and accounting quality.
 
     ETFs remain unscored because corporate accounting ratios are not comparable to fund holdings.
     Missing values are reweighted, then the final score is confidence-adjusted for data coverage.
@@ -153,15 +204,39 @@ def valuation_score(snap):
         "peg": band_score(snap.get("peg"), cfg["peg"]),
         "forward_pe": multiple_score(snap.get("forward_pe"), pe_bands),
         "price_to_sales": multiple_score(snap.get("price_to_sales"), ps_bands),
-        "price_to_book": band_score(snap.get("price_to_book"), cfg["price_to_book"]),
+        # Goodwill makes reported book value meaningless for banks; tangible book replaces it there.
+        "price_to_book": None if is_financial else band_score(snap.get("price_to_book"), cfg["price_to_book"]),
+        "price_to_tangible_book": band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"]),
+        "ev_to_ebitda": None if is_financial else multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"]),
+        "ev_to_fcf": None if is_financial else multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"]),
         "return_on_equity": higher_is_better_score(snap.get("return_on_equity"), cfg["return_on_equity"]),
+        # ROIC is the one ROE should have been: leverage cannot inflate it.
+        "return_on_invested_capital": higher_is_better_score(snap.get("return_on_invested_capital"),
+                                                             cfg["return_on_invested_capital"]),
+        "cash_conversion": higher_is_better_score(snap.get("cash_conversion"), cfg["cash_conversion"]),
         "free_cash_flow_yield": higher_is_better_score(snap.get("free_cash_flow_yield"), cfg["free_cash_flow_yield"]),
         "profit_margin": higher_is_better_score(snap.get("profit_margin"), cfg["profit_margin"]),
         # Bank balance sheets are structurally leveraged; these industrial-company cutoffs do not apply.
         "debt_to_equity": None if is_financial else band_score(snap.get("debt_to_equity"), cfg["debt_to_equity"]),
         "current_ratio": None if is_financial else higher_is_better_score(snap.get("current_ratio"), cfg["current_ratio"]),
+        "interest_coverage": higher_is_better_score(snap.get("interest_coverage"), cfg["interest_coverage"]),
+        "net_debt_to_ebitda": None if is_financial else lower_is_better_score(snap.get("net_debt_to_ebitda"),
+                                                                             cfg["net_debt_to_ebitda"]),
+        "altman_z": higher_is_better_score(snap.get("altman_z"), cfg["altman_z"]),
         "revenue_growth": higher_is_better_score(snap.get("revenue_growth"), cfg["revenue_growth"]),
         "earnings_growth": higher_is_better_score(snap.get("earnings_growth"), cfg["earnings_growth"]),
+        "fcf_growth_3y": higher_is_better_score(snap.get("fcf_growth_3y"), cfg["fcf_growth_3y"]),
+        "operating_margin_trend": higher_is_better_score(snap.get("operating_margin_trend"),
+                                                         cfg["operating_margin_trend"]),
+        "net_buyback_yield": higher_is_better_score(snap.get("net_buyback_yield"), cfg["net_buyback_yield"]),
+        "stock_comp_to_revenue": lower_is_better_score(snap.get("stock_comp_to_revenue"), cfg["stock_comp_to_revenue"]),
+        "capex_to_depreciation": range_score(snap.get("capex_to_depreciation"), cfg["capex_to_depreciation"]),
+        # Earnings that never become cash are the most-studied warning in the literature.
+        "accruals_ratio": lower_is_better_score(snap.get("accruals_ratio"), cfg["accruals_ratio"]),
+        "piotroski_f": higher_is_better_score(snap.get("piotroski_f"), cfg["piotroski_f"]),
+        "days_sales_outstanding_trend": lower_is_better_score(snap.get("days_sales_outstanding_trend"),
+                                                              cfg["days_sales_outstanding_trend"]),
+        "inventory_days_trend": lower_is_better_score(snap.get("inventory_days_trend"), cfg["inventory_days_trend"]),
     }
     categories = {}
     for category, weights in cfg["metric_weights"].items():
@@ -170,7 +245,7 @@ def valuation_score(snap):
     raw = weighted_available(categories, cfg["category_weights"])
     if raw is None:
         return None, {**metrics, "categories": categories, "coverage": 0.0}
-    coverage = sum(value is not None for value in metrics.values()) / len(metrics)
+    coverage = weighted_coverage(metrics, cfg, FINANCIAL_EXEMPT if is_financial else ())
     confidence_multiplier = 0.65 + (0.35 * coverage)
     total = round(raw * confidence_multiplier, 1)
     return total, {**metrics, "categories": categories, "coverage": round(coverage, 2),

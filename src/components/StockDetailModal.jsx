@@ -1,184 +1,200 @@
-import { useState, useEffect } from 'react'
-import { Tier, MetricPills } from './Bits'
+import { useEffect, useState } from 'react'
+import { Tier } from './Bits'
+import ActionGuidance from './ActionGuidance'
+import GrowthChart from './GrowthChart'
+import MetricSections from './MetricSections'
+import { getRecommendation } from '../lib/recommendation'
 
-export default function StockDetailModal({ stock, onClose }) {
+const TABS = [
+  ['evidence', 'Evidence'],
+  ['metrics', 'All metrics'],
+  ['performance', 'Vs S&P 500'],
+]
+
+function Kpi({ label, value, note, color }) {
+  return (
+    <div className="card kpi">
+      <div className="kpi-label">{label}</div>
+      <div className="kpi-value" style={color ? { color } : undefined}>{value}</div>
+      {note && <div className="kpi-note">{note}</div>}
+    </div>
+  )
+}
+
+const signed = (value, digits = 1, suffix = '%') =>
+  value == null ? '—' : `${value > 0 ? '+' : ''}${value.toFixed(digits)}${suffix}`
+
+const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
+
+export default function StockDetailModal({ stock, onClose, benchmarkHistory, position }) {
+  const [tab, setTab] = useState('evidence')
+
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose()
-    }
+    const handleEscape = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
   if (!stock) return null
 
-  // Calculate sell strategy based on fundamentals and technical indicators
-  const getSellStrategy = () => {
-    const strategies = []
-    const score = stock.score || 0
-    const fundScore = stock.components?.fundamentals || 0
-    const techDetail = stock.technical_detail || {}
-    const valuation = stock.fundamental_detail?.valuation || {}
+  const recommendation = getRecommendation(stock)
+  const technical = stock.technical_detail || {}
+  const hypothetical = stock.hypothetical
+  const categories = stock.fundamental_categories || {}
 
-    // Profit-taking strategy
-    if (techDetail.return_20d > 15) {
-      strategies.push({
-        type: 'Take Profits',
-        reason: `Strong 20-day gain of ${techDetail.return_20d.toFixed(1)}%. Consider trimming position.`,
-        action: 'Sell 25-50% to lock in gains',
-        urgency: 'medium'
-      })
-    }
-
-    // Fundamental deterioration
-    if (fundScore < 60 && score < 65) {
-      strategies.push({
-        type: 'Exit',
-        reason: 'Fundamentals deteriorating. Score below investment threshold.',
-        action: 'Consider full exit and redeployment',
-        urgency: 'high'
-      })
-    }
-
-    // Valuation concerns
-    if (valuation.forward_pe > 30 && stock.peg > 2.5) {
-      strategies.push({
-        type: 'Reduce',
-        reason: 'Valuation stretched. High P/E and PEG suggest limited upside.',
-        action: 'Reduce position by 30-40%',
-        urgency: 'medium'
-      })
-    }
-
-    // Rebalancing
-    if (techDetail.return_20d < -10) {
-      strategies.push({
-        type: 'Review',
-        reason: `20-day decline of ${techDetail.return_20d.toFixed(1)}%. Check if thesis still intact.`,
-        action: fundScore > 70 ? 'Hold or add on weakness' : 'Consider tax-loss harvesting',
-        urgency: 'low'
-      })
-    }
-
-    // Hold recommendation
-    if (score > 75 && fundScore > 70 && Math.abs(techDetail.return_20d || 0) < 10) {
-      strategies.push({
-        type: 'Hold',
-        reason: 'Strong fundamentals and stable price action.',
-        action: 'Maintain position. Consider adding on dips.',
-        urgency: 'low'
-      })
-    }
-
-    return strategies.length > 0 ? strategies : [{
-      type: 'Hold',
-      reason: 'No immediate action required.',
-      action: 'Monitor quarterly earnings and fundamental updates',
-      urgency: 'low'
-    }]
+  const chartSeries = []
+  if (stock.history?.growth) {
+    chartSeries.push({ label: stock.ticker, values: stock.history.growth, color: 'var(--series-stock)', emphasis: true })
   }
-
-  const strategies = getSellStrategy()
+  const benchmark = benchmarkHistory?.growth
+  if (benchmark) {
+    chartSeries.push({ label: 'S&P 500 (SPY)', values: benchmark, color: 'var(--series-benchmark)', dashed: true })
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal stock-modal" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 20, gap: 16 }}>
           <div>
             <h2 style={{ marginBottom: 4 }}>{stock.ticker}</h2>
-            <div style={{ opacity: 0.7, marginBottom: 8 }}>{stock.name}</div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ opacity: 0.7, marginBottom: 8 }}>{stock.name} · {stock.industry || stock.sector || '—'}</div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <Tier label={stock.stance} />
               <span className="mono" style={{ fontSize: 24, fontWeight: 600 }}>{stock.score}</span>
               <span style={{ opacity: 0.6, fontSize: 14 }}>{Math.round(stock.confidence * 100)}% confidence</span>
+              {stock.sector_valuation_percentile != null && (
+                <span className="chip">cheaper than {stock.sector_valuation_percentile.toFixed(0)}% of its sector</span>
+              )}
             </div>
           </div>
           <button className="chip button-chip" onClick={onClose}>✕ Close</button>
         </div>
 
-        <MetricPills {...stock} fundamental_coverage={stock.fundamental_detail?.coverage} />
+        <div style={{ marginBottom: 22 }}>
+          <ActionGuidance recommendation={recommendation} position={position} />
+        </div>
 
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ marginBottom: 12 }}>Key Metrics</h3>
-          <div className="grid grid-4" style={{ marginBottom: 20 }}>
-            <div className="card kpi">
-              <div className="kpi-label">Current Price</div>
-              <div className="kpi-value">${stock.price?.toFixed(2) || '—'}</div>
-            </div>
-            <div className="card kpi">
-              <div className="kpi-label">Market Cap</div>
-              <div className="kpi-value">{stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'}</div>
-            </div>
-            <div className="card kpi">
-              <div className="kpi-label">PEG Ratio</div>
-              <div className="kpi-value">{stock.peg || '—'}</div>
-            </div>
-            <div className="card kpi">
-              <div className="kpi-label">Forward P/E</div>
-              <div className="kpi-value">{stock.forward_pe || '—'}</div>
-            </div>
-          </div>
+        <div className="grid grid-4" style={{ marginBottom: 20 }}>
+          <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />
+          <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'} />
+          <Kpi label="20-day move" value={signed(technical.return_20d)} color={moveColor(technical.return_20d)} />
+          <Kpi label="1-year move" value={signed(technical.return_252d)} color={moveColor(technical.return_252d)} />
+        </div>
 
-          <div className="grid grid-4" style={{ marginBottom: 20 }}>
-            <div className="card kpi">
-              <div className="kpi-label">1-Day Return</div>
-              <div className="kpi-value" style={{ color: stock.technical_detail?.return_1d >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
-                {stock.technical_detail?.return_1d != null ? `${stock.technical_detail.return_1d > 0 ? '+' : ''}${stock.technical_detail.return_1d.toFixed(1)}%` : '—'}
-              </div>
-            </div>
-            <div className="card kpi">
-              <div className="kpi-label">5-Day Return</div>
-              <div className="kpi-value" style={{ color: stock.technical_detail?.return_5d >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
-                {stock.technical_detail?.return_5d != null ? `${stock.technical_detail.return_5d > 0 ? '+' : ''}${stock.technical_detail.return_5d.toFixed(1)}%` : '—'}
-              </div>
-            </div>
-            <div className="card kpi">
-              <div className="kpi-label">20-Day Return</div>
-              <div className="kpi-value" style={{ color: stock.technical_detail?.return_20d >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
-                {stock.technical_detail?.return_20d != null ? `${stock.technical_detail.return_20d > 0 ? '+' : ''}${stock.technical_detail.return_20d.toFixed(1)}%` : '—'}
-              </div>
-            </div>
-            <div className="card kpi">
-              <div className="kpi-label">3-Month Return</div>
-              <div className="kpi-value" style={{ color: stock.technical_detail?.return_60d >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
-                {stock.technical_detail?.return_60d != null ? `${stock.technical_detail.return_60d > 0 ? '+' : ''}${stock.technical_detail.return_60d.toFixed(1)}%` : '—'}
-              </div>
-            </div>
-          </div>
+        <div className="tabs">
+          {TABS.map(([key, label]) => (
+            <button key={key} className={`tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <h3 style={{ marginBottom: 12, marginTop: 32 }}>Sell Strategy & Recommendations</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {strategies.map((strategy, index) => (
-              <div
-                key={index}
-                className="card"
-                style={{
-                  padding: 16,
-                  borderLeft: `4px solid ${strategy.urgency === 'high' ? 'var(--neg)' : strategy.urgency === 'medium' ? 'var(--warn)' : 'var(--pos)'}`
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
-                  <h4 style={{ margin: 0 }}>{strategy.type}</h4>
-                  <span
-                    className="chip"
-                    style={{
-                      background: strategy.urgency === 'high' ? 'var(--neg)' : strategy.urgency === 'medium' ? 'var(--warn)' : 'var(--pos)',
-                      color: '#fff',
-                      fontSize: 11
-                    }}
-                  >
-                    {strategy.urgency.toUpperCase()}
-                  </span>
+        {tab === 'evidence' && (
+          <div style={{ display: 'grid', gap: 20 }}>
+            <div>
+              <div className="sec-label">Score components</div>
+              <div className="component-scores">
+                {Object.entries(stock.components || {}).map(([key, value]) => (
+                  <div key={key}>
+                    <span>{key.replace(/_/g, ' ')}</span>
+                    <b>{value == null ? '—' : Math.round(value)}</b>
+                    <i><em style={{ width: `${value || 0}%` }} /></i>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {Object.keys(categories).length > 0 && (
+              <div>
+                <div className="sec-label">Fundamental categories</div>
+                <div className="component-scores" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+                  {Object.entries(categories).map(([key, value]) => (
+                    <div key={key}>
+                      <span>{key.replace(/_/g, ' ')}</span>
+                      <b>{value == null ? '—' : Math.round(value)}</b>
+                      <i><em style={{ width: `${value || 0}%` }} /></i>
+                    </div>
+                  ))}
                 </div>
-                <p style={{ margin: '0 0 8px 0', opacity: 0.8 }}>{strategy.reason}</p>
-                <p style={{ margin: 0, fontWeight: 500 }}><strong>Action:</strong> {strategy.action}</p>
               </div>
-            ))}
-          </div>
+            )}
 
-          <div className="callout" style={{ marginTop: 24 }}>
-            <strong>Disclaimer:</strong> These are algorithmic suggestions based on quantitative metrics. Not financial advice. Always conduct your own research and consult with a financial advisor before making investment decisions.
+            <div className="evidence-grid">
+              <div>
+                <b>Evidence for</b>
+                <ul>{(stock.strengths || []).map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>
+              <div>
+                <b>Risks / gaps</b>
+                <ul>{(stock.risks || []).map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>
+            </div>
+
+            {stock.modifiers?.notes?.length > 0 && (
+              <div>
+                <div className="sec-label">Score modifiers ({signed(stock.modifiers.total, 1, ' pts')})</div>
+                <ul className="method-list">
+                  {stock.modifiers.notes.map((note) => <li key={note}>{note}</li>)}
+                </ul>
+                <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
+                  Applied on top of the {stock.base_score ?? '—'} evidence score. Modifiers refine
+                  a ranking; they never outweigh the fundamentals behind it.
+                </p>
+              </div>
+            )}
           </div>
+        )}
+
+        {tab === 'metrics' && <MetricSections stock={stock} />}
+
+        {tab === 'performance' && (
+          <div style={{ display: 'grid', gap: 20 }}>
+            <GrowthChart
+              dates={stock.history?.dates || benchmarkHistory?.dates}
+              series={chartSeries}
+              title={`Growth of $${(hypothetical?.basis || 500).toFixed(0)} — ${stock.ticker} vs the S&P 500`}
+              caption="Same dollars, same start date, same window. The gap is what picking this name earned or cost against simply buying the index."
+            />
+            {hypothetical && (
+              <div className="grid grid-4">
+                <Kpi
+                  label={`$${hypothetical.basis} in ${stock.ticker}`}
+                  value={`$${hypothetical.stock_value.toFixed(0)}`}
+                  note={signed(hypothetical.stock_return_pct)}
+                  color={moveColor(hypothetical.stock_return_pct)}
+                />
+                <Kpi
+                  label={`$${hypothetical.basis} in the S&P 500`}
+                  value={`$${hypothetical.benchmark_value.toFixed(0)}`}
+                  note={signed(hypothetical.benchmark_return_pct)}
+                  color={moveColor(hypothetical.benchmark_return_pct)}
+                />
+                <Kpi
+                  label="Dollars ahead"
+                  value={`${hypothetical.dollars_ahead >= 0 ? '+' : '−'}$${Math.abs(hypothetical.dollars_ahead).toFixed(0)}`}
+                  note="versus the index"
+                  color={moveColor(hypothetical.dollars_ahead)}
+                />
+                <Kpi
+                  label="Excess return"
+                  value={signed(hypothetical.excess_return_pct)}
+                  note="over the charted window"
+                  color={moveColor(hypothetical.excess_return_pct)}
+                />
+              </div>
+            )}
+            <div className="grid grid-4">
+              <Kpi label="Max drawdown (1y)" value={signed(technical.max_drawdown_252d)} color={moveColor(technical.max_drawdown_252d)} />
+              <Kpi label="Volatility" value={technical.annualized_volatility ? `${technical.annualized_volatility.toFixed(0)}%` : '—'} />
+              <Kpi label="Vs SPY (20d)" value={signed(technical.relative_strength_20d)} color={moveColor(technical.relative_strength_20d)} />
+              <Kpi label="Beta" value={technical.beta != null ? technical.beta.toFixed(2) : '—'} />
+            </div>
+          </div>
+        )}
+
+        <div className="callout" style={{ marginTop: 24 }}>
+          <strong>Disclaimer:</strong> Algorithmic research from quantitative metrics, not financial
+          advice. Verify the filings and your own suitability before acting.
         </div>
       </div>
     </div>

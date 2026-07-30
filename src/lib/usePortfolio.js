@@ -125,7 +125,7 @@ export function usePortfolio() {
         if (data.positions && Array.isArray(data.positions)) {
           savePositions(data.positions)
         }
-      } catch (error) {
+      } catch {
         alert('Failed to import portfolio: Invalid file format')
       }
     }

@@ -125,7 +125,7 @@ export default function ScoreBandView({ stocks, onStockClick }) {
               {isExpanded && (
                 <div style={{ padding: 16 }}>
                   <div style={{ display: 'grid', gap: 10 }}>
-                    {stocksInBand.map((stock, i) => (
+                    {stocksInBand.map((stock) => (
                       <div
                         key={stock.ticker}
                         style={{

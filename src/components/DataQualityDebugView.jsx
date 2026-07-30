@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { formatValidationReport } from '../lib/pipelineGuardrails'
 
 /**
  * Data Quality Debug View
@@ -187,7 +186,6 @@ export default function DataQualityDebugView({ validationResults }) {
                               fontSize: 10,
                               opacity: 0.6,
                               fontFamily: 'var(--font-mono)',
-                              marginTop: 2,
                               background: 'var(--bg-card)',
                               padding: 4,
                               borderRadius: 4,

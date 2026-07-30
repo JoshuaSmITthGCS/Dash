@@ -90,7 +90,7 @@ function calculateFreshness(stock, thresholdHours) {
     } else {
       return 0.2 // Ancient data
     }
-  } catch (e) {
+  } catch {
     return 0.5 // Parse error - neutral score
   }
 }

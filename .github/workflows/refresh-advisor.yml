@@ -17,7 +17,9 @@ jobs:
   refresh:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # A ~330-name universe plus financial statements for the shortlist needs a wider window
+    # than the old 120-name price-only pass.
+    timeout-minutes: 50
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       ALPHA_ENRICH_LIMIT: '5'

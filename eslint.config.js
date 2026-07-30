@@ -1,8 +1,12 @@
 import js from '@eslint/js'
 
 const globals = Object.fromEntries([
-  'console', 'document', 'fetch', 'import.meta', 'localStorage', 'setTimeout', 'window',
-  'describe', 'expect', 'it', 'vi',
+  // browser
+  'alert', 'Blob', 'confirm', 'console', 'document', 'fetch', 'FileReader', 'import.meta',
+  'localStorage', 'navigator', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+  'URL', 'window',
+  // test runner
+  'afterEach', 'beforeEach', 'describe', 'expect', 'it', 'vi',
 ].map((name) => [name, 'readonly']))
 
 export default [
@@ -17,5 +21,11 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals,
     },
+  },
+  {
+    // Unimplemented connector stubs: the parameter names are the documented contract for
+    // the eventual implementation, so they stay even though nothing reads them yet.
+    files: ['src/lib/fidelityConnectorStub.js'],
+    rules: { 'no-unused-vars': ['error', { args: 'none' }] },
   },
 ]
