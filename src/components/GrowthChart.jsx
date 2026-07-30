@@ -36,13 +36,31 @@ function pathFor(points) {
 }
 
 const money = (value) => `$${Math.round(value).toLocaleString('en-US')}`
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// Calendar-day lookback windows rather than fixed point counts: the underlying grid mixes
+// dense recent daily closes with sparser older weekly ones, so a point count can't mean the
+// same span of time at both ends of the series.
 const ZOOM_RANGES = [
-  { key: 'all', label: 'All', points: null },
-  { key: '1y', label: '1Y', points: 53 },
-  { key: '6m', label: '6M', points: 27 },
-  { key: '3m', label: '3M', points: 14 },
-  { key: '1m', label: '1M', points: 6 },
+  { key: 'all', label: 'All', days: null },
+  { key: '1y', label: '1Y', days: 365 },
+  { key: '6m', label: '6M', days: 182 },
+  { key: '3m', label: '3M', days: 91 },
+  { key: '1m', label: '1M', days: 30 },
+  { key: '1w', label: '1W', days: 7 },
+  { key: '5d', label: '5D', days: 5 },
+  { key: '1d', label: '1D', days: 1 },
 ]
+
+/** First index whose date falls within `days` of the series' last date. */
+function cutoffIndex(dates, days) {
+  if (days == null || !dates.length) return 0
+  const last = new Date(`${dates[dates.length - 1]}T00:00:00Z`).getTime()
+  const cutoff = last - days * DAY_MS
+  const index = dates.findIndex((date) => new Date(`${date}T00:00:00Z`).getTime() >= cutoff)
+  // Keep at least two points so a short range still draws a line rather than a single dot.
+  return index < 0 ? dates.length - 1 : Math.min(index, dates.length - 2)
+}
 
 export default function GrowthChart({
   dates = [],
@@ -67,16 +85,14 @@ export default function GrowthChart({
     )
   }
   const selectedRange = ZOOM_RANGES.find((range) => range.key === zoom) || ZOOM_RANGES[0]
-  const startIndex = selectedRange.points
-    ? Math.max(0, fullDates.length - selectedRange.points)
-    : 0
+  const startIndex = cutoffIndex(fullDates, selectedRange.days)
   const usableDates = fullDates.slice(startIndex)
   const lines = availableLines.map((line) => ({
     ...line,
     values: line.values.slice(startIndex),
   }))
   const availableRanges = ZOOM_RANGES.filter((range) =>
-    range.points == null || range.points < fullDates.length)
+    range.days == null || cutoffIndex(fullDates, range.days) > 0)
 
   const allValues = lines.flatMap((line) => line.values.filter((value) => value != null))
   const min = Math.min(...allValues)

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   benchmarkAlternative,
   benchmarkCloseOn,
+  fixedBasisAlternative,
+  portfolioFixedBasisVsBenchmark,
   portfolioGrowthSeries,
   portfolioVsBenchmark,
+  positionGrowthSeries,
 } from './portfolioPerformance'
 
 const HISTORY = {
@@ -135,5 +138,72 @@ describe('portfolioGrowthSeries', () => {
     expect(portfolioGrowthSeries([
       { ticker: 'AAA', shares: 2, costBasis: 100 },
     ], priceData, HISTORY)).toBeNull()
+  })
+})
+
+const STOCK_HISTORY = { dates: HISTORY.dates, closes: [50, 55, 60, 66, 75] }
+
+describe('fixedBasisAlternative', () => {
+  it('prices a flat basis into the stock and the index on the same purchase day, regardless of what was actually invested', () => {
+    const position = { shares: 123, costBasis: 9, purchaseDate: '2025-01-06' }
+    const result = fixedBasisAlternative(position, STOCK_HISTORY, HISTORY, 500)
+    expect(result.stockValue).toBeCloseTo(750, 5) // 500/50 * 75
+    expect(result.benchmarkValue).toBeCloseTo(625, 5) // 500/400 * 500
+    expect(result.stockReturnPct).toBeCloseTo(50, 5)
+    expect(result.benchmarkReturnPct).toBeCloseTo(25, 5)
+    expect(result.dollarsAhead).toBeCloseTo(125, 5)
+  })
+
+  it('declines to compare a purchase that predates the window', () => {
+    const position = { purchaseDate: '2020-01-01' }
+    expect(fixedBasisAlternative(position, STOCK_HISTORY, HISTORY, 500)).toBeNull()
+  })
+
+  it('requires a purchase date', () => {
+    expect(fixedBasisAlternative({}, STOCK_HISTORY, HISTORY, 500)).toBeNull()
+  })
+})
+
+describe('portfolioFixedBasisVsBenchmark', () => {
+  const priceDataWithDates = { AAA: { history: STOCK_HISTORY } }
+
+  it('totals a flat basis per comparable position rather than actual dollars invested', () => {
+    const positions = [
+      { ticker: 'AAA', shares: 999, costBasis: 1, purchaseDate: '2025-01-06' },
+      { ticker: 'ZZZ', shares: 1, costBasis: 1, purchaseDate: '2020-01-01' },
+    ]
+    const result = portfolioFixedBasisVsBenchmark(positions, priceDataWithDates, HISTORY, 500)
+    expect(result.comparable).toBe(1)
+    expect(result.invested).toBe(500)
+    expect(result.stockValue).toBeCloseTo(750, 5)
+    expect(result.benchmarkValue).toBeCloseTo(625, 5)
+    expect(result.dollarsAhead).toBeCloseTo(125, 5)
+  })
+
+  it('returns nothing when no position falls inside the window', () => {
+    const positions = [{ ticker: 'AAA', purchaseDate: '2000-01-01' }]
+    expect(portfolioFixedBasisVsBenchmark(positions, priceDataWithDates, HISTORY, 500)).toBeNull()
+  })
+})
+
+describe('positionGrowthSeries', () => {
+  it('starts a single position at its own purchase date, not the whole window', () => {
+    const position = { purchaseDate: '2025-07-07' }
+    const series = positionGrowthSeries(position, STOCK_HISTORY, HISTORY, 500)
+    expect(series.dates).toEqual(['2025-07-07', '2025-10-06', '2026-01-05'])
+    expect(series.stock[0]).toBeCloseTo(500, 5)
+    expect(series.stock.at(-1)).toBeCloseTo(625, 5) // 500/60 * 75
+    expect(series.benchmark[0]).toBeCloseTo(500, 5)
+    expect(series.benchmark.at(-1)).toBeCloseTo(555.56, 2) // 500/450 * 500
+  })
+
+  it('requires a purchase date', () => {
+    expect(positionGrowthSeries({}, STOCK_HISTORY, HISTORY, 500)).toBeNull()
+  })
+
+  it('bails out when the stock history is not on the shared grid', () => {
+    const position = { purchaseDate: '2025-01-06' }
+    const misaligned = { dates: HISTORY.dates, closes: [50, 55] }
+    expect(positionGrowthSeries(position, misaligned, HISTORY, 500)).toBeNull()
   })
 })

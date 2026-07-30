@@ -5,6 +5,7 @@ import GrowthChart from './GrowthChart'
 import MetricSections from './MetricSections'
 import { getRecommendation } from '../lib/recommendation'
 import { bullBearScore } from '../lib/bullBearScore'
+import { fixedBasisAlternative, positionGrowthSeries } from '../lib/portfolioPerformance'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -40,18 +41,43 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
 
   const recommendation = getRecommendation(stock)
   const technical = stock.technical_detail || {}
-  const hypothetical = stock.hypothetical
   const categories = stock.fundamental_categories || {}
   const thesis = bullBearScore(stock)
 
+  // A held position with a purchase date gets its own since-you-bought-it comparison — the
+  // full charted window (often a year) is the wrong question once you actually own the stock.
+  const basis = stock.hypothetical?.basis || 500
+  const scopedSeries = position?.purchaseDate
+    ? positionGrowthSeries(position, stock.history, benchmarkHistory, basis)
+    : null
+  const scopedHypothetical = position?.purchaseDate
+    ? fixedBasisAlternative(position, stock.history, benchmarkHistory, basis)
+    : null
+  const hypothetical = scopedHypothetical
+    ? {
+        basis,
+        stock_value: scopedHypothetical.stockValue,
+        benchmark_value: scopedHypothetical.benchmarkValue,
+        stock_return_pct: scopedHypothetical.stockReturnPct,
+        benchmark_return_pct: scopedHypothetical.benchmarkReturnPct,
+        dollars_ahead: scopedHypothetical.dollarsAhead,
+        excess_return_pct: (scopedHypothetical.dollarsAhead / basis) * 100,
+      }
+    : stock.hypothetical
+
   const chartSeries = []
-  if (stock.history?.growth) {
-    chartSeries.push({ label: stock.ticker, values: stock.history.growth, color: 'var(--series-stock)', emphasis: true })
+  if (scopedSeries) {
+    chartSeries.push({ label: stock.ticker, values: scopedSeries.stock, color: 'var(--series-stock)', emphasis: true })
+    chartSeries.push({ label: 'S&P 500 (SPY)', values: scopedSeries.benchmark, color: 'var(--series-benchmark)', dashed: true })
+  } else {
+    if (stock.history?.growth) {
+      chartSeries.push({ label: stock.ticker, values: stock.history.growth, color: 'var(--series-stock)', emphasis: true })
+    }
+    if (benchmarkHistory?.growth) {
+      chartSeries.push({ label: 'S&P 500 (SPY)', values: benchmarkHistory.growth, color: 'var(--series-benchmark)', dashed: true })
+    }
   }
-  const benchmark = benchmarkHistory?.growth
-  if (benchmark) {
-    chartSeries.push({ label: 'S&P 500 (SPY)', values: benchmark, color: 'var(--series-benchmark)', dashed: true })
-  }
+  const chartDates = scopedSeries ? scopedSeries.dates : (stock.history?.dates || benchmarkHistory?.dates)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -180,10 +206,15 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         {tab === 'performance' && (
           <div style={{ display: 'grid', gap: 20 }}>
             <GrowthChart
-              dates={stock.history?.dates || benchmarkHistory?.dates}
+              dates={chartDates}
               series={chartSeries}
-              title={`Growth of $${(hypothetical?.basis || 500).toFixed(0)} — ${stock.ticker} vs the S&P 500`}
-              caption="Same dollars, same start date, same window. The gap is what picking this name earned or cost against simply buying the index."
+              title={scopedSeries
+                ? `Growth of $${basis.toFixed(0)} — ${stock.ticker} vs the S&P 500 since you bought it (${position.purchaseDate})`
+                : `Growth of $${basis.toFixed(0)} — ${stock.ticker} vs the S&P 500`}
+              caption={scopedSeries
+                ? 'Same dollars, invested the day you actually bought this position, in the stock and in the S&P 500. The gap is what picking this name earned or cost against simply buying the index from that same day.'
+                : 'Same dollars, same start date, same window. The gap is what picking this name earned or cost against simply buying the index.'}
+              zoomable
             />
             {hypothetical && (
               <div className="grid grid-4">

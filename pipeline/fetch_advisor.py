@@ -13,8 +13,8 @@ from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import derive_extended, extended_inputs
 from fred import FredClient, FredError, fetch_regime
-from market_history import (BASIS, hypothetical_vs_benchmark, sector_percentiles,
-                            series_payload, weekly_grid)
+from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
+                            series_payload)
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
 from scorer import SETTINGS, valuation_score
@@ -641,7 +641,7 @@ def run():
                 sec_failures.append(row["ticker"])
                 LOG.warn(f"{row['ticker']}: SEC Form 4 unavailable ({type(exc).__name__})")
 
-    grid = weekly_grid(benchmark["dates"])
+    grid = chart_grid(benchmark["dates"])
     benchmark_series = series_payload(benchmark["dates"], benchmark["closes"], grid)
     benchmark_growth = (benchmark_series or {}).get("growth")
     contexts_by_symbol = {context["symbol"]: context for context in contexts}

@@ -8,7 +8,13 @@ import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
-import { benchmarkAlternative, portfolioGrowthSeries, portfolioVsBenchmark } from '../lib/portfolioPerformance'
+import {
+  benchmarkAlternative,
+  fixedBasisAlternative,
+  portfolioFixedBasisVsBenchmark,
+  portfolioGrowthSeries,
+  portfolioVsBenchmark,
+} from '../lib/portfolioPerformance'
 import Icon from '../components/Icons'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
 import {
@@ -127,6 +133,8 @@ export default function Portfolio() {
     : 0
 
   const versusIndex = portfolioVsBenchmark(portfolioStats.positions, benchmarkHistory)
+  const basis = data?.hypothetical_basis || 500
+  const fixedBasisTotal = portfolioFixedBasisVsBenchmark(portfolioStats.positions, priceData, benchmarkHistory, basis)
   const growth = portfolioGrowthSeries(portfolioStats.positions, priceData, benchmarkHistory)
   const actionable = portfolioStats.positions.filter(
     (pos) => pos.recommendation && pos.recommendation.action !== 'HOLD')
@@ -161,8 +169,6 @@ export default function Portfolio() {
     const result = await updatePosition(positionId, { purchaseDate })
     setSyncMessage(result?.success ? 'Purchase date saved' : `Could not save date: ${result?.error || 'Unknown error'}`)
   }
-
-  const basis = data?.hypothetical_basis || 500
 
   return (
     <>
@@ -514,48 +520,89 @@ export default function Portfolio() {
       {viewMode === 'hypothetical' && (
         <div className="card card-pad table-wrap">
           <div className="callout" style={{ margin: '0 0 16px' }}>
-            <strong>Hypothetical returns:</strong> ${basis} put into each researched company at the
-            start of the charted window, against the same ${basis} in the S&P 500.
+            <strong>${basis} calculator:</strong> what ${basis} would be worth today if it went into
+            each position on the day you actually bought it, against the same ${basis} in the
+            S&amp;P 500 from that same day. Not what you actually invested — same fair, same-day
+            comparison as "Vs S&amp;P 500", just a flat ${basis} everywhere.
           </div>
           <table>
             <thead>
               <tr>
-                <th>Ticker</th><th>Company</th><th className="num">Price</th>
-                <th className="num">${basis} would be</th><th className="num">Return</th>
-                <th className="num">S&P instead</th><th className="num">Dollars ahead</th><th>Action</th>
+                <th>Ticker</th><th className="num">Purchased</th><th className="num">${basis} invested</th>
+                <th className="num">Now</th><th className="num">Return</th>
+                <th className="num">S&P instead</th><th className="num">S&P return</th>
+                <th className="num">Dollars ahead</th>
               </tr>
             </thead>
             <tbody>
-              {research.map((row) => (
-                <tr key={row.ticker}>
-                  <td className="mono">{row.ticker}</td>
-                  <td>{row.name}</td>
-                  <td className="mono num">{row.price ? `$${row.price.toFixed(2)}` : '—'}</td>
-                  <td className="mono num">{row.hypothetical ? money(row.hypothetical.stock_value) : '—'}</td>
-                  <td className="num">
-                    {row.hypothetical ? <Move value={row.hypothetical.stock_return_pct} /> : <span className="mono">—</span>}
+              {sortedPositions.map((pos) => {
+                const calc = fixedBasisAlternative(pos, pos.priceInfo?.history, benchmarkHistory, basis)
+                return (
+                  <tr key={pos.id || pos.ticker}>
+                    <td className="mono">{pos.ticker}</td>
+                    <td className="mono num">
+                      <input
+                        className="portfolio-date-input"
+                        type="date"
+                        value={pos.purchaseDate || ''}
+                        aria-label={`${pos.ticker} purchase date`}
+                        onChange={(event) => handlePurchaseDateChange(pos.id, event.target.value)}
+                      />
+                    </td>
+                    <td className="mono num">{money(basis)}</td>
+                    <td className="mono num">{calc ? money(calc.stockValue) : '—'}</td>
+                    <td className="num">
+                      {calc ? <Move value={calc.stockReturnPct} /> : <span className="mono">—</span>}
+                    </td>
+                    <td className="mono num">{calc ? money(calc.benchmarkValue) : '—'}</td>
+                    <td className="num">
+                      {calc ? <Move value={calc.benchmarkReturnPct} /> : <span className="mono">—</span>}
+                    </td>
+                    <td className="mono num" style={{ color: moveColor(calc?.dollarsAhead) }}>
+                      {calc
+                        ? `${calc.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(calc.dollarsAhead))}`
+                        : '—'}
+                    </td>
+                  </tr>
+                )
+              })}
+              {fixedBasisTotal && (
+                <tr style={{ fontWeight: 600 }}>
+                  <td className="mono">TOTAL</td>
+                  <td className="num">—</td>
+                  <td className="mono num">{money(fixedBasisTotal.invested)}</td>
+                  <td className="mono num">{money(fixedBasisTotal.stockValue)}</td>
+                  <td className="num"><Move value={fixedBasisTotal.stockReturnPct} /></td>
+                  <td className="mono num">{money(fixedBasisTotal.benchmarkValue)}</td>
+                  <td className="num"><Move value={fixedBasisTotal.benchmarkReturnPct} /></td>
+                  <td className="mono num" style={{ color: moveColor(fixedBasisTotal.dollarsAhead) }}>
+                    {fixedBasisTotal.dollarsAhead >= 0 ? '+' : '−'}{money(Math.abs(fixedBasisTotal.dollarsAhead))}
                   </td>
-                  <td className="mono num">{row.hypothetical ? money(row.hypothetical.benchmark_value) : '—'}</td>
-                  <td className="mono num" style={{ color: moveColor(row.hypothetical?.dollars_ahead) }}>
-                    {row.hypothetical
-                      ? `${row.hypothetical.dollars_ahead >= 0 ? '+' : '−'}${money(Math.abs(row.hypothetical.dollars_ahead))}`
-                      : '—'}
-                  </td>
-                  <td><button className="chip button-chip" onClick={() => setSelectedStock(row)}>Details</button></td>
                 </tr>
-              ))}
-              {research.length === 0 && (
-                <tr><td colSpan="8" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>No research data yet.</td></tr>
+              )}
+              {portfolioStats.positions.length === 0 && (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
+                    No positions yet. Click "+ Add Position" to start tracking.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
+          <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 12 }}>
+            Add or correct a purchase date above to calculate the same-day comparison. Positions
+            bought before the published benchmark window show “—” rather than being compared
+            against the wrong entry price.
+          </p>
         </div>
       )}
 
       {selectedStock && (
         <StockDetailModal
           stock={selectedStock.priceInfo || selectedStock}
-          position={selectedStock.shares ? { shares: selectedStock.shares, price: selectedStock.currentPrice } : null}
+          position={selectedStock.shares
+            ? { shares: selectedStock.shares, price: selectedStock.currentPrice, purchaseDate: selectedStock.purchaseDate }
+            : null}
           benchmarkHistory={benchmarkHistory}
           onClose={() => setSelectedStock(null)}
         />
