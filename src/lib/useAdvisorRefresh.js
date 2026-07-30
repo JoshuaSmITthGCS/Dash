@@ -68,8 +68,8 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
       if (response.status === 503) {
         await reload()
         setState({
-          status: 'success',
-          message: 'Latest published data reloaded. Automatic market refresh is not configured on Netlify yet.',
+          status: 'error',
+          message: 'No new Yahoo data was fetched: the refresh service is not configured on Netlify. Showing the latest previously published data.',
         })
         return
       }

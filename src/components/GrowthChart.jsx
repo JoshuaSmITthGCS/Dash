@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 /**
  * Dollar-value comparison line chart, drawn as inline SVG.
  *
@@ -34,6 +36,13 @@ function pathFor(points) {
 }
 
 const money = (value) => `$${Math.round(value).toLocaleString('en-US')}`
+const ZOOM_RANGES = [
+  { key: 'all', label: 'All', points: null },
+  { key: '1y', label: '1Y', points: 53 },
+  { key: '6m', label: '6M', points: 27 },
+  { key: '3m', label: '3M', points: 14 },
+  { key: '1m', label: '1M', points: 6 },
+]
 
 export default function GrowthChart({
   dates = [],
@@ -42,16 +51,32 @@ export default function GrowthChart({
   width = 720,
   title,
   caption,
+  zoomable = false,
 }) {
-  const lines = series.filter((line) => Array.isArray(line.values) && line.values.some((v) => v != null))
-  const usableDates = dates.length ? dates : lines[0]?.values.map((_, index) => String(index)) || []
-  if (!lines.length || usableDates.length < 2) {
+  const [zoom, setZoom] = useState('all')
+  const availableLines = series.filter((line) =>
+    Array.isArray(line.values) && line.values.some((value) => value != null))
+  const fullDates = dates.length
+    ? dates
+    : availableLines[0]?.values.map((_, index) => String(index)) || []
+  if (!availableLines.length || fullDates.length < 2) {
     return (
       <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
         No comparable price history yet — it appears after the next data refresh.
       </div>
     )
   }
+  const selectedRange = ZOOM_RANGES.find((range) => range.key === zoom) || ZOOM_RANGES[0]
+  const startIndex = selectedRange.points
+    ? Math.max(0, fullDates.length - selectedRange.points)
+    : 0
+  const usableDates = fullDates.slice(startIndex)
+  const lines = availableLines.map((line) => ({
+    ...line,
+    values: line.values.slice(startIndex),
+  }))
+  const availableRanges = ZOOM_RANGES.filter((range) =>
+    range.points == null || range.points < fullDates.length)
 
   const allValues = lines.flatMap((line) => line.values.filter((value) => value != null))
   const min = Math.min(...allValues)
@@ -68,14 +93,23 @@ export default function GrowthChart({
 
   return (
     <figure style={{ margin: 0 }}>
-      {title && (
-        <figcaption style={{
-          fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.12em',
-          textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 10,
-        }}>
-          {title}
-        </figcaption>
-      )}
+      <div className="chart-heading">
+        {title && <figcaption>{title}</figcaption>}
+        {zoomable && availableRanges.length > 1 && (
+          <div className="chart-zoom" aria-label="Chart time range">
+            {availableRanges.map((range) => (
+              <button
+                key={range.key}
+                className={zoom === range.key ? 'active' : ''}
+                aria-pressed={zoom === range.key}
+                onClick={() => setZoom(range.key)}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div style={{ overflowX: 'auto' }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
