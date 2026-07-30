@@ -6,6 +6,7 @@ import PolicyRadar from './pages/PolicyRadar.jsx'
 import Watchlist from './pages/Watchlist.jsx'
 import Methodology from './pages/Methodology.jsx'
 import Portfolio from './pages/Portfolio.jsx'
+import Backtest from './pages/Backtest.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
@@ -16,6 +17,7 @@ const NAV = [
   { to: '/research', label: 'Research' },
   { to: '/market', label: 'Market Pulse' },
   { to: '/portfolio', label: 'My Portfolio', requireAuth: true },
+  { to: '/backtest', label: 'Backtest', requireAuth: true },
   { to: '/watchlist', label: 'Watchlist' },
   { to: '/methodology', label: 'Methodology' },
 ]
@@ -127,6 +129,7 @@ function AppContent() {
           <Route path="/research" element={<Picks />} />
           <Route path="/market" element={<PolicyRadar />} />
           <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
+          <Route path="/backtest" element={currentUser ? <Backtest /> : <Dashboard />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
         </Routes>
