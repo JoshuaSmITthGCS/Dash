@@ -69,46 +69,76 @@ export function portfolioVsBenchmark(positions, history) {
 
 /**
  * Three aligned series for the comparison chart: the market value of what is actually held,
- * the value of the same starting dollars tracking the index, and those dollars left as cash.
+ * the value of identical contributions tracking the index, and those contributions held as cash.
  *
- * All three lines start from the portfolio's value at the beginning of the window, so the chart
- * answers "did these holdings beat the index over this period" without pretending to know
- * about contributions made mid-window.
+ * Each position enters on its recorded purchase date. This intentionally produces jumps when
+ * several positions were purchased together: hiding those cash flows would overstate or
+ * understate performance.
  */
 export function portfolioGrowthSeries(positions, priceData, history) {
   const dates = history?.dates || []
   const benchmarkCloses = history?.closes || []
   if (dates.length < 2) return null
 
-  const tracked = positions.filter((position) => priceData[position.ticker]?.history?.closes?.length === dates.length)
+  const tracked = positions.flatMap((position) => {
+    const closes = priceData[position.ticker]?.history?.closes
+    const purchaseDate = String(position.purchaseDate || '').slice(0, 10)
+    const activationIndex = dates.findIndex((date) => date >= purchaseDate)
+    const benchmarkEntry = benchmarkCloseOn(history, purchaseDate)
+    const invested = Number(position.shares) * Number(position.costBasis)
+    if (
+      !purchaseDate
+      || activationIndex < 0
+      || closes?.length !== dates.length
+      || !benchmarkEntry
+      || !Number.isFinite(invested)
+      || invested <= 0
+    ) return []
+    return [{ ...position, closes, purchaseDate, activationIndex, benchmarkEntry, invested }]
+  })
   if (!tracked.length) return null
 
   const holdings = dates.map((_, index) => {
     let total = 0
-    let priced = 0
+    let active = 0
     for (const position of tracked) {
-      const close = priceData[position.ticker].history.closes[index]
-      if (close == null) continue
+      if (index < position.activationIndex) continue
+      const close = position.closes[index]
+      if (!Number.isFinite(close)) return null
       total += close * position.shares
-      priced += 1
+      active += 1
     }
-    return priced ? total : null
+    return active ? total : null
   })
 
-  const firstIndex = holdings.findIndex((value) => value != null)
-  if (firstIndex < 0 || benchmarkCloses[firstIndex] == null) return null
-  const basis = holdings[firstIndex]
-  const benchmark = benchmarkCloses.map((close, index) => (
-    close == null || index < firstIndex ? null : (basis / benchmarkCloses[firstIndex]) * close
-  ))
-  const cash = dates.map((_, index) => (index < firstIndex ? null : basis))
+  const benchmark = dates.map((_, index) => {
+    const close = benchmarkCloses[index]
+    if (!Number.isFinite(close)) return null
+    const active = tracked.filter((position) => index >= position.activationIndex)
+    if (!active.length) return null
+    return active.reduce(
+      (total, position) => total + (position.invested / position.benchmarkEntry) * close,
+      0
+    )
+  })
+
+  const cash = dates.map((_, index) => {
+    const active = tracked.filter((position) => index >= position.activationIndex)
+    return active.length
+      ? active.reduce((total, position) => total + position.invested, 0)
+      : null
+  })
+  const firstActiveIndex = Math.min(...tracked.map((position) => position.activationIndex))
 
   return {
-    dates,
-    holdings,
-    benchmark,
-    cash,
+    dates: dates.slice(firstActiveIndex),
+    holdings: holdings.slice(firstActiveIndex),
+    benchmark: benchmark.slice(firstActiveIndex),
+    cash: cash.slice(firstActiveIndex),
     trackedTickers: tracked.map((position) => position.ticker),
     untrackedCount: positions.length - tracked.length,
+    firstInvestmentDate: tracked
+      .map((position) => position.purchaseDate)
+      .sort()[0],
   }
 }

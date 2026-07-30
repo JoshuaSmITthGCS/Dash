@@ -26,6 +26,22 @@ function githubHeaders(token) {
   }
 }
 
+function portfolioSymbols(body) {
+  let payload = {}
+  try {
+    payload = JSON.parse(body || '{}')
+  } catch {
+    return []
+  }
+  if (!Array.isArray(payload.symbols)) return []
+
+  return [...new Set(
+    payload.symbols
+      .map((symbol) => String(symbol || '').trim().toUpperCase())
+      .filter((symbol) => /^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol))
+  )].slice(0, 50)
+}
+
 export async function handler(event) {
   if (event.httpMethod !== 'POST') {
     return json(405, { error: 'Method not allowed.' })
@@ -55,6 +71,7 @@ export async function handler(event) {
     if (!user.email || !allowedEmails.has(user.email.toLowerCase())) {
       return json(403, { error: 'Your account is not allowed to start data refreshes.' })
     }
+    const symbols = portfolioSymbols(event.body)
 
     const workflowUrl = `https://api.github.com/repos/${repository}/actions/workflows/refresh-advisor.yml`
     const headers = githubHeaders(githubToken)
@@ -71,12 +88,18 @@ export async function handler(event) {
     const dispatchResponse = await fetch(`${workflowUrl}/dispatches`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ ref: 'main', inputs: { refresh_mode: 'data-only' } }),
+      body: JSON.stringify({
+        ref: 'main',
+        inputs: {
+          refresh_mode: 'data-only',
+          portfolio_symbols: symbols.join(','),
+        },
+      }),
     })
     if (!dispatchResponse.ok) {
       throw new Error(`GitHub workflow dispatch failed (${dispatchResponse.status})`)
     }
-    return json(202, { ok: true, mode: 'data-only' })
+    return json(202, { ok: true, mode: 'data-only', symbols })
   } catch (error) {
     console.error('Manual refresh failed:', error)
     return json(500, { error: 'The refresh could not be started. Check the server configuration.' })

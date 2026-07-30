@@ -5,6 +5,7 @@ import { useAuth } from '../lib/FirebaseAuthContext'
 import { Loading } from '../components/Bits'
 import { ActionPill } from '../components/ActionGuidance'
 import GrowthChart from '../components/GrowthChart'
+import Sparkline from '../components/Sparkline'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
 import { benchmarkAlternative, portfolioGrowthSeries, portfolioVsBenchmark } from '../lib/portfolioPerformance'
@@ -21,6 +22,12 @@ const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--po
 
 function Move({ value, digits = 1 }) {
   return <span className="mono" style={{ color: moveColor(value) }}>{signedPct(value, digits)}</span>
+}
+
+function recentReturn(values, points = 5) {
+  const clean = (values || []).filter(Number.isFinite).slice(-points)
+  if (clean.length < 2 || !clean[0]) return null
+  return (clean.at(-1) / clean[0] - 1) * 100
 }
 
 export default function Portfolio() {
@@ -41,7 +48,11 @@ export default function Portfolio() {
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
-  const refresh = useAdvisorRefresh(data?.generated_at, reload)
+  const refresh = useAdvisorRefresh(
+    data?.generated_at,
+    reload,
+    positions.map((position) => position.ticker),
+  )
 
   if (dataLoading || portfolioLoading) return <Loading />
 
@@ -59,6 +70,7 @@ export default function Portfolio() {
     const totalCost = pos.shares * pos.costBasis
     const currentValue = currentPrice == null ? null : pos.shares * currentPrice
     const gain = currentValue == null ? null : currentValue - totalCost
+    const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-5) || []
     const enriched = {
       ...pos,
       ticker,
@@ -67,6 +79,8 @@ export default function Portfolio() {
       currentValue,
       gain,
       gainPct: gain == null || !totalCost ? null : (gain / totalCost) * 100,
+      trendValues,
+      trendPct: recentReturn(trendValues),
       quoteSource: current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
       recommendation: current ? getRecommendation(current) : null,
@@ -210,7 +224,7 @@ export default function Portfolio() {
             <div>
               <span className="eyebrow">Opportunity cost</span>
               <strong>What if I chose the S&amp;P 500—or did not invest?</strong>
-              <small>Compare the same starting dollars across all three paths</small>
+              <small>Same contributions, added on your recorded purchase dates</small>
             </div>
             <span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span>
           </summary>
@@ -219,11 +233,11 @@ export default function Portfolio() {
               dates={growth.dates}
               series={[
                 { label: 'My holdings', values: growth.holdings, color: 'var(--series-stock)', emphasis: true },
-                { label: 'S&P 500 instead', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
-                { label: 'Not invested (cash)', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
+                { label: 'S&P 500, same deposits', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
+                { label: 'Deposits held as cash', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
               ]}
-              title="Portfolio value over time"
-              caption={`All three lines start from the value of your tracked holdings at the beginning of the window. “Not invested” holds that amount as cash with no interest or inflation adjustment. Covers ${growth.trackedTickers.length} position${growth.trackedTickers.length === 1 ? '' : 's'} with published price history${growth.untrackedCount ? `; ${growth.untrackedCount} not in the current research universe` : ''}.`}
+              title="Portfolio value from your investment dates"
+              caption={`Each holding enters on its recorded purchase date. The S&P line receives the same cost-basis dollars on those dates; cash holds those deposits with no interest or inflation adjustment. Jumps show new money entering the portfolio. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `; ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
             />
           </div>
         </details>
@@ -290,6 +304,12 @@ export default function Portfolio() {
                 <span>{pos.shares} shares</span><span>Cost {money(pos.costBasis, 2)}</span>
                 <span>{pos.quoteSource || 'Live quote unavailable'}</span>
               </div>
+              {pos.trendValues.length > 1 && (
+                <div className="holding-trend">
+                  <div><span>1-month trend</span><Move value={pos.trendPct} /></div>
+                  <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={48} />
+                </div>
+              )}
               <div className="holding-actions">
                 {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
                 <button className="text-button danger" onClick={() => removePosition(pos.id)}>Remove</button>
@@ -304,7 +324,7 @@ export default function Portfolio() {
                 <th>Ticker</th><th>Company</th><th>Signal</th>
                 <th className="num">Shares</th><th className="num">Cost</th><th className="num">Price</th>
                 <th className="num">Value</th><th className="num">Gain/Loss</th><th className="num">Return</th>
-                <th className="num">Score</th><th className="num">20D</th><th>Action</th>
+                <th className="num">Score</th><th className="num">1M trend</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -322,7 +342,14 @@ export default function Portfolio() {
                   </td>
                   <td className="num"><Move value={pos.gainPct} /></td>
                   <td className="mono num score-cell">{pos.priceInfo?.score ?? '—'}</td>
-                  <td className="num"><Move value={pos.priceInfo?.technical_detail?.return_20d} /></td>
+                  <td className="num portfolio-trend-cell">
+                    {pos.trendValues.length > 1 ? (
+                      <>
+                        <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={34} />
+                        <Move value={pos.trendPct} />
+                      </>
+                    ) : <span className="mono">—</span>}
+                  </td>
                   <td style={{ display: 'flex', gap: 6 }}>
                     {pos.priceInfo && (
                       <button className="chip button-chip" onClick={() => setSelectedStock(pos)}>Details</button>

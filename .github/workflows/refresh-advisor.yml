@@ -11,6 +11,11 @@ on:
         options:
           - data-only
           - full-alpha
+      portfolio_symbols:
+        description: Optional comma-separated portfolio tickers to include
+        required: false
+        default: ''
+        type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
     - cron: '0 11,12,16,17,19,20 * * 1-5'
@@ -35,6 +40,7 @@ jobs:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       ALPHA_ENRICH_LIMIT: '5'
       ALPHA_VANTAGE_CALL_DELAY: '0'
+      ADVISOR_PORTFOLIO_SYMBOLS: ${{ inputs.portfolio_symbols || '' }}
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window

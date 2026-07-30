@@ -1,7 +1,8 @@
 """Build the public investment-research dataset from Alpha Vantage + Yahoo fundamentals."""
 
-import os
 import math
+import os
+import re
 import statistics
 import time
 from datetime import datetime, timezone
@@ -29,6 +30,27 @@ PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
 NEWS_DISCOVERY_LIMIT = 50
+
+
+def resolve_refresh_symbols(requested_symbols, configured_portfolio, portfolio_override=""):
+    """Include every valid current holding in Yahoo fetches and portfolio coverage."""
+    dynamic_portfolio = portfolio_override.split(",") if portfolio_override else ()
+
+    def valid_symbols(values):
+        normalized = []
+        for value in values:
+            symbol = str(value or "").strip().upper()
+            if re.fullmatch(r"[A-Z][A-Z0-9.-]{0,9}", symbol):
+                normalized.append(symbol)
+        return normalized
+
+    portfolio_symbols = tuple(dict.fromkeys(
+        (*valid_symbols(configured_portfolio), *valid_symbols(dynamic_portfolio))
+    ))
+    symbols = tuple(dict.fromkeys(
+        (*valid_symbols(requested_symbols), *portfolio_symbols)
+    ))
+    return symbols, portfolio_symbols
 
 
 def number(value, digits=4):
@@ -438,7 +460,11 @@ def run():
     load_local_env()
     configured = os.getenv("ADVISOR_SYMBOLS")
     requested_symbols = configured.split(",") if configured else DEFAULT_SYMBOLS
-    symbols = tuple(dict.fromkeys(str(s).strip().upper() for s in requested_symbols if str(s).strip()))
+    symbols, portfolio_symbols = resolve_refresh_symbols(
+        requested_symbols,
+        PORTFOLIO_SYMBOLS,
+        os.getenv("ADVISOR_PORTFOLIO_SYMBOLS", ""),
+    )
     publish_limit = max(1, int(os.getenv("ADVISOR_PUBLISH_LIMIT", PUBLISH_LIMIT)))
     extended_limit = max(publish_limit, int(os.getenv("ADVISOR_EXTENDED_LIMIT", EXTENDED_LIMIT)))
     alpha_enabled = os.getenv("ALPHA_DISABLE", "").lower() not in {"1", "true", "yes"}
@@ -541,7 +567,7 @@ def run():
     all_news.extend(discovery_news)
 
     incumbents, challengers, statement_priority = select_enrichment_priority(
-        previous_top, preliminary_symbols, available, PORTFOLIO_SYMBOLS
+        previous_top, preliminary_symbols, available, portfolio_symbols
     )
     enriched_count = enrich(contexts, extended_limit, delay, statement_priority)
 
@@ -573,7 +599,7 @@ def run():
     # price-less placeholder still lets the portfolio use its brokerage snapshot.
     previous_coverage = (load_json("advisor.json") or {}).get("portfolio_coverage", [])
     portfolio_coverage = build_portfolio_coverage(
-        research, PORTFOLIO_SYMBOLS, previous_coverage
+        research, portfolio_symbols, previous_coverage
     )
     research_context = {
         row["ticker"]: {
@@ -607,8 +633,9 @@ def run():
         attach_history(row, contexts_by_symbol[row["ticker"]], grid, benchmark_growth)
     ranked_tickers = {row["ticker"] for row in ranked}
     for row in portfolio_coverage:
-        if row["ticker"] not in ranked_tickers:
-            attach_history(row, contexts_by_symbol[row["ticker"]], grid, benchmark_growth)
+        context = contexts_by_symbol.get(row["ticker"])
+        if row["ticker"] not in ranked_tickers and context:
+            attach_history(row, context, grid, benchmark_growth)
 
     market_status = fetch_optional(client, "MARKET_STATUS") if client else {}
     macro = macro_context(client) if client else {}

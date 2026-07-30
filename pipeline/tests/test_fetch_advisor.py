@@ -5,7 +5,29 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (build_portfolio_coverage, compact_news, curate_candidate_news,
-                           latest_unique_news, select_enrichment_priority)
+                           latest_unique_news, resolve_refresh_symbols,
+                           select_enrichment_priority)
+
+
+class RefreshSymbolTests(unittest.TestCase):
+    def test_dynamic_portfolio_symbols_are_fetched_and_covered(self):
+        symbols, portfolio = resolve_refresh_symbols(
+            ("AAPL", "MSFT"), ("MU", "AMAT"), "ntnx, VOO, NEW.X"
+        )
+
+        self.assertEqual(portfolio, ("MU", "AMAT", "NTNX", "VOO", "NEW.X"))
+        self.assertEqual(
+            symbols,
+            ("AAPL", "MSFT", "MU", "AMAT", "NTNX", "VOO", "NEW.X"),
+        )
+
+    def test_dynamic_symbols_are_validated_and_deduplicated(self):
+        symbols, portfolio = resolve_refresh_symbols(
+            ("AAPL",), ("MU",), " mu, bad symbol, , $SPY, VOO "
+        )
+
+        self.assertEqual(portfolio, ("MU", "VOO"))
+        self.assertEqual(symbols, ("AAPL", "MU", "VOO"))
 
 
 class EnrichmentPriorityTests(unittest.TestCase):
