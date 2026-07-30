@@ -21,6 +21,16 @@ export function latestBenchmarkClose(history) {
   return closes.length ? closes[closes.length - 1] : null
 }
 
+/** Last usable close at or before a date for any aligned price history. */
+function closeOnDates(dates, closes, date) {
+  const target = String(date || '').slice(0, 10)
+  let match = null
+  for (let index = 0; index < dates.length; index += 1) {
+    if (dates[index] <= target && Number.isFinite(closes[index])) match = closes[index]
+  }
+  return match
+}
+
 /**
  * What one position would be worth had the same money gone into the index on the same day.
  * Returns null when the purchase predates the published benchmark window, rather than
@@ -81,20 +91,32 @@ export function portfolioGrowthSeries(positions, priceData, history) {
   if (dates.length < 2) return null
 
   const tracked = positions.flatMap((position) => {
-    const closes = priceData[position.ticker]?.history?.closes
+    const stockHistory = priceData[position.ticker]?.history
+    const closes = stockHistory?.closes
+    const stockDates = stockHistory?.dates || dates
     const purchaseDate = String(position.purchaseDate || '').slice(0, 10)
     const activationIndex = dates.findIndex((date) => date >= purchaseDate)
     const benchmarkEntry = benchmarkCloseOn(history, purchaseDate)
+    const stockEntry = closeOnDates(stockDates, closes || [], purchaseDate)
     const invested = Number(position.shares) * Number(position.costBasis)
     if (
       !purchaseDate
       || activationIndex < 0
       || closes?.length !== dates.length
       || !benchmarkEntry
+      || !stockEntry
       || !Number.isFinite(invested)
       || invested <= 0
     ) return []
-    return [{ ...position, closes, purchaseDate, activationIndex, benchmarkEntry, invested }]
+    return [{
+      ...position,
+      closes,
+      purchaseDate,
+      activationIndex,
+      benchmarkEntry,
+      stockEntry,
+      invested,
+    }]
   })
   if (!tracked.length) return null
 
@@ -105,7 +127,7 @@ export function portfolioGrowthSeries(positions, priceData, history) {
       if (index < position.activationIndex) continue
       const close = position.closes[index]
       if (!Number.isFinite(close)) return null
-      total += close * position.shares
+      total += (position.invested / position.stockEntry) * close
       active += 1
     }
     return active ? total : null

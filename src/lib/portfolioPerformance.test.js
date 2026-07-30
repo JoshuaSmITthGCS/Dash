@@ -111,6 +111,20 @@ describe('portfolioGrowthSeries', () => {
     expect(series.benchmark[0]).toBe(240)
   })
 
+  it('starts both simulations from identical cost-basis dollars when execution differs from the chart close', () => {
+    const positions = [
+      { ticker: 'AAA', shares: 2, costBasis: 95, purchaseDate: '2025-01-06' },
+    ]
+
+    const series = portfolioGrowthSeries(positions, priceData, HISTORY)
+
+    expect(series.holdings[0]).toBe(190)
+    expect(series.benchmark[0]).toBe(190)
+    expect(series.cash[0]).toBe(190)
+    expect(series.holdings.at(-1)).toBeCloseTo(266, 5)
+    expect(series.benchmark.at(-1)).toBeCloseTo(237.5, 5)
+  })
+
   it('returns nothing when no holding has published history', () => {
     expect(portfolioGrowthSeries([
       { ticker: 'ZZZ', shares: 5, costBasis: 10, purchaseDate: '2025-01-06' },
