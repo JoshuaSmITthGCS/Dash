@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from advisor_engine import RANKING_WEIGHTS, build_research, technical_factors
+from advisor_engine import RANKING_WEIGHTS, build_research, macro_regime_modifier, technical_factors
 
 
 class AdvisorEngineTests(unittest.TestCase):
@@ -108,6 +108,25 @@ class AdvisorEngineTests(unittest.TestCase):
         sparse = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False, "forward_pe": 20}
         row = build_research("TEST", sparse, [100 + i for i in range(100)], None, [])
         self.assertLess(row["confidence"], 0.5)
+
+    def test_macro_is_sector_sensitive_and_capped(self):
+        regime = {
+            "coverage": 1.0,
+            "factors": {
+                "rates": {"score": 20},
+                "inflation": {"score": 50},
+                "labor": {"score": 55},
+                "yield_curve": {"score": 90},
+            },
+        }
+        tech_points, tech_note = macro_regime_modifier({"sector": "Technology"}, regime)
+        bank_points, bank_note = macro_regime_modifier({"sector": "Financial Services"}, regime)
+
+        self.assertLess(tech_points, bank_points)
+        self.assertGreaterEqual(tech_points, -3)
+        self.assertLessEqual(bank_points, 3)
+        self.assertIn("Technology", tech_note)
+        self.assertIn("Financial Services", bank_note)
 
 
 if __name__ == "__main__":

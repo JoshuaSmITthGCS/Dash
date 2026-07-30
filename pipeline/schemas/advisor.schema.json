@@ -93,7 +93,32 @@
         }
       }
     },
-    "market": { "type": "object" },
+    "market": {
+      "type": "object",
+      "properties": {
+        "macro": {
+          "type": "object",
+          "properties": {
+            "regime": {
+              "type": ["object", "null"],
+              "required": ["score", "label", "coverage", "freshness_date", "factors", "series", "attribution", "notice", "terms_url"],
+              "properties": {
+                "score": { "type": "number", "minimum": 0, "maximum": 100 },
+                "label": { "enum": ["supportive", "neutral", "restrictive"] },
+                "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+                "freshness_date": { "type": "string", "format": "date" },
+                "factors": { "type": "object" },
+                "series": { "type": "object" },
+                "attribution": { "type": "string" },
+                "notice": { "type": "string" },
+                "terms_url": { "type": "string", "format": "uri" }
+              },
+              "additionalProperties": true
+            }
+          }
+        }
+      }
+    },
     "source_status": { "type": "object" },
     "disclaimer": { "type": "string", "minLength": 1 }
   },

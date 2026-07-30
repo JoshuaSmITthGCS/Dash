@@ -1,90 +1,69 @@
 :root {
-  /* --- surfaces: layered near-black, warm-cool neutral --- */
-  --bg:        #0a0c0e;
-  --bg-elev:   #101318;
-  --bg-card:   #14181e;
-  --bg-hover:  #1a1f27;
-  --bg-dim:    #101318;
-  --border:    #232a33;
-  --border-lit:#333c47;
-
-  /* --- text --- */
-  --text:      #e9ecf0;
-  --text-dim:  #8b929c;
-  --text-faint:#565d67;
-
-  /* --- one dominant accent: acid lime = "conviction" --- */
-  --accent:    #c2f731;
-  --accent-dim:#8aa82a;
-  --accent-glow: rgba(194, 247, 49, 0.14);
-  --accent-ink: #0a0c0e; /* text drawn on top of the accent */
-
-  /* --- signal tiers --- */
-  --tier-high: #c2f731;
-  --tier-watch:#f5b13d;
-  --tier-neutral: #7d8590;
-  --tier-cool: #ff5f56;
-
-  /* --- movement --- */
-  --up:   #3ddc84;
-  --down: #ff5f56;
-  /* --pos/--neg/--warn are the names used throughout the components; keep them
-     defined here so an undefined custom property never silently drops a colour. */
-  --pos:  var(--up);
-  --neg:  var(--down);
+  color-scheme: dark;
+  --bg: #07100d;
+  --bg-elev: #0d1713;
+  --bg-card: #12211a;
+  --bg-card-strong: #173025;
+  --bg-hover: #1b3328;
+  --bg-dim: #0a130f;
+  --border: rgba(239, 242, 218, 0.10);
+  --border-lit: rgba(239, 242, 218, 0.19);
+  --text: #f1f2df;
+  --text-dim: #a9b2a3;
+  --text-faint: #78847a;
+  --accent: #c7f43d;
+  --accent-dim: #8faa2d;
+  --accent-glow: rgba(199, 244, 61, 0.16);
+  --accent-ink: #0a120e;
+  --tier-high: #c7f43d;
+  --tier-watch: #e9b949;
+  --tier-neutral: #9ba69d;
+  --tier-cool: #ff796d;
+  --up: #69df9b;
+  --down: #ff796d;
+  --pos: var(--up);
+  --neg: var(--down);
   --warn: var(--tier-watch);
-
-  /* --- chart series --- */
-  --series-stock: #c2f731;
-  --series-benchmark: #7aa2ff;
-
-  /* --- type --- */
-  --font-display: 'Bricolage Grotesque', sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --font-body: 'Instrument Sans', system-ui, sans-serif;
-
-  /* --- rhythm --- */
-  --r-sm: 4px;
-  --r-md: 8px;
-  --r-lg: 14px;
-  --shadow: 0 1px 0 rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6);
-  --scrim: rgba(0, 0, 0, 0.75);
+  --series-stock: #c7f43d;
+  --series-benchmark: #86aef7;
+  --series-cash: #c6aca4;
+  --font-display: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+  --font-body: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --shadow: 0 24px 60px -38px rgba(0, 0, 0, .9), inset 0 1px rgba(255,255,255,.025);
+  --scrim: rgba(0, 6, 3, .8);
 }
 
-/* Light mode is a full palette, not a pair of overridden background colours.
-   Every token above is redefined here, so contrast holds everywhere the dark
-   theme relied on light text over dark surfaces. */
 :root[data-theme="light"] {
-  --bg:        #f7f8fa;
-  --bg-elev:   #ffffff;
-  --bg-card:   #ffffff;
-  --bg-hover:  #eef1f5;
-  --bg-dim:    #eef1f5;
-  --border:    #dfe3ea;
-  --border-lit:#c3cad6;
-
-  --text:      #14181e;
-  --text-dim:  #545c69;
-  --text-faint:#7c8492;
-
-  /* The acid lime is unreadable on white, so light mode moves to a deep
-     evergreen of the same "conviction" role and keeps the lime for fills. */
-  --accent:    #2f6f2f;
-  --accent-dim:#4f8a4f;
-  --accent-glow: rgba(47, 111, 47, 0.10);
-  --accent-ink: #ffffff;
-
-  --tier-high: #2f6f2f;
-  --tier-watch:#a86412;
-  --tier-neutral: #5d6572;
-  --tier-cool: #c0392b;
-
-  --up:   #1c7f4b;
-  --down: #c0392b;
-
-  --series-stock: #2f6f2f;
-  --series-benchmark: #2f5ea8;
-
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px -14px rgba(16, 24, 40, 0.24);
-  --scrim: rgba(16, 24, 40, 0.45);
+  color-scheme: light;
+  --bg: #f2f2e8;
+  --bg-elev: #e7eadc;
+  --bg-card: #fbfcf4;
+  --bg-card-strong: #dfe8d8;
+  --bg-hover: #e2e8da;
+  --bg-dim: #edf0e6;
+  --border: rgba(20, 43, 32, .12);
+  --border-lit: rgba(20, 43, 32, .23);
+  --text: #13241b;
+  --text-dim: #526258;
+  --text-faint: #6b796f;
+  --accent: #32651f;
+  --accent-dim: #4d7a37;
+  --accent-glow: rgba(92, 133, 53, .12);
+  --accent-ink: #fff;
+  --tier-high: #32651f;
+  --tier-watch: #92651e;
+  --tier-neutral: #617067;
+  --tier-cool: #b74237;
+  --up: #27734a;
+  --down: #b74237;
+  --series-stock: #32651f;
+  --series-benchmark: #315b9c;
+  --series-cash: #72564e;
+  --shadow: 0 20px 60px -40px rgba(19, 36, 27, .38);
+  --scrim: rgba(20, 32, 25, .5);
 }

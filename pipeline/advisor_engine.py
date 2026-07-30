@@ -178,7 +178,33 @@ def sector_percentile_modifier(percentile):
     return points, f"Valuation {label} than {abs(percentile - 50) * 2:.0f}% of its sector peers"
 
 
-def apply_modifiers(base, extended, sector_percentile=None):
+def macro_regime_modifier(snapshot, macro_regime):
+    """Translate macro conditions through sector exposure, with a hard ±3 point cap."""
+    cfg = MODIFIERS.get("macro_regime", {})
+    if not macro_regime or macro_regime.get("coverage", 0) < cfg.get("min_coverage", 0.7):
+        return 0.0, None
+    factors = macro_regime.get("factors", {})
+    sector = snapshot.get("sector") or "default"
+    weights = cfg.get("sector_weights", {}).get(
+        sector, cfg.get("sector_weights", {}).get("default", {})
+    )
+    available = [
+        (factors[name]["score"], weight)
+        for name, weight in weights.items()
+        if factors.get(name, {}).get("score") is not None
+    ]
+    if not available:
+        return 0.0, None
+    sector_score = sum(value * weight for value, weight in available) / sum(weight for _, weight in available)
+    cap = cfg.get("max_points", 3.0)
+    points = round((sector_score - 50) / 50 * cap, 2)
+    if abs(points) < 0.25:
+        return 0.0, None
+    direction = "supportive" if points > 0 else "restrictive"
+    return points, f"FRED macro regime is {direction} for {sector} ({sector_score:.0f}/100)"
+
+
+def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None):
     """Blend the bounded refinements onto the evidence score and explain every one."""
     applied = {}
     notes = []
@@ -187,13 +213,19 @@ def apply_modifiers(base, extended, sector_percentile=None):
         "short_interest": short_interest_modifier(extended),
         "liquidity": liquidity_modifier(extended),
         "expectations": expectations_modifier(extended),
+        "macro_regime": macro_regime_modifier(snapshot, macro_regime),
     }.items():
         if points:
             applied[name] = points
         if note:
             notes.append(note)
-    total = round(sum(applied.values()), 2)
-    return round(clamp(base + total), 1), {"applied": applied, "total": total, "notes": notes}
+    uncapped_total = round(sum(applied.values()), 2)
+    total = round(max(-15.0, min(15.0, uncapped_total)), 2)
+    if total != uncapped_total:
+        notes.append(f"Combined modifiers capped at {total:+.0f} points")
+    return round(clamp(base + total), 1), {
+        "applied": applied, "total": total, "uncapped_total": uncapped_total, "notes": notes,
+    }
 
 
 # ---------------- action guidance ----------------
@@ -331,7 +363,7 @@ def build_evidence(categories, technical_parts, extended):
 
 
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
-                   volumes=None, extended=None, sector_percentile=None):
+                   volumes=None, extended=None, sector_percentile=None, macro_regime=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -346,7 +378,7 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     confidence = round(0.65 * fundamental_coverage + 0.25 * technical_parts.get("coverage", 0) +
                        0.10 * sentiment_parts.get("coverage", 0), 2)
     base = round(raw * (0.8 + confidence * 0.2), 1)
-    score, modifiers = apply_modifiers(base, extended, sector_percentile)
+    score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, confidence)
     strengths, risks = build_evidence(categories, technical_parts, extended)

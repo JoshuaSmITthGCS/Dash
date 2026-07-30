@@ -68,10 +68,10 @@ export function portfolioVsBenchmark(positions, history) {
 }
 
 /**
- * Two aligned series for the comparison chart: the market value of what is actually held,
- * and the value of the same starting dollars tracking the index over the same window.
+ * Three aligned series for the comparison chart: the market value of what is actually held,
+ * the value of the same starting dollars tracking the index, and those dollars left as cash.
  *
- * Both lines start from the portfolio's value at the beginning of the window, so the chart
+ * All three lines start from the portfolio's value at the beginning of the window, so the chart
  * answers "did these holdings beat the index over this period" without pretending to know
  * about contributions made mid-window.
  */
@@ -101,11 +101,13 @@ export function portfolioGrowthSeries(positions, priceData, history) {
   const benchmark = benchmarkCloses.map((close, index) => (
     close == null || index < firstIndex ? null : (basis / benchmarkCloses[firstIndex]) * close
   ))
+  const cash = dates.map((_, index) => (index < firstIndex ? null : basis))
 
   return {
     dates,
     holdings,
     benchmark,
+    cash,
     trackedTickers: tracked.map((position) => position.ticker),
     untrackedCount: positions.length - tracked.length,
   }

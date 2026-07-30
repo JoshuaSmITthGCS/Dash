@@ -47,6 +47,9 @@ def validate(production=False):
     expected_weights = {"fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.10}
     if advisor and advisor.get("methodology", {}).get("weights") != expected_weights:
         errors.append("advisor.json: ranking weights must remain 75% fundamentals, 15% market behavior, 10% news")
+    regime = advisor.get("market", {}).get("macro", {}).get("regime")
+    if regime and "observations" in regime:
+        errors.append("advisor.json: raw FRED observations must not be published")
     scores = [row.get("score", -1) for row in advisor.get("research", [])]
     if scores != sorted(scores, reverse=True):
         errors.append("advisor.json: research rows are not ranked by descending score")

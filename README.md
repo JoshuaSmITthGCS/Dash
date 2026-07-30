@@ -47,7 +47,9 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r pipeline/requirements.txt
 cp .env.example .env.local
-# Put the real ALPHA_VANTAGE_API_KEY in .env.local; this file is ignored by Git.
+# Put the real ALPHA_VANTAGE_API_KEY, MARKETAUX_API_TOKEN, and FRED_API_KEY in .env.local.
+# This file is ignored by Git.
+python pipeline/fetch_news.py
 python pipeline/fetch_advisor.py
 python pipeline/validate_data.py
 
@@ -59,8 +61,11 @@ npm run dev
 
 `pipeline/config/advisor_universe.json` defines the default 120-stock candidate universe and the
 pipeline publishes its top 20. `ADVISOR_SYMBOLS` can override it without imposing an application
-hard cap. To respect the free plan, `ALPHA_ENRICH_LIMIT` caps Alpha Vantage company/news/insider enrichment at five;
-Yahoo Finance supplies the full-universe fundamentals and history. The committed `advisor.json`
+hard cap. To respect the free plan, `ALPHA_ENRICH_LIMIT` caps Alpha Vantage company and insider
+enrichment at five. Marketaux supplies entity-level news sentiment for that shortlist and the
+market-pulse feed. FRED supplies a six-series macro regime that is reduced to a sector-sensitive
+±3-point modifier; raw FRED observations are not published or cached. Yahoo Finance supplies the
+full-universe fundamentals and history. The committed `advisor.json`
 contains derived public data only; it never contains the API key.
 
 ## Deployment
@@ -68,13 +73,28 @@ contains derived public data only; it never contains the API key.
 The app lives at the repository root. Netlify should leave its base directory empty; root
 `netlify.toml` builds with `npm run build` and publishes `dist`.
 
-For scheduled refreshes, add `ALPHA_VANTAGE_API_KEY` under GitHub repository
-**Settings → Secrets and variables → Actions**. `refresh-advisor.yml` fetches, scores, validates,
-and commits data in one job. It has explicit `contents: write`, shared push concurrency, and three
-push retries.
+For scheduled refreshes, add `ALPHA_VANTAGE_API_KEY`, `MARKETAUX_API_TOKEN`, and `FRED_API_KEY` under GitHub
+repository **Settings → Secrets and variables → Actions**. `refresh-advisor.yml` fetches news and
+research, scores, validates, and commits data in one job. It has explicit `contents: write`, shared
+push concurrency, and three push retries.
 
-The weekday cron is fixed at 11:00 UTC. That is 07:00 Eastern during daylight time and 06:00
-Eastern during standard time; GitHub cron does not automatically follow daylight-saving changes.
+The workflow refreshes at 07:00, 12:00, and 15:00 Eastern on weekdays. It gates paired UTC cron
+times against `America/New_York`, so daylight-saving changes do not shift the local schedule.
+Only the morning run spends Alpha Vantage quota; the later runs refresh the other providers.
+
+### Manual data refresh
+
+Authenticated users can start a data-only refresh from the Overview page. Configure these
+server-only environment variables in Netlify:
+
+- `GITHUB_REFRESH_TOKEN`: fine-grained token with Actions read/write access to this repository
+- `REFRESH_GITHUB_REPOSITORY`: repository in `owner/name` form
+- `REFRESH_ALLOWED_EMAILS`: comma-separated Firebase account emails allowed to start a run
+- `FIREBASE_SERVICE_ACCOUNT_JSON`: single-line Firebase service-account JSON
+
+The browser sends a Firebase ID token to the Netlify function. The GitHub token and service-account
+credential remain server-side. The function refuses duplicate runs and always dispatches
+`data-only`; Alpha Vantage can only be selected from the GitHub Actions manual form.
 
 ## Quality controls
 

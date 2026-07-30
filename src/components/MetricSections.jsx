@@ -112,6 +112,9 @@ export const SECTIONS = [
       ['@technical.annualized_volatility', 'Volatility', (value) => `${value.toFixed(0)}%`, 'Annualized standard deviation of daily moves', { lowerBetter: true, good: 25, bad: 50 }],
       ['beta', 'Beta', num, 'Sensitivity to the broad market — the link between the Fed backdrop and this name'],
       ['average_dollar_volume', 'Avg daily volume', dollars, 'Dollar liquidity — how easily a position can be entered or exited', { good: 50e6, bad: 5e6 }],
+      ['implied_volatility', 'Implied volatility', pct, 'Near-the-money option pricing for the nearest listed expiry'],
+      ['realized_volatility_20d', 'Realized volatility (20d)', pct, 'Annualized volatility actually experienced over 20 sessions', { lowerBetter: true, good: 0.25, bad: 0.50 }],
+      ['implied_realized_vol_ratio', 'Implied / realized vol', times, 'Above 1× means options price more movement than the stock recently realized'],
     ],
   },
 ]

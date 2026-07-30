@@ -8,6 +8,7 @@ import GrowthChart from '../components/GrowthChart'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
 import { benchmarkAlternative, portfolioGrowthSeries, portfolioVsBenchmark } from '../lib/portfolioPerformance'
+import Icon from '../components/Icons'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -22,42 +23,46 @@ function Move({ value, digits = 1 }) {
 }
 
 export default function Portfolio() {
-  const { currentUser, userProfile, logout } = useAuth()
+  const { logout } = useAuth()
   const { data, loading: dataLoading } = useData('advisor.json')
-  const { positions, loading: portfolioLoading, addPosition, removePosition, exportPortfolio } = useFirebasePortfolio()
+  const { positions, loading: portfolioLoading, addPosition, removePosition, exportPortfolio, syncReferencePortfolio } = useFirebasePortfolio()
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', purchaseDate: new Date().toISOString().split('T')[0] })
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
+  const [syncMessage, setSyncMessage] = useState('')
 
   if (dataLoading || portfolioLoading) return <Loading />
 
   const research = data?.research || []
+  const portfolioCoverage = data?.portfolio_coverage || []
   const benchmarkHistory = data?.benchmark_history
-  const priceData = Object.fromEntries(research.filter((row) => row.ticker).map((row) => [row.ticker, row]))
+  const priceData = Object.fromEntries([...research, ...portfolioCoverage]
+    .filter((row) => row.ticker).map((row) => [row.ticker, row]))
 
   const portfolioStats = positions.reduce((acc, pos) => {
     const current = priceData[pos.ticker]
-    const currentPrice = current?.price || pos.costBasis
+    const currentPrice = current?.price ?? pos.snapshotPrice ?? null
     const totalCost = pos.shares * pos.costBasis
-    const currentValue = pos.shares * currentPrice
-    const gain = currentValue - totalCost
+    const currentValue = currentPrice == null ? null : pos.shares * currentPrice
+    const gain = currentValue == null ? null : currentValue - totalCost
     const enriched = {
       ...pos,
       currentPrice,
       totalCost,
       currentValue,
       gain,
-      gainPct: (gain / totalCost) * 100,
+      gainPct: gain == null || !totalCost ? null : (gain / totalCost) * 100,
+      quoteSource: current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
       recommendation: current ? getRecommendation(current) : null,
       versusBenchmark: benchmarkAlternative({ ...pos, currentValue }, benchmarkHistory),
     }
     return {
       totalCost: acc.totalCost + totalCost,
-      totalValue: acc.totalValue + currentValue,
-      totalGain: acc.totalGain + gain,
+      totalValue: acc.totalValue + (currentValue || 0),
+      totalGain: acc.totalGain + (gain || 0),
       positions: [...acc.positions, enriched],
     }
   }, { totalCost: 0, totalValue: 0, totalGain: 0, positions: [] })
@@ -82,36 +87,42 @@ export default function Portfolio() {
     setShowAddForm(false)
   }
 
+  const handleReferenceSync = async () => {
+    setSyncMessage('Syncing…')
+    const result = await syncReferencePortfolio()
+    setSyncMessage(result.success
+      ? `${result.added} holding${result.added === 1 ? '' : 's'} added · ${result.skipped} already present`
+      : `Sync failed: ${result.error}`)
+  }
+
   const basis = data?.hypothetical_basis || 500
 
   return (
     <>
       <div className="page-head">
         <div>
-          <h1 className="page-title">My <span className="accent">Portfolio</span></h1>
+          <span className="eyebrow">Your money</span>
+          <h1 className="page-title">My <span className="accent">portfolio</span></h1>
           <p className="page-sub">
-            Holdings, action guidance, and how the same money would have done in the S&P 500.
-            Signed in as {userProfile?.displayName} ({currentUser?.email}).
+            Holdings, action guidance, and a fair same-dollar comparison with the S&amp;P 500.
           </p>
         </div>
-        <div>
-          <button className="chip button-chip" onClick={logout} style={{ marginRight: 8 }}>Logout</button>
-          <button className="chip button-chip" onClick={exportPortfolio}>Export</button>
+        <div className="page-actions">
+          <button className="secondary-button" onClick={handleReferenceSync}><Icon name="sync" size={17} /> Sync 19 holdings</button>
+          <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
+          <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
         </div>
       </div>
+      {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
 
-      <div className="grid grid-4" style={{ marginBottom: 20 }}>
-        <div className="card kpi">
+      <div className="portfolio-summary">
+        <div className="portfolio-value-card">
           <div className="kpi-label">Total Value</div>
           <div className="kpi-value">{money(portfolioStats.totalValue)}</div>
-          <div className="kpi-note">{positions.length} positions · {money(portfolioStats.totalCost)} invested</div>
-        </div>
-        <div className="card kpi">
-          <div className="kpi-label">Total Gain/Loss</div>
-          <div className="kpi-value" style={{ color: moveColor(portfolioStats.totalGain) }}>
-            {portfolioStats.totalGain >= 0 ? '+' : '−'}{money(Math.abs(portfolioStats.totalGain))}
+          <div className="portfolio-delta" style={{ color: moveColor(portfolioStats.totalGain) }}>
+            {portfolioStats.totalGain >= 0 ? '+' : '−'}{money(Math.abs(portfolioStats.totalGain))} · {signedPct(totalGainPct, 2)}
           </div>
-          <div className="kpi-note" style={{ color: moveColor(totalGainPct) }}>{signedPct(totalGainPct, 2)}</div>
+          <div className="kpi-note">{positions.length} positions · {money(portfolioStats.totalCost)} cost basis</div>
         </div>
         <div className="card kpi">
           <div className="kpi-label">Vs S&P 500</div>
@@ -167,17 +178,28 @@ export default function Portfolio() {
       )}
 
       {growth && (
-        <div className="card card-pad" style={{ marginBottom: 20 }}>
-          <GrowthChart
-            dates={growth.dates}
-            series={[
-              { label: 'My holdings', values: growth.holdings, color: 'var(--series-stock)', emphasis: true },
-              { label: 'Same dollars in the S&P 500', values: growth.benchmark, color: 'var(--series-benchmark)', dashed: true },
-            ]}
-            title="Holdings vs the S&P 500"
-            caption={`Both lines start from what these holdings were worth at the beginning of the window. Covers ${growth.trackedTickers.length} position${growth.trackedTickers.length === 1 ? '' : 's'} with published price history${growth.untrackedCount ? `; ${growth.untrackedCount} not in the current research universe` : ''}.`}
-          />
-        </div>
+        <details className="card portfolio-comparison">
+          <summary>
+            <div>
+              <span className="eyebrow">Opportunity cost</span>
+              <strong>What if I chose the S&amp;P 500—or did not invest?</strong>
+              <small>Compare the same starting dollars across all three paths</small>
+            </div>
+            <span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span>
+          </summary>
+          <div className="portfolio-comparison-chart">
+            <GrowthChart
+              dates={growth.dates}
+              series={[
+                { label: 'My holdings', values: growth.holdings, color: 'var(--series-stock)', emphasis: true },
+                { label: 'S&P 500 instead', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
+                { label: 'Not invested (cash)', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
+              ]}
+              title="Portfolio value over time"
+              caption={`All three lines start from the value of your tracked holdings at the beginning of the window. “Not invested” holds that amount as cash with no interest or inflation adjustment. Covers ${growth.trackedTickers.length} position${growth.trackedTickers.length === 1 ? '' : 's'} with published price history${growth.untrackedCount ? `; ${growth.untrackedCount} not in the current research universe` : ''}.`}
+            />
+          </div>
+        </details>
       )}
 
       <div className="filters" style={{ marginBottom: 20 }}>
@@ -225,7 +247,30 @@ export default function Portfolio() {
       )}
 
       {viewMode === 'holdings' && (
-        <div className="card card-pad table-wrap">
+        <>
+        <div className="portfolio-mobile-list">
+          {portfolioStats.positions.map((pos) => (
+            <article className="holding-card" key={pos.id || pos.ticker}>
+              <div className="holding-card-head">
+                <div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span></div>
+                <ActionPill recommendation={pos.recommendation} />
+              </div>
+              <div className="holding-value">
+                <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
+                <Move value={pos.gainPct} />
+              </div>
+              <div className="holding-meta">
+                <span>{pos.shares} shares</span><span>Cost {money(pos.costBasis, 2)}</span>
+                <span>{pos.quoteSource || 'Live quote unavailable'}</span>
+              </div>
+              <div className="holding-actions">
+                {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
+                <button className="text-button danger" onClick={() => removePosition(pos.id)}>Remove</button>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="card card-pad table-wrap portfolio-table">
           <table>
             <thead>
               <tr>
@@ -243,10 +288,10 @@ export default function Portfolio() {
                   <td><ActionPill recommendation={pos.recommendation} /></td>
                   <td className="mono num">{pos.shares}</td>
                   <td className="mono num">${pos.costBasis.toFixed(2)}</td>
-                  <td className="mono num">${pos.currentPrice.toFixed(2)}</td>
-                  <td className="mono num">{money(pos.currentValue)}</td>
+                  <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
+                  <td className="mono num">{pos.currentValue == null ? '—' : money(pos.currentValue)}</td>
                   <td className="mono num" style={{ color: moveColor(pos.gain) }}>
-                    {pos.gain >= 0 ? '+' : '−'}{money(Math.abs(pos.gain))}
+                    {pos.gain == null ? '—' : `${pos.gain >= 0 ? '+' : '−'}${money(Math.abs(pos.gain))}`}
                   </td>
                   <td className="num"><Move value={pos.gainPct} /></td>
                   <td className="mono num score-cell">{pos.priceInfo?.score ?? '—'}</td>
@@ -269,6 +314,7 @@ export default function Portfolio() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {viewMode === 'benchmark' && (

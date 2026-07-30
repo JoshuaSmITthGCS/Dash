@@ -14,11 +14,21 @@ const MODIFIERS = [
   ['Short interest', 'Up to −4 points. Crowded shorts are not automatically bearish, but they raise the cost of being wrong.'],
   ['Liquidity', 'Up to −3 points. A name you cannot exit without moving the price carries a real cost that fundamentals never show.'],
   ['Analyst expectations', '±3 points, and only where at least three analysts cover the name.'],
+  ['Macro regime', '±3 points. FRED rates, inflation, labor, and yield-curve conditions are weighted by sector sensitivity and never replace company evidence.'],
 ]
 
 export default function Methodology() {
   const { data } = useData('advisor.json')
   const published = data?.research?.length
+  const capabilities = data?.capability_status || {
+    form4_insider_transactions: { status: 'available_next_refresh', source: 'SEC EDGAR', note: 'Free Form 4 parser is included in the pipeline.' },
+    implied_vs_realized_volatility: { status: 'opt_in', source: 'Option chains + calculated returns', note: 'Enable options requests in the pipeline.' },
+    analyst_revision_trends: { status: 'provider_required', note: 'Point-in-time estimate history is not supplied by the current providers.' },
+    guidance_beat_miss_history: { status: 'provider_required', note: 'Requires contemporaneous consensus snapshots.' },
+    backlog_growth: { status: 'filing_parser_required', note: 'Backlog is issuer-specific and non-GAAP.' },
+    institutional_13f_changes: { status: 'mapping_required', source: 'SEC EDGAR', note: 'Reliable CUSIP-to-ticker mapping is still required.' },
+    fx_exposure: { status: 'filing_parser_required', source: 'SEC filings', note: 'Requires issuer-specific filing text normalization.' },
+  }
   return <>
     <div className="page-head"><div>
       <h1 className="page-title">How the <span className="accent">score works</span></h1>
@@ -88,6 +98,18 @@ export default function Methodology() {
         index I could have bought instead”. Portfolio positions bought before the published
         benchmark window are shown as unavailable rather than compared against the wrong entry price.
       </p>
+    </section>
+
+    <div className="sec-label" style={{ marginTop: 28 }}>Provider and parser coverage</div>
+    <section className="capability-grid" aria-label="Metric availability">
+      {Object.entries(capabilities).map(([key, capability]) => (
+        <article className="capability-card" key={key}>
+          <span className={`capability-status ${capability.status}`}>{capability.status.replace(/_/g, ' ')}</span>
+          <h2>{key.replace(/_/g, ' ')}</h2>
+          {capability.source && <b>{capability.source}</b>}
+          <p>{capability.note}</p>
+        </article>
+      ))}
     </section>
 
     <div className="disclaimer">{data?.disclaimer || 'General research only. Not individualized investment advice.'}</div>

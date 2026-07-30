@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
+import { REFERENCE_PORTFOLIO } from './referencePortfolio'
 
 export function useFirebasePortfolio() {
   const { currentUser } = useAuth()
@@ -187,6 +188,28 @@ export function useFirebasePortfolio() {
     }
   }
 
+  // Merge the user's supplied brokerage snapshot without duplicating symbols already saved.
+  // This is explicit rather than automatic because it writes to the signed-in cloud portfolio.
+  const syncReferencePortfolio = async () => {
+    if (!currentUser) return { success: false, error: 'Please sign in first' }
+    try {
+      const existing = new Set(positions.map((position) => position.ticker))
+      const missing = REFERENCE_PORTFOLIO.filter((position) => !existing.has(position.ticker))
+      const importedAt = new Date().toISOString()
+      const created = await Promise.all(missing.map(async (position) => {
+        const id = `${position.ticker}-reference`
+        const record = { ...position, id, purchaseDate: '', importedAt }
+        await setDoc(doc(db, 'portfolios', currentUser.uid, 'positions', id), record)
+        return record
+      }))
+      setPositions((previous) => [...previous, ...created])
+      return { success: true, added: created.length, skipped: REFERENCE_PORTFOLIO.length - created.length }
+    } catch (error) {
+      console.error('Failed to sync reference portfolio:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Clear all positions
   const clearAll = async () => {
     if (!currentUser) return
@@ -282,6 +305,7 @@ export function useFirebasePortfolio() {
     updatePosition,
     clearAll,
     exportPortfolio,
-    importPortfolio
+    importPortfolio,
+    syncReferencePortfolio
   }
 }

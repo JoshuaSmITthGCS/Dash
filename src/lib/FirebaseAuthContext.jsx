@@ -224,6 +224,10 @@ export function AuthProvider({ children }) {
 
   // Listen for auth state changes
   useEffect(() => {
+    // Auth should never hold the research UI hostage when Firebase is slow or offline.
+    // The observer can still populate the session later; after four seconds we render the
+    // signed-out state with a recoverable login surface.
+    const fallback = window.setTimeout(() => setLoading(false), 4000)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user)
 
@@ -238,9 +242,13 @@ export function AuthProvider({ children }) {
       }
 
       setLoading(false)
+      window.clearTimeout(fallback)
     })
 
-    return unsubscribe
+    return () => {
+      window.clearTimeout(fallback)
+      unsubscribe()
+    }
   }, [])
 
   const value = {

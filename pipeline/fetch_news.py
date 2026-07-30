@@ -1,13 +1,16 @@
-"""
-fetch_news.py
-Parse RSS feeds, match headlines against policy_map keywords, flag sectors + tickers.
-Writes news.json. The 'flagged_sectors' block feeds the scorer's policy-catalyst factor.
+"""Fetch financial news, flag policy sectors and tickers, and write news.json.
+
+Marketaux is the primary provider when MARKETAUX_API_TOKEN is configured. The
+existing RSS collection remains a no-key fallback.
 """
 
+import os
 import sys
 from datetime import datetime, timezone
 
+from alpha_vantage import load_local_env
 from common import LOG, load_json, save_json, update_pipeline_status
+from marketaux import MarketauxClient, MarketauxError
 
 FEEDS = [
     ("BBC Business", "https://feeds.bbci.co.uk/news/business/rss.xml"),
@@ -31,16 +34,95 @@ def match_headline(title, summary, policy):
     return hits
 
 
-def fetch():
+def match_entities(entities, policy, existing=()):
+    """Add policy flags when Marketaux identifies a configured ticker."""
+    hits = list(existing)
+    existing_sectors = {hit["sector"] for hit in hits}
+    symbols = {str(entity.get("symbol", "")).upper() for entity in entities}
+    for sector, cfg in policy.get("sectors", {}).items():
+        configured = [ticker for ticker in cfg.get("tickers", []) if ticker.upper() in symbols]
+        if configured and sector not in existing_sectors:
+            hits.append({"sector": sector, "keyword": "entity match", "tickers": configured})
+    return hits
+
+
+def build_payload(items, feed_health, policy, source):
+    sector_counts = {}
+    for item in items:
+        for hit in item["flags"]:
+            sector_counts[hit["sector"]] = sector_counts.get(hit["sector"], 0) + 1
+
+    flagged = sorted(sector_counts.items(), key=lambda value: value[1], reverse=True)
+    flagged_sectors = dict(flagged)
+    flagged_tickers = {}
+    for sector in flagged_sectors:
+        for ticker in policy.get("sectors", {}).get(sector, {}).get("tickers", []):
+            flagged_tickers[ticker] = sector
+
+    items = items[:60]
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": "live",
+        "count": len(items),
+        "feed_health": feed_health,
+        "flagged_sectors": flagged_sectors,
+        "flagged_tickers": flagged_tickers,
+        "items": items,
+        "provider": source,
+    }
+
+
+def fetch_marketaux(policy):
+    client = MarketauxClient()
+    limit = max(1, int(os.getenv("MARKETAUX_NEWS_LIMIT", "50")))
+    symbols = sorted({
+        ticker.upper()
+        for config in policy.get("sectors", {}).values()
+        for ticker in config.get("tickers", [])
+    })
+    payload = client.news(
+        symbols=",".join(symbols) or None,
+        language="en",
+        must_have_entities="true",
+        filter_entities="true",
+        group_similar="true",
+        limit=limit,
+    )
+    articles = payload.get("data", [])
+    items = []
+    for article in articles:
+        summary = article.get("description") or article.get("snippet") or ""
+        hits = match_headline(article.get("title", ""), summary, policy)
+        hits = match_entities(article.get("entities", []), policy, hits)
+        if not hits:
+            continue
+        items.append({
+            "title": article.get("title") or "Untitled article",
+            "source": article.get("source") or "Marketaux",
+            "url": article.get("url") or "",
+            "published": article.get("published_at") or "",
+            "summary": summary,
+            "image_url": article.get("image_url"),
+            "entities": article.get("entities", []),
+            "flags": hits,
+        })
+    feed_health = [{
+        "name": "Marketaux",
+        "url": "https://api.marketaux.com/v1/news/all",
+        "status": "healthy",
+        "entries": len(articles),
+    }]
+    return build_payload(items, feed_health, policy, "Marketaux")
+
+
+def fetch_rss(policy):
     try:
         import feedparser
     except ImportError:
         LOG.error("feedparser not installed. pip install -r requirements.txt")
         return None
 
-    policy = load_json("policy_map.json", from_config=True) or {}
     items = []
-    sector_counts = {}
     feed_health = []
 
     for configured_name, url in FEEDS:
@@ -67,8 +149,6 @@ def fetch():
             hits = match_headline(title, summary, policy)
             if not hits:
                 continue
-            for h in hits:
-                sector_counts[h["sector"]] = sector_counts.get(h["sector"], 0) + 1
             items.append({
                 "title": title,
                 "source": source,
@@ -84,24 +164,18 @@ def fetch():
                                message="Healthy feed threshold not met", details={"feeds": feed_health})
         return None
 
-    # Which sectors are hot this week -> scorer reads this
-    flagged = sorted(sector_counts.items(), key=lambda x: x[1], reverse=True)
-    flagged_sectors = {s: c for s, c in flagged}
-    flagged_tickers = {}
-    for s in flagged_sectors:
-        for tk in policy["sectors"][s].get("tickers", []):
-            flagged_tickers[tk] = s
+    return build_payload(items, feed_health, policy, "RSS feeds")
 
-    items = items[:60]
-    return {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "data_mode": "live",
-        "count": len(items),
-        "feed_health": feed_health,
-        "flagged_sectors": flagged_sectors,
-        "flagged_tickers": flagged_tickers,
-        "items": items,
-    }
+
+def fetch():
+    load_local_env()
+    policy = load_json("policy_map.json", from_config=True) or {}
+    if os.getenv("MARKETAUX_API_TOKEN"):
+        try:
+            return fetch_marketaux(policy)
+        except (MarketauxError, OSError, ValueError) as exc:
+            LOG.warn(f"Marketaux unavailable; falling back to RSS ({type(exc).__name__}: {exc})")
+    return fetch_rss(policy)
 
 
 def main():
@@ -109,9 +183,16 @@ def main():
     if payload is None:
         return 1
     save_json("news.json", payload)
-    update_pipeline_status("news", status="healthy", source="RSS feeds",
-                           details={"healthy_feeds": sum(h["status"] == "healthy" for h in payload["feed_health"]),
-                                    "total_feeds": len(payload["feed_health"]), "flagged_items": payload["count"]})
+    update_pipeline_status(
+        "news",
+        status="healthy",
+        source=payload["provider"],
+        details={
+            "healthy_feeds": sum(h["status"] == "healthy" for h in payload["feed_health"]),
+            "total_feeds": len(payload["feed_health"]),
+            "flagged_items": payload["count"],
+        },
+    )
     LOG.info(f"Wrote news.json: {payload['count']} flagged items, "
              f"{len(payload['flagged_sectors'])} hot sectors")
     return 0

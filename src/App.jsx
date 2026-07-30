@@ -8,121 +8,105 @@ import Methodology from './pages/Methodology.jsx'
 import Portfolio from './pages/Portfolio.jsx'
 import Backtest from './pages/Backtest.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
+import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
 import PasswordChangeModal from './components/PasswordChangeModal.jsx'
 
 const NAV = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/research', label: 'Research' },
-  { to: '/market', label: 'Market Pulse' },
-  { to: '/portfolio', label: 'My Portfolio', requireAuth: true },
-  { to: '/backtest', label: 'Backtest', requireAuth: true },
-  { to: '/watchlist', label: 'Watchlist' },
-  { to: '/methodology', label: 'Methodology' },
+  { to: '/', label: 'Overview', icon: 'overview', end: true, mobile: true },
+  { to: '/research', label: 'Research', icon: 'research', mobile: true },
+  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true, mobile: true },
+  { to: '/watchlist', label: 'Watchlist', icon: 'watchlist', mobile: true },
+  { to: '/market', label: 'Market Pulse', icon: 'market' },
+  { to: '/backtest', label: 'Backtest', icon: 'backtest', requireAuth: true },
+  { to: '/methodology', label: 'Methodology', icon: 'method' },
 ]
 
-function ProfileSwitcher() {
+function ProfilePanel() {
   const { currentUser, userProfile, logout, toggleDarkMode } = useAuth()
   const [showPasswordChange, setShowPasswordChange] = useState(false)
-
   if (!currentUser) return null
-
-  const theme = userProfile?.colorTheme
 
   return (
     <>
-      <div style={{
-        padding: '12px 14px',
-        marginTop: 'auto',
-        marginBottom: 12,
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-        background: 'var(--bg-elev)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <div style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: theme?.accent || 'var(--accent)'
-          }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{userProfile?.displayName}</div>
-            <div style={{ fontSize: 10, opacity: 0.6, fontFamily: 'var(--font-mono)' }}>
-              {theme?.name}
-            </div>
-          </div>
+      <div className="profile-panel">
+        <div className="avatar" aria-hidden="true">
+          {(userProfile?.displayName || currentUser.email || 'V').slice(0, 1).toUpperCase()}
         </div>
-        <div style={{ display: 'flex', gap: 4, flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button
-              onClick={toggleDarkMode}
-              className="chip button-chip"
-              style={{ fontSize: 10, padding: '4px 8px', flex: 1 }}
-              title="Toggle dark/light mode"
-            >
-              {userProfile?.darkMode ? '☀️' : '🌙'}
-            </button>
-            <button
-              onClick={() => setShowPasswordChange(true)}
-              className="chip button-chip"
-              style={{ fontSize: 10, padding: '4px 8px', flex: 1 }}
-              title="Change password"
-            >
-              🔐
-            </button>
-            <button
-              onClick={logout}
-              className="chip button-chip"
-              style={{ fontSize: 10, padding: '4px 8px', flex: 1 }}
-              title="Switch profile"
-            >
-              ↻
-            </button>
-          </div>
+        <div className="profile-copy">
+          <strong>{userProfile?.displayName || 'Investor'}</strong>
+          <span>{userProfile?.colorTheme?.name || 'ValueSignal member'}</span>
         </div>
+        <button className="icon-button" onClick={toggleDarkMode}
+          aria-label={userProfile?.darkMode ? 'Use light theme' : 'Use dark theme'}>
+          <Icon name={userProfile?.darkMode ? 'sun' : 'moon'} />
+        </button>
+        <button className="icon-button" onClick={() => setShowPasswordChange(true)}
+          aria-label="Account settings"><Icon name="user" /></button>
+        <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
       </div>
-      {showPasswordChange && (
-        <PasswordChangeModal onClose={() => setShowPasswordChange(false)} />
-      )}
+      {showPasswordChange && <PasswordChangeModal onClose={() => setShowPasswordChange(false)} />}
     </>
   )
 }
 
+function MoreLink() {
+  return (
+    <NavLink to="/market" className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
+      <span className="mobile-nav-icon"><Icon name="more" size={19} /></span>
+      <span>More</span>
+    </NavLink>
+  )
+}
+
 function AppContent() {
-  const { currentUser, loading } = useAuth()
+  const { currentUser, loading, userProfile } = useAuth()
+  const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
 
   if (loading) {
-    return (
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
-        <div>Loading...</div>
-      </div>
-    )
+    return <div className="app-loading" role="status"><span className="loading-mark" />Loading ValueSignal</div>
   }
 
   return (
     <div className="shell">
-      <aside className="rail">
-        <div className="brand">Value<em>Signal</em></div>
-        <div className="brand-sub">research advisor</div>
-        {NAV.map((n) => {
-          if (n.requireAuth && !currentUser) return null
-          return (
-            <NavLink key={n.to} to={n.to} end={n.end}
-              className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
-              <span className="dot" />{n.label}
-            </NavLink>
-          )
-        })}
-        <div className="rail-foot" style={{ marginTop: 'auto', marginBottom: 8 }}>
-          fundamentals first<br />
-          evidence, not hype<br />
-          general research only
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <aside className="rail" aria-label="Primary navigation">
+        <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
+          <span className="brand-mark">V</span>
+          <span><span className="brand">Value<em>Signal</em></span><span className="brand-sub">research intelligence</span></span>
+        </NavLink>
+        <nav className="desktop-nav">
+          {NAV.map((item) => {
+            if (item.requireAuth && !currentUser) return null
+            return (
+              <NavLink key={item.to} to={item.to} end={item.end}
+                className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
+                <Icon name={item.icon} size={19} /><span>{item.label}</span>
+              </NavLink>
+            )
+          })}
+        </nav>
+        <div className="rail-note">
+          <span>Research framework</span>
+          Fundamentals first. Evidence, not hype. General research only.
         </div>
-        <ProfileSwitcher />
+        <ProfilePanel />
       </aside>
-      <main className="content">
+
+      <main id="main-content" className="content" tabIndex="-1">
+        <header className="mobile-header">
+          <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
+            <span className="brand-mark">V</span>
+            <span className="brand">Value<em>Signal</em></span>
+          </NavLink>
+          <div className="mobile-profile">
+            <button className="icon-button" aria-label="Notifications"><Icon name="bell" /></button>
+            <div className="avatar" aria-label={`Profile: ${userProfile?.displayName || 'Investor'}`}>
+              {(userProfile?.displayName || 'V').slice(0, 1).toUpperCase()}
+            </div>
+          </div>
+        </header>
         <DataStatus />
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -134,15 +118,25 @@ function AppContent() {
           <Route path="/methodology" element={<Methodology />} />
         </Routes>
       </main>
-      {!currentUser && <FirebaseLoginModal />}
+
+      <nav className="mobile-nav" aria-label="Mobile navigation">
+        {NAV.filter((item) => item.mobile).map((item) => {
+          if (item.requireAuth && !currentUser) return null
+          return (
+            <NavLink key={item.to} to={item.to} end={item.end}
+              className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
+              <span className="mobile-nav-icon"><Icon name={item.icon} size={19} /></span>
+              <span>{item.label}</span>
+            </NavLink>
+          )
+        })}
+        <MoreLink />
+      </nav>
+      {!currentUser && !previewMode && <FirebaseLoginModal />}
     </div>
   )
 }
 
 export default function App() {
-  return (
-    <FirebaseAuthProvider>
-      <AppContent />
-    </FirebaseAuthProvider>
-  )
+  return <FirebaseAuthProvider><AppContent /></FirebaseAuthProvider>
 }

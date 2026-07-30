@@ -61,6 +61,10 @@ export default function GrowthChart({
   const innerHeight = height - PAD.top - PAD.bottom
 
   const labelIndexes = [0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1]
+  const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {
+    const values = line.values.filter((value) => value != null)
+    return `${line.label}: ${money(values[values.length - 1])}`
+  }).join('; ')} at the end of the period.`
 
   return (
     <figure style={{ margin: 0 }}>
@@ -78,7 +82,7 @@ export default function GrowthChart({
           width="100%"
           height={height}
           role="img"
-          aria-label={title || 'Growth comparison chart'}
+          aria-label={chartSummary}
           style={{ display: 'block', minWidth: 320 }}
         >
           {ticks.map((tick, index) => {
@@ -102,7 +106,7 @@ export default function GrowthChart({
               <g key={line.label}>
                 <path d={pathFor(points)} fill="none" stroke={line.color}
                   strokeWidth={line.emphasis ? 2.4 : 1.8}
-                  strokeDasharray={line.dashed ? '5 4' : undefined}
+                  strokeDasharray={line.dashPattern || (line.dashed ? '5 4' : undefined)}
                   strokeLinejoin="round" strokeLinecap="round" />
                 {last && <circle cx={last.x} cy={last.y} r="3.5" fill={line.color} />}
               </g>
@@ -130,8 +134,8 @@ export default function GrowthChart({
           return (
             <div key={line.label} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12 }}>
               <span style={{
-                width: 14, height: 3, borderRadius: 2, background: line.color,
-                opacity: line.dashed ? 0.75 : 1,
+                width: 16, height: 0, borderTop: `3px ${line.dashPattern ? 'dashed' : 'solid'} ${line.color}`,
+                opacity: line.dashPattern || line.dashed ? 0.85 : 1,
               }} />
               <span style={{ color: 'var(--text-dim)' }}>{line.label}</span>
               <span className="mono" style={{ fontWeight: 600 }}>{money(latest)}</span>

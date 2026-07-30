@@ -1,105 +1,122 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { Tier, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
 import { ActionPill } from '../components/ActionGuidance.jsx'
+import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import { getRecommendation } from '../lib/recommendation'
 
 const SORTS = {
   score: ['Research score', (a, b) => b.score - a.score],
-  valuation: ['Cheapest for its sector', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1)],
-  quality: ['Return on invested capital', (a, b) => (b.return_on_invested_capital ?? -1) - (a.return_on_invested_capital ?? -1)],
-  accounting: ['Accounting quality', (a, b) => (b.fundamental_categories?.accounting_quality ?? -1) - (a.fundamental_categories?.accounting_quality ?? -1)],
-  benchmark: ['Beating the S&P', (a, b) => (b.hypothetical?.excess_return_pct ?? -999) - (a.hypothetical?.excess_return_pct ?? -999)],
+  return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999)],
+  valuation: ['Sector valuation', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1)],
+  quality: ['Fundamentals', (a, b) => (b.components?.fundamentals ?? -1) - (a.components?.fundamentals ?? -1)],
+  confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1)],
+}
+
+function ResearchCard({ row, rank, onOpen }) {
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <article className="research-mobile-card">
+      <div className="research-card-head">
+        <span className="rank-badge">#{rank}</span>
+        <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+        <span className="mobile-score">{row.score}</span>
+      </div>
+      <div className="research-card-badges"><Tier label={row.stance} /><ActionPill recommendation={getRecommendation(row)} /></div>
+      <dl className="research-card-metrics">
+        <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</dd></div>
+        <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} /></dd></div>
+        <div><dt>Data confidence</dt><dd>{Math.round((row.confidence || 0) * 100)}%</dd></div>
+      </dl>
+      <button className="expand-button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
+        {expanded ? 'Hide secondary metrics' : 'Show secondary metrics'}
+        <Icon name="chevron" size={17} className={expanded ? 'rotated' : ''} />
+      </button>
+      {expanded && (
+        <div className="research-expanded">
+          <MetricPills {...row} fundamental_coverage={row.fundamental_detail?.coverage} />
+          <div className="evidence-grid">
+            <div><b>Strengths</b><ul>{row.strengths?.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            <div><b>Risks & gaps</b><ul>{row.risks?.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          </div>
+          <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
+        </div>
+      )}
+    </article>
+  )
 }
 
 export default function Picks() {
   const { data, loading } = useData('advisor.json')
   const [sector, setSector] = useState('all')
   const [sort, setSort] = useState('score')
+  const [query, setQuery] = useState('')
   const [selectedStock, setSelectedStock] = useState(null)
+
+  const research = data?.research || []
+  const sectors = useMemo(() => [...new Set(research.map((row) => row.sector).filter(Boolean))].sort(), [research])
 
   if (loading) return <Loading />
   if (!data?.research) return <Empty />
 
-  const sectors = [...new Set(data.research.map(x => x.sector).filter(Boolean))].sort()
-  const rows = data.research
-    .filter(x => sector === 'all' || x.sector === sector)
-    .slice()
-    .sort(SORTS[sort][1])
+  const normalized = query.trim().toLowerCase()
+  const rows = research
+    .filter((row) => sector === 'all' || row.sector === sector)
+    .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || row.name.toLowerCase().includes(normalized))
+    .slice().sort(SORTS[sort][1])
 
-  return <>
-    <div className="page-head"><div>
-      <h1 className="page-title">Top {data.research.length} <span className="accent">deep dive</span></h1>
-      <p className="page-sub">Compare the evidence behind every ranked company. Sector-aware multiples stop a bank, a grocer, and a software company from being judged by one arbitrary P/E cutoff, and a sector percentile separates “cheap for tech” from “cheap outright”.</p>
-    </div></div>
+  return (
+    <>
+      <div className="page-head">
+        <div><span className="eyebrow">Evidence library</span><h1 className="page-title">Company <span className="accent">research</span></h1>
+          <p className="page-sub">Compare the ranked evidence behind every published company. Confidence measures data completeness, not expected performance.</p></div>
+        <div className="result-count"><strong>{rows.length}</strong><span>results</span></div>
+      </div>
 
-    <div className="filters">
-      <label className="sr-only" htmlFor="sector">Filter by sector</label>
-      <select id="sector" value={sector} onChange={e => setSector(e.target.value)}>
-        <option value="all">All sectors</option>
-        {sectors.map(s => <option key={s}>{s}</option>)}
-      </select>
-      <label className="sr-only" htmlFor="sort">Sort by</label>
-      <select id="sort" value={sort} onChange={e => setSort(e.target.value)}>
-        {Object.entries(SORTS).map(([key, [label]]) => <option key={key} value={key}>{label}</option>)}
-      </select>
-    </div>
+      <div className="research-toolbar">
+        <label className="search-field">
+          <Icon name="research" size={18} /><span className="sr-only">Search companies</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search ticker or company" />
+        </label>
+        <label><span className="sr-only">Filter by sector</span><select value={sector} onChange={(event) => setSector(event.target.value)}>
+          <option value="all">All sectors</option>{sectors.map((item) => <option key={item}>{item}</option>)}
+        </select></label>
+        <label><span className="sr-only">Sort research</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
+          {Object.entries(SORTS).map(([key, [label]]) => <option key={key} value={key}>Sort: {label}</option>)}
+        </select></label>
+      </div>
 
-    <div className="grid">{rows.map(row => {
-      const rank = data.research.findIndex(item => item.ticker === row.ticker) + 1
-      return <article className="card card-pad research-card" key={row.ticker}>
-        <div className="sig-top">
-          <div className="company-line">
-            <span className="rank">#{rank}</span>
-            <div>
-              <div className="sig-tick">{row.ticker}</div>
-              <div className="sig-name">{row.name} · {row.industry || row.sector || '—'}</div>
-            </div>
-          </div>
-          <div className="score-lockup">
-            <Move pct={row.pct_30d} />
-            <ActionPill recommendation={getRecommendation(row)} />
-            <Tier label={row.stance} />
-            <span className="sig-score">{row.score}</span>
-          </div>
-        </div>
+      <div className="research-mobile-list">
+        {rows.map((row) => <ResearchCard key={row.ticker} row={row}
+          rank={research.findIndex((item) => item.ticker === row.ticker) + 1} onOpen={setSelectedStock} />)}
+      </div>
 
-        <div className="component-scores">
-          {Object.entries(row.fundamental_categories || row.components).map(([key, value]) => (
-            <div key={key}>
-              <span>{key.replace(/_/g, ' ')}</span>
-              <b>{value == null ? '—' : Math.round(value)}</b>
-              <i><em style={{ width: `${value || 0}%` }} /></i>
-            </div>
-          ))}
-        </div>
+      <div className="research-table card">
+        <table>
+          <thead><tr>
+            <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Research rating</th><th scope="col">Signal</th>
+            <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
+            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col"><span className="sr-only">Open</span></th>
+          </tr></thead>
+          <tbody>{rows.map((row) => (
+            <tr key={row.ticker}>
+              <td className="rank">#{research.findIndex((item) => item.ticker === row.ticker) + 1}</td>
+              <td><div className="table-company"><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></td>
+              <td><Tier label={row.stance} /></td><td><ActionPill recommendation={getRecommendation(row)} /></td>
+              <td className="mono num score-cell">{row.score}</td>
+              <td className="mono num">{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</td>
+              <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
+              <td className="mono num">{Math.round((row.confidence || 0) * 100)}%</td>
+              <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
 
-        <MetricPills {...row} fundamental_coverage={row.fundamental_detail?.coverage} />
-
-        <div className="insider-line">
-          {row.sector_valuation_percentile != null &&
-            <b>cheaper than {row.sector_valuation_percentile.toFixed(0)}% of its sector</b>}
-          {row.hypothetical &&
-            <b style={{ color: row.hypothetical.dollars_ahead >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
-              {row.hypothetical.dollars_ahead >= 0 ? '+' : '−'}${Math.abs(row.hypothetical.dollars_ahead).toFixed(0)} vs S&P on ${row.hypothetical.basis}
-            </b>}
-          {row.insider_activity?.records_reviewed > 0 &&
-            <b>{row.insider_activity.recent_acquisitions} insider buys / {row.insider_activity.recent_disposals} sells</b>}
-          <button className="chip button-chip" onClick={() => setSelectedStock(row)}>Full breakdown</button>
-        </div>
-
-        <details>
-          <summary>Evidence and risks</summary>
-          <div className="evidence-grid">
-            <div><b>Evidence for</b><ul>{row.strengths.map(x => <li key={x}>{x}</li>)}</ul></div>
-            <div><b>Risks / gaps</b><ul>{row.risks.map(x => <li key={x}>{x}</li>)}</ul></div>
-          </div>
-        </details>
-      </article>
-    })}</div>
-
-    <div className="disclaimer">These are the top {data.research.length} from a configured {data.universe_count || data.universe?.length}-company universe. They do not imply expected return, suitability, or portfolio allocation.</div>
-    {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
-  </>
+      {!rows.length && <Empty note="No companies match those filters." />}
+      <div className="disclaimer">Published {research.length} highest-ranked companies from a configured {data.universe_count || data.universe?.length}-company universe. Rankings do not imply suitability or portfolio allocation.</div>
+      {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
+    </>
+  )
 }

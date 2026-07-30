@@ -72,6 +72,7 @@ describe('portfolioGrowthSeries', () => {
     expect(series.benchmark[0]).toBe(200)
     // The index rose 25% over the window, so the same starting dollars end at 250.
     expect(series.benchmark[4]).toBeCloseTo(250, 5)
+    expect(series.cash).toEqual([200, 200, 200, 200, 200])
     expect(series.trackedTickers).toEqual(['AAA'])
     expect(series.untrackedCount).toBe(1)
   })
