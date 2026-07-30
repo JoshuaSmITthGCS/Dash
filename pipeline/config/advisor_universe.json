@@ -1,5 +1,7 @@
 {
-  "description": "Diversified liquid US large- and mid-cap candidate universe. The pipeline scores all available names and publishes the top 20.",
+  "description": "Diversified liquid US large- and mid-cap candidate universe. The pipeline scores every available name, derives financial-statement metrics for the shortlist, and publishes the top `publish_limit`.",
+  "publish_limit": 40,
+  "extended_limit": 110,
   "symbols": [
     "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "AVGO", "ORCL", "CRM", "ADBE",
     "JPM", "BAC", "GS", "V", "MA", "JNJ", "UNH", "LLY", "MRK", "ABBV",
@@ -12,6 +14,29 @@
     "BSX", "GILD", "AMGN", "CVS", "CI", "TGT", "TJX", "ROST", "CMG", "MAR",
     "HLT", "GM", "F", "DECK", "LULU", "BA", "RTX", "LMT", "DE", "ETN",
     "WM", "RSG", "UNP", "CSX", "APD", "EOG", "MPC", "OXY", "PSX", "DUK",
-    "SO", "AEP", "SRE", "CEG", "VST", "PLD", "AMT", "EQIX", "O", "WELL"
+    "SO", "AEP", "SRE", "CEG", "VST", "PLD", "AMT", "EQIX", "O", "WELL",
+
+    "ADI", "NXPI", "MCHP", "ON", "TER", "ANET", "DELL", "HPQ", "STX", "WDC",
+    "CSCO", "MSI", "APH", "TEL", "GLW", "KEYS", "FTNT", "CRWD", "ZS", "DDOG",
+    "SNOW", "MDB", "TEAM", "WDAY", "ADSK", "ANSS", "ROP", "PTC", "TYL", "VRSK",
+    "FICO", "MCO", "MSCI", "CME", "NDAQ", "TROW", "BK", "STT", "USB", "PNC",
+    "TFC", "FITB", "MTB", "HBAN", "RF", "KEY", "CFG", "ALL", "TRV", "AIG",
+    "MET", "PRU", "AFL", "HIG", "AMP", "COF", "SYF", "FIS", "FI", "MMC",
+    "GPN", "PYPL", "ADP", "PAYX", "CTAS", "FAST", "GWW", "URI", "PH", "EMR",
+    "ITW", "ROK", "DOV", "XYL", "AME", "CMI", "PCAR", "NSC", "ODFL", "CHRW",
+    "EXPD", "JBHT", "LUV", "DAL", "UAL", "GD", "NOC", "LHX", "TDG", "HWM",
+    "VRTX", "REGN", "BIIB", "MRNA", "ZTS", "IDXX", "IQV", "A", "WAT", "MTD",
+    "RMD", "EW", "BDX", "BAX", "HOLX", "DXCM", "ALGN", "COO", "STE", "MCK",
+    "COR", "CAH", "HCA", "ELV", "HUM", "CNC", "MOH", "DG", "DLTR", "KR",
+    "SYY", "GIS", "K", "HSY", "STZ", "KDP", "MNST", "CL", "KMB", "CHD",
+    "EL", "CLX", "MKC", "TSN", "ADM", "MO", "YUM", "DRI", "ORLY", "AZO",
+    "BBY", "EBAY", "ETSY", "W", "RH", "TSCO", "ULTA", "DKS", "BURL", "FIVE",
+    "CROX", "SKX", "RL", "PVH", "TPR", "LVS", "WYNN", "MGM", "RCL", "CCL",
+    "NCLH", "ABNB", "UBER", "LYFT", "DASH", "EXPE", "CHTR", "WBD", "PARA", "LYV",
+    "PSA", "SPG", "AVB", "EQR", "MAA", "ESS", "VTR", "DLR", "IRM", "CCI",
+    "XEL", "ED", "EIX", "WEC", "ES", "AEE", "DTE", "PPL", "FE", "ETR",
+    "DVN", "FANG", "HES", "APA", "CTRA", "HAL", "BKR", "VLO", "KMI",
+    "OKE", "WMB", "TRGP", "LNG", "NUE", "STLD", "FCX", "NEM", "DOW", "LYB",
+    "PPG", "SHW", "ECL", "IFF", "ALB", "CE", "EMN", "VMC", "MLM", "NDSN"
   ]
 }

@@ -90,21 +90,25 @@ export function AuthProvider({ children }) {
     return null
   }
 
-  // Apply theme to CSS custom properties
+  // Switch palettes by flipping one attribute. The full light and dark token sets live in
+  // variables.css, so a theme change can never leave light text sitting on a white card.
   const applyTheme = (theme, darkMode = true) => {
     const root = document.documentElement
+    root.setAttribute('data-theme', darkMode ? 'dark' : 'light')
 
-    if (darkMode) {
-      root.style.setProperty('--primary', theme.primary)
+    // A personal accent is the only per-user override, and only where it stays readable:
+    // the family accents are bright hues built for dark surfaces.
+    root.style.setProperty('--primary', theme.primary)
+    if (darkMode && theme.accent) {
       root.style.setProperty('--accent', theme.accent)
-      root.style.setProperty('--bg', theme.bg)
-      root.style.setProperty('--bg-card', theme.bgCard)
+      root.style.setProperty('--accent-dim', theme.accent)
+      root.style.setProperty('--accent-glow', `${theme.accent}22`)
+      root.style.setProperty('--tier-high', theme.accent)
+      root.style.setProperty('--series-stock', theme.accent)
     } else {
-      // Light mode variations
-      root.style.setProperty('--primary', theme.primary)
-      root.style.setProperty('--accent', theme.accent)
-      root.style.setProperty('--bg', '#ffffff')
-      root.style.setProperty('--bg-card', '#f8f8f8')
+      for (const token of ['--accent', '--accent-dim', '--accent-glow', '--tier-high', '--series-stock']) {
+        root.style.removeProperty(token)
+      }
     }
   }
 

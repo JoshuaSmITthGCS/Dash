@@ -4,6 +4,7 @@
   --bg-elev:   #101318;
   --bg-card:   #14181e;
   --bg-hover:  #1a1f27;
+  --bg-dim:    #101318;
   --border:    #232a33;
   --border-lit:#333c47;
 
@@ -16,6 +17,7 @@
   --accent:    #c2f731;
   --accent-dim:#8aa82a;
   --accent-glow: rgba(194, 247, 49, 0.14);
+  --accent-ink: #0a0c0e; /* text drawn on top of the accent */
 
   /* --- signal tiers --- */
   --tier-high: #c2f731;
@@ -26,6 +28,15 @@
   /* --- movement --- */
   --up:   #3ddc84;
   --down: #ff5f56;
+  /* --pos/--neg/--warn are the names used throughout the components; keep them
+     defined here so an undefined custom property never silently drops a colour. */
+  --pos:  var(--up);
+  --neg:  var(--down);
+  --warn: var(--tier-watch);
+
+  /* --- chart series --- */
+  --series-stock: #c2f731;
+  --series-benchmark: #7aa2ff;
 
   /* --- type --- */
   --font-display: 'Bricolage Grotesque', sans-serif;
@@ -37,4 +48,43 @@
   --r-md: 8px;
   --r-lg: 14px;
   --shadow: 0 1px 0 rgba(255,255,255,0.02), 0 8px 24px -12px rgba(0,0,0,0.6);
+  --scrim: rgba(0, 0, 0, 0.75);
+}
+
+/* Light mode is a full palette, not a pair of overridden background colours.
+   Every token above is redefined here, so contrast holds everywhere the dark
+   theme relied on light text over dark surfaces. */
+:root[data-theme="light"] {
+  --bg:        #f7f8fa;
+  --bg-elev:   #ffffff;
+  --bg-card:   #ffffff;
+  --bg-hover:  #eef1f5;
+  --bg-dim:    #eef1f5;
+  --border:    #dfe3ea;
+  --border-lit:#c3cad6;
+
+  --text:      #14181e;
+  --text-dim:  #545c69;
+  --text-faint:#7c8492;
+
+  /* The acid lime is unreadable on white, so light mode moves to a deep
+     evergreen of the same "conviction" role and keeps the lime for fills. */
+  --accent:    #2f6f2f;
+  --accent-dim:#4f8a4f;
+  --accent-glow: rgba(47, 111, 47, 0.10);
+  --accent-ink: #ffffff;
+
+  --tier-high: #2f6f2f;
+  --tier-watch:#a86412;
+  --tier-neutral: #5d6572;
+  --tier-cool: #c0392b;
+
+  --up:   #1c7f4b;
+  --down: #c0392b;
+
+  --series-stock: #2f6f2f;
+  --series-benchmark: #2f5ea8;
+
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px -14px rgba(16, 24, 40, 0.24);
+  --scrim: rgba(16, 24, 40, 0.45);
 }

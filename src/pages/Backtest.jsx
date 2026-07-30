@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../lib/FirebaseAuthContext'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { simulateEqualWeight, simulateRankWeighted, simulateSPYBenchmark, formatMetric } from '../lib/backtestEngine'
+import { simulateEqualWeight, simulateRankWeighted, simulateSPYBenchmark } from '../lib/backtestEngine'
 import BacktestChart from '../components/BacktestChart'
 import BacktestStatsTable from '../components/BacktestStatsTable'
 import BacktestTradeHistory from '../components/BacktestTradeHistory'
@@ -12,7 +12,6 @@ export default function Backtest() {
   const [signals, setSignals] = useState([])
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [priceData, setPriceData] = useState({})
   const [selectedStrategy, setSelectedStrategy] = useState('all')
 
   useEffect(() => {

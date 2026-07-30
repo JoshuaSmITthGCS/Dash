@@ -76,6 +76,7 @@ export default function DataFreshnessIndicator({ timestamp, type = 'price', thre
 
   return (
     <div
+      data-freshness={status}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -96,7 +97,7 @@ export default function DataFreshnessIndicator({ timestamp, type = 'price', thre
  * Batch freshness summary
  * Shows overall data quality for a list of timestamps
  */
-export function DataFreshnessSummary({ timestamps, type = 'mixed' }) {
+export function DataFreshnessSummary({ timestamps }) {
   if (!timestamps || timestamps.length === 0) {
     return (
       <div style={{
@@ -200,7 +201,7 @@ export function DataFreshnessSummary({ timestamps, type = 'mixed' }) {
           </div>
         </div>
         <div>
-          <div style={{ opacity: 0.7, marginBottom: 4 }}>Stale (>7d)</div>
+          <div style={{ opacity: 0.7, marginBottom: 4 }}>Stale (&gt;7d)</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--neg)' }}>
             {staleCount}
           </div>

@@ -50,13 +50,22 @@ def validate(production=False):
     scores = [row.get("score", -1) for row in advisor.get("research", [])]
     if scores != sorted(scores, reverse=True):
         errors.append("advisor.json: research rows are not ranked by descending score")
-    if advisor.get("universe_count", 0) >= 20 and advisor.get("count") != 20:
-        errors.append("advisor.json: a universe of 20+ companies must publish exactly 20 rankings")
+    if advisor:
+        publish_limit = advisor.get("publish_limit", 20)
+        expected = min(publish_limit, advisor.get("universe_count", publish_limit))
+        if advisor.get("count") != expected:
+            errors.append(f"advisor.json: expected {expected} published rankings, found {advisor.get('count')}")
     for index, row in enumerate(advisor.get("research", [])):
         if row.get("components", {}).get("fundamentals") is None:
             errors.append(f"advisor.json:research.{index}: ranked company lacks a fundamental score")
         if all(row.get(metric) is None for metric in ("peg", "forward_pe", "price_to_sales", "price_to_book")):
             errors.append(f"advisor.json:research.{index}: ranked company lacks every valuation metric")
+        history = row.get("history")
+        if history and len(history.get("dates", [])) != len(history.get("growth", [])):
+            errors.append(f"advisor.json:research.{index}: price history dates and growth series disagree")
+        recommendation = row.get("recommendation")
+        if recommendation and recommendation.get("action") in ("TRIM", "SELL") and recommendation.get("agreement_count", 0) < 2:
+            errors.append(f"advisor.json:research.{index}: sell guidance requires two agreeing factors")
 
     # Legacy political fixtures stay explicitly demo while the independent advisor dataset is live.
     modes = {p.get("data_mode") for key, p in payloads.items() if key not in ("status", "advisor")}

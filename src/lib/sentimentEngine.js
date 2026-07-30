@@ -225,7 +225,7 @@ export function calculateSentimentImpact(analysis) {
   } = analysis
 
   // Base impact from polarity and intensity
-  let impact = 0
+  let impact
   if (polarity === 'negative') {
     impact = intensity === 'severe' ? 0.6 : intensity === 'moderate' ? 0.4 : 0.2
   } else if (polarity === 'positive') {

@@ -50,10 +50,14 @@ def safe(info, *keys):
     return None
 
 
-def fetch_snapshot(ticker, yf, etf_ids):
-    """Return price plus valuation, profitability, balance-sheet, cash, and growth metrics."""
+def fetch_snapshot(ticker, yf, etf_ids, ticker_obj=None):
+    """Return price plus valuation, profitability, balance-sheet, cash, and growth metrics.
+
+    Callers that already hold a yfinance Ticker should pass it in: reusing one object per
+    company keeps its cached quote payload and roughly halves the requests per symbol.
+    """
     try:
-        tk = yf.Ticker(ticker)
+        tk = ticker_obj or yf.Ticker(ticker)
         info = tk.info or {}
         hist = tk.history(period="35d")
     except Exception as e:  # noqa: BLE001

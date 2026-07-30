@@ -27,13 +27,22 @@
   },
 
   "fundamentals": {
-    "_comment": "Fundamental score: sector-aware valuation plus profitability, balance-sheet health, cash generation, and growth. Percentages are decimals (15% = 0.15).",
-    "category_weights": { "valuation": 0.40, "profitability": 0.25, "financial_health": 0.20, "growth": 0.15 },
+    "_comment": "Fundamental score: sector-aware valuation plus profitability, balance-sheet health, cash generation, growth, capital allocation, and accounting quality. Percentages are decimals (15% = 0.15).",
+    "category_weights": {
+      "valuation": 0.28,
+      "profitability": 0.22,
+      "financial_health": 0.16,
+      "growth": 0.12,
+      "capital_allocation": 0.10,
+      "accounting_quality": 0.12
+    },
     "metric_weights": {
-      "valuation": { "peg": 0.30, "forward_pe": 0.30, "price_to_sales": 0.20, "price_to_book": 0.20 },
-      "profitability": { "return_on_equity": 0.40, "free_cash_flow_yield": 0.35, "profit_margin": 0.25 },
-      "financial_health": { "debt_to_equity": 0.60, "current_ratio": 0.40 },
-      "growth": { "revenue_growth": 0.50, "earnings_growth": 0.50 }
+      "valuation": { "peg": 0.18, "forward_pe": 0.18, "price_to_sales": 0.10, "price_to_book": 0.08, "price_to_tangible_book": 0.08, "ev_to_ebitda": 0.20, "ev_to_fcf": 0.18 },
+      "profitability": { "return_on_invested_capital": 0.30, "return_on_equity": 0.14, "free_cash_flow_yield": 0.18, "profit_margin": 0.13, "cash_conversion": 0.25 },
+      "financial_health": { "interest_coverage": 0.30, "net_debt_to_ebitda": 0.24, "debt_to_equity": 0.18, "current_ratio": 0.10, "altman_z": 0.18 },
+      "growth": { "revenue_growth": 0.30, "earnings_growth": 0.24, "fcf_growth_3y": 0.26, "operating_margin_trend": 0.20 },
+      "capital_allocation": { "net_buyback_yield": 0.40, "stock_comp_to_revenue": 0.34, "capex_to_depreciation": 0.26 },
+      "accounting_quality": { "accruals_ratio": 0.40, "piotroski_f": 0.30, "days_sales_outstanding_trend": 0.16, "inventory_days_trend": 0.14 }
     },
     "peg": {
       "excellent_max": 1.0,
@@ -65,7 +74,34 @@
     "debt_to_equity": { "excellent_max": 0.5, "good_max": 1.0, "fair_max": 2.0, "poor_max": 3.0 },
     "current_ratio": { "excellent_min": 2.0, "good_min": 1.5, "fair_min": 1.0, "weak_min": 0.75 },
     "revenue_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 },
-    "earnings_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 }
+    "earnings_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 },
+
+    "_extended_comment": "Quality, capital-allocation, and accounting-integrity bands. Trends are decimal fractions; ratios are multiples.",
+    "return_on_invested_capital": { "excellent_min": 0.20, "good_min": 0.13, "fair_min": 0.08, "weak_min": 0.04 },
+    "cash_conversion": { "excellent_min": 1.0, "good_min": 0.8, "fair_min": 0.6, "weak_min": 0.35 },
+    "fcf_growth_3y": { "excellent_min": 0.15, "good_min": 0.08, "fair_min": 0.02, "weak_min": -0.05 },
+    "interest_coverage": { "excellent_min": 12.0, "good_min": 6.0, "fair_min": 3.0, "weak_min": 1.5 },
+    "net_debt_to_ebitda": { "excellent_max": 0.5, "good_max": 1.5, "fair_max": 3.0, "poor_max": 4.5 },
+    "altman_z": { "excellent_min": 3.0, "good_min": 2.6, "fair_min": 1.8, "weak_min": 1.1 },
+    "piotroski_f": { "excellent_min": 8.0, "good_min": 6.5, "fair_min": 5.0, "weak_min": 3.0 },
+    "accruals_ratio": { "excellent_max": -0.02, "good_max": 0.03, "fair_max": 0.08, "poor_max": 0.15 },
+    "operating_margin_trend": { "excellent_min": 0.02, "good_min": 0.005, "fair_min": -0.005, "weak_min": -0.02 },
+    "days_sales_outstanding_trend": { "excellent_max": -0.05, "good_max": 0.03, "fair_max": 0.10, "poor_max": 0.20 },
+    "inventory_days_trend": { "excellent_max": -0.05, "good_max": 0.03, "fair_max": 0.10, "poor_max": 0.20 },
+    "net_buyback_yield": { "excellent_min": 0.03, "good_min": 0.01, "fair_min": 0.0, "weak_min": -0.02 },
+    "stock_comp_to_revenue": { "excellent_max": 0.01, "good_max": 0.03, "fair_max": 0.07, "poor_max": 0.12 },
+    "capex_to_depreciation": { "ideal_min": 0.9, "ideal_max": 1.8, "acceptable_min": 0.6, "acceptable_max": 2.8 },
+    "price_to_tangible_book": { "excellent_max": 1.5, "good_max": 3.0, "fair_max": 6.0, "poor_max": 12.0 },
+    "ev_to_ebitda": { "suspicious_below": 3.0, "cheap_max": 10.0, "healthy_max": 15.0, "elevated_max": 22.0 },
+    "ev_to_fcf": { "suspicious_below": 5.0, "cheap_max": 18.0, "healthy_max": 28.0, "elevated_max": 45.0 }
+  },
+
+  "modifiers": {
+    "_comment": "Bounded adjustments applied after the 75/15/10 blend. They refine, never replace, the evidence score. Units are score points.",
+    "sector_valuation_percentile": { "max_points": 3.0 },
+    "short_interest": { "float_warning": 0.08, "float_severe": 0.15, "days_to_cover_warning": 5.0, "max_penalty": 4.0 },
+    "liquidity": { "thin_dollar_volume": 25000000, "illiquid_dollar_volume": 5000000, "max_penalty": 3.0 },
+    "expectations": { "max_points": 3.0, "strong_upside": 20.0, "weak_upside": -5.0, "bullish_rating": 2.0, "bearish_rating": 3.5 }
   },
 
   "bucket_weights": {
