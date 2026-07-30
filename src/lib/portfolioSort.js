@@ -1,6 +1,7 @@
 export const PORTFOLIO_SORT_OPTIONS = [
   { key: 'ticker', label: 'Ticker' },
   { key: 'company', label: 'Company' },
+  { key: 'signal', label: 'Signal' },
   { key: 'value', label: 'Position value' },
   { key: 'gain', label: 'Gain/loss ($)' },
   { key: 'return', label: 'Total return (%)' },
@@ -15,6 +16,12 @@ export const PORTFOLIO_SORT_OPTIONS = [
 const VALUE_FOR = {
   ticker: (position) => position.ticker,
   company: (position) => position.priceInfo?.name,
+  signal: (position) => ({
+    HOLD: 0,
+    WATCH: 1,
+    TRIM: 2,
+    SELL: 3,
+  })[position.recommendation?.action],
   value: (position) => position.currentValue,
   gain: (position) => position.gain,
   return: (position) => position.gainPct,

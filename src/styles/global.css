@@ -232,15 +232,17 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .sync-message { margin: -14px 0 20px; color: var(--text-dim); font-size: 12px; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }.tab { min-height: 44px; padding: 0 15px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); color: var(--text-dim); }.tab.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .portfolio-mobile-list { display: none; }.portfolio-table { overflow-x: auto; }.portfolio-table table { min-width: 1120px; }
-.portfolio-sort-toolbar { display: flex; align-items: end; justify-content: flex-end; gap: 10px; margin: 0 0 12px; }
+.portfolio-sort-toolbar { display: none; align-items: end; justify-content: flex-end; gap: 10px; margin: 0 0 12px; }
 .portfolio-sort-toolbar label > span { display: block; margin-bottom: 5px; color: var(--text-faint); font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: .1em; }
 .portfolio-sort-toolbar select { min-width: 190px; min-height: 44px; padding: 0 36px 0 13px; border: 1px solid var(--border-lit); border-radius: 14px; background: var(--bg-elev); color: var(--text); }
 .portfolio-sort-direction { min-width: 132px; }
 .sort-header { min-height: 44px; margin: -13px -14px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: inherit; gap: 5px; border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; white-space: nowrap; }
 .num .sort-header { width: calc(100% + 28px); justify-content: flex-end; }
 .sort-header:hover, .sort-header.active { color: var(--text); }
-.sort-header span { color: var(--text-faint); font-size: 11px; }
-.sort-header.active span { color: var(--accent); }
+.sort-arrows { display: grid; gap: 2px; color: var(--text-faint); }
+.sort-arrow { width: 0; height: 0; opacity: .42; border-inline: 3px solid transparent; }
+.sort-arrow.up { border-bottom: 4px solid currentColor; }.sort-arrow.down { border-top: 4px solid currentColor; }
+.sort-arrow.selected { color: var(--accent); opacity: 1; }
 .portfolio-trend-cell { width: 112px; min-width: 112px; }
 .portfolio-trend-cell .sparkline { width: 76px; margin: 0 0 3px auto; }
 .portfolio-trend-cell .mono { display: block; font-size: 10px; }
@@ -317,7 +319,7 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .research-table { display: none; }.research-mobile-list { display: grid; gap: 12px; }
   .research-toolbar { grid-template-columns: 1fr 1fr; }.research-toolbar .search-field { grid-column: 1 / -1; }
   .portfolio-mobile-list { display: grid; gap: 12px; }.portfolio-table { display: none; }
-  .portfolio-sort-toolbar { justify-content: stretch; }.portfolio-sort-toolbar label { flex: 1; }.portfolio-sort-toolbar select { width: 100%; min-width: 0; }
+  .portfolio-sort-toolbar { display: flex; justify-content: stretch; }.portfolio-sort-toolbar label { flex: 1; }.portfolio-sort-toolbar select { width: 100%; min-width: 0; }
   .holding-card { padding: 18px; border: 1px solid var(--border); border-radius: 22px; background: var(--bg-card); }.holding-card-head, .holding-value, .holding-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.holding-card-head strong, .holding-card-head span, .holding-value span, .holding-value strong { display: block; }.holding-card-head strong { font-size: 20px; }.holding-card-head span { color: var(--text-faint); font-size: 10px; }.holding-value { margin: 20px 0 14px; }.holding-value span { color: var(--text-faint); font-size: 9px; }.holding-value strong { font: 730 28px var(--font-display); }.holding-meta { display: flex; gap: 7px; flex-wrap: wrap; }.holding-meta span { padding: 5px 8px; border-radius: 999px; background: var(--bg-elev); color: var(--text-faint); font-size: 9px; }.holding-actions { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
   .holding-trend { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 12px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: var(--bg-elev); }
   .holding-trend > div > span { display: block; color: var(--text-faint); font-size: 9px; }

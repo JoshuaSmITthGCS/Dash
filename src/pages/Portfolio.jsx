@@ -48,7 +48,10 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
         onClick={() => onSort(sortKey)}
       >
         {children}
-        <span aria-hidden="true">{active ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}</span>
+        <span className="sort-arrows" aria-hidden="true">
+          <i className={`sort-arrow up ${active && sort.direction === 'asc' ? 'selected' : ''}`} />
+          <i className={`sort-arrow down ${active && sort.direction === 'desc' ? 'selected' : ''}`} />
+        </span>
       </button>
     </th>
   )
@@ -378,7 +381,7 @@ export default function Portfolio() {
               <tr>
                 <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
                 <SortableHeader sortKey="company" sort={portfolioSort} onSort={setSortKey}>Company</SortableHeader>
-                <th scope="col">Signal</th>
+                <SortableHeader sortKey="signal" sort={portfolioSort} onSort={setSortKey}>Signal</SortableHeader>
                 <SortableHeader numeric sortKey="shares" sort={portfolioSort} onSort={setSortKey}>Shares</SortableHeader>
                 <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Cost</SortableHeader>
                 <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
