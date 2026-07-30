@@ -15,6 +15,20 @@ def weekly_grid(dates, weeks=53):
     return sampled[-weeks:]
 
 
+def chart_grid(dates, daily_days=45, weeks=53):
+    """Dense daily resolution for the recent window, weekly further back.
+
+    A pure weekly grid makes 1W/5D/1D chart zooms meaningless — they'd show at most one point.
+    Keeping the last `daily_days` sessions at full resolution fixes that while the older, sparser
+    weekly points keep the multi-year view compact.
+    """
+    if not dates:
+        return []
+    recent = dates[-daily_days:]
+    older = dates[:-daily_days] if len(dates) > daily_days else []
+    return sorted(set(weekly_grid(older, weeks=weeks)) | set(recent))
+
+
 def sample_on(dates, values, grid):
     """Project a daily series onto a shared date grid using the last close at or before each point.
 

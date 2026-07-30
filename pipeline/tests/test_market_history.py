@@ -24,6 +24,36 @@ class GridTests(unittest.TestCase):
         self.assertEqual(mh.weekly_grid([]), [])
 
 
+class ChartGridTests(unittest.TestCase):
+    def test_recent_sessions_stay_at_daily_resolution(self):
+        dates = sessions(200)
+        grid = mh.chart_grid(dates, daily_days=45)
+        recent = set(dates[-45:])
+        self.assertTrue(recent.issubset(set(grid)))
+
+    def test_older_sessions_fall_back_to_weekly(self):
+        dates = sessions(200)
+        grid = mh.chart_grid(dates, daily_days=45)
+        # Every daily point beyond the recent window would make this basically the full
+        # series again; the point of the older half is to stay sparse.
+        older_grid_points = [d for d in grid if d < dates[-45]]
+        self.assertLess(len(older_grid_points), 200 - 45)
+
+    def test_grid_ends_on_the_latest_session_and_has_no_duplicates(self):
+        dates = sessions(200)
+        grid = mh.chart_grid(dates)
+        self.assertEqual(grid[-1], dates[-1])
+        self.assertEqual(len(set(grid)), len(grid))
+        self.assertEqual(grid, sorted(grid))
+
+    def test_short_series_is_all_daily(self):
+        dates = sessions(10)
+        self.assertEqual(mh.chart_grid(dates, daily_days=45), dates)
+
+    def test_grid_of_nothing_is_empty(self):
+        self.assertEqual(mh.chart_grid([]), [])
+
+
 class AlignmentTests(unittest.TestCase):
     def test_gaps_carry_the_last_known_close_forward(self):
         dates = ["2025-01-06", "2025-01-13", "2025-01-27"]

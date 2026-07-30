@@ -22,7 +22,7 @@ export function latestBenchmarkClose(history) {
 }
 
 /** Last usable close at or before a date for any aligned price history. */
-function closeOnDates(dates, closes, date) {
+export function closeOnDates(dates, closes, date) {
   const target = String(date || '').slice(0, 10)
   let match = null
   for (let index = 0; index < dates.length; index += 1) {
@@ -74,6 +74,84 @@ export function portfolioVsBenchmark(positions, history) {
     holdingsReturnPct: (holdings / invested - 1) * 100,
     benchmarkReturnPct: (benchmark / invested - 1) * 100,
     excessReturnPct: ((holdings - benchmark) / invested) * 100,
+  }
+}
+
+/**
+ * What a fixed dollar amount — not what was actually invested — would be worth today if it had
+ * gone into this position's stock, and separately into the S&P 500, both on its purchase date.
+ * Answers "if I'd put the same $X into every pick on the day I actually bought it, how did
+ * picking this stock do against just buying the index?" rather than reporting real dollars.
+ */
+export function fixedBasisAlternative(position, stockHistory, benchmarkHistory, basis = 500) {
+  const purchaseDate = String(position.purchaseDate || '').slice(0, 10)
+  if (!purchaseDate) return null
+  const stockDates = stockHistory?.dates || []
+  const stockCloses = stockHistory?.closes || []
+  const stockEntry = closeOnDates(stockDates, stockCloses, purchaseDate)
+  const stockNow = closeOnDates(stockDates, stockCloses, stockDates[stockDates.length - 1])
+  const benchmarkEntry = benchmarkCloseOn(benchmarkHistory, purchaseDate)
+  const benchmarkNow = latestBenchmarkClose(benchmarkHistory)
+  if (!stockEntry || !stockNow || !benchmarkEntry || !benchmarkNow) return null
+  const stockValue = (basis / stockEntry) * stockNow
+  const benchmarkValue = (basis / benchmarkEntry) * benchmarkNow
+  return {
+    basis,
+    purchaseDate,
+    stockValue,
+    benchmarkValue,
+    stockReturnPct: (stockValue / basis - 1) * 100,
+    benchmarkReturnPct: (benchmarkValue / basis - 1) * 100,
+    dollarsAhead: stockValue - benchmarkValue,
+  }
+}
+
+/** Portfolio-wide totals for the fixed-basis calculator: the same $X on each position's own purchase day. */
+export function portfolioFixedBasisVsBenchmark(positions, priceData, benchmarkHistory, basis = 500) {
+  let stock = 0
+  let benchmark = 0
+  let comparable = 0
+  for (const position of positions) {
+    const alternative = fixedBasisAlternative(position, priceData[position.ticker]?.history, benchmarkHistory, basis)
+    if (!alternative) continue
+    comparable += 1
+    stock += alternative.stockValue
+    benchmark += alternative.benchmarkValue
+  }
+  if (!comparable) return null
+  const invested = comparable * basis
+  return {
+    comparable,
+    invested,
+    stockValue: stock,
+    benchmarkValue: benchmark,
+    dollarsAhead: stock - benchmark,
+    stockReturnPct: (stock / invested - 1) * 100,
+    benchmarkReturnPct: (benchmark / invested - 1) * 100,
+  }
+}
+
+/**
+ * Growth-of-$X series for a single position from its purchase date forward, for the stock and
+ * the benchmark side by side. Unlike `portfolioGrowthSeries`, this draws one position starting
+ * at its own purchase date rather than the whole portfolio from its earliest one.
+ */
+export function positionGrowthSeries(position, stockHistory, benchmarkHistory, basis = 500) {
+  const dates = benchmarkHistory?.dates || []
+  const benchmarkCloses = benchmarkHistory?.closes || []
+  const stockCloses = stockHistory?.closes || []
+  const purchaseDate = String(position.purchaseDate || '').slice(0, 10)
+  if (!purchaseDate || dates.length < 2 || stockCloses.length !== dates.length) return null
+  const activationIndex = dates.findIndex((date) => date >= purchaseDate)
+  const stockEntry = closeOnDates(dates, stockCloses, purchaseDate)
+  const benchmarkEntry = benchmarkCloseOn(benchmarkHistory, purchaseDate)
+  if (activationIndex < 0 || !stockEntry || !benchmarkEntry) return null
+  return {
+    dates: dates.slice(activationIndex),
+    stock: stockCloses.slice(activationIndex).map((close) =>
+      Number.isFinite(close) ? (basis / stockEntry) * close : null),
+    benchmark: benchmarkCloses.slice(activationIndex).map((close) =>
+      Number.isFinite(close) ? (basis / benchmarkEntry) * close : null),
   }
 }
 
