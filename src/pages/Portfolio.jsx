@@ -48,7 +48,11 @@ export default function Portfolio() {
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
-  const refresh = useAdvisorRefresh(data?.generated_at, reload)
+  const refresh = useAdvisorRefresh(
+    data?.generated_at,
+    reload,
+    positions.map((position) => position.ticker),
+  )
 
   if (dataLoading || portfolioLoading) return <Loading />
 

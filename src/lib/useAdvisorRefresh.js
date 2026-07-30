@@ -4,7 +4,7 @@ import { useAuth } from './FirebaseAuthContext'
 const POLL_INTERVAL_MS = 20_000
 const REFRESH_TIMEOUT_MS = 55 * 60_000
 
-export function useAdvisorRefresh(generatedAt, reload) {
+export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const { currentUser } = useAuth()
   const [state, setState] = useState({ status: 'idle', message: '' })
   const baseline = useRef(generatedAt)
@@ -52,7 +52,17 @@ export function useAdvisorRefresh(generatedAt, reload) {
       const idToken = await currentUser.getIdToken()
       const response = await fetch('/.netlify/functions/refresh-data', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${idToken}` },
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          symbols: [...new Set(
+            symbols
+              .map((symbol) => String(symbol || '').trim().toUpperCase())
+              .filter(Boolean),
+          )],
+        }),
       })
       const payload = await response.json().catch(() => ({}))
       if (response.status === 503) {
