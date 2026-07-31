@@ -26,9 +26,15 @@ advisor_engine.RANKING_WEIGHTS. This script never writes those files itself.
 Needs real network access + yfinance for the first (uncached) fetch -- same caveat as
 backtest_historical.py, which this script imports and reuses rather than duplicating.
 
+Use --holdout-weeks (and --holdout-folds for multiple walk-forward windows) before trusting any
+result: it reserves the most recent weeks, searches only the earlier ones, then re-checks the
+top finishers against weeks the search never saw. A config that only wins on the weeks it was
+fit to is overfit, not an improvement -- this is the difference between the two.
+
 Usage:
   python3 pipeline/optimize_weights.py --weeks 52 --trials 200 --sweep both
-  python3 pipeline/optimize_weights.py --weeks 52 --trials 500 --sweep categories --seed 7
+  python3 pipeline/optimize_weights.py --weeks 104 --trials 200 --sweep categories --seed 7 \
+      --holdout-weeks 40 --holdout-folds 4
 """
 
 import argparse
@@ -166,13 +172,30 @@ def run_sweep(name, keys, baseline, other_fixed_ranking, other_fixed_categories,
     return results
 
 
+def split_into_folds(dates, folds):
+    """Consecutive, roughly-equal chunks of a date list. Any remainder joins the last chunk."""
+    if folds <= 1 or len(dates) <= 1:
+        return [dates]
+    fold_size = max(1, len(dates) // folds)
+    chunks = [dates[i:i + fold_size] for i in range(0, len(dates), fold_size)]
+    if len(chunks) > folds:
+        merged = []
+        for chunk in chunks[folds - 1:]:
+            merged.extend(chunk)
+        chunks[folds - 1:] = [merged]
+    return chunks
+
+
 def evaluate_holdout(name, results, top_k, other_fixed_ranking, other_fixed_categories, universe_data,
-                     benchmarks, test_dates, top_n, monthly_contribution, report_lag_days):
-    """Re-score the top-K training winners (plus the baseline) on weeks the search never touched.
+                     benchmarks, test_folds, top_n, monthly_contribution, report_lag_days):
+    """Re-score the top-K training winners (plus the baseline) on one or more holdout folds --
+    consecutive stretches of weeks the search never touched.
 
     A weight vector that only wins on the weeks it was searched against is fit to that specific
-    history, not evidence of a better methodology -- this is the check for that. Mutates and
-    returns the same result dicts with holdout_* fields attached.
+    history, not evidence of a better methodology. Checking several separate folds (not just one)
+    is the difference between "won once" and "wins consistently" -- one lucky fold is still
+    possible with a single holdout window. Mutates and returns the same result dicts with
+    holdout_* fields attached.
     """
     baseline = next(r for r in results if r["is_baseline"])
     to_check = {id(r): r for r in results[:top_k]}
@@ -181,10 +204,26 @@ def evaluate_holdout(name, results, top_k, other_fixed_ranking, other_fixed_cate
     for r in to_check.values():
         ranking_weights = r["weights"] if name == "blend" else other_fixed_ranking
         category_weights = r["weights"] if name == "categories" else other_fixed_categories
-        outcome = run_trial(universe_data, benchmarks, test_dates, ranking_weights, category_weights,
-                            top_n, monthly_contribution, report_lag_days)
-        r["holdout_return_pct"] = outcome["return_pct"]
-        r["holdout_score_vs_spy"] = outcome["score_vs_spy"]
+        folds = []
+        for fold_dates in test_folds:
+            outcome = run_trial(universe_data, benchmarks, fold_dates, ranking_weights, category_weights,
+                                top_n, monthly_contribution, report_lag_days)
+            folds.append({"return_pct": outcome["return_pct"], "score_vs_spy": outcome["score_vs_spy"]})
+        scores = [f["score_vs_spy"] for f in folds if f["score_vs_spy"] is not None]
+        r["holdout_folds"] = folds
+        r["holdout_mean_score"] = round(sum(scores) / len(scores), 2) if scores else None
+        r["holdout_min_score"] = min(scores) if scores else None
+
+    baseline_folds = baseline["holdout_folds"]
+    for r in to_check.values():
+        if r is baseline:
+            continue
+        wins = sum(
+            1 for mine, base in zip(r["holdout_folds"], baseline_folds)
+            if mine["score_vs_spy"] is not None and base["score_vs_spy"] is not None
+            and mine["score_vs_spy"] > base["score_vs_spy"]
+        )
+        r["holdout_folds_beating_baseline"] = f"{wins}/{len(baseline_folds)}"
     return results
 
 
@@ -192,7 +231,7 @@ def print_leaderboard(name, keys, results, top=10, holdout=False):
     baseline = next(r for r in results if r["is_baseline"])
     baseline_rank = next(i for i, r in enumerate(results, 1) if r["is_baseline"])
     print(f"\n{'=' * 88}\n{name.upper()} SWEEP -- {len(results) - 1} random trials + baseline\n{'=' * 88}")
-    holdout_header = f" {'holdout':>8} {'ho.score':>8}" if holdout else ""
+    holdout_header = f" {'ho.mean':>8} {'ho.min':>8} {'ho.wins':>8}" if holdout else ""
     print(f"{'#':>3} {'score':>6} {'return':>8} {'final $':>12}{holdout_header}  " + "  ".join(f"{k[:10]:>10}" for k in keys))
     for rank, r in enumerate(results[:top], 1):
         tag = " <- BASELINE (today's config)" if r["is_baseline"] else ""
@@ -201,18 +240,21 @@ def print_leaderboard(name, keys, results, top=10, holdout=False):
         weights_str = "  ".join(f"{r['weights'][k] * 100:9.1f}%" for k in keys)
         holdout_cols = ""
         if holdout:
-            ho_ret = r.get("holdout_return_pct")
-            ho_score = r.get("holdout_score_vs_spy")
-            holdout_cols = (f" {('—' if ho_ret is None else f'{ho_ret:+.1f}%'):>8}"
-                            f" {('—' if ho_score is None else f'{ho_score:.1f}'):>8}")
+            mean = r.get("holdout_mean_score")
+            low = r.get("holdout_min_score")
+            wins = "n/a" if r["is_baseline"] else r.get("holdout_folds_beating_baseline", "—")
+            holdout_cols = (f" {('—' if mean is None else f'{mean:.1f}'):>8}"
+                            f" {('—' if low is None else f'{low:.1f}'):>8}"
+                            f" {str(wins):>8}")
         print(f"{rank:>3} {score:>6} {ret:>8} {r['final_value']:>12,.0f}{holdout_cols}  {weights_str}{tag}")
     print(f"\nBaseline (today's weights) ranked #{baseline_rank} of {len(results)} "
           f"-- score {baseline['score_vs_spy']}, return {baseline['return_pct']:+.1f}%.")
     if holdout:
-        base_ho = baseline.get("holdout_score_vs_spy")
-        print(f"Baseline holdout score: {'—' if base_ho is None else base_ho} "
-              "(compare each row's 'ho.score' against this -- a real edge beats it there too, "
-              "not just on the weeks it was searched against).")
+        base_scores = [f["score_vs_spy"] for f in baseline.get("holdout_folds", [])]
+        print(f"Baseline holdout scores by fold: {base_scores}")
+        print("ho.mean/ho.min = that row's average/worst score across the same folds; "
+              "ho.wins = how many of those folds it beat the baseline on. Look for consistency "
+              "(most or all folds won) over a single strong fold.")
 
 
 # ---------------- entry point ----------------
@@ -241,6 +283,12 @@ def main():
                              "trusting a result enough to act on it.")
     parser.add_argument("--holdout-top-k", type=int, default=10,
                         help="How many top training finishers (plus the baseline) get holdout-checked")
+    parser.add_argument("--holdout-folds", type=int, default=1,
+                        help="Split the holdout weeks into this many consecutive folds and check top "
+                             "finishers against each separately (walk-forward), instead of one lump "
+                             "holdout window -- a config that wins on every fold is far more credible "
+                             "than one that won a single lucky stretch. Requires --holdout-weeks; "
+                             "each fold needs enough weeks left to mean something (a handful at least).")
     parser.add_argument("--out", type=str, default=os.path.join(HERE, "optimize_weights_results.json"))
     args = parser.parse_args()
 
@@ -260,35 +308,39 @@ def main():
             LOG.error(f"--holdout-weeks ({args.holdout_weeks}) must be smaller than --weeks ({args.weeks})")
             sys.exit(1)
         train_dates, test_dates = week_dates[:-args.holdout_weeks], week_dates[-args.holdout_weeks:]
-        LOG.info(f"Searching on {len(train_dates)} weeks, holding out the most recent {len(test_dates)} for validation")
+        test_folds = split_into_folds(test_dates, args.holdout_folds)
+        LOG.info(f"Searching on {len(train_dates)} weeks, holding out the most recent {len(test_dates)} "
+                 f"weeks across {len(test_folds)} fold(s) for validation")
     else:
-        train_dates, test_dates = week_dates, None
+        if args.holdout_folds > 1:
+            LOG.warn("--holdout-folds has no effect without --holdout-weeks")
+        train_dates, test_folds = week_dates, None
 
     output = {"generated_at": datetime.utcnow().isoformat() + "Z", "weeks": args.weeks, "trials": args.trials,
               "concentration": args.concentration, "seed": args.seed, "holdout_weeks": args.holdout_weeks,
-              "sweeps": {}}
+              "holdout_folds": len(test_folds) if test_folds else 0, "sweeps": {}}
 
     try:
         if args.sweep in ("blend", "both"):
             results = run_sweep("blend", RANKING_KEYS, baseline_ranking, None, baseline_categories,
                                 universe_data, benchmarks, train_dates, args.trials, args.concentration,
                                 args.top_n, args.monthly_contribution, args.report_lag_days)
-            if test_dates:
+            if test_folds:
                 evaluate_holdout("blend", results, args.holdout_top_k, None, baseline_categories,
-                                 universe_data, benchmarks, test_dates, args.top_n,
+                                 universe_data, benchmarks, test_folds, args.top_n,
                                  args.monthly_contribution, args.report_lag_days)
-            print_leaderboard("blend (fundamentals / behavior / news)", RANKING_KEYS, results, holdout=bool(test_dates))
+            print_leaderboard("blend (fundamentals / behavior / news)", RANKING_KEYS, results, holdout=bool(test_folds))
             output["sweeps"]["blend"] = results
 
         if args.sweep in ("categories", "both"):
             results = run_sweep("categories", CATEGORY_KEYS, baseline_categories, baseline_ranking, None,
                                 universe_data, benchmarks, train_dates, args.trials, args.concentration,
                                 args.top_n, args.monthly_contribution, args.report_lag_days)
-            if test_dates:
+            if test_folds:
                 evaluate_holdout("categories", results, args.holdout_top_k, baseline_ranking, None,
-                                 universe_data, benchmarks, test_dates, args.top_n,
+                                 universe_data, benchmarks, test_folds, args.top_n,
                                  args.monthly_contribution, args.report_lag_days)
-            print_leaderboard("fundamentals categories", CATEGORY_KEYS, results, holdout=bool(test_dates))
+            print_leaderboard("fundamentals categories", CATEGORY_KEYS, results, holdout=bool(test_folds))
             output["sweeps"]["categories"] = results
     finally:
         # Global scoring state was monkey-patched per trial above; always leave it as found.

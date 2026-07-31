@@ -109,7 +109,7 @@ class EvaluateHoldoutTests(unittest.TestCase):
         random.seed(4)
         benchmarks = {"SPY": {"dates": ["2025-01-06"], "closes": [500.0]}}
         train_dates = [__import__("datetime").date(2025, 1, 6)]
-        test_dates = [__import__("datetime").date(2025, 2, 3)]
+        test_folds = [[__import__("datetime").date(2025, 2, 3)], [__import__("datetime").date(2025, 3, 3)]]
         results = ow.run_sweep(
             "blend", ow.RANKING_KEYS, self.baseline_ranking, None, self.baseline_categories,
             {}, benchmarks, train_dates, trials=5, concentration=1.0,
@@ -117,15 +117,21 @@ class EvaluateHoldoutTests(unittest.TestCase):
         )
         ow.evaluate_holdout("blend", results, top_k=2, other_fixed_ranking=None,
                             other_fixed_categories=self.baseline_categories,
-                            universe_data={}, benchmarks=benchmarks, test_dates=test_dates,
+                            universe_data={}, benchmarks=benchmarks, test_folds=test_folds,
                             top_n=20, monthly_contribution=1000.0, report_lag_days=45)
 
-        checked = [r for r in results if "holdout_score_vs_spy" in r]
+        checked = [r for r in results if "holdout_folds" in r]
         # Top 2 finishers plus the baseline, unless the baseline is already in the top 2.
         self.assertLessEqual(len(checked), 3)
         self.assertTrue(any(r["is_baseline"] for r in checked))
         for r in checked:
-            self.assertIn("holdout_return_pct", r)
+            self.assertEqual(len(r["holdout_folds"]), 2)
+            self.assertIn("holdout_mean_score", r)
+            self.assertIn("holdout_min_score", r)
+        non_baseline = [r for r in checked if not r["is_baseline"]]
+        for r in non_baseline:
+            self.assertIn("holdout_folds_beating_baseline", r)
+            self.assertTrue(r["holdout_folds_beating_baseline"].endswith("/2"))
 
     def test_leaves_scoring_config_at_whatever_the_last_call_set(self):
         # evaluate_holdout doesn't restore state itself -- that's main()'s job via try/finally --
@@ -137,9 +143,27 @@ class EvaluateHoldoutTests(unittest.TestCase):
         ow.evaluate_holdout("blend", results, top_k=1, other_fixed_ranking=None,
                             other_fixed_categories=self.baseline_categories,
                             universe_data={}, benchmarks=benchmarks,
-                            test_dates=[__import__("datetime").date(2025, 2, 3)],
+                            test_folds=[[__import__("datetime").date(2025, 2, 3)]],
                             top_n=20, monthly_contribution=1000.0, report_lag_days=45)
         self.assertEqual(advisor_engine.RANKING_WEIGHTS, self.baseline_ranking)
+
+
+class SplitIntoFoldsTests(unittest.TestCase):
+    def test_single_fold_returns_the_whole_list(self):
+        dates = list(range(10))
+        self.assertEqual(ow.split_into_folds(dates, 1), [dates])
+
+    def test_splits_into_the_requested_number_of_consecutive_folds(self):
+        dates = list(range(10))
+        folds = ow.split_into_folds(dates, 3)
+        self.assertEqual(len(folds), 3)
+        self.assertEqual(sum(folds, []), dates)  # nothing lost or reordered
+
+    def test_remainder_merges_into_the_last_fold_rather_than_dropping(self):
+        dates = list(range(7))
+        folds = ow.split_into_folds(dates, 3)
+        self.assertEqual(len(folds), 3)
+        self.assertEqual(sum(folds, []), dates)
 
 
 if __name__ == "__main__":
