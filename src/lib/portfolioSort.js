@@ -11,6 +11,15 @@ export const PORTFOLIO_SORT_OPTIONS = [
   { key: 'cost', label: 'Average cost' },
   { key: 'price', label: 'Current price' },
   { key: 'purchaseDate', label: 'Purchase date' },
+  { key: 'invested', label: 'Amount invested' },
+  { key: 'spValue', label: 'S&P instead ($)' },
+  { key: 'spReturn', label: 'S&P return (%)' },
+  { key: 'dollarsAhead', label: 'Dollars ahead of S&P' },
+  { key: 'hypNow', label: '$ calculator: value now' },
+  { key: 'hypReturn', label: '$ calculator: return (%)' },
+  { key: 'hypSpValue', label: '$ calculator: S&P instead' },
+  { key: 'hypSpReturn', label: '$ calculator: S&P return (%)' },
+  { key: 'hypDollarsAhead', label: '$ calculator: dollars ahead' },
 ]
 
 const VALUE_FOR = {
@@ -31,6 +40,17 @@ const VALUE_FOR = {
   cost: (position) => position.costBasis,
   price: (position) => position.currentPrice,
   purchaseDate: (position) => position.purchaseDate,
+  invested: (position) => position.totalCost,
+  spValue: (position) => position.versusBenchmark?.value,
+  spReturn: (position) => position.versusBenchmark?.gainPct,
+  dollarsAhead: (position) => (
+    position.versusBenchmark ? position.currentValue - position.versusBenchmark.value : null
+  ),
+  hypNow: (position) => position.hypothetical?.stockValue,
+  hypReturn: (position) => position.hypothetical?.stockReturnPct,
+  hypSpValue: (position) => position.hypothetical?.benchmarkValue,
+  hypSpReturn: (position) => position.hypothetical?.benchmarkReturnPct,
+  hypDollarsAhead: (position) => position.hypothetical?.dollarsAhead,
 }
 
 export function sortPortfolioPositions(positions, key, direction = 'asc') {

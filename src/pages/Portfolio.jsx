@@ -136,6 +136,8 @@ export default function Portfolio() {
     .filter((row) => row.ticker && row.price != null)
     .map((row) => [String(row.ticker).trim().toUpperCase(), row]))
 
+  const basis = data?.hypothetical_basis || 500
+
   const portfolioStats = positions.reduce((acc, pos) => {
     const ticker = String(pos.ticker || '').trim().toUpperCase()
     const current = priceData[ticker]
@@ -164,6 +166,7 @@ export default function Portfolio() {
       recommendation,
       stopLoss: current ? stopLossLevels(riskPosition) : null,
       versusBenchmark: benchmarkAlternative({ ...pos, currentValue }, benchmarkHistory),
+      hypothetical: fixedBasisAlternative(pos, current?.history, benchmarkHistory, basis),
     }
     return {
       totalCost: acc.totalCost + totalCost,
@@ -178,7 +181,6 @@ export default function Portfolio() {
     : 0
 
   const versusIndex = portfolioVsBenchmark(portfolioStats.positions, benchmarkHistory)
-  const basis = data?.hypothetical_basis || 500
   const fixedBasisTotal = portfolioFixedBasisVsBenchmark(portfolioStats.positions, priceData, benchmarkHistory, basis)
   const growth = portfolioGrowthSeries(portfolioStats.positions, priceData, benchmarkHistory)
   const actionable = portfolioStats.positions.filter(
@@ -522,10 +524,14 @@ export default function Portfolio() {
           <table>
             <thead>
               <tr>
-                <th>Ticker</th><th className="num">Purchased</th><th className="num">Invested</th>
-                <th className="num">Now</th><th className="num">Return</th>
-                <th className="num">S&P instead</th><th className="num">S&P return</th>
-                <th className="num">Dollars ahead</th>
+                <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
+                <SortableHeader numeric sortKey="purchaseDate" sort={portfolioSort} onSort={setSortKey}>Purchased</SortableHeader>
+                <SortableHeader numeric sortKey="invested" sort={portfolioSort} onSort={setSortKey}>Invested</SortableHeader>
+                <SortableHeader numeric sortKey="value" sort={portfolioSort} onSort={setSortKey}>Now</SortableHeader>
+                <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
+                <SortableHeader numeric sortKey="spValue" sort={portfolioSort} onSort={setSortKey}>S&P instead</SortableHeader>
+                <SortableHeader numeric sortKey="spReturn" sort={portfolioSort} onSort={setSortKey}>S&P return</SortableHeader>
+                <SortableHeader numeric sortKey="dollarsAhead" sort={portfolioSort} onSort={setSortKey}>Dollars ahead</SortableHeader>
               </tr>
             </thead>
             <tbody>
@@ -598,15 +604,19 @@ export default function Portfolio() {
           <table>
             <thead>
               <tr>
-                <th>Ticker</th><th className="num">Purchased</th><th className="num">${basis} invested</th>
-                <th className="num">Now</th><th className="num">Return</th>
-                <th className="num">S&P instead</th><th className="num">S&P return</th>
-                <th className="num">Dollars ahead</th>
+                <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
+                <SortableHeader numeric sortKey="purchaseDate" sort={portfolioSort} onSort={setSortKey}>Purchased</SortableHeader>
+                <th className="num">${basis} invested</th>
+                <SortableHeader numeric sortKey="hypNow" sort={portfolioSort} onSort={setSortKey}>Now</SortableHeader>
+                <SortableHeader numeric sortKey="hypReturn" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
+                <SortableHeader numeric sortKey="hypSpValue" sort={portfolioSort} onSort={setSortKey}>S&P instead</SortableHeader>
+                <SortableHeader numeric sortKey="hypSpReturn" sort={portfolioSort} onSort={setSortKey}>S&P return</SortableHeader>
+                <SortableHeader numeric sortKey="hypDollarsAhead" sort={portfolioSort} onSort={setSortKey}>Dollars ahead</SortableHeader>
               </tr>
             </thead>
             <tbody>
               {sortedPositions.map((pos) => {
-                const calc = fixedBasisAlternative(pos, pos.priceInfo?.history, benchmarkHistory, basis)
+                const calc = pos.hypothetical
                 return (
                   <tr key={pos.id || pos.ticker}>
                     <td className="mono">{pos.ticker}</td>
