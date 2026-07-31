@@ -8,7 +8,7 @@ import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
-import { withStopLoss } from '../lib/positionRisk'
+import { stopLossLevels, withStopLoss } from '../lib/positionRisk'
 import { assessPortfolioExposure } from '../lib/portfolioExposure'
 import {
   benchmarkAlternative,
@@ -41,6 +41,21 @@ function recentReturn(values, points = 5) {
   const clean = (values || []).filter(Number.isFinite).slice(-points)
   if (clean.length < 2 || !clean[0]) return null
   return (clean.at(-1) / clean[0] - 1) * 100
+}
+
+/** Where the binding stop sits and how far away it is — visible before it's hit, not just after. */
+function StopLossNote({ stopLoss }) {
+  if (!stopLoss || stopLoss.bindingPrice == null) return null
+  const close = stopLoss.distancePct != null && stopLoss.distancePct <= 5
+  const past = stopLoss.distancePct != null && stopLoss.distancePct < 0
+  return (
+    <span className="mono stop-loss-note" style={{ color: past ? 'var(--neg)' : close ? 'var(--warn)' : 'var(--text-faint)', fontSize: 12 }}>
+      Stop ${stopLoss.bindingPrice.toFixed(2)}
+      {stopLoss.distancePct != null && (
+        past ? ` · ${Math.abs(stopLoss.distancePct).toFixed(1)}% past it` : ` · ${stopLoss.distancePct.toFixed(1)}% away`
+      )}
+    </span>
+  )
 }
 
 function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirection }) {
@@ -130,8 +145,9 @@ export default function Portfolio() {
     const gain = currentValue == null ? null : currentValue - totalCost
     const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-5) || []
     const gainPct = gain == null || !totalCost ? null : (gain / totalCost) * 100
+    const riskPosition = { gainPct, currentPrice, costBasis: pos.costBasis, purchaseDate: pos.purchaseDate, priceInfo: current }
     const recommendation = current
-      ? withStopLoss(getRecommendation(current), { gainPct, currentPrice, purchaseDate: pos.purchaseDate, priceInfo: current })
+      ? withStopLoss(getRecommendation(current), riskPosition)
       : null
     const enriched = {
       ...pos,
@@ -146,6 +162,7 @@ export default function Portfolio() {
       quoteSource: current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
       recommendation,
+      stopLoss: current ? stopLossLevels(riskPosition) : null,
       versusBenchmark: benchmarkAlternative({ ...pos, currentValue }, benchmarkHistory),
     }
     return {
@@ -410,6 +427,7 @@ export default function Portfolio() {
               <div className="holding-meta">
                 <span>{pos.shares} shares</span><span>Cost {money(pos.costBasis, 2)}</span>
                 <span>{pos.quoteSource || 'Live quote unavailable'}</span>
+                <StopLossNote stopLoss={pos.stopLoss} />
               </div>
               {pos.trendValues.length > 1 && (
                 <div className="holding-trend">
@@ -431,6 +449,7 @@ export default function Portfolio() {
                 <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
                 <SortableHeader sortKey="company" sort={portfolioSort} onSort={setSortKey}>Company</SortableHeader>
                 <SortableHeader sortKey="signal" sort={portfolioSort} onSort={setSortKey}>Signal</SortableHeader>
+                <th scope="col">Stop-loss</th>
                 <SortableHeader numeric sortKey="shares" sort={portfolioSort} onSort={setSortKey}>Shares</SortableHeader>
                 <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Cost</SortableHeader>
                 <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
@@ -448,6 +467,7 @@ export default function Portfolio() {
                   <td className="mono">{pos.ticker}</td>
                   <td>{pos.priceInfo?.name || '—'}</td>
                   <td><ActionPill recommendation={pos.recommendation} /></td>
+                  <td>{pos.stopLoss ? <StopLossNote stopLoss={pos.stopLoss} /> : <span className="mono">—</span>}</td>
                   <td className="mono num">{pos.shares}</td>
                   <td className="mono num">${pos.costBasis.toFixed(2)}</td>
                   <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
@@ -475,7 +495,7 @@ export default function Portfolio() {
               ))}
               {portfolioStats.positions.length === 0 && (
                 <tr>
-                  <td colSpan="12" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
+                  <td colSpan="13" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
                     No positions yet. Click "+ Add Position" to start tracking.
                   </td>
                 </tr>
@@ -651,6 +671,8 @@ export default function Portfolio() {
       {selectedStock && (
         <StockDetailModal
           stock={selectedStock.priceInfo || selectedStock}
+          recommendationOverride={selectedStock.recommendation}
+          stopLoss={selectedStock.stopLoss}
           position={selectedStock.shares
             ? { shares: selectedStock.shares, price: selectedStock.currentPrice, purchaseDate: selectedStock.purchaseDate }
             : null}
