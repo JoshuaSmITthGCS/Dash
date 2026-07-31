@@ -90,11 +90,14 @@ server-only environment variables in Netlify:
 - `GITHUB_REFRESH_TOKEN`: fine-grained token with Actions read/write access to this repository
 - `REFRESH_GITHUB_REPOSITORY`: repository in `owner/name` form
 - `REFRESH_ALLOWED_EMAILS`: comma-separated Firebase account emails allowed to start a run
-- `FIREBASE_SERVICE_ACCOUNT_JSON`: single-line Firebase service-account JSON
+- `FIREBASE_SERVICE_ACCOUNT_JSON`: complete Firebase service-account JSON
 
 The browser sends a Firebase ID token to the Netlify function. The GitHub token and service-account
 credential remain server-side. The function refuses duplicate runs and always dispatches
 `data-only`; Alpha Vantage can only be selected from the GitHub Actions manual form.
+
+See [Configure manual refresh on Netlify](docs/MANUAL_REFRESH_SETUP.md) for step-by-step instructions
+to create each value, add the variables safely, verify the live function, and troubleshoot errors.
 
 ## Quality controls
 
