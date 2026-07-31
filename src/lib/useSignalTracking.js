@@ -1,93 +1,99 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from './FirebaseAuthContext'
 import { db } from './firebase'
 import { logSignal, createEntrySignal, createExitSignal } from './backtestEngine'
 
+const SNAPSHOT_KEY = 'valuesignal.signalSnapshot'
+
+function readSnapshot() {
+  try { return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)) || null }
+  catch { return null }
+}
+
+function writeSnapshot(generatedAt, stocks) {
+  const snapshot = {
+    generatedAt,
+    stocks: stocks.map((stock, index) => ({
+      ticker: stock.ticker,
+      rank: index + 1,
+      stance: stock.stance,
+    })),
+  }
+  try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot)) } catch { /* storage unavailable */ }
+}
+
 /**
  * Signal Tracking Hook
  *
- * Automatically logs entry/exit signals when:
- * - Entry: Stock enters top 20 OR becomes "Attractive"/"Promising"
- * - Exit: Stock exits top 20 OR gets "SELL" recommendation
+ * Diffs each newly published refresh against the last refresh this browser saw
+ * (tracked in localStorage, so it survives reloads without needing a server round trip)
+ * and logs entry/exit signals to Firestore so /backtest has something real to replay:
+ * - Entry: stock enters the top 20 OR becomes "Attractive"/"Promising"
+ * - Exit: stock drops out of the top 20 OR receives a "SELL" stance
  *
- * Usage: Add to Dashboard.jsx or Picks.jsx to track signals in real-time
+ * Call once per page with the full ranked research array and the payload's generated_at.
  */
-export function useSignalTracking(currentStocks, previousStocks) {
+export function useSignalTracking(currentStocks, generatedAt) {
   const { currentUser } = useAuth()
-  const previousStocksRef = useRef(previousStocks)
 
   useEffect(() => {
-    if (!currentUser || !db || !currentStocks || !previousStocks) return
+    if (!currentUser || !db || !generatedAt || !currentStocks?.length) return
 
-    // Track stocks that have changed
-    const previousMap = new Map(previousStocks.map(s => [s.ticker, s]))
-    const currentMap = new Map(currentStocks.map(s => [s.ticker, s]))
+    const snapshot = readSnapshot()
+    if (snapshot?.generatedAt === generatedAt) return // already processed this refresh
 
-    // Get current top 20 by rank
-    const currentTop20 = currentStocks.slice(0, 20).map(s => s.ticker)
-    const previousTop20 = previousStocks.slice(0, 20).map(s => s.ticker)
+    const previousStocks = snapshot?.stocks || []
+    const previousMap = new Map(previousStocks.map((stock) => [stock.ticker, stock]))
+    const currentMap = new Map(currentStocks.map((stock) => [stock.ticker, stock]))
+    const currentTop20 = new Set(currentStocks.slice(0, 20).map((stock) => stock.ticker))
+    const previousTop20 = new Set(previousStocks.slice(0, 20).map((stock) => stock.ticker))
+    const isFirstSnapshot = previousStocks.length === 0
 
     const signals = []
 
-    // Check each stock in current universe
-    currentStocks.forEach((currentStock, index) => {
-      const previousStock = previousMap.get(currentStock.ticker)
+    currentStocks.forEach((stock, index) => {
       const rank = index + 1
+      const previous = previousMap.get(stock.ticker)
+      const wasInTop20 = previousTop20.has(stock.ticker)
+      const isNowInTop20 = currentTop20.has(stock.ticker)
+      const wasAttractive = previous?.stance === 'Attractive' || previous?.stance === 'Promising'
+      const isAttractive = stock.stance === 'Attractive' || stock.stance === 'Promising'
 
-      // Entry Signal Conditions:
-      // 1. Stock enters top 20 (wasn't in previous top 20)
-      // 2. Stock becomes "Attractive" or "Promising" (stance change)
-      const wasInTop20 = previousTop20.includes(currentStock.ticker)
-      const isNowInTop20 = currentTop20.includes(currentStock.ticker)
-
-      const wasAttractivePreviously = previousStock?.stance === 'Attractive' || previousStock?.stance === 'Promising'
-      const isAttractiveNow = currentStock.stance === 'Attractive' || currentStock.stance === 'Promising'
-
-      // Entry signal: enters top 20 OR becomes attractive
-      if ((!wasInTop20 && isNowInTop20) || (!wasAttractivePreviously && isAttractiveNow)) {
+      const enteredTop20 = !wasInTop20 && isNowInTop20
+      const upgraded = !wasAttractive && isAttractive
+      if (isFirstSnapshot ? isNowInTop20 : (enteredTop20 || upgraded)) {
         signals.push({
-          type: 'entry',
-          signal: createEntrySignal(currentStock, rank),
-          reason: !wasInTop20 && isNowInTop20 ? 'entered_top_20' : 'stance_upgrade'
+          signal: createEntrySignal(stock, rank),
+          reason: isFirstSnapshot ? 'initial_snapshot' : enteredTop20 ? 'entered_top_20' : 'stance_upgrade',
         })
       }
     })
 
-    // Check for exit signals
-    previousStocks.forEach(previousStock => {
-      const currentStock = currentMap.get(previousStock.ticker)
+    if (!isFirstSnapshot) {
+      previousStocks.forEach((previous) => {
+        const current = currentMap.get(previous.ticker)
+        const wasInTop20 = previousTop20.has(previous.ticker)
+        const isStillInTop20 = currentTop20.has(previous.ticker)
+        const isSellNow = current?.stance === 'SELL'
 
-      const wasInTop20 = previousTop20.includes(previousStock.ticker)
-      const isStillInTop20 = currentTop20.includes(previousStock.ticker)
+        const droppedOut = wasInTop20 && !isStillInTop20
+        const newSell = previous.stance !== 'SELL' && isSellNow
+        if (droppedOut || newSell) {
+          signals.push({
+            signal: createExitSignal(current || previous, droppedOut ? 'dropped_out' : 'sell_signal'),
+            reason: droppedOut ? 'dropped_out_top_20' : 'sell_signal',
+          })
+        }
+      })
+    }
 
-      const wasSellPreviously = previousStock.stance === 'SELL'
-      const isSellNow = currentStock?.stance === 'SELL'
-
-      // Exit signal: drops out of top 20 OR becomes SELL
-      if ((wasInTop20 && !isStillInTop20) || (!wasSellPreviously && isSellNow)) {
-        const exitStock = currentStock || previousStock
-        signals.push({
-          type: 'exit',
-          signal: createExitSignal(exitStock, wasInTop20 && !isStillInTop20 ? 'dropped_out' : 'sell_signal'),
-          reason: wasInTop20 && !isStillInTop20 ? 'dropped_out_top_20' : 'sell_signal'
-        })
-      }
-    })
-
-    // Log all signals to Firestore
     signals.forEach(async ({ signal, reason }) => {
       const result = await logSignal(signal, db, currentUser)
-      if (result.success) {
-        console.log(`✓ Logged ${signal.type} signal for ${signal.ticker}:`, reason)
-      } else {
-        console.error(`✗ Failed to log signal for ${signal.ticker}:`, result.error)
-      }
+      if (!result.success) console.error(`Failed to log ${signal.type} signal for ${signal.ticker} (${reason}):`, result.error)
     })
 
-    // Update ref for next comparison
-    previousStocksRef.current = currentStocks
-
-  }, [currentStocks, previousStocks, currentUser])
+    writeSnapshot(generatedAt, currentStocks)
+  }, [currentStocks, generatedAt, currentUser])
 }
 
 /**
