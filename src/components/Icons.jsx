@@ -18,6 +18,7 @@ const paths = {
   sync: <><path d="M20 7h-5V2"/><path d="M20 7a8 8 0 1 0 1 8"/></>,
   download: <><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></>,
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>,
+  glossary: <><path d="M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M6 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"/><path d="M9 8h7M9 11.5h7"/></>,
 }
 
 export default function Icon({ name, size = 20, className = '', ...props }) {

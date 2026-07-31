@@ -9,6 +9,7 @@ import { getRecommendation } from '../lib/recommendation'
 import { humanDate } from '../lib/formatters'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
+import { useSignalTracking } from '../lib/useSignalTracking'
 import { rankMomentum, rankValueTurnarounds } from '../lib/researchScreens'
 
 const WATCH_KEY = 'valuesignal.watchlist'
@@ -110,6 +111,7 @@ export default function Dashboard() {
     catch { return ['AAPL', 'MSFT'] }
   }, [])
   const refresh = useAdvisorRefresh(data?.generated_at, reload, watchlist)
+  useSignalTracking(data?.research, data?.generated_at)
 
   if (loading) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset yet — run python pipeline/fetch_advisor.py." />
