@@ -8,6 +8,7 @@ import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
+import { withStopLoss } from '../lib/positionRisk'
 import {
   benchmarkAlternative,
   fixedBasisAlternative,
@@ -127,6 +128,10 @@ export default function Portfolio() {
     const currentValue = currentPrice == null ? null : pos.shares * currentPrice
     const gain = currentValue == null ? null : currentValue - totalCost
     const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-5) || []
+    const gainPct = gain == null || !totalCost ? null : (gain / totalCost) * 100
+    const recommendation = current
+      ? withStopLoss(getRecommendation(current), { gainPct, currentPrice, purchaseDate: pos.purchaseDate, priceInfo: current })
+      : null
     const enriched = {
       ...pos,
       ticker,
@@ -134,12 +139,12 @@ export default function Portfolio() {
       totalCost,
       currentValue,
       gain,
-      gainPct: gain == null || !totalCost ? null : (gain / totalCost) * 100,
+      gainPct,
       trendValues,
       trendPct: recentReturn(trendValues),
       quoteSource: current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
-      recommendation: current ? getRecommendation(current) : null,
+      recommendation,
       versusBenchmark: benchmarkAlternative({ ...pos, currentValue }, benchmarkHistory),
     }
     return {
