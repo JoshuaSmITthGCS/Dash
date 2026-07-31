@@ -5,6 +5,7 @@ import Picks from './pages/Picks.jsx'
 import PolicyRadar from './pages/PolicyRadar.jsx'
 import Watchlist from './pages/Watchlist.jsx'
 import Methodology from './pages/Methodology.jsx'
+import Glossary from './pages/Glossary.jsx'
 import Portfolio from './pages/Portfolio.jsx'
 import Backtest from './pages/Backtest.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -21,6 +22,7 @@ const NAV = [
   { to: '/market', label: 'Market Pulse', icon: 'market' },
   { to: '/backtest', label: 'Backtest', icon: 'backtest', requireAuth: true },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
+  { to: '/glossary', label: 'Glossary', icon: 'glossary' },
 ]
 
 function ProfilePanel() {
@@ -116,6 +118,7 @@ function AppContent() {
           <Route path="/backtest" element={currentUser ? <Backtest /> : <Dashboard />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
+          <Route path="/glossary" element={<Glossary />} />
         </Routes>
       </main>
 
