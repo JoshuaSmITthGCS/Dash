@@ -166,19 +166,53 @@ def run_sweep(name, keys, baseline, other_fixed_ranking, other_fixed_categories,
     return results
 
 
-def print_leaderboard(name, keys, results, top=10):
+def evaluate_holdout(name, results, top_k, other_fixed_ranking, other_fixed_categories, universe_data,
+                     benchmarks, test_dates, top_n, monthly_contribution, report_lag_days):
+    """Re-score the top-K training winners (plus the baseline) on weeks the search never touched.
+
+    A weight vector that only wins on the weeks it was searched against is fit to that specific
+    history, not evidence of a better methodology -- this is the check for that. Mutates and
+    returns the same result dicts with holdout_* fields attached.
+    """
+    baseline = next(r for r in results if r["is_baseline"])
+    to_check = {id(r): r for r in results[:top_k]}
+    to_check[id(baseline)] = baseline
+
+    for r in to_check.values():
+        ranking_weights = r["weights"] if name == "blend" else other_fixed_ranking
+        category_weights = r["weights"] if name == "categories" else other_fixed_categories
+        outcome = run_trial(universe_data, benchmarks, test_dates, ranking_weights, category_weights,
+                            top_n, monthly_contribution, report_lag_days)
+        r["holdout_return_pct"] = outcome["return_pct"]
+        r["holdout_score_vs_spy"] = outcome["score_vs_spy"]
+    return results
+
+
+def print_leaderboard(name, keys, results, top=10, holdout=False):
     baseline = next(r for r in results if r["is_baseline"])
     baseline_rank = next(i for i, r in enumerate(results, 1) if r["is_baseline"])
     print(f"\n{'=' * 88}\n{name.upper()} SWEEP -- {len(results) - 1} random trials + baseline\n{'=' * 88}")
-    print(f"{'#':>3} {'score':>6} {'return':>8} {'final $':>12}  " + "  ".join(f"{k[:10]:>10}" for k in keys))
+    holdout_header = f" {'holdout':>8} {'ho.score':>8}" if holdout else ""
+    print(f"{'#':>3} {'score':>6} {'return':>8} {'final $':>12}{holdout_header}  " + "  ".join(f"{k[:10]:>10}" for k in keys))
     for rank, r in enumerate(results[:top], 1):
         tag = " <- BASELINE (today's config)" if r["is_baseline"] else ""
         score = "—" if r["score_vs_spy"] is None else f"{r['score_vs_spy']:.1f}"
         ret = "—" if r["return_pct"] is None else f"{r['return_pct']:+.1f}%"
         weights_str = "  ".join(f"{r['weights'][k] * 100:9.1f}%" for k in keys)
-        print(f"{rank:>3} {score:>6} {ret:>8} {r['final_value']:>12,.0f}  {weights_str}{tag}")
+        holdout_cols = ""
+        if holdout:
+            ho_ret = r.get("holdout_return_pct")
+            ho_score = r.get("holdout_score_vs_spy")
+            holdout_cols = (f" {('—' if ho_ret is None else f'{ho_ret:+.1f}%'):>8}"
+                            f" {('—' if ho_score is None else f'{ho_score:.1f}'):>8}")
+        print(f"{rank:>3} {score:>6} {ret:>8} {r['final_value']:>12,.0f}{holdout_cols}  {weights_str}{tag}")
     print(f"\nBaseline (today's weights) ranked #{baseline_rank} of {len(results)} "
           f"-- score {baseline['score_vs_spy']}, return {baseline['return_pct']:+.1f}%.")
+    if holdout:
+        base_ho = baseline.get("holdout_score_vs_spy")
+        print(f"Baseline holdout score: {'—' if base_ho is None else base_ho} "
+              "(compare each row's 'ho.score' against this -- a real edge beats it there too, "
+              "not just on the weeks it was searched against).")
 
 
 # ---------------- entry point ----------------
@@ -199,6 +233,14 @@ def main():
                         help="Dirichlet concentration for the random draws (1.0 = uniform over the simplex)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed, for a reproducible sweep")
     parser.add_argument("--refresh-cache", action="store_true", help="Re-fetch candidate data instead of using the cache")
+    parser.add_argument("--holdout-weeks", type=int, default=0,
+                        help="Reserve the most recent N weeks as a holdout: the sweep searches only the "
+                             "earlier weeks, then the top finishers are re-scored on the weeks the search "
+                             "never saw. 0 disables this (the default) and searches the full window, which "
+                             "will happily find weights that fit that exact history -- use a holdout before "
+                             "trusting a result enough to act on it.")
+    parser.add_argument("--holdout-top-k", type=int, default=10,
+                        help="How many top training finishers (plus the baseline) get holdout-checked")
     parser.add_argument("--out", type=str, default=os.path.join(HERE, "optimize_weights_results.json"))
     args = parser.parse_args()
 
@@ -213,23 +255,40 @@ def main():
         symbols, ["SPY"], args.delay, args.weeks, args.report_lag_days, args.refresh_cache,
     )
     week_dates = bt.weekly_dates(args.weeks)
+    if args.holdout_weeks:
+        if args.holdout_weeks >= len(week_dates):
+            LOG.error(f"--holdout-weeks ({args.holdout_weeks}) must be smaller than --weeks ({args.weeks})")
+            sys.exit(1)
+        train_dates, test_dates = week_dates[:-args.holdout_weeks], week_dates[-args.holdout_weeks:]
+        LOG.info(f"Searching on {len(train_dates)} weeks, holding out the most recent {len(test_dates)} for validation")
+    else:
+        train_dates, test_dates = week_dates, None
 
     output = {"generated_at": datetime.utcnow().isoformat() + "Z", "weeks": args.weeks, "trials": args.trials,
-              "concentration": args.concentration, "seed": args.seed, "sweeps": {}}
+              "concentration": args.concentration, "seed": args.seed, "holdout_weeks": args.holdout_weeks,
+              "sweeps": {}}
 
     try:
         if args.sweep in ("blend", "both"):
             results = run_sweep("blend", RANKING_KEYS, baseline_ranking, None, baseline_categories,
-                                universe_data, benchmarks, week_dates, args.trials, args.concentration,
+                                universe_data, benchmarks, train_dates, args.trials, args.concentration,
                                 args.top_n, args.monthly_contribution, args.report_lag_days)
-            print_leaderboard("blend (fundamentals / behavior / news)", RANKING_KEYS, results)
+            if test_dates:
+                evaluate_holdout("blend", results, args.holdout_top_k, None, baseline_categories,
+                                 universe_data, benchmarks, test_dates, args.top_n,
+                                 args.monthly_contribution, args.report_lag_days)
+            print_leaderboard("blend (fundamentals / behavior / news)", RANKING_KEYS, results, holdout=bool(test_dates))
             output["sweeps"]["blend"] = results
 
         if args.sweep in ("categories", "both"):
             results = run_sweep("categories", CATEGORY_KEYS, baseline_categories, baseline_ranking, None,
-                                universe_data, benchmarks, week_dates, args.trials, args.concentration,
+                                universe_data, benchmarks, train_dates, args.trials, args.concentration,
                                 args.top_n, args.monthly_contribution, args.report_lag_days)
-            print_leaderboard("fundamentals categories", CATEGORY_KEYS, results)
+            if test_dates:
+                evaluate_holdout("categories", results, args.holdout_top_k, baseline_ranking, None,
+                                 universe_data, benchmarks, test_dates, args.top_n,
+                                 args.monthly_contribution, args.report_lag_days)
+            print_leaderboard("fundamentals categories", CATEGORY_KEYS, results, holdout=bool(test_dates))
             output["sweeps"]["categories"] = results
     finally:
         # Global scoring state was monkey-patched per trial above; always leave it as found.
