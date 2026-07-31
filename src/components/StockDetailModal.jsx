@@ -110,23 +110,23 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         </div>
 
         {thesis && (
-          <section className="bull-bear-detail" aria-label={`Bull bear thesis score ${thesis.score} out of 5`}>
+          <section className="bull-bear-detail" aria-label={`Bull bear thesis score ${thesis.score} out of 10`}>
             <div>
               <span>Bull / bear thesis</span>
               <strong className="mono" style={{
-                color: thesis.score === 0 ? 'var(--text-dim)' : moveColor(thesis.score),
+                color: thesis.score === 5 ? 'var(--text-dim)' : moveColor(thesis.score - 5),
               }}>
-                {thesis.score > 0 ? '+' : ''}{thesis.score}
+                {thesis.score.toFixed(1)}
               </strong>
-              <small>−5 bearish · 0 neutral · +5 bullish</small>
+              <small>0 bearish · 5 neutral · 10 bullish</small>
             </div>
             <div className="bull-bear-track" aria-hidden="true">
               <span className="bull-bear-zero" />
               <span
-                className={thesis.score >= 0 ? 'positive' : 'negative'}
+                className={thesis.score >= 5 ? 'positive' : 'negative'}
                 style={{
-                  left: thesis.score >= 0 ? '50%' : `${50 + thesis.score * 10}%`,
-                  width: `${Math.abs(thesis.score) * 10}%`,
+                  left: thesis.score >= 5 ? '50%' : `${thesis.score * 10}%`,
+                  width: `${Math.abs(thesis.score - 5) * 10}%`,
                 }}
               />
             </div>

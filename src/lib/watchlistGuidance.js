@@ -11,7 +11,7 @@ export function watchlistGuidance(stock, budget = null, maxPositionPct = 5) {
   const blockedAction = ['TRIM', 'SELL'].includes(stock.recommendation?.action)
   const buySetup = Boolean(
     thesis
-    && thesis.score >= 1
+    && thesis.score >= 5.5
     && stock.score >= 65
     && stock.confidence >= 0.5
     && technical.return_20d > 0

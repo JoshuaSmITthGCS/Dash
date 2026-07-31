@@ -104,7 +104,7 @@ export default function Watchlist() {
                   </div>
                   <div className={`watchlist-verdict ${guidance.buySetup ? 'buy' : 'wait'}`}>
                     <strong>{guidance.verdict}</strong>
-                    <span>Bull/bear thesis {guidance.thesisScore == null ? '—' : `${guidance.thesisScore > 0 ? '+' : ''}${guidance.thesisScore}`}</span>
+                    <span>Bull/bear thesis {guidance.thesisScore == null ? '—' : `${guidance.thesisScore.toFixed(1)} / 10`}</span>
                   </div>
                   <div className="watchlist-plan">
                     <div>
