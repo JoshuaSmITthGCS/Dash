@@ -41,6 +41,28 @@ function recentReturn(values, points = 5) {
   return (clean.at(-1) / clean[0] - 1) * 100
 }
 
+function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirection }) {
+  return (
+    <div className="portfolio-sort-toolbar" aria-label="Portfolio sorting controls">
+      <label>
+        <span>Sort holdings</span>
+        <select value={sort.key} onChange={(event) => onSortKey(event.target.value)}>
+          {PORTFOLIO_SORT_OPTIONS.map((option) => (
+            <option key={option.key} value={option.key}>{option.label}</option>
+          ))}
+        </select>
+      </label>
+      <button
+        className="secondary-button portfolio-sort-direction"
+        onClick={onToggleDirection}
+        aria-label={`Reverse ${selectedLabel || 'portfolio'} sort order`}
+      >
+        {sort.direction === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
+      </button>
+    </div>
+  )
+}
+
 function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
   const active = sort.key === sortKey
   return (
@@ -144,6 +166,10 @@ export default function Portfolio() {
     portfolioSort.direction,
   )
   const setSortKey = (key) => setPortfolioSort((current) => nextPortfolioSort(current, key))
+  const toggleSortDirection = () => setPortfolioSort((current) => ({
+    ...current,
+    direction: current.direction === 'asc' ? 'desc' : 'asc',
+  }))
   const selectedSort = PORTFOLIO_SORT_OPTIONS.find((option) => option.key === portfolioSort.key)
 
   const handleSubmit = (e) => {
@@ -338,29 +364,12 @@ export default function Portfolio() {
 
       {viewMode === 'holdings' && (
         <>
-        <div className="portfolio-sort-toolbar" aria-label="Portfolio sorting controls">
-          <label>
-            <span>Sort holdings</span>
-            <select
-              value={portfolioSort.key}
-              onChange={(event) => setSortKey(event.target.value)}
-            >
-              {PORTFOLIO_SORT_OPTIONS.map((option) => (
-                <option key={option.key} value={option.key}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-          <button
-            className="secondary-button portfolio-sort-direction"
-            onClick={() => setPortfolioSort((current) => ({
-              ...current,
-              direction: current.direction === 'asc' ? 'desc' : 'asc',
-            }))}
-            aria-label={`Reverse ${selectedSort?.label || 'portfolio'} sort order`}
-          >
-            {portfolioSort.direction === 'asc' ? 'Ascending ↑' : 'Descending ↓'}
-          </button>
-        </div>
+        <PortfolioSortToolbar
+          sort={portfolioSort}
+          selectedLabel={selectedSort?.label}
+          onSortKey={setSortKey}
+          onToggleDirection={toggleSortDirection}
+        />
         <div className="portfolio-mobile-list">
           {sortedPositions.map((pos) => (
             <article className="holding-card" key={pos.id || pos.ticker}>
@@ -452,6 +461,13 @@ export default function Portfolio() {
       )}
 
       {viewMode === 'benchmark' && (
+        <>
+        <PortfolioSortToolbar
+          sort={portfolioSort}
+          selectedLabel={selectedSort?.label}
+          onSortKey={setSortKey}
+          onToggleDirection={toggleSortDirection}
+        />
         <div className="card card-pad table-wrap">
           <div className="callout" style={{ margin: '0 0 16px' }}>
             <strong>The only fair comparison:</strong> what each position is worth now against
@@ -515,9 +531,17 @@ export default function Portfolio() {
             against the wrong entry price.
           </p>
         </div>
+        </>
       )}
 
       {viewMode === 'hypothetical' && (
+        <>
+        <PortfolioSortToolbar
+          sort={portfolioSort}
+          selectedLabel={selectedSort?.label}
+          onSortKey={setSortKey}
+          onToggleDirection={toggleSortDirection}
+        />
         <div className="card card-pad table-wrap">
           <div className="callout" style={{ margin: '0 0 16px' }}>
             <strong>${basis} calculator:</strong> what ${basis} would be worth today if it went into
@@ -595,6 +619,7 @@ export default function Portfolio() {
             against the wrong entry price.
           </p>
         </div>
+        </>
       )}
 
       {selectedStock && (
