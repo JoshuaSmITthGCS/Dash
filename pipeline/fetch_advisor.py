@@ -29,7 +29,7 @@ EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
 PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
-NEWS_DISCOVERY_LIMIT = 50
+NEWS_DISCOVERY_LIMIT = 75
 
 
 def resolve_refresh_symbols(
@@ -270,7 +270,7 @@ def fetch_discovery_news(client, symbols, limit=NEWS_DISCOVERY_LIMIT):
     return advisor_articles_for_symbols(payload, selected)
 
 
-def curate_candidate_news(items, research_context, limit=40, discovery_slots=15):
+def curate_candidate_news(items, research_context, limit=70, discovery_slots=25):
     """Reserve room for broader candidates so leader coverage cannot crowd them out."""
     annotated = [
         {**item, **research_context.get(item.get("ticker"), {})}
