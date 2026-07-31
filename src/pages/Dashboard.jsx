@@ -143,8 +143,11 @@ export default function Dashboard() {
     .sort((left, right) => right.trendReturn - left.trendReturn)
   const strengthening = trendRows.slice(0, 2)
   const cooling = trendRows.slice(-2).reverse()
-  const valueTurnarounds = rankValueTurnarounds(rows)
-  const momentumLeaders = rankMomentum(rows)
+  // The screens rank on price behavior, not the fundamentals-led composite score used to
+  // decide which names get published, so scan the full scored universe, not just the leaderboard.
+  const screenRows = [...rows, ...(data.screen_universe || [])]
+  const valueTurnarounds = rankValueTurnarounds(screenRows)
+  const momentumLeaders = rankMomentum(screenRows)
 
   return (
     <>

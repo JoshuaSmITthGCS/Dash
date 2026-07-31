@@ -30,7 +30,8 @@ export function bullBearScore(stock) {
   ) / availableWeight
 
   return {
-    score: clamp(Math.round((composite - 50) / 10), -5, 5),
+    // 0 = fully bearish, 5 = neutral, 10 = fully bullish. One decimal of precision.
+    score: clamp(Math.round(composite) / 10, 0, 10),
     composite: Math.round(composite * 10) / 10,
     coverage: Math.round((availableWeight / FACTORS.reduce((sum, factor) => sum + factor[1], 0)) * 100),
     factors: available,

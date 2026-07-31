@@ -8,6 +8,8 @@ import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
+import { withStopLoss } from '../lib/positionRisk'
+import { assessPortfolioExposure } from '../lib/portfolioExposure'
 import {
   benchmarkAlternative,
   fixedBasisAlternative,
@@ -127,6 +129,10 @@ export default function Portfolio() {
     const currentValue = currentPrice == null ? null : pos.shares * currentPrice
     const gain = currentValue == null ? null : currentValue - totalCost
     const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-5) || []
+    const gainPct = gain == null || !totalCost ? null : (gain / totalCost) * 100
+    const recommendation = current
+      ? withStopLoss(getRecommendation(current), { gainPct, currentPrice, purchaseDate: pos.purchaseDate, priceInfo: current })
+      : null
     const enriched = {
       ...pos,
       ticker,
@@ -134,12 +140,12 @@ export default function Portfolio() {
       totalCost,
       currentValue,
       gain,
-      gainPct: gain == null || !totalCost ? null : (gain / totalCost) * 100,
+      gainPct,
       trendValues,
       trendPct: recentReturn(trendValues),
       quoteSource: current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
-      recommendation: current ? getRecommendation(current) : null,
+      recommendation,
       versusBenchmark: benchmarkAlternative({ ...pos, currentValue }, benchmarkHistory),
     }
     return {
@@ -160,6 +166,7 @@ export default function Portfolio() {
   const growth = portfolioGrowthSeries(portfolioStats.positions, priceData, benchmarkHistory)
   const actionable = portfolioStats.positions.filter(
     (pos) => pos.recommendation && pos.recommendation.action !== 'HOLD')
+  const exposure = assessPortfolioExposure(portfolioStats.positions)
   const sortedPositions = sortPortfolioPositions(
     portfolioStats.positions,
     portfolioSort.key,
@@ -282,6 +289,25 @@ export default function Portfolio() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {exposure.warnings.length > 0 && (
+        <div className="card card-pad" style={{ marginBottom: 20, borderColor: 'var(--warn)' }}>
+          <div className="sec-label">Concentration risk</div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {exposure.warnings.map((warning) => (
+              <div key={`${warning.type}-${warning.label}`} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span className="mono" style={{ color: 'var(--warn)', fontWeight: 600 }}>{warning.pct.toFixed(1)}%</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 13 }}>{warning.message}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--text-faint)', fontSize: 11, marginTop: 10 }}>
+            Illustrative guidelines only ({exposure.maxPositionPct}% per position, {exposure.maxSectorPct}% per
+            sector) — not a rule to force a sale, but a prompt to size new buys and rebalancing with the
+            concentration you already carry in mind.
+          </p>
         </div>
       )}
 

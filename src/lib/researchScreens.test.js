@@ -42,12 +42,12 @@ describe('momentum screen', () => {
 })
 
 describe('bull/bear thesis score', () => {
-  it('maps the weighted evidence onto the minus-five to plus-five scale', () => {
+  it('maps the weighted evidence onto the zero to ten scale', () => {
     expect(bullBearScore({
       components: { fundamentals: 90, market_behavior: 80, news_sentiment: 70 },
       sentiment_detail: { coverage: 1 },
       technical_detail: { risk: 60 },
-    })).toMatchObject({ score: 3, composite: 80, coverage: 100 })
+    })).toMatchObject({ score: 8, composite: 80, coverage: 100 })
   })
 
   it('does not count placeholder sentiment as real evidence', () => {
@@ -55,7 +55,7 @@ describe('bull/bear thesis score', () => {
       components: { fundamentals: 90, market_behavior: 80, news_sentiment: 50 },
       sentiment_detail: { coverage: 0 },
       technical_detail: { risk: 60 },
-    })).toMatchObject({ score: 3, composite: 82.5, coverage: 80 })
+    })).toMatchObject({ score: 8.3, composite: 82.5, coverage: 80 })
   })
 
   it('returns no score when evidence is unavailable', () => {

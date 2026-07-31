@@ -65,6 +65,17 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         relative = ret_20 - bench_ret
     confirmation = volume_confirmation(closes, volumes)
     from_high = extended.get("pct_from_52w_high")
+    above_low = extended.get("pct_above_52w_low")
+    # Statement enrichment (the source of the fields above) only runs for a shortlist. Every
+    # candidate already has two years of closes, so fall back to a price-derived 52-week range
+    # rather than leaving the rest of the universe without high/low context.
+    if (from_high is None or above_low is None) and len(closes) >= 200:
+        year_window = closes[-252:]
+        year_high, year_low = max(year_window), min(year_window)
+        if from_high is None and year_high:
+            from_high = round((last / year_high - 1) * 100, 2)
+        if above_low is None and year_low:
+            above_low = round((last / year_low - 1) * 100, 2)
 
     trend_score = clamp(50 + ret_20 * 2 + ((ret_60 or 0) * 0.5))
     risk_score = clamp(100 - max(0, vol - 12) * 2 - abs(min(0, drawdown)) * 1.5)
@@ -84,7 +95,7 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         "max_drawdown_252d": drawdown_252,
         "relative_strength_20d": round(relative, 2) if relative is not None else None,
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
-        "pct_above_52w_low": extended.get("pct_above_52w_low"), "beta": extended.get("beta"),
+        "pct_above_52w_low": above_low, "beta": extended.get("beta"),
         **{name: round(value, 1) for name, (value, _) in parts.items()},
         "coverage": round(0.7 + (0.15 if volumes else 0) + (0.15 if len(closes) >= 253 else 0), 2),
     }

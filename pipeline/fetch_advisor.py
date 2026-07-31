@@ -29,7 +29,7 @@ EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
 PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
-NEWS_DISCOVERY_LIMIT = 50
+NEWS_DISCOVERY_LIMIT = 75
 
 
 def resolve_refresh_symbols(
@@ -270,7 +270,7 @@ def fetch_discovery_news(client, symbols, limit=NEWS_DISCOVERY_LIMIT):
     return advisor_articles_for_symbols(payload, selected)
 
 
-def curate_candidate_news(items, research_context, limit=40, discovery_slots=15):
+def curate_candidate_news(items, research_context, limit=70, discovery_slots=25):
     """Reserve room for broader candidates so leader coverage cannot crowd them out."""
     annotated = [
         {**item, **research_context.get(item.get("ticker"), {})}
@@ -610,6 +610,20 @@ def run():
 
     research.sort(key=lambda row: row["score"], reverse=True)
     ranked = research[:publish_limit]
+    # The momentum and 52-week-low screens rank on price behavior, not the fundamentals-led
+    # composite score, so a strong screen candidate can rank outside the published leaderboard.
+    # technical_detail and fundamental_categories are populated for the whole scored universe
+    # (see technical_factors' closes-based 52-week fallback above), so publish a lightweight,
+    # history-free slice of the rest of the universe for those screens to scan.
+    screen_universe = [
+        {
+            "ticker": row["ticker"], "name": row["name"], "sector": row.get("sector"),
+            "price": row.get("price"), "score": row["score"], "stance": row["stance"],
+            "components": row["components"], "fundamental_categories": row["fundamental_categories"],
+            "technical_detail": row["technical_detail"],
+        }
+        for row in research[publish_limit:]
+    ]
     # Publish every configured holding explicitly. A provider can temporarily stop resolving
     # a symbol (for example, an expired structured product); omitting that row made the UI look
     # as if the user's holding itself had disappeared. A stale prior row is preferable, and a
@@ -677,6 +691,7 @@ def run():
         "benchmark_history": {"symbol": "SPY", "dates": grid, **(benchmark_series or {})},
         "hypothetical_basis": BASIS,
         "research": ranked,
+        "screen_universe": screen_universe,
         "portfolio_coverage": portfolio_coverage,
         "news": published_news,
         "capability_status": {

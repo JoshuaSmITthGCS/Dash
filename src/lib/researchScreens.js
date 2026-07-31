@@ -27,7 +27,9 @@ export function rankValueTurnarounds(rows, limit = 5) {
     .map((row) => {
       const fundamentals = row.components?.fundamentals
       const valuation = row.fundamental_categories?.valuation
-      const weekReturn = trailingWeekReturn(row)
+      const weekReturn = finite(row.technical_detail?.return_5d)
+        ? row.technical_detail.return_5d
+        : trailingWeekReturn(row)
       const aboveLow = finite(row.technical_detail?.pct_above_52w_low)
         ? row.technical_detail.pct_above_52w_low
         : distanceAbove52WeekLow(row)
