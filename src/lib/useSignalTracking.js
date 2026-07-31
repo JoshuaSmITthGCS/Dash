@@ -2,8 +2,10 @@ import { useEffect } from 'react'
 import { useAuth } from './FirebaseAuthContext'
 import { db } from './firebase'
 import { logSignal, createEntrySignal, createExitSignal } from './backtestEngine'
+import { getRecommendation } from './recommendation'
 
 const SNAPSHOT_KEY = 'valuesignal.signalSnapshot'
+const ATTRACTIVE_STANCES = new Set(['ATTRACTIVE', 'PROMISING'])
 
 function readSnapshot() {
   try { return JSON.parse(localStorage.getItem(SNAPSHOT_KEY)) || null }
@@ -17,6 +19,7 @@ function writeSnapshot(generatedAt, stocks) {
       ticker: stock.ticker,
       rank: index + 1,
       stance: stock.stance,
+      action: getRecommendation(stock)?.action,
     })),
   }
   try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot)) } catch { /* storage unavailable */ }
@@ -28,8 +31,12 @@ function writeSnapshot(generatedAt, stocks) {
  * Diffs each newly published refresh against the last refresh this browser saw
  * (tracked in localStorage, so it survives reloads without needing a server round trip)
  * and logs entry/exit signals to Firestore so /backtest has something real to replay:
- * - Entry: stock enters the top 20 OR becomes "Attractive"/"Promising"
- * - Exit: stock drops out of the top 20 OR receives a "SELL" stance
+ * - Entry: stock enters the top 20 OR its stance becomes ATTRACTIVE/PROMISING
+ * - Exit: stock drops out of the top 20 OR its guidance action becomes SELL
+ *
+ * Stance values from the pipeline are uppercase ("ATTRACTIVE"/"PROMISING"/"MIXED"/"CAUTION"),
+ * and SELL/TRIM/WATCH/HOLD live on the guidance action (getRecommendation), not on stance —
+ * they are two different fields.
  *
  * Call once per page with the full ranked research array and the payload's generated_at.
  */
@@ -56,8 +63,8 @@ export function useSignalTracking(currentStocks, generatedAt) {
       const previous = previousMap.get(stock.ticker)
       const wasInTop20 = previousTop20.has(stock.ticker)
       const isNowInTop20 = currentTop20.has(stock.ticker)
-      const wasAttractive = previous?.stance === 'Attractive' || previous?.stance === 'Promising'
-      const isAttractive = stock.stance === 'Attractive' || stock.stance === 'Promising'
+      const wasAttractive = ATTRACTIVE_STANCES.has(previous?.stance)
+      const isAttractive = ATTRACTIVE_STANCES.has(stock.stance)
 
       const enteredTop20 = !wasInTop20 && isNowInTop20
       const upgraded = !wasAttractive && isAttractive
@@ -74,10 +81,10 @@ export function useSignalTracking(currentStocks, generatedAt) {
         const current = currentMap.get(previous.ticker)
         const wasInTop20 = previousTop20.has(previous.ticker)
         const isStillInTop20 = currentTop20.has(previous.ticker)
-        const isSellNow = current?.stance === 'SELL'
+        const isSellNow = current ? getRecommendation(current)?.action === 'SELL' : false
 
         const droppedOut = wasInTop20 && !isStillInTop20
-        const newSell = previous.stance !== 'SELL' && isSellNow
+        const newSell = previous.action !== 'SELL' && isSellNow
         if (droppedOut || newSell) {
           signals.push({
             signal: createExitSignal(current || previous, droppedOut ? 'dropped_out' : 'sell_signal'),
