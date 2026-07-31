@@ -96,5 +96,51 @@ class RunSweepTests(unittest.TestCase):
         self.assertEqual(baseline_entries[0]["weights"], self.baseline_ranking)
 
 
+class EvaluateHoldoutTests(unittest.TestCase):
+    def setUp(self):
+        self.baseline_ranking = dict(advisor_engine.RANKING_WEIGHTS)
+        self.baseline_categories = dict(SETTINGS["fundamentals"]["category_weights"])
+
+    def tearDown(self):
+        advisor_engine.RANKING_WEIGHTS = self.baseline_ranking
+        SETTINGS["fundamentals"]["category_weights"] = self.baseline_categories
+
+    def test_attaches_holdout_fields_to_the_baseline_and_top_finishers_only(self):
+        random.seed(4)
+        benchmarks = {"SPY": {"dates": ["2025-01-06"], "closes": [500.0]}}
+        train_dates = [__import__("datetime").date(2025, 1, 6)]
+        test_dates = [__import__("datetime").date(2025, 2, 3)]
+        results = ow.run_sweep(
+            "blend", ow.RANKING_KEYS, self.baseline_ranking, None, self.baseline_categories,
+            {}, benchmarks, train_dates, trials=5, concentration=1.0,
+            top_n=20, monthly_contribution=1000.0, report_lag_days=45,
+        )
+        ow.evaluate_holdout("blend", results, top_k=2, other_fixed_ranking=None,
+                            other_fixed_categories=self.baseline_categories,
+                            universe_data={}, benchmarks=benchmarks, test_dates=test_dates,
+                            top_n=20, monthly_contribution=1000.0, report_lag_days=45)
+
+        checked = [r for r in results if "holdout_score_vs_spy" in r]
+        # Top 2 finishers plus the baseline, unless the baseline is already in the top 2.
+        self.assertLessEqual(len(checked), 3)
+        self.assertTrue(any(r["is_baseline"] for r in checked))
+        for r in checked:
+            self.assertIn("holdout_return_pct", r)
+
+    def test_leaves_scoring_config_at_whatever_the_last_call_set(self):
+        # evaluate_holdout doesn't restore state itself -- that's main()'s job via try/finally --
+        # but it should still leave the config matching its own last trial, not something stale.
+        random.seed(5)
+        benchmarks = {"SPY": {"dates": ["2025-01-06"], "closes": [500.0]}}
+        results = [{"trial": 0, "is_baseline": True, "weights": self.baseline_ranking,
+                   "return_pct": 0.0, "final_value": 0, "score_vs_spy": 5.0}]
+        ow.evaluate_holdout("blend", results, top_k=1, other_fixed_ranking=None,
+                            other_fixed_categories=self.baseline_categories,
+                            universe_data={}, benchmarks=benchmarks,
+                            test_dates=[__import__("datetime").date(2025, 2, 3)],
+                            top_n=20, monthly_contribution=1000.0, report_lag_days=45)
+        self.assertEqual(advisor_engine.RANKING_WEIGHTS, self.baseline_ranking)
+
+
 if __name__ == "__main__":
     unittest.main()
