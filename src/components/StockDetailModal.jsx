@@ -28,7 +28,7 @@ const signed = (value, digits = 1, suffix = '%') =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
-export default function StockDetailModal({ stock, onClose, benchmarkHistory, position }) {
+export default function StockDetailModal({ stock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
 
   useEffect(() => {
@@ -39,7 +39,10 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
 
   if (!stock) return null
 
-  const recommendation = getRecommendation(stock)
+  // A caller that already merged in position-specific guidance (e.g. a portfolio
+  // stop-loss check) passes it here — recomputing from the raw research row would
+  // silently drop that, since the row itself knows nothing about your cost basis.
+  const recommendation = recommendationOverride || getRecommendation(stock)
   const technical = stock.technical_detail || {}
   const categories = stock.fundamental_categories || {}
   const thesis = bullBearScore(stock)
@@ -99,7 +102,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         </div>
 
         <div style={{ marginBottom: 22 }}>
-          <ActionGuidance recommendation={recommendation} position={position} />
+          <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
         </div>
 
         <div className="grid grid-4" style={{ marginBottom: 20 }}>

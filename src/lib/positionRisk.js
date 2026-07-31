@@ -73,6 +73,37 @@ export function assessPositionStopLoss(position, thresholds = {}) {
   }
 }
 
+/**
+ * Where the stops actually sit in dollars, and how far away the current price is —
+ * computed for every position, not just ones that have already triggered, so the level
+ * is visible before you need it rather than only after.
+ *
+ * @param {Object} position - Needs costBasis, currentPrice, purchaseDate, priceInfo.history.
+ */
+export function stopLossLevels(position, thresholds = {}) {
+  const { costBasisSell, costBasisTrim, trailingStopTrim } = { ...DEFAULTS, ...thresholds }
+  if (!finite(position?.costBasis) || !finite(position?.currentPrice) || position.costBasis <= 0) return null
+
+  const peak = peakSincePurchase(position, position.priceInfo?.history)
+  const costStopPrice = position.costBasis * (1 + costBasisSell / 100)
+  const costTrimPrice = position.costBasis * (1 + costBasisTrim / 100)
+  const trailingStopPrice = finite(peak) ? peak * (1 + trailingStopTrim / 100) : null
+
+  // Price falling from above hits whichever floor sits highest first — that's the one
+  // that's actually binding right now, cost-basis stop or trailing stop.
+  const floors = [costStopPrice, trailingStopPrice].filter(finite)
+  const bindingPrice = floors.length ? Math.max(...floors) : null
+  const bindingSource = bindingPrice === trailingStopPrice ? 'trailing' : 'cost_basis'
+  const distancePct = finite(bindingPrice) && bindingPrice > 0
+    ? (position.currentPrice / bindingPrice - 1) * 100
+    : null
+
+  return {
+    costStopPrice, costTrimPrice, trailingStopPrice, peak,
+    bindingPrice, bindingSource, distancePct,
+  }
+}
+
 const ACTION_RANK = { HOLD: 0, WATCH: 1, TRIM: 2, SELL: 3 }
 const STOP_LOSS_TRIM = { HOLD: 0, WATCH: 0, TRIM: 33, SELL: 100 }
 
@@ -96,7 +127,7 @@ export function withStopLoss(recommendation, position, thresholds = {}) {
       ? stopLoss.reasons[0]
       : base.summary,
     reasons: [...stopLoss.reasons, ...(base.reasons || [])],
-    stopLoss,
+    stopLossTrigger: stopLoss,
     source: upgraded ? 'stop_loss' : base.source,
   }
 }

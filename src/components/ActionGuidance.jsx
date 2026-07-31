@@ -1,5 +1,7 @@
 import { actionHeadline, actionStyle, positionImpact } from '../lib/recommendation'
 
+const money = (value) => (value == null ? '—' : `$${value.toFixed(2)}`)
+
 /** Compact action chip for tables and card headers. */
 export function ActionPill({ recommendation }) {
   if (!recommendation) return <span className="mono" style={{ color: 'var(--text-faint)' }}>—</span>
@@ -19,7 +21,7 @@ export function ActionPill({ recommendation }) {
  * The full explanation: what to do, how much of the position it applies to, and every
  * factor that had to agree before the guidance moved off Hold.
  */
-export default function ActionGuidance({ recommendation, position }) {
+export default function ActionGuidance({ recommendation, position, stopLoss }) {
   if (!recommendation) return null
   const style = actionStyle(recommendation.action)
   const impact = position ? positionImpact(recommendation, position) : null
@@ -55,6 +57,21 @@ export default function ActionGuidance({ recommendation, position }) {
         <ul>
           {recommendation.reasons.map((reason) => <li key={reason}>{reason}</li>)}
         </ul>
+      )}
+
+      {stopLoss?.bindingPrice != null && (
+        <div className="action-impact" aria-label="Stop-loss levels">
+          <span>
+            {stopLoss.bindingSource === 'trailing' ? 'Trailing stop' : 'Cost-basis stop'}:
+            {' '}<b>{money(stopLoss.bindingPrice)}</b>
+          </span>
+          {stopLoss.distancePct != null && (
+            <span>{stopLoss.distancePct >= 0 ? '' : 'past it, '}<b>{Math.abs(stopLoss.distancePct).toFixed(1)}%</b> {stopLoss.distancePct >= 0 ? 'away' : ''}</span>
+          )}
+          {stopLoss.trailingStopPrice != null && stopLoss.bindingSource !== 'trailing' && (
+            <span>trailing stop at <b>{money(stopLoss.trailingStopPrice)}</b> once it leads</span>
+          )}
+        </div>
       )}
 
       <small style={{ color: 'var(--text-faint)', fontSize: 11 }}>

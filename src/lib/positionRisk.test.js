@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assessPositionStopLoss, peakSincePurchase, withStopLoss } from './positionRisk'
+import { assessPositionStopLoss, peakSincePurchase, stopLossLevels, withStopLoss } from './positionRisk'
 
 const history = {
   dates: ['2024-01-05', '2024-02-02', '2024-03-01', '2024-04-05', '2024-05-03'],
@@ -53,6 +53,31 @@ describe('assessPositionStopLoss', () => {
 
   it('returns null without enough position data', () => {
     expect(assessPositionStopLoss({})).toBeNull()
+  })
+})
+
+describe('stopLossLevels', () => {
+  it('reports the trailing stop as binding once it sits above the cost-basis stop', () => {
+    // cost basis 100 -> hard stop 80, trim 88; peak-since-purchase 120 -> trailing stop 102
+    const levels = stopLossLevels({
+      costBasis: 100, currentPrice: 110, purchaseDate: '2024-01-15', priceInfo: { history },
+    })
+    expect(levels.costStopPrice).toBeCloseTo(80)
+    expect(levels.trailingStopPrice).toBeCloseTo(102)
+    expect(levels.bindingPrice).toBeCloseTo(102)
+    expect(levels.bindingSource).toBe('trailing')
+    expect(levels.distancePct).toBeCloseTo((110 / 102 - 1) * 100)
+  })
+
+  it('falls back to the cost-basis stop without enough history for a peak', () => {
+    const levels = stopLossLevels({ costBasis: 100, currentPrice: 90, purchaseDate: '2024-01-15' })
+    expect(levels.trailingStopPrice).toBeNull()
+    expect(levels.bindingPrice).toBeCloseTo(80)
+    expect(levels.bindingSource).toBe('cost_basis')
+  })
+
+  it('returns null without a cost basis and current price', () => {
+    expect(stopLossLevels({})).toBeNull()
   })
 })
 
