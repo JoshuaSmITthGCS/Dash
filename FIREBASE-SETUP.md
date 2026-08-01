@@ -55,10 +55,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Backtest signals are readable by all authenticated users
-    match /backtestSignals/{signalId} {
-      allow read: if request.auth != null;
-      allow write: if false; // Only server/pipeline can write
+    // Finances data (budget, savings pools, retirement settings) is private to each user
+    match /finances/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
@@ -235,16 +234,33 @@ The app will automatically migrate existing portfolio data from localStorage to 
 }
 ```
 
-### `/backtestSignals/{signalId}`
+### `/finances/{userId}` (retirement + budget settings)
 ```json
 {
-  "ticker": "MSFT",
-  "type": "entry",
-  "timestamp": "2026-07-15T09:30:00Z",
-  "rank": 3,
-  "score": 87,
-  "stance": "Attractive",
-  "price": 420.30
+  "currentAge": 30,
+  "retireAge": 65,
+  "annualReturnPct": 7,
+  "inflationPct": 2.5,
+  "monthlyContribution": 500,
+  "currentSavings": 42000
+}
+```
+
+### `/finances/{userId}/budgetItems/{itemId}`
+```json
+{
+  "name": "Rent",
+  "amount": 1800,
+  "type": "expense"
+}
+```
+
+### `/finances/{userId}/pools/{poolId}`
+```json
+{
+  "name": "Emergency fund",
+  "percent": 30,
+  "balance": 640.50
 }
 ```
 

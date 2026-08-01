@@ -7,7 +7,7 @@ import Watchlist from './pages/Watchlist.jsx'
 import Methodology from './pages/Methodology.jsx'
 import Glossary from './pages/Glossary.jsx'
 import Portfolio from './pages/Portfolio.jsx'
-import Backtest from './pages/Backtest.jsx'
+import Finances from './pages/Finances.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
@@ -20,7 +20,7 @@ const NAV = [
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true, mobile: true },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist', mobile: true },
   { to: '/market', label: 'Market Pulse', icon: 'market' },
-  { to: '/backtest', label: 'Backtest', icon: 'backtest', requireAuth: true },
+  { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
 ]
@@ -115,7 +115,7 @@ function AppContent() {
           <Route path="/research" element={<Picks />} />
           <Route path="/market" element={<PolicyRadar />} />
           <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
-          <Route path="/backtest" element={currentUser ? <Backtest /> : <Dashboard />} />
+          <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />

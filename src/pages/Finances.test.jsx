@@ -1,0 +1,69 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import Finances from './Finances'
+import { useData } from '../lib/useData'
+import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
+import { useFirebaseFinances } from '../lib/useFirebaseFinances'
+
+vi.mock('../lib/useData', () => ({ useData: vi.fn() }))
+vi.mock('../lib/useFirebasePortfolio', () => ({ useFirebasePortfolio: vi.fn() }))
+vi.mock('../lib/useFirebaseFinances', () => ({ useFirebaseFinances: vi.fn() }))
+
+describe('Finances page', () => {
+  const addBudgetItem = vi.fn()
+  const addPool = vi.fn()
+  const depositToPools = vi.fn()
+  const updateSettings = vi.fn()
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useData.mockReturnValue({ data: { research: [], portfolio_coverage: [] } })
+    useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'AAPL', shares: 10, costBasis: 100 }] })
+    useFirebaseFinances.mockReturnValue({
+      settings: {
+        currentAge: 30, retireAge: 65, annualReturnPct: 7, inflationPct: 2.5,
+        monthlyContribution: 200, currentSavings: 1000,
+      },
+      budgetItems: [
+        { id: 'income-1', name: 'Paycheck', amount: 4000, type: 'income' },
+        { id: 'expense-1', name: 'Rent', amount: 1500, type: 'expense' },
+      ],
+      pools: [{ id: 'pool-1', name: 'Emergency fund', percent: 50, balance: 300 }],
+      loading: false,
+      updateSettings,
+      addBudgetItem,
+      removeBudgetItem: vi.fn(),
+      addPool,
+      removePool: vi.fn(),
+      depositToPools,
+    })
+  })
+
+  it('shows the budget leftover and lets you add a line item', () => {
+    render(<Finances />)
+    expect(screen.getAllByText('$2,500').length).toBeGreaterThan(0)
+
+    fireEvent.change(screen.getByPlaceholderText('Paycheck'), { target: { value: 'Freelance' } })
+    fireEvent.change(screen.getByPlaceholderText('500'), { target: { value: '300' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(addBudgetItem).toHaveBeenCalledWith({ name: 'Freelance', amount: '300', type: 'expense' })
+  })
+
+  it('previews and logs a pool deposit split proportionally', () => {
+    render(<Finances />)
+    fireEvent.click(screen.getByRole('button', { name: 'Auto-Split Pools' }))
+
+    const amountInput = screen.getByPlaceholderText('2500')
+    fireEvent.change(amountInput, { target: { value: '100' } })
+    expect(screen.getByText((_, el) => el.className === 'chip' && el.textContent === 'Emergency fund: $100')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to pools' }))
+    expect(depositToPools).toHaveBeenCalledWith([{ id: 'pool-1', share: 100 }])
+  })
+
+  it('projects a retirement balance from the current assumptions', () => {
+    render(<Finances />)
+    fireEvent.click(screen.getByRole('button', { name: 'Retirement' }))
+    expect(screen.getByText('At Retirement (Nominal)')).toBeInTheDocument()
+    expect(screen.getByText(/Sync current savings from portfolio/)).toBeInTheDocument()
+  })
+})
