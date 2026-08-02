@@ -79,16 +79,24 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
       - if: steps.refresh_window.outputs.should_run == 'true'
         run: pip install -r pipeline/requirements.txt
-      - name: Fetch, score, and validate in one chain
+      - name: Fetch and score stock research
         if: steps.refresh_window.outputs.should_run == 'true'
-        run: python pipeline/fetch_advisor.py && python pipeline/validate_data.py
+        run: python pipeline/fetch_advisor.py
+      - name: Fetch ETF growth screen
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here
+        # shouldn't block the stock research refresh, so keep the previous etfs.json on failure.
+        run: python pipeline/fetch_etfs.py || echo "::warning::ETF fetch failed; keeping previous etfs.json"
+      - name: Validate
+        if: steps.refresh_window.outputs.should_run == 'true'
+        run: python pipeline/validate_data.py
       - name: Commit refreshed data with retry
         if: steps.refresh_window.outputs.should_run == 'true'
         shell: bash
         run: |
           git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add public/data/advisor.json public/data/status.json
+          git add public/data/advisor.json public/data/etfs.json public/data/status.json
           git diff --cached --quiet && exit 0
           git commit -m "chore(data): refresh advisor research"
           for attempt in 1 2 3; do

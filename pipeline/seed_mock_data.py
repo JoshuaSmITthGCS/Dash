@@ -12,6 +12,7 @@ import random
 from datetime import datetime, timezone, timedelta
 
 from common import save_json, normalize_name
+from fetch_etfs import ETFS as ETF_UNIVERSE, build_etf_row, rank_etf_rows
 
 random.seed(7)
 TODAY = datetime.now(timezone.utc).date()
@@ -160,6 +161,33 @@ def make_prices():
     return prices
 
 
+# engineered standouts so the demo growth screen has clear winners and a laggard
+ETF_TECHNICAL_OVERRIDES = {
+    "QQQ": {"return_5d": 3.8, "return_20d": 9.4, "return_60d": 17.2},
+    "SMH": {"return_5d": 4.1, "return_20d": 10.8, "return_60d": 21.5},
+    "BND": {"return_5d": -0.4, "return_20d": -1.1, "return_60d": 0.6},
+}
+
+
+def make_etfs():
+    """Synthetic growth-ranked ETF snapshot, mirroring fetch_etfs.py's live output shape."""
+    rows = []
+    for ticker, meta in ETF_UNIVERSE.items():
+        technical = {
+            "return_5d": round(random.uniform(-3, 3), 2),
+            "return_20d": round(random.uniform(-8, 8), 2),
+            "return_60d": round(random.uniform(-15, 15), 2),
+            "coverage": 1.0,
+            **ETF_TECHNICAL_OVERRIDES.get(ticker, {}),
+        }
+        rows.append(build_etf_row(ticker, meta, {"price": None, "dividend_yield": None}, technical))
+    ranked = rank_etf_rows(rows)
+    return {
+        "schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": "demo", "benchmark": "SPY", "count": len(ranked), "etfs": ranked,
+    }
+
+
 def make_news():
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -217,6 +245,7 @@ def main():
                               "data_mode": "demo", "count": len(FUND), "prices": make_prices()})
     save_json("news.json", make_news())
     save_json("politicians.json", make_politicians())
+    save_json("etfs.json", make_etfs())
     now = datetime.now(timezone.utc).isoformat()
     save_json("status.json", {
         "generated_at": now,
@@ -229,7 +258,7 @@ def main():
             },
         },
     })
-    print("Mock data written: trades.json, prices.json, news.json, politicians.json")
+    print("Mock data written: trades.json, prices.json, news.json, politicians.json, etfs.json")
 
 
 if __name__ == "__main__":

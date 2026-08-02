@@ -102,6 +102,7 @@ function ScreenRow({ row, rank, type, onOpen }) {
 
 export default function Dashboard() {
   const { data, loading, reload } = useData('advisor.json')
+  const { data: etfData } = useData('etfs.json')
   const { currentUser } = useAuth()
   const [selectedStock, setSelectedStock] = useState(null)
 
@@ -146,7 +147,10 @@ export default function Dashboard() {
   const screenRows = [...rows, ...(data.screen_universe || [])]
   const valueTurnarounds = rankValueTurnarounds(screenRows)
   const momentumLeaders = rankMomentum(screenRows)
-  const growingEtfs = rankGrowingEtfs(screenRows)
+  // ETFs are ranked against each other in a separate dataset (public/data/etfs.json),
+  // not folded into the stock screen universe — a diversified fund doesn't clear the same
+  // fundamentals/momentum bars a single stock does, so growth alone decides its rank.
+  const growingEtfs = rankGrowingEtfs(etfData?.etfs || [])
 
   return (
     <>
@@ -245,13 +249,13 @@ export default function Dashboard() {
         <article className="stock-screen-panel">
           <header>
             <div><span>Top 5</span><h3>Growing ETFs</h3></div>
-            <small>Positive 20-day growth · trend ranked</small>
+            <small>Ranked against each other by growth</small>
           </header>
           <div className="stock-screen-list">
             {growingEtfs.map((row, index) => (
               <ScreenRow key={row.ticker} row={row} rank={index + 1} type="etf" onOpen={setSelectedStock} />
             ))}
-            {!growingEtfs.length && <div className="inline-empty">No published ETF currently clears the growth requirement.</div>}
+            {!growingEtfs.length && <div className="inline-empty">ETF growth data isn't available yet.</div>}
           </div>
         </article>
       </section>

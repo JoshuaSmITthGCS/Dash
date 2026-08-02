@@ -42,12 +42,20 @@ describe('momentum screen', () => {
 })
 
 describe('growing ETF screen', () => {
-  it('only ranks ETFs with positive 20-day growth', () => {
-    const growing = row('VTI', { is_etf: true })
-    const shrinking = row('BND', { is_etf: true, technical_detail: { ...row('X').technical_detail, return_20d: -3 } })
-    const stock = row('AAPL', { is_etf: false })
+  it('ranks ETFs against each other by growth score, best first, no pass/fail bar', () => {
+    const laggard = row('BND', { growth_score: -1.1 })
+    const leader = row('SMH', { growth_score: 11.3 })
+    const middling = row('VTI', { growth_score: 2.4 })
 
-    expect(rankGrowingEtfs([shrinking, growing, stock]).map((item) => item.ticker)).toEqual(['VTI'])
+    expect(rankGrowingEtfs([laggard, leader, middling]).map((item) => item.ticker))
+      .toEqual(['SMH', 'VTI', 'BND'])
+  })
+
+  it('skips ETFs without a computed growth score', () => {
+    const scored = row('QQQ', { growth_score: 5 })
+    const unscored = row('IBIT', { growth_score: undefined })
+
+    expect(rankGrowingEtfs([unscored, scored]).map((item) => item.ticker)).toEqual(['QQQ'])
   })
 })
 

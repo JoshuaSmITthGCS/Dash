@@ -10,7 +10,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from common import DATA_DIR
 
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
-FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status", "advisor")
+FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status", "advisor", "etfs")
 
 
 def load(path):
@@ -33,7 +33,7 @@ def validate(production=False):
             location = ".".join(str(part) for part in error.path) or "$"
             errors.append(f"{name}.json:{location}: {error.message}")
 
-    for name in ("trades", "prices", "news", "politicians", "signals"):
+    for name in ("trades", "prices", "news", "politicians", "signals", "etfs"):
         payload = payloads.get(name, {})
         collection = payload.get(name if name != "politicians" else "leaderboard")
         if name == "prices":
@@ -88,8 +88,9 @@ def validate(production=False):
         missing = ", ".join(sorted(configured_portfolio - covered_portfolio))
         errors.append(f"advisor.json: portfolio coverage missing configured symbols: {missing}")
 
-    # Legacy political fixtures stay explicitly demo while the independent advisor dataset is live.
-    modes = {p.get("data_mode") for key, p in payloads.items() if key not in ("status", "advisor")}
+    # Legacy political fixtures stay explicitly demo while the independent advisor and ETF
+    # datasets are live.
+    modes = {p.get("data_mode") for key, p in payloads.items() if key not in ("status", "advisor", "etfs")}
     if len(modes) > 1:
         errors.append(f"data_mode mismatch across payloads: {sorted(modes)}")
     if production and modes != {"live"}:
