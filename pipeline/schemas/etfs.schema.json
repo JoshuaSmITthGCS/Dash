@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "data_mode", "benchmark", "count", "etfs"],
+  "properties": {
+    "schema_version": {"type": "integer"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "data_mode": {"enum": ["demo", "live"]},
+    "benchmark": {"type": "string"},
+    "count": {"type": "integer", "minimum": 0},
+    "etfs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "name", "category", "growth_score", "growth_rank", "technical_detail"],
+        "properties": {
+          "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
+          "name": {"type": "string"},
+          "category": {"type": "string"},
+          "expense_ratio": {"type": ["number", "null"]},
+          "price": {"type": ["number", "null"]},
+          "dividend_yield": {"type": ["number", "null"]},
+          "growth_score": {"type": "number"},
+          "growth_rank": {"type": "integer", "minimum": 1},
+          "technical_detail": {"type": "object"}
+        }
+      }
+    }
+  }
+}

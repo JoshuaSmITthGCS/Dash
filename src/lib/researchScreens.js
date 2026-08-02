@@ -53,27 +53,21 @@ export function rankValueTurnarounds(rows, limit = 5) {
     .slice(0, limit)
 }
 
+// ETFs are evaluated on their own, separate from the stock screens: a diversified fund
+// doesn't carry the fundamentals ratios those screens gate on, and there's no meaningful
+// "clears the bar" threshold for a fund's growth the way there is for a single stock.
+// This just ranks the configured ETF watchlist against itself, best growth first.
 export function rankGrowingEtfs(rows, limit = 5) {
   return rows
-    .filter((row) => row.is_etf)
-    .map((row) => {
-      const technical = row.technical_detail || {}
-      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
-      const monthReturn = technical.return_20d
-      if (![weekReturn, monthReturn].every(finite) || monthReturn <= 0) return null
-
-      const trend = finite(technical.trend) ? technical.trend : clamp(50 + monthReturn * 2)
-      const upturn = clamp(50 + weekReturn * 5)
-      return {
-        ...row,
-        screen: {
-          weekReturn,
-          monthReturn,
-          rankScore: trend * 0.6 + upturn * 0.4,
-        },
-      }
-    })
-    .filter(Boolean)
+    .filter((row) => finite(row.growth_score))
+    .map((row) => ({
+      ...row,
+      screen: {
+        weekReturn: row.technical_detail?.return_5d,
+        monthReturn: row.technical_detail?.return_20d,
+        rankScore: row.growth_score,
+      },
+    }))
     .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
     .slice(0, limit)
 }
