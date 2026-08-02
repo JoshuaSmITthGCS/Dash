@@ -9,7 +9,7 @@ import { getRecommendation } from '../lib/recommendation'
 import { humanDate } from '../lib/formatters'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
-import { rankMomentum, rankValueTurnarounds } from '../lib/researchScreens'
+import { rankGrowingEtfs, rankMomentum, rankValueTurnarounds } from '../lib/researchScreens'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 
@@ -146,6 +146,7 @@ export default function Dashboard() {
   const screenRows = [...rows, ...(data.screen_universe || [])]
   const valueTurnarounds = rankValueTurnarounds(screenRows)
   const momentumLeaders = rankMomentum(screenRows)
+  const growingEtfs = rankGrowingEtfs(screenRows)
 
   return (
     <>
@@ -213,10 +214,10 @@ export default function Dashboard() {
       </section>
 
       <div className="section-heading">
-        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds and momentum</h2></div>
+        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds, momentum, and ETF growth</h2></div>
         <Link to="/research">Compare research <Icon name="arrow" size={17} /></Link>
       </div>
-      <section className="stock-screen-grid" aria-label="Focused stock research screens">
+      <section className="stock-screen-grid" aria-label="Focused stock and ETF research screens">
         <article className="stock-screen-panel">
           <header>
             <div><span>Top 5</span><h3>Value near 52-week lows</h3></div>
@@ -239,6 +240,18 @@ export default function Dashboard() {
               <ScreenRow key={row.ticker} row={row} rank={index + 1} type="momentum" onOpen={setSelectedStock} />
             ))}
             {!momentumLeaders.length && <div className="inline-empty">No published stock currently clears every momentum requirement.</div>}
+          </div>
+        </article>
+        <article className="stock-screen-panel">
+          <header>
+            <div><span>Top 5</span><h3>Growing ETFs</h3></div>
+            <small>Positive 20-day growth · trend ranked</small>
+          </header>
+          <div className="stock-screen-list">
+            {growingEtfs.map((row, index) => (
+              <ScreenRow key={row.ticker} row={row} rank={index + 1} type="etf" onOpen={setSelectedStock} />
+            ))}
+            {!growingEtfs.length && <div className="inline-empty">No published ETF currently clears the growth requirement.</div>}
           </div>
         </article>
       </section>
