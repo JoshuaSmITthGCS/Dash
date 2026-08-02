@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
-import { rankMomentum, rankValueTurnarounds } from './researchScreens'
+import { rankGrowingEtfs, rankMomentum, rankValueTurnarounds } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
   ticker,
@@ -38,6 +38,16 @@ describe('momentum screen', () => {
     const falling = row('DOWN', { technical_detail: { ...row('X').technical_detail, return_5d: -2 } })
 
     expect(rankMomentum([falling, rising]).map((item) => item.ticker)).toEqual(['UP'])
+  })
+})
+
+describe('growing ETF screen', () => {
+  it('only ranks ETFs with positive 20-day growth', () => {
+    const growing = row('VTI', { is_etf: true })
+    const shrinking = row('BND', { is_etf: true, technical_detail: { ...row('X').technical_detail, return_20d: -3 } })
+    const stock = row('AAPL', { is_etf: false })
+
+    expect(rankGrowingEtfs([shrinking, growing, stock]).map((item) => item.ticker)).toEqual(['VTI'])
   })
 })
 

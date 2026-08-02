@@ -53,6 +53,31 @@ export function rankValueTurnarounds(rows, limit = 5) {
     .slice(0, limit)
 }
 
+export function rankGrowingEtfs(rows, limit = 5) {
+  return rows
+    .filter((row) => row.is_etf)
+    .map((row) => {
+      const technical = row.technical_detail || {}
+      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
+      const monthReturn = technical.return_20d
+      if (![weekReturn, monthReturn].every(finite) || monthReturn <= 0) return null
+
+      const trend = finite(technical.trend) ? technical.trend : clamp(50 + monthReturn * 2)
+      const upturn = clamp(50 + weekReturn * 5)
+      return {
+        ...row,
+        screen: {
+          weekReturn,
+          monthReturn,
+          rankScore: trend * 0.6 + upturn * 0.4,
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
 export function rankMomentum(rows, limit = 5) {
   return rows
     .map((row) => {
