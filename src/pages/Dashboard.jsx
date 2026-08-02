@@ -100,6 +100,23 @@ function ScreenRow({ row, rank, type, onOpen }) {
   )
 }
 
+// ETFs carry a different shape than the stock screens (a blended score plus multi-window
+// returns vs the S&P 500 and the Dow), so they get their own row instead of overloading
+// ScreenRow's two-metric layout.
+function EtfScreenRow({ row, rank, onOpen }) {
+  const oneYearReturn = row.returns?.['1y']
+  const vsSp500 = row.vs_benchmarks?.sp500_1y
+  return (
+    <button onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}>
+      <span className="screen-rank">#{rank}</span>
+      <span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span>
+      <span><small>1-year return</small><Move pct={oneYearReturn} /></span>
+      <span><small>Vs S&amp;P 500</small><Move pct={vsSp500} /></span>
+      <Icon name="chevron" size={17} />
+    </button>
+  )
+}
+
 export default function Dashboard() {
   const { data, loading, reload } = useData('advisor.json')
   const { data: etfData } = useData('etfs.json')
@@ -149,8 +166,11 @@ export default function Dashboard() {
   const momentumLeaders = rankMomentum(screenRows)
   // ETFs are ranked against each other in a separate dataset (public/data/etfs.json),
   // not folded into the stock screen universe — a diversified fund doesn't clear the same
-  // fundamentals/momentum bars a single stock does, so growth alone decides its rank.
-  const growingEtfs = rankGrowingEtfs(etfData?.etfs || [])
+  // fundamentals/momentum bars a single stock does, so a blended score decides its rank.
+  const etfUniverse = etfData?.etfs || []
+  const growingEtfs = rankGrowingEtfs(etfUniverse)
+  const sp500Benchmark = etfUniverse.find((row) => row.ticker === etfData?.benchmarks?.sp500)
+  const dowBenchmark = etfUniverse.find((row) => row.ticker === etfData?.benchmarks?.dow)
 
   return (
     <>
@@ -218,7 +238,7 @@ export default function Dashboard() {
       </section>
 
       <div className="section-heading">
-        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds, momentum, and ETF growth</h2></div>
+        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds, momentum, and top ETFs</h2></div>
         <Link to="/research">Compare research <Icon name="arrow" size={17} /></Link>
       </div>
       <section className="stock-screen-grid" aria-label="Focused stock and ETF research screens">
@@ -248,14 +268,20 @@ export default function Dashboard() {
         </article>
         <article className="stock-screen-panel">
           <header>
-            <div><span>Top 5</span><h3>Growing ETFs</h3></div>
-            <small>Ranked against each other by growth</small>
+            <div><span>Top 5 of {etfUniverse.length || 40}</span><h3>Top ETFs</h3></div>
+            <small>Performance, risk, cost, liquidity &amp; issuer quality</small>
           </header>
+          {(sp500Benchmark || dowBenchmark) && (
+            <div className="etf-benchmark-strip">
+              {sp500Benchmark && <span>S&amp;P 500 (1Y) <Move pct={sp500Benchmark.returns?.['1y']} /></span>}
+              {dowBenchmark && <span>Dow (1Y) <Move pct={dowBenchmark.returns?.['1y']} /></span>}
+            </div>
+          )}
           <div className="stock-screen-list">
             {growingEtfs.map((row, index) => (
-              <ScreenRow key={row.ticker} row={row} rank={index + 1} type="etf" onOpen={setSelectedStock} />
+              <EtfScreenRow key={row.ticker} row={row} rank={index + 1} onOpen={setSelectedStock} />
             ))}
-            {!growingEtfs.length && <div className="inline-empty">ETF growth data isn't available yet.</div>}
+            {!growingEtfs.length && <div className="inline-empty">ETF ranking data isn't available yet.</div>}
           </div>
         </article>
       </section>

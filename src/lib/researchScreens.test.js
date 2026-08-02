@@ -42,18 +42,18 @@ describe('momentum screen', () => {
 })
 
 describe('growing ETF screen', () => {
-  it('ranks ETFs against each other by growth score, best first, no pass/fail bar', () => {
-    const laggard = row('BND', { growth_score: -1.1 })
-    const leader = row('SMH', { growth_score: 11.3 })
-    const middling = row('VTI', { growth_score: 2.4 })
+  it('ranks ETFs against each other by overall score, best first, no pass/fail bar', () => {
+    const laggard = row('BND', { scores: { overall: 34.1 } })
+    const leader = row('SMH', { scores: { overall: 77.9 } })
+    const middling = row('VTI', { scores: { overall: 55.2 } })
 
     expect(rankGrowingEtfs([laggard, leader, middling]).map((item) => item.ticker))
       .toEqual(['SMH', 'VTI', 'BND'])
   })
 
-  it('skips ETFs without a computed growth score', () => {
-    const scored = row('QQQ', { growth_score: 5 })
-    const unscored = row('IBIT', { growth_score: undefined })
+  it('skips ETFs without a computed overall score', () => {
+    const scored = row('QQQ', { scores: { overall: 60 } })
+    const unscored = row('IBIT', { scores: {} })
 
     expect(rankGrowingEtfs([unscored, scored]).map((item) => item.ticker)).toEqual(['QQQ'])
   })
