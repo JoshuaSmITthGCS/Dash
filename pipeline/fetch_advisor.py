@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from advisor_engine import RANKING_WEIGHTS, build_research
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
-from cache import CACHE, parallel_map, retry_with_backoff
+from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
@@ -36,6 +36,17 @@ PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
 NEWS_DISCOVERY_LIMIT = 75
+
+# The unpublished remainder of the universe rides along so the value and momentum screens
+# can scan more than the leaderboard. It carries only the fields those screens actually
+# read - the full technical block is roughly three times the size, and at a universe of
+# several hundred names that difference is most of the payload the browser downloads.
+# Keep this in sync with src/lib/researchScreens.js.
+SCREEN_TECHNICAL_FIELDS = (
+    "return_5d", "return_20d", "momentum_12_1", "momentum_12_1_pct", "risk_adjusted",
+    "relative_strength", "relative_strength_20d", "volume_confirmation",
+    "pct_above_52w_low",
+)
 
 
 def resolve_refresh_symbols(
@@ -153,16 +164,53 @@ def prefetch_histories(symbols, yf, period="2y", cache=None):
     return warmed
 
 
-def yahoo_snapshot(symbol, yf, ticker_obj=None, attempts=2):
+def yahoo_snapshot(symbol, yf, ticker_obj=None, attempts=2, cache=None):
+    """Quote-derived snapshot for one company, served from cache when it is fresh."""
     if not yf:
         return None
+    cache = cache or CACHE
+    cached = cache.get("quote", f"snapshot:{symbol}")
+    if cached:
+        return cached
     for attempt in range(attempts):
         snapshot = fetch_snapshot(symbol, yf, set(), ticker_obj)
         if snapshot:
-            return snapshot
+            return cache.set("quote", f"snapshot:{symbol}", snapshot, source="yahoo")
         if attempt + 1 < attempts:
             time.sleep(0.5)
     return None
+
+
+def prefetch_snapshots(symbols, yf, cache=None):
+    """Warm the quote cache in parallel so the sequential collect loop mostly reads memory.
+
+    Quotes cannot be batched the way price history can - each one is its own request - so
+    the lever here is concurrency rather than batching. The pool is bounded and paced by the
+    Yahoo rate limiter, which is what makes a universe of several hundred names finish
+    inside the workflow's timeout instead of crawling through them one at a time.
+    """
+    if not yf or not symbols:
+        return 0
+    cache = cache or CACHE
+    missing = [symbol for symbol in symbols
+               if cache.get("quote", f"snapshot:{symbol}") is None]
+    if not missing:
+        LOG.info(f"Quotes: all {len(symbols)} symbols served from cache")
+        return 0
+
+    def fetch_one(symbol):
+        limiter_for("yahoo").acquire()
+        snapshot = fetch_snapshot(symbol, yf, set())
+        if snapshot:
+            cache.set("quote", f"snapshot:{symbol}", snapshot, source="yahoo")
+            return 1
+        return 0
+
+    workers = int(os.getenv("YAHOO_QUOTE_WORKERS", "6"))
+    warmed = sum(result or 0 for result in
+                 parallel_map(fetch_one, missing, provider="yahoo", max_workers=workers))
+    LOG.info(f"Quotes: warmed {warmed}/{len(missing)} uncached symbols")
+    return warmed
 
 
 # Earnings surprises come from a scraped page, one request per symbol, on an endpoint that
@@ -663,6 +711,7 @@ def run():
     # One batched download for the whole universe before the per-symbol loop starts, so the
     # loop mostly reads cache instead of making a few hundred separate HTTP calls.
     prefetch_histories(("SPY", *symbols), yf)
+    prefetch_snapshots(symbols, yf)
     benchmark = daily_history(benchmark_payload)
     yahoo_benchmark = yahoo_history("SPY", yf)
     if len(yahoo_benchmark["closes"]) > len(benchmark["closes"]):
@@ -792,7 +841,9 @@ def run():
             "ticker": row["ticker"], "name": row["name"], "sector": row.get("sector"),
             "price": row.get("price"), "score": row["score"], "stance": row["stance"],
             "components": row["components"], "fundamental_categories": row["fundamental_categories"],
-            "technical_detail": row["technical_detail"],
+            "technical_detail": {key: row["technical_detail"].get(key)
+                                 for key in SCREEN_TECHNICAL_FIELDS
+                                 if row["technical_detail"].get(key) is not None},
         }
         for row in research[publish_limit:]
     ]

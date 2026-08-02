@@ -1,6 +1,6 @@
 # TODO
 
-_Last updated: 2026-08-02 (revised after the first production run on `main`)_
+_Last updated: 2026-08-02 (revised after the first production run and the universe expansion)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
@@ -14,6 +14,15 @@ the 78/18/4 blend, the rebuilt technicals, `gross_profits_to_assets` (32/40), `e
 24 non-manufacturing, 8 financials suppressed) all landed. The point-in-time store wrote
 its first 338 observations and committed them. Cache hit rate was 47.5% on a cold start.
 Form 4 and the theme screen both reported `unavailable` for the reason in §1.
+
+**Universe expanded after that run**: stocks 343 -> 910, ETFs 40 -> 126. This was not
+cosmetic. Every ETF peer group is now above the ranking threshold, so **zero funds fall back
+to cross-asset-class pooling** (nine did before), and stock deciles hold ~91 names instead of
+~34, which is what makes the rank-IC estimates in §3 worth reading. Alpha Vantage enrichment
+is capped at five symbols regardless of universe size, so the growth costs only free Yahoo
+requests. Price history is batched for both universes, quotes are prefetched in parallel, and
+the screen payload was slimmed to the nine fields the screens actually read - without that
+last change the browser would download roughly twice the JSON for no benefit.
 
 ---
 
@@ -35,19 +44,25 @@ is otherwise finished, and each reports itself unavailable rather than failing l
       theme-exposure screen. *Highest-value item on this list — free, and unblocks the most.*
 
 - [ ] **Rule 6c-11 disclosure endpoints in `pipeline/config/universe.json`.** Currently
-      **0 of 40 funds** have one, so every fund falls back to a quote-derived
+      **0 of 126 funds** have one, so every fund falls back to a quote-derived
       premium/discount and a single-moment bid-ask spread instead of the legally mandated
       30-day median. The adapter and field-mapping parser are done; each fund needs a
       `disclosure: {url, format, fields}` block. A worked example sits in
       `etf_scoring.disclosure.example`. Start with the largest issuers — iShares, Vanguard,
       and State Street cover most of the watchlist.
 
-- [ ] **Index proxies for the 18 funds that lack one.** `DIA, JEPI, XLK, XLF, XLV, XLE,
-      XLY, XLP, XLI, XLB, XLRE, XLU, XLC, ITA, ICLN, TAN, ARKK, IBIT` have no
-      `index_proxy`, so they get no tracking difference and their cost bucket falls back to
-      the expense ratio alone. The sector SPDRs have no free like-for-like twin in this
-      watchlist; either add Vanguard sector funds to the universe as proxies, or accept
-      that tracking difference is unavailable for them and say so in the UI.
+- [x] ~~Index proxies for the 18 funds that lack one.~~ **Largely resolved by the universe
+      expansion**: adding the Vanguard sector funds gave every SPDR sector fund a
+      like-for-like twin, and coverage went from 22/40 (55%) to 98/126 (78%). The 28 still
+      without one are genuine singletons in this watchlist (DIA, ARKK, JETS, INDA, thematic
+      one-offs). Either accept that tracking difference is unavailable for them - the UI
+      already renders it as absent rather than zero - or add a twin for the handful worth it.
+
+- [ ] **Verify the hardcoded expense ratios.** 126 funds now carry an `expense_ratio` in
+      config, and they drift. A stale one directly biases the cost bucket, which is 17% of
+      an ETF's score. Once §1's 6c-11 endpoints exist, source these from the disclosure feed
+      rather than the config file. A unit-sanity guard (`< 3.0`) is in the test suite, but
+      that only catches a decimal/percent mix-up, not a rate that moved 3bp.
 
 ---
 

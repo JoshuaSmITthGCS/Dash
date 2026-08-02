@@ -1,7 +1,7 @@
 # ValueSignal — fundamentals-first investment research
 
 ValueSignal is a static React research dashboard backed by a Python data pipeline. It ranks a
-configurable 120-company equity universe using company fundamentals first, then adds price behavior,
+configurable ~900-company equity universe using company fundamentals first, then adds price behavior,
 market context, news sentiment, and corporate-insider activity. Congressional trading is not an
 input to the advisor score.
 
@@ -68,7 +68,7 @@ score impossible to interpret.
 
 ### ETFs
 
-ETFs are scored separately on performance, risk, total cost of ownership, liquidity, and structure.
+The ~125-fund ETF watchlist is scored separately on performance, risk, total cost of ownership, liquidity, and structure.
 Percentiles are computed **within peer groups** (broad equity, sector, thematic, fixed income,
 commodity, crypto), never across the whole batch — ranking a bond fund's Sharpe against an equity
 fund's measures batch composition, not fund quality. Cost includes tracking difference against the
@@ -124,8 +124,11 @@ npm run build
 npm run dev
 ```
 
-`pipeline/config/advisor_universe.json` defines the default 120-stock candidate universe and the
-pipeline publishes its top 20. `ADVISOR_SYMBOLS` can override it without imposing an application
+`pipeline/config/advisor_universe.json` defines the ~900-stock candidate universe and the
+pipeline publishes its top 40. Breadth is deliberate: a signal's information ratio scales
+with the square root of the number of independent bets, so a wider cross-section tightens
+every rank-IC estimate. Alpha Vantage enrichment is capped at five symbols regardless of
+universe size, so growing the list spends only free Yahoo requests. `ADVISOR_SYMBOLS` can override it without imposing an application
 hard cap. To respect the free plan, `ALPHA_ENRICH_LIMIT` caps Alpha Vantage company and insider
 enrichment at five. Marketaux supplies entity-level news sentiment for that shortlist and the
 market-pulse feed. FRED supplies a six-series macro regime that is reduced to a sector-sensitive

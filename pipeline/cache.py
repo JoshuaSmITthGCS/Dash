@@ -36,7 +36,12 @@ DEFAULT_RATE_LIMITS = {
     # leaves no room for clock jitter or a retry the limiter never saw, and the penalty for
     # crossing it is a block rather than a warning, so this runs at 9/s instead.
     "sec_edgar": 540,
-    "yahoo": 120,
+    # Yahoo publishes no rate limit, so this is our own conservative guess rather than a
+    # documented ceiling. 4/s clears a ~900-name universe in a few minutes of pacing where
+    # 2/s took nearly eight, and stays far below the rates that draw 429s in practice.
+    # Every call is cached and retried with backoff, so the cost of guessing slightly high
+    # is a retry, not a lost run. Lower it if YFRateLimitError starts appearing in the logs.
+    "yahoo": 240,
     "fred": 120,
     "marketaux": 60,
     "polygon": 5,

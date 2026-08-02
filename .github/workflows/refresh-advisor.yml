@@ -31,9 +31,10 @@ jobs:
   refresh:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # A ~330-name universe plus financial statements for the shortlist needs a wider window
-    # than the old 120-name price-only pass.
-    timeout-minutes: 50
+    # A ~900-name stock universe and a ~125-fund ETF watchlist, plus financial statements
+    # for the shortlist. Price history is batched and everything is cached, so most of the
+    # wall time is deliberate rate-limit pacing rather than transfer.
+    timeout-minutes: 90
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       MARKETAUX_API_TOKEN: ${{ secrets.MARKETAUX_API_TOKEN }}

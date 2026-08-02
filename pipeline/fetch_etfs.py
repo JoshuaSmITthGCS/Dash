@@ -31,6 +31,7 @@ from cache import CACHE, parallel_map, retry_with_backoff
 from common import LOG, load_json, save_json, update_pipeline_status
 from etf_disclosure import (effective_spread_pct, fetch_disclosure, from_quote,
                             total_cost_of_ownership)
+from providers import YahooAdapter
 from risk_metrics import (beta_vs_benchmark, daily_returns, max_drawdown, period_return,
                           sharpe_ratio, sortino_ratio, tracking_difference, tracking_error)
 
@@ -119,6 +120,45 @@ def price_history(symbol, yf, ticker_obj=None, cache=None):
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{symbol}: Yahoo price history unavailable ({type(exc).__name__})")
         return {"closes": [], "volumes": []}
+
+
+def warm_price_cache(symbols, yf, period="3y", cache=None):
+    """Batch-download price history for the whole watchlist into the cache.
+
+    ``yf.download`` collapses many symbols into a handful of HTTP calls, which is what makes
+    a large ETF universe affordable: the alternative is one request per fund plus one per
+    index proxy. A failed batch is not fatal - the per-fund path still runs and simply pays
+    full price for that chunk.
+    """
+    if not yf or not symbols:
+        return 0
+    cache = cache or CACHE
+    missing = [symbol for symbol in symbols
+               if cache.get("price_history", f"{symbol}:{period}") is None]
+    if not missing:
+        LOG.info(f"ETF price history: all {len(symbols)} symbols served from cache")
+        return 0
+    warmed = 0
+    batch_size = int(os.getenv("YAHOO_BATCH_SIZE", "60"))
+    for start in range(0, len(missing), batch_size):
+        chunk = missing[start:start + batch_size]
+        try:
+            frame = retry_with_backoff(
+                lambda chunk=chunk: yf.download(chunk, period=period, auto_adjust=False,
+                                                group_by="ticker", progress=False, threads=True),
+                description=f"batch ETF history for {len(chunk)} symbols")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"batch ETF history failed ({type(exc).__name__}); "
+                     "per-fund fetches will cover this chunk")
+            continue
+        for symbol in chunk:
+            payload = YahooAdapter.extract_symbol_frame(frame, symbol, single=len(chunk) == 1)
+            if payload:
+                # build_etf_row only needs closes and volumes; dates ride along harmlessly.
+                cache.set("price_history", f"{symbol}:{period}", payload, source="yahoo")
+                warmed += 1
+    LOG.info(f"ETF price history: warmed {warmed}/{len(missing)} uncached symbols in batches")
+    return warmed
 
 
 def etf_snapshot(ticker, yf, ticker_obj=None, cache=None):
@@ -439,6 +479,10 @@ def build_etfs():
     proxies = [symbol for symbol in index_proxy_symbols(ETFS) if symbol not in tickers]
     max_workers = int(os.getenv("ETF_FETCH_WORKERS", "4"))
     fetch_symbols = tickers + proxies
+    # One batched download for the whole watchlist before the per-fund loop, so a universe
+    # of a hundred-plus funds costs a couple of HTTP calls rather than one per fund.
+    # Anything the batch misses falls through to a per-symbol fetch below.
+    warm_price_cache(fetch_symbols, yf)
     fetched = parallel_map(lambda symbol: (symbol, price_history(symbol, yf)),
                            fetch_symbols, provider="yahoo", max_workers=max_workers)
     histories = {symbol: history for symbol, history in fetched if symbol}
