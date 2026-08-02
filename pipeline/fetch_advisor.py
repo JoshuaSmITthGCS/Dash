@@ -165,6 +165,41 @@ def yahoo_snapshot(symbol, yf, ticker_obj=None, attempts=2):
     return None
 
 
+# Earnings surprises come from a scraped page, one request per symbol, on an endpoint that
+# is noticeably flakier than the statement bundle. Opt-in for the same reason option chains
+# are: a per-symbol extra request has to earn its place. The first production run scored
+# 0/40 companies on it, so leaving it on by default would spend ~110 requests to populate a
+# metric that never resolves. The weight stays in config - missing values reweight - so
+# enabling it later needs no other change.
+EARNINGS_SURPRISE_ENABLED = os.getenv("ENABLE_EARNINGS_SURPRISE", "").lower() in {"1", "true", "yes"}
+EARNINGS_SURPRISE_STATS = {"requested": 0, "resolved": 0, "failed": 0}
+
+
+def fetch_earnings_surprises(symbol, ticker_obj, cache=None):
+    """Cached, opt-in earnings-surprise history with visible failures."""
+    if not EARNINGS_SURPRISE_ENABLED or ticker_obj is None:
+        return []
+    cache = cache or CACHE
+    EARNINGS_SURPRISE_STATS["requested"] += 1
+
+    def produce():
+        failures = []
+        rows = earnings_surprise_rows(ticker_obj, on_error=failures.append)
+        if failures:
+            raise failures[0]
+        return rows
+
+    try:
+        rows = cache.fetch("statements", f"earnings_surprise:{symbol}", produce, source="yahoo")
+    except Exception as exc:  # noqa: BLE001
+        EARNINGS_SURPRISE_STATS["failed"] += 1
+        LOG.warn(f"{symbol}: earnings surprise history unavailable ({type(exc).__name__})")
+        return []
+    if rows:
+        EARNINGS_SURPRISE_STATS["resolved"] += 1
+    return rows or []
+
+
 def yahoo_extended(symbol, ticker_obj, snapshot, history):
     """Statement-derived quality, capital-allocation, and accounting metrics for one company."""
     if ticker_obj is None:
@@ -179,7 +214,7 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history):
         annual=inputs["annual"], quarterly=inputs["quarterly"], info=info,
         market_cap=snapshot.get("market_cap"), price=snapshot.get("price"),
         sector=snapshot.get("sector"), closes=history["closes"], volumes=history["volumes"],
-        earnings_surprises=earnings_surprise_rows(ticker_obj),
+        earnings_surprises=fetch_earnings_surprises(symbol, ticker_obj),
     )
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
@@ -882,6 +917,15 @@ def run():
                 "status": "available" if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"} else "opt_in",
                 "source": "Yahoo option chains + calculated price returns",
                 "note": "Set ENABLE_OPTIONS_VOLATILITY=1; options requests are intentionally opt-in.",
+            },
+            "earnings_surprise_momentum": {
+                "status": "available" if EARNINGS_SURPRISE_ENABLED else "opt_in",
+                "source": "Yahoo earnings calendar (scraped, one request per symbol)",
+                **EARNINGS_SURPRISE_STATS,
+                "note": "Set ENABLE_EARNINGS_SURPRISE=1. Off by default: the first production "
+                        "run resolved it for 0 of 40 published companies, so it spent a "
+                        "request per symbol for nothing. Its growth-bucket weight stays in "
+                        "config and reweights away while unavailable.",
             },
             "analyst_revision_trends": {"status": "provider_required", "note": "Point-in-time estimate history is not supplied by current providers."},
             "guidance_beat_miss_history": {"status": "provider_required", "note": "Needs normalized company guidance and contemporaneous consensus snapshots."},

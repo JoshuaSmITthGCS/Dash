@@ -506,11 +506,20 @@ def derive_earnings_surprise(surprises):
     return rounded(weighted / total)
 
 
-def earnings_surprise_rows(ticker_obj):
-    """Adapt a yfinance ``earnings_dates`` frame into plain rows. Never raises."""
+def earnings_surprise_rows(ticker_obj, *, on_error=None):
+    """Adapt a yfinance ``earnings_dates`` frame into plain rows. Never raises.
+
+    ``earnings_dates`` is not part of the statement bundle - yfinance serves it by scraping
+    a separate page, one request per symbol, and that endpoint is markedly less reliable
+    than the rest. Failures are reported through ``on_error`` rather than swallowed, because
+    a silently empty result is indistinguishable from a company that simply has no reported
+    surprises, and that ambiguity is what let this signal sit at zero coverage unnoticed.
+    """
     try:
         frame = ticker_obj.earnings_dates
-    except Exception:  # noqa: BLE001 - an absent calendar must not sink the symbol
+    except Exception as exc:  # noqa: BLE001 - an absent calendar must not sink the symbol
+        if on_error:
+            on_error(exc)
         return []
     if frame is None or getattr(frame, "empty", True):
         return []

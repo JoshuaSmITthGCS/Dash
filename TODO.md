@@ -1,12 +1,19 @@
 # TODO
 
-_Last updated: 2026-08-02_
+_Last updated: 2026-08-02 (revised after the first production run on `main`)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
 between "the code runs" and "every declared capability actually produces data".
 
 Grouped by what they block. Within each group, roughly in the order worth doing.
+
+**Confirmed by the 2026-08-02 production run** (338 companies, 40 published): schema v2,
+the 78/18/4 blend, the rebuilt technicals, `gross_profits_to_assets` (32/40), `ev_to_ebit`
+(32/40), `asset_growth` (40/40), and sector-correct Altman variants (8 manufacturing,
+24 non-manufacturing, 8 financials suppressed) all landed. The point-in-time store wrote
+its first 338 observations and committed them. Cache hit rate was 47.5% on a cold start.
+Form 4 and the theme screen both reported `unavailable` for the reason in §1.
 
 ---
 
@@ -15,12 +22,17 @@ Grouped by what they block. Within each group, roughly in the order worth doing.
 These are credentials and endpoints, not code. Each one silently disables a feature that
 is otherwise finished, and each reports itself unavailable rather than failing loudly.
 
-- [ ] **`SEC_USER_AGENT` GitHub secret.** SEC fair-access policy requires a real
-      application and contact string (for example `ValueSignal research you@example.com`).
-      Without it, `SecEdgarClient.available` is false and **two finished features produce
-      nothing**: the Form 4 insider modifier and the entire theme-exposure screen. Add
-      under **Settings → Secrets and variables → Actions**; the workflow already reads it.
-      *Highest-value item on this list — it costs nothing and unblocks the most.*
+- [ ] **`SEC_USER_AGENT` GitHub secret.** No registration or application is required — the
+      SEC just wants a real identifier and a working email so they can make contact if a
+      script misbehaves. Format is a plain string: `Joshua Smith jbmsmusic05@gmail.com`.
+      Add it under **Settings → Secrets and variables → Actions**; the workflow already
+      reads it, and `.env.local` covers local runs.
+
+      Confirmed unset by the 2026-08-02 run: `source_status.sec_form4` reported
+      `"unavailable"` and `theme_screen` reported
+      `"SEC_USER_AGENT is required by SEC fair-access policy"`. **Two finished features
+      produce nothing until this exists**: the Form 4 insider modifier and the entire
+      theme-exposure screen. *Highest-value item on this list — free, and unblocks the most.*
 
 - [ ] **Rule 6c-11 disclosure endpoints in `pipeline/config/universe.json`.** Currently
       **0 of 40 funds** have one, so every fund falls back to a quote-derived
@@ -71,6 +83,27 @@ is a thin basis for a screen whose whole purpose is corroboration.
 
 - [ ] **Add a second theme.** One theme does not exercise the "drop in a YAML file, no code
       change" claim. A second, structurally different one would prove it.
+
+---
+
+## 2b. Earnings surprise — shipped, measured at zero, now opt-in
+
+The fundamental-momentum input resolved for **0 of 40** published companies on the first
+production run. yfinance serves `earnings_dates` by scraping a separate page, one request
+per symbol, and the original code swallowed every failure silently — so it spent roughly
+110 requests per run to populate a metric that never appeared, with no diagnostic.
+
+It is now cached, logs its failures, reports `requested`/`resolved`/`failed` in
+`capability_status`, and is **off by default** behind `ENABLE_EARNINGS_SURPRISE=1` — the
+same treatment option-chain volatility already gets, for the same reason. Its growth-bucket
+weight stays in config and reweights away while unavailable, so re-enabling needs no other
+change.
+
+- [ ] **Diagnose why it returns nothing.** Run once with `ENABLE_EARNINGS_SURPRISE=1` and
+      read the new warnings: they will distinguish a blocked scrape from a genuinely absent
+      calendar. If the endpoint is simply gone, source surprises elsewhere (Alpha Vantage
+      `EARNINGS` returns `surprisePercentage` and would cost quota, not scrapes) or drop the
+      metric and redistribute its 0.16 growth weight.
 
 ---
 
