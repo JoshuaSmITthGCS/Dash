@@ -1,7 +1,16 @@
+import contextlib
+import os
+import sys
+import threading
+import time
 import unittest
-
-from pipeline.sec_edgar import parse_form4, parse_owner
 import xml.etree.ElementTree as ET
+from unittest import mock
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+import sec_edgar
+from pipeline.sec_edgar import SecEdgarClient, parse_form4, parse_owner
 
 
 FORM4 = """<?xml version="1.0"?>
@@ -78,6 +87,82 @@ class Form4ParserTests(unittest.TestCase):
         owner = parse_owner(ET.fromstring(FORM4))
         self.assertEqual(owner["owner_name"], "Doe Jane")
         self.assertEqual(owner["officer_title"], "Chief Financial Officer")
+
+
+class FairAccessTests(unittest.TestCase):
+    """SEC fair access allows 10 requests/second. Exceeding it gets the client blocked."""
+
+    def test_requests_are_paced_by_a_shared_limiter_across_threads(self):
+        # The bug this guards: pacing used to be a per-instance sleep, which only slows the
+        # thread it runs on. Four concurrent workers each sleeping 0.12s issued ~33 requests
+        # a second between them. A process-wide token bucket is the only thing that can hold
+        # a global rate, so this measures the rate under concurrency rather than in one thread.
+        from cache import RateLimiter
+
+        limiter = RateLimiter(per_minute=540)   # 9 requests/second
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=limiter)
+        sent = []
+
+        def fake_urlopen(request, timeout=None):
+            sent.append(time.monotonic())
+            return contextlib.nullcontext(_FakeResponse(b"{}"))
+
+        with mock.patch.object(sec_edgar.urllib.request, "urlopen", fake_urlopen):
+            def worker():
+                for _ in range(4):
+                    client._get("https://data.sec.gov/x.json", as_json=True)
+
+            threads = [threading.Thread(target=worker) for _ in range(4)]
+            start = time.monotonic()
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            elapsed = time.monotonic() - start
+
+        self.assertEqual(len(sent), 16)
+        observed_rate = len(sent) / max(elapsed, 1e-9)
+        self.assertLessEqual(observed_rate, 10.0,
+                             f"issued {observed_rate:.1f} requests/second, over the SEC ceiling")
+
+    def test_a_client_without_an_identity_refuses_to_call(self):
+        # The environment is cleared explicitly: other modules call load_local_env() at
+        # import time, so on a machine with a real .env.local this would otherwise pick up
+        # a live identity and make an actual network request.
+        with mock.patch.dict(os.environ, {"SEC_USER_AGENT": ""}):
+            client = SecEdgarClient(user_agent="")
+            self.assertFalse(client.available)
+            with self.assertRaises(RuntimeError):
+                client._get("https://data.sec.gov/x.json")
+
+    def test_the_required_headers_are_sent(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com",
+                                limiter=_NoopLimiter())
+        captured = {}
+
+        def fake_urlopen(request, timeout=None):
+            captured["headers"] = dict(request.headers)
+            return contextlib.nullcontext(_FakeResponse(b"{}"))
+
+        with mock.patch.object(sec_edgar.urllib.request, "urlopen", fake_urlopen):
+            client._get("https://data.sec.gov/submissions/CIK0000320193.json", as_json=True)
+
+        # urllib title-cases header names on the way in.
+        self.assertEqual(captured["headers"]["User-agent"], "Test Harness test@example.com")
+        self.assertEqual(captured["headers"]["Host"], "data.sec.gov")
+
+
+class _FakeResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def read(self):
+        return self._payload
+
+
+class _NoopLimiter:
+    def acquire(self):
+        return 0.0
 
 
 if __name__ == "__main__":

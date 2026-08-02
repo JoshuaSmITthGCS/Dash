@@ -90,18 +90,32 @@ def parse_form4(xml_text):
 
 
 class SecEdgarClient:
-    def __init__(self, user_agent=None, request_delay=0.12):
+    def __init__(self, user_agent=None, request_delay=None, limiter=None):
         self.user_agent = user_agent or os.getenv("SEC_USER_AGENT", "").strip()
+        # Pacing is delegated to a process-wide token bucket rather than a per-instance
+        # sleep. A sleep only paces the thread it runs on, so N concurrent callers each
+        # sleeping 0.12s issue roughly N * 8 requests per second between them - which is how
+        # a "compliant" client quietly ends up eight times over the SEC's ceiling. The
+        # shared limiter is the only thing that can enforce a global rate.
         self.request_delay = request_delay
+        self._limiter = limiter
         self._tickers = None
 
     @property
     def available(self):
         return bool(self.user_agent)
 
+    def limiter(self):
+        if self._limiter is None:
+            from cache import limiter_for  # local import keeps sec_edgar standalone-usable
+            self._limiter = limiter_for("sec_edgar")
+        return self._limiter
+
     def _get(self, url, as_json=False):
         if not self.available:
             raise RuntimeError("SEC_USER_AGENT is required by SEC fair-access policy")
+        # Blocks until this caller owns the next slot, across every thread in the process.
+        self.limiter().acquire()
         request = urllib.request.Request(url, headers={
             "User-Agent": self.user_agent,
             "Accept-Encoding": "identity",
@@ -109,7 +123,8 @@ class SecEdgarClient:
         })
         with urllib.request.urlopen(request, timeout=20) as response:
             payload = response.read()
-        time.sleep(self.request_delay)
+        if self.request_delay:
+            time.sleep(self.request_delay)
         return json.loads(payload) if as_json else payload.decode("utf-8", errors="replace")
 
     def ticker_map(self):

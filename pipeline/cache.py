@@ -32,7 +32,10 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 # config/settings.json so a paid upgrade is a config edit, not a code change.
 DEFAULT_RATE_LIMITS = {
     "alpha_vantage": 5,
-    "sec_edgar": 600,      # SEC fair access is 10 requests/second
+    # SEC fair access allows 10 requests/second. Sitting exactly on a published ceiling
+    # leaves no room for clock jitter or a retry the limiter never saw, and the penalty for
+    # crossing it is a block rather than a warning, so this runs at 9/s instead.
+    "sec_edgar": 540,
     "yahoo": 120,
     "fred": 120,
     "marketaux": 60,
