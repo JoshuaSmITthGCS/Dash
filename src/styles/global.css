@@ -182,6 +182,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .screen-company b { font: 720 15px var(--font-display); }.screen-company small { overflow: hidden; color: var(--text-faint); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .stock-screen-list button > span > small { color: var(--text-faint); font-size: 8px; }.stock-screen-list button > span > .mono { font-size: 11px; }
 .screen-disclaimer { margin: 10px 2px 0; color: var(--text-faint); font-size: 10px; }
+.etf-benchmark-strip { display: flex; gap: 18px; padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 10px; color: var(--text-faint); }
+.etf-benchmark-strip .mono { margin-left: 5px; font-size: 11px; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 26px; }
 .summary-grid article { min-height: 126px; padding: 18px; border: 1px solid var(--border); border-radius: 20px; background: var(--bg-elev); }
 .summary-grid span, .summary-grid small, .macro-card small { display: block; color: var(--text-faint); font-size: 10px; }

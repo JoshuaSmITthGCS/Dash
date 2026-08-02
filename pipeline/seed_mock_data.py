@@ -12,7 +12,7 @@ import random
 from datetime import datetime, timezone, timedelta
 
 from common import save_json, normalize_name
-from fetch_etfs import ETFS as ETF_UNIVERSE, build_etf_row, rank_etf_rows
+from fetch_etfs import ETFS as ETF_UNIVERSE, build_etf_row, daily_returns, score_etf_universe
 
 random.seed(7)
 TODAY = datetime.now(timezone.utc).date()
@@ -161,30 +161,54 @@ def make_prices():
     return prices
 
 
-# engineered standouts so the demo growth screen has clear winners and a laggard
-ETF_TECHNICAL_OVERRIDES = {
-    "QQQ": {"return_5d": 3.8, "return_20d": 9.4, "return_60d": 17.2},
-    "SMH": {"return_5d": 4.1, "return_20d": 10.8, "return_60d": 21.5},
-    "BND": {"return_5d": -0.4, "return_20d": -1.1, "return_60d": 0.6},
+# Rough daily-drift/volatility profile per category so the synthetic price walks look like
+# the asset class they represent (bonds calm, thematic/crypto choppy) rather than uniform noise.
+CATEGORY_PROFILE = {
+    "broad_market": (0.00035, 0.010), "growth": (0.00050, 0.014), "value": (0.00030, 0.010),
+    "small_cap": (0.00030, 0.016), "dividend": (0.00025, 0.008), "international": (0.00020, 0.011),
+    "bonds": (0.00008, 0.004), "commodity": (0.00020, 0.013), "sector": (0.00030, 0.013),
+    "thematic": (0.00040, 0.020), "crypto": (0.00090, 0.045),
 }
+# engineered standouts so the demo screen has a clear leader and a clear laggard
+ETF_DRIFT_OVERRIDES = {"SMH": 0.0013, "QQQ": 0.0010, "BND": -0.0002}
+
+
+def synthetic_closes(seed_offset, days=800, drift=0.0003, vol=0.012, start=100.0):
+    rng = random.Random(1000 + seed_offset)
+    price = start
+    closes = []
+    for _ in range(days):
+        price *= 1 + rng.gauss(drift, vol)
+        closes.append(round(max(price, 0.01), 4))
+    return closes
 
 
 def make_etfs():
-    """Synthetic growth-ranked ETF snapshot, mirroring fetch_etfs.py's live output shape."""
+    """Synthetic, growth-ranked ETF watchlist mirroring fetch_etfs.py's live output shape."""
+    closes_by_ticker = {}
+    for index, (ticker, meta) in enumerate(ETF_UNIVERSE.items()):
+        drift, vol = CATEGORY_PROFILE.get(meta.get("category"), (0.0003, 0.012))
+        drift = ETF_DRIFT_OVERRIDES.get(ticker, drift)
+        closes_by_ticker[ticker] = synthetic_closes(index, drift=drift, vol=vol)
+
+    benchmark_daily = daily_returns(closes_by_ticker["SPY"])
     rows = []
     for ticker, meta in ETF_UNIVERSE.items():
-        technical = {
-            "return_5d": round(random.uniform(-3, 3), 2),
-            "return_20d": round(random.uniform(-8, 8), 2),
-            "return_60d": round(random.uniform(-15, 15), 2),
-            "coverage": 1.0,
-            **ETF_TECHNICAL_OVERRIDES.get(ticker, {}),
+        closes = closes_by_ticker[ticker]
+        volumes = [round(random.uniform(2e5, 8e6)) for _ in closes]
+        price = closes[-1]
+        spread = max(price * random.uniform(0.0002, 0.003), 0.01)
+        snapshot = {
+            "price": price, "aum": round(random.uniform(3e8, 4e11)),
+            "bid": round(price - spread / 2, 2), "ask": round(price + spread / 2, 2),
         }
-        rows.append(build_etf_row(ticker, meta, {"price": None, "dividend_yield": None}, technical))
-    ranked = rank_etf_rows(rows)
+        rows.append(build_etf_row(ticker, meta, snapshot, closes, volumes, benchmark_daily))
+
+    scored = score_etf_universe(rows)
     return {
-        "schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
-        "data_mode": "demo", "benchmark": "SPY", "count": len(ranked), "etfs": ranked,
+        "schema_version": 2, "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_mode": "demo", "benchmarks": {"sp500": "SPY", "dow": "DIA"},
+        "count": len(scored), "etfs": scored,
     }
 
 
