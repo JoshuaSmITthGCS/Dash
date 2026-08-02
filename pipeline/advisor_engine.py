@@ -1,27 +1,46 @@
 """Explainable, fundamentals-first research scoring. No political inputs."""
 
-from math import sqrt
+from datetime import datetime, timedelta, timezone
 
+from insider_signal import score_insider_activity
+from risk_metrics import (annualized_volatility, beta_vs_benchmark, daily_returns,
+                          drawdown_score, low_beta_score, max_drawdown, momentum_12_1,
+                          ratio_to_score, sharpe_ratio, sortino_ratio)
 from scorer import SETTINGS, valuation_score
 
-RANKING_WEIGHTS = {"fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.10}
+# Fundamentals deliberately dominate. News sentiment was cut from 10% because its alpha
+# decays in days: Tetlock (2007) finds media pessimism predicts downward price pressure
+# "followed by a reversion to fundamentals", so a daily headline snapshot is a tilt, not a
+# tenth of a research thesis. The freed weight went to market behavior, which is now built
+# on real risk-adjusted math rather than invented constants.
+DEFAULT_RANKING_WEIGHTS = {"fundamentals": 0.78, "market_behavior": 0.18, "news_sentiment": 0.04}
+
+
+def _weights(configured, defaults):
+    """Merge a config weight table over defaults, dropping ``_comment``-style annotations."""
+    numeric = {key: value for key, value in (configured or {}).items()
+               if not key.startswith("_") and isinstance(value, (int, float))}
+    return {**defaults, **numeric}
+
+
+RANKING_WEIGHTS = _weights(SETTINGS.get("ranking_weights"), DEFAULT_RANKING_WEIGHTS)
 MODIFIERS = SETTINGS.get("modifiers", {})
+
+# Market-behavior sub-weights, overridable from config.
+DEFAULT_TECHNICAL_WEIGHTS = {
+    "momentum_12_1": 0.30, "risk_adjusted": 0.26, "relative_strength": 0.16,
+    "drawdown_resilience": 0.14, "volume_confirmation": 0.08, "low_beta": 0.06,
+}
+TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weights"),
+                             DEFAULT_TECHNICAL_WEIGHTS)
+# How many days of headlines are aggregated. Tetlock's result is that a single day of
+# sentiment mostly mean-reverts within days while a week's aggregate extends predictability,
+# so the window is a week rather than a snapshot.
+SENTIMENT_WINDOW_DAYS = int((SETTINGS.get("market_behavior") or {}).get("sentiment_window_days", 7))
 
 
 def clamp(value, low=0.0, high=100.0):
     return max(low, min(high, value))
-
-
-def max_drawdown(closes):
-    """Deepest peak-to-trough fall over the window, in percent. Makes broken charts obvious."""
-    if len(closes) < 2:
-        return None
-    peak, worst = closes[0], 0.0
-    for close in closes:
-        peak = max(peak, close)
-        if peak:
-            worst = min(worst, close / peak - 1)
-    return round(worst * 100, 2)
 
 
 def volume_confirmation(closes, volumes):
@@ -43,7 +62,25 @@ def volume_confirmation(closes, volumes):
 
 
 def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None):
-    """Score trend, relative strength, volatility, drawdown, and volume confirmation."""
+    """Score market behavior on the same risk math the ETF model uses.
+
+    The previous version scored two invented linear formulas - a trend of
+    ``50 + 20d_return*2 + 60d_return*0.5`` and a risk penalty of
+    ``100 - max(0, vol-12)*2 - |drawdown|*1.5``. Those constants were arbitrary: they are
+    not comparable across volatility regimes, they cannot be validated against any published
+    result, and they measured something no two people would agree on. What replaced them:
+
+      * **12-1 momentum** (Jegadeesh & Titman 1993) instead of raw recent return, skipping
+        the most recent month to avoid the short-term reversal that runs against momentum.
+      * **Sortino and Sharpe** on the stock's own return series instead of a hand-tuned
+        volatility penalty - the identical functions the ETF screen scores funds with, so a
+        risk reading means the same thing on either side of the platform.
+      * **Low beta rewarded** rather than volatility punished, following the
+        betting-against-beta result (Frazzini & Pedersen 2014).
+
+    Relative strength versus SPY and volume confirmation are kept as they were; both were
+    already reasonable.
+    """
     if len(closes) < 21:
         return None, {"coverage": 0.0}
     extended = extended or {}
@@ -52,13 +89,19 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
     ret_20 = (last / closes[-21] - 1) * 100
     ret_60 = (last / closes[-61] - 1) * 100 if len(closes) >= 61 else None
     ret_252 = (last / closes[-253] - 1) * 100 if len(closes) >= 253 else None
-    daily = [(b / a) - 1 for a, b in zip(closes[:-1], closes[1:]) if a]
-    recent = daily[-60:]
-    mean = sum(recent) / len(recent)
-    vol = sqrt(sum((x - mean) ** 2 for x in recent) / len(recent)) * sqrt(252) * 100
+    momentum = momentum_12_1(closes)
+    returns = daily_returns(closes)
+    volatility = annualized_volatility(returns, window=60)
+    sortino = sortino_ratio(returns[-252:] if len(returns) >= 252 else returns)
+    sharpe = sharpe_ratio(returns[-252:] if len(returns) >= 252 else returns)
     peak = max(closes[-60:])
     drawdown = (last / peak - 1) * 100
     drawdown_252 = max_drawdown(closes[-252:])
+
+    benchmark_returns = daily_returns(benchmark_closes) if benchmark_closes else []
+    beta = extended.get("beta")
+    if beta is None and benchmark_returns:
+        beta = beta_vs_benchmark(returns, benchmark_returns)
     relative = None
     if benchmark_closes and len(benchmark_closes) >= 21:
         bench_ret = (benchmark_closes[-1] / benchmark_closes[-21] - 1) * 100
@@ -77,33 +120,92 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         if above_low is None and year_low:
             above_low = round((last / year_low - 1) * 100, 2)
 
-    trend_score = clamp(50 + ret_20 * 2 + ((ret_60 or 0) * 0.5))
-    risk_score = clamp(100 - max(0, vol - 12) * 2 - abs(min(0, drawdown)) * 1.5)
-    relative_score = clamp(50 + (relative or 0) * 3)
+    # A stock without a full year of history has no 12-1 momentum. Rather than score it
+    # neutral and pretend, fall back to the 60-day return and mark coverage down for it.
+    momentum_input = momentum if momentum is not None else ret_60
+    momentum_score = None if momentum_input is None else clamp(50 + momentum_input * 1.2)
+    # Sortino leads (downside deviation is the risk worth avoiding); Sharpe cross-checks it.
+    risk_adjusted = None
+    if sortino is not None or sharpe is not None:
+        components = [(ratio_to_score(sortino), 0.65), (ratio_to_score(sharpe), 0.35)]
+        present = [(value, weight) for value, weight in components if value is not None]
+        risk_adjusted = round(sum(value * weight for value, weight in present)
+                              / sum(weight for _, weight in present), 1)
+    relative_score = None if relative is None else clamp(50 + relative * 3)
     # A one-to-three year max drawdown says more about a broken chart than a 60-day dip does.
-    drawdown_score = clamp(100 + (drawdown_252 or 0) * 1.6)
-    volume_score = 50.0 if confirmation is None else clamp(35 + (confirmation - 1) * 55)
-    parts = {"trend": (trend_score, 0.32), "risk": (risk_score, 0.22),
-             "relative_strength": (relative_score, 0.18), "drawdown_resilience": (drawdown_score, 0.16),
-             "volume_confirmation": (volume_score, 0.12)}
-    score = round(sum(value * weight for value, weight in parts.values()), 1)
+    resilience = drawdown_score(drawdown_252 if drawdown_252 is not None else drawdown)
+    volume_score = None if confirmation is None else clamp(35 + (confirmation - 1) * 55)
+    beta_score = low_beta_score(beta)
+
+    parts = {
+        name: None if value is None else round(value, 1)
+        for name, value in (
+            ("momentum_12_1", momentum_score), ("risk_adjusted", risk_adjusted),
+            ("relative_strength", relative_score), ("drawdown_resilience", resilience),
+            ("volume_confirmation", volume_score), ("low_beta", beta_score),
+        )
+    }
+    answered = [(value, TECHNICAL_WEIGHTS[name]) for name, value in parts.items()
+                if value is not None and name in TECHNICAL_WEIGHTS]
+    if not answered:
+        return None, {"coverage": 0.0}
+    score = round(sum(value * weight for value, weight in answered)
+                  / sum(weight for _, weight in answered), 1)
+    # Coverage is the share of the weight table that actually resolved, so a stock with six
+    # months of prices is visibly less certain than one with three years.
+    coverage = round(sum(weight for _, weight in answered) / sum(TECHNICAL_WEIGHTS.values()), 2)
+
     return score, {
         "return_5d": round(ret_5, 2) if ret_5 is not None else None,
         "return_20d": round(ret_20, 2), "return_60d": round(ret_60, 2) if ret_60 is not None else None,
         "return_252d": round(ret_252, 2) if ret_252 is not None else None,
-        "annualized_volatility": round(vol, 2), "drawdown_60d": round(drawdown, 2),
+        "momentum_12_1_pct": momentum,
+        "annualized_volatility": volatility, "drawdown_60d": round(drawdown, 2),
         "max_drawdown_252d": drawdown_252,
+        "sharpe_ratio": sharpe, "sortino_ratio": sortino,
         "relative_strength_20d": round(relative, 2) if relative is not None else None,
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
-        "pct_above_52w_low": above_low, "beta": extended.get("beta"),
-        **{name: round(value, 1) for name, (value, _) in parts.items()},
-        "coverage": round(0.7 + (0.15 if volumes else 0) + (0.15 if len(closes) >= 253 else 0), 2),
+        "pct_above_52w_low": above_low, "beta": beta,
+        **{name: value for name, value in parts.items() if value is not None},
+        "coverage": coverage,
     }
 
 
-def sentiment_score(news_items, ticker):
+def _published_within(item, days, now=None):
+    """Whether an article falls inside the aggregation window. Undated articles are kept."""
+    stamp = item.get("published_at")
+    if not stamp:
+        return True
+    text = str(stamp)
+    # Alpha Vantage stamps as YYYYMMDDTHHMMSS; Marketaux uses ISO 8601.
+    for parse in (lambda t: datetime.strptime(t[:15], "%Y%m%dT%H%M%S").replace(tzinfo=timezone.utc),
+                  lambda t: datetime.fromisoformat(t.replace("Z", "+00:00"))):
+        try:
+            published = parse(text)
+            break
+        except (ValueError, TypeError):
+            continue
+    else:
+        return True
+    if published.tzinfo is None:
+        published = published.replace(tzinfo=timezone.utc)
+    return published >= (now or datetime.now(timezone.utc)) - timedelta(days=days)
+
+
+def sentiment_score(news_items, ticker, *, window_days=None, now=None):
+    """Aggregate entity-level headline sentiment over a window, not a single snapshot.
+
+    Tetlock (2007) finds high media pessimism predicts downward price pressure "followed by
+    a reversion to fundamentals" - the effect on any one day largely unwinds within days,
+    while aggregating over a week extends the horizon over which it carries information.
+    So this aggregates a week of coverage and the blend weights it as a tilt (4%), not as a
+    core component.
+    """
+    window_days = SENTIMENT_WINDOW_DAYS if window_days is None else window_days
     scores = []
     for item in news_items:
+        if not _published_within(item, window_days, now):
+            continue
         for row in item.get("ticker_sentiment", []):
             if row.get("ticker") == ticker:
                 try:
@@ -111,32 +213,71 @@ def sentiment_score(news_items, ticker):
                 except (TypeError, ValueError):
                     pass
     if not scores:
-        return 50.0, {"article_count": 0, "average": None, "coverage": 0.0}
+        return 50.0, {"article_count": 0, "average": None, "coverage": 0.0,
+                      "window_days": window_days}
     avg = sum(scores) / len(scores)
     return round(clamp(50 + avg * 100), 1), {
-        "article_count": len(scores), "average": round(avg, 3), "coverage": min(1.0, len(scores) / 5),
+        "article_count": len(scores), "average": round(avg, 3),
+        # Confidence scales with how many articles actually mention the company. One
+        # headline is an anecdote; five is a read on coverage.
+        "coverage": min(1.0, len(scores) / 5), "window_days": window_days,
     }
 
 
 # ---------------- post-blend modifiers ----------------
 
 def short_interest_modifier(extended):
-    """Penalize crowded shorts. High short interest is not automatically bearish, but it
-    raises the cost of being wrong, so it trims the score instead of driving it."""
+    """Penalize crowded shorts.
+
+    Short interest is one of the strongest documented cross-sectional predictors there is:
+    Boehmer, Jones & Zhang (*JF* 2008) find heavily shorted stocks underperform lightly
+    shorted ones by a risk-adjusted 1.16% over the following 20 trading days - about 15.6%
+    annualized. The old -4 cap under-used a signal that strong, so it is now -6. It stays a
+    bounded modifier rather than a ranking factor because high short interest is not
+    automatically bearish; it raises the cost of being wrong.
+    """
     cfg = MODIFIERS.get("short_interest", {})
+    cap = cfg.get("max_penalty", 6.0)
     float_short, days = extended.get("short_percent_of_float"), extended.get("days_to_cover")
     if float_short is None and days is None:
         return 0.0, None
     penalty = 0.0
     note = None
     if float_short is not None and float_short >= cfg.get("float_severe", 0.15):
-        penalty, note = cfg.get("max_penalty", 4.0), f"{float_short * 100:.1f}% of float sold short"
+        penalty, note = cap, f"{float_short * 100:.1f}% of float sold short"
     elif float_short is not None and float_short >= cfg.get("float_warning", 0.08):
-        penalty, note = cfg.get("max_penalty", 4.0) / 2, f"{float_short * 100:.1f}% of float sold short"
+        penalty, note = cap / 2, f"{float_short * 100:.1f}% of float sold short"
     if days is not None and days >= cfg.get("days_to_cover_warning", 5.0):
-        penalty = min(cfg.get("max_penalty", 4.0), penalty + 1.0)
+        penalty = min(cap, penalty + 1.5)
         note = note or f"{days:.1f} days to cover"
     return -round(penalty, 2), note
+
+
+def insider_modifier(insider_activity):
+    """Reward fresh opportunistic cluster buying; penalize opportunistic cluster selling.
+
+    The scoring itself lives in ``insider_signal`` (Cohen-Malloy-Pomorski routine/
+    opportunistic split, buys weighted above sells, decaying over one to three months).
+    This adapter accepts either raw parsed Form 4 transactions or an already-scored
+    summary, so the pipeline can compute it once and reuse it.
+    """
+    if not insider_activity:
+        return 0.0, None
+    cfg = MODIFIERS.get("insider_activity", {})
+    if insider_activity.get("score_points") is not None:
+        points = insider_activity["score_points"]
+        notes = insider_activity.get("notes") or []
+    else:
+        transactions = insider_activity.get("transactions") or []
+        if not transactions:
+            return 0.0, None
+        points, detail = score_insider_activity(transactions, config=cfg)
+        notes = detail.get("notes") or []
+    if not points:
+        return 0.0, None
+    cap = cfg.get("max_points", 5.0)
+    floor = -cfg.get("max_penalty", 3.0)
+    return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
 
 
 def liquidity_modifier(extended):
@@ -215,7 +356,8 @@ def macro_regime_modifier(snapshot, macro_regime):
     return points, f"FRED macro regime is {direction} for {sector} ({sector_score:.0f}/100)"
 
 
-def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None):
+def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
+                    insider_activity=None):
     """Blend the bounded refinements onto the evidence score and explain every one."""
     applied = {}
     notes = []
@@ -225,6 +367,7 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         "liquidity": liquidity_modifier(extended),
         "expectations": expectations_modifier(extended),
         "macro_regime": macro_regime_modifier(snapshot, macro_regime),
+        "insider_activity": insider_modifier(insider_activity),
     }.items():
         if points:
             applied[name] = points
@@ -374,7 +517,8 @@ def build_evidence(categories, technical_parts, extended):
 
 
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
-                   volumes=None, extended=None, sector_percentile=None, macro_regime=None):
+                   volumes=None, extended=None, sector_percentile=None, macro_regime=None,
+                   insider_activity=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -389,7 +533,8 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     confidence = round(0.65 * fundamental_coverage + 0.25 * technical_parts.get("coverage", 0) +
                        0.10 * sentiment_parts.get("coverage", 0), 2)
     base = round(raw * (0.8 + confidence * 0.2), 1)
-    score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime)
+    score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
+                                       insider_activity)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, confidence)
     strengths, risks = build_evidence(categories, technical_parts, extended)

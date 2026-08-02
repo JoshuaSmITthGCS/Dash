@@ -1,61 +1,318 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["schema_version", "generated_at", "data_mode", "benchmarks", "count", "etfs"],
+  "required": [
+    "schema_version",
+    "generated_at",
+    "data_mode",
+    "benchmarks",
+    "count",
+    "etfs"
+  ],
   "properties": {
-    "schema_version": {"type": "integer"},
-    "generated_at": {"type": "string", "format": "date-time"},
-    "data_mode": {"enum": ["demo", "live"]},
+    "schema_version": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 3
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_mode": {
+      "enum": [
+        "demo",
+        "live"
+      ]
+    },
     "benchmarks": {
       "type": "object",
-      "required": ["sp500", "dow"],
+      "required": [
+        "sp500",
+        "dow"
+      ],
       "properties": {
-        "sp500": {"type": "string"},
-        "dow": {"type": "string"}
+        "sp500": {
+          "type": "string"
+        },
+        "dow": {
+          "type": "string"
+        }
       }
     },
-    "count": {"type": "integer", "minimum": 0},
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "etfs": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["ticker", "name", "category", "issuer", "returns", "scores", "vs_benchmarks", "overall_rank"],
+        "required": [
+          "ticker",
+          "name",
+          "category",
+          "issuer",
+          "returns",
+          "scores",
+          "vs_benchmarks",
+          "overall_rank"
+        ],
         "properties": {
-          "ticker": {"type": "string", "pattern": "^[A-Z0-9.-]+$"},
-          "name": {"type": "string"},
-          "category": {"type": "string"},
-          "issuer": {"type": "string"},
-          "expense_ratio": {"type": ["number", "null"]},
-          "price": {"type": ["number", "null"]},
-          "aum": {"type": ["number", "null"]},
-          "avg_dollar_volume": {"type": ["number", "null"]},
-          "bid_ask_spread_pct": {"type": ["number", "null"]},
-          "max_drawdown": {"type": ["number", "null"]},
-          "sharpe_ratio": {"type": ["number", "null"]},
-          "sortino_ratio": {"type": ["number", "null"]},
-          "beta": {"type": ["number", "null"]},
+          "ticker": {
+            "type": "string",
+            "pattern": "^[A-Z0-9.-]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "expense_ratio": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "aum": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "avg_dollar_volume": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bid_ask_spread_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "max_drawdown": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "sharpe_ratio": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "sortino_ratio": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "beta": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
           "returns": {
             "type": "object",
-            "required": ["1m", "3m", "6m", "1y", "3y"],
+            "required": [
+              "1m",
+              "3m",
+              "6m",
+              "1y",
+              "3y"
+            ],
             "properties": {
-              "1m": {"type": ["number", "null"]}, "3m": {"type": ["number", "null"]},
-              "6m": {"type": ["number", "null"]}, "1y": {"type": ["number", "null"]},
-              "3y": {"type": ["number", "null"]}
+              "1m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "3m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "6m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "1y": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "3y": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
             }
           },
           "scores": {
             "type": "object",
-            "required": ["performance", "risk", "cost", "liquidity", "quality", "overall"],
+            "required": [
+              "performance",
+              "risk",
+              "cost",
+              "liquidity",
+              "quality",
+              "overall"
+            ],
             "properties": {
-              "performance": {"type": "number"}, "risk": {"type": "number"},
-              "cost": {"type": "number"}, "liquidity": {"type": "number"},
-              "quality": {"type": "number"}, "overall": {"type": "number"}
+              "performance": {
+                "type": "number"
+              },
+              "risk": {
+                "type": "number"
+              },
+              "cost": {
+                "type": "number"
+              },
+              "liquidity": {
+                "type": "number"
+              },
+              "quality": {
+                "type": "number"
+              },
+              "overall": {
+                "type": "number"
+              }
             }
           },
-          "vs_benchmarks": {"type": "object"},
-          "overall_rank": {"type": "integer", "minimum": 1}
-        }
+          "vs_benchmarks": {
+            "type": "object"
+          },
+          "overall_rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "peer_group": {
+            "type": "string"
+          },
+          "ranked_against": {
+            "type": "string"
+          },
+          "peer_rank": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "peer_group_size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "cross_asset_class_rank": {
+            "type": "boolean"
+          },
+          "nav": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "premium_discount_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "premium_discount_source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bid_ask_spread_source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "index_symbol": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "index_returns": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "tracking_difference": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "tracking_difference_1y": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tracking_error_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "total_cost_of_ownership_pct": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "quality_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
       }
+    },
+    "score_weights": {
+      "type": "object"
+    },
+    "peer_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "methodology": {
+      "type": "object"
+    },
+    "disclosure_coverage": {
+      "type": "object"
     }
   }
 }

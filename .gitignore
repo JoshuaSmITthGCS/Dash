@@ -11,3 +11,8 @@
 !.env.example
 pipeline/logs/
 pipeline/cache/
+# Downloaded payloads. Regenerable by definition, and stale on purpose once expired.
+pipeline/data/cache/
+# The point-in-time store (pipeline/data/pit/) is deliberately NOT ignored. Scheduled runs
+# happen on ephemeral runners, so committing it back is the only way the history survives -
+# and it cannot be reconstructed later, because the providers only ever serve today.

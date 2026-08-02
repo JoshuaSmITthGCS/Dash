@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { datasetFor, migrate } from './schemaMigrations'
 
 // Loads a JSON file the pipeline committed into /public/data.
 // Static fetch -> no backend. Returns { data, loading, error, reload }.
+//
+// Payloads are migrated to the version this build expects on the way in, so a freshly
+// deployed site keeps working against the last committed snapshot until the next pipeline
+// run replaces it.
 export function useData(file) {
   const [state, setState] = useState({ data: null, loading: true, error: null })
   const mounted = useRef(false)
@@ -17,7 +22,9 @@ export function useData(file) {
         { cache: 'no-store' }
       )
       if (!response.ok) throw new Error(`${file}: ${response.status}`)
-      const data = await response.json()
+      const raw = await response.json()
+      const dataset = datasetFor(file)
+      const data = dataset ? migrate(dataset, raw) : raw
       if (mounted.current) setState({ data, loading: false, error: null })
       return data
     } catch (error) {

@@ -9,9 +9,13 @@ from datetime import datetime, timezone
 
 from advisor_engine import RANKING_WEIGHTS, build_research
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
+from cache import CACHE, parallel_map, retry_with_backoff
+from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
-from fundamentals_extended import derive_extended, extended_inputs
+from fundamentals_extended import derive_extended, earnings_surprise_rows, extended_inputs
+from insider_signal import summarize as summarize_insiders
+import pit_store
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload)
@@ -19,6 +23,8 @@ from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
 from scorer import SETTINGS, valuation_score
 from sec_edgar import SecEdgarClient
+from theme_signals import EdgarThemeSignals
+from themes import build_theme_screen, empty_screen, load_themes
 
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
@@ -81,21 +87,70 @@ def daily_history(payload):
 EMPTY_HISTORY = {"dates": [], "closes": [], "volumes": []}
 
 
-def yahoo_history(symbol, yf, period="2y", ticker_obj=None):
-    """Dates, closes, and volumes. Two years so max drawdown and 52-week context are real."""
+def yahoo_history(symbol, yf, period="2y", ticker_obj=None, cache=None):
+    """Dates, closes, and volumes. Two years so max drawdown and 52-week context are real.
+
+    Served from the on-disk cache when a recent copy exists, which is what makes a rerun
+    cheap and keeps the universe sweep off Yahoo's undocumented rate limiter.
+    """
     if not yf:
         return dict(EMPTY_HISTORY)
-    try:
+    cache = cache or CACHE
+
+    def produce():
         source = ticker_obj or yf.Ticker(symbol)
         frame = source.history(period=period, auto_adjust=False).dropna(subset=["Close"])
+        if frame.empty:
+            raise ValueError("empty price frame")
         return {
             "dates": [str(index)[:10] for index in frame.index],
             "closes": [float(value) for value in frame["Close"].tolist()],
             "volumes": [float(value) for value in frame["Volume"].fillna(0).tolist()],
         }
+
+    try:
+        return cache.fetch("price_history", f"{symbol}:{period}", produce, source="yahoo")
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{symbol}: Yahoo price history unavailable ({type(exc).__name__})")
         return dict(EMPTY_HISTORY)
+
+
+def prefetch_histories(symbols, yf, period="2y", cache=None):
+    """Warm the price cache for the whole universe in a handful of HTTP calls.
+
+    ``yf.download`` batches many symbols into far fewer requests than one Ticker call each,
+    which is both the biggest speed win available and the most reliable way to stay under a
+    rate limit nobody publishes. Anything the batch misses falls back to a per-symbol fetch
+    at the normal call site, so a partial batch degrades rather than fails.
+    """
+    if not yf or not symbols:
+        return 0
+    cache = cache or CACHE
+    missing = [symbol for symbol in symbols
+               if cache.get("price_history", f"{symbol}:{period}") is None]
+    if not missing:
+        LOG.info(f"Price history: all {len(symbols)} symbols served from cache")
+        return 0
+    warmed = 0
+    batch_size = int(os.getenv("YAHOO_BATCH_SIZE", "60"))
+    for start in range(0, len(missing), batch_size):
+        chunk = missing[start:start + batch_size]
+        try:
+            frame = retry_with_backoff(
+                lambda chunk=chunk: yf.download(chunk, period=period, auto_adjust=False,
+                                                group_by="ticker", progress=False, threads=True),
+                description=f"batch history for {len(chunk)} symbols")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"batch history failed ({type(exc).__name__}); "
+                     "per-symbol fetches will cover this chunk")
+            continue
+        for symbol in chunk:
+            payload = YahooAdapter.extract_symbol_frame(frame, symbol, single=len(chunk) == 1)
+            if payload:
+                cache.set("price_history", f"{symbol}:{period}", payload, source="yahoo")
+                warmed += 1
+    LOG.info(f"Price history: warmed {warmed}/{len(missing)} uncached symbols in batches")
+    return warmed
 
 
 def yahoo_snapshot(symbol, yf, ticker_obj=None, attempts=2):
@@ -124,6 +179,7 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history):
         annual=inputs["annual"], quarterly=inputs["quarterly"], info=info,
         market_cap=snapshot.get("market_cap"), price=snapshot.get("price"),
         sector=snapshot.get("sector"), closes=history["closes"], volumes=history["volumes"],
+        earnings_surprises=earnings_surprise_rows(ticker_obj),
     )
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
@@ -297,6 +353,47 @@ def insider_summary(payload):
     return {"recent_acquisitions": buys, "recent_disposals": sells, "records_reviewed": min(100, len(payload.get("data", [])))}
 
 
+def collect_insider_signals(sec, symbols, *, lookback_days=1100, cache=None):
+    """Score Form 4 activity for a shortlist, before the final ranking rather than after.
+
+    This used to run at the very end, purely as display, which meant the single
+    best-supported unused signal in the dataset could not influence a single score. It now
+    runs ahead of scoring so ``insider_modifier`` can act on it. Results are cached for a
+    day - Form 4 filings are not intraday data - and the whole thing is skipped silently
+    when ``SEC_USER_AGENT`` is unset, since SEC fair-access policy requires it.
+    """
+    if not sec.available or not symbols:
+        return {}, []
+    cache = cache or CACHE
+    failures = []
+
+    def collect_one(symbol):
+        def produce():
+            transactions, _ = sec.form4_transactions(symbol, lookback_days=lookback_days)
+            return transactions
+        try:
+            transactions = cache.fetch("sec_submissions", f"form4:{symbol}:{lookback_days}",
+                                       produce, source="sec_edgar")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"{symbol}: SEC Form 4 unavailable ({type(exc).__name__})")
+            return symbol, None
+        return symbol, summarize_insiders(transactions or [])
+
+    # SEC fair access allows 10 requests/second, so a small pool is safely inside the limit
+    # while still overlapping the latency of dozens of filing downloads.
+    results = parallel_map(collect_one, list(symbols), provider="sec_edgar", max_workers=4)
+    signals = {}
+    for entry in results:
+        if not entry:
+            continue
+        symbol, summary = entry
+        if summary is None:
+            failures.append(symbol)
+        else:
+            signals[symbol] = summary
+    return signals, failures
+
+
 def fetch_optional(client, function, **params):
     try:
         return client.query(function, **params)
@@ -399,6 +496,28 @@ def enrich(contexts, limit, delay, priority=()):
         time.sleep(delay)
     LOG.info(f"Extended statement metrics derived for {enriched}/{min(limit, len(contexts))} shortlisted companies")
     return enriched
+
+
+def build_theme_layer(sec, rows):
+    """Score the structural-trend screen, or explain why it could not run.
+
+    Kept out of the score by design: a forward-looking thematic bet blended into the
+    fundamentals score would make that score impossible to interpret. This emits an
+    independent ``theme_screen`` block the UI renders beside the other screens.
+    """
+    if os.getenv("THEMES_DISABLE", "").lower() in {"1", "true", "yes"}:
+        return empty_screen("disabled via THEMES_DISABLE")
+    themes = load_themes()
+    if not themes:
+        return empty_screen("no active theme definitions in pipeline/themes/")
+    provider = EdgarThemeSignals(sec)
+    if not provider.available:
+        return empty_screen("SEC_USER_AGENT is required by SEC fair-access policy; "
+                            "theme signals come from EDGAR filings")
+    screen = build_theme_screen(themes, rows, provider)
+    LOG.info(f"Theme screen: {len(screen['themes'])} theme(s), "
+             f"{sum(theme['count'] for theme in screen['themes'])} scored exposures")
+    return screen
 
 
 def previous_ranked_symbols(limit=INCUMBENT_ENRICH_LIMIT):
@@ -506,6 +625,9 @@ def run():
         fetch_optional(client, "TIME_SERIES_DAILY", symbol="SPY", outputsize="compact")
         if client else {}
     )
+    # One batched download for the whole universe before the per-symbol loop starts, so the
+    # loop mostly reads cache instead of making a few hundred separate HTTP calls.
+    prefetch_histories(("SPY", *symbols), yf)
     benchmark = daily_history(benchmark_payload)
     yahoo_benchmark = yahoo_history("SPY", yf)
     if len(yahoo_benchmark["closes"]) > len(benchmark["closes"]):
@@ -596,20 +718,35 @@ def run():
         for context in contexts
     ])
 
+    # SEC Form 4 is the free source-of-record for genuine open-market insider trades. It is
+    # collected here, ahead of scoring, so opportunistic cluster buying can actually move a
+    # score - previously it was fetched after ranking and could only ever be displayed.
+    sec = SecEdgarClient()
+    sec_limit = max(0, int(os.getenv("SEC_FORM4_LIMIT", str(publish_limit))))
+    insider_candidates = tuple(dict.fromkeys(
+        (*preliminary_symbols[:sec_limit], *portfolio_symbols)
+    )) if sec.available else ()
+    insider_signals, sec_failures = collect_insider_signals(sec, insider_candidates)
+
     research = []
     for context in contexts:
+        symbol = context["symbol"]
         row = build_research(
-            context["symbol"], context["snapshot"], context["history"]["closes"], benchmark["closes"],
+            symbol, context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended=context["extended"],
-            sector_percentile=percentiles.get(context["symbol"]),
+            sector_percentile=percentiles.get(symbol),
             macro_regime=fred_regime,
+            insider_activity=insider_signals.get(symbol),
         )
-        row["insider_activity"] = context["insider_activity"]
+        # The Form 4 record when we have one; the Alpha Vantage count as a display-only
+        # fallback when we do not.
+        row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["alpha_enriched"] = context["alpha_enriched"]
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
     ranked = research[:publish_limit]
+    ranked_tickers = {row["ticker"] for row in ranked}
     # The momentum and 52-week-low screens rank on price behavior, not the fundamentals-led
     # composite score, so a strong screen candidate can rank outside the published leaderboard.
     # technical_detail and fundamental_categories are populated for the whole scored universe
@@ -642,18 +779,23 @@ def run():
     }
     published_news = curate_candidate_news(all_news, research_context)
 
-    # SEC Form 4 is the free source-of-record fallback for genuine open-market insider
-    # purchases/sales. It runs only for published names to respect SEC fair-access limits.
-    sec = SecEdgarClient()
-    sec_failures = []
-    sec_limit = max(0, min(len(ranked), int(os.getenv("SEC_FORM4_LIMIT", str(len(ranked))))))
-    if sec.available:
-        for row in ranked[:sec_limit]:
-            try:
-                row["insider_activity"] = sec.form4_summary(row["ticker"])
-            except Exception as exc:  # noqa: BLE001
-                sec_failures.append(row["ticker"])
-                LOG.warn(f"{row['ticker']}: SEC Form 4 unavailable ({type(exc).__name__})")
+    # Append this run's observations to the point-in-time store. It only becomes valuable
+    # with time depth, so it starts accumulating now, well before any backtest needs it -
+    # there is no way to reconstruct it retroactively from a provider that only serves today.
+    # The trend-exposure layer runs as its own screen, deliberately outside the score. It
+    # is scored on the published leaders plus every configured holding, because the SEC
+    # requests are per-company and the whole universe would be wasteful for a screen most
+    # names will not clear anyway.
+    theme_candidates = [*ranked, *(
+        row for row in research
+        if row["ticker"] in set(portfolio_symbols) and row["ticker"] not in ranked_tickers)]
+    theme_screen = build_theme_layer(sec, theme_candidates)
+
+    # Rows carry the raw metric values merged from their snapshot, which is what a later
+    # backtest needs - the derived 0-100 scores can always be recomputed from them.
+    pit_summary = pit_store.append_snapshot(research, source="advisor_refresh")
+    pit_store.record_universe(symbols, source="advisor_refresh")
+    pit_depth = pit_store.depth()
 
     grid = chart_grid(benchmark["dates"])
     benchmark_series = series_payload(benchmark["dates"], benchmark["closes"], grid)
@@ -661,7 +803,6 @@ def run():
     contexts_by_symbol = {context["symbol"]: context for context in contexts}
     for row in ranked:
         attach_history(row, contexts_by_symbol[row["ticker"]], grid, benchmark_growth)
-    ranked_tickers = {row["ticker"] for row in ranked}
     for row in portfolio_coverage:
         context = contexts_by_symbol.get(row["ticker"])
         if row["ticker"] not in ranked_tickers and context:
@@ -671,8 +812,14 @@ def run():
     macro = macro_context(client) if client else {}
     generated_at = datetime.now(timezone.utc).isoformat()
     fundamentals_cfg = SETTINGS["fundamentals"]
+    for row in research:
+        row.setdefault("data_fetched_at", generated_at)
     payload = {
-        "schema_version": 1, "generated_at": generated_at, "data_mode": "live",
+        # Bumped to 2: market-behavior detail keys changed (12-1 momentum and real
+        # risk-adjusted ratios replaced the invented trend/risk fields), and theme exposure
+        # plus data-freshness blocks were added. All additive except the technical rename,
+        # which the frontend migration in src/lib/schemaMigrations.js maps for v1 readers.
+        "schema_version": 2, "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
         "enrichment_selection": {
@@ -684,20 +831,52 @@ def run():
             "weights": RANKING_WEIGHTS,
             "fundamental_weights": fundamentals_cfg["category_weights"],
             "metric_weights": fundamentals_cfg["metric_weights"],
+            "market_behavior_weights": SETTINGS.get("market_behavior", {}).get("weights", {}),
             "modifiers": SETTINGS.get("modifiers", {}),
             "principle": "Fundamentals lead. Price behavior and news modify confidence; they do not replace business quality.",
+            "evidence": {
+                "valuation": "EV/EBITDA and EV/EBIT carry the valuation bucket (Loughran & Wellman's "
+                             "enterprise-multiple factor; Gray & Vogel's multiples comparison). PEG is a "
+                             "minor sanity check because it ignores the time value of money, risk, and "
+                             "cost of capital.",
+                "profitability": "Gross profits-to-assets added per Novy-Marx (JFE 2013), which finds it "
+                                 "roughly as predictive as book-to-market and complementary to it.",
+                "accounting_quality": "Accruals down-weighted and Piotroski raised: the accruals anomaly "
+                                      "has decayed in US data since 2002 while the F-score still validates.",
+                "market_behavior": "12-1 momentum (Jegadeesh & Titman 1993) plus Sharpe/Sortino and a "
+                                   "low-beta reward (Frazzini & Pedersen 2014), using the same functions "
+                                   "as the ETF model.",
+                "news_sentiment": "Weighted as a 4% tilt over a 7-day window; daily headline sentiment "
+                                  "largely mean-reverts (Tetlock 2007).",
+                "insider_activity": "Form 4 trades split routine vs opportunistic per Cohen, Malloy & "
+                                    "Pomorski (JF 2012); only opportunistic cluster activity scores.",
+                "caveat": "Published factor premia are historical in-sample estimates. They indicate which "
+                          "signals have mattered, not what any of them will return next.",
+            },
         },
         "market": {"status": market_status.get("markets", []), "macro": {**macro, "regime": fred_regime}},
         "benchmark_history": {"symbol": "SPY", "dates": grid, **(benchmark_series or {})},
         "hypothetical_basis": BASIS,
         "research": ranked,
         "screen_universe": screen_universe,
+        "theme_screen": theme_screen,
         "portfolio_coverage": portfolio_coverage,
         "news": published_news,
+        "data_freshness": pit_store.freshness_report(research),
+        "point_in_time_store": {
+            **pit_depth, "appended": pit_summary,
+            "note": "Timestamped observations accumulate from each run so future backtests "
+                    "can score on what was actually known at the time. Yahoo serves restated "
+                    "fundamentals only, so this history cannot be rebuilt retroactively.",
+        },
+        "cache": CACHE.stats(),
         "capability_status": {
             "form4_insider_transactions": {
                 "status": "available" if sec.available else "configuration_required",
-                "source": "SEC EDGAR", "note": "Open-market purchase/sale codes only; set SEC_USER_AGENT.",
+                "source": "SEC EDGAR",
+                "scored_symbols": len(insider_signals),
+                "note": "Open-market purchase/sale codes only, split routine vs opportunistic "
+                        "and scored as a bounded decaying modifier; set SEC_USER_AGENT.",
             },
             "implied_vs_realized_volatility": {
                 "status": "available" if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"} else "opt_in",
@@ -731,8 +910,10 @@ def run():
             "sec_form4": {
                 "status": "unavailable" if not sec.available else ("degraded" if sec_failures else "healthy"),
                 "failed_symbols": sec_failures,
+                "scored_symbols": len(insider_signals),
                 "note": "Set SEC_USER_AGENT to enable free source-of-record insider transactions" if not sec.available else
-                        "Open-market Form 4 transaction codes P/S only; grants and tax withholding excluded",
+                        "Open-market Form 4 codes P/S only; routine calendar trades score zero, "
+                        "opportunistic cluster activity is a bounded decaying modifier",
             },
         },
         "disclaimer": "General research, not individualized investment advice. Verify filings, estimates, valuation context, and suitability before acting.",

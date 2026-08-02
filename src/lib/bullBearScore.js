@@ -7,7 +7,13 @@ const FACTORS = [
     (stock) => stock.components?.news_sentiment,
     (stock) => (stock.sentiment_detail?.coverage || 0) > 0,
   ],
-  ['Risk quality', 0.1, (stock) => stock.technical_detail?.risk],
+  // `risk_adjusted` is the Sortino/Sharpe-derived score; `risk` is the pre-rebuild field
+  // name, kept for snapshots committed before the technicals were rebuilt.
+  [
+    'Risk quality',
+    0.1,
+    (stock) => stock.technical_detail?.risk_adjusted ?? stock.technical_detail?.risk,
+  ],
 ]
 
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value))

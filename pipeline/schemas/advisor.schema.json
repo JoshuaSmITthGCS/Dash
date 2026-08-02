@@ -1,114 +1,395 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["schema_version", "generated_at", "data_mode", "count", "universe_count", "methodology", "research", "benchmark_history", "hypothetical_basis", "portfolio_coverage", "market", "source_status", "disclaimer"],
+  "required": [
+    "schema_version",
+    "generated_at",
+    "data_mode",
+    "count",
+    "universe_count",
+    "methodology",
+    "research",
+    "benchmark_history",
+    "hypothetical_basis",
+    "portfolio_coverage",
+    "market",
+    "source_status",
+    "disclaimer"
+  ],
   "properties": {
-    "schema_version": { "const": 1 },
-    "generated_at": { "type": "string", "format": "date-time" },
-    "data_mode": { "const": "live" },
-    "count": { "type": "integer", "minimum": 1, "maximum": 100 },
-    "universe_count": { "type": "integer", "minimum": 20 },
-    "publish_limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "schema_version": {
+      "_comment": "Integer, additive-only. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js); writers never rename or remove a field.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_mode": {
+      "const": "live"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "universe_count": {
+      "type": "integer",
+      "minimum": 20
+    },
+    "publish_limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
     "research": {
       "type": "array",
       "minItems": 1,
       "maxItems": 100,
       "items": {
         "type": "object",
-        "required": ["ticker", "name", "score", "stance", "confidence", "components", "strengths", "risks", "history", "hypothetical"],
+        "required": [
+          "ticker",
+          "name",
+          "score",
+          "stance",
+          "confidence",
+          "components",
+          "strengths",
+          "risks",
+          "history",
+          "hypothetical"
+        ],
         "properties": {
-          "ticker": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "score": { "type": "number", "minimum": 0, "maximum": 100 },
-          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-          "stance": { "enum": ["ATTRACTIVE", "PROMISING", "MIXED", "CAUTION", "INSUFFICIENT DATA"] },
+          "ticker": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "stance": {
+            "enum": [
+              "ATTRACTIVE",
+              "PROMISING",
+              "MIXED",
+              "CAUTION",
+              "INSUFFICIENT DATA"
+            ]
+          },
           "components": {
             "type": "object",
-            "required": ["fundamentals", "market_behavior", "news_sentiment"],
+            "required": [
+              "fundamentals",
+              "market_behavior",
+              "news_sentiment"
+            ],
             "properties": {
-              "fundamentals": { "type": "number", "minimum": 0, "maximum": 100 },
-              "market_behavior": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-              "news_sentiment": { "type": "number", "minimum": 0, "maximum": 100 }
+              "fundamentals": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "market_behavior": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 100
+              },
+              "news_sentiment": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              }
             }
           },
           "recommendation": {
             "type": "object",
-            "required": ["action", "suggested_trim_pct", "agreement_count"],
+            "required": [
+              "action",
+              "suggested_trim_pct",
+              "agreement_count"
+            ],
             "properties": {
-              "action": { "enum": ["HOLD", "WATCH", "TRIM", "SELL"] },
-              "suggested_trim_pct": { "type": "number", "minimum": 0, "maximum": 100 },
-              "confidence": { "enum": ["moderate", "high"] },
-              "agreement_count": { "type": "integer", "minimum": 0, "maximum": 3 },
-              "reasons": { "type": "array", "items": { "type": "string" } },
-              "summary": { "type": "string" }
+              "action": {
+                "enum": [
+                  "HOLD",
+                  "WATCH",
+                  "TRIM",
+                  "SELL"
+                ]
+              },
+              "suggested_trim_pct": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "confidence": {
+                "enum": [
+                  "moderate",
+                  "high"
+                ]
+              },
+              "agreement_count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "summary": {
+                "type": "string"
+              }
             }
           },
           "modifiers": {
             "type": "object",
             "properties": {
-              "applied": { "type": "object" },
-              "total": { "type": "number", "minimum": -15, "maximum": 15 },
-              "notes": { "type": "array", "items": { "type": "string" } }
+              "applied": {
+                "type": "object"
+              },
+              "total": {
+                "type": "number",
+                "minimum": -15,
+                "maximum": 15
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           },
           "history": {
             "type": "object",
-            "required": ["dates", "closes", "growth"],
+            "required": [
+              "dates",
+              "closes",
+              "growth"
+            ],
             "properties": {
-              "dates": { "type": "array", "minItems": 8, "items": { "type": "string" } },
-              "closes": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } },
-              "growth": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } }
+              "dates": {
+                "type": "array",
+                "minItems": 8,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "closes": {
+                "type": "array",
+                "minItems": 8,
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "growth": {
+                "type": "array",
+                "minItems": 8,
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
             }
           },
           "hypothetical": {
             "type": "object",
-            "required": ["basis", "stock_value", "benchmark_value", "stock_return_pct", "benchmark_return_pct", "excess_return_pct", "dollars_ahead"],
+            "required": [
+              "basis",
+              "stock_value",
+              "benchmark_value",
+              "stock_return_pct",
+              "benchmark_return_pct",
+              "excess_return_pct",
+              "dollars_ahead"
+            ],
             "properties": {
-              "basis": { "type": "number", "exclusiveMinimum": 0 },
-              "stock_value": { "type": "number" },
-              "benchmark_value": { "type": "number" },
-              "stock_return_pct": { "type": "number" },
-              "benchmark_return_pct": { "type": "number" },
-              "dollars_ahead": { "type": "number" },
-              "excess_return_pct": { "type": "number" }
+              "basis": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "stock_value": {
+                "type": "number"
+              },
+              "benchmark_value": {
+                "type": "number"
+              },
+              "stock_return_pct": {
+                "type": "number"
+              },
+              "benchmark_return_pct": {
+                "type": "number"
+              },
+              "dollars_ahead": {
+                "type": "number"
+              },
+              "excess_return_pct": {
+                "type": "number"
+              }
             }
           },
-          "sector_valuation_percentile": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-          "strengths": { "type": "array", "items": { "type": "string" } },
-          "risks": { "type": "array", "items": { "type": "string" } }
+          "sector_valuation_percentile": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "strengths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         },
         "additionalProperties": true
       }
     },
     "benchmark_history": {
       "type": "object",
-      "required": ["symbol", "dates", "closes", "growth"],
+      "required": [
+        "symbol",
+        "dates",
+        "closes",
+        "growth"
+      ],
       "properties": {
-        "symbol": { "const": "SPY" },
-        "dates": { "type": "array", "minItems": 8, "items": { "type": "string" } },
-        "closes": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } },
-        "growth": { "type": "array", "minItems": 8, "items": { "type": ["number", "null"] } }
+        "symbol": {
+          "const": "SPY"
+        },
+        "dates": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "type": "string"
+          }
+        },
+        "closes": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "growth": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
       }
     },
-    "hypothetical_basis": { "type": "number", "exclusiveMinimum": 0 },
+    "hypothetical_basis": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
     "portfolio_coverage": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["ticker", "name", "price"],
+        "required": [
+          "ticker",
+          "name",
+          "price"
+        ],
         "properties": {
-          "ticker": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "price": { "type": ["number", "null"] }
+          "ticker": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
         }
       }
     },
     "methodology": {
+      "_comment": "The exact blend is a config decision. What the schema pins is the contract: three components, fundamentals dominant, news a bounded tilt.",
       "type": "object",
-      "required": ["weights", "fundamental_weights"],
+      "required": [
+        "weights",
+        "fundamental_weights"
+      ],
       "properties": {
         "weights": {
-          "const": { "fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.1 }
+          "type": "object",
+          "required": [
+            "fundamentals",
+            "market_behavior",
+            "news_sentiment"
+          ],
+          "properties": {
+            "fundamentals": {
+              "type": "number",
+              "minimum": 0.6,
+              "maximum": 1.0
+            },
+            "market_behavior": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.3
+            },
+            "news_sentiment": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.15
+            }
+          }
+        },
+        "fundamental_weights": {
+          "type": "object"
+        },
+        "market_behavior_weights": {
+          "type": "object"
+        },
+        "evidence": {
+          "type": "object"
         }
       }
     },
@@ -119,18 +400,59 @@
           "type": "object",
           "properties": {
             "regime": {
-              "type": ["object", "null"],
-              "required": ["score", "label", "coverage", "freshness_date", "factors", "series", "attribution", "notice", "terms_url"],
+              "type": [
+                "object",
+                "null"
+              ],
+              "required": [
+                "score",
+                "label",
+                "coverage",
+                "freshness_date",
+                "factors",
+                "series",
+                "attribution",
+                "notice",
+                "terms_url"
+              ],
               "properties": {
-                "score": { "type": "number", "minimum": 0, "maximum": 100 },
-                "label": { "enum": ["supportive", "neutral", "restrictive"] },
-                "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
-                "freshness_date": { "type": "string", "format": "date" },
-                "factors": { "type": "object" },
-                "series": { "type": "object" },
-                "attribution": { "type": "string" },
-                "notice": { "type": "string" },
-                "terms_url": { "type": "string", "format": "uri" }
+                "score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "label": {
+                  "enum": [
+                    "supportive",
+                    "neutral",
+                    "restrictive"
+                  ]
+                },
+                "coverage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "freshness_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "factors": {
+                  "type": "object"
+                },
+                "series": {
+                  "type": "object"
+                },
+                "attribution": {
+                  "type": "string"
+                },
+                "notice": {
+                  "type": "string"
+                },
+                "terms_url": {
+                  "type": "string",
+                  "format": "uri"
+                }
               },
               "additionalProperties": true
             }
@@ -138,8 +460,134 @@
         }
       }
     },
-    "source_status": { "type": "object" },
-    "disclaimer": { "type": "string", "minLength": 1 }
+    "source_status": {
+      "type": "object"
+    },
+    "disclaimer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "theme_screen": {
+      "_comment": "Structural-trend exposure, published as an independent screen and never folded into the research score.",
+      "type": "object",
+      "properties": {
+        "generated_at": {
+          "type": "string"
+        },
+        "unavailable_reason": {
+          "type": "string"
+        },
+        "principle": {
+          "type": "string"
+        },
+        "by_ticker": {
+          "type": "object"
+        },
+        "themes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "rows",
+              "guardrails"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "guardrails": {
+                "type": "object",
+                "properties": {
+                  "max_price_momentum_contribution": {
+                    "const": 0.0
+                  }
+                }
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "ticker",
+                    "theme_exposure_score",
+                    "eligible"
+                  ],
+                  "properties": {
+                    "ticker": {
+                      "type": "string"
+                    },
+                    "theme_exposure_score": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "eligible": {
+                      "type": "boolean"
+                    },
+                    "opportunity_score": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "excluded_by": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "data_freshness": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "healthy",
+            "degraded",
+            "error"
+          ]
+        },
+        "stale_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stale_after_hours": {
+          "type": "number"
+        },
+        "median_age_hours": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "point_in_time_store": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "cache": {
+      "type": "object",
+      "additionalProperties": true
+    }
   },
   "additionalProperties": true
 }

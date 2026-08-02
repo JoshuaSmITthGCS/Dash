@@ -181,6 +181,11 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .screen-company { min-width: 0; }.screen-company b, .screen-company small, .stock-screen-list button > span > small { display: block; }
 .screen-company b { font: 720 15px var(--font-display); }.screen-company small { overflow: hidden; color: var(--text-faint); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .stock-screen-list button > span > small { color: var(--text-faint); font-size: 8px; }.stock-screen-list button > span > .mono { font-size: 11px; }
+/* A theme row whose valuation already cleared the guardrail ceiling. Shown, never hidden -
+   real exposure at a stretched price is worth knowing - but visibly set apart so it does
+   not read as the screen's pick. */
+.stock-screen-list button.screen-row-flagged { opacity: 0.66; }
+.stock-screen-list button.screen-row-flagged .screen-company small { color: var(--down); }
 .screen-disclaimer { margin: 10px 2px 0; color: var(--text-faint); font-size: 10px; }
 .etf-benchmark-strip { display: flex; gap: 18px; padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 10px; color: var(--text-faint); }
 .etf-benchmark-strip .mono { margin-left: 5px; font-size: 11px; }

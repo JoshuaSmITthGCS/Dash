@@ -2,3 +2,6 @@ requests>=2.31
 yfinance>=0.2.40
 feedparser>=6.0
 jsonschema>=4.22
+# Theme definitions in pipeline/themes/ are YAML so adding a structural trend is a config
+# file rather than a code change. JSON theme files still load without this installed.
+pyyaml>=6.0

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
-import { rankGrowingEtfs, rankMomentum, rankValueTurnarounds } from './researchScreens'
+import {
+  activeThemes, rankGrowingEtfs, rankMomentum, rankThemeExposure, rankValueTurnarounds,
+} from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
   ticker,
@@ -56,6 +58,83 @@ describe('growing ETF screen', () => {
     const unscored = row('IBIT', { scores: {} })
 
     expect(rankGrowingEtfs([unscored, scored]).map((item) => item.ticker)).toEqual(['QQQ'])
+  })
+})
+
+describe('momentum screen uses the rebuilt technical fields', () => {
+  it('prefers 12-1 momentum over the retired trend field', () => {
+    const base = row('X').technical_detail
+    const strongMomentum = row('MOM', {
+      technical_detail: { ...base, return_5d: 3, trend: 10, momentum_12_1: 95 },
+    })
+    const weakMomentum = row('LAG', {
+      technical_detail: { ...base, return_5d: 3, trend: 95, momentum_12_1: 10 },
+    })
+    expect(rankMomentum([weakMomentum, strongMomentum]).map((item) => item.ticker))
+      .toEqual(['MOM', 'LAG'])
+  })
+
+  it('still ranks snapshots that predate the rebuild', () => {
+    const legacy = row('OLD', {
+      technical_detail: { return_20d: 8, return_5d: 2, trend: 80, risk: 70 },
+    })
+    expect(rankMomentum([legacy]).map((item) => item.ticker)).toEqual(['OLD'])
+  })
+})
+
+describe('theme exposure screen', () => {
+  const themeRow = (ticker, overrides = {}) => ({
+    ticker,
+    name: `${ticker} Inc`,
+    theme_exposure_score: 80,
+    fundamental_score: 70,
+    opportunity_score: 70,
+    eligible: true,
+    ...overrides,
+  })
+
+  it('ranks by opportunity, not by raw exposure', () => {
+    // The purest-play name is not automatically the best idea; exposure has to come with
+    // a business that holds up and a price that has not already run.
+    const purestButExpensive = themeRow('PURE', {
+      theme_exposure_score: 98, opportunity_score: 55,
+    })
+    const balanced = themeRow('BAL', { theme_exposure_score: 72, opportunity_score: 85 })
+    expect(rankThemeExposure({ rows: [purestButExpensive, balanced] })
+      .map((item) => item.ticker)).toEqual(['BAL', 'PURE'])
+  })
+
+  it('sorts guardrail-excluded names below eligible ones without hiding them', () => {
+    const euphoric = themeRow('HYPE', {
+      eligible: false, opportunity_score: 99, theme_exposure_score: 99,
+    })
+    const eligible = themeRow('OK', { opportunity_score: 40 })
+    const ranked = rankThemeExposure({ rows: [euphoric, eligible] })
+    expect(ranked.map((item) => item.ticker)).toEqual(['OK', 'HYPE'])
+    expect(ranked).toHaveLength(2)
+  })
+
+  it('skips rows without a computed exposure score', () => {
+    const scored = themeRow('AAA')
+    const unscored = themeRow('BBB', { theme_exposure_score: null })
+    expect(rankThemeExposure({ rows: [unscored, scored] }).map((item) => item.ticker))
+      .toEqual(['AAA'])
+  })
+
+  it('handles a missing or empty theme screen', () => {
+    expect(rankThemeExposure(undefined)).toEqual([])
+    expect(rankThemeExposure({ rows: [] })).toEqual([])
+  })
+
+  it('lists only themes that actually produced scored rows', () => {
+    const screen = {
+      themes: [
+        { id: 'live', rows: [themeRow('AAA')] },
+        { id: 'no_signals', rows: [] },
+      ],
+    }
+    expect(activeThemes(screen).map((theme) => theme.id)).toEqual(['live'])
+    expect(activeThemes(undefined)).toEqual([])
   })
 })
 

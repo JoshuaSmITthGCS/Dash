@@ -108,8 +108,59 @@ class HealthTests(unittest.TestCase):
         self.assertLess(fx.derive_net_debt_to_ebitda(INCOME, cash_rich), 0)
 
     def test_altman_z_is_skipped_for_banks(self):
-        self.assertIsNotNone(fx.derive_altman_z(INCOME, BALANCE, 4000, "Technology"))
-        self.assertIsNone(fx.derive_altman_z(INCOME, BALANCE, 4000, "Financial Services"))
+        self.assertIsNotNone(fx.derive_altman_z(INCOME, BALANCE, 4000, "Technology")[0])
+        self.assertEqual(fx.derive_altman_z(INCOME, BALANCE, 4000, "Financial Services"),
+                         (None, None))
+
+    def test_altman_variant_follows_the_sector(self):
+        # The original 1968 model was fitted on manufacturers; applying it to an asset-light
+        # company reports a misleadingly low score, so non-manufacturers get Altman's own
+        # Z'' revision instead. The variant travels with the number.
+        _, industrial = fx.derive_altman_z(INCOME, BALANCE, 4000, "Industrials")
+        _, software = fx.derive_altman_z(INCOME, BALANCE, 4000, "Technology")
+        self.assertEqual(industrial, "z")
+        self.assertEqual(software, "z_double_prime")
+        self.assertIsNone(fx.altman_variant_for("Financial Services"))
+
+    def test_z_double_prime_drops_the_asset_turnover_term(self):
+        # Same balance sheet, two models: the scores must differ, because Z'' removes the
+        # revenue/assets term that penalizes asset-light filers and reweights the rest.
+        manufacturing, _ = fx.derive_altman_z(INCOME, BALANCE, 4000, "Industrials")
+        non_manufacturing, _ = fx.derive_altman_z(INCOME, BALANCE, 4000, "Technology")
+        self.assertNotAlmostEqual(manufacturing, non_manufacturing, places=2)
+
+    def test_gross_profits_to_assets_uses_average_assets(self):
+        value = fx.derive_gross_profits_to_assets(INCOME, BALANCE)
+        gross = fx.at(fx.line(INCOME, "gross_profit"))
+        assets = fx.average(fx.at(fx.line(BALANCE, "total_assets")),
+                            fx.at(fx.line(BALANCE, "total_assets"), 1))
+        self.assertAlmostEqual(value, gross / assets, places=4)
+
+    def test_gross_profits_falls_back_to_revenue_minus_cost(self):
+        without_gross = {"periods": ["2025"], "rows": {"Total Revenue": [1000.0],
+                                                       "Cost Of Revenue": [400.0]}}
+        balance = {"periods": ["2025"], "rows": {"Total Assets": [2000.0]}}
+        self.assertAlmostEqual(fx.derive_gross_profits_to_assets(without_gross, balance), 0.3)
+
+    def test_asset_growth_is_year_over_year(self):
+        balance = {"periods": ["2025", "2024"], "rows": {"Total Assets": [1200.0, 1000.0]}}
+        self.assertAlmostEqual(fx.derive_asset_growth(balance), 0.2)
+        self.assertIsNone(fx.derive_asset_growth({"periods": ["2025"], "rows": {"Total Assets": [1200.0]}}))
+
+    def test_earnings_surprise_weights_recent_quarters_heaviest(self):
+        recent_beat = fx.derive_earnings_surprise([
+            {"date": "2026-06-30", "surprise_pct": 10.0},
+            {"date": "2026-03-31", "surprise_pct": -2.0},
+        ])
+        recent_miss = fx.derive_earnings_surprise([
+            {"date": "2026-06-30", "surprise_pct": -2.0},
+            {"date": "2026-03-31", "surprise_pct": 10.0},
+        ])
+        self.assertGreater(recent_beat, recent_miss)
+
+    def test_earnings_surprise_is_none_without_reported_quarters(self):
+        self.assertIsNone(fx.derive_earnings_surprise([]))
+        self.assertIsNone(fx.derive_earnings_surprise([{"date": "2026-06-30", "surprise_pct": None}]))
 
     def test_piotroski_rewards_improving_fundamentals(self):
         score, tests = fx.derive_piotroski(INCOME, BALANCE, CASHFLOW)

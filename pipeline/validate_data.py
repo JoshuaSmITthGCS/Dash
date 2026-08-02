@@ -18,6 +18,58 @@ def load(path):
         return json.load(handle)
 
 
+def theme_screen_errors(screen):
+    """Enforce the anti-hype guardrails as a published contract, not just a code comment.
+
+    The failure mode for a thematic screen is that it quietly becomes a momentum screen -
+    exactly the pattern behind specialized ETFs losing about 30% risk-adjusted over five
+    years. Two things make that impossible to ship by accident: price momentum must carry
+    zero weight, and every published row must declare whether it cleared the guardrails.
+    """
+    if not screen or not screen.get("themes"):
+        return []
+    errors = []
+    for theme in screen["themes"]:
+        theme_id = theme.get("id", "?")
+        guardrails = theme.get("guardrails") or {}
+        if guardrails.get("max_price_momentum_contribution", 0) != 0:
+            errors.append(f"advisor.json:theme_screen.{theme_id}: price momentum must "
+                          "contribute zero to theme exposure")
+        for signal in theme.get("signals") or []:
+            if signal.get("name") in ("price_momentum", "return_12m", "return_1m",
+                                      "distance_from_52w_high", "social_mentions"):
+                errors.append(f"advisor.json:theme_screen.{theme_id}: lagging signal "
+                              f"'{signal['name']}' cannot contribute to theme exposure")
+        for index, row in enumerate(theme.get("rows") or []):
+            if row.get("eligible") is None:
+                errors.append(f"advisor.json:theme_screen.{theme_id}.rows.{index}: "
+                              "every row must declare whether it cleared the guardrails")
+            score = row.get("theme_exposure_score")
+            if score is not None and not 0 <= score <= 100:
+                errors.append(f"advisor.json:theme_screen.{theme_id}.rows.{index}: "
+                              f"exposure score {score} is outside 0-100")
+    return errors
+
+
+def etf_peer_group_errors(payload):
+    """A fund's rank is only meaningful inside its peer group; make that explicit."""
+    rows = payload.get("etfs") or []
+    if not rows or payload.get("schema_version", 2) < 3:
+        return []
+    errors = []
+    for index, row in enumerate(rows):
+        if not row.get("ranked_against"):
+            errors.append(f"etfs.json:etfs.{index}: missing the peer group the fund was ranked in")
+        if row.get("ranked_against") == "_pooled" and not row.get("cross_asset_class_rank"):
+            errors.append(f"etfs.json:etfs.{index}: pooled ranking must be flagged as "
+                          "cross-asset-class so it is not read as a like-for-like comparison")
+    groups = {row.get("ranked_against") for row in rows}
+    if len(groups) == 1 and len(rows) > 10:
+        errors.append("etfs.json: every fund landed in one peer group, so the whole batch is "
+                      "being cross-ranked again")
+    return errors
+
+
 def validate(production=False):
     errors = []
     payloads = {}
@@ -44,9 +96,24 @@ def validate(production=False):
     advisor = payloads.get("advisor", {})
     if advisor and advisor.get("count") != len(advisor.get("research", [])):
         errors.append("advisor.json: count does not match research length")
-    expected_weights = {"fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.10}
-    if advisor and advisor.get("methodology", {}).get("weights") != expected_weights:
-        errors.append("advisor.json: ranking weights must remain 75% fundamentals, 15% market behavior, 10% news")
+    # The blend is a config decision, so validate the contract rather than the constants:
+    # three components that sum to one, fundamentals dominant, news a bounded tilt.
+    weights = advisor.get("methodology", {}).get("weights") if advisor else None
+    if advisor:
+        if set(weights or {}) != {"fundamentals", "market_behavior", "news_sentiment"}:
+            errors.append("advisor.json: methodology.weights must name exactly fundamentals, "
+                          "market_behavior, and news_sentiment")
+        else:
+            total = sum(weights.values())
+            if abs(total - 1.0) > 1e-6:
+                errors.append(f"advisor.json: ranking weights sum to {total}, not 1.0")
+            if weights["fundamentals"] < 0.6:
+                errors.append("advisor.json: fundamentals must carry at least 60% of the blend")
+            if weights["fundamentals"] <= weights["market_behavior"] + weights["news_sentiment"]:
+                errors.append("advisor.json: fundamentals must outweigh price and news combined")
+            # Headline sentiment alpha decays within days; it cannot be a core component.
+            if weights["news_sentiment"] > 0.15:
+                errors.append("advisor.json: news sentiment is a tilt, capped at 15% of the blend")
     regime = advisor.get("market", {}).get("macro", {}).get("regime")
     if regime and "observations" in regime:
         errors.append("advisor.json: raw FRED observations must not be published")
@@ -87,6 +154,9 @@ def validate(production=False):
     if advisor and configured_portfolio - covered_portfolio:
         missing = ", ".join(sorted(configured_portfolio - covered_portfolio))
         errors.append(f"advisor.json: portfolio coverage missing configured symbols: {missing}")
+
+    errors.extend(theme_screen_errors(advisor.get("theme_screen")))
+    errors.extend(etf_peer_group_errors(payloads.get("etfs", {})))
 
     # Legacy political fixtures stay explicitly demo while the independent advisor and ETF
     # datasets are live.
