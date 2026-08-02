@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-08-02T17:09:22.648815+00:00",
+  "generated_at": "2026-08-02T20:14:02.576618+00:00",
   "data_mode": "live",
   "benchmarks": {
     "sp500": "SPY",
@@ -8,51 +8,6 @@
   },
   "count": 40,
   "etfs": [
-    {
-      "ticker": "VTV",
-      "name": "Vanguard Value",
-      "category": "value",
-      "sector": "Value",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.04,
-      "price": 219.95,
-      "aum": 254461837312,
-      "avg_dollar_volume": 678701905.0,
-      "bid_ask_spread_pct": 0.272,
-      "returns": {
-        "1m": 1.18,
-        "3m": 6.37,
-        "6m": 10.2,
-        "1y": 23.08,
-        "3y": null
-      },
-      "max_drawdown": -15.51,
-      "sharpe_ratio": 1.16,
-      "sortino_ratio": 1.7,
-      "beta": 0.66,
-      "scores": {
-        "performance": 78.8,
-        "risk": 84.6,
-        "cost": 84.61538461538461,
-        "liquidity": 53.0,
-        "quality": 100,
-        "overall": 79.4
-      },
-      "vs_benchmarks": {
-        "sp500_1m": 1.01,
-        "dow_1m": 0.81,
-        "sp500_3m": 2.42,
-        "dow_3m": 0.8,
-        "sp500_6m": 2.56,
-        "dow_6m": 3.24,
-        "sp500_1y": 5.34,
-        "dow_1y": 5.19,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 1
-    },
     {
       "ticker": "VOO",
       "name": "Vanguard S&P 500",
@@ -80,9 +35,9 @@
         "performance": 62.2,
         "risk": 78.6,
         "cost": 100.0,
-        "liquidity": 83.8,
+        "liquidity": 88.0,
         "quality": 100,
-        "overall": 79.0
+        "overall": 79.6
       },
       "vs_benchmarks": {
         "sp500_1m": 0.0,
@@ -93,6 +48,51 @@
         "dow_6m": 0.62,
         "sp500_1y": 0.0,
         "dow_1y": -0.15,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 1
+    },
+    {
+      "ticker": "VTV",
+      "name": "Vanguard Value",
+      "category": "value",
+      "sector": "Value",
+      "confidence": 1.0,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.04,
+      "price": 219.95,
+      "aum": 254461837312,
+      "avg_dollar_volume": 678701905.0,
+      "bid_ask_spread_pct": 0.455,
+      "returns": {
+        "1m": 1.18,
+        "3m": 6.37,
+        "6m": 10.2,
+        "1y": 23.08,
+        "3y": null
+      },
+      "max_drawdown": -15.51,
+      "sharpe_ratio": 1.16,
+      "sortino_ratio": 1.7,
+      "beta": 0.66,
+      "scores": {
+        "performance": 78.8,
+        "risk": 84.6,
+        "cost": 84.61538461538461,
+        "liquidity": 47.0,
+        "quality": 100,
+        "overall": 78.5
+      },
+      "vs_benchmarks": {
+        "sp500_1m": 1.01,
+        "dow_1m": 0.81,
+        "sp500_3m": 2.42,
+        "dow_3m": 0.8,
+        "sp500_6m": 2.56,
+        "dow_6m": 3.24,
+        "sp500_1y": 5.34,
+        "dow_1y": 5.19,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -109,7 +109,7 @@
       "price": 750.32,
       "aum": 888128929792,
       "avg_dollar_volume": 5066988543.0,
-      "bid_ask_spread_pct": 0.345,
+      "bid_ask_spread_pct": 0.202,
       "returns": {
         "1m": 0.16,
         "3m": 3.91,
@@ -125,9 +125,9 @@
         "performance": 59.6,
         "risk": 75.2,
         "cost": 94.87179487179488,
-        "liquidity": 71.8,
+        "liquidity": 81.2,
         "quality": 98,
-        "overall": 74.5
+        "overall": 75.9
       },
       "vs_benchmarks": {
         "sp500_1m": -0.01,
@@ -142,51 +142,6 @@
         "dow_3y": null
       },
       "overall_rank": 3
-    },
-    {
-      "ticker": "VYM",
-      "name": "Vanguard High Dividend",
-      "category": "dividend",
-      "sector": "Dividend",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.06,
-      "price": 161.96,
-      "aum": 96168181760,
-      "avg_dollar_volume": 227747082.0,
-      "bid_ask_spread_pct": 0.068,
-      "returns": {
-        "1m": 2.35,
-        "3m": 3.03,
-        "6m": 8.35,
-        "1y": 19.36,
-        "3y": null
-      },
-      "max_drawdown": -15.02,
-      "sharpe_ratio": 1.09,
-      "sortino_ratio": 1.6,
-      "beta": 0.67,
-      "scores": {
-        "performance": 69.9,
-        "risk": 82.1,
-        "cost": 74.35897435897436,
-        "liquidity": 55.6,
-        "quality": 100,
-        "overall": 74.5
-      },
-      "vs_benchmarks": {
-        "sp500_1m": 2.18,
-        "dow_1m": 1.98,
-        "sp500_3m": -0.92,
-        "dow_3m": -2.54,
-        "sp500_6m": 0.71,
-        "dow_6m": 1.39,
-        "sp500_1y": 1.62,
-        "dow_1y": 1.47,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 4
     },
     {
       "ticker": "VTI",
@@ -215,9 +170,9 @@
         "performance": 60.9,
         "risk": 68.4,
         "cost": 97.43589743589743,
-        "liquidity": 70.9,
+        "liquidity": 75.2,
         "quality": 100,
-        "overall": 73.7
+        "overall": 74.3
       },
       "vs_benchmarks": {
         "sp500_1m": -0.46,
@@ -228,6 +183,51 @@
         "dow_6m": 0.61,
         "sp500_1y": 0.18,
         "dow_1y": 0.03,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 4
+    },
+    {
+      "ticker": "XLF",
+      "name": "Financials Select Sector",
+      "category": "sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.09,
+      "price": 56.94,
+      "aum": 51353821184,
+      "avg_dollar_volume": 1926125846.0,
+      "bid_ask_spread_pct": 0.053,
+      "returns": {
+        "1m": 3.94,
+        "3m": 9.23,
+        "6m": 6.33,
+        "1y": 8.05,
+        "3y": null
+      },
+      "max_drawdown": -15.85,
+      "sharpe_ratio": 1.08,
+      "sortino_ratio": 1.55,
+      "beta": 0.77,
+      "scores": {
+        "performance": 67.9,
+        "risk": 74.4,
+        "cost": 69.23076923076923,
+        "liquidity": 75.2,
+        "quality": 95,
+        "overall": 73.5
+      },
+      "vs_benchmarks": {
+        "sp500_1m": 3.77,
+        "dow_1m": 3.57,
+        "sp500_3m": 5.28,
+        "dow_3m": 3.66,
+        "sp500_6m": -1.31,
+        "dow_6m": -0.63,
+        "sp500_1y": -9.69,
+        "dow_1y": -9.84,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -279,45 +279,45 @@
       "overall_rank": 6
     },
     {
-      "ticker": "XLF",
-      "name": "Financials Select Sector",
-      "category": "sector",
-      "sector": "Sector",
+      "ticker": "VYM",
+      "name": "Vanguard High Dividend",
+      "category": "dividend",
+      "sector": "Dividend",
       "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.09,
-      "price": 56.94,
-      "aum": 51353821184,
-      "avg_dollar_volume": 1926125846.0,
-      "bid_ask_spread_pct": 0.14,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.06,
+      "price": 161.96,
+      "aum": 96168181760,
+      "avg_dollar_volume": 227747082.0,
+      "bid_ask_spread_pct": 0.476,
       "returns": {
-        "1m": 3.94,
-        "3m": 9.23,
-        "6m": 6.33,
-        "1y": 8.05,
+        "1m": 2.35,
+        "3m": 3.03,
+        "6m": 8.35,
+        "1y": 19.36,
         "3y": null
       },
-      "max_drawdown": -15.85,
-      "sharpe_ratio": 1.08,
-      "sortino_ratio": 1.55,
-      "beta": 0.77,
+      "max_drawdown": -15.02,
+      "sharpe_ratio": 1.09,
+      "sortino_ratio": 1.6,
+      "beta": 0.67,
       "scores": {
-        "performance": 67.9,
-        "risk": 74.4,
-        "cost": 69.23076923076923,
-        "liquidity": 62.4,
-        "quality": 95,
-        "overall": 71.6
+        "performance": 69.9,
+        "risk": 82.1,
+        "cost": 74.35897435897436,
+        "liquidity": 35.9,
+        "quality": 100,
+        "overall": 71.5
       },
       "vs_benchmarks": {
-        "sp500_1m": 3.77,
-        "dow_1m": 3.57,
-        "sp500_3m": 5.28,
-        "dow_3m": 3.66,
-        "sp500_6m": -1.31,
-        "dow_6m": -0.63,
-        "sp500_1y": -9.69,
-        "dow_1y": -9.84,
+        "sp500_1m": 2.18,
+        "dow_1m": 1.98,
+        "sp500_3m": -0.92,
+        "dow_3m": -2.54,
+        "sp500_6m": 0.71,
+        "dow_6m": 1.39,
+        "sp500_1y": 1.62,
+        "dow_1y": 1.47,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -350,9 +350,9 @@
         "performance": 60.9,
         "risk": 72.6,
         "cost": 43.58974358974359,
-        "liquidity": 94.0,
+        "liquidity": 94.9,
         "quality": 95,
-        "overall": 69.6
+        "overall": 69.7
       },
       "vs_benchmarks": {
         "sp500_1m": 0.0,
@@ -379,7 +379,7 @@
       "price": 175.35,
       "aum": 123912577024,
       "avg_dollar_volume": 1793150204.0,
-      "bid_ask_spread_pct": 0.499,
+      "bid_ask_spread_pct": 0.619,
       "returns": {
         "1m": -5.53,
         "3m": 9.94,
@@ -395,9 +395,9 @@
         "performance": 73.7,
         "risk": 50.4,
         "cost": 71.7948717948718,
-        "liquidity": 53.8,
+        "liquidity": 54.7,
         "quality": 95,
-        "overall": 66.7
+        "overall": 66.9
       },
       "vs_benchmarks": {
         "sp500_1m": -5.7,
@@ -412,6 +412,51 @@
         "dow_3y": null
       },
       "overall_rank": 9
+    },
+    {
+      "ticker": "XLE",
+      "name": "Energy Select Sector",
+      "category": "sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.09,
+      "price": 59.55,
+      "aum": 35721338880,
+      "avg_dollar_volume": 1829007362.0,
+      "bid_ask_spread_pct": 0.133,
+      "returns": {
+        "1m": 12.76,
+        "3m": -0.17,
+        "6m": 17.9,
+        "1y": 35.83,
+        "3y": null
+      },
+      "max_drawdown": -22.06,
+      "sharpe_ratio": 0.6,
+      "sortino_ratio": 0.81,
+      "beta": 0.48,
+      "scores": {
+        "performance": 81.4,
+        "risk": 35.9,
+        "cost": 64.1025641025641,
+        "liquidity": 60.7,
+        "quality": 95,
+        "overall": 65.7
+      },
+      "vs_benchmarks": {
+        "sp500_1m": 12.59,
+        "dow_1m": 12.39,
+        "sp500_3m": -4.12,
+        "dow_3m": -5.74,
+        "sp500_6m": 10.26,
+        "dow_6m": 10.94,
+        "sp500_1y": 18.09,
+        "dow_1y": 17.94,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 10
     },
     {
       "ticker": "VXUS",
@@ -440,9 +485,9 @@
         "performance": 55.1,
         "risk": 65.8,
         "cost": 79.48717948717949,
-        "liquidity": 52.1,
+        "liquidity": 53.0,
         "quality": 100,
-        "overall": 65.5
+        "overall": 65.6
       },
       "vs_benchmarks": {
         "sp500_1m": -0.1,
@@ -453,51 +498,6 @@
         "dow_6m": -2.46,
         "sp500_1y": 4.8,
         "dow_1y": 4.65,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 10
-    },
-    {
-      "ticker": "XLE",
-      "name": "Energy Select Sector",
-      "category": "sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.09,
-      "price": 59.55,
-      "aum": 35721338880,
-      "avg_dollar_volume": 1829007362.0,
-      "bid_ask_spread_pct": 0.149,
-      "returns": {
-        "1m": 12.76,
-        "3m": -0.17,
-        "6m": 17.9,
-        "1y": 35.83,
-        "3y": null
-      },
-      "max_drawdown": -22.06,
-      "sharpe_ratio": 0.6,
-      "sortino_ratio": 0.81,
-      "beta": 0.48,
-      "scores": {
-        "performance": 81.4,
-        "risk": 35.9,
-        "cost": 64.1025641025641,
-        "liquidity": 55.6,
-        "quality": 95,
-        "overall": 64.9
-      },
-      "vs_benchmarks": {
-        "sp500_1m": 12.59,
-        "dow_1m": 12.39,
-        "sp500_3m": -4.12,
-        "dow_3m": -5.74,
-        "sp500_6m": 10.26,
-        "dow_6m": 10.94,
-        "sp500_1y": 18.09,
-        "dow_1y": 17.94,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -514,7 +514,7 @@
       "price": 524.32,
       "aum": 44062826496,
       "avg_dollar_volume": 2158031241.0,
-      "bid_ask_spread_pct": 0.095,
+      "bid_ask_spread_pct": 0.237,
       "returns": {
         "1m": 0.37,
         "3m": 5.57,
@@ -530,9 +530,9 @@
         "performance": 66.0,
         "risk": 65.0,
         "cost": 35.8974358974359,
-        "liquidity": 68.4,
+        "liquidity": 61.5,
         "quality": 95,
-        "overall": 64.5
+        "overall": 63.5
       },
       "vs_benchmarks": {
         "sp500_1m": 0.2,
@@ -559,7 +559,7 @@
       "price": 162.55,
       "aum": 40598945792,
       "avg_dollar_volume": 1689594580.0,
-      "bid_ask_spread_pct": 0.24,
+      "bid_ask_spread_pct": 0.364,
       "returns": {
         "1m": 1.89,
         "3m": 11.34,
@@ -575,9 +575,9 @@
         "performance": 73.1,
         "risk": 41.9,
         "cost": 66.66666666666666,
-        "liquidity": 53.0,
+        "liquidity": 47.9,
         "quality": 95,
-        "overall": 63.5
+        "overall": 62.7
       },
       "vs_benchmarks": {
         "sp500_1m": 1.72,
@@ -592,51 +592,6 @@
         "dow_3y": null
       },
       "overall_rank": 13
-    },
-    {
-      "ticker": "XLI",
-      "name": "Industrial Select Sector",
-      "category": "sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.09,
-      "price": 179.84,
-      "aum": 33963890688,
-      "avg_dollar_volume": 1246499190.0,
-      "bid_ask_spread_pct": 0.017,
-      "returns": {
-        "1m": -1.92,
-        "3m": 3.01,
-        "6m": 8.43,
-        "1y": 18.32,
-        "3y": null
-      },
-      "max_drawdown": -19.15,
-      "sharpe_ratio": 1.06,
-      "sortino_ratio": 1.59,
-      "beta": 0.89,
-      "scores": {
-        "performance": 53.8,
-        "risk": 64.1,
-        "cost": 56.41025641025641,
-        "liquidity": 62.4,
-        "quality": 95,
-        "overall": 62.2
-      },
-      "vs_benchmarks": {
-        "sp500_1m": -2.09,
-        "dow_1m": -2.29,
-        "sp500_3m": -0.94,
-        "dow_3m": -2.56,
-        "sp500_6m": 0.79,
-        "dow_6m": 1.47,
-        "sp500_1y": 0.58,
-        "dow_1y": 0.43,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 14
     },
     {
       "ticker": "SMH",
@@ -665,9 +620,9 @@
         "performance": 73.7,
         "risk": 69.2,
         "cost": 20.51282051282051,
-        "liquidity": 56.4,
+        "liquidity": 58.1,
         "quality": 75,
-        "overall": 62.1
+        "overall": 62.4
       },
       "vs_benchmarks": {
         "sp500_1m": -13.05,
@@ -678,6 +633,51 @@
         "dow_6m": 22.5,
         "sp500_1y": 64.71,
         "dow_1y": 64.56,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 14
+    },
+    {
+      "ticker": "VUG",
+      "name": "Vanguard Growth",
+      "category": "growth",
+      "sector": "Growth",
+      "confidence": 1.0,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.04,
+      "price": 85.2,
+      "aum": 379207221248,
+      "avg_dollar_volume": 664554012.0,
+      "bid_ask_spread_pct": 0.212,
+      "returns": {
+        "1m": -1.13,
+        "3m": 2.44,
+        "6m": 5.37,
+        "1y": 12.4,
+        "3y": null
+      },
+      "max_drawdown": -23.04,
+      "sharpe_ratio": 1.05,
+      "sortino_ratio": 1.53,
+      "beta": 1.23,
+      "scores": {
+        "performance": 45.5,
+        "risk": 55.6,
+        "cost": 87.17948717948718,
+        "liquidity": 56.4,
+        "quality": 100,
+        "overall": 61.4
+      },
+      "vs_benchmarks": {
+        "sp500_1m": -1.3,
+        "dow_1m": -1.5,
+        "sp500_3m": -1.51,
+        "dow_3m": -3.13,
+        "sp500_6m": -2.27,
+        "dow_6m": -1.59,
+        "sp500_1y": -5.34,
+        "dow_1y": -5.49,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -694,7 +694,7 @@
       "price": 34.17,
       "aum": 59069509632,
       "avg_dollar_volume": 256018483.0,
-      "bid_ask_spread_pct": 0.294,
+      "bid_ask_spread_pct": 0.323,
       "returns": {
         "1m": 0.18,
         "3m": 3.83,
@@ -755,9 +755,9 @@
         "performance": 54.5,
         "risk": 59.0,
         "cost": 30.769230769230774,
-        "liquidity": 85.5,
+        "liquidity": 88.9,
         "quality": 85,
-        "overall": 59.8
+        "overall": 60.3
       },
       "vs_benchmarks": {
         "sp500_1m": -5.3,
@@ -774,6 +774,51 @@
       "overall_rank": 17
     },
     {
+      "ticker": "XLI",
+      "name": "Industrial Select Sector",
+      "category": "sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.09,
+      "price": 179.84,
+      "aum": 33963890688,
+      "avg_dollar_volume": 1246499190.0,
+      "bid_ask_spread_pct": 0.352,
+      "returns": {
+        "1m": -1.92,
+        "3m": 3.01,
+        "6m": 8.43,
+        "1y": 18.32,
+        "3y": null
+      },
+      "max_drawdown": -19.15,
+      "sharpe_ratio": 1.06,
+      "sortino_ratio": 1.59,
+      "beta": 0.89,
+      "scores": {
+        "performance": 53.8,
+        "risk": 64.1,
+        "cost": 56.41025641025641,
+        "liquidity": 42.7,
+        "quality": 95,
+        "overall": 59.2
+      },
+      "vs_benchmarks": {
+        "sp500_1m": -2.09,
+        "dow_1m": -2.29,
+        "sp500_3m": -0.94,
+        "dow_3m": -2.56,
+        "sp500_6m": 0.79,
+        "dow_6m": 1.47,
+        "sp500_1y": 0.58,
+        "dow_1y": 0.43,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 18
+    },
+    {
       "ticker": "IWM",
       "name": "iShares Russell 2000",
       "category": "small_cap",
@@ -784,7 +829,7 @@
       "price": 291.2,
       "aum": 82970353664,
       "avg_dollar_volume": 6791404541.0,
-      "bid_ask_spread_pct": 0.083,
+      "bid_ask_spread_pct": 0.135,
       "returns": {
         "1m": -2.71,
         "3m": 4.76,
@@ -800,9 +845,9 @@
         "performance": 69.2,
         "risk": 33.3,
         "cost": 33.33333333333333,
-        "liquidity": 79.5,
+        "liquidity": 75.2,
         "quality": 98,
-        "overall": 59.3
+        "overall": 58.6
       },
       "vs_benchmarks": {
         "sp500_1m": -2.88,
@@ -813,51 +858,6 @@
         "dow_6m": 3.61,
         "sp500_1y": 13.69,
         "dow_1y": 13.54,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 18
-    },
-    {
-      "ticker": "VUG",
-      "name": "Vanguard Growth",
-      "category": "growth",
-      "sector": "Growth",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.04,
-      "price": 85.2,
-      "aum": 379207221248,
-      "avg_dollar_volume": 664554012.0,
-      "bid_ask_spread_pct": 0.564,
-      "returns": {
-        "1m": -1.13,
-        "3m": 2.44,
-        "6m": 5.37,
-        "1y": 12.4,
-        "3y": null
-      },
-      "max_drawdown": -23.04,
-      "sharpe_ratio": 1.05,
-      "sortino_ratio": 1.53,
-      "beta": 1.23,
-      "scores": {
-        "performance": 45.5,
-        "risk": 55.6,
-        "cost": 87.17948717948718,
-        "liquidity": 42.7,
-        "quality": 100,
-        "overall": 59.3
-      },
-      "vs_benchmarks": {
-        "sp500_1m": -1.3,
-        "dow_1m": -1.5,
-        "sp500_3m": -1.51,
-        "dow_3m": -3.13,
-        "sp500_6m": -2.27,
-        "dow_6m": -1.59,
-        "sp500_1y": -5.34,
-        "dow_1y": -5.49,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -874,7 +874,7 @@
       "price": 105.58,
       "aum": 77217693696,
       "avg_dollar_volume": 1254846828.0,
-      "bid_ask_spread_pct": 1.345,
+      "bid_ask_spread_pct": 2.144,
       "returns": {
         "1m": 2.48,
         "3m": 3.19,
@@ -954,49 +954,94 @@
       "overall_rank": 21
     },
     {
-      "ticker": "AGG",
-      "name": "iShares Core US Aggregate Bond",
-      "category": "bonds",
-      "sector": "Bonds",
+      "ticker": "GLD",
+      "name": "SPDR Gold Shares",
+      "category": "commodity",
+      "sector": "Commodity",
       "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.03,
-      "price": 97.37,
-      "aum": 138847469568,
-      "avg_dollar_volume": 820142016.0,
-      "bid_ask_spread_pct": 0.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.4,
+      "price": 371.54,
+      "aum": 130053275648,
+      "avg_dollar_volume": 2530902053.0,
+      "bid_ask_spread_pct": 0.172,
       "returns": {
-        "1m": -1.15,
-        "3m": -1.75,
-        "6m": -2.78,
-        "1y": -1.22,
+        "1m": 0.25,
+        "3m": -12.3,
+        "6m": -25.08,
+        "1y": 23.45,
         "3y": null
       },
-      "max_drawdown": -6.01,
-      "sharpe_ratio": 0.07,
-      "sortino_ratio": 0.09,
-      "beta": 0.07,
+      "max_drawdown": -26.4,
+      "sharpe_ratio": 1.27,
+      "sortino_ratio": 1.78,
+      "beta": 0.24,
       "scores": {
-        "performance": 28.2,
-        "risk": 39.3,
-        "cost": 89.74358974358974,
-        "liquidity": 71.8,
-        "quality": 98,
-        "overall": 53.7
+        "performance": 39.7,
+        "risk": 70.1,
+        "cost": 15.384615384615387,
+        "liquidity": 74.4,
+        "quality": 95,
+        "overall": 54.4
       },
       "vs_benchmarks": {
-        "sp500_1m": -1.32,
-        "dow_1m": -1.52,
-        "sp500_3m": -5.7,
-        "dow_3m": -7.32,
-        "sp500_6m": -10.42,
-        "dow_6m": -9.74,
-        "sp500_1y": -18.96,
-        "dow_1y": -19.11,
+        "sp500_1m": 0.08,
+        "dow_1m": -0.12,
+        "sp500_3m": -16.25,
+        "dow_3m": -17.87,
+        "sp500_6m": -32.72,
+        "dow_6m": -32.04,
+        "sp500_1y": 5.71,
+        "dow_1y": 5.56,
         "sp500_3y": null,
         "dow_3y": null
       },
       "overall_rank": 22
+    },
+    {
+      "ticker": "XBI",
+      "name": "S&P Biotech",
+      "category": "thematic",
+      "sector": "Thematic",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.35,
+      "price": 147.01,
+      "aum": 10734887936,
+      "avg_dollar_volume": 1394295712.0,
+      "bid_ask_spread_pct": 0.266,
+      "returns": {
+        "1m": -6.09,
+        "3m": 11.94,
+        "6m": 15.99,
+        "1y": 70.47,
+        "3y": null
+      },
+      "max_drawdown": -33.0,
+      "sharpe_ratio": 0.83,
+      "sortino_ratio": 1.22,
+      "beta": 0.99,
+      "scores": {
+        "performance": 75.0,
+        "risk": 37.6,
+        "cost": 17.948717948717942,
+        "liquidity": 41.0,
+        "quality": 95,
+        "overall": 54.0
+      },
+      "vs_benchmarks": {
+        "sp500_1m": -6.26,
+        "dow_1m": -6.46,
+        "sp500_3m": 7.99,
+        "dow_3m": 6.37,
+        "sp500_6m": 8.35,
+        "dow_6m": 9.03,
+        "sp500_1y": 52.73,
+        "dow_1y": 52.58,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 23
     },
     {
       "ticker": "BND",
@@ -1025,9 +1070,9 @@
         "performance": 29.5,
         "risk": 38.5,
         "cost": 92.3076923076923,
-        "liquidity": 64.1,
+        "liquidity": 65.8,
         "quality": 100,
-        "overall": 53.4
+        "overall": 53.7
       },
       "vs_benchmarks": {
         "sp500_1m": -1.31,
@@ -1041,93 +1086,48 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 23
-    },
-    {
-      "ticker": "GLD",
-      "name": "SPDR Gold Shares",
-      "category": "commodity",
-      "sector": "Commodity",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.4,
-      "price": 371.54,
-      "aum": 130053275648,
-      "avg_dollar_volume": 2530902053.0,
-      "bid_ask_spread_pct": 0.305,
-      "returns": {
-        "1m": 0.25,
-        "3m": -12.3,
-        "6m": -25.08,
-        "1y": 23.45,
-        "3y": null
-      },
-      "max_drawdown": -26.4,
-      "sharpe_ratio": 1.27,
-      "sortino_ratio": 1.78,
-      "beta": 0.24,
-      "scores": {
-        "performance": 39.7,
-        "risk": 70.1,
-        "cost": 15.384615384615387,
-        "liquidity": 65.0,
-        "quality": 95,
-        "overall": 53.0
-      },
-      "vs_benchmarks": {
-        "sp500_1m": 0.08,
-        "dow_1m": -0.12,
-        "sp500_3m": -16.25,
-        "dow_3m": -17.87,
-        "sp500_6m": -32.72,
-        "dow_6m": -32.04,
-        "sp500_1y": 5.71,
-        "dow_1y": 5.56,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
       "overall_rank": 24
     },
     {
-      "ticker": "XBI",
-      "name": "S&P Biotech",
-      "category": "thematic",
-      "sector": "Thematic",
+      "ticker": "AGG",
+      "name": "iShares Core US Aggregate Bond",
+      "category": "bonds",
+      "sector": "Bonds",
       "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.35,
-      "price": 147.01,
-      "aum": 10734887936,
-      "avg_dollar_volume": 1394295712.0,
-      "bid_ask_spread_pct": 0.436,
+      "issuer": "iShares",
+      "expense_ratio": 0.03,
+      "price": 97.37,
+      "aum": 138847469568,
+      "avg_dollar_volume": 820142016.0,
+      "bid_ask_spread_pct": 0.185,
       "returns": {
-        "1m": -6.09,
-        "3m": 11.94,
-        "6m": 15.99,
-        "1y": 70.47,
+        "1m": -1.15,
+        "3m": -1.75,
+        "6m": -2.78,
+        "1y": -1.22,
         "3y": null
       },
-      "max_drawdown": -33.0,
-      "sharpe_ratio": 0.83,
-      "sortino_ratio": 1.22,
-      "beta": 0.99,
+      "max_drawdown": -6.01,
+      "sharpe_ratio": 0.07,
+      "sortino_ratio": 0.09,
+      "beta": 0.07,
       "scores": {
-        "performance": 75.0,
-        "risk": 37.6,
-        "cost": 17.948717948717942,
-        "liquidity": 31.6,
-        "quality": 95,
-        "overall": 52.6
+        "performance": 28.2,
+        "risk": 39.3,
+        "cost": 89.74358974358974,
+        "liquidity": 59.8,
+        "quality": 98,
+        "overall": 51.9
       },
       "vs_benchmarks": {
-        "sp500_1m": -6.26,
-        "dow_1m": -6.46,
-        "sp500_3m": 7.99,
-        "dow_3m": 6.37,
-        "sp500_6m": 8.35,
-        "dow_6m": 9.03,
-        "sp500_1y": 52.73,
-        "dow_1y": 52.58,
+        "sp500_1m": -1.32,
+        "dow_1m": -1.52,
+        "sp500_3m": -5.7,
+        "dow_3m": -7.32,
+        "sp500_6m": -10.42,
+        "dow_6m": -9.74,
+        "sp500_1y": -18.96,
+        "dow_1y": -19.11,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -1144,7 +1144,7 @@
       "price": 85.05,
       "aum": 13649293312,
       "avg_dollar_volume": 995907186.0,
-      "bid_ask_spread_pct": 0.424,
+      "bid_ask_spread_pct": 0.542,
       "returns": {
         "1m": 2.1,
         "3m": 0.88,
@@ -1179,51 +1179,6 @@
       "overall_rank": 26
     },
     {
-      "ticker": "XLRE",
-      "name": "Real Estate Select Sector",
-      "category": "sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.09,
-      "price": 45.07,
-      "aum": 8102354432,
-      "avg_dollar_volume": 226368130.0,
-      "bid_ask_spread_pct": 0.846,
-      "returns": {
-        "1m": 2.01,
-        "3m": 1.51,
-        "6m": 8.94,
-        "1y": 6.93,
-        "3y": null
-      },
-      "max_drawdown": -18.25,
-      "sharpe_ratio": 0.42,
-      "sortino_ratio": 0.59,
-      "beta": 0.54,
-      "scores": {
-        "performance": 58.3,
-        "risk": 35.0,
-        "cost": 51.282051282051285,
-        "liquidity": 8.5,
-        "quality": 95,
-        "overall": 47.6
-      },
-      "vs_benchmarks": {
-        "sp500_1m": 1.84,
-        "dow_1m": 1.64,
-        "sp500_3m": -2.44,
-        "dow_3m": -4.06,
-        "sp500_6m": 1.3,
-        "dow_6m": 1.98,
-        "sp500_1y": -10.81,
-        "dow_1y": -10.96,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 27
-    },
-    {
       "ticker": "XLU",
       "name": "Utilities Select Sector",
       "category": "sector",
@@ -1234,7 +1189,7 @@
       "price": 44.35,
       "aum": 23111417856,
       "avg_dollar_volume": 863828278.0,
-      "bid_ask_spread_pct": 0.18,
+      "bid_ask_spread_pct": 0.023,
       "returns": {
         "1m": -0.94,
         "3m": -5.34,
@@ -1250,9 +1205,9 @@
         "performance": 32.1,
         "risk": 53.0,
         "cost": 48.717948717948715,
-        "liquidity": 40.2,
+        "liquidity": 55.6,
         "quality": 95,
-        "overall": 47.3
+        "overall": 49.6
       },
       "vs_benchmarks": {
         "sp500_1m": -1.11,
@@ -1263,6 +1218,51 @@
         "dow_6m": -4.61,
         "sp500_1y": -13.64,
         "dow_1y": -13.79,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 27
+    },
+    {
+      "ticker": "XLRE",
+      "name": "Real Estate Select Sector",
+      "category": "sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.09,
+      "price": 45.07,
+      "aum": 8102354432,
+      "avg_dollar_volume": 226368130.0,
+      "bid_ask_spread_pct": 0.757,
+      "returns": {
+        "1m": 2.01,
+        "3m": 1.51,
+        "6m": 8.94,
+        "1y": 6.93,
+        "3y": null
+      },
+      "max_drawdown": -18.25,
+      "sharpe_ratio": 0.42,
+      "sortino_ratio": 0.59,
+      "beta": 0.54,
+      "scores": {
+        "performance": 58.3,
+        "risk": 35.0,
+        "cost": 51.282051282051285,
+        "liquidity": 11.1,
+        "quality": 95,
+        "overall": 48.0
+      },
+      "vs_benchmarks": {
+        "sp500_1m": 1.84,
+        "dow_1m": 1.64,
+        "sp500_3m": -2.44,
+        "dow_3m": -4.06,
+        "sp500_6m": 1.3,
+        "dow_6m": 1.98,
+        "sp500_1y": -10.81,
+        "dow_1y": -10.96,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -1324,7 +1324,7 @@
       "price": 108.24,
       "aum": 22262224896,
       "avg_dollar_volume": 777749124.0,
-      "bid_ask_spread_pct": 0.12,
+      "bid_ask_spread_pct": 1.31,
       "returns": {
         "1m": -1.37,
         "3m": -7.1,
@@ -1340,9 +1340,9 @@
         "performance": 19.9,
         "risk": 59.8,
         "cost": 46.15384615384615,
-        "liquidity": 41.9,
+        "liquidity": 21.4,
         "quality": 95,
-        "overall": 44.6
+        "overall": 41.5
       },
       "vs_benchmarks": {
         "sp500_1m": -1.54,
@@ -1359,45 +1359,45 @@
       "overall_rank": 30
     },
     {
-      "ticker": "XLB",
-      "name": "Materials Select Sector",
+      "ticker": "XLY",
+      "name": "Consumer Discretionary Select Sector",
       "category": "sector",
       "sector": "Sector",
       "confidence": 1.0,
       "issuer": "State Street",
       "expense_ratio": 0.09,
-      "price": 50.43,
-      "aum": 8166011392,
-      "avg_dollar_volume": 564730272.0,
-      "bid_ask_spread_pct": 0.06,
+      "price": 116.09,
+      "aum": 22593435648,
+      "avg_dollar_volume": 991894599.0,
+      "bid_ask_spread_pct": 0.302,
       "returns": {
-        "1m": -1.16,
-        "3m": -2.02,
-        "6m": 0.86,
-        "1y": 13.52,
+        "1m": -1.69,
+        "3m": -1.91,
+        "6m": -4.21,
+        "1y": 4.02,
         "3y": null
       },
-      "max_drawdown": -23.93,
-      "sharpe_ratio": 0.41,
-      "sortino_ratio": 0.59,
-      "beta": 0.79,
+      "max_drawdown": -26.35,
+      "sharpe_ratio": 0.58,
+      "sortino_ratio": 0.85,
+      "beta": 1.17,
       "scores": {
-        "performance": 34.6,
-        "risk": 23.1,
-        "cost": 53.84615384615385,
-        "liquidity": 42.7,
+        "performance": 26.3,
+        "risk": 30.8,
+        "cost": 61.53846153846154,
+        "liquidity": 37.6,
         "quality": 95,
-        "overall": 41.9
+        "overall": 41.3
       },
       "vs_benchmarks": {
-        "sp500_1m": -1.33,
-        "dow_1m": -1.53,
-        "sp500_3m": -5.97,
-        "dow_3m": -7.59,
-        "sp500_6m": -6.78,
-        "dow_6m": -6.1,
-        "sp500_1y": -4.22,
-        "dow_1y": -4.37,
+        "sp500_1m": -1.86,
+        "dow_1m": -2.06,
+        "sp500_3m": -5.86,
+        "dow_3m": -7.48,
+        "sp500_6m": -11.85,
+        "dow_6m": -11.17,
+        "sp500_1y": -13.72,
+        "dow_1y": -13.87,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -1430,9 +1430,9 @@
         "performance": 41.7,
         "risk": 34.2,
         "cost": 23.07692307692308,
-        "liquidity": 36.8,
+        "liquidity": 37.6,
         "quality": 85,
-        "overall": 40.6
+        "overall": 40.7
       },
       "vs_benchmarks": {
         "sp500_1m": 2.16,
@@ -1449,51 +1449,6 @@
       "overall_rank": 32
     },
     {
-      "ticker": "XLY",
-      "name": "Consumer Discretionary Select Sector",
-      "category": "sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.09,
-      "price": 116.09,
-      "aum": 22593435648,
-      "avg_dollar_volume": 991894599.0,
-      "bid_ask_spread_pct": 0.422,
-      "returns": {
-        "1m": -1.69,
-        "3m": -1.91,
-        "6m": -4.21,
-        "1y": 4.02,
-        "3y": null
-      },
-      "max_drawdown": -26.35,
-      "sharpe_ratio": 0.58,
-      "sortino_ratio": 0.85,
-      "beta": 1.17,
-      "scores": {
-        "performance": 26.3,
-        "risk": 30.8,
-        "cost": 61.53846153846154,
-        "liquidity": 32.5,
-        "quality": 95,
-        "overall": 40.5
-      },
-      "vs_benchmarks": {
-        "sp500_1m": -1.86,
-        "dow_1m": -2.06,
-        "sp500_3m": -5.86,
-        "dow_3m": -7.48,
-        "sp500_6m": -11.85,
-        "dow_6m": -11.17,
-        "sp500_1y": -13.72,
-        "dow_1y": -13.87,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 33
-    },
-    {
       "ticker": "LQD",
       "name": "iShares Investment Grade Corp Bond",
       "category": "bonds",
@@ -1504,7 +1459,7 @@
       "price": 106.25,
       "aum": 33113137152,
       "avg_dollar_volume": 3207241958.0,
-      "bid_ask_spread_pct": 0.311,
+      "bid_ask_spread_pct": 0.245,
       "returns": {
         "1m": -2.04,
         "3m": -2.39,
@@ -1520,9 +1475,9 @@
         "performance": 20.5,
         "risk": 35.0,
         "cost": 41.02564102564103,
-        "liquidity": 51.3,
+        "liquidity": 57.3,
         "quality": 98,
-        "overall": 39.6
+        "overall": 40.5
       },
       "vs_benchmarks": {
         "sp500_1m": -2.21,
@@ -1536,7 +1491,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 34
+      "overall_rank": 33
     },
     {
       "ticker": "SLV",
@@ -1565,9 +1520,9 @@
         "performance": 30.1,
         "risk": 35.0,
         "cost": 7.692307692307693,
-        "liquidity": 48.7,
+        "liquidity": 52.1,
         "quality": 98,
-        "overall": 37.5
+        "overall": 38.1
       },
       "vs_benchmarks": {
         "sp500_1m": -2.45,
@@ -1578,6 +1533,51 @@
         "dow_6m": -57.36,
         "sp500_1y": 38.51,
         "dow_1y": 38.36,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 34
+    },
+    {
+      "ticker": "XLB",
+      "name": "Materials Select Sector",
+      "category": "sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.09,
+      "price": 50.43,
+      "aum": 8166011392,
+      "avg_dollar_volume": 564730272.0,
+      "bid_ask_spread_pct": 0.775,
+      "returns": {
+        "1m": -1.16,
+        "3m": -2.02,
+        "6m": 0.86,
+        "1y": 13.52,
+        "3y": null
+      },
+      "max_drawdown": -23.93,
+      "sharpe_ratio": 0.41,
+      "sortino_ratio": 0.59,
+      "beta": 0.79,
+      "scores": {
+        "performance": 34.6,
+        "risk": 23.1,
+        "cost": 53.84615384615385,
+        "liquidity": 17.1,
+        "quality": 95,
+        "overall": 38.0
+      },
+      "vs_benchmarks": {
+        "sp500_1m": -1.33,
+        "dow_1m": -1.53,
+        "sp500_3m": -5.97,
+        "dow_3m": -7.59,
+        "sp500_6m": -6.78,
+        "dow_6m": -6.1,
+        "sp500_1y": -4.22,
+        "dow_1y": -4.37,
         "sp500_3y": null,
         "dow_3y": null
       },
@@ -1610,9 +1610,9 @@
         "performance": 25.0,
         "risk": 17.9,
         "cost": 28.205128205128204,
-        "liquidity": 62.4,
+        "liquidity": 65.0,
         "quality": 98,
-        "overall": 36.6
+        "overall": 37.0
       },
       "vs_benchmarks": {
         "sp500_1m": 4.65,
@@ -1655,9 +1655,9 @@
         "performance": 14.7,
         "risk": 17.9,
         "cost": 38.46153846153846,
-        "liquidity": 62.4,
+        "liquidity": 66.7,
         "quality": 98,
-        "overall": 34.5
+        "overall": 35.2
       },
       "vs_benchmarks": {
         "sp500_1m": -3.99,
@@ -1700,9 +1700,9 @@
         "performance": 26.9,
         "risk": 11.1,
         "cost": 10.256410256410263,
-        "liquidity": 4.3,
+        "liquidity": 5.1,
         "quality": 98,
-        "overall": 24.2
+        "overall": 24.3
       },
       "vs_benchmarks": {
         "sp500_1m": -13.2,
@@ -1729,7 +1729,7 @@
       "price": 49.33,
       "aum": 1719587200,
       "avg_dollar_volume": 51974254.0,
-      "bid_ask_spread_pct": 3.087,
+      "bid_ask_spread_pct": 3.863,
       "returns": {
         "1m": -14.65,
         "3m": -15.55,
@@ -1774,7 +1774,7 @@
       "price": 71.24,
       "aum": 6534055424,
       "avg_dollar_volume": 391896927.0,
-      "bid_ask_spread_pct": 0.407,
+      "bid_ask_spread_pct": 0.437,
       "returns": {
         "1m": -12.96,
         "3m": -6.07,
@@ -1790,9 +1790,9 @@
         "performance": 9.0,
         "risk": 22.2,
         "cost": 0.0,
-        "liquidity": 17.9,
+        "liquidity": 18.8,
         "quality": 55,
-        "overall": 16.9
+        "overall": 17.0
       },
       "vs_benchmarks": {
         "sp500_1m": -13.13,
