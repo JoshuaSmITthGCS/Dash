@@ -1,6 +1,5 @@
 {
   "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
-
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,
@@ -9,40 +8,74 @@
     "direction_recency": 10,
     "policy_catalyst": 10
   },
-
   "cluster": {
     "window_days": 30,
     "min_politicians_for_max": 3
   },
-
   "recency": {
     "hot_filing_days": 7,
     "warm_filing_days": 30
   },
-
   "trade_size_bands": {
     "low_max": 15000,
     "mid_max": 100000,
     "high_min": 250000
   },
-
   "fundamentals": {
-    "_comment": "Fundamental score: sector-aware valuation plus profitability, balance-sheet health, cash generation, growth, capital allocation, and accounting quality. Percentages are decimals (15% = 0.15).",
+    "_comment": "Fundamental score: sector-aware valuation plus profitability, balance-sheet health, cash generation, growth, capital allocation, and accounting quality. Percentages are decimals (15% = 0.15). Weights follow the strength of the published evidence for each signal, not the convenience of the data: EV/EBITDA and gross profitability carry weight because Loughran-Wellman and Novy-Marx measured them working; PEG and the accruals ratio carry little because their support is thin or has decayed.",
     "category_weights": {
       "valuation": 0.28,
-      "profitability": 0.22,
-      "financial_health": 0.16,
-      "growth": 0.12,
-      "capital_allocation": 0.10,
-      "accounting_quality": 0.12
+      "profitability": 0.26,
+      "financial_health": 0.15,
+      "growth": 0.11,
+      "capital_allocation": 0.1,
+      "accounting_quality": 0.1
     },
     "metric_weights": {
-      "valuation": { "peg": 0.18, "forward_pe": 0.18, "price_to_sales": 0.10, "price_to_book": 0.08, "price_to_tangible_book": 0.08, "ev_to_ebitda": 0.20, "ev_to_fcf": 0.18 },
-      "profitability": { "return_on_invested_capital": 0.30, "return_on_equity": 0.14, "free_cash_flow_yield": 0.18, "profit_margin": 0.13, "cash_conversion": 0.25 },
-      "financial_health": { "interest_coverage": 0.30, "net_debt_to_ebitda": 0.24, "debt_to_equity": 0.18, "current_ratio": 0.10, "altman_z": 0.18 },
-      "growth": { "revenue_growth": 0.30, "earnings_growth": 0.24, "fcf_growth_3y": 0.26, "operating_margin_trend": 0.20 },
-      "capital_allocation": { "net_buyback_yield": 0.40, "stock_comp_to_revenue": 0.34, "capex_to_depreciation": 0.26 },
-      "accounting_quality": { "accruals_ratio": 0.40, "piotroski_f": 0.30, "days_sales_outstanding_trend": 0.16, "inventory_days_trend": 0.14 }
+      "valuation": {
+        "peg": 0.09,
+        "forward_pe": 0.15,
+        "sales_multiple": 0.09,
+        "price_to_book": 0.05,
+        "price_to_tangible_book": 0.05,
+        "ev_to_ebitda": 0.27,
+        "ev_to_ebit": 0.12,
+        "ev_to_fcf": 0.18
+      },
+      "profitability": {
+        "return_on_invested_capital": 0.26,
+        "gross_profits_to_assets": 0.22,
+        "return_on_equity": 0.1,
+        "free_cash_flow_yield": 0.16,
+        "profit_margin": 0.1,
+        "cash_conversion": 0.16
+      },
+      "financial_health": {
+        "interest_coverage": 0.3,
+        "net_debt_to_ebitda": 0.24,
+        "debt_to_equity": 0.18,
+        "current_ratio": 0.1,
+        "altman_z": 0.18
+      },
+      "growth": {
+        "revenue_growth": 0.26,
+        "earnings_growth": 0.2,
+        "fcf_growth_3y": 0.22,
+        "operating_margin_trend": 0.16,
+        "earnings_surprise": 0.16
+      },
+      "capital_allocation": {
+        "net_buyback_yield": 0.34,
+        "stock_comp_to_revenue": 0.28,
+        "capex_to_depreciation": 0.16,
+        "asset_growth": 0.22
+      },
+      "accounting_quality": {
+        "accruals_ratio": 0.22,
+        "piotroski_f": 0.45,
+        "days_sales_outstanding_trend": 0.17,
+        "inventory_days_trend": 0.16
+      }
     },
     "peg": {
       "excellent_max": 1.0,
@@ -51,96 +84,437 @@
       "poor_max": 3.0
     },
     "forward_pe_by_sector": {
-      "Technology": { "suspicious_below": 8, "cheap_max": 25, "healthy_max": 35, "elevated_max": 50 },
-      "Consumer Defensive": { "suspicious_below": 6, "cheap_max": 15, "healthy_max": 20, "elevated_max": 28 },
-      "Utilities": { "suspicious_below": 6, "cheap_max": 15, "healthy_max": 20, "elevated_max": 28 },
-      "Financial Services": { "suspicious_below": 5, "cheap_max": 12, "healthy_max": 18, "elevated_max": 25 },
-      "Financials": { "suspicious_below": 5, "cheap_max": 12, "healthy_max": 18, "elevated_max": 25 },
-      "Healthcare": { "suspicious_below": 6, "cheap_max": 16, "healthy_max": 25, "elevated_max": 38 },
-      "default": { "suspicious_below": 5, "cheap_max": 15, "healthy_max": 25, "elevated_max": 40 }
+      "Technology": {
+        "suspicious_below": 8,
+        "cheap_max": 25,
+        "healthy_max": 35,
+        "elevated_max": 50
+      },
+      "Consumer Defensive": {
+        "suspicious_below": 6,
+        "cheap_max": 15,
+        "healthy_max": 20,
+        "elevated_max": 28
+      },
+      "Utilities": {
+        "suspicious_below": 6,
+        "cheap_max": 15,
+        "healthy_max": 20,
+        "elevated_max": 28
+      },
+      "Financial Services": {
+        "suspicious_below": 5,
+        "cheap_max": 12,
+        "healthy_max": 18,
+        "elevated_max": 25
+      },
+      "Financials": {
+        "suspicious_below": 5,
+        "cheap_max": 12,
+        "healthy_max": 18,
+        "elevated_max": 25
+      },
+      "Healthcare": {
+        "suspicious_below": 6,
+        "cheap_max": 16,
+        "healthy_max": 25,
+        "elevated_max": 38
+      },
+      "default": {
+        "suspicious_below": 5,
+        "cheap_max": 15,
+        "healthy_max": 25,
+        "elevated_max": 40
+      }
     },
     "price_to_sales_by_sector": {
-      "Technology": { "cheap_max": 5.0, "healthy_max": 15.0, "elevated_max": 25.0 },
-      "Healthcare": { "cheap_max": 2.0, "healthy_max": 5.0, "elevated_max": 10.0 },
-      "Industrials": { "cheap_max": 1.0, "healthy_max": 2.5, "elevated_max": 5.0 },
-      "Consumer Cyclical": { "cheap_max": 1.0, "healthy_max": 3.0, "elevated_max": 6.0 },
-      "Consumer Defensive": { "cheap_max": 1.0, "healthy_max": 2.5, "elevated_max": 4.0 },
-      "default": { "cheap_max": 1.0, "healthy_max": 3.0, "elevated_max": 8.0 }
+      "Technology": {
+        "cheap_max": 5.0,
+        "healthy_max": 15.0,
+        "elevated_max": 25.0
+      },
+      "Healthcare": {
+        "cheap_max": 2.0,
+        "healthy_max": 5.0,
+        "elevated_max": 10.0
+      },
+      "Industrials": {
+        "cheap_max": 1.0,
+        "healthy_max": 2.5,
+        "elevated_max": 5.0
+      },
+      "Consumer Cyclical": {
+        "cheap_max": 1.0,
+        "healthy_max": 3.0,
+        "elevated_max": 6.0
+      },
+      "Consumer Defensive": {
+        "cheap_max": 1.0,
+        "healthy_max": 2.5,
+        "elevated_max": 4.0
+      },
+      "default": {
+        "cheap_max": 1.0,
+        "healthy_max": 3.0,
+        "elevated_max": 8.0
+      }
     },
-    "price_to_book": { "excellent_max": 1.0, "good_max": 3.0, "fair_max": 6.0, "poor_max": 10.0 },
-    "return_on_equity": { "excellent_min": 0.20, "good_min": 0.15, "fair_min": 0.10, "weak_min": 0.05 },
-    "free_cash_flow_yield": { "excellent_min": 0.08, "good_min": 0.05, "fair_min": 0.02, "weak_min": 0.0 },
-    "profit_margin": { "excellent_min": 0.20, "good_min": 0.12, "fair_min": 0.06, "weak_min": 0.0 },
-    "debt_to_equity": { "excellent_max": 0.5, "good_max": 1.0, "fair_max": 2.0, "poor_max": 3.0 },
-    "current_ratio": { "excellent_min": 2.0, "good_min": 1.5, "fair_min": 1.0, "weak_min": 0.75 },
-    "revenue_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 },
-    "earnings_growth": { "excellent_min": 0.20, "good_min": 0.10, "fair_min": 0.03, "weak_min": 0.0 },
-
+    "price_to_book": {
+      "excellent_max": 1.0,
+      "good_max": 3.0,
+      "fair_max": 6.0,
+      "poor_max": 10.0
+    },
+    "return_on_equity": {
+      "excellent_min": 0.2,
+      "good_min": 0.15,
+      "fair_min": 0.1,
+      "weak_min": 0.05
+    },
+    "free_cash_flow_yield": {
+      "excellent_min": 0.08,
+      "good_min": 0.05,
+      "fair_min": 0.02,
+      "weak_min": 0.0
+    },
+    "profit_margin": {
+      "excellent_min": 0.2,
+      "good_min": 0.12,
+      "fair_min": 0.06,
+      "weak_min": 0.0
+    },
+    "debt_to_equity": {
+      "excellent_max": 0.5,
+      "good_max": 1.0,
+      "fair_max": 2.0,
+      "poor_max": 3.0
+    },
+    "current_ratio": {
+      "excellent_min": 2.0,
+      "good_min": 1.5,
+      "fair_min": 1.0,
+      "weak_min": 0.75
+    },
+    "revenue_growth": {
+      "excellent_min": 0.2,
+      "good_min": 0.1,
+      "fair_min": 0.03,
+      "weak_min": 0.0
+    },
+    "earnings_growth": {
+      "excellent_min": 0.2,
+      "good_min": 0.1,
+      "fair_min": 0.03,
+      "weak_min": 0.0
+    },
     "_extended_comment": "Quality, capital-allocation, and accounting-integrity bands. Trends are decimal fractions; ratios are multiples.",
-    "return_on_invested_capital": { "excellent_min": 0.20, "good_min": 0.13, "fair_min": 0.08, "weak_min": 0.04 },
-    "cash_conversion": { "excellent_min": 1.0, "good_min": 0.8, "fair_min": 0.6, "weak_min": 0.35 },
-    "fcf_growth_3y": { "excellent_min": 0.15, "good_min": 0.08, "fair_min": 0.02, "weak_min": -0.05 },
-    "interest_coverage": { "excellent_min": 12.0, "good_min": 6.0, "fair_min": 3.0, "weak_min": 1.5 },
-    "net_debt_to_ebitda": { "excellent_max": 0.5, "good_max": 1.5, "fair_max": 3.0, "poor_max": 4.5 },
-    "altman_z": { "excellent_min": 3.0, "good_min": 2.6, "fair_min": 1.8, "weak_min": 1.1 },
-    "piotroski_f": { "excellent_min": 8.0, "good_min": 6.5, "fair_min": 5.0, "weak_min": 3.0 },
-    "accruals_ratio": { "excellent_max": -0.02, "good_max": 0.03, "fair_max": 0.08, "poor_max": 0.15 },
-    "operating_margin_trend": { "excellent_min": 0.02, "good_min": 0.005, "fair_min": -0.005, "weak_min": -0.02 },
-    "days_sales_outstanding_trend": { "excellent_max": -0.05, "good_max": 0.03, "fair_max": 0.10, "poor_max": 0.20 },
-    "inventory_days_trend": { "excellent_max": -0.05, "good_max": 0.03, "fair_max": 0.10, "poor_max": 0.20 },
-    "net_buyback_yield": { "excellent_min": 0.03, "good_min": 0.01, "fair_min": 0.0, "weak_min": -0.02 },
-    "stock_comp_to_revenue": { "excellent_max": 0.01, "good_max": 0.03, "fair_max": 0.07, "poor_max": 0.12 },
-    "capex_to_depreciation": { "ideal_min": 0.9, "ideal_max": 1.8, "acceptable_min": 0.6, "acceptable_max": 2.8 },
-    "price_to_tangible_book": { "excellent_max": 1.5, "good_max": 3.0, "fair_max": 6.0, "poor_max": 12.0 },
-    "ev_to_ebitda": { "suspicious_below": 3.0, "cheap_max": 10.0, "healthy_max": 15.0, "elevated_max": 22.0 },
-    "ev_to_fcf": { "suspicious_below": 5.0, "cheap_max": 18.0, "healthy_max": 28.0, "elevated_max": 45.0 }
+    "return_on_invested_capital": {
+      "excellent_min": 0.2,
+      "good_min": 0.13,
+      "fair_min": 0.08,
+      "weak_min": 0.04
+    },
+    "cash_conversion": {
+      "excellent_min": 1.0,
+      "good_min": 0.8,
+      "fair_min": 0.6,
+      "weak_min": 0.35
+    },
+    "fcf_growth_3y": {
+      "excellent_min": 0.15,
+      "good_min": 0.08,
+      "fair_min": 0.02,
+      "weak_min": -0.05
+    },
+    "interest_coverage": {
+      "excellent_min": 12.0,
+      "good_min": 6.0,
+      "fair_min": 3.0,
+      "weak_min": 1.5
+    },
+    "net_debt_to_ebitda": {
+      "excellent_max": 0.5,
+      "good_max": 1.5,
+      "fair_max": 3.0,
+      "poor_max": 4.5
+    },
+    "altman_z": {
+      "_comment": "Distress/safe cutoffs differ by variant. z is Altman's original 1968 manufacturing model (distress <1.81, safe >2.99); z_double_prime is his non-manufacturer revision on a different scale (distress <1.1, safe >2.6). Financials are suppressed entirely.",
+      "z": {
+        "excellent_min": 3.0,
+        "good_min": 2.6,
+        "fair_min": 1.8,
+        "weak_min": 1.1
+      },
+      "z_double_prime": {
+        "excellent_min": 2.6,
+        "good_min": 2.0,
+        "fair_min": 1.1,
+        "weak_min": 0.5
+      },
+      "manufacturer_sectors": [
+        "Industrials",
+        "Basic Materials",
+        "Energy",
+        "Materials",
+        "Consumer Defensive",
+        "Utilities"
+      ]
+    },
+    "piotroski_f": {
+      "excellent_min": 8.0,
+      "good_min": 6.5,
+      "fair_min": 5.0,
+      "weak_min": 3.0
+    },
+    "accruals_ratio": {
+      "excellent_max": -0.02,
+      "good_max": 0.03,
+      "fair_max": 0.08,
+      "poor_max": 0.15
+    },
+    "operating_margin_trend": {
+      "excellent_min": 0.02,
+      "good_min": 0.005,
+      "fair_min": -0.005,
+      "weak_min": -0.02
+    },
+    "days_sales_outstanding_trend": {
+      "excellent_max": -0.05,
+      "good_max": 0.03,
+      "fair_max": 0.1,
+      "poor_max": 0.2
+    },
+    "inventory_days_trend": {
+      "excellent_max": -0.05,
+      "good_max": 0.03,
+      "fair_max": 0.1,
+      "poor_max": 0.2
+    },
+    "net_buyback_yield": {
+      "excellent_min": 0.03,
+      "good_min": 0.01,
+      "fair_min": 0.0,
+      "weak_min": -0.02
+    },
+    "stock_comp_to_revenue": {
+      "excellent_max": 0.01,
+      "good_max": 0.03,
+      "fair_max": 0.07,
+      "poor_max": 0.12
+    },
+    "capex_to_depreciation": {
+      "ideal_min": 0.9,
+      "ideal_max": 1.8,
+      "acceptable_min": 0.6,
+      "acceptable_max": 2.8
+    },
+    "price_to_tangible_book": {
+      "excellent_max": 1.5,
+      "good_max": 3.0,
+      "fair_max": 6.0,
+      "poor_max": 12.0
+    },
+    "ev_to_ebitda": {
+      "suspicious_below": 3.0,
+      "cheap_max": 10.0,
+      "healthy_max": 15.0,
+      "elevated_max": 22.0
+    },
+    "ev_to_fcf": {
+      "suspicious_below": 5.0,
+      "cheap_max": 18.0,
+      "healthy_max": 28.0,
+      "elevated_max": 45.0
+    },
+    "gross_profits_to_assets": {
+      "excellent_min": 0.33,
+      "good_min": 0.22,
+      "fair_min": 0.13,
+      "weak_min": 0.06
+    },
+    "asset_growth": {
+      "_comment": "Investment factor: conservative asset growth beats aggressive. Shrinkage is not rewarded above steady reinvestment, so this is a range, not a floor.",
+      "ideal_min": -0.02,
+      "ideal_max": 0.12,
+      "acceptable_min": -0.12,
+      "acceptable_max": 0.25
+    },
+    "earnings_surprise": {
+      "excellent_min": 8.0,
+      "good_min": 3.0,
+      "fair_min": 0.0,
+      "weak_min": -5.0
+    },
+    "ev_to_ebit": {
+      "suspicious_below": 4.0,
+      "cheap_max": 12.0,
+      "healthy_max": 18.0,
+      "elevated_max": 26.0
+    },
+    "ev_to_sales_by_sector": {
+      "Technology": {
+        "cheap_max": 5.5,
+        "healthy_max": 15.0,
+        "elevated_max": 26.0
+      },
+      "Healthcare": {
+        "cheap_max": 2.5,
+        "healthy_max": 5.5,
+        "elevated_max": 11.0
+      },
+      "Industrials": {
+        "cheap_max": 1.4,
+        "healthy_max": 3.0,
+        "elevated_max": 5.5
+      },
+      "Consumer Cyclical": {
+        "cheap_max": 1.4,
+        "healthy_max": 3.5,
+        "elevated_max": 6.5
+      },
+      "Consumer Defensive": {
+        "cheap_max": 1.4,
+        "healthy_max": 3.0,
+        "elevated_max": 4.5
+      },
+      "default": {
+        "cheap_max": 1.5,
+        "healthy_max": 3.5,
+        "elevated_max": 8.5
+      }
+    }
   },
-
   "modifiers": {
-    "_comment": "Bounded adjustments applied after the 75/15/10 blend. They refine, never replace, the evidence score. Units are score points.",
-    "sector_valuation_percentile": { "max_points": 3.0 },
-    "short_interest": { "float_warning": 0.08, "float_severe": 0.15, "days_to_cover_warning": 5.0, "max_penalty": 4.0 },
-    "liquidity": { "thin_dollar_volume": 25000000, "illiquid_dollar_volume": 5000000, "max_penalty": 3.0 },
-    "expectations": { "max_points": 3.0, "strong_upside": 20.0, "weak_upside": -5.0, "bullish_rating": 2.0, "bearish_rating": 3.5 },
+    "_comment": "Bounded adjustments applied after the evidence blend. They refine, never replace, the evidence score. Units are score points.",
+    "sector_valuation_percentile": {
+      "max_points": 3.0
+    },
+    "short_interest": {
+      "float_warning": 0.08,
+      "float_severe": 0.15,
+      "days_to_cover_warning": 5.0,
+      "max_penalty": 6.0
+    },
+    "liquidity": {
+      "thin_dollar_volume": 25000000,
+      "illiquid_dollar_volume": 5000000,
+      "max_penalty": 3.0
+    },
+    "expectations": {
+      "max_points": 3.0,
+      "strong_upside": 20.0,
+      "weak_upside": -5.0,
+      "bullish_rating": 2.0,
+      "bearish_rating": 3.5
+    },
     "macro_regime": {
       "_comment": "FRED-derived context is a sector-sensitive modifier, never a primary ranking factor.",
       "max_points": 3.0,
       "min_coverage": 0.7,
       "sector_weights": {
-        "Technology": { "rates": 0.50, "inflation": 0.15, "labor": 0.20, "yield_curve": 0.15 },
-        "Communication Services": { "rates": 0.40, "inflation": 0.15, "labor": 0.25, "yield_curve": 0.20 },
-        "Financial Services": { "rates": 0.10, "inflation": 0.10, "labor": 0.25, "yield_curve": 0.55 },
-        "Financials": { "rates": 0.10, "inflation": 0.10, "labor": 0.25, "yield_curve": 0.55 },
-        "Consumer Cyclical": { "rates": 0.20, "inflation": 0.30, "labor": 0.35, "yield_curve": 0.15 },
-        "Real Estate": { "rates": 0.55, "inflation": 0.15, "labor": 0.15, "yield_curve": 0.15 },
-        "default": { "rates": 0.30, "inflation": 0.25, "labor": 0.25, "yield_curve": 0.20 }
+        "Technology": {
+          "rates": 0.5,
+          "inflation": 0.15,
+          "labor": 0.2,
+          "yield_curve": 0.15
+        },
+        "Communication Services": {
+          "rates": 0.4,
+          "inflation": 0.15,
+          "labor": 0.25,
+          "yield_curve": 0.2
+        },
+        "Financial Services": {
+          "rates": 0.1,
+          "inflation": 0.1,
+          "labor": 0.25,
+          "yield_curve": 0.55
+        },
+        "Financials": {
+          "rates": 0.1,
+          "inflation": 0.1,
+          "labor": 0.25,
+          "yield_curve": 0.55
+        },
+        "Consumer Cyclical": {
+          "rates": 0.2,
+          "inflation": 0.3,
+          "labor": 0.35,
+          "yield_curve": 0.15
+        },
+        "Real Estate": {
+          "rates": 0.55,
+          "inflation": 0.15,
+          "labor": 0.15,
+          "yield_curve": 0.15
+        },
+        "default": {
+          "rates": 0.3,
+          "inflation": 0.25,
+          "labor": 0.25,
+          "yield_curve": 0.2
+        }
       }
+    },
+    "insider_activity": {
+      "_comment": "SEC Form 4 open-market activity scored via the Cohen-Malloy-Pomorski (JF 2012) routine-versus-opportunistic split. Routine calendar-scheduled trades score zero - the paper finds their returns are essentially zero. Opportunistic cluster buys earn up to max_points and decay over one to three months, the horizon the effect pays off over. Sells are capped lower because insiders sell for many non-informative reasons.",
+      "max_points": 5.0,
+      "max_penalty": 3.0,
+      "cluster_bonus": 1.0,
+      "min_trade_value": 25000.0
     }
   },
-
   "bucket_weights": {
     "_comment": "The valuation input is the broad fundamental score (valuation, profitability, health, and growth).",
-    "short_term": { "signal": 0.70, "valuation": 0.15, "momentum": 0.15 },
-    "long_term":  { "signal": 0.40, "valuation": 0.45, "quality": 0.15 },
-    "retirement": { "signal": 0.15, "valuation": 0.20, "stability": 0.65 }
+    "short_term": {
+      "signal": 0.7,
+      "valuation": 0.15,
+      "momentum": 0.15
+    },
+    "long_term": {
+      "signal": 0.4,
+      "valuation": 0.45,
+      "quality": 0.15
+    },
+    "retirement": {
+      "signal": 0.15,
+      "valuation": 0.2,
+      "stability": 0.65
+    }
   },
-
   "bucket_limits": {
     "short_term": 8,
     "long_term": 8,
     "retirement": 6
   },
-
   "labels": {
     "_comment": "Composite score -> label. Never 'BUY'. Research candidates only.",
     "high_conviction_min": 75,
     "watch_min": 55,
     "neutral_min": 35
   },
-
   "feature_flags": {
     "haiku_morning_brief": false,
     "webhook_alerts": false,
     "signal_alert_threshold": 80
+  },
+  "ranking_weights": {
+    "_comment": "Blend of the three evidence components. Fundamentals dominate by design. News sentiment is a 4% tilt rather than a 10% component because headline alpha decays within days (Tetlock 2007); the freed weight went to market behavior, which is now built on 12-1 momentum and real Sharpe/Sortino rather than invented constants.",
+    "fundamentals": 0.78,
+    "market_behavior": 0.18,
+    "news_sentiment": 0.04
+  },
+  "market_behavior": {
+    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant.",
+    "weights": {
+      "momentum_12_1": 0.3,
+      "risk_adjusted": 0.26,
+      "relative_strength": 0.16,
+      "drawdown_resilience": 0.14,
+      "volume_confirmation": 0.08,
+      "low_beta": 0.06
+    },
+    "sentiment_window_days": 7
   }
 }

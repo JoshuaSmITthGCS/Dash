@@ -1,48 +1,312 @@
 {
-  "_comment": "Classifies tickers so the ranker treats ETFs differently from single stocks (PEG/PS don't apply cleanly to funds). 'retirement_core' seeds the broad/retirement bucket regardless of congressional activity — these are diversified low-maintenance holdings, not signals. The etfs list also doubles as the universe fetch_etfs.py screens: SPY and DIA double as the S&P 500 / Dow benchmarks that every fund is ranked against.",
-
+  "_comment": "Classifies tickers so the ranker treats ETFs differently from single stocks (PEG/PS don't apply cleanly to funds). 'retirement_core' seeds the broad/retirement bucket regardless of congressional activity \u2014 these are diversified low-maintenance holdings, not signals. The etfs list also doubles as the universe fetch_etfs.py screens: SPY and DIA double as the S&P 500 / Dow benchmarks that every fund is ranked against.",
   "etfs": {
-    "SPY":   { "name": "S&P 500 (State Street)", "category": "broad_market", "expense_ratio": 0.0945, "issuer": "State Street" },
-    "VOO":   { "name": "Vanguard S&P 500", "category": "broad_market", "expense_ratio": 0.03, "issuer": "Vanguard" },
-    "VTI":   { "name": "Vanguard Total US Market", "category": "broad_market", "expense_ratio": 0.03, "issuer": "Vanguard" },
-    "IVV":   { "name": "iShares Core S&P 500", "category": "broad_market", "expense_ratio": 0.03, "issuer": "iShares" },
-    "DIA":   { "name": "SPDR Dow Jones Industrial Average", "category": "broad_market", "expense_ratio": 0.16, "issuer": "State Street" },
-    "QQQ":   { "name": "Invesco Nasdaq 100", "category": "growth", "expense_ratio": 0.20, "issuer": "Invesco" },
-    "IWM":   { "name": "iShares Russell 2000", "category": "small_cap", "expense_ratio": 0.19, "issuer": "iShares" },
-    "VUG":   { "name": "Vanguard Growth", "category": "growth", "expense_ratio": 0.04, "issuer": "Vanguard" },
-    "VTV":   { "name": "Vanguard Value", "category": "value", "expense_ratio": 0.04, "issuer": "Vanguard" },
-    "SCHG":  { "name": "Schwab US Large-Cap Growth", "category": "growth", "expense_ratio": 0.04, "issuer": "Schwab" },
-    "SCHD":  { "name": "Schwab US Dividend", "category": "dividend", "expense_ratio": 0.06, "issuer": "Schwab" },
-    "VYM":   { "name": "Vanguard High Dividend", "category": "dividend", "expense_ratio": 0.06, "issuer": "Vanguard" },
-    "JEPI":  { "name": "JPMorgan Equity Premium Income", "category": "dividend", "expense_ratio": 0.35, "issuer": "JPMorgan" },
-    "VXUS":  { "name": "Total International", "category": "international", "expense_ratio": 0.05, "issuer": "Vanguard" },
-    "EFA":   { "name": "iShares MSCI EAFE", "category": "international", "expense_ratio": 0.32, "issuer": "iShares" },
-    "EEM":   { "name": "iShares MSCI Emerging Markets", "category": "international", "expense_ratio": 0.68, "issuer": "iShares" },
-    "BND":   { "name": "Total Bond Market", "category": "bonds", "expense_ratio": 0.03, "issuer": "Vanguard" },
-    "AGG":   { "name": "iShares Core US Aggregate Bond", "category": "bonds", "expense_ratio": 0.03, "issuer": "iShares" },
-    "TLT":   { "name": "iShares 20+ Year Treasury Bond", "category": "bonds", "expense_ratio": 0.15, "issuer": "iShares" },
-    "LQD":   { "name": "iShares Investment Grade Corp Bond", "category": "bonds", "expense_ratio": 0.14, "issuer": "iShares" },
-    "GLD":   { "name": "SPDR Gold Shares", "category": "commodity", "expense_ratio": 0.40, "issuer": "State Street" },
-    "SLV":   { "name": "iShares Silver Trust", "category": "commodity", "expense_ratio": 0.50, "issuer": "iShares" },
-    "XLK":   { "name": "Technology Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLF":   { "name": "Financials Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLV":   { "name": "Health Care Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLE":   { "name": "Energy Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLY":   { "name": "Consumer Discretionary Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLP":   { "name": "Consumer Staples Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLI":   { "name": "Industrial Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLB":   { "name": "Materials Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLRE":  { "name": "Real Estate Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLU":   { "name": "Utilities Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "XLC":   { "name": "Communication Services Select Sector", "category": "sector", "expense_ratio": 0.09, "issuer": "State Street" },
-    "SMH":   { "name": "Semiconductor ETF", "category": "thematic", "expense_ratio": 0.35, "issuer": "VanEck" },
-    "ITA":   { "name": "Aerospace & Defense", "category": "thematic", "expense_ratio": 0.40, "issuer": "iShares" },
-    "ICLN":  { "name": "Clean Energy", "category": "thematic", "expense_ratio": 0.41, "issuer": "iShares" },
-    "TAN":   { "name": "Solar", "category": "thematic", "expense_ratio": 0.68, "issuer": "Invesco" },
-    "XBI":   { "name": "S&P Biotech", "category": "thematic", "expense_ratio": 0.35, "issuer": "State Street" },
-    "ARKK":  { "name": "ARK Innovation", "category": "thematic", "expense_ratio": 0.75, "issuer": "ARK" },
-    "IBIT":  { "name": "iShares Bitcoin Trust", "category": "crypto", "expense_ratio": 0.25, "issuer": "iShares" }
+    "SPY": {
+      "name": "S&P 500 (State Street)",
+      "category": "broad_market",
+      "expense_ratio": 0.0945,
+      "issuer": "State Street",
+      "index_proxy": "IVV"
+    },
+    "VOO": {
+      "name": "Vanguard S&P 500",
+      "category": "broad_market",
+      "expense_ratio": 0.03,
+      "issuer": "Vanguard",
+      "index_proxy": "IVV"
+    },
+    "VTI": {
+      "name": "Vanguard Total US Market",
+      "category": "broad_market",
+      "expense_ratio": 0.03,
+      "issuer": "Vanguard",
+      "index_proxy": "ITOT"
+    },
+    "IVV": {
+      "name": "iShares Core S&P 500",
+      "category": "broad_market",
+      "expense_ratio": 0.03,
+      "issuer": "iShares",
+      "index_proxy": "SPY"
+    },
+    "DIA": {
+      "name": "SPDR Dow Jones Industrial Average",
+      "category": "broad_market",
+      "expense_ratio": 0.16,
+      "issuer": "State Street"
+    },
+    "QQQ": {
+      "name": "Invesco Nasdaq 100",
+      "category": "growth",
+      "expense_ratio": 0.2,
+      "issuer": "Invesco",
+      "index_proxy": "QQQM"
+    },
+    "IWM": {
+      "name": "iShares Russell 2000",
+      "category": "small_cap",
+      "expense_ratio": 0.19,
+      "issuer": "iShares",
+      "index_proxy": "VTWO"
+    },
+    "VUG": {
+      "name": "Vanguard Growth",
+      "category": "growth",
+      "expense_ratio": 0.04,
+      "issuer": "Vanguard",
+      "index_proxy": "SCHG"
+    },
+    "VTV": {
+      "name": "Vanguard Value",
+      "category": "value",
+      "expense_ratio": 0.04,
+      "issuer": "Vanguard",
+      "index_proxy": "IWD"
+    },
+    "SCHG": {
+      "name": "Schwab US Large-Cap Growth",
+      "category": "growth",
+      "expense_ratio": 0.04,
+      "issuer": "Schwab",
+      "index_proxy": "VUG"
+    },
+    "SCHD": {
+      "name": "Schwab US Dividend",
+      "category": "dividend",
+      "expense_ratio": 0.06,
+      "issuer": "Schwab",
+      "index_proxy": "VYM"
+    },
+    "VYM": {
+      "name": "Vanguard High Dividend",
+      "category": "dividend",
+      "expense_ratio": 0.06,
+      "issuer": "Vanguard",
+      "index_proxy": "SCHD"
+    },
+    "JEPI": {
+      "name": "JPMorgan Equity Premium Income",
+      "category": "dividend",
+      "expense_ratio": 0.35,
+      "issuer": "JPMorgan"
+    },
+    "VXUS": {
+      "name": "Total International",
+      "category": "international",
+      "expense_ratio": 0.05,
+      "issuer": "Vanguard",
+      "index_proxy": "IXUS"
+    },
+    "EFA": {
+      "name": "iShares MSCI EAFE",
+      "category": "international",
+      "expense_ratio": 0.32,
+      "issuer": "iShares",
+      "index_proxy": "IEFA"
+    },
+    "EEM": {
+      "name": "iShares MSCI Emerging Markets",
+      "category": "international",
+      "expense_ratio": 0.68,
+      "issuer": "iShares",
+      "index_proxy": "IEMG"
+    },
+    "BND": {
+      "name": "Total Bond Market",
+      "category": "bonds",
+      "expense_ratio": 0.03,
+      "issuer": "Vanguard",
+      "index_proxy": "AGG"
+    },
+    "AGG": {
+      "name": "iShares Core US Aggregate Bond",
+      "category": "bonds",
+      "expense_ratio": 0.03,
+      "issuer": "iShares",
+      "index_proxy": "BND"
+    },
+    "TLT": {
+      "name": "iShares 20+ Year Treasury Bond",
+      "category": "bonds",
+      "expense_ratio": 0.15,
+      "issuer": "iShares",
+      "index_proxy": "VGLT"
+    },
+    "LQD": {
+      "name": "iShares Investment Grade Corp Bond",
+      "category": "bonds",
+      "expense_ratio": 0.14,
+      "issuer": "iShares",
+      "index_proxy": "VCIT"
+    },
+    "GLD": {
+      "name": "SPDR Gold Shares",
+      "category": "commodity",
+      "expense_ratio": 0.4,
+      "issuer": "State Street",
+      "index_proxy": "IAU"
+    },
+    "SLV": {
+      "name": "iShares Silver Trust",
+      "category": "commodity",
+      "expense_ratio": 0.5,
+      "issuer": "iShares",
+      "index_proxy": "SIVR"
+    },
+    "XLK": {
+      "name": "Technology Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLF": {
+      "name": "Financials Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLV": {
+      "name": "Health Care Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLE": {
+      "name": "Energy Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLY": {
+      "name": "Consumer Discretionary Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLP": {
+      "name": "Consumer Staples Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLI": {
+      "name": "Industrial Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLB": {
+      "name": "Materials Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLRE": {
+      "name": "Real Estate Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLU": {
+      "name": "Utilities Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "XLC": {
+      "name": "Communication Services Select Sector",
+      "category": "sector",
+      "expense_ratio": 0.09,
+      "issuer": "State Street"
+    },
+    "SMH": {
+      "name": "Semiconductor ETF",
+      "category": "thematic",
+      "expense_ratio": 0.35,
+      "issuer": "VanEck",
+      "index_proxy": "SOXX"
+    },
+    "ITA": {
+      "name": "Aerospace & Defense",
+      "category": "thematic",
+      "expense_ratio": 0.4,
+      "issuer": "iShares"
+    },
+    "ICLN": {
+      "name": "Clean Energy",
+      "category": "thematic",
+      "expense_ratio": 0.41,
+      "issuer": "iShares"
+    },
+    "TAN": {
+      "name": "Solar",
+      "category": "thematic",
+      "expense_ratio": 0.68,
+      "issuer": "Invesco"
+    },
+    "XBI": {
+      "name": "S&P Biotech",
+      "category": "thematic",
+      "expense_ratio": 0.35,
+      "issuer": "State Street",
+      "index_proxy": "IBB"
+    },
+    "ARKK": {
+      "name": "ARK Innovation",
+      "category": "thematic",
+      "expense_ratio": 0.75,
+      "issuer": "ARK"
+    },
+    "IBIT": {
+      "name": "iShares Bitcoin Trust",
+      "category": "crypto",
+      "expense_ratio": 0.25,
+      "issuer": "iShares"
+    }
   },
-
-  "retirement_core": ["VTI", "VOO", "SCHD", "VXUS", "QQQ", "BND"]
+  "retirement_core": [
+    "VTI",
+    "VOO",
+    "SCHD",
+    "VXUS",
+    "QQQ",
+    "BND"
+  ],
+  "etf_scoring": {
+    "_comment": "ETF ranking config. Percentiles are computed within peer_groups, never across the whole batch: a bond fund's Sharpe ranked against an equity fund's is an artifact of the batch composition. index_proxy on each fund names a free like-for-like ETF used to compute tracking difference; it is a proxy for the fund's stated index, not the index itself, and is labelled as such in the output.",
+    "weights": {
+      "performance": 0.28,
+      "risk": 0.27,
+      "cost": 0.17,
+      "liquidity": 0.16,
+      "quality": 0.12
+    },
+    "peer_groups": {
+      "broad_market": "equity_broad",
+      "growth": "equity_broad",
+      "value": "equity_broad",
+      "small_cap": "equity_broad",
+      "dividend": "equity_income",
+      "international": "equity_international",
+      "sector": "equity_sector",
+      "thematic": "equity_thematic",
+      "bonds": "fixed_income",
+      "commodity": "commodity",
+      "crypto": "crypto"
+    },
+    "disclosure": {
+      "_comment": "Optional per-fund Rule 6c-11 endpoint. SEC Rule 6c-11 requires every ETF to publish NAV, market price, premium/discount, and the median 30-day bid-ask spread on a free public website. Issuers publish those under different keys, so declare {url, format, fields} per fund and etf_disclosure.py normalizes it. Funds without an entry fall back to premium/discount computed from quote NAV.",
+      "example": {
+        "url": "https://issuer.example.com/api/etf/XYZ/6c-11.json",
+        "format": "generic_json",
+        "fields": {
+          "nav": "navPerShare",
+          "market_price": "closingPrice",
+          "premium_discount_pct": "premiumDiscountPercent",
+          "median_bid_ask_spread_pct": "medianSpread30Day",
+          "as_of": "asOfDate"
+        }
+      }
+    }
+  }
 }

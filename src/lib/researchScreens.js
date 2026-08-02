@@ -76,24 +76,69 @@ export function rankMomentum(rows, limit = 5) {
       const monthReturn = technical.return_20d
       if (![weekReturn, monthReturn].every(finite) || weekReturn <= 0 || monthReturn <= 0) return null
 
-      const trend = finite(technical.trend) ? technical.trend : clamp(50 + monthReturn * 2)
+      // The backend now scores 12-1 momentum (12-month return skipping the most recent
+      // month) rather than a raw recent-return formula. `trend` is the pre-rebuild field
+      // name, kept as a fallback for snapshots that predate the change.
+      const momentum = finite(technical.momentum_12_1)
+        ? technical.momentum_12_1
+        : finite(technical.trend)
+          ? technical.trend
+          : clamp(50 + monthReturn * 2)
       const relative = finite(technical.relative_strength)
         ? technical.relative_strength
         : clamp(50 + (technical.relative_strength_20d || 0) * 3)
       const volume = finite(technical.volume_confirmation) ? technical.volume_confirmation : 50
-      const risk = finite(technical.risk) ? technical.risk : 50
+      // Real Sharpe/Sortino-derived risk, falling back to the old invented penalty.
+      const risk = finite(technical.risk_adjusted)
+        ? technical.risk_adjusted
+        : finite(technical.risk)
+          ? technical.risk
+          : 50
       return {
         ...row,
         screen: {
           weekReturn,
           monthReturn,
+          momentum12m: technical.momentum_12_1_pct,
           relativeReturn: technical.relative_strength_20d,
-          rankScore: trend * 0.4 + relative * 0.25 + volume * 0.15 + risk * 0.2,
+          rankScore: momentum * 0.4 + relative * 0.25 + volume * 0.15 + risk * 0.2,
         },
       }
     })
     .filter(Boolean)
     .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
     .slice(0, limit)
+}
+
+// Structural-trend exposure is deliberately its own screen rather than a component of the
+// research score. Blending a forward-looking thematic bet into the fundamentals score would
+// make that score unreadable — you could no longer tell whether a stock ranked well because
+// it was cheap and profitable or because it carried a fashionable tag.
+//
+// Two rules this ranking enforces, both aimed at the documented failure mode of thematic
+// products (buying whatever already ran):
+//   1. Names the backend excluded on valuation grounds sort below eligible ones. They stay
+//      visible — high exposure at a euphoric price is worth knowing — but never lead.
+//   2. Ordering uses opportunity_score (exposure × quality × valuation discipline), never
+//      exposure alone, so the purest-play expensive name does not automatically win.
+export function rankThemeExposure(theme, limit = 5) {
+  const rows = theme?.rows || []
+  return rows
+    .filter((row) => finite(row.theme_exposure_score))
+    .slice()
+    .sort((left, right) => {
+      if (left.eligible !== right.eligible) return left.eligible ? -1 : 1
+      const leftScore = finite(left.opportunity_score) ? left.opportunity_score : -1
+      const rightScore = finite(right.opportunity_score) ? right.opportunity_score : -1
+      if (leftScore !== rightScore) return rightScore - leftScore
+      return right.theme_exposure_score - left.theme_exposure_score
+    })
+    .slice(0, limit)
+}
+
+// Themes that actually produced scored rows, so the UI doesn't render an empty panel for a
+// theme whose signals were all unavailable this run.
+export function activeThemes(screen) {
+  return (screen?.themes || []).filter((theme) => (theme.rows || []).length > 0)
 }
 

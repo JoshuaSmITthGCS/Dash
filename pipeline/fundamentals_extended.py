@@ -52,6 +52,15 @@ ALIASES = {
 
 FINANCIAL_SECTORS = ("Financial Services", "Financials", "Financial")
 
+# Altman's original 1968 Z-score was estimated on publicly traded *manufacturers*. Applied
+# to an asset-light software company it reports a misleadingly low score, because the model
+# leans on asset turnover and working capital that such a company structurally does not
+# carry. Altman's own Z'' revision drops the asset-turnover term and reweights the rest for
+# non-manufacturers, so each sector gets the variant it was fitted for - and financials get
+# neither, because the model has no meaning for a leveraged balance sheet by design.
+MANUFACTURING_SECTORS = ("Industrials", "Basic Materials", "Energy", "Materials",
+                         "Consumer Defensive", "Utilities")
+
 
 # ---------------- adapters ----------------
 
@@ -234,31 +243,98 @@ def derive_net_debt_to_ebitda(income, balance, info=None):
     return rounded((debt - (cash or 0)) / ebitda, 2)
 
 
-def derive_altman_z(income, balance, market_cap, sector=None):
-    """Classic five-factor solvency composite. Undefined for banks, where it has no meaning."""
+def altman_variant_for(sector):
+    """Which Z-score model a sector should be scored against, or None to suppress it."""
     if sector in FINANCIAL_SECTORS:
         return None
+    return "z" if sector in MANUFACTURING_SECTORS else "z_double_prime"
+
+
+def derive_altman_z(income, balance, market_cap, sector=None):
+    """Solvency composite using the variant fitted for the filer's sector.
+
+    Returns ``(score, variant)``. ``z`` is the original 1968 five-factor manufacturing model
+    (distress below 1.81, safe above 2.99). ``z_double_prime`` is Altman's non-manufacturer
+    revision: it drops the asset-turnover term, substitutes book equity for market
+    capitalization in the leverage term, and reweights the remainder onto a different scale
+    (distress below 1.1, safe above 2.6). Reporting the raw number without the variant would
+    be meaningless, since the same value means opposite things under the two models.
+
+    Financials return ``(None, None)``: the accuracy figures quoted for Z-scores were
+    measured on manufacturers, and a bank's balance sheet breaks every assumption behind it.
+    """
+    variant = altman_variant_for(sector)
+    if variant is None:
+        return None, None
     assets = at(line(balance, "total_assets"))
     if not assets:
-        return None
+        return None, None
     working_capital = at(line(balance, "working_capital"))
     if working_capital is None:
         current_assets, current_liabilities = at(line(balance, "current_assets")), at(line(balance, "current_liabilities"))
         if current_assets is not None and current_liabilities is not None:
             working_capital = current_assets - current_liabilities
     liabilities = at(line(balance, "total_liabilities"))
-    parts = {
-        "working_capital": ratio(working_capital, assets),
-        "retained_earnings": ratio(at(line(balance, "retained_earnings")), assets),
-        "ebit": ratio(at(line(income, "ebit")), assets),
-        "equity_to_liabilities": ratio(market_cap, liabilities),
-        "asset_turnover": ratio(at(line(income, "revenue")), assets),
-    }
-    if sum(value is not None for value in parts.values()) < 4:
+    equity = at(line(balance, "equity"))
+
+    if variant == "z":
+        parts = {
+            "working_capital": ratio(working_capital, assets),
+            "retained_earnings": ratio(at(line(balance, "retained_earnings")), assets),
+            "ebit": ratio(at(line(income, "ebit")), assets),
+            "equity_to_liabilities": ratio(market_cap, liabilities),
+            "asset_turnover": ratio(at(line(income, "revenue")), assets),
+        }
+        weights = {"working_capital": 1.2, "retained_earnings": 1.4, "ebit": 3.3,
+                   "equity_to_liabilities": 0.6, "asset_turnover": 1.0}
+        required = 4
+    else:
+        parts = {
+            "working_capital": ratio(working_capital, assets),
+            "retained_earnings": ratio(at(line(balance, "retained_earnings")), assets),
+            "ebit": ratio(at(line(income, "ebit")), assets),
+            "equity_to_liabilities": ratio(equity, liabilities),
+        }
+        weights = {"working_capital": 6.56, "retained_earnings": 3.26, "ebit": 6.72,
+                   "equity_to_liabilities": 1.05}
+        required = 3
+    if sum(value is not None for value in parts.values()) < required:
+        return None, None
+    score = sum(weights[key] * value for key, value in parts.items() if value is not None)
+    return rounded(score, 2), variant
+
+
+def derive_gross_profits_to_assets(income, balance):
+    """Gross profit over total assets - Novy-Marx's (JFE 2013) profitability measure.
+
+    Novy-Marx shows gross profits-to-assets has "roughly the same power as book-to-market
+    predicting the cross-section of average returns", and crucially it is *negatively*
+    correlated with book-to-market, so it adds information a value screen cannot. Gross
+    profit is used rather than earnings precisely because it sits above the line where
+    accounting discretion, R&D expensing, and SG&A choices distort comparability.
+    """
+    gross = at(line(income, "gross_profit"))
+    if gross is None:
+        revenue, cost = at(line(income, "revenue")), at(line(income, "cost_of_revenue"))
+        gross = None if revenue is None or cost is None else revenue - cost
+    assets = average(at(line(balance, "total_assets")), at(line(balance, "total_assets"), 1))
+    if assets is None:
+        assets = at(line(balance, "total_assets"))
+    return rounded(ratio(gross, assets))
+
+
+def derive_asset_growth(balance):
+    """Year-over-year total asset growth - the canonical investment-factor input.
+
+    The Fama-French five-factor model's investment factor (conservative-minus-aggressive)
+    says firms growing assets aggressively earn *lower* subsequent returns. Capex over
+    depreciation captures only reinvestment in fixed assets; total asset growth captures
+    acquisitions and balance-sheet expansion too, which is where empire-building shows up.
+    """
+    now, prior = at(line(balance, "total_assets")), at(line(balance, "total_assets"), 1)
+    if now is None or not prior or prior <= 0:
         return None
-    weights = {"working_capital": 1.2, "retained_earnings": 1.4, "ebit": 3.3,
-               "equity_to_liabilities": 0.6, "asset_turnover": 1.0}
-    return rounded(sum(weights[key] * value for key, value in parts.items() if value is not None), 2)
+    return rounded(now / prior - 1)
 
 
 def derive_piotroski(income, balance, cashflow):
@@ -375,6 +451,8 @@ def derive_enterprise_multiples(income, balance, cashflow, info, market_cap):
         cash = at(line(balance, "cash")) or info.get("totalCash")
         enterprise_value = market_cap + (debt or 0) - (cash or 0)
     ebitda = at(line(income, "ebitda")) or info.get("ebitda")
+    ebit = at(line(income, "ebit"))
+    revenue = at(line(income, "revenue")) or info.get("totalRevenue")
     fcf = at(line(cashflow, "free_cash_flow")) or info.get("freeCashflow")
 
     equity = at(line(balance, "equity"))
@@ -390,11 +468,65 @@ def derive_enterprise_multiples(income, balance, cashflow, info, market_cap):
     return {
         "enterprise_value": None if enterprise_value is None else round(enterprise_value),
         "ev_to_ebitda": rounded(multiple(ebitda), 2),
+        # EV/EBIT is EV/EBITDA's twin without the depreciation add-back, which is where
+        # capital intensity hides. Gray & Vogel's multiples horse race finds the two produce
+        # nearly identical results; carrying both means one covers the other's data gaps.
+        "ev_to_ebit": rounded(multiple(ebit), 2),
+        # EV/Sales rather than P/S: including debt is the whole point of an enterprise
+        # multiple, and a levered company looks artificially cheap on price-to-sales.
+        "ev_to_sales": rounded(multiple(revenue), 2),
         "ev_to_fcf": rounded(multiple(fcf), 2),
         "price_to_tangible_book": rounded(
             ratio(market_cap, tangible_book) if (tangible_book or 0) > 0 else None, 2),
         "earnings_yield": rounded(ratio(info.get("trailingEps"), info.get("currentPrice") or info.get("regularMarketPrice"))),
     }
+
+
+def derive_earnings_surprise(surprises):
+    """Recent earnings-surprise momentum from a list of ``{"date", "surprise_pct"}`` rows.
+
+    Novy-Marx (2014) makes the case that price momentum is largely a shadow of fundamental
+    momentum - "fundamentally, momentum is fundamental momentum". Trailing growth on its own
+    is a weak predictor of forward returns; the *direction of surprise against expectations*
+    is the part that carries drift. Averaging the last four quarters, newest weighted
+    heaviest, keeps one noisy quarter from dominating.
+    """
+    rows = [row for row in (surprises or [])
+            if isinstance(row, dict) and row.get("surprise_pct") is not None]
+    if not rows:
+        return None
+    ordered = sorted(rows, key=lambda row: str(row.get("date") or ""), reverse=True)[:4]
+    weights = [0.4, 0.3, 0.2, 0.1][:len(ordered)]
+    total = sum(weights)
+    try:
+        weighted = sum(float(row["surprise_pct"]) * weight
+                       for row, weight in zip(ordered, weights))
+    except (TypeError, ValueError):
+        return None
+    return rounded(weighted / total)
+
+
+def earnings_surprise_rows(ticker_obj):
+    """Adapt a yfinance ``earnings_dates`` frame into plain rows. Never raises."""
+    try:
+        frame = ticker_obj.earnings_dates
+    except Exception:  # noqa: BLE001 - an absent calendar must not sink the symbol
+        return []
+    if frame is None or getattr(frame, "empty", True):
+        return []
+    column = next((name for name in frame.columns if "surprise" in str(name).lower()), None)
+    if column is None:
+        return []
+    rows = []
+    for index, value in zip(frame.index, frame[column].tolist()):
+        try:
+            surprise = float(value)
+        except (TypeError, ValueError):
+            continue
+        if surprise != surprise:  # NaN: the quarter has not been reported yet
+            continue
+        rows.append({"date": str(index)[:10], "surprise_pct": surprise})
+    return rows
 
 
 # ---------------- market structure ----------------
@@ -427,7 +559,7 @@ def derive_market_structure(info, price, closes=(), volumes=()):
 # ---------------- assembly ----------------
 
 def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price=None,
-                    sector=None, closes=(), volumes=()):
+                    sector=None, closes=(), volumes=(), earnings_surprises=()):
     """Every extended metric for one company, merged into a single flat dict."""
     income = (annual or {}).get("income", {})
     balance = (annual or {}).get("balance", {})
@@ -435,16 +567,21 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
     info = info or {}
     market_cap = market_cap or info.get("marketCap")
     piotroski, piotroski_tests = derive_piotroski(income, balance, cashflow)
+    altman, altman_variant = derive_altman_z(income, balance, market_cap, sector)
 
     metrics = {
         "return_on_invested_capital": derive_roic(income, balance),
+        "gross_profits_to_assets": derive_gross_profits_to_assets(income, balance),
         "cash_conversion": derive_cash_conversion(income, cashflow),
         "fcf_growth_3y": derive_fcf_growth(cashflow),
         "interest_coverage": derive_interest_coverage(income),
         "net_debt_to_ebitda": derive_net_debt_to_ebitda(income, balance, info),
-        "altman_z": derive_altman_z(income, balance, market_cap, sector),
+        "altman_z": altman,
+        "altman_z_variant": altman_variant,
         "piotroski_f": piotroski,
         "accruals_ratio": derive_accruals_ratio(income, balance, cashflow),
+        "asset_growth": derive_asset_growth(balance),
+        "earnings_surprise": derive_earnings_surprise(earnings_surprises),
     }
     metrics.update(derive_margins(income))
     metrics.update(derive_working_capital_trends(income, balance))
@@ -459,8 +596,9 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
 
 
 COVERAGE_KEYS = (
-    "return_on_invested_capital", "cash_conversion", "fcf_growth_3y", "interest_coverage",
-    "net_debt_to_ebitda", "altman_z", "piotroski_f", "accruals_ratio", "operating_margin_trend",
-    "days_sales_outstanding_trend", "net_buyback_yield", "stock_comp_to_revenue",
-    "capex_to_depreciation", "ev_to_ebitda", "ev_to_fcf", "price_to_tangible_book",
+    "return_on_invested_capital", "gross_profits_to_assets", "cash_conversion", "fcf_growth_3y",
+    "interest_coverage", "net_debt_to_ebitda", "altman_z", "piotroski_f", "accruals_ratio",
+    "operating_margin_trend", "days_sales_outstanding_trend", "net_buyback_yield",
+    "stock_comp_to_revenue", "capex_to_depreciation", "asset_growth", "ev_to_ebitda",
+    "ev_to_ebit", "ev_to_sales", "ev_to_fcf", "price_to_tangible_book",
 )

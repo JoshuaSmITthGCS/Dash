@@ -9,7 +9,9 @@ import { getRecommendation } from '../lib/recommendation'
 import { humanDate } from '../lib/formatters'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
-import { rankGrowingEtfs, rankMomentum, rankValueTurnarounds } from '../lib/researchScreens'
+import {
+  activeThemes, rankGrowingEtfs, rankMomentum, rankThemeExposure, rankValueTurnarounds,
+} from '../lib/researchScreens'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 
@@ -103,17 +105,85 @@ function ScreenRow({ row, rank, type, onOpen }) {
 // ETFs carry a different shape than the stock screens (a blended score plus multi-window
 // returns vs the S&P 500 and the Dow), so they get their own row instead of overloading
 // ScreenRow's two-metric layout.
+const PEER_GROUP_LABELS = {
+  equity_broad: 'broad equity', equity_income: 'dividend', equity_sector: 'sector',
+  equity_thematic: 'thematic', equity_international: 'international',
+  fixed_income: 'bonds', commodity: 'commodity', crypto: 'crypto',
+  _pooled: 'mixed asset classes',
+}
+
 function EtfScreenRow({ row, rank, onOpen }) {
   const oneYearReturn = row.returns?.['1y']
   const vsSp500 = row.vs_benchmarks?.sp500_1y
+  // Rank only means something inside a peer group; comparing a bond fund's score to an
+  // equity fund's is an artifact of the batch, so the label says which group it is.
+  const group = PEER_GROUP_LABELS[row.ranked_against] || row.ranked_against
+  const peerNote = row.peer_rank && !row.cross_asset_class_rank
+    ? `#${row.peer_rank} of ${row.peer_group_size} ${group}`
+    : row.cross_asset_class_rank
+      ? 'ranked across asset classes'
+      : row.name
   return (
     <button onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}>
       <span className="screen-rank">#{rank}</span>
-      <span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span>
+      <span className="screen-company"><b>{row.ticker}</b><small>{peerNote}</small></span>
       <span><small>1-year return</small><Move pct={oneYearReturn} /></span>
       <span><small>Vs S&amp;P 500</small><Move pct={vsSp500} /></span>
       <Icon name="chevron" size={17} />
     </button>
+  )
+}
+
+// Theme rows carry a different shape again: an exposure score, the guardrail verdict, and
+// an opportunity score that combines exposure with business quality and valuation discipline.
+// Excluded names stay on the board — high exposure at a euphoric price is worth seeing — but
+// they are visibly marked so nobody reads them as the screen's recommendation.
+function ThemeRow({ row, rank, onOpen, research }) {
+  const full = research.find((item) => item.ticker === row.ticker)
+  return (
+    <button
+      onClick={() => onOpen(full || row)}
+      aria-label={`Open ${row.name || row.ticker} research`}
+      className={row.eligible ? undefined : 'screen-row-flagged'}
+    >
+      <span className="screen-rank">#{rank}</span>
+      <span className="screen-company">
+        <b>{row.ticker}</b>
+        <small>{row.eligible ? row.name : `${row.name} · valuation already stretched`}</small>
+      </span>
+      <span><small>Exposure</small><b>{Math.round(row.theme_exposure_score)}</b></span>
+      <span>
+        <small>Quality</small>
+        <b>{Number.isFinite(row.fundamental_score) ? Math.round(row.fundamental_score) : '—'}</b>
+      </span>
+      <Icon name="chevron" size={17} />
+    </button>
+  )
+}
+
+function ThemePanel({ theme, onOpen, rows }) {
+  const ranked = rankThemeExposure(theme)
+  const leading = (theme.signals || []).filter((signal) => signal.leading).length
+  return (
+    <article className="stock-screen-panel">
+      <header>
+        <div>
+          <span>Top {ranked.length} of {theme.count}</span>
+          <h3>{theme.display_name}</h3>
+        </div>
+        <small>
+          {theme.eligible_count} clear the valuation guardrail · {leading} leading signals
+        </small>
+      </header>
+      <div className="stock-screen-list">
+        {ranked.map((row, index) => (
+          <ThemeRow key={row.ticker} row={row} rank={index + 1} onOpen={onOpen} research={rows} />
+        ))}
+        {!ranked.length && (
+          <div className="inline-empty">No company currently has measurable exposure to this theme.</div>
+        )}
+      </div>
+    </article>
   )
 }
 
@@ -169,6 +239,8 @@ export default function Dashboard() {
   // fundamentals/momentum bars a single stock does, so a blended score decides its rank.
   const etfUniverse = etfData?.etfs || []
   const growingEtfs = rankGrowingEtfs(etfUniverse)
+  // Theme exposure is a separate screen, deliberately not folded into the research score.
+  const themeScreens = activeThemes(data.theme_screen)
   const sp500Benchmark = etfUniverse.find((row) => row.ticker === etfData?.benchmarks?.sp500)
   const dowBenchmark = etfUniverse.find((row) => row.ticker === etfData?.benchmarks?.dow)
 
@@ -289,6 +361,29 @@ export default function Dashboard() {
         Research screens, not trade instructions. Prices can gap before the open; confirm the current quote,
         liquidity, news, and your order limits before acting.
       </p>
+
+      {themeScreens.length > 0 && (
+        <>
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Structural trends</span>
+              <h2>Theme exposure</h2>
+            </div>
+            <Link to="/methodology">How exposure is measured <Icon name="arrow" size={17} /></Link>
+          </div>
+          <section className="stock-screen-grid" aria-label="Structural trend exposure screens">
+            {themeScreens.map((theme) => (
+              <ThemePanel key={theme.id} theme={theme} onOpen={setSelectedStock} rows={rows} />
+            ))}
+          </section>
+          <p className="screen-disclaimer">
+            Exposure is measured from filings and supply-chain evidence, never from price. Share-price
+            momentum contributes nothing to these scores by design, and companies already priced in the
+            top valuation decile of their sector are flagged rather than promoted — buying structural
+            themes after they are priced in is the documented way thematic funds lose money.
+          </p>
+        </>
+      )}
 
       {trendRows.length >= 4 && (
         <>

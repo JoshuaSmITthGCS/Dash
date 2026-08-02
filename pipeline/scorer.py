@@ -164,7 +164,48 @@ def weighted_available(scores, weights):
 # Metrics whose accounting cutoffs are meaningless for banks and insurers. They are skipped
 # for those sectors and excluded from coverage rather than counted as missing evidence.
 FINANCIAL_EXEMPT = ("price_to_book", "debt_to_equity", "current_ratio", "net_debt_to_ebitda",
-                    "ev_to_ebitda", "ev_to_fcf", "capex_to_depreciation", "inventory_days_trend")
+                    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "sales_multiple",
+                    "capex_to_depreciation", "inventory_days_trend", "altman_z",
+                    "gross_profits_to_assets")
+
+# Price-to-tangible-book is a bank and insurer metric. For an asset-light software company
+# whose value is people and code, tangible book is close to an accounting accident, and
+# ranking on it is noise dressed as discipline. It is scored only where it means something.
+TANGIBLE_BOOK_SECTORS = ("Financial Services", "Financials", "Financial", "Real Estate",
+                         "Utilities", "Energy", "Basic Materials", "Materials", "Industrials")
+
+
+def altman_score(value, variant, cfg):
+    """Score an Altman Z against the bands for the variant it was computed under.
+
+    Passing a Z'' through the original model's cutoffs (or the reverse) is the single
+    easiest way to mislabel a healthy company as distressed, because the two models put
+    their distress thresholds in different places on different scales.
+    """
+    bands = cfg.get("altman_z", {})
+    if value is None or not variant:
+        return None
+    variant_bands = bands.get(variant)
+    if not variant_bands:
+        return None
+    return higher_is_better_score(value, variant_bands)
+
+
+def sales_multiple_score(snap, cfg):
+    """Score sales valuation, preferring EV/Sales and falling back to P/S.
+
+    EV/Sales is the better measure - it includes debt, so a levered company cannot look
+    cheap simply by borrowing - but it needs the balance sheet, which only the enriched
+    shortlist has. P/S comes free from the quote payload and covers everyone else.
+    Returns ``(score, basis)`` so the output can say which input answered.
+    """
+    sector = snap.get("sector") or "default"
+    enterprise = snap.get("ev_to_sales")
+    if enterprise is not None:
+        bands = cfg["ev_to_sales_by_sector"].get(sector, cfg["ev_to_sales_by_sector"]["default"])
+        return multiple_score(enterprise, bands), "ev_to_sales"
+    bands = cfg["price_to_sales_by_sector"].get(sector, cfg["price_to_sales_by_sector"]["default"])
+    return multiple_score(snap.get("price_to_sales"), bands), "price_to_sales"
 
 
 def weighted_coverage(metrics, cfg, exempt=()):
@@ -198,21 +239,31 @@ def valuation_score(snap):
     sector = snap.get("sector") or "default"
     is_financial = sector in ("Financial Services", "Financials")
     pe_bands = cfg["forward_pe_by_sector"].get(sector, cfg["forward_pe_by_sector"]["default"])
-    ps_bands = cfg["price_to_sales_by_sector"].get(sector, cfg["price_to_sales_by_sector"]["default"])
+    sales_score, sales_basis = sales_multiple_score(snap, cfg)
+    altman_variant = snap.get("altman_z_variant")
 
     metrics = {
+        # PEG survives as a minor growth-adjusted sanity check only. It ignores the time
+        # value of money, risk, and cost of capital, and its support as a return predictor
+        # is thin, so it no longer carries the largest weight in the bucket.
         "peg": band_score(snap.get("peg"), cfg["peg"]),
         "forward_pe": multiple_score(snap.get("forward_pe"), pe_bands),
-        "price_to_sales": multiple_score(snap.get("price_to_sales"), ps_bands),
+        "sales_multiple": None if is_financial else sales_score,
         # Goodwill makes reported book value meaningless for banks; tangible book replaces it there.
         "price_to_book": None if is_financial else band_score(snap.get("price_to_book"), cfg["price_to_book"]),
-        "price_to_tangible_book": band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"]),
+        "price_to_tangible_book": (band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"])
+                                   if sector in TANGIBLE_BOOK_SECTORS else None),
         "ev_to_ebitda": None if is_financial else multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"]),
+        "ev_to_ebit": None if is_financial else multiple_score(snap.get("ev_to_ebit"), cfg["ev_to_ebit"]),
         "ev_to_fcf": None if is_financial else multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"]),
         "return_on_equity": higher_is_better_score(snap.get("return_on_equity"), cfg["return_on_equity"]),
         # ROIC is the one ROE should have been: leverage cannot inflate it.
         "return_on_invested_capital": higher_is_better_score(snap.get("return_on_invested_capital"),
                                                              cfg["return_on_invested_capital"]),
+        # Gross profits over assets - the cleanest profitability signal in the literature,
+        # measured above the line where accounting discretion does its work.
+        "gross_profits_to_assets": None if is_financial else higher_is_better_score(
+            snap.get("gross_profits_to_assets"), cfg["gross_profits_to_assets"]),
         "cash_conversion": higher_is_better_score(snap.get("cash_conversion"), cfg["cash_conversion"]),
         "free_cash_flow_yield": higher_is_better_score(snap.get("free_cash_flow_yield"), cfg["free_cash_flow_yield"]),
         "profit_margin": higher_is_better_score(snap.get("profit_margin"), cfg["profit_margin"]),
@@ -222,16 +273,22 @@ def valuation_score(snap):
         "interest_coverage": higher_is_better_score(snap.get("interest_coverage"), cfg["interest_coverage"]),
         "net_debt_to_ebitda": None if is_financial else lower_is_better_score(snap.get("net_debt_to_ebitda"),
                                                                              cfg["net_debt_to_ebitda"]),
-        "altman_z": higher_is_better_score(snap.get("altman_z"), cfg["altman_z"]),
+        "altman_z": None if is_financial else altman_score(snap.get("altman_z"), altman_variant, cfg),
         "revenue_growth": higher_is_better_score(snap.get("revenue_growth"), cfg["revenue_growth"]),
         "earnings_growth": higher_is_better_score(snap.get("earnings_growth"), cfg["earnings_growth"]),
         "fcf_growth_3y": higher_is_better_score(snap.get("fcf_growth_3y"), cfg["fcf_growth_3y"]),
         "operating_margin_trend": higher_is_better_score(snap.get("operating_margin_trend"),
                                                          cfg["operating_margin_trend"]),
+        # Fundamental momentum: beating expectations, not merely growing.
+        "earnings_surprise": higher_is_better_score(snap.get("earnings_surprise"), cfg["earnings_surprise"]),
         "net_buyback_yield": higher_is_better_score(snap.get("net_buyback_yield"), cfg["net_buyback_yield"]),
         "stock_comp_to_revenue": lower_is_better_score(snap.get("stock_comp_to_revenue"), cfg["stock_comp_to_revenue"]),
         "capex_to_depreciation": range_score(snap.get("capex_to_depreciation"), cfg["capex_to_depreciation"]),
-        # Earnings that never become cash are the most-studied warning in the literature.
+        # The investment factor: aggressive balance-sheet expansion predicts weak returns,
+        # and shrinking the asset base is not a virtue either, so both tails are penalized.
+        "asset_growth": range_score(snap.get("asset_growth"), cfg["asset_growth"]),
+        # Earnings that never become cash are a classic warning, but the anomaly has decayed
+        # sharply in US data since 2002, so this is now a minor input rather than the bucket.
         "accruals_ratio": lower_is_better_score(snap.get("accruals_ratio"), cfg["accruals_ratio"]),
         "piotroski_f": higher_is_better_score(snap.get("piotroski_f"), cfg["piotroski_f"]),
         "days_sales_outstanding_trend": lower_is_better_score(snap.get("days_sales_outstanding_trend"),
@@ -245,11 +302,16 @@ def valuation_score(snap):
     raw = weighted_available(categories, cfg["category_weights"])
     if raw is None:
         return None, {**metrics, "categories": categories, "coverage": 0.0}
-    coverage = weighted_coverage(metrics, cfg, FINANCIAL_EXEMPT if is_financial else ())
+    exempt = list(FINANCIAL_EXEMPT) if is_financial else []
+    if sector not in TANGIBLE_BOOK_SECTORS:
+        exempt.append("price_to_tangible_book")
+    coverage = weighted_coverage(metrics, cfg, tuple(exempt))
     confidence_multiplier = 0.65 + (0.35 * coverage)
     total = round(raw * confidence_multiplier, 1)
     return total, {**metrics, "categories": categories, "coverage": round(coverage, 2),
-                   "raw_score": round(raw, 1), "sector": sector}
+                   "raw_score": round(raw, 1), "sector": sector,
+                   "sales_multiple_basis": sales_basis if sales_score is not None else None,
+                   "altman_z_variant": altman_variant}
 
 
 # ---------------- assembly ----------------

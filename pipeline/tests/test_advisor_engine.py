@@ -1,17 +1,25 @@
 import os
 import sys
 import unittest
+from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from advisor_engine import RANKING_WEIGHTS, build_research, macro_regime_modifier, technical_factors
+from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, build_research, insider_modifier,
+                            macro_regime_modifier, sentiment_score, technical_factors)
 
 
 class AdvisorEngineTests(unittest.TestCase):
     def test_ranking_is_fundamentals_dominant(self):
-        self.assertEqual(RANKING_WEIGHTS, {
-            "fundamentals": 0.75, "market_behavior": 0.15, "news_sentiment": 0.10,
-        })
+        self.assertAlmostEqual(sum(RANKING_WEIGHTS.values()), 1.0, places=6)
+        self.assertGreaterEqual(RANKING_WEIGHTS["fundamentals"], 0.7)
+        self.assertGreater(RANKING_WEIGHTS["fundamentals"],
+                           RANKING_WEIGHTS["market_behavior"] + RANKING_WEIGHTS["news_sentiment"])
+
+    def test_news_sentiment_is_a_tilt_not_a_core_component(self):
+        # Headline sentiment alpha decays within days, so it must not carry the weight of a
+        # component that is measured over quarters.
+        self.assertLessEqual(RANKING_WEIGHTS["news_sentiment"], 0.05)
 
     def test_peg_pe_and_price_to_sales_change_the_rank_score(self):
         base = {
@@ -55,10 +63,12 @@ class AdvisorEngineTests(unittest.TestCase):
             "debt_to_equity": 0.4, "current_ratio": 2.0, "revenue_growth": 0.15,
             "earnings_growth": 0.18, "return_on_invested_capital": 0.21, "cash_conversion": 1.05,
             "interest_coverage": 18, "net_debt_to_ebitda": 0.4, "altman_z": 6.0,
-            "ev_to_ebitda": 11, "ev_to_fcf": 20, "fcf_growth_3y": 0.14,
-            "operating_margin_trend": 0.02, "net_buyback_yield": 0.03,
-            "stock_comp_to_revenue": 0.02, "capex_to_depreciation": 1.1,
-            "accruals_ratio": -0.02, "piotroski_f": 8.0, "price_to_tangible_book": 3.0,
+            "ev_to_ebitda": 11, "ev_to_ebit": 13, "ev_to_sales": 4.2, "ev_to_fcf": 20,
+            "fcf_growth_3y": 0.14, "gross_profits_to_assets": 0.35,
+            "operating_margin_trend": 0.02, "earnings_surprise": 6.0,
+            "net_buyback_yield": 0.03, "stock_comp_to_revenue": 0.02,
+            "capex_to_depreciation": 1.1, "asset_growth": 0.06,
+            "accruals_ratio": -0.02, "piotroski_f": 8.0, "altman_z_variant": "z_double_prime",
             "days_sales_outstanding_trend": -0.02, "inventory_days_trend": 0.01,
         }
         closes = [100 + index * 0.3 for index in range(100)]
@@ -127,6 +137,112 @@ class AdvisorEngineTests(unittest.TestCase):
         self.assertLessEqual(bank_points, 3)
         self.assertIn("Technology", tech_note)
         self.assertIn("Financial Services", bank_note)
+
+
+class RebuiltTechnicalTests(unittest.TestCase):
+    """The invented trend/risk constants are gone; these lock in what replaced them."""
+
+    def test_momentum_skips_the_most_recent_month(self):
+        # A year of steady gains that reverses hard in the final month. Raw 12-month return
+        # is dragged down by the reversal; 12-1 momentum, which is what the literature
+        # documents, still sees the underlying trend.
+        rising = [100 * (1.001 ** index) for index in range(300)]
+        reversed_last_month = rising[:-21] + [rising[-21] * (1 - 0.004 * step)
+                                              for step in range(1, 22)]
+        _, detail = technical_factors(reversed_last_month, rising, [1e6] * 300)
+        self.assertGreater(detail["momentum_12_1_pct"], 0)
+        self.assertLess(detail["return_20d"], 0)
+
+    def test_risk_is_a_real_ratio_not_an_invented_penalty(self):
+        trend = [100 * (1.0008 ** index) for index in range(300)]
+        # Both series drift upward at the same rate; only the size of the wobble differs.
+        steady = [value * (1.002 if index % 3 else 0.998) for index, value in enumerate(trend)]
+        choppy = [value * (1.06 if index % 3 else 0.94) for index, value in enumerate(trend)]
+        _, calm = technical_factors(steady, trend, [1e6] * 300)
+        _, wild = technical_factors(choppy, trend, [1e6] * 300)
+        self.assertIsNotNone(calm["sortino_ratio"])
+        self.assertIsNotNone(calm["sharpe_ratio"])
+        self.assertGreater(calm["risk_adjusted"], wild["risk_adjusted"])
+
+    def test_stock_and_etf_models_compute_the_same_sharpe(self):
+        # The point of the shared risk_metrics module: a Sharpe of 1.2 has to mean the same
+        # thing on the stock screen and the ETF screen.
+        import fetch_etfs
+        from risk_metrics import daily_returns as shared_daily_returns
+        closes = [100 * (1.0009 ** index) for index in range(300)]
+        _, detail = technical_factors(closes, closes, [1e6] * 300)
+        etf_sharpe = fetch_etfs.sharpe_ratio(shared_daily_returns(closes)[-252:])
+        self.assertEqual(detail["sharpe_ratio"], etf_sharpe)
+
+    def test_short_history_lowers_coverage_instead_of_faking_a_score(self):
+        short = [100 + index * 0.2 for index in range(60)]
+        long = [100 + index * 0.2 for index in range(400)]
+        _, sparse = technical_factors(short, long, [1e6] * 60)
+        _, full = technical_factors(long, long, [1e6] * 400)
+        self.assertLess(sparse["coverage"], full["coverage"])
+        self.assertIsNone(sparse.get("momentum_12_1_pct"))
+
+    def test_low_beta_is_rewarded_rather_than_volatility_punished(self):
+        closes = [100 + index * 0.2 for index in range(300)]
+        _, defensive = technical_factors(closes, closes, [1e6] * 300, extended={"beta": 0.8})
+        _, aggressive = technical_factors(closes, closes, [1e6] * 300, extended={"beta": 2.4})
+        self.assertGreater(defensive["low_beta"], aggressive["low_beta"])
+
+
+class SentimentWindowTests(unittest.TestCase):
+    def _article(self, ticker, score, published_at):
+        return {"published_at": published_at, "ticker": ticker,
+                "ticker_sentiment": [{"ticker": ticker, "ticker_sentiment_score": score}]}
+
+    def test_articles_outside_the_window_are_excluded(self):
+        now = datetime(2026, 8, 2, tzinfo=timezone.utc)
+        fresh = self._article("TEST", 0.5, "20260801T120000")
+        stale = self._article("TEST", -0.9, "20260101T120000")
+        score, detail = sentiment_score([fresh, stale], "TEST", window_days=7, now=now)
+        self.assertEqual(detail["article_count"], 1)
+        self.assertGreater(score, 50)
+
+    def test_no_coverage_reads_neutral_with_zero_confidence(self):
+        score, detail = sentiment_score([], "TEST")
+        self.assertEqual(score, 50.0)
+        self.assertEqual(detail["coverage"], 0.0)
+
+
+class InsiderModifierTests(unittest.TestCase):
+    def test_opportunistic_cluster_buying_lifts_the_score(self):
+        today = date.today()
+        transactions = [
+            {"side": "purchase", "value": 400_000, "date": (today - timedelta(days=5)).isoformat(),
+             "owner_cik": f"000{index}", "owner_name": f"Insider {index}", "roles": ["director"]}
+            for index in range(3)
+        ]
+        points, note = insider_modifier({"transactions": transactions})
+        self.assertGreater(points, 0)
+        self.assertIn("insider", note.lower())
+
+    def test_routine_calendar_trades_contribute_nothing(self):
+        # Same insider selling every March for three years: diversification, not a signal.
+        transactions = [
+            {"side": "sale", "value": 500_000, "date": f"{year}-03-15",
+             "owner_cik": "0001", "owner_name": "Regular Seller", "roles": ["officer"]}
+            for year in (date.today().year - 2, date.today().year - 1, date.today().year)
+        ]
+        points, _ = insider_modifier({"transactions": transactions})
+        self.assertEqual(points, 0.0)
+
+    def test_absent_insider_data_is_neutral(self):
+        self.assertEqual(insider_modifier(None), (0.0, None))
+        self.assertEqual(insider_modifier({"transactions": []}), (0.0, None))
+
+    def test_modifier_respects_the_configured_cap(self):
+        today = date.today()
+        transactions = [
+            {"side": "purchase", "value": 50_000_000, "date": today.isoformat(),
+             "owner_cik": f"00{index}", "owner_name": f"Buyer {index}", "roles": ["director"]}
+            for index in range(8)
+        ]
+        points, _ = insider_modifier({"transactions": transactions})
+        self.assertLessEqual(points, MODIFIERS.get("insider_activity", {}).get("max_points", 5.0))
 
 
 if __name__ == "__main__":

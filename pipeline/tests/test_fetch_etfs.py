@@ -4,8 +4,10 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_etfs import (beta_vs_benchmark, build_etf_row, daily_returns, percentile_scores,
-                        period_return, score_etf_universe, sharpe_ratio, sortino_ratio)
+import etf_disclosure
+from fetch_etfs import (beta_vs_benchmark, build_etf_row, daily_returns, group_indices,
+                        peer_group_for, percentile_scores, period_return, score_etf_universe,
+                        sharpe_ratio, sortino_ratio, structural_quality)
 
 
 def rising_closes(days, daily_gain=0.001, start=100.0):
@@ -62,6 +64,12 @@ class PercentileScoresTests(unittest.TestCase):
 
     def test_fewer_than_two_data_points_returns_all_neutral(self):
         self.assertEqual(percentile_scores([42, None, None]), [50.0, 50.0, 50.0])
+
+    def test_equal_values_share_a_percentile(self):
+        # Four identical expense ratios must not be spread across 0/33/67/100 by input
+        # order - that is a decisive-looking ranking of nothing.
+        self.assertEqual(percentile_scores([5, 5, 5, 5]), [50.0, 50.0, 50.0, 50.0])
+        self.assertEqual(percentile_scores([1, 2, 2, 3]), [0.0, 50.0, 50.0, 100.0])
 
 
 class BuildEtfRowTests(unittest.TestCase):
@@ -128,6 +136,196 @@ class ScoreEtfUniverseTests(unittest.TestCase):
         pricey_row = next(row for row in scored if row["ticker"] == "PRICEY")
 
         self.assertGreater(cheap_row["scores"]["cost"], pricey_row["scores"]["cost"])
+
+
+class PeerGroupTests(unittest.TestCase):
+    """Ranking a bond fund's Sharpe against an equity fund's produces a number, not a finding."""
+
+    def _row(self, ticker, category, daily_gain, issuer="Vanguard", expense_ratio=0.05):
+        closes = rising_closes(260, daily_gain=daily_gain)
+        benchmark = daily_returns(rising_closes(260, daily_gain=0.0004))
+        return build_etf_row(
+            ticker, {"name": ticker, "category": category, "issuer": issuer,
+                     "expense_ratio": expense_ratio},
+            {"price": closes[-1], "aum": 1e10, "bid": 99.9, "ask": 100.1},
+            closes, [2_000_000.0] * 260, benchmark)
+
+    def test_category_maps_to_a_peer_group(self):
+        self.assertEqual(peer_group_for({"category": "bonds"}), "fixed_income")
+        self.assertEqual(peer_group_for({"category": "thematic"}), "equity_thematic")
+        self.assertEqual(peer_group_for({"category": "unheard_of"}), "other")
+
+    def test_an_explicit_peer_group_overrides_the_category_mapping(self):
+        self.assertEqual(peer_group_for({"category": "bonds", "peer_group": "custom"}),
+                         "custom")
+
+    def test_funds_are_ranked_inside_their_own_group(self):
+        rows = [
+            *[self._row(f"EQ{index}", "sector", 0.0020 + index * 0.0001) for index in range(4)],
+            *[self._row(f"BD{index}", "bonds", 0.0001 + index * 0.00001) for index in range(4)],
+        ]
+        scored = score_etf_universe(rows)
+        groups = {row["ticker"]: row["ranked_against"] for row in scored}
+        self.assertEqual(groups["EQ0"], "equity_sector")
+        self.assertEqual(groups["BD0"], "fixed_income")
+        # The best bond fund tops its own group despite trailing every equity fund.
+        best_bond = min((row for row in scored if row["ranked_against"] == "fixed_income"),
+                        key=lambda row: row["peer_rank"])
+        self.assertEqual(best_bond["peer_rank"], 1)
+        self.assertEqual(best_bond["peer_group_size"], 4)
+
+    def test_a_slow_bond_fund_is_not_punished_for_not_being_an_equity_fund(self):
+        # The bug this fixes: in one mixed batch, every bond fund landed at the bottom of
+        # the performance percentile purely because bonds are not equities.
+        mixed = [
+            *[self._row(f"EQ{index}", "sector", 0.0025) for index in range(4)],
+            *[self._row(f"BD{index}", "bonds", 0.0001) for index in range(4)],
+        ]
+        scored = {row["ticker"]: row for row in score_etf_universe(mixed)}
+        self.assertGreater(scored["BD0"]["scores"]["performance"], 20)
+
+    def test_an_undersized_group_is_pooled_and_flagged(self):
+        rows = [
+            *[self._row(f"EQ{index}", "sector", 0.002) for index in range(4)],
+            self._row("GOLD", "commodity", 0.0005),
+        ]
+        scored = {row["ticker"]: row for row in score_etf_universe(rows)}
+        self.assertEqual(scored["GOLD"]["ranked_against"], "_pooled")
+        self.assertTrue(scored["GOLD"]["cross_asset_class_rank"])
+        self.assertFalse(scored["EQ0"]["cross_asset_class_rank"])
+
+    def test_beta_is_part_of_the_risk_bucket(self):
+        # Beta was computed and then thrown away. Betting-against-beta says it is priced,
+        # so a low-beta fund must score better on risk, all else equal.
+        closes = rising_closes(260, daily_gain=0.0008)
+        benchmark = daily_returns(closes)
+        defensive = build_etf_row(
+            "DEF", {"name": "DEF", "category": "sector", "issuer": "Vanguard", "expense_ratio": 0.05},
+            {"price": closes[-1], "aum": 1e10}, closes, [1e6] * 260, benchmark)
+        racy_closes = [value ** 1.0 for value in rising_closes(260, daily_gain=0.0008)]
+        racy = build_etf_row(
+            "RACY", {"name": "RACY", "category": "sector", "issuer": "Vanguard", "expense_ratio": 0.05},
+            {"price": racy_closes[-1], "aum": 1e10}, racy_closes, [1e6] * 260,
+            [value * 0.4 for value in benchmark])
+        self.assertIsNotNone(defensive["beta"])
+        self.assertIsNotNone(racy["beta"])
+        self.assertGreater(racy["beta"], defensive["beta"])
+
+
+class StructuralQualityTests(unittest.TestCase):
+    def test_leverage_costs_more_than_a_good_brand_earns(self):
+        plain = structural_quality({"issuer": "Vanguard", "aum": 1e10}, {})
+        levered = structural_quality({"issuer": "Vanguard", "aum": 1e10}, {"leveraged": True})
+        self.assertGreater(plain, levered)
+
+    def test_a_tiny_fund_is_marked_down(self):
+        big = structural_quality({"issuer": "iShares", "aum": 2e10}, {})
+        tiny = structural_quality({"issuer": "iShares", "aum": 1e8}, {})
+        self.assertGreater(big, tiny)
+
+    def test_the_score_stays_inside_zero_to_one_hundred(self):
+        worst = structural_quality({"issuer": "ARK", "aum": 1e7},
+                                   {"leveraged": True, "replication": "synthetic"})
+        self.assertGreaterEqual(worst, 0.0)
+        self.assertLessEqual(structural_quality({"issuer": "Vanguard", "aum": 1e12}, {}), 100.0)
+
+
+class DisclosureTests(unittest.TestCase):
+    """SEC Rule 6c-11 makes premium/discount and the 30-day median spread free to obtain."""
+
+    def test_premium_and_discount_are_signed(self):
+        self.assertAlmostEqual(etf_disclosure.premium_discount_pct(101.0, 100.0), 1.0)
+        self.assertAlmostEqual(etf_disclosure.premium_discount_pct(99.0, 100.0), -1.0)
+        self.assertIsNone(etf_disclosure.premium_discount_pct(101.0, 0))
+
+    def test_the_mandated_median_spread_wins_over_a_quoted_snapshot(self):
+        official = {"median_bid_ask_spread_pct": 0.02, "quoted_bid_ask_spread_pct": 0.9}
+        value, source = etf_disclosure.effective_spread_pct(official)
+        self.assertEqual(value, 0.02)
+        self.assertEqual(source, "rule_6c11_median_30d")
+
+    def test_the_quote_is_used_only_as_a_labelled_fallback(self):
+        value, source = etf_disclosure.effective_spread_pct(
+            {"quoted_bid_ask_spread_pct": 0.9})
+        self.assertEqual(value, 0.9)
+        self.assertEqual(source, "quoted_snapshot")
+        self.assertEqual(etf_disclosure.effective_spread_pct({}), (None, None))
+
+    def test_an_issuer_payload_is_normalized_through_the_configured_field_map(self):
+        parsed = etf_disclosure.parse_generic_json(
+            {"navPerShare": 100.0, "closingPrice": 100.5, "medianSpread30Day": 0.03,
+             "asOfDate": "2026-08-01"},
+            {"nav": "navPerShare", "market_price": "closingPrice",
+             "median_bid_ask_spread_pct": "medianSpread30Day", "as_of": "asOfDate"})
+        self.assertEqual(parsed["nav"], 100.0)
+        self.assertAlmostEqual(parsed["premium_discount_pct"], 0.5, places=3)
+        self.assertEqual(parsed["median_bid_ask_spread_pct"], 0.03)
+        self.assertEqual(parsed["source"], etf_disclosure.SOURCE_RULE_6C11)
+
+    def test_the_quote_fallback_labels_itself_honestly(self):
+        fallback = etf_disclosure.from_quote({"price": 100.5, "nav": 100.0,
+                                              "bid": 100.4, "ask": 100.6})
+        self.assertEqual(fallback["source"], etf_disclosure.SOURCE_QUOTE_NAV)
+        self.assertIsNone(fallback["median_bid_ask_spread_pct"])
+        self.assertIsNotNone(fallback["quoted_bid_ask_spread_pct"])
+
+    def test_the_premium_discount_distribution_says_more_than_one_day(self):
+        summary = etf_disclosure.premium_discount_days([0.1, -0.2, -0.3, 0.0, 0.4])
+        self.assertEqual(summary["days_at_premium"], 2)
+        self.assertEqual(summary["days_at_discount"], 2)
+        self.assertEqual(summary["days_at_nav"], 1)
+        self.assertIsNone(etf_disclosure.premium_discount_days([]))
+
+    def test_total_cost_does_not_double_count_the_expense_ratio(self):
+        # The expense ratio is already inside the fund's return, so it largely *is* the
+        # negative tracking difference. Adding them would charge the investor twice.
+        cost = etf_disclosure.total_cost_of_ownership(0.20, -0.25, 0.05)
+        self.assertAlmostEqual(cost, 0.30, places=4)
+
+    def test_a_premium_paid_at_entry_is_a_real_added_cost(self):
+        without = etf_disclosure.total_cost_of_ownership(0.10, -0.10, 0.0)
+        with_premium = etf_disclosure.total_cost_of_ownership(0.10, -0.10, 0.5)
+        self.assertGreater(with_premium, without)
+
+    def test_no_cost_inputs_at_all_returns_nothing(self):
+        self.assertIsNone(etf_disclosure.total_cost_of_ownership(None, None, None))
+
+
+class TrackingDifferenceTests(unittest.TestCase):
+    def test_a_lagging_fund_scores_worse_on_cost_than_a_tracking_one(self):
+        index_closes = rising_closes(260, daily_gain=0.0010)
+        benchmark = daily_returns(index_closes)
+        meta = {"name": "F", "category": "sector", "issuer": "Vanguard",
+                "expense_ratio": 0.05, "index_proxy": "IDX"}
+
+        def fund(ticker, gain):
+            closes = rising_closes(260, daily_gain=gain)
+            return build_etf_row(ticker, {**meta, "name": ticker},
+                                 {"price": closes[-1], "aum": 1e10}, closes, [1e6] * 260,
+                                 benchmark, index_closes=index_closes)
+
+        tracking = fund("TRACK", 0.0010)
+        lagging = fund("LAG", 0.0007)
+        self.assertGreater(tracking["tracking_difference_1y"], lagging["tracking_difference_1y"])
+        scored = {row["ticker"]: row for row in score_etf_universe(
+            [tracking, lagging, fund("A", 0.0009), fund("B", 0.0008)])}
+        self.assertGreater(scored["TRACK"]["scores"]["cost"], scored["LAG"]["scores"]["cost"])
+
+    def test_tracking_fields_are_absent_without_an_index_proxy(self):
+        closes = rising_closes(260)
+        row = build_etf_row("X", {"name": "X", "category": "sector", "issuer": "Vanguard",
+                                  "expense_ratio": 0.05},
+                            {"price": closes[-1]}, closes, [1e6] * 260, daily_returns(closes))
+        self.assertIsNone(row["tracking_difference"])
+        self.assertIsNone(row["tracking_difference_1y"])
+
+
+class GroupIndicesTests(unittest.TestCase):
+    def test_small_groups_are_pooled_together(self):
+        rows = [{"peer_group": "equity_broad"}] * 5 + [{"peer_group": "crypto"}]
+        grouped = group_indices(rows)
+        self.assertIn("equity_broad", grouped)
+        self.assertEqual(grouped["_pooled"], [5])
 
 
 if __name__ == "__main__":

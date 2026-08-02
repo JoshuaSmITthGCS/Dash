@@ -10,23 +10,88 @@ input to the advisor score.
 
 ## Scoring model
 
+Weights follow the strength of the published evidence for each signal, not the convenience of the
+data. They live in `pipeline/config/settings.json`, so changing the model is a config edit.
+
 The overall research score is:
 
-- 75% fundamentals
-- 15% market behavior: trend, volatility, drawdown, and 20-day relative strength versus SPY
-- 10% company news sentiment
+- **78% fundamentals**
+- **18% market behavior**: 12-1 momentum (twelve-month return skipping the most recent month, to
+  avoid the short-term reversal that runs against it), Sortino and Sharpe ratios on the stock's own
+  returns, 20-day relative strength versus SPY, one-year maximum drawdown, volume confirmation, and
+  a low-beta reward. This uses the same `risk_metrics` functions as the ETF model, so a Sharpe means
+  the same thing on both screens.
+- **4% company news sentiment**, aggregated over seven days. Headline sentiment largely mean-reverts
+  within days, so it is a tilt rather than a component.
 
-The fundamental score implements this framework:
+The fundamental score:
 
-- 40% valuation: PEG, sector-aware forward P/E, sector-aware P/S, and P/B
-- 25% profitability and cash: ROE, free-cash-flow yield, and profit margin
-- 20% financial health: debt-to-equity and current ratio
-- 15% growth: year-over-year revenue and earnings growth
+- **28% valuation**: EV/EBITDA and EV/EBIT lead — the enterprise multiple is the best-validated
+  single value measure available. Plus EV/FCF, EV/Sales (falling back to P/S), sector-aware forward
+  P/E, and trimmed book multiples. PEG is a minor sanity check; it ignores the time value of money,
+  risk, and cost of capital. Price-to-tangible-book is scored only in the sectors it describes.
+- **26% profitability and cash**: ROIC, gross profits-to-assets, FCF yield, margin, cash conversion.
+- **15% financial health**: interest coverage, net debt/EBITDA, debt/equity, current ratio, and an
+  Altman Z computed with the variant fitted for the filer's sector — suppressed entirely for
+  financials.
+- **11% growth**: revenue, earnings, three-year FCF growth, operating-margin direction, and earnings
+  surprise against expectations.
+- **10% capital allocation**: net buyback yield, stock comp, capex/depreciation, total asset growth.
+- **10% accounting quality**: Piotroski F-score leads; the accruals ratio is retained at a small
+  weight because its predictive power has largely decayed in US data since the early 2000s.
 
 Metrics are reweighted only within their category when unavailable, then missing coverage reduces
-the final confidence. Suspiciously low P/E values receive a possible value-trap penalty. Banks do
-not use industrial-company leverage cutoffs. PEG is taken from a provider-consistent calculation
-rather than combining trailing and forward periods.
+the final confidence. Metrics that do not apply to a sector leave the coverage denominator rather
+than counting as missing evidence. Suspiciously low P/E values receive a possible value-trap penalty.
+
+Bounded post-blend modifiers refine the score without replacing it: sector-relative valuation (±3),
+short interest (up to −6), insider activity (+5/−3), liquidity (−3), analyst expectations (±3), and
+macro regime (±3), with a hard ±15 combined cap.
+
+### Insider activity
+
+SEC Form 4 open-market trades are split into **routine** (same calendar month across years — a
+schedule, and historically uninformative) and **opportunistic**. Only opportunistic activity scores.
+Clusters of independent buyers count for more than one large buyer, buys count for more than sells,
+and the signal decays over one to three months.
+
+### Theme exposure
+
+`pipeline/themes/*.yaml` declares structural trends; adding one is a config file, not a code change.
+Exposure is measured from segment revenue, the trend in how a company describes itself in its own
+filings, disclosed customer ties to confirmed spenders, and the capex of the companies doing the
+spending. Two guardrails are enforced in code and re-checked by `validate_data.py`: **price momentum
+contributes exactly zero**, and names already in the top valuation decile of their sector are flagged
+rather than promoted. The result is published as an independent screen and never folded into the
+research score — blending a forward-looking thematic bet into the fundamentals score would make that
+score impossible to interpret.
+
+### ETFs
+
+ETFs are scored separately on performance, risk, total cost of ownership, liquidity, and structure.
+Percentiles are computed **within peer groups** (broad equity, sector, thematic, fixed income,
+commodity, crypto), never across the whole batch — ranking a bond fund's Sharpe against an equity
+fund's measures batch composition, not fund quality. Cost includes tracking difference against the
+fund's index proxy and NAV premium/discount, not just the expense ratio; where a fund declares a
+Rule 6c-11 disclosure endpoint in `universe.json`, the mandated median 30-day bid-ask spread is used
+instead of an estimate.
+
+### Validating a change
+
+`pipeline/evaluation.py` measures whether a score predicts forward returns cross-sectionally — rank
+information coefficient and ICIR, quantile spread and monotonicity — rather than reading one equity
+curve. Results are deflated for the number of configurations tried (deflated Sharpe ratio) and the
+probability of backtest overfitting is estimated by combinatorially-symmetric cross-validation. A
+change ships only if it improves out-of-sample IC *after* deflation.
+
+`pipeline/pit_store.py` appends a timestamped observation of every tracked metric on each run, with
+restatements kept in a separate revision log, plus a point-in-time universe membership record that
+includes departed names. Neither can be reconstructed retroactively — the providers only ever serve
+today's restated numbers for today's survivors — so the store starts accumulating before any
+backtest needs it. Its contents are committed, because scheduled runs happen on ephemeral runners.
+
+Published factor premia are historical, in-sample estimates. They indicate which signals have
+mattered; they are not forecasts.
 
 ## Data sources
 
@@ -73,10 +138,13 @@ contains derived public data only; it never contains the API key.
 The app lives at the repository root. Netlify should leave its base directory empty; root
 `netlify.toml` builds with `npm run build` and publishes `dist`.
 
-For scheduled refreshes, add `ALPHA_VANTAGE_API_KEY`, `MARKETAUX_API_TOKEN`, and `FRED_API_KEY` under GitHub
-repository **Settings → Secrets and variables → Actions**. `refresh-advisor.yml` fetches news and
-research, scores, validates, and commits data in one job. It has explicit `contents: write`, shared
-push concurrency, and three push retries.
+For scheduled refreshes, add `ALPHA_VANTAGE_API_KEY`, `MARKETAUX_API_TOKEN`, `FRED_API_KEY`, and
+`SEC_USER_AGENT` under GitHub repository **Settings → Secrets and variables → Actions**.
+`SEC_USER_AGENT` must be a real application and contact string (for example
+`ValueSignal research admin@example.com`); SEC fair-access policy requires it, and without it the
+Form 4 insider layer and the theme-exposure screen both report themselves unavailable rather than
+spoofing a client. `refresh-advisor.yml` fetches news and research, scores, validates, and commits
+data in one job. It has explicit `contents: write`, shared push concurrency, and three push retries.
 
 The workflow refreshes at 07:00, 12:00, and 15:00 Eastern on weekdays. It gates paired UTC cron
 times against `America/New_York`, so daylight-saving changes do not shift the local schedule.

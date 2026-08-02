@@ -29,13 +29,44 @@ def _text(node, path):
     return found.text.strip() if found is not None and found.text else None
 
 
+def parse_owner(root):
+    """Who filed, and in what capacity.
+
+    Identity matters because the routine-versus-opportunistic classification in
+    ``insider_signal`` is per-insider: it needs to know whether *this person* trades every
+    March. Role matters because Cohen, Malloy & Pomorski (2012) find the informative
+    subset skews toward non-executive insiders, so the two are kept separate rather than
+    collapsed into a single "insider bought" count.
+    """
+    node = root.find(".//reportingOwner")
+    if node is None:
+        return {"owner_name": None, "owner_cik": None, "roles": [], "officer_title": None}
+    relationship = node.find("./reportingOwnerRelationship")
+    roles = []
+    if relationship is not None:
+        for tag, label in (("isDirector", "director"), ("isOfficer", "officer"),
+                           ("isTenPercentOwner", "ten_percent_owner"), ("isOther", "other")):
+            value = _text(relationship, f"./{tag}")
+            if value and value.strip().lower() in {"1", "true"}:
+                roles.append(label)
+    return {
+        "owner_name": _text(node, "./reportingOwnerId/rptOwnerName"),
+        "owner_cik": _text(node, "./reportingOwnerId/rptOwnerCik"),
+        "roles": roles,
+        "officer_title": _text(node, "./reportingOwnerRelationship/officerTitle"),
+    }
+
+
 def parse_form4(xml_text):
     """Return open-market purchases/sales from one ownership XML document.
 
     Transaction codes P and S are used instead of acquisition/disposition alone so grants,
     tax withholding, gifts, and option exercises are not mislabeled as insider conviction.
+    Each transaction carries its filer's identity and role so downstream scoring can tell a
+    calendar-clockwork sale from a genuine opportunistic purchase.
     """
     root = ET.fromstring(xml_text)
+    owner = parse_owner(root)
     transactions = []
     for node in root.findall(".//nonDerivativeTransaction"):
         code = _text(node, "./transactionCoding/transactionCode")
@@ -53,6 +84,7 @@ def parse_form4(xml_text):
             "value": None if shares is None or price is None else round(shares * price, 2),
             "acquired_disposed": acquired,
             "date": transaction_date,
+            **owner,
         })
     return transactions
 
@@ -116,15 +148,29 @@ class SecEdgarClient:
                 break
         return filings
 
-    def form4_summary(self, ticker, lookback_days=180, max_filings=12):
+    def form4_transactions(self, ticker, lookback_days=1100, max_filings=80):
+        """Every open-market Form 4 transaction in the window, newest filing first.
+
+        The default lookback is deliberately close to three years. Classifying a trade as
+        routine requires seeing whether the same insider traded in the same calendar month
+        in prior years, and that judgement is impossible on a six-month window.
+        """
         transactions = []
         filings = self.recent_form4_filings(ticker, lookback_days, max_filings)
         for filing in filings:
             accession = filing["accession"].replace("-", "")
             cik = str(int(filing["cik"]))
             url = f"{SEC_ROOT}/Archives/edgar/data/{cik}/{accession}/{filing['document']}"
-            for transaction in parse_form4(self._get(url)):
+            try:
+                parsed = parse_form4(self._get(url))
+            except (ET.ParseError, OSError, ValueError):
+                continue
+            for transaction in parsed:
                 transactions.append({**transaction, "filing_url": url, "filed": filing["filed"]})
+        return transactions, filings
+
+    def form4_summary(self, ticker, lookback_days=180, max_filings=12):
+        transactions, filings = self.form4_transactions(ticker, lookback_days, max_filings)
         purchases = [row for row in transactions if row["side"] == "purchase"]
         sales = [row for row in transactions if row["side"] == "sale"]
         return {
@@ -139,3 +185,48 @@ class SecEdgarClient:
             "latest_transaction_date": max((row["date"] for row in transactions if row["date"]), default=None),
             "transactions": transactions[:20],
         }
+
+    # ---------------- XBRL and full-text search (used by the theme-exposure layer) ----------------
+
+    def company_facts(self, ticker):
+        """Every XBRL fact the filer has ever tagged. Large; cache aggressively."""
+        cik = self.ticker_map().get(ticker.upper())
+        if not cik:
+            return {}
+        return self._get(f"{SEC_DATA}/api/xbrl/companyfacts/CIK{cik}.json", as_json=True)
+
+    def company_concept(self, ticker, concept, taxonomy="us-gaap"):
+        """One XBRL concept's full reported history for one filer."""
+        cik = self.ticker_map().get(ticker.upper())
+        if not cik:
+            return {}
+        return self._get(
+            f"{SEC_DATA}/api/xbrl/companyconcept/CIK{cik}/{taxonomy}/{concept}.json",
+            as_json=True,
+        )
+
+    def frames(self, concept, period, taxonomy="us-gaap", unit="USD"):
+        """One concept across every filer for one period - the cross-sectional view.
+
+        EDGAR snaps each filer's nearest reporting date into the requested calendar period,
+        so a frame mixes fiscal calendars by design. Fine for ranking, wrong for precision.
+        """
+        return self._get(
+            f"{SEC_DATA}/api/xbrl/frames/{taxonomy}/{concept}/{unit}/{period}.json",
+            as_json=True,
+        )
+
+    def full_text_search(self, query, *, forms="10-K", date_range=None, limit=10):
+        """EDGAR full-text search. Returns the raw hit payload; callers extract what they need."""
+        params = {"q": f'"{query}"', "forms": forms, "hits": str(limit)}
+        if date_range:
+            params["dateRange"] = "custom"
+            params["startdt"], params["enddt"] = date_range
+        encoded = urllib.parse.urlencode(params)
+        return self._get(f"https://efts.sec.gov/LATEST/search-index?{encoded}", as_json=True)
+
+    def filing_document(self, cik, accession, document):
+        """Raw text of one filed document, for keyword-density work."""
+        accession = str(accession).replace("-", "")
+        return self._get(
+            f"{SEC_ROOT}/Archives/edgar/data/{int(cik)}/{accession}/{document}")

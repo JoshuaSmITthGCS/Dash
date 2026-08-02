@@ -1,0 +1,81 @@
+# Adding a new structural trend means dropping another file in this directory.
+# No scoring code changes. See pipeline/themes.py for how these fields are consumed.
+theme:
+  id: ai_infrastructure
+  display_name: "AI Infrastructure Buildout"
+  version: 1
+  status: active            # active | watch | retired
+  created: 2026-08-02
+  thesis: >
+    A multi-year capex cycle in AI compute pulls through demand for accelerators,
+    HBM/DRAM/NAND memory, networking silicon, and grid and data-center power. The
+    exposure worth identifying is upstream of the spending, not downstream of the
+    share price that has already responded to it.
+
+  # ---- Exposure definition (how a company scores onto the theme) ----
+  # Anchors, not the universe. Every scored company is measured on its own signals;
+  # these exist to seed peer expansion and to sanity-check the keyword list.
+  seed_tickers: [NVDA, AVGO, MU, TSM, VRT, ETN]
+  expand_via_tnic: true     # text-based product-space neighbours (Hoberg-Phillips TNIC)
+  keywords:
+    include:
+      - "accelerated computing"
+      - "HBM"
+      - "high bandwidth memory"
+      - "data center"
+      - "GPU"
+      - "liquid cooling"
+      - "AI training"
+      - "inference"
+      - "grid capacity"
+      - "power density"
+    # Guards against buzzword dilution. Without this, a company selling AI-branded
+    # marketing software scores identically to one building the accelerators.
+    exclude:
+      - "AI-powered marketing"
+      - "AI-enabled customer"
+      - "AI assistant for"
+  sic_codes: [3674, 3661, 3612]   # semiconductors, comms equipment, power equipment
+  icb_subsectors: []              # optional alternative classification
+
+  # ---- Supporting data signals ----
+  # `leading: true` means the signal describes what a company is building. Lagging
+  # price-derived signals are rejected outright by validate_theme(), not merely
+  # down-weighted, because they are the mechanism by which thematic screens decay
+  # into momentum screens.
+  signals:
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: filing_keyword_density_trend      # rising self-description over time
+      source: edgar_fulltext
+      leading: true
+      weight: 0.25
+    - name: transcript_theme_salience
+      source: transcripts_api
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders   # supplier pull-through, ASC 280
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+    - name: hyperscaler_capex_growth             # demand-side leading indicator
+      source: edgar_xbrl_capex
+      universe: [MSFT, GOOGL, AMZN, META]
+      leading: true
+      weight: 0.15
+
+  # ---- Guardrails against performance-chasing ----
+  guardrails:
+    # Specialized ETFs launch near hype peaks and have lost roughly 30% risk-adjusted
+    # over their first five years, driven by the overvaluation of their holdings at
+    # launch (Ben-David, Franzoni, Kim & Moussawi, RFS 2023). Names already in the top
+    # valuation decile are flagged rather than surfaced as opportunities.
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true    # >=1 leading signal must fire
+    max_price_momentum_contribution: 0.0         # enforced in code; must stay 0
+
+  scoring:
+    output: theme_exposure_score   # 0-100, stored per (ticker, theme)
+    min_signals_required: 2        # ASC 280 segment granularity is uneven; corroborate
