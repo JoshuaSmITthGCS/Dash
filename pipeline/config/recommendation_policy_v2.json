@@ -20,6 +20,13 @@
     "general": ["forward_estimates"],
     "diversified_insurer": ["insurer_capital", "underwriting_quality"],
     "bank": ["capital_adequacy", "credit_quality"],
+    "property_casualty_insurer": ["insurer_capital", "underwriting_quality"],
+    "life_insurer": ["insurer_capital", "spread_margin"],
+    "reit": ["affo", "occupancy", "reit_leverage"],
+    "utility": ["regulated_mix", "funds_from_operations_to_debt"],
+    "commodity_producer": ["midcycle_normalization", "free_cash_flow_breakeven"],
+    "profitable_biotechnology": ["binary_event_risk", "revenue_concentration"],
+    "pre_profit_biotechnology": ["cash_runway", "pipeline_stage", "binary_event_risk"],
     "etf": ["holdings_liquidity", "tracking_quality"]
   },
   "deterioration": {
@@ -55,10 +62,14 @@
   },
   "stop_profiles": {
     "default": {"mode": "fixed", "hard_cost_basis_pct": -20, "trailing_high_water_pct": -15, "persistence_closes": 1, "reentry_cooldown_days": 20},
+    "atr_based": {"mode": "atr_based", "hard_cost_basis_pct": -20, "atr_multiple": 3.0, "persistence_closes": 2, "reentry_cooldown_days": 20},
+    "volatility_adjusted": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -25, "volatility_multiple": 3.0, "minimum_trailing_pct": -10, "maximum_trailing_pct": -30, "persistence_closes": 2, "reentry_cooldown_days": 20},
     "low_volatility_insurer": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -18, "trailing_high_water_pct": -12, "atr_multiple": 3.0, "persistence_closes": 2, "reentry_cooldown_days": 20},
     "high_volatility_biotech": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -35, "trailing_high_water_pct": -25, "atr_multiple": 4.0, "persistence_closes": 2, "reentry_cooldown_days": 30},
     "broad_etf": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -15, "trailing_high_water_pct": -10, "atr_multiple": 3.0, "persistence_closes": 2, "reentry_cooldown_days": 10},
     "leveraged_etf": {"mode": "fixed", "hard_cost_basis_pct": -12, "trailing_high_water_pct": -10, "persistence_closes": 1, "reentry_cooldown_days": 20},
+    "biotech": {"mode": "atr_based", "hard_cost_basis_pct": -35, "atr_multiple": 4.0, "persistence_closes": 2, "reentry_cooldown_days": 30},
+    "no_stop": {"mode": "none", "persistence_closes": 0, "reentry_cooldown_days": 0},
     "long_duration_compounder": {"mode": "none", "persistence_closes": 0, "reentry_cooldown_days": 0}
   },
   "thesis_break": {

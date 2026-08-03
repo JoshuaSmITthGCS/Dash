@@ -13,6 +13,16 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG_PATH = os.path.join(HERE, "config", "recommendation_policy_v2.json")
 
+COMPANY_DISPLAY_LABELS = {
+    "buy": "BUY CANDIDATE", "accumulate": "ACCUMULATE", "quality_watch": "QUALITY WATCH",
+    "tactical_candidate": "TACTICAL CANDIDATE", "hold_existing_position": "HOLD EXISTING POSITION",
+    "watch": "WATCH FOR ENTRY", "avoid": "AVOID NEW ENTRY", "sell_thesis": "SELL THESIS",
+    "insufficient_evidence": "INSUFFICIENT EVIDENCE",
+}
+POSITION_DISPLAY_LABELS = {
+    "no_action": "NO ACTION", "hold": "NO ACTION", "trim": "TRIM", "exit": "EXIT", "review": "REVIEW",
+}
+
 
 def load_policy(path=DEFAULT_CONFIG_PATH):
     with open(path, encoding="utf-8") as handle:
@@ -286,22 +296,37 @@ def _stop_state(position, config):
         threshold = cost * (1 + profile["hard_cost_basis_pct"] / 100)
         rules["hard_cost_basis_stop"] = {
             "triggered": current <= threshold, "threshold_price": round(threshold, 4), "current_price": current,
+            "high_water_mark": high, "breach_amount": round(max(0, threshold - current), 4),
             "breach_percentage": round((current / threshold - 1) * 100, 3),
             "first_breached_at": position.get("hard_stop_first_breached_at"),
             "confirmed_at": position.get("hard_stop_confirmed_at"),
             "required_persistence": profile.get("persistence_closes", 1),
+            "persistence_rule": f"{profile.get('persistence_closes', 1)} confirming closes",
             "execution_policy": position.get("execution_policy", "next_liquid_close"),
             "action": "exit", "discretionary": False,
         }
-    if high and profile.get("trailing_high_water_pct") is not None:
+    threshold = None
+    mode = profile.get("mode")
+    if high and mode == "atr_based" and _number(position.get("atr"), 0) > 0:
+        threshold = high - profile.get("atr_multiple", 3.0) * position["atr"]
+    elif high and mode == "volatility_adjusted" and _number(position.get("realized_volatility"), 0) > 0:
+        annualized = position["realized_volatility"]
+        decline = -profile.get("volatility_multiple", 3.0) * annualized / (252 ** .5) * 100
+        decline = max(profile.get("maximum_trailing_pct", -30),
+                      min(profile.get("minimum_trailing_pct", -10), decline))
+        threshold = high * (1 + decline / 100)
+    elif high and profile.get("trailing_high_water_pct") is not None:
         threshold = high * (1 + profile["trailing_high_water_pct"] / 100)
+    if high and threshold is not None:
         rules["trailing_high_water_stop"] = {
             "triggered": current <= threshold, "threshold_price": round(threshold, 4), "current_price": current,
+            "high_water_mark": high, "breach_amount": round(max(0, threshold - current), 4),
             "breach_percentage": round((current / threshold - 1) * 100, 3),
             "first_breached_at": position.get("trailing_stop_first_breached_at"),
             "confirmed_at": position.get("trailing_stop_confirmed_at"),
             "required_persistence": profile.get("persistence_closes", 1),
             "execution_policy": position.get("execution_policy", "next_liquid_close"),
+            "persistence_rule": f"{profile.get('persistence_closes', 1)} confirming closes",
             "action": position.get("trailing_stop_action", "exit"), "discretionary": True,
         }
     triggered = [name for name, state in rules.items() if state["triggered"]]
@@ -481,7 +506,8 @@ def build_recommendation_v2(ticker, analysis, technical=None, sentiment=None, ex
     if position_label == "exit" and company_confidence < config["confidence_gates"]["insufficient"] and triggered_stops:
         position_reasons.append("position_rule_triggered_despite_insufficient_company_evidence")
 
-    company_action = {"label": company_label, "confidence": round(company_confidence, 3),
+    company_action = {"label": company_label, "display_label": COMPANY_DISPLAY_LABELS[company_label],
+                      "confidence": round(company_confidence, 3),
                       "reason_namespace": namespace, "reason_codes": company_reasons}
     entry_action = evaluate_entry_rules(
         company_label, structural, timeliness, portfolio_fit, position, thesis_break, config,
@@ -507,7 +533,11 @@ def build_recommendation_v2(ticker, analysis, technical=None, sentiment=None, ex
         "portfolio_fit": portfolio_fit,
         "position_rules": stop_state.get("rules", {}),
         "position_action": {
-            "label": position_label, "trim_percent": trim_pct,
+            "label": position_label,
+            "display_label": ("DO NOT ADD — PORTFOLIO OVERWEIGHT"
+                              if portfolio_fit["classification"] in ("overweight", "severely_overweight")
+                              and not position_exists else POSITION_DISPLAY_LABELS[position_label]),
+            "trim_percent": trim_pct,
             "shares": economics["shares"], "estimated_value": economics["estimated_value"],
             "confidence": round(company_confidence, 3) if reason_namespace == "company_deterioration" else 1.0,
             "reason_namespace": reason_namespace, "reason_codes": position_reasons,

@@ -67,14 +67,22 @@ def load_universe(limit, tickers_arg):
     return symbols[:limit] if limit else symbols
 
 
-def fetch_ticker_data(yf, symbol, delay):
-    """Everything one ticker needs: ~2y daily prices + up to 8 trailing quarters of statements."""
+def fetch_ticker_data(yf, symbol, delay, history_period="2y", include_current_metadata=True):
+    """Everything one ticker needs: daily prices plus available quarterly statements.
+
+    ``history_period`` is explicit so longer walk-forward runners can request enough price
+    warm-up without changing the legacy weekly backtest's network footprint.
+    """
     try:
         ticker_obj = yf.Ticker(symbol)
-        info = ticker_obj.info or {}
-        hist = ticker_obj.history(period="2y", auto_adjust=False).dropna(subset=["Close"])
+        # ``info`` is a current snapshot and is intentionally optional in strict historical
+        # runs. It also costs another Yahoo request for every symbol.
+        info = ticker_obj.info or {} if include_current_metadata else {}
+        hist = ticker_obj.history(period=history_period, auto_adjust=False).dropna(subset=["Close"])
         dates = [str(idx)[:10] for idx in hist.index]
-        closes = [float(v) for v in hist["Close"].tolist()]
+        raw_closes = [float(v) for v in hist["Close"].tolist()]
+        adjusted = hist["Adj Close"] if "Adj Close" in hist.columns else hist["Close"]
+        closes = [float(v) for v in adjusted.tolist()]
         volumes = [float(v) for v in hist["Volume"].fillna(0).tolist()]
         income = statement_series(ticker_obj.quarterly_income_stmt)
         balance = statement_series(ticker_obj.quarterly_balance_sheet)
@@ -97,6 +105,7 @@ def fetch_ticker_data(yf, symbol, delay):
         "current_shares_outstanding": info.get("sharesOutstanding"),
         "dates": dates,
         "closes": closes,
+        "raw_closes": raw_closes,
         "volumes": volumes,
         "income": income,
         "balance": balance,
@@ -104,13 +113,14 @@ def fetch_ticker_data(yf, symbol, delay):
     }
 
 
-def fetch_benchmark(yf, symbol, delay):
+def fetch_benchmark(yf, symbol, delay, history_period="2y"):
     try:
         ticker_obj = yf.Ticker(symbol)
-        hist = ticker_obj.history(period="2y", auto_adjust=False).dropna(subset=["Close"])
+        hist = ticker_obj.history(period=history_period, auto_adjust=False).dropna(subset=["Close"])
+        adjusted = hist["Adj Close"] if "Adj Close" in hist.columns else hist["Close"]
         return {
             "dates": [str(idx)[:10] for idx in hist.index],
-            "closes": [float(v) for v in hist["Close"].tolist()],
+            "closes": [float(v) for v in adjusted.tolist()],
         }
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{symbol}: benchmark fetch failed ({type(exc).__name__})")
@@ -246,18 +256,24 @@ def basic_ratios(income_ttm, balance_now, market_cap, revenue_growth):
     }
 
 
-def build_snapshot(ticker_data, as_of, report_lag_days):
+def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=True,
+                   allow_empty_fundamentals=False):
     """The full point-in-time `snap` dict scorer.valuation_score expects, or None if too early."""
     known_dates = quarter_known_dates(ticker_data["income"]["periods"], report_lag_days)
     start_idx = most_recent_known_index(known_dates, as_of)
-    if start_idx is None:
+    if start_idx is None and not allow_empty_fundamentals:
         return None
 
-    income_ttm, balance_now, cashflow_ttm = build_ttm_statements(ticker_data, start_idx)
-    price = nearest_close(ticker_data["dates"], ticker_data["closes"], as_of)
+    if start_idx is None:
+        empty = {"periods": [], "rows": {}}
+        income_ttm, balance_now, cashflow_ttm = empty, empty, empty
+    else:
+        income_ttm, balance_now, cashflow_ttm = build_ttm_statements(ticker_data, start_idx)
+    raw_closes = ticker_data.get("raw_closes") or ticker_data["closes"]
+    price = nearest_close(ticker_data["dates"], raw_closes, as_of)
     if price is None:
         return None
-    shares = ticker_data["current_shares_outstanding"]
+    shares = ticker_data["current_shares_outstanding"] if allow_current_shares else None
     balance_shares = at(line(balance_now, "shares_outstanding"))
     if balance_shares:
         shares = balance_shares
@@ -312,11 +328,15 @@ def weekly_dates(weeks):
     return [today - timedelta(weeks=i) for i in range(weeks, 0, -1)]
 
 
-def rank_week(universe_data, benchmark_closes_to_date, as_of, report_lag_days):
+def rank_week(universe_data, benchmark_closes_to_date, as_of, report_lag_days,
+              allow_current_shares=True, allow_empty_fundamentals=False):
     """Score every ticker as of `as_of` using the real scoring functions, ranked best first."""
     prepared = {}
     for symbol, ticker_data in universe_data.items():
-        built = build_snapshot(ticker_data, as_of, report_lag_days)
+        built = build_snapshot(
+            ticker_data, as_of, report_lag_days, allow_current_shares,
+            allow_empty_fundamentals,
+        )
         if built is None:
             continue
         snap, closes_to_date, volumes_to_date = built
@@ -337,7 +357,9 @@ def rank_week(universe_data, benchmark_closes_to_date, as_of, report_lag_days):
         )
         row["action"] = (row.get("recommendation") or {}).get("action")
         rows.append(row)
-    rows.sort(key=lambda r: r["score"], reverse=True)
+    # Ticker is the deterministic tie-breaker. Concurrent cache loading must never change
+    # which equally scored name enters the portfolio at the top-N boundary.
+    rows.sort(key=lambda r: (-r["score"], r["ticker"]))
     return rows
 
 

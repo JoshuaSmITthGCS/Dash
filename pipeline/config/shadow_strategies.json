@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "shadow-construction-v1.0.0",
+  "point_in_time_required": true,
+  "construction_defaults": {
+    "universe": "eligible_advisor_universe_as_of_signal_cutoff",
+    "rebalance_date": "last_trading_day_of_month",
+    "signal_cutoff": "prior_trading_day_16:00_America/New_York",
+    "execution_lag_sessions": 1,
+    "execution_price_convention": "next_session_vwap_or_close_when_vwap_unavailable",
+    "number_of_holdings": 20,
+    "weighting_method": "equal_weight",
+    "cash_treatment": "uninvested_cash_earns_configured_FRED_risk_free_rate",
+    "maximum_position": 0.05,
+    "maximum_sector": 0.25,
+    "turnover_cap": 0.30,
+    "liquidity_floor_usd_60d_median": 5000000,
+    "slippage_bps": 10,
+    "spread_bps": 10,
+    "commissions_bps": 0,
+    "minimum_holding_period_days": 30,
+    "exit_rules": ["ineligible", "rank_below_exit_hysteresis", "verified_delisting"],
+    "delisting_treatment": "last_tradable_price_then_realized_loss; bankruptcy_without_price_is_minus_100_percent",
+    "corporate_actions": "split_and_distribution_adjusted_total_return",
+    "unavailable_price_handling": "carry_stale_for_one_session_then_flag_and_hold_cash_after_verified_exit"
+  },
+  "strategies": {
+    "legacy_production_model": {"signal": "legacy_score", "weighting_method": "legacy_documented_weighting", "exit_rules": ["legacy_documented_exit"]},
+    "v2_structural_model": {"signal": "v2_effective_structural_score"},
+    "structural_timeliness_model": {"signal": "v2_structural_plus_timeliness_matrix"},
+    "momentum_sleeve": {"signal": "capped_momentum_family", "weighting_method": "inverse_volatility", "exit_rules": ["exit_hysteresis", "minimum_holding_period_met", "ineligible"]},
+    "quality_value_sleeve": {"signal": "quality_value_score", "rebalance_date": "last_trading_day_of_quarter"},
+    "combined_model": {"signal": "documented_combined_model", "weighting_method": "sleeve_risk_budget"},
+    "SPY_benchmark": {"universe": "SPY", "signal": "none", "number_of_holdings": 1, "weighting_method": "100_percent_SPY", "turnover_cap": 1.0, "maximum_position": 1.0, "maximum_sector": 1.0},
+    "equal_weight_eligible_universe": {"signal": "none", "number_of_holdings": "all_eligible", "weighting_method": "equal_weight", "maximum_position": "inverse_eligible_count"},
+    "manual_external_rankings": {"signal": "imported_rank", "input_contract": "date,ticker,rank,value_grade,growth_grade,momentum_grade", "access_policy": "user_supplied_only_no_scraping"}
+  },
+  "comparison_modes": {
+    "signal_only": {"construction": "construction_defaults_for_every_signal", "strategy_specific_exits": false},
+    "full_strategy": {"construction": "defaults_merged_with_strategy_overrides", "strategy_specific_exits": true}
+  },
+  "reporting": {"gross_and_net_of_cost_required": true, "comparison_modes_must_not_be_mixed": true,
+                "outperformance_claims_prohibited_until_untouched_oos_evidence": true}
+}

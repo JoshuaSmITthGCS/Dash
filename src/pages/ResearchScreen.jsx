@@ -6,7 +6,7 @@ import { Empty, Loading } from '../components/Bits'
 export const SCREEN_NAV = [
   ['/screens/momentum', 'Momentum'], ['/screens/quality-value', 'Quality at valuation lows'],
   ['/screens/earnings', 'Earnings timeliness'], ['/screens/matrix', 'Structural vs tactical'],
-  ['/screens/shadow', 'Shadow portfolios'],
+  ['/screens/shadow', 'Shadow portfolios'], ['/screens/validation', 'Live validation'],
 ]
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'

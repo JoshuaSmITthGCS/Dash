@@ -1,7 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-<<<<<<< Updated upstream
   "required": [
     "schema_version",
     "generated_at",
@@ -15,14 +14,14 @@
     "portfolio_coverage",
     "market",
     "source_status",
+    "run_manifest",
     "disclaimer"
   ],
   "properties": {
     "schema_version": {
       "_comment": "Integer, additive-only. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js); writers never rename or remove a field.",
       "type": "integer",
-      "minimum": 1,
-      "maximum": 2
+      "const": 2
     },
     "generated_at": {
       "type": "string",
@@ -45,23 +44,12 @@
       "minimum": 1,
       "maximum": 100
     },
-=======
-  "required": ["schema_version", "generated_at", "data_mode", "count", "universe_count", "methodology", "research", "benchmark_history", "hypothetical_basis", "portfolio_coverage", "market", "source_status", "run_manifest", "disclaimer"],
-  "properties": {
-    "schema_version": { "const": 2 },
-    "generated_at": { "type": "string", "format": "date-time" },
-    "data_mode": { "const": "live" },
-    "count": { "type": "integer", "minimum": 1, "maximum": 100 },
-    "universe_count": { "type": "integer", "minimum": 20 },
-    "publish_limit": { "type": "integer", "minimum": 1, "maximum": 100 },
->>>>>>> Stashed changes
     "research": {
       "type": "array",
       "minItems": 1,
       "maxItems": 100,
       "items": {
         "type": "object",
-<<<<<<< Updated upstream
         "required": [
           "ticker",
           "name",
@@ -69,14 +57,12 @@
           "stance",
           "confidence",
           "components",
+          "analysis_v2",
           "strengths",
           "risks",
           "history",
           "hypothetical"
         ],
-=======
-        "required": ["ticker", "name", "score", "stance", "confidence", "components", "analysis_v2", "strengths", "risks", "history", "hypothetical"],
->>>>>>> Stashed changes
         "properties": {
           "ticker": {
             "type": "string",
@@ -268,7 +254,6 @@
               }
             }
           },
-<<<<<<< Updated upstream
           "sector_valuation_percentile": {
             "type": [
               "number",
@@ -288,9 +273,8 @@
             "items": {
               "type": "string"
             }
-          }
-=======
-          "sector_valuation_percentile": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+<<<<<<< HEAD
+          },
           "analysis_v2": {
             "type": "object",
             "required": ["model_version", "applicability_profile", "structural", "timeliness", "company_classification", "screen_memberships", "position_action", "metric_status"],
@@ -308,10 +292,10 @@
             "type": "object",
             "description": "Shadow-only decision-v2.0.0 output; legacy recommendation remains active."
           },
-          "valuation_percentile": { "$ref": "#/$defs/peerPercentile" },
-          "strengths": { "type": "array", "items": { "type": "string" } },
-          "risks": { "type": "array", "items": { "type": "string" } }
->>>>>>> Stashed changes
+          "valuation_percentile": { "$ref": "#/$defs/peerPercentile" }
+=======
+          }
+>>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
         },
         "additionalProperties": true
       }
@@ -499,7 +483,6 @@
         }
       }
     },
-<<<<<<< Updated upstream
     "source_status": {
       "type": "object"
     },
@@ -627,15 +610,14 @@
     "cache": {
       "type": "object",
       "additionalProperties": true
-    }
-=======
-    "source_status": { "type": "object" },
+<<<<<<< HEAD
+    },
     "run_manifest": {
       "type": "object",
       "required": ["run_id", "generated_at", "data_cutoff", "code_commit_hash", "config_hash", "schema_version", "model_version", "universe_version", "provider_status", "cache", "stale_field_count", "provider_conflict_count", "score_distribution", "rejected_at_each_step"]
-    },
-    "disclaimer": { "type": "string", "minLength": 1 }
->>>>>>> Stashed changes
+=======
+>>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
+    }
   },
   "additionalProperties": true,
   "$defs": {

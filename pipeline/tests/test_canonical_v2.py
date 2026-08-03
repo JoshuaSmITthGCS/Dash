@@ -108,14 +108,17 @@ class DecisionLayerTests(unittest.TestCase):
         legacy = {"peg": 45, "forward_pe": 45, "price_to_sales": 15, "ev_to_ebitda": 15,
                   "revenue_growth": 100, "earnings_growth": 100, "categories": {}}
         result = build_v2_analysis(case, legacy)
-        self.assertLess(result["structural"]["categories"]["valuation"], 60)
+        self.assertIsNone(result["structural"]["categories"]["valuation"])
+        self.assertIn("legacy_value_missing_lineage", result["metric_status"]["forward_pe"]["quality_flags"])
         self.assertEqual(result["timeliness"]["forward"]["revision_30d"], -8)
         self.assertLess(result["timeliness"]["effective_score"], 45)
         self.assertNotEqual(result["timeliness"]["classification"], "improving")
 
     def test_coverage_and_confidence_are_distinct(self):
         result = build_v2_analysis({"sector": "Technology", "forward_pe": 20}, {"forward_pe": 80})
-        self.assertNotEqual(result["structural"]["coverage"], result["structural"]["confidence"])
+        self.assertEqual(result["structural"]["coverage"], 0)
+        self.assertEqual(result["structural"]["confidence"], 0)
+        self.assertNotEqual(result["structural"]["coverage_basis"], result["structural"]["confidence_basis"])
 
     def test_stale_fundamental_is_disclosed_and_reduces_confidence(self):
         observation = Observation(20, "multiple", "yahoo", "forwardPE", fetched_at="2020-01-01T00:00:00+00:00", is_forward=True).to_dict()

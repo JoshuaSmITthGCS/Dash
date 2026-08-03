@@ -24,7 +24,8 @@ def test_hand_calculated_synthetic_fixture():
     assert metrics["fund_return"] == -1
     assert metrics["benchmark_return"] == -5.5
     assert metrics["excess_return"] == 4.5
-    assert metrics["tracking_difference"] == 4.5
+    assert metrics["relative_return_difference"] == 4.5
+    assert "tracking_error" not in metrics
 
 
 def test_alignment_uses_intersection_and_resolves_duplicate_dates():

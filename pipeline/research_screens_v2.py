@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import date, datetime
-from statistics import median
+from statistics import mean, median
 
 
 MOMENTUM_WEIGHTS = {"momentum_12_1": .40, "momentum_12_7": .20, "momentum_6_1": .15,
@@ -54,6 +54,101 @@ def momentum_factors(prices, industry_return=None, as_of=None):
             "industry_relative_momentum": None if industry_return is None else twelve_one - industry_return}
 
 
+def momentum_boundary_diagnostics(prices, as_of=None):
+    """Return auditable month-end boundaries for every skip-month signal.
+
+    ``end`` is the last completed month before the skipped month(s). The diagnostics
+    deliberately name every skipped calendar month so fixtures can prove that a partial
+    formation month never leaks into a signal.
+    """
+    months = month_end_prices(prices, as_of)
+    specs = {"momentum_12_1": (12, 1), "momentum_12_7": (12, 7), "momentum_6_1": (6, 1)}
+    output = {}
+    for signal, (start_offset, end_offset) in specs.items():
+        if len(months) <= start_offset:
+            output[signal] = {"status": "unavailable", "reason_code": "INSUFFICIENT_MONTH_ENDS"}
+            continue
+        start_index, end_index = len(months) - 1 - start_offset, len(months) - 1 - end_offset
+        start, end = months[start_index], months[end_index]
+        skipped = [day[:7] for day, _ in months[end_index + 1:]]
+        output[signal] = {
+            "status": "success",
+            "formation_date": str(as_of or months[-1][0])[:10],
+            "starting_month_end": start[0],
+            "ending_month_end": end[0],
+            "skipped_months": skipped,
+            "included_return_months": end_index - start_index,
+            "return": round(end[1] / start[1] - 1, 12),
+        }
+    return output
+
+
+def industry_relative_returns(rows, minimum_peer_count=4, weighting="median"):
+    """Compute a leave-one-out industry benchmark; a company never benchmarks itself."""
+    if weighting not in {"median", "equal_weight"}:
+        raise ValueError("weighting must be median or equal_weight")
+    output = {}
+    for row in rows or []:
+        ticker, group = row.get("ticker"), row.get("peer_group")
+        peers = [float(peer["momentum_12_1"]) for peer in rows
+                 if peer.get("ticker") != ticker and peer.get("peer_group") == group
+                 and peer.get("momentum_12_1") is not None
+                 and math.isfinite(float(peer["momentum_12_1"]))]
+        if len(peers) < minimum_peer_count:
+            output[ticker] = {"status": "unavailable", "reason_code": "INSUFFICIENT_VALID_PEERS",
+                              "peer_group": group, "peer_count": len(peers),
+                              "minimum_peer_count": minimum_peer_count, "leave_one_out": True}
+            continue
+        benchmark = median(peers) if weighting == "median" else mean(peers)
+        own = row.get("momentum_12_1")
+        output[ticker] = {"status": "success", "peer_group": group, "peer_count": len(peers),
+                          "minimum_peer_count": minimum_peer_count, "leave_one_out": True,
+                          "weighting": weighting, "industry_return": benchmark,
+                          "industry_relative_momentum": None if own is None else float(own) - benchmark}
+    return output
+
+
+def _correlation(xs, ys):
+    pairs = [(float(x), float(y)) for x, y in zip(xs, ys) if x is not None and y is not None
+             and math.isfinite(float(x)) and math.isfinite(float(y))]
+    if len(pairs) < 3:
+        return None
+    left, right = [x for x, _ in pairs], [y for _, y in pairs]
+    left_mean, right_mean = mean(left), mean(right)
+    numerator = sum((x - left_mean) * (y - right_mean) for x, y in pairs)
+    left_scale = math.sqrt(sum((x - left_mean) ** 2 for x in left))
+    right_scale = math.sqrt(sum((y - right_mean) ** 2 for y in right))
+    return numerator / (left_scale * right_scale) if left_scale and right_scale else None
+
+
+def momentum_correlation_diagnostics(rows, fields=None, threshold=.80, family_cap=.60):
+    """Monitor cross-sectional dependence and declare the enforced family cap."""
+    fields = list(fields or MOMENTUM_WEIGHTS)
+    matrix, pairs = {}, []
+    for left in fields:
+        matrix[left] = {}
+        for right in fields:
+            value = 1.0 if left == right else _correlation(
+                [(row.get("factors") or row).get(left) for row in rows],
+                [(row.get("factors") or row).get(right) for row in rows])
+            matrix[left][right] = None if value is None else round(value, 6)
+            if fields.index(right) > fields.index(left) and value is not None:
+                pairs.append(abs(value))
+    average = mean(pairs) if pairs else None
+    # Equicorrelation approximation: transparent, bounded, and stable without a
+    # numerical dependency. It prevents five near-duplicates from posing as five facts.
+    n = len(fields)
+    effective = n if average is None else n / (1 + (n - 1) * max(0, average))
+    concentrated = average is not None and average > threshold
+    return {"correlation_matrix": matrix,
+            "average_pairwise_correlation": None if average is None else round(average, 6),
+            "effective_factor_count": round(effective, 3),
+            "momentum_family_concentration": "high" if concentrated else "normal",
+            "correlation_threshold": threshold,
+            "family_contribution_cap": family_cap,
+            "cap_applied": concentrated}
+
+
 def winsorize(values, lower=.05, upper=.95):
     finite = sorted(value for value in values if value is not None and math.isfinite(value))
     if not finite: return []
@@ -77,6 +172,9 @@ def momentum_scores(rows, current_members=None, config=None):
     current_members = current_members or {}
     fields = list(MOMENTUM_WEIGHTS)
     standardized = {field: zscores(winsorize([(row.get("factors") or {}).get(field) for row in rows])) for field in fields}
+    diagnostics = momentum_correlation_diagnostics(
+        rows, threshold=config.get("correlation_threshold", .80),
+        family_cap=config.get("family_contribution_cap", config.get("price_family_cap", .90)))
     output = []
     for index, row in enumerate(rows):
         reasons = []
@@ -87,9 +185,15 @@ def momentum_scores(rows, current_members=None, config=None):
         if row.get("binary_event_excluded"): reasons.append("BINARY_EVENT_EXCLUSION")
         if row.get("stale_price"): reasons.append("STALE_PRICE")
         contributions = {field: (standardized[field][index] or 0) * MOMENTUM_WEIGHTS[field] for field in fields}
+        gross_score = sum(contributions.values())
+        cap = diagnostics["family_contribution_cap"]
+        scale = min(1.0, cap / abs(gross_score)) if diagnostics["cap_applied"] and gross_score else 1.0
+        contributions = {field: value * scale for field, value in contributions.items()}
         score = sum(contributions.values())
         output.append({**row, "score": score, "standardized_factors": {f: standardized[f][index] for f in fields},
-                       "contribution_by_factor": contributions, "eligibility": not reasons, "reason_codes": reasons})
+                       "uncapped_score": gross_score, "contribution_by_factor": contributions,
+                       "momentum_correlation": diagnostics,
+                       "eligibility": not reasons, "reason_codes": reasons})
     eligible = sorted((row for row in output if row["eligibility"]), key=lambda row: row["score"])
     for rank, row in enumerate(eligible):
         row["percentile"] = 100 * rank / max(1, len(eligible) - 1)

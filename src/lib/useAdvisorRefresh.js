@@ -1,13 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from './FirebaseAuthContext'
+import { formatElapsed } from './useData'
 
 const POLL_INTERVAL_MS = 20_000
 const REFRESH_TIMEOUT_MS = 55 * 60_000
+const ELAPSED_TICK_MS = 1_000
 
 export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const { currentUser } = useAuth()
   const [state, setState] = useState({ status: 'idle', message: '' })
+  const [elapsedMs, setElapsedMs] = useState(0)
   const baseline = useRef(generatedAt)
+  const startedAt = useRef(null)
+
+  // There is no real progress signal from the GitHub Actions run - no step-by-step
+  // percentage to show honestly. An elapsed-time counter is real, though, and it's what
+  // actually answers "is this doing anything" while the run is in flight.
+  useEffect(() => {
+    if (state.status !== 'starting' && state.status !== 'pending') return undefined
+    const tick = () => setElapsedMs(Date.now() - (startedAt.current || Date.now()))
+    tick()
+    const ticker = window.setInterval(tick, ELAPSED_TICK_MS)
+    return () => window.clearInterval(ticker)
+  }, [state.status])
 
   useEffect(() => {
     if (state.status !== 'pending') return undefined
@@ -47,6 +62,8 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const requestRefresh = async () => {
     if (!currentUser || state.status === 'pending') return
     baseline.current = generatedAt
+    startedAt.current = Date.now()
+    setElapsedMs(0)
     setState({ status: 'starting', message: 'Connecting to the refresh service…' })
     try {
       const idToken = await currentUser.getIdToken()
@@ -87,10 +104,13 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
     }
   }
 
+  const refreshing = state.status === 'starting' || state.status === 'pending'
   return {
     ...state,
     requestRefresh,
-    refreshing: state.status === 'starting' || state.status === 'pending',
+    refreshing,
     available: Boolean(currentUser),
+    elapsedMs,
+    elapsedLabel: refreshing ? formatElapsed(elapsedMs) : null,
   }
 }

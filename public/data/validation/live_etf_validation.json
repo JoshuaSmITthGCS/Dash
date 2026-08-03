@@ -1,0 +1,429 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "etf-v2.0.0",
+  "generated_at": "2026-08-03T05:34:17.385306+00:00",
+  "run_id": "727d2a098359950d",
+  "production_outputs_replaced": false,
+  "results": [
+    {
+      "ticker": "VXUS",
+      "case": "international_equity",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "FTSE Global All Cap ex US Index",
+        "identifier": "FTSEGAEXUS",
+        "ticker": "IXUS",
+        "type": "investable_proxy",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "unhedged",
+        "source": "fund objective / configured proxy",
+        "confidence": 0.78,
+        "quality_label": "Investable proxy"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 127.1305126,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 127.26865545,
+          "fund_return": 27.130513,
+          "benchmark_return": 27.268655,
+          "excess_return": -0.138143,
+          "fund_annualized_return": 27.151416,
+          "benchmark_annualized_return": 27.289677,
+          "relative_return_difference": -0.13826,
+          "beta": 0.985925,
+          "correlation": 0.998506,
+          "fund_max_drawdown": -11.27379078,
+          "benchmark_max_drawdown": -11.35810716,
+          "relative_max_drawdown": -0.66959362,
+          "sharpe": 1.513216,
+          "sortino": 2.242287,
+          "up_capture": 99.187709,
+          "down_capture": 99.189635,
+          "up_capture_sample_count": 140,
+          "down_capture_sample_count": 110,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "TLT",
+      "case": "bond",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "ICE U.S. Treasury 20+ Year Bond Index",
+        "identifier": "IDCOT20TR",
+        "ticker": "VGLT",
+        "type": "investable_proxy",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "not_applicable",
+        "source": "fund objective / configured proxy",
+        "confidence": 0.72,
+        "quality_label": "Investable proxy"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 98.93945898,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 99.62770703,
+          "fund_return": -1.060541,
+          "benchmark_return": -0.372293,
+          "excess_return": -0.688248,
+          "fund_annualized_return": -1.061264,
+          "benchmark_annualized_return": -0.372547,
+          "relative_return_difference": -0.688716,
+          "beta": 1.09664,
+          "correlation": 0.996383,
+          "fund_max_drawdown": -7.73550221,
+          "benchmark_max_drawdown": -7.02882619,
+          "relative_max_drawdown": -1.21714084,
+          "sharpe": -0.068078,
+          "sortino": -0.096522,
+          "up_capture": 108.841275,
+          "down_capture": 109.962017,
+          "up_capture_sample_count": 121,
+          "down_capture_sample_count": 127,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "GLD",
+      "case": "commodity",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "LBMA Gold Price",
+        "identifier": "LBMAGOLD",
+        "ticker": "IAU",
+        "type": "investable_proxy",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "not_applicable",
+        "source": "fund objective / configured commodity proxy",
+        "confidence": 0.7,
+        "quality_label": "Investable proxy"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 122.63665798,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 122.83502699,
+          "fund_return": 22.636658,
+          "benchmark_return": 22.835027,
+          "excess_return": -0.198369,
+          "fund_annualized_return": 22.653799,
+          "benchmark_annualized_return": 22.852332,
+          "relative_return_difference": -0.198533,
+          "beta": 1.007245,
+          "correlation": 0.999863,
+          "fund_max_drawdown": -26.40451786,
+          "benchmark_max_drawdown": -26.35620431,
+          "relative_max_drawdown": -0.23866744,
+          "sharpe": 0.869458,
+          "sortino": 1.163705,
+          "up_capture": 100.460752,
+          "down_capture": 100.636121,
+          "up_capture_sample_count": 137,
+          "down_capture_sample_count": 111,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "TQQQ",
+      "case": "leveraged",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "Nasdaq-100 daily 3x objective",
+        "identifier": "NDX_3X_DAILY",
+        "ticker": "QQQ",
+        "type": "generic_market",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "not_applicable",
+        "source": "underlying exposure proxy; leverage path differs",
+        "confidence": 0.55,
+        "quality_label": "Generic market comparison"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 147.46531272,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 122.35242578,
+          "fund_return": 47.465313,
+          "benchmark_return": 22.352426,
+          "excess_return": 25.112887,
+          "fund_annualized_return": 47.50455,
+          "benchmark_annualized_return": 22.369333,
+          "relative_return_difference": 25.135217,
+          "beta": 2.971529,
+          "correlation": 0.999759,
+          "fund_max_drawdown": -36.96696278,
+          "benchmark_max_drawdown": -11.96436379,
+          "relative_max_drawdown": -28.4005433,
+          "sharpe": 0.965616,
+          "sortino": 1.380097,
+          "up_capture": 293.148731,
+          "down_capture": 301.694895,
+          "up_capture_sample_count": 139,
+          "down_capture_sample_count": 112,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "AVUV",
+      "case": "young",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "U.S. small-cap value comparison",
+        "identifier": "SMALL_VALUE_PROXY",
+        "ticker": "IJS",
+        "type": "generic_market",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "not_applicable",
+        "source": "configured young-fund comparison proxy",
+        "confidence": 0.55,
+        "quality_label": "Generic market comparison"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 137.54047409,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 136.84617843,
+          "fund_return": 37.540474,
+          "benchmark_return": 36.846178,
+          "excess_return": 0.694296,
+          "fund_annualized_return": 37.570505,
+          "benchmark_annualized_return": 36.875584,
+          "relative_return_difference": 0.694922,
+          "beta": 0.912264,
+          "correlation": 0.95789,
+          "fund_max_drawdown": -7.9511635,
+          "benchmark_max_drawdown": -9.28456553,
+          "relative_max_drawdown": -3.88450956,
+          "sharpe": 1.980038,
+          "sortino": 3.233533,
+          "up_capture": 90.085456,
+          "down_capture": 85.603746,
+          "up_capture_sample_count": 136,
+          "down_capture_sample_count": 112,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "HEFA",
+      "case": "currency_hedged",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "Currency-hedged developed markets comparison",
+        "identifier": "HEDGED_DM_PROXY",
+        "ticker": "DBEF",
+        "type": "investable_proxy",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "USD_hedged",
+        "source": "configured hedged-fund proxy",
+        "confidence": 0.65,
+        "quality_label": "Investable proxy"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 128.21065499,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 127.16539749,
+          "fund_return": 28.210655,
+          "benchmark_return": 27.165397,
+          "excess_return": 1.045257,
+          "fund_annualized_return": 28.232479,
+          "benchmark_annualized_return": 27.186331,
+          "relative_return_difference": 1.046149,
+          "beta": 0.991543,
+          "correlation": 0.983212,
+          "fund_max_drawdown": -9.5174863,
+          "benchmark_max_drawdown": -9.41310721,
+          "relative_max_drawdown": -0.64746581,
+          "sharpe": 1.965681,
+          "sortino": 2.983944,
+          "up_capture": 99.263061,
+          "down_capture": 97.890195,
+          "up_capture_sample_count": 140,
+          "down_capture_sample_count": 110,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "SGOV",
+      "case": "sparse_history",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "1-3 month Treasury bill comparison",
+        "identifier": "TBILL_PROXY",
+        "ticker": "BIL",
+        "type": "investable_proxy",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "not_applicable",
+        "source": "configured sparse/young history proxy",
+        "confidence": 0.65,
+        "quality_label": "Investable proxy"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 103.86321831,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 103.80575637,
+          "fund_return": 3.863218,
+          "benchmark_return": 3.805756,
+          "excess_return": 0.057462,
+          "fund_annualized_return": 3.865915,
+          "benchmark_annualized_return": 3.808412,
+          "relative_return_difference": 0.057503,
+          "beta": 0.571552,
+          "correlation": 0.611657,
+          "fund_max_drawdown": -0.00997008,
+          "benchmark_max_drawdown": -0.01095024,
+          "relative_max_drawdown": -0.03665485,
+          "sharpe": 20.345822,
+          "sortino": 380.986435,
+          "up_capture": 85.841983,
+          "down_capture": null,
+          "up_capture_sample_count": 194,
+          "down_capture_sample_count": 5,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    },
+    {
+      "ticker": "VTI",
+      "case": "proxy_benchmark",
+      "status": "pass",
+      "benchmark": {
+        "display_name": "CRSP US Total Market Index",
+        "identifier": "CRSPUSTMI",
+        "ticker": "ITOT",
+        "type": "investable_proxy",
+        "return_type": "total_return",
+        "currency": "USD",
+        "hedging": "not_applicable",
+        "source": "fund objective / configured proxy",
+        "confidence": 0.8,
+        "quality_label": "Investable proxy"
+      },
+      "contract_status": "success",
+      "one_year": {
+        "observation_count": 252,
+        "metrics": {
+          "fund_start_value": 100.0,
+          "fund_end_value": 119.82032173,
+          "benchmark_start_value": 100.0,
+          "benchmark_end_value": 119.76098835,
+          "fund_return": 19.820322,
+          "benchmark_return": 19.760988,
+          "excess_return": 0.059333,
+          "fund_annualized_return": 19.835163,
+          "benchmark_annualized_return": 19.775781,
+          "relative_return_difference": 0.059381,
+          "beta": 0.9968,
+          "correlation": 0.999536,
+          "fund_max_drawdown": -8.91820018,
+          "benchmark_max_drawdown": -8.89826794,
+          "relative_max_drawdown": -0.18962552,
+          "sharpe": 1.449962,
+          "sortino": 2.117439,
+          "up_capture": 99.847299,
+          "down_capture": 99.762766,
+          "up_capture_sample_count": 137,
+          "down_capture_sample_count": 112,
+          "capture_minimum_samples": 20
+        },
+        "quality_flags": []
+      },
+      "checks": {
+        "overlap_or_explicit_unavailable": true,
+        "proxy_label_honest": true,
+        "adjusted_total_return_basis": true,
+        "capture_sample_gate": true
+      }
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0
+  }
+}

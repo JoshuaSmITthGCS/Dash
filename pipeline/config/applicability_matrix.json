@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "profiles": ["general", "bank", "property_casualty_insurer", "life_insurer", "diversified_insurer", "reit", "utility", "commodity_producer", "pre_profit_biotechnology", "other_pre_profit"],
+  "profiles": ["general", "bank", "property_casualty_insurer", "life_insurer", "diversified_insurer", "reit", "utility", "commodity_producer", "profitable_biotechnology", "pre_profit_biotechnology", "other_pre_profit"],
   "rules": {
     "general": {},
     "bank": {
@@ -38,7 +38,8 @@
     },
     "utility": {"free_cash_flow_yield": ["replaced", "funds_from_operations_yield", "Regulated utilities commonly fund large mandated capital programs."]},
     "commodity_producer": {"peg": ["replaced", "midcycle_ev_ebitda", "Point estimates are dominated by commodity-cycle assumptions."]},
-    "pre_profit_biotechnology": {"peg": ["suppressed", "cash_runway_months", "No positive earnings denominator."], "forward_pe": ["suppressed", "cash_runway_months", "No positive consensus earnings."], "price_to_book": ["suppressed", "cash_runway_months", "Book value does not capture pipeline probability."], "free_cash_flow_yield": ["suppressed", "cash_runway_months", "Cash burn should be evaluated as runway."]},
+    "profitable_biotechnology": {"altman_z": ["suppressed", "cash_runway_months", "Industrial distress scores do not represent pipeline and binary-event risk."]},
+    "pre_profit_biotechnology": {"peg": ["suppressed", "cash_runway_months", "No positive earnings denominator."], "forward_pe": ["suppressed", "cash_runway_months", "No positive consensus earnings."], "price_to_book": ["suppressed", "cash_runway_months", "Book value does not capture pipeline probability."], "free_cash_flow_yield": ["suppressed", "cash_runway_months", "Cash burn should be evaluated as runway."], "altman_z": ["suppressed", "cash_runway_months", "Industrial distress scores do not represent clinical-stage solvency or binary-event risk."], "return_on_invested_capital": ["suppressed", "pipeline_stage", "Pre-profit biotechnology has no stable operating-return denominator."]},
     "other_pre_profit": {"peg": ["suppressed", "gross_margin_and_runway", "No positive earnings denominator."], "forward_pe": ["suppressed", "gross_margin_and_runway", "No positive consensus earnings."]}
   }
 }

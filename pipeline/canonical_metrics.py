@@ -118,6 +118,8 @@ def classify_profile(snapshot):
     pre_profit = snapshot.get("profit_margin") is not None and snapshot.get("profit_margin") < 0
     if pre_profit and "biotech" in text:
         return "pre_profit_biotechnology"
+    if "biotech" in text:
+        return "profitable_biotechnology"
     if pre_profit:
         return "other_pre_profit"
     return "general"

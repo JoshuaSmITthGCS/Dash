@@ -116,6 +116,18 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .refresh-message.success { color: var(--up); }.refresh-message.error { color: var(--down); }
 .refresh-spin { animation: refresh-spin .8s linear infinite; }
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
+.refresh-progress { display: grid; justify-items: end; gap: 5px; width: 100%; max-width: 220px; margin-left: auto; }
+.refresh-progress-track { width: 100%; height: 4px; border-radius: 999px; background: var(--border-lit); overflow: hidden; }
+.refresh-progress-fill {
+  height: 100%; width: 40%; border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-glow), var(--accent), transparent);
+  animation: refresh-progress-slide 1.4s ease-in-out infinite;
+}
+@keyframes refresh-progress-slide { 0% { transform: translateX(-120%); } 100% { transform: translateX(340%); } }
+.refresh-progress-elapsed { color: var(--text-faint); font: 10px var(--font-mono); letter-spacing: .02em; }
+@media (prefers-reduced-motion: reduce) {
+  .refresh-progress-fill { animation: none; width: 100%; opacity: .5; }
+}
 .hero-research {
   position: relative; overflow: hidden; min-height: 470px; display: grid; grid-template-columns: minmax(0, .92fr) minmax(380px, 1.08fr);
   gap: 32px; padding: 34px; border: 1px solid var(--border-lit); border-radius: var(--r-xl);
@@ -438,3 +450,11 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
 .shadow-reasons { margin: 0; padding-left: 18px; color: var(--text-dim); font-size: 11px; }
 @media (max-width: 800px) { .shadow-comparison { grid-template-columns: 1fr; }.shadow-layers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 440px) { .shadow-layers { grid-template-columns: 1fr; } }
+.validation-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.validation-card { display: grid; gap: 16px; }
+.validation-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.validation-card-head h2 { margin: 4px 0 0; }
+.validation-card details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.validation-card details p { overflow-wrap: anywhere; }
+.validation-pass { color: var(--pos); }
+.validation-fail, .validation-error { color: var(--neg); }

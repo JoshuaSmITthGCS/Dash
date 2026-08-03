@@ -1,5 +1,45 @@
 {
   "version": "2.0.0",
+  "profiles": {
+    "general": {"replacement_metrics": [], "critical_metrics": ["forward_estimates"]},
+    "etf": {"replacement_metrics": ["holdings_liquidity", "tracking_quality"], "critical_metrics": ["holdings_liquidity", "tracking_quality"]},
+    "property_casualty_insurer": {
+      "replacement_metrics": ["combined_ratio", "underlying_combined_ratio", "loss_ratio", "expense_ratio", "catastrophe_loss_ratio", "prior_year_reserve_development", "pricing_growth_vs_loss_cost", "core_roe", "normalized_roe", "underwriting_income", "book_value_per_share_growth", "tangible_book_value_growth", "investment_yield", "debt_to_capital", "financial_leverage", "fixed_charge_coverage", "holding_company_liquidity", "statutory_capital_surplus", "risk_based_capital_ratio", "forward_pe_core", "price_to_book", "price_to_tangible_book", "total_capital_return_yield"],
+      "critical_metrics": ["combined_ratio", "normalized_roe", "statutory_capital_surplus"]
+    },
+    "life_insurer": {
+      "replacement_metrics": ["spread_margin", "core_roe", "normalized_roe", "book_value_per_share_growth", "investment_yield", "debt_to_capital", "financial_leverage", "fixed_charge_coverage", "holding_company_liquidity", "statutory_capital_surplus", "risk_based_capital_ratio", "forward_pe_core", "price_to_book", "price_to_tangible_book", "total_capital_return_yield"],
+      "critical_metrics": ["spread_margin", "normalized_roe", "statutory_capital_surplus"]
+    },
+    "diversified_insurer": {
+      "replacement_metrics": ["combined_ratio", "underlying_combined_ratio", "loss_ratio", "expense_ratio", "prior_year_reserve_development", "core_roe", "normalized_roe", "book_value_per_share_growth", "tangible_book_value_growth", "investment_yield", "debt_to_capital", "fixed_charge_coverage", "holding_company_liquidity", "statutory_capital_surplus", "risk_based_capital_ratio", "forward_pe_core", "price_to_book", "price_to_tangible_book", "total_capital_return_yield"],
+      "critical_metrics": ["combined_ratio", "normalized_roe", "statutory_capital_surplus"]
+    },
+    "bank": {
+      "replacement_metrics": ["common_equity_tier_1_ratio", "total_capital_ratio", "tangible_common_equity", "net_interest_margin", "efficiency_ratio", "return_on_tangible_common_equity", "nonperforming_assets", "net_charge_off_trend", "deposit_growth", "deposit_beta", "loan_growth", "price_to_tangible_book", "forward_pe", "credit_loss_reserve_coverage"],
+      "critical_metrics": ["common_equity_tier_1_ratio", "return_on_tangible_common_equity", "nonperforming_assets"]
+    },
+    "reit": {
+      "replacement_metrics": ["funds_from_operations", "adjusted_funds_from_operations", "price_to_ffo", "price_to_affo", "nav_premium_discount", "occupancy", "same_store_noi_growth", "debt_to_ebitdare", "fixed_charge_coverage", "weighted_average_debt_maturity", "secured_unsecured_debt_mix", "affo_dividend_payout"],
+      "critical_metrics": ["adjusted_funds_from_operations", "occupancy", "debt_to_ebitdare"]
+    },
+    "utility": {
+      "replacement_metrics": ["regulated_merchant_mix", "rate_base_growth", "allowed_roe", "funds_from_operations_to_debt", "interest_coverage", "capex_funding_needs", "dividend_payout", "regulatory_jurisdiction_quality", "valuation_vs_own_history"],
+      "critical_metrics": ["regulated_merchant_mix", "funds_from_operations_to_debt", "capex_funding_needs"]
+    },
+    "commodity_producer": {
+      "replacement_metrics": ["normalized_midcycle_margin", "reserve_replacement", "lifting_production_cost", "realized_commodity_price", "net_debt", "free_cash_flow_breakeven", "capital_discipline", "production_growth", "normalized_commodity_valuation"],
+      "critical_metrics": ["normalized_midcycle_margin", "free_cash_flow_breakeven", "normalized_commodity_valuation"]
+    },
+    "profitable_biotechnology": {
+      "replacement_metrics": ["cash_runway_months", "pipeline_stage", "clinical_regulatory_milestones", "revenue_concentration", "partnership_revenue", "binary_event_risk"],
+      "critical_metrics": ["revenue_concentration", "binary_event_risk"]
+    },
+    "pre_profit_biotechnology": {
+      "replacement_metrics": ["cash_runway_months", "annual_cash_burn", "dilution_rate", "pipeline_stage", "clinical_regulatory_milestones", "revenue_concentration", "partnership_revenue", "binary_event_risk"],
+      "critical_metrics": ["cash_runway_months", "annual_cash_burn", "pipeline_stage", "binary_event_risk"]
+    }
+  },
   "ticker_overrides": {
     "HIG": {"profile": "diversified_insurer", "peer_group_id": "diversified_insurer", "peer_group_label": "Diversified insurers"},
     "AIG": {"profile": "diversified_insurer", "peer_group_id": "diversified_insurer", "peer_group_label": "Diversified insurers"},
@@ -7,9 +47,14 @@
     "TRV": {"profile": "property_casualty_insurer", "peer_group_id": "property_casualty_insurer", "peer_group_label": "Property & casualty insurers"},
     "AGO": {"profile": "property_casualty_insurer", "peer_group_id": "specialty_insurer", "peer_group_label": "Specialty insurers"},
     "MET": {"profile": "life_insurer", "peer_group_id": "life_insurer", "peer_group_label": "Life insurers"},
+    "JPM": {"profile": "bank", "peer_group_id": "large_bank", "peer_group_label": "Large banks"},
     "BAC": {"profile": "bank", "peer_group_id": "large_bank", "peer_group_label": "Large banks"},
     "COF": {"profile": "bank", "peer_group_id": "consumer_lender", "peer_group_label": "Consumer lenders"},
     "SYF": {"profile": "bank", "peer_group_id": "consumer_lender", "peer_group_label": "Consumer lenders"},
+    "O": {"profile": "reit", "peer_group_id": "net_lease_reit", "peer_group_label": "Net lease REITs"},
+    "NEE": {"profile": "utility", "peer_group_id": "regulated_utility", "peer_group_label": "Regulated utilities"},
+    "XOM": {"profile": "commodity_producer", "peer_group_id": "integrated_oil_gas", "peer_group_label": "Integrated oil and gas producers"},
+    "MRNA": {"peer_group_id": "commercial_biotechnology", "peer_group_label": "Commercial biotechnology"},
     "BSX": {"peer_group_id": "medical_devices", "peer_group_label": "Medical device companies"},
     "ALGN": {"peer_group_id": "medical_devices", "peer_group_label": "Medical device companies"},
     "AXGN": {"peer_group_id": "medical_devices", "peer_group_label": "Medical device companies"},

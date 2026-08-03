@@ -8,6 +8,7 @@ import json
 import os
 from datetime import timezone
 
+from cache import CACHE, limiter_for, retry_with_backoff
 from common import CONFIG_DIR, DATA_DIR, LOG, load_json, update_pipeline_status
 from etf_comparison import build_contract
 
@@ -26,6 +27,24 @@ def _registry():
         return json.load(handle)
 
 
+def _fetch_rows(symbol, yf, period, cache):
+    """Full adjusted history for one symbol - rate-limited, retried, and cached.
+
+    This used to call yf.Ticker(...).history() directly with no pacing at all, right after
+    fetch_advisor.py and fetch_etfs.py had already spent the same run's Yahoo budget on
+    ~1,000 other symbols. Routing through the shared limiter and disk cache (same as every
+    other Yahoo call in the pipeline) means a rate-limited fetch retries with backoff and,
+    failing that, falls back to yesterday's cached history instead of going unavailable.
+    """
+    def produce():
+        limiter_for("yahoo").acquire()
+        frame = retry_with_backoff(
+            lambda: yf.Ticker(symbol).history(period=period, auto_adjust=True, actions=True),
+            description=f"full history for {symbol}")
+        return _rows(frame)
+    return cache.fetch("etf_full_history", f"{symbol}:{period}", produce, source="yahoo")
+
+
 def build_all(period="max"):
     try:
         import yfinance as yf
@@ -37,15 +56,15 @@ def build_all(period="max"):
     output_dir = os.path.join(DATA_DIR, "etf")
     os.makedirs(output_dir, exist_ok=True)
     complete, failed = [], {}
-    cache = {}
+    fetched = {}
     for ticker in universe.get("etfs", {}):
         benchmark = {**registry["default"], **registry.get("funds", {}).get(ticker, {})}
         benchmark_ticker = benchmark.get("benchmark_ticker")
         try:
             for symbol in (ticker, benchmark_ticker):
-                if symbol and symbol not in cache:
-                    cache[symbol] = yf.Ticker(symbol).history(period=period, auto_adjust=True, actions=True)
-            payload = build_contract(ticker, _rows(cache[ticker]), _rows(cache.get(benchmark_ticker)), benchmark)
+                if symbol and symbol not in fetched:
+                    fetched[symbol] = _fetch_rows(symbol, yf, period, CACHE)
+            payload = build_contract(ticker, fetched[ticker], fetched.get(benchmark_ticker) or [], benchmark)
             path = os.path.join(output_dir, f"{ticker}.json")
             temporary = f"{path}.tmp"
             with open(temporary, "w") as handle:

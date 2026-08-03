@@ -91,15 +91,16 @@ def _annualized(total_return, days):
     return (1 + total_return) ** (365.25 / days) - 1 if days >= 350 and total_return > -1 else None
 
 
-def _capture(fund_returns, benchmark_returns, positive):
+def _capture(fund_returns, benchmark_returns, positive, minimum_samples=20):
     pairs = [(f, b) for f, b in zip(fund_returns, benchmark_returns) if (b > 0) == positive and b != 0]
-    if not pairs:
-        return None
+    if len(pairs) < minimum_samples:
+        return None, len(pairs)
     benchmark_mean = mean(pair[1] for pair in pairs)
-    return mean(pair[0] for pair in pairs) / benchmark_mean if benchmark_mean else None
+    return (mean(pair[0] for pair in pairs) / benchmark_mean if benchmark_mean else None), len(pairs)
 
 
-def calculate_metrics(series, benchmark_type="generic_market"):
+def calculate_metrics(series, benchmark_type="generic_market", *, tracking_metrics_approved=False,
+                      capture_min_samples=20):
     if len(series) < 2:
         return None
     fund = [row["fund_index"] for row in series]
@@ -109,13 +110,15 @@ def calculate_metrics(series, benchmark_type="generic_market"):
     days = (datetime.fromisoformat(series[-1]["date"]) - datetime.fromisoformat(series[0]["date"])).days
     fund_total = fund[-1] / fund[0] - 1
     benchmark_total = benchmark[-1] / benchmark[0] - 1
-    variance = sum((value - mean(benchmark_returns)) ** 2 for value in benchmark_returns) / max(1, len(benchmark_returns) - 1)
-    covariance = sum((f - mean(fund_returns)) * (b - mean(benchmark_returns)) for f, b in zip(fund_returns, benchmark_returns)) / max(1, len(fund_returns) - 1)
+    fund_mean, benchmark_mean = mean(fund_returns), mean(benchmark_returns)
+    variance = sum((value - benchmark_mean) ** 2 for value in benchmark_returns) / max(1, len(benchmark_returns) - 1)
+    covariance = sum((f - fund_mean) * (b - benchmark_mean) for f, b in zip(fund_returns, benchmark_returns)) / max(1, len(fund_returns) - 1)
     fund_sd = stdev(fund_returns) if len(fund_returns) > 1 else 0
     benchmark_sd = stdev(benchmark_returns) if len(benchmark_returns) > 1 else 0
     downside = [min(value, 0) for value in fund_returns]
     downside_dev = math.sqrt(mean(value * value for value in downside)) if downside else 0
-    tracking_label = "tracking_difference" if benchmark_type in {"actual_index", "investable_proxy"} else "relative_return_difference"
+    tracking_allowed = benchmark_type == "actual_index" or tracking_metrics_approved
+    difference_label = "tracking_difference" if tracking_allowed else "relative_return_difference"
     fund_annualized = _annualized(fund_total, days)
     benchmark_annualized = _annualized(benchmark_total, days)
     tracking_difference = ((fund_annualized - benchmark_annualized)
@@ -129,18 +132,26 @@ def calculate_metrics(series, benchmark_type="generic_market"):
         "excess_return": round((fund_total - benchmark_total) * 100, 6),
         "fund_annualized_return": None if fund_annualized is None else round(fund_annualized * 100, 6),
         "benchmark_annualized_return": None if benchmark_annualized is None else round(benchmark_annualized * 100, 6),
-        tracking_label: round(tracking_difference * 100, 6),
-        "tracking_error": round(stdev(excess) * math.sqrt(252) * 100, 6) if len(excess) > 1 else None,
+        difference_label: round(tracking_difference * 100, 6),
         "beta": round(covariance / variance, 6) if variance else None,
         "correlation": round(covariance / (fund_sd * benchmark_sd), 6) if fund_sd and benchmark_sd else None,
-        "up_capture": None if (value := _capture(fund_returns, benchmark_returns, True)) is None else round(value * 100, 6),
-        "down_capture": None if (value := _capture(fund_returns, benchmark_returns, False)) is None else round(value * 100, 6),
         "fund_max_drawdown": min(row["fund_drawdown"] for row in series),
         "benchmark_max_drawdown": min(row["benchmark_drawdown"] for row in series),
         "relative_max_drawdown": min(row["relative_drawdown"] for row in series),
-        "sharpe": round(mean(fund_returns) / fund_sd * math.sqrt(252), 6) if fund_sd else None,
-        "sortino": round(mean(fund_returns) / downside_dev * math.sqrt(252), 6) if downside_dev else None,
+        "sharpe": round(fund_mean / fund_sd * math.sqrt(252), 6) if fund_sd else None,
+        "sortino": round(fund_mean / downside_dev * math.sqrt(252), 6) if downside_dev else None,
     }
+    if tracking_allowed:
+        metrics["tracking_error"] = round(stdev(excess) * math.sqrt(252) * 100, 6) if len(excess) > 1 else None
+    up, up_count = _capture(fund_returns, benchmark_returns, True, capture_min_samples)
+    down, down_count = _capture(fund_returns, benchmark_returns, False, capture_min_samples)
+    metrics.update({
+        "up_capture": None if up is None else round(up * 100, 6),
+        "down_capture": None if down is None else round(down * 100, 6),
+        "up_capture_sample_count": up_count,
+        "down_capture_sample_count": down_count,
+        "capture_minimum_samples": capture_min_samples,
+    })
     return metrics
 
 
@@ -166,7 +177,9 @@ def build_contract(ticker, fund_rows, benchmark_rows, benchmark, generated_at=No
                    "confidence": benchmark["confidence"],
                    "quality_label": "Actual index" if benchmark["benchmark_type"] == "actual_index" else (
                        "Investable proxy" if benchmark["benchmark_type"] == "investable_proxy" else "Generic market comparison")},
-               "price_series": {"fund": fund, "benchmark": benchmark_points}, "chart_ranges": {}}
+               "price_series": {"fund": fund, "benchmark": benchmark_points,
+                                "return_basis": "provider_adjusted_close_total_return_compatible"},
+               "chart_ranges": {}}
     if not aligned:
         payload["status"] = "unavailable"
         payload["reason_code"] = "NO_OVERLAPPING_DATES"
@@ -188,7 +201,10 @@ def build_contract(ticker, fund_rows, benchmark_rows, benchmark, generated_at=No
             gaps = [(date.fromisoformat(selected[i]["date"]) - date.fromisoformat(selected[i - 1]["date"])).days
                     for i in range(1, len(selected))]
             if max(gaps) > 10: quality.append("MATERIAL_MISSING_DATA_GAP")
-        metrics = calculate_metrics(selected, benchmark["benchmark_type"])
+        metrics = calculate_metrics(
+            selected, benchmark["benchmark_type"],
+            tracking_metrics_approved=bool(benchmark.get("tracking_metrics_approved", False)),
+            capture_min_samples=int(benchmark.get("capture_ratio_minimum_samples", 20)))
         payload["chart_ranges"][key] = {
             "requested_start": None if key == "MAX" else requested.isoformat(),
             "actual_start": selected[0]["date"] if selected else None,

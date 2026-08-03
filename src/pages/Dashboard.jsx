@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData'
-import { Tier, Move, Loading, Empty } from '../components/Bits.jsx'
+import { Tier, Move, Loading, Empty, RefreshProgress } from '../components/Bits.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
@@ -261,6 +261,7 @@ export default function Dashboard() {
               {refresh.refreshing ? 'Refreshing…' : 'Refresh data'}
             </button>
           )}
+          <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel} />
           {refresh.message && (
             <span className={`refresh-message ${refresh.status}`} role="status" aria-live="polite">
               {refresh.message}

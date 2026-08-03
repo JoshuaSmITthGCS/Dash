@@ -2,7 +2,8 @@
 
 from datetime import datetime, timezone
 
-from canonical_metrics import METRIC_REGISTRY, applicability_for, calculate_peg, classify_profile, reconcile
+from canonical_metrics import (BUSINESS_PROFILES, METRIC_REGISTRY, applicability_for, calculate_peg,
+                               classify_profile, reconcile)
 
 MODEL_VERSION = "structural-timeliness-2.0.0"
 CONFIG_VERSION = "canonical-metrics-2.0.0"
@@ -93,6 +94,7 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
             source_rows = observations.get(metric_id, observations.get(legacy_id, []))
             if value is not None and not source_rows:
                 quality_flags.append("legacy_value_missing_lineage")
+                value = None
             reconciliation = reconcile(metric_id, source_rows) if source_rows else {"conflicts": []}
             if source_rows and reconciliation.get("canonical") is None:
                 value = None
@@ -163,6 +165,8 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
         "effective_score": round(effective, 1),
         "confidence": round(confidence, 2),
         "coverage": round(coverage, 2),
+        "coverage_basis": "answered_applicable_weight",
+        "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
         "available_weight": round(available_weight, 4),
         "applicable_weight": round(applicable_weight, 4),
         "stale_weight": round(stale_weight, 4),
@@ -206,6 +210,14 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
             "guidance_direction": snapshot.get("guidance_direction"),
         },
     }
+    profile_contract = (BUSINESS_PROFILES.get("profiles") or {}).get(profile, {})
+    replacement_metrics = list(profile_contract.get("replacement_metrics") or [])
+    unavailable_replacements = [metric for metric in replacement_metrics
+                                if snapshot.get(metric) is None and not observations.get(metric)]
+    critical = list(profile_contract.get("critical_metrics") or [])
+    critical_gaps = [metric for metric in critical if snapshot.get(metric) is None and not observations.get(metric)]
+    profile_confidence = (0.0 if not critical else (len(critical) - len(critical_gaps)) / len(critical))
+    applied_metrics = sorted(metric for metric, detail in metric_status.items() if detail["status"] == "applied")
     return {
         "model_version": MODEL_VERSION,
         "config_version": CONFIG_VERSION,
@@ -216,5 +228,14 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
         "screen_memberships": list(screen_memberships or []),
         "position_action": None,
         "metric_status": metric_status,
+        "applicability": {
+            "profile_id": profile,
+            "profile_confidence": round(profile_confidence, 3),
+            "applied_metrics": applied_metrics,
+            "suppressed_metrics": sorted(set(suppressed_metrics)),
+            "replacement_metrics": replacement_metrics,
+            "unavailable_replacement_metrics": unavailable_replacements,
+            "critical_data_gaps": critical_gaps,
+        },
         "canonical_metrics": {"peg": canonical_peg},
     }
