@@ -13,7 +13,13 @@ on:
           - full-alpha
       universe_scope:
         description: Full ~900-name sweep, or just the prior top 100 (+ holdings)
-        required: true
+        # Not required: the GitHub REST dispatch API (unlike the web UI's "Run workflow"
+        # form) does not apply `default` when a caller omits an input, and rejects the
+        # whole dispatch with a 422 if a required one is missing. The site's refresh
+        # button calls this via netlify/functions/refresh-data.mjs, which predates this
+        # input - required:true here would break every button click until that function
+        # is updated to match. `inputs.universe_scope || 'full'` below covers the blank.
+        required: false
         default: full
         type: choice
         options:
