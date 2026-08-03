@@ -130,11 +130,7 @@ jobs:
         # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here
         # shouldn't block the stock research refresh, so keep the previous etfs.json on failure.
         run: python pipeline/fetch_etfs.py || echo "::warning::ETF fetch failed; keeping previous etfs.json"
-<<<<<<< HEAD
-      - name: Build ETF benchmark comparisons
-=======
       - name: Build ETF comparison contracts
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/build_etf_comparisons.py
       - name: Validate
@@ -146,9 +142,6 @@ jobs:
         run: |
           git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
-<<<<<<< HEAD
-          git add public/data/advisor.json public/data/diagnostics.json public/data/etfs.json public/data/status.json public/data/etf/
-=======
           # Every file this pipeline can write under public/data/, not an explicit
           # allowlist: public/data/diagnostics.json was added by fetch_advisor.py without
           # ever being added here, which silently left it uncommitted on every run since -
@@ -157,15 +150,11 @@ jobs:
           # actually published again. An allowlist can drift out of sync with what the
           # scripts write; `git add public/data` cannot.
           git add public/data
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
           # The point-in-time store is committed because the runner is ephemeral. It cannot
           # be rebuilt later - the providers only ever serve today's restated numbers - so
           # the history only exists if each run appends to it and pushes the result.
           git add --all pipeline/data/pit 2>/dev/null || true
-<<<<<<< HEAD
           git add --all pipeline/data/estimates 2>/dev/null || true
-=======
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
           git diff --cached --quiet && exit 0
           git commit -m "chore(data): refresh advisor research"
           for attempt in 1 2 3; do

@@ -10,10 +10,7 @@ import Portfolio from './pages/Portfolio.jsx'
 import Finances from './pages/Finances.jsx'
 import ResearchScreen from './pages/ResearchScreen.jsx'
 import ShadowPortfolios from './pages/ShadowPortfolios.jsx'
-<<<<<<< HEAD
 import LiveValidation from './pages/LiveValidation.jsx'
-=======
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
 import { DataStatus } from './components/DataStatus.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
@@ -128,11 +125,7 @@ function AppContent() {
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability—kept separate from structural quality." />} />
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
-<<<<<<< HEAD
           <Route path="/screens/validation" element={<LiveValidation />} />
-=======
-
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
