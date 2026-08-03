@@ -77,3 +77,41 @@ describe('dipWatch', () => {
     })).status).toBe('recovering')
   })
 })
+
+describe('dipWatch near-term blending', () => {
+  // A fixed "today" so the 60-day window is deterministic regardless of when the suite
+  // runs - the code anchors to the data's own latest date, not the real clock.
+  const TODAY = '2026-08-01'
+  const daysBefore = (offset) => {
+    const date = new Date(TODAY)
+    date.setUTCDate(date.getUTCDate() - offset)
+    return date.toISOString().slice(0, 10)
+  }
+
+  function historyWithRange({ outOfWindowLow, outOfWindowHigh, recentLow, recentHigh }) {
+    return {
+      dates: [daysBefore(120), daysBefore(90), daysBefore(45), daysBefore(20), daysBefore(5), daysBefore(0)],
+      closes: [outOfWindowLow, outOfWindowHigh, recentHigh, recentLow, (recentLow + recentHigh) / 2, (recentLow + recentHigh) / 2],
+    }
+  }
+
+  it('blends the recent 60-day range with the long-term read', () => {
+    const withHistory = dipWatch(stock(81, {
+      history: historyWithRange({ outOfWindowLow: 20, outOfWindowHigh: 500, recentLow: 70, recentHigh: 90 }),
+    }))
+    const withoutHistory = dipWatch(stock(81))
+    // 0.6 * recent + 0.4 * long-term, per the weights in dipWatch.js.
+    expect(withHistory.floor).toBeCloseTo(70 * 0.6 + withoutHistory.floor * 0.4, 1)
+    expect(withHistory.max).toBeCloseTo(90 * 1.02 * 0.6 + withoutHistory.max * 0.4, 1)
+  })
+
+  it('ignores closes older than the 60-day window', () => {
+    const result = dipWatch(stock(81, {
+      // The out-of-window extremes (20 and 500) would blow the floor/max far outside a
+      // sane range if they leaked into the recent-window calculation.
+      history: historyWithRange({ outOfWindowLow: 20, outOfWindowHigh: 500, recentLow: 70, recentHigh: 90 }),
+    }))
+    expect(result.floor).toBeGreaterThan(40)
+    expect(result.max).toBeLessThan(150)
+  })
+})

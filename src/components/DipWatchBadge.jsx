@@ -38,6 +38,9 @@ export default function DipWatchBadge({ stock }) {
           <b>${watch.max.toFixed(2)}</b>
         </div>
       </div>
+      <p className="dip-watch-note">
+        A reasonable pair of broker alerts: drops below ${watch.floor.toFixed(2)}, rises above ${watch.max.toFixed(2)}.
+      </p>
     </div>
   )
 }
