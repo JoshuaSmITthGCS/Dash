@@ -11,6 +11,10 @@ on:
         options:
           - data-only
           - full-alpha
+          # Re-runs the scoring layer over the last published advisor.json with zero
+          # network calls - use this after a scoring/canonical-metrics code change, when
+          # nothing about the underlying data itself needs to change. See pipeline/rescore.py.
+          - rescore-only
       universe_scope:
         description: Full ~900-name sweep, or just the prior top 100 (+ holdings)
         # Not required: the GitHub REST dispatch API (unlike the web UI's "Run workflow"
@@ -73,11 +77,14 @@ jobs:
           should_run=false
           alpha_disable=1
           universe_mode=fast
+          is_rescore=false
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
             universe_mode="${{ inputs.universe_scope || 'full' }}"
             if [[ "${{ inputs.refresh_mode }}" == "full-alpha" ]]; then
               alpha_disable=0
+            elif [[ "${{ inputs.refresh_mode }}" == "rescore-only" ]]; then
+              is_rescore=true
             fi
           else
             local_hour="$(TZ=America/New_York date +%H)"
@@ -94,6 +101,7 @@ jobs:
             esac
           fi
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
+          echo "is_rescore=$is_rescore" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
@@ -122,19 +130,22 @@ jobs:
       - if: steps.refresh_window.outputs.should_run == 'true'
         run: pip install -r pipeline/requirements.txt
       - name: Append point-in-time estimate snapshots
-        if: steps.refresh_window.outputs.should_run == 'true'
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         run: python pipeline/collect_estimates.py || echo "::warning::Estimate collection failed; no history was backfilled"
       - name: Fetch and score stock research
-        if: steps.refresh_window.outputs.should_run == 'true'
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         run: python pipeline/fetch_advisor.py
       - name: Fetch ETF growth screen
-        if: steps.refresh_window.outputs.should_run == 'true'
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here
         # shouldn't block the stock research refresh, so keep the previous etfs.json on failure.
         run: python pipeline/fetch_etfs.py || echo "::warning::ETF fetch failed; keeping previous etfs.json"
       - name: Build ETF comparison contracts
-        if: steps.refresh_window.outputs.should_run == 'true'
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         run: python pipeline/build_etf_comparisons.py
+      - name: Rescore the last published data (no network calls)
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore == 'true'
+        run: python pipeline/rescore.py
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py
@@ -158,7 +169,11 @@ jobs:
           git add --all pipeline/data/pit 2>/dev/null || true
           git add --all pipeline/data/estimates 2>/dev/null || true
           git diff --cached --quiet && exit 0
-          git commit -m "chore(data): refresh advisor research"
+          if [[ "${{ steps.refresh_window.outputs.is_rescore }}" == "true" ]]; then
+            git commit -m "chore(data): rescore published research (no data refresh)"
+          else
+            git commit -m "chore(data): refresh advisor research"
+          fi
           for attempt in 1 2 3; do
             git pull --rebase origin main && git push origin HEAD:main && exit 0
             git rebase --abort 2>/dev/null || true
