@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useAuth } from '../lib/FirebaseAuthContext'
-import { Loading } from '../components/Bits'
+import { Loading, RefreshProgress } from '../components/Bits'
 import { ActionPill } from '../components/ActionGuidance'
 import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
@@ -241,6 +241,7 @@ export default function Portfolio() {
         </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
+      <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel} />
       {refresh.message && (
         <div className={`sync-message refresh-message ${refresh.status}`} role="status" aria-live="polite">
           {refresh.message}

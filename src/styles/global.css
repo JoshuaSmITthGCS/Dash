@@ -116,6 +116,18 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .refresh-message.success { color: var(--up); }.refresh-message.error { color: var(--down); }
 .refresh-spin { animation: refresh-spin .8s linear infinite; }
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
+.refresh-progress { display: grid; justify-items: end; gap: 5px; width: 100%; max-width: 220px; margin-left: auto; }
+.refresh-progress-track { width: 100%; height: 4px; border-radius: 999px; background: var(--border-lit); overflow: hidden; }
+.refresh-progress-fill {
+  height: 100%; width: 40%; border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-glow), var(--accent), transparent);
+  animation: refresh-progress-slide 1.4s ease-in-out infinite;
+}
+@keyframes refresh-progress-slide { 0% { transform: translateX(-120%); } 100% { transform: translateX(340%); } }
+.refresh-progress-elapsed { color: var(--text-faint); font: 10px var(--font-mono); letter-spacing: .02em; }
+@media (prefers-reduced-motion: reduce) {
+  .refresh-progress-fill { animation: none; width: 100%; opacity: .5; }
+}
 .hero-research {
   position: relative; overflow: hidden; min-height: 470px; display: grid; grid-template-columns: minmax(0, .92fr) minmax(380px, 1.08fr);
   gap: 32px; padding: 34px; border: 1px solid var(--border-lit); border-radius: var(--r-xl);
