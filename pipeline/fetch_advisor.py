@@ -52,6 +52,23 @@ SCREEN_TECHNICAL_FIELDS = (
 )
 
 
+def _screen_row(row):
+    """Project a full or already-lightweight row into the screen_universe shape.
+
+    ``.get`` throughout because a carried-forward row from a fast refresh may itself
+    already be in this lightweight shape (if it was never published to begin with).
+    """
+    detail = row.get("technical_detail") or {}
+    return {
+        "ticker": row["ticker"], "name": row.get("name"), "sector": row.get("sector"),
+        "price": row.get("price"), "score": row["score"], "stance": row.get("stance"),
+        "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
+        "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
+                             if detail.get(key) is not None},
+        "stale_carryforward": row.get("stale_carryforward", False),
+    }
+
+
 def resolve_refresh_symbols(
     requested_symbols,
     configured_portfolio,
@@ -647,6 +664,51 @@ def previous_ranked_symbols(limit=INCUMBENT_ENRICH_LIMIT):
     )
 
 
+def previous_rows_by_ticker(payload):
+    """Every row from the last run, published or screen-only, keyed by ticker.
+
+    Insertion order follows score - ``research`` is the top ``publish_limit`` and
+    ``screen_universe`` is the sorted remainder immediately below it - which is what lets
+    ``previous_top_symbols`` slice this same dict for a threshold above ``publish_limit``.
+    """
+    rows = {}
+    for row in (*payload.get("research", []), *payload.get("screen_universe", [])):
+        ticker = (row.get("ticker") or "").upper()
+        if ticker and ticker not in rows:
+            rows[ticker] = row
+    return rows
+
+
+def previous_top_symbols(payload, limit):
+    """Prior top-``limit`` tickers by score, spanning published research and the screen tail.
+
+    ``previous_ranked_symbols`` only sees ``research`` (the published top ``publish_limit``,
+    e.g. 40) - fine for its own callers, which ask for fewer than that. A fast refresh asks
+    for more (e.g. 100), so it needs the screen-universe tail too or it silently gets fewer
+    names than requested.
+    """
+    return tuple(previous_rows_by_ticker(payload).keys())[:limit]
+
+
+def carry_forward_rows(research, symbols, previous_payload):
+    """Previous-run rows for symbols a fast refresh didn't poll this cycle.
+
+    Each carried row is flagged ``stale_carryforward`` so consumers (screens, the
+    freshness report) can tell it apart from a symbol that was actually re-fetched. A
+    symbol with no prior row simply has nothing to carry - it stays absent until the next
+    full refresh, same as it would on a brand-new universe entry. The caller is responsible
+    for only ever routing these into `screen_universe`, never the published `research` list
+    - see `_screen_row`.
+    """
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    refreshed = {row["ticker"] for row in research}
+    return [
+        {**previous_rows[symbol], "stale_carryforward": True}
+        for symbol in symbols
+        if symbol not in refreshed and symbol in previous_rows
+    ]
+
+
 def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=()):
     """Choose prior leaders, five best outsiders, then any explicit portfolio coverage."""
     incumbents = tuple(
@@ -720,6 +782,13 @@ def run():
     )
     publish_limit = max(1, int(os.getenv("ADVISOR_PUBLISH_LIMIT", PUBLISH_LIMIT)))
     extended_limit = max(publish_limit, int(os.getenv("ADVISOR_EXTENDED_LIMIT", EXTENDED_LIMIT)))
+    # Intraday refreshes don't need to re-poll all ~900 names - only the previously ranked
+    # leaders move enough intraday to matter for the leaderboard. The full universe still
+    # gets swept once a day (ADVISOR_UNIVERSE_MODE=full); everything left out of a fast
+    # refresh carries its last full-refresh row forward rather than disappearing from the
+    # published dataset (see the carry-forward merge below `research.sort`).
+    universe_mode = os.getenv("ADVISOR_UNIVERSE_MODE", "full").strip().lower()
+    fast_universe_size = max(1, int(os.getenv("ADVISOR_FAST_UNIVERSE_SIZE", "100")))
     alpha_enabled = os.getenv("ALPHA_DISABLE", "").lower() not in {"1", "true", "yes"}
     alpha_limit = max(0, min(5, int(os.getenv("ALPHA_ENRICH_LIMIT", "5")))) if alpha_enabled else 0
     previous_top = previous_ranked_symbols()
@@ -738,14 +807,23 @@ def run():
     except ImportError:
         yf = None
 
+    if universe_mode == "fast":
+        fast_priority = set(previous_top_symbols(previous_payload, fast_universe_size)) | set(portfolio_symbols)
+        refresh_symbols = tuple(symbol for symbol in symbols if symbol in fast_priority) or symbols
+        LOG.info(f"Fast refresh: polling {len(refresh_symbols)}/{len(symbols)} symbols "
+                 f"(prior top {fast_universe_size} plus portfolio holdings); the rest carry "
+                 "forward from the last full refresh")
+    else:
+        refresh_symbols = symbols
+
     benchmark_payload = (
         fetch_optional(client, "TIME_SERIES_DAILY", symbol="SPY", outputsize="compact")
         if client else {}
     )
     # One batched download for the whole universe before the per-symbol loop starts, so the
     # loop mostly reads cache instead of making a few hundred separate HTTP calls.
-    prefetch_histories(("SPY", *symbols), yf)
-    prefetch_snapshots(symbols, yf)
+    prefetch_histories(("SPY", *refresh_symbols), yf)
+    prefetch_snapshots(refresh_symbols, yf)
     benchmark = daily_history(benchmark_payload)
     yahoo_benchmark = yahoo_history("SPY", yf)
     if len(yahoo_benchmark["closes"]) > len(benchmark["closes"]):
@@ -753,7 +831,7 @@ def run():
 
     contexts, all_news = [], []
     alpha_failures, marketaux_failures, research_failures = [], [], []
-    for symbol in symbols:
+    for symbol in refresh_symbols:
         try:
             context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client)
             contexts.append(context)
@@ -871,17 +949,17 @@ def run():
     # technical_detail and fundamental_categories are populated for the whole scored universe
     # (see technical_factors' closes-based 52-week fallback above), so publish a lightweight,
     # history-free slice of the rest of the universe for those screens to scan.
-    screen_universe = [
-        {
-            "ticker": row["ticker"], "name": row["name"], "sector": row.get("sector"),
-            "price": row.get("price"), "score": row["score"], "stance": row["stance"],
-            "components": row["components"], "fundamental_categories": row["fundamental_categories"],
-            "technical_detail": {key: row["technical_detail"].get(key)
-                                 for key in SCREEN_TECHNICAL_FIELDS
-                                 if row["technical_detail"].get(key) is not None},
-        }
-        for row in research[publish_limit:]
-    ]
+    screen_universe = [_screen_row(row) for row in research[publish_limit:]]
+    if universe_mode == "fast":
+        # Carried-forward rows only ever join the lightweight screen tail, never the
+        # published `research`/`ranked` list - a stale row is never promoted to "top pick"
+        # on unverified data, and it lacks the fields (confidence, history, ...) the schema
+        # requires of a published row anyway.
+        carried = carry_forward_rows(research, symbols, previous_payload)
+        screen_universe = sorted((*screen_universe, *(_screen_row(row) for row in carried)),
+                                key=lambda row: row["score"], reverse=True)
+        LOG.info(f"Fast refresh: carried {len(carried)} unpolled symbols forward as "
+                 "screen-only rows")
     # Publish every configured holding explicitly. A provider can temporarily stop resolving
     # a symbol (for example, an expired structured product); omitting that row made the UI look
     # as if the user's holding itself had disappeared. A stale prior row is preferable, and a
@@ -914,6 +992,8 @@ def run():
 
     # Rows carry the raw metric values merged from their snapshot, which is what a later
     # backtest needs - the derived 0-100 scores can always be recomputed from them.
+    # `research` only ever holds freshly polled rows now - carried-forward rows join
+    # `screen_universe` directly and never pass through here, so there is nothing to filter.
     pit_summary = pit_store.append_snapshot(research, source="advisor_refresh")
     pit_store.record_universe(symbols, source="advisor_refresh")
     pit_depth = pit_store.depth()
@@ -923,7 +1003,9 @@ def run():
     benchmark_growth = (benchmark_series or {}).get("growth")
     contexts_by_symbol = {context["symbol"]: context for context in contexts}
     for row in ranked:
-        attach_history(row, contexts_by_symbol[row["ticker"]], grid, benchmark_growth)
+        context = contexts_by_symbol.get(row["ticker"])
+        if context:
+            attach_history(row, context, grid, benchmark_growth)
     for row in portfolio_coverage:
         context = contexts_by_symbol.get(row["ticker"])
         if row["ticker"] not in ranked_tickers and context:
@@ -943,6 +1025,7 @@ def run():
         "schema_version": 2, "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
+        "universe_mode": universe_mode, "polled_count": len(refresh_symbols),
         "enrichment_selection": {
             "previous_top": list(incumbents),
             "challengers": list(challengers),

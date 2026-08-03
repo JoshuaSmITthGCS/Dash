@@ -11,6 +11,14 @@ on:
         options:
           - data-only
           - full-alpha
+      universe_scope:
+        description: Full ~900-name sweep, or just the prior top 100 (+ holdings)
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - fast
       portfolio_symbols:
         description: Optional comma-separated portfolio tickers to include
         required: false
@@ -18,7 +26,10 @@ on:
         type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
-    - cron: '0 11,12,16,17,19,20 * * 1-5'
+    # 08:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and 15:00 ET are
+    # fast refreshes limited to the prior top 100 plus portfolio holdings - see the
+    # "Select the Eastern-time refresh window" step below for how that's enforced.
+    - cron: '0 12,13,16,17,19,20 * * 1-5'
 
 permissions:
   contents: write
@@ -46,6 +57,10 @@ jobs:
       ALPHA_ENRICH_LIMIT: '5'
       ALPHA_VANTAGE_CALL_DELAY: '0'
       ADVISOR_PORTFOLIO_SYMBOLS: ${{ inputs.portfolio_symbols || '' }}
+      # Yahoo publishes no official limit; more workers and bigger batches are safe because
+      # both are still paced by cache.py's own per-provider limiter (see settings.json).
+      YAHOO_QUOTE_WORKERS: '10'
+      YAHOO_BATCH_SIZE: '100'
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window
@@ -53,29 +68,47 @@ jobs:
         run: |
           should_run=false
           alpha_disable=1
+          universe_mode=fast
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
+            universe_mode="${{ inputs.universe_scope || 'full' }}"
             if [[ "${{ inputs.refresh_mode }}" == "full-alpha" ]]; then
               alpha_disable=0
             fi
           else
             local_hour="$(TZ=America/New_York date +%H)"
             case "$local_hour" in
-              07)
+              08)
                 should_run=true
                 alpha_disable=0
+                universe_mode=full
                 ;;
               12|15)
                 should_run=true
+                universe_mode=fast
                 ;;
             esac
           fi
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
+          echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
         if: steps.refresh_window.outputs.should_run == 'true'
         with:
           fetch-depth: 0
+      - name: Restore the Yahoo/Alpha Vantage/SEC response cache
+        if: steps.refresh_window.outputs.should_run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: pipeline/data/cache
+          # The exact key never matches (run_id is unique), so this always falls through to
+          # restore-keys and picks up the most recent cache, then saves a fresh one at the
+          # end of the job. That's what makes the fast (top-100) runs actually fast, and
+          # cache.py's own TTLs (6h price history, 15min quotes) decide what's still fresh
+          # enough to skip re-fetching.
+          key: pipeline-data-cache-${{ github.run_id }}
+          restore-keys: |
+            pipeline-data-cache-
       - uses: actions/setup-python@v5
         if: steps.refresh_window.outputs.should_run == 'true'
         with:

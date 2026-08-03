@@ -516,5 +516,11 @@
       "low_beta": 0.06
     },
     "sentiment_window_days": 7
+  },
+  "providers": {
+    "_comment": "Overrides cache.py's DEFAULT_RATE_LIMITS (requests/minute per provider). Yahoo publishes no official limit; 300/min (5/s) leaves headroom under the roughly 2000-2500/hour throttling point commonly reported for this endpoint, versus the prior 240/min guess. Watch pipeline logs for YFRateLimitError/HTTP 429/999 and dial this back if they appear - the on-disk cache and retry-with-backoff mean a lower limit costs run time, not correctness.",
+    "rate_limits_per_minute": {
+      "yahoo": 300
+    }
   }
 }

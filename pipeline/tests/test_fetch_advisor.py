@@ -4,9 +4,10 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_advisor import (build_portfolio_coverage, compact_news, curate_candidate_news,
-                           latest_unique_news, resolve_refresh_symbols,
-                           select_enrichment_priority)
+from fetch_advisor import (_screen_row, build_portfolio_coverage, carry_forward_rows,
+                           compact_news, curate_candidate_news, latest_unique_news,
+                           previous_rows_by_ticker, previous_top_symbols,
+                           resolve_refresh_symbols, select_enrichment_priority)
 
 
 class RefreshSymbolTests(unittest.TestCase):
@@ -142,6 +143,109 @@ class NewsMatchingTests(unittest.TestCase):
 
         self.assertEqual(sum(not row["published_research"] for row in rows), 3)
         self.assertEqual(len(rows), 10)
+
+
+class FastRefreshCarryForwardTests(unittest.TestCase):
+    def test_screen_only_rows_are_found_when_not_published(self):
+        payload = {
+            "research": [{"ticker": "AAPL", "score": 90}],
+            "screen_universe": [{"ticker": "IBM", "score": 40}],
+        }
+
+        rows = previous_rows_by_ticker(payload)
+
+        self.assertEqual(set(rows), {"AAPL", "IBM"})
+        self.assertEqual(rows["IBM"]["score"], 40)
+
+    def test_published_row_wins_over_a_screen_only_duplicate(self):
+        payload = {
+            "research": [{"ticker": "AAPL", "score": 90}],
+            "screen_universe": [{"ticker": "AAPL", "score": 40}],
+        }
+
+        self.assertEqual(previous_rows_by_ticker(payload)["AAPL"]["score"], 90)
+
+    def test_unrefreshed_symbols_carry_forward_flagged_as_stale(self):
+        previous_payload = {
+            "research": [{"ticker": "AAPL", "score": 90}, {"ticker": "MU", "score": 55}],
+            "screen_universe": [{"ticker": "IBM", "score": 40}],
+        }
+        research = [{"ticker": "AAPL", "score": 92}]  # only AAPL was actually polled
+
+        carried = carry_forward_rows(research, ("AAPL", "MU", "IBM"), previous_payload)
+
+        self.assertEqual({row["ticker"] for row in carried}, {"MU", "IBM"})
+        self.assertTrue(all(row["stale_carryforward"] for row in carried))
+        self.assertEqual(next(row for row in carried if row["ticker"] == "MU")["score"], 55)
+
+    def test_a_symbol_with_no_prior_row_is_simply_not_carried(self):
+        previous_payload = {"research": [{"ticker": "AAPL", "score": 90}]}
+
+        carried = carry_forward_rows([], ("AAPL", "NEWCO"), previous_payload)
+
+        self.assertEqual([row["ticker"] for row in carried], ["AAPL"])
+
+    def test_a_symbol_that_was_actually_refreshed_is_not_duplicated(self):
+        previous_payload = {"research": [{"ticker": "AAPL", "score": 90}]}
+        research = [{"ticker": "AAPL", "score": 92}]
+
+        carried = carry_forward_rows(research, ("AAPL",), previous_payload)
+
+        self.assertEqual(carried, [])
+
+    def test_top_symbols_span_published_research_and_the_screen_tail(self):
+        # publish_limit-sized "research" (published leaders) plus a much longer
+        # "screen_universe" tail, exactly the shape a real advisor.json has.
+        payload = {
+            "research": [{"ticker": f"R{i:02d}", "score": 100 - i} for i in range(40)],
+            "screen_universe": [{"ticker": f"S{i:02d}", "score": 60 - i} for i in range(60)],
+        }
+
+        top100 = previous_top_symbols(payload, 100)
+
+        self.assertEqual(len(top100), 100)
+        self.assertEqual(top100[:3], ("R00", "R01", "R02"))
+        self.assertEqual(top100[40:43], ("S00", "S01", "S02"))
+
+    def test_top_symbols_does_not_silently_shrink_below_the_requested_count(self):
+        # A naive implementation that only looks at "research" (40 rows) would return 40
+        # tickers here instead of the 100 asked for - this is the regression to catch.
+        payload = {"research": [{"ticker": f"R{i:02d}", "score": 100 - i} for i in range(40)],
+                   "screen_universe": [{"ticker": f"S{i:02d}", "score": 60 - i} for i in range(60)]}
+
+        self.assertEqual(len(previous_top_symbols(payload, 100)), 100)
+
+
+class ScreenRowProjectionTests(unittest.TestCase):
+    def test_a_full_research_row_projects_to_the_lightweight_shape(self):
+        full_row = {
+            "ticker": "AAPL", "name": "Apple", "sector": "Tech", "price": 200.0, "score": 88,
+            "stance": "buy", "components": {"fundamentals": 90}, "fundamental_categories": {"valuation": 80},
+            "technical_detail": {"momentum_12_1": 0.2, "unrelated_field": "drop me"},
+            "confidence": 0.9, "history": {"dates": []}, "hypothetical": {},
+        }
+
+        projected = _screen_row(full_row)
+
+        self.assertEqual(projected["ticker"], "AAPL")
+        self.assertEqual(projected["technical_detail"], {"momentum_12_1": 0.2})
+        self.assertNotIn("confidence", projected)
+        self.assertNotIn("history", projected)
+        self.assertFalse(projected["stale_carryforward"])
+
+    def test_an_already_lightweight_carried_forward_row_projects_without_error(self):
+        # What a carried-forward row looks like when it was never published to begin with -
+        # i.e. it came from a prior screen_universe entry, not a prior research entry.
+        lightweight_row = {
+            "ticker": "IBM", "name": "IBM", "sector": "Tech", "price": 150.0, "score": 40,
+            "stance": "hold", "components": {}, "fundamental_categories": {},
+            "technical_detail": {"return_5d": 0.01}, "stale_carryforward": True,
+        }
+
+        projected = _screen_row(lightweight_row)
+
+        self.assertEqual(projected["ticker"], "IBM")
+        self.assertTrue(projected["stale_carryforward"])
 
 
 if __name__ == "__main__":
