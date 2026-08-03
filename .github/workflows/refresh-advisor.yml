@@ -63,10 +63,6 @@ jobs:
       ALPHA_ENRICH_LIMIT: '5'
       ALPHA_VANTAGE_CALL_DELAY: '0'
       ADVISOR_PORTFOLIO_SYMBOLS: ${{ inputs.portfolio_symbols || '' }}
-      # Yahoo publishes no official limit; more workers and bigger batches are safe because
-      # both are still paced by cache.py's own per-provider limiter (see settings.json).
-      YAHOO_QUOTE_WORKERS: '10'
-      YAHOO_BATCH_SIZE: '100'
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window
@@ -143,7 +139,14 @@ jobs:
         run: |
           git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add public/data/advisor.json public/data/etfs.json public/data/status.json public/data/etf/
+          # Every file this pipeline can write under public/data/, not an explicit
+          # allowlist: public/data/diagnostics.json was added by fetch_advisor.py without
+          # ever being added here, which silently left it uncommitted on every run since -
+          # `git commit` would succeed, then `git pull --rebase` below would fail with
+          # "You have unstaged changes" on that one leftover file, so no refresh ever
+          # actually published again. An allowlist can drift out of sync with what the
+          # scripts write; `git add public/data` cannot.
+          git add public/data
           # The point-in-time store is committed because the runner is ephemeral. It cannot
           # be rebuilt later - the providers only ever serve today's restated numbers - so
           # the history only exists if each run appends to it and pushes the result.

@@ -57,6 +57,7 @@ DEFAULT_TTLS = {
     "sec_document": 30 * 24 * 3600,   # a filed document never changes
     "sec_xbrl": 24 * 3600,
     "etf_disclosure": 24 * 3600,
+    "etf_full_history": 20 * 3600,  # a "max" pull is expensive; only the latest session changes daily
     "news": 1800,
     "default": 3600,
 }
