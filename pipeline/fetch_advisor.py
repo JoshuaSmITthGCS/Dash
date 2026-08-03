@@ -9,12 +9,9 @@ from datetime import datetime, timezone
 
 from advisor_engine import RANKING_WEIGHTS, build_research
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
-<<<<<<< Updated upstream
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
-from providers import YahooAdapter
-=======
 from canonical_metrics import Observation
->>>>>>> Stashed changes
+from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import derive_extended, earnings_surprise_rows, extended_inputs
@@ -855,11 +852,7 @@ def run():
         row = build_research(
             symbol, context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended=context["extended"],
-<<<<<<< Updated upstream
-            sector_percentile=percentiles.get(symbol),
-=======
             sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
->>>>>>> Stashed changes
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
         )
@@ -943,13 +936,10 @@ def run():
     for row in research:
         row.setdefault("data_fetched_at", generated_at)
     payload = {
-<<<<<<< Updated upstream
         # Bumped to 2: market-behavior detail keys changed (12-1 momentum and real
         # risk-adjusted ratios replaced the invented trend/risk fields), and theme exposure
         # plus data-freshness blocks were added. All additive except the technical rename,
         # which the frontend migration in src/lib/schemaMigrations.js maps for v1 readers.
-=======
->>>>>>> Stashed changes
         "schema_version": 2, "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
