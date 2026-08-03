@@ -10,6 +10,10 @@ reweights around missing values rather than assuming a neutral reading, so a com
 never rewarded for hiding a number.
 """
 
+from datetime import datetime, timezone
+
+from canonical_metrics import Observation
+
 # Line-item aliases. yfinance normalizes statement rows, but names still drift between
 # filers and between annual/quarterly frames, so each concept lists its known spellings.
 ALIASES = {
@@ -611,3 +615,56 @@ COVERAGE_KEYS = (
     "stock_comp_to_revenue", "capex_to_depreciation", "asset_growth", "ev_to_ebitda",
     "ev_to_ebit", "ev_to_sales", "ev_to_fcf", "price_to_tangible_book",
 )
+
+# Every statement-derived metric the legacy scorer weighs (pipeline/config/settings.json's
+# fundamentals.metric_weights), mapped to the unit its canonical_metrics registry entry
+# declares. Without an Observation, scoring_v2.build_v2_analysis treats these as legacy
+# scalars with no lineage and discards them even though they were computed from the same
+# annual statements as everything else here - that's what left the v2 confidence/coverage
+# layer reporting near-zero evidence for most companies despite the values being present.
+EXTENDED_METRIC_UNITS = {
+    "price_to_tangible_book": "multiple",
+    "ev_to_ebitda": "multiple",
+    "ev_to_ebit": "multiple",
+    "ev_to_fcf": "multiple",
+    "return_on_invested_capital": "decimal",
+    "gross_profits_to_assets": "decimal",
+    "cash_conversion": "decimal",
+    "interest_coverage": "multiple",
+    "net_debt_to_ebitda": "multiple",
+    "altman_z": "score",
+    "fcf_growth_3y": "decimal",
+    "operating_margin_trend": "decimal",
+    "earnings_surprise": "decimal",
+    "net_buyback_yield": "decimal",
+    "stock_comp_to_revenue": "decimal",
+    "capex_to_depreciation": "multiple",
+    "asset_growth": "decimal",
+    "accruals_ratio": "decimal",
+    "piotroski_f": "count",
+    "days_sales_outstanding_trend": "decimal",
+    "inventory_days_trend": "decimal",
+}
+
+
+def extended_observations(metrics, fetched_at=None):
+    """Canonical-observation lineage for every statement-derived metric in ``metrics``.
+
+    Mirrors ``canonical_metrics.yahoo_observations`` for the values ``derive_extended``
+    computes, all sourced from the same matched annual statements recorded in
+    ``metrics["statement_periods"]``.
+    """
+    fetched_at = fetched_at or datetime.now(timezone.utc).isoformat()
+    period_end = (metrics.get("statement_periods") or [None])[0]
+    result = {}
+    for metric_id, unit in EXTENDED_METRIC_UNITS.items():
+        value = metrics.get(metric_id)
+        if value is None:
+            continue
+        result[metric_id] = [Observation(
+            value=value, unit=unit, source="yahoo", source_field=f"derived:{metric_id}",
+            period_end=period_end, observed_at=fetched_at, fetched_at=fetched_at,
+            is_ttm=False, is_forward=False,
+            quality_flags=["derived_from_annual_statements"],
+        ).to_dict()]
+    return result

@@ -1,18 +1,72 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { datasetFor, migrate } from './schemaMigrations'
 
+// Local cache of the last successfully fetched payload for each data file, so a page
+// reload while iterating on new metrics (or running the app with no network at all for
+// pack testing) doesn't require a fresh round trip to re-see the last refresh. Best
+// effort only: private browsing and quota limits (a handful of the larger ETF snapshots
+// won't fit) both fail silently and just fall back to a network fetch.
+const CACHE_PREFIX = 'dash:last-refresh:'
+
+function cacheKey(file) {
+  return `${CACHE_PREFIX}${file}`
+}
+
+function readCachedPayload(file) {
+  try {
+    const raw = localStorage.getItem(cacheKey(file))
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function writeCachedPayload(file, data) {
+  try {
+    localStorage.setItem(cacheKey(file), JSON.stringify({ data, cachedAt: Date.now() }))
+  } catch {
+    // Quota exceeded or storage unavailable - caching is a nice-to-have, not load-bearing.
+  }
+}
+
+// Drops one cached file, or every file this hook has cached, so a genuinely fresh pull
+// can be forced without clearing all of localStorage (which would also drop the
+// watchlist and portfolio settings other features keep there).
+export function clearCachedData(file) {
+  try {
+    if (file) {
+      localStorage.removeItem(cacheKey(file))
+      return
+    }
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith(CACHE_PREFIX))
+      .forEach((key) => localStorage.removeItem(key))
+  } catch {
+    // ignore
+  }
+}
+
 // Loads a JSON file the pipeline committed into /public/data.
-// Static fetch -> no backend. Returns { data, loading, error, reload }.
+// Static fetch -> no backend. Returns { data, loading, error, fromCache, cachedAt, reload }.
 //
 // Payloads are migrated to the version this build expects on the way in, so a freshly
 // deployed site keeps working against the last committed snapshot until the next pipeline
 // run replaces it.
 export function useData(file) {
-  const [state, setState] = useState({ data: null, loading: true, error: null })
+  const hadCache = useRef(false)
+  const [state, setState] = useState(() => {
+    const cached = readCachedPayload(file)
+    hadCache.current = Boolean(cached)
+    return cached
+      ? { data: cached.data, loading: false, error: null, fromCache: true, cachedAt: cached.cachedAt }
+      : { data: null, loading: true, error: null, fromCache: false, cachedAt: null }
+  })
   const mounted = useRef(false)
 
   const load = useCallback(async ({ initial = false } = {}) => {
-    if (initial && mounted.current) {
+    // A cached copy is already on screen, so an initial mount revalidates quietly in the
+    // background rather than showing a spinner over data the user can already see.
+    if (initial && mounted.current && !hadCache.current) {
       setState((current) => ({ ...current, loading: true, error: null }))
     }
     try {
@@ -25,11 +79,13 @@ export function useData(file) {
       const raw = await response.json()
       const dataset = datasetFor(file)
       const data = dataset ? migrate(dataset, raw) : raw
-      if (mounted.current) setState({ data, loading: false, error: null })
+      const cachedAt = Date.now()
+      writeCachedPayload(file, data)
+      if (mounted.current) setState({ data, loading: false, error: null, fromCache: false, cachedAt })
       return data
     } catch (error) {
       if (mounted.current) {
-        setState((current) => ({ data: current.data, loading: false, error }))
+        setState((current) => ({ ...current, loading: false, error }))
       }
       throw error
     }

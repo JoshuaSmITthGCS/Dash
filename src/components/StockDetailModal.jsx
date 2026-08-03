@@ -9,6 +9,7 @@ import { bullBearScore } from '../lib/bullBearScore'
 import { fixedBasisAlternative, positionGrowthSeries } from '../lib/portfolioPerformance'
 import AnalysisLayers from './AnalysisLayers'
 import RecommendationShadowPanel from './RecommendationShadowPanel'
+import DipWatchBadge from './DipWatchBadge'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -126,6 +127,8 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           <Kpi label="20-day move" value={signed(technical.return_20d)} color={moveColor(technical.return_20d)} />
           <Kpi label="1-year move" value={signed(technical.return_252d)} color={moveColor(technical.return_252d)} />
         </div>
+
+        <DipWatchBadge stock={stock} />
 
         {thesis && !analysis && (
           <section className="bull-bear-detail" aria-label={`Bull bear thesis score ${thesis.score} out of 10`}>

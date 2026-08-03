@@ -58,6 +58,7 @@ def _observations_are_stale(metric_id, rows):
 ALIASES = {
     "revenue_growth": "trailing_revenue_growth",
     "earnings_growth": "trailing_eps_growth",
+    "sales_multiple": "price_to_sales",
 }
 
 
