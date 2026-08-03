@@ -1,0 +1,3197 @@
+{
+  "generated_at": "2026-07-31T07:06:59.736670Z",
+  "weeks": 156,
+  "trials": 200,
+  "concentration": 1.0,
+  "seed": 7,
+  "holdout_weeks": 60,
+  "holdout_folds": 3,
+  "sweeps": {
+    "categories": [
+      {
+        "trial": 0,
+        "is_baseline": true,
+        "weights": {
+          "valuation": 0.28,
+          "profitability": 0.22,
+          "financial_health": 0.16,
+          "growth": 0.12,
+          "capital_allocation": 0.1,
+          "accounting_quality": 0.12
+        },
+        "return_pct": 4.39,
+        "final_value": 22964.77,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 3.8,
+            "score_vs_spy": 4.7
+          },
+          {
+            "return_pct": 8.43,
+            "score_vs_spy": 6.9
+          },
+          {
+            "return_pct": 1.55,
+            "score_vs_spy": 4.3
+          }
+        ],
+        "holdout_mean_score": 5.3,
+        "holdout_min_score": 4.3
+      },
+      {
+        "trial": 2,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0387440970756386,
+          "profitability": 0.45918648671476164,
+          "financial_health": 0.0247815865117741,
+          "growth": 0.3686662720774339,
+          "capital_allocation": 0.04695760214075427,
+          "accounting_quality": 0.06166395547963755
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 2.7,
+            "score_vs_spy": 4.5
+          },
+          {
+            "return_pct": 3.4,
+            "score_vs_spy": 5.9
+          },
+          {
+            "return_pct": 0.16,
+            "score_vs_spy": 4.0
+          }
+        ],
+        "holdout_mean_score": 4.8,
+        "holdout_min_score": 4.0,
+        "holdout_folds_beating_baseline": "0/3"
+      },
+      {
+        "trial": 3,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.08335067454997068,
+          "profitability": 0.26452751133004176,
+          "financial_health": 0.019936474688719015,
+          "growth": 0.03810746686675869,
+          "capital_allocation": 0.14893758182801473,
+          "accounting_quality": 0.44514029073649525
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 0.22,
+            "score_vs_spy": 4.0
+          },
+          {
+            "return_pct": 4.93,
+            "score_vs_spy": 6.2
+          },
+          {
+            "return_pct": 1.75,
+            "score_vs_spy": 4.3
+          }
+        ],
+        "holdout_mean_score": 4.83,
+        "holdout_min_score": 4.0,
+        "holdout_folds_beating_baseline": "0/3"
+      },
+      {
+        "trial": 5,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.04562877860999212,
+          "profitability": 0.03670844503046387,
+          "financial_health": 0.10804069888366512,
+          "growth": 0.4960275616537626,
+          "capital_allocation": 0.058385796657676105,
+          "accounting_quality": 0.25520871916444016
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 5.42,
+            "score_vs_spy": 5.0
+          },
+          {
+            "return_pct": 7.6,
+            "score_vs_spy": 6.7
+          },
+          {
+            "return_pct": 5.85,
+            "score_vs_spy": 5.1
+          }
+        ],
+        "holdout_mean_score": 5.6,
+        "holdout_min_score": 5.0,
+        "holdout_folds_beating_baseline": "2/3"
+      },
+      {
+        "trial": 7,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.29125124001141206,
+          "profitability": 0.14244964480296546,
+          "financial_health": 0.09628300108486311,
+          "growth": 0.22490283426676722,
+          "capital_allocation": 0.15412839690277524,
+          "accounting_quality": 0.09098488293121697
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 0.3,
+            "score_vs_spy": 4.0
+          },
+          {
+            "return_pct": 6.71,
+            "score_vs_spy": 6.6
+          },
+          {
+            "return_pct": 3.8,
+            "score_vs_spy": 4.7
+          }
+        ],
+        "holdout_mean_score": 5.1,
+        "holdout_min_score": 4.0,
+        "holdout_folds_beating_baseline": "1/3"
+      },
+      {
+        "trial": 8,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.23461091282646843,
+          "profitability": 0.17808433760757328,
+          "financial_health": 0.04150782931797625,
+          "growth": 0.1267166893011089,
+          "capital_allocation": 0.11048138102074502,
+          "accounting_quality": 0.308598849926128
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 0.4,
+            "score_vs_spy": 4.0
+          },
+          {
+            "return_pct": 5.53,
+            "score_vs_spy": 6.3
+          },
+          {
+            "return_pct": 0.52,
+            "score_vs_spy": 4.1
+          }
+        ],
+        "holdout_mean_score": 4.8,
+        "holdout_min_score": 4.0,
+        "holdout_folds_beating_baseline": "0/3"
+      },
+      {
+        "trial": 10,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.038546541226565645,
+          "profitability": 0.15696577044956944,
+          "financial_health": 0.009351951434861346,
+          "growth": 0.25796552439838805,
+          "capital_allocation": 0.33818285395069614,
+          "accounting_quality": 0.19898735853991936
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 0.2,
+            "score_vs_spy": 4.0
+          },
+          {
+            "return_pct": 5.1,
+            "score_vs_spy": 6.2
+          },
+          {
+            "return_pct": 3.21,
+            "score_vs_spy": 4.6
+          }
+        ],
+        "holdout_mean_score": 4.93,
+        "holdout_min_score": 4.0,
+        "holdout_folds_beating_baseline": "1/3"
+      },
+      {
+        "trial": 11,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3456597884808594,
+          "profitability": 0.06247109836314317,
+          "financial_health": 0.19718332502365363,
+          "growth": 0.1497133406877393,
+          "capital_allocation": 0.14389571724831487,
+          "accounting_quality": 0.10107673019628965
+        },
+        "return_pct": 4.39,
+        "final_value": 22964.77,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 3.17,
+            "score_vs_spy": 4.6
+          },
+          {
+            "return_pct": 7.92,
+            "score_vs_spy": 6.8
+          },
+          {
+            "return_pct": 0.74,
+            "score_vs_spy": 4.1
+          }
+        ],
+        "holdout_mean_score": 5.17,
+        "holdout_min_score": 4.1,
+        "holdout_folds_beating_baseline": "0/3"
+      },
+      {
+        "trial": 12,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.23697720487489504,
+          "profitability": 0.3743567322125123,
+          "financial_health": 0.08311118182751082,
+          "growth": 0.14110891420812988,
+          "capital_allocation": 0.008094327823377002,
+          "accounting_quality": 0.15635163905357488
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 0.35,
+            "score_vs_spy": 4.0
+          },
+          {
+            "return_pct": 6.75,
+            "score_vs_spy": 6.6
+          },
+          {
+            "return_pct": -0.99,
+            "score_vs_spy": 3.8
+          }
+        ],
+        "holdout_mean_score": 4.8,
+        "holdout_min_score": 3.8,
+        "holdout_folds_beating_baseline": "0/3"
+      },
+      {
+        "trial": 13,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10772262757877911,
+          "profitability": 0.5145571178342692,
+          "financial_health": 0.1784479318767733,
+          "growth": 0.0346344781018452,
+          "capital_allocation": 0.0504066874023094,
+          "accounting_quality": 0.11423115720602374
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7,
+        "holdout_folds": [
+          {
+            "return_pct": 4.97,
+            "score_vs_spy": 5.0
+          },
+          {
+            "return_pct": 8.03,
+            "score_vs_spy": 6.8
+          },
+          {
+            "return_pct": 1.97,
+            "score_vs_spy": 4.3
+          }
+        ],
+        "holdout_mean_score": 5.37,
+        "holdout_min_score": 4.3,
+        "holdout_folds_beating_baseline": "1/3"
+      },
+      {
+        "trial": 21,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2207828533298024,
+          "profitability": 0.22562272534248193,
+          "financial_health": 0.048436412472100746,
+          "growth": 0.44577829073776953,
+          "capital_allocation": 0.028481554295753716,
+          "accounting_quality": 0.03089816382209163
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 23,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.02836554999599318,
+          "profitability": 0.11982201956719628,
+          "financial_health": 0.006848648897569176,
+          "growth": 0.5499018804399236,
+          "capital_allocation": 0.25242563485938446,
+          "accounting_quality": 0.042636266239933364
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 24,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.03558955981231601,
+          "profitability": 0.052249360477488405,
+          "financial_health": 0.055437255301025,
+          "growth": 0.016046493811098052,
+          "capital_allocation": 0.23139673423743987,
+          "accounting_quality": 0.6092805963606326
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 25,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2834368176384329,
+          "profitability": 0.2987930474842841,
+          "financial_health": 0.040571652036625355,
+          "growth": 0.04870221601897449,
+          "capital_allocation": 0.18954101159854972,
+          "accounting_quality": 0.13895525522313346
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 26,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2996934783445334,
+          "profitability": 0.029891736045306306,
+          "financial_health": 0.003967049435404269,
+          "growth": 0.5119782997722248,
+          "capital_allocation": 0.12755513491472623,
+          "accounting_quality": 0.02691430148780504
+        },
+        "return_pct": 4.04,
+        "final_value": 22887.92,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 27,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09127751458450695,
+          "profitability": 0.0031940307694155517,
+          "financial_health": 0.08749789465226027,
+          "growth": 0.44735987535182803,
+          "capital_allocation": 0.23186685314007965,
+          "accounting_quality": 0.1388038315019097
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 28,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06451306776121814,
+          "profitability": 0.0973858871089592,
+          "financial_health": 0.03896454879572082,
+          "growth": 0.31511896622326113,
+          "capital_allocation": 0.16213977720567854,
+          "accounting_quality": 0.3218777529051622
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 30,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3784162593687667,
+          "profitability": 0.29876635257920864,
+          "financial_health": 0.057051386698737765,
+          "growth": 0.16175667025485133,
+          "capital_allocation": 0.09748450824487463,
+          "accounting_quality": 0.006524822853560879
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 34,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.13629494624528718,
+          "profitability": 0.20703181834862258,
+          "financial_health": 0.011408378297499494,
+          "growth": 0.13914950503993978,
+          "capital_allocation": 0.30977313618466745,
+          "accounting_quality": 0.19634221588398346
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 35,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.23878373919347107,
+          "profitability": 0.11194046731101452,
+          "financial_health": 0.03385842327772315,
+          "growth": 0.2679990968642022,
+          "capital_allocation": 0.069600816066668,
+          "accounting_quality": 0.27781745728692114
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 36,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.39634277447289284,
+          "profitability": 0.056048544257456125,
+          "financial_health": 0.0570747127288563,
+          "growth": 0.32629848688510754,
+          "capital_allocation": 0.14351021013796372,
+          "accounting_quality": 0.02072527151772327
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 38,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.6155927922843579,
+          "profitability": 0.16784000432390167,
+          "financial_health": 0.06761988194815541,
+          "growth": 0.12469330375252732,
+          "capital_allocation": 0.02200550645652677,
+          "accounting_quality": 0.002248511234530825
+        },
+        "return_pct": 4.04,
+        "final_value": 22887.92,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 39,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3315122579218418,
+          "profitability": 0.09831846214781986,
+          "financial_health": 0.07009298433668189,
+          "growth": 0.25425102366776026,
+          "capital_allocation": 0.05331902785990812,
+          "accounting_quality": 0.19250624406598807
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 40,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.4626670870588431,
+          "profitability": 0.0626842021359468,
+          "financial_health": 0.07672316785212434,
+          "growth": 0.09167633752838558,
+          "capital_allocation": 0.07276058308470196,
+          "accounting_quality": 0.23348862233999823
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 41,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06760322166323704,
+          "profitability": 0.12226702137737355,
+          "financial_health": 0.03163409923761517,
+          "growth": 0.5422124198496331,
+          "capital_allocation": 0.09830910132662365,
+          "accounting_quality": 0.13797413654551755
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 42,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.11339538248809493,
+          "profitability": 0.3039187626011885,
+          "financial_health": 0.07069335963419236,
+          "growth": 0.3234940198108224,
+          "capital_allocation": 0.09020416895024798,
+          "accounting_quality": 0.09829430651545377
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.62,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 43,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2352059233226846,
+          "profitability": 0.005991034487681648,
+          "financial_health": 0.18404014776271907,
+          "growth": 0.06417091197778982,
+          "capital_allocation": 0.001250188507198982,
+          "accounting_quality": 0.5093417939419259
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 45,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.20849891470499013,
+          "profitability": 0.39446529576352274,
+          "financial_health": 0.02884970567767355,
+          "growth": 0.21132271267753247,
+          "capital_allocation": 0.07347368803367729,
+          "accounting_quality": 0.08338968314260393
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 46,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.19828204350570922,
+          "profitability": 0.09497553633435098,
+          "financial_health": 0.11055115695015122,
+          "growth": 0.19125060636416694,
+          "capital_allocation": 0.3264568675959444,
+          "accounting_quality": 0.0784837892496773
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 47,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1929260165841799,
+          "profitability": 0.14331733574152913,
+          "financial_health": 0.14605526848750142,
+          "growth": 0.240118215550463,
+          "capital_allocation": 0.1225203241888249,
+          "accounting_quality": 0.15506283944750174
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 48,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06545387059712857,
+          "profitability": 0.2857878242094012,
+          "financial_health": 0.1209465215482854,
+          "growth": 0.21058982057318942,
+          "capital_allocation": 0.2869639891874536,
+          "accounting_quality": 0.030257973884541853
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 50,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.014105916021858346,
+          "profitability": 0.05155929955712173,
+          "financial_health": 0.014222006011568752,
+          "growth": 0.20735231420802236,
+          "capital_allocation": 0.28697628612264536,
+          "accounting_quality": 0.42578417807878355
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 52,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.022851401677824422,
+          "profitability": 0.28084510750046104,
+          "financial_health": 0.046814204143308294,
+          "growth": 0.06156685478189091,
+          "capital_allocation": 0.4232703561782926,
+          "accounting_quality": 0.1646520757182228
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 55,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.08822240675842945,
+          "profitability": 0.06476840718517886,
+          "financial_health": 0.005994470371257385,
+          "growth": 0.3793554176102086,
+          "capital_allocation": 0.14008483625173865,
+          "accounting_quality": 0.32157446182318705
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 56,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.045673841429040594,
+          "profitability": 0.12736429464270332,
+          "financial_health": 0.016668052488878014,
+          "growth": 0.6229223181769652,
+          "capital_allocation": 0.13011632558536235,
+          "accounting_quality": 0.0572551676770505
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 58,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.21548483298156743,
+          "profitability": 0.3072532397557199,
+          "financial_health": 0.023889633887887736,
+          "growth": 0.015102462146527532,
+          "capital_allocation": 0.2970687602976834,
+          "accounting_quality": 0.14120107093061396
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 64,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.22710470952702771,
+          "profitability": 0.13769979059355714,
+          "financial_health": 0.03611684220123045,
+          "growth": 0.11071482283969265,
+          "capital_allocation": 0.4690434966810513,
+          "accounting_quality": 0.01932033815744076
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 65,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2865501427828966,
+          "profitability": 0.09490311434847616,
+          "financial_health": 0.11456524168237844,
+          "growth": 0.3017521074291675,
+          "capital_allocation": 0.08373866100246202,
+          "accounting_quality": 0.1184907327546192
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 66,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.12063406525936407,
+          "profitability": 0.4189467807763163,
+          "financial_health": 0.04349137265891768,
+          "growth": 0.185056588044757,
+          "capital_allocation": 0.12713476034170937,
+          "accounting_quality": 0.1047364329189357
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 67,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.202253422046469,
+          "profitability": 0.16651133135031485,
+          "financial_health": 0.02180649238028381,
+          "growth": 0.05422174767042279,
+          "capital_allocation": 0.028600982364020755,
+          "accounting_quality": 0.5266060241884888
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 68,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.05311763599334716,
+          "profitability": 0.03207297257948331,
+          "financial_health": 0.015884512862853712,
+          "growth": 0.33121877304415315,
+          "capital_allocation": 0.36789801385679555,
+          "accounting_quality": 0.19980809166336722
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 69,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1420074444865134,
+          "profitability": 0.11892218094193062,
+          "financial_health": 0.1487025883189629,
+          "growth": 0.2637715269631563,
+          "capital_allocation": 0.07350104906231245,
+          "accounting_quality": 0.25309521022712433
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 71,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.14054730009857658,
+          "profitability": 0.16731856521942756,
+          "financial_health": 0.00040580434078825374,
+          "growth": 0.1823819448641116,
+          "capital_allocation": 0.24423634244523018,
+          "accounting_quality": 0.26511004303186575
+        },
+        "return_pct": 4.04,
+        "final_value": 22887.92,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 72,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.12175452120134665,
+          "profitability": 0.3813019122753394,
+          "financial_health": 0.0026930881900166337,
+          "growth": 0.16646092357422584,
+          "capital_allocation": 0.05103085892869472,
+          "accounting_quality": 0.2767586958303768
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 74,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.20662296807287844,
+          "profitability": 0.15947135586378658,
+          "financial_health": 0.18732152719179812,
+          "growth": 0.31440271577456297,
+          "capital_allocation": 0.0734405824569284,
+          "accounting_quality": 0.058740850640045555
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 75,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.4913650201632944,
+          "profitability": 0.019021898307649072,
+          "financial_health": 0.15133137317844603,
+          "growth": 0.12110025665377827,
+          "capital_allocation": 0.0052611761878709985,
+          "accounting_quality": 0.21192027550896136
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 76,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3133848329710702,
+          "profitability": 0.1390199829785932,
+          "financial_health": 0.18643219880371864,
+          "growth": 0.23555418881163645,
+          "capital_allocation": 0.021128759053480075,
+          "accounting_quality": 0.10448003738150137
+        },
+        "return_pct": 4.39,
+        "final_value": 22964.77,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 78,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.357388548985461,
+          "profitability": 0.36779630314949324,
+          "financial_health": 0.0813054859182411,
+          "growth": 0.009850572848980717,
+          "capital_allocation": 0.04444279271027839,
+          "accounting_quality": 0.13921629638754554
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 82,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.16830329646533004,
+          "profitability": 0.029579793549554267,
+          "financial_health": 0.17339552097007543,
+          "growth": 0.47890903356235054,
+          "capital_allocation": 0.08771644638958033,
+          "accounting_quality": 0.062095909063109384
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 86,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.15906323164143407,
+          "profitability": 0.13675709617384044,
+          "financial_health": 0.13744349036593514,
+          "growth": 0.027605695028265084,
+          "capital_allocation": 0.49049816913650507,
+          "accounting_quality": 0.04863231765402032
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 87,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.30908725619587146,
+          "profitability": 0.2225989526719721,
+          "financial_health": 0.001427965068439991,
+          "growth": 0.04967155393568731,
+          "capital_allocation": 0.13861462475613096,
+          "accounting_quality": 0.2785996473718982
+        },
+        "return_pct": 4.04,
+        "final_value": 22887.92,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 88,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.11557652199807848,
+          "profitability": 0.06058712925988708,
+          "financial_health": 0.0456071794364521,
+          "growth": 0.5637387720307012,
+          "capital_allocation": 0.045820897550338725,
+          "accounting_quality": 0.16866949972454234
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 90,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.32876304497865444,
+          "profitability": 0.18332814970396297,
+          "financial_health": 0.03970282981664156,
+          "growth": 0.34396340143413945,
+          "capital_allocation": 0.10044855692843083,
+          "accounting_quality": 0.0037940171381708556
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 92,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06833142439238991,
+          "profitability": 0.32987064363838553,
+          "financial_health": 0.0003134804852561678,
+          "growth": 0.24986978133718638,
+          "capital_allocation": 0.32861392456444094,
+          "accounting_quality": 0.023000745582341026
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 95,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.019217108683532283,
+          "profitability": 0.32246110181250187,
+          "financial_health": 0.060259578701702135,
+          "growth": 0.4913440406150931,
+          "capital_allocation": 0.05137993235389338,
+          "accounting_quality": 0.05533823783327727
+        },
+        "return_pct": 4.36,
+        "final_value": 22958.18,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 96,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.08568596236073377,
+          "profitability": 0.02521939879234463,
+          "financial_health": 0.05598454517036712,
+          "growth": 0.3746145186709574,
+          "capital_allocation": 0.2583173694705978,
+          "accounting_quality": 0.20017820553499938
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 99,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.47468165907921234,
+          "profitability": 0.024726222995536236,
+          "financial_health": 0.11602779516017128,
+          "growth": 0.07645770488611336,
+          "capital_allocation": 0.0641861925490008,
+          "accounting_quality": 0.24392042532996613
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 101,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.04704664252442116,
+          "profitability": 0.04530143148150571,
+          "financial_health": 0.05986985244170303,
+          "growth": 0.6073577906838012,
+          "capital_allocation": 0.17658230804544306,
+          "accounting_quality": 0.0638419748231257
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 102,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2609361407074992,
+          "profitability": 0.6225617904716465,
+          "financial_health": 0.06589090348107207,
+          "growth": 0.016573258504233853,
+          "capital_allocation": 0.023555574913457316,
+          "accounting_quality": 0.01048233192209099
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 103,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10177472006905162,
+          "profitability": 0.02322895764934344,
+          "financial_health": 0.06646359013699749,
+          "growth": 0.07268944568782879,
+          "capital_allocation": 0.20503705821772775,
+          "accounting_quality": 0.5308062282390509
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 104,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.33944242949252107,
+          "profitability": 0.13047998284687196,
+          "financial_health": 0.13094034057497056,
+          "growth": 0.18203196023841234,
+          "capital_allocation": 0.1159297023399989,
+          "accounting_quality": 0.10117558450722508
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 106,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.5052097275289654,
+          "profitability": 0.06186805220842269,
+          "financial_health": 0.08038299399882384,
+          "growth": 0.07263031660624414,
+          "capital_allocation": 0.1297938631282773,
+          "accounting_quality": 0.15011504652926663
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 108,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.32768920446571564,
+          "profitability": 0.09293268028751549,
+          "financial_health": 0.12825679666141365,
+          "growth": 2.5906030793680745e-05,
+          "capital_allocation": 0.0720182597618403,
+          "accounting_quality": 0.3790771527927212
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 111,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10598049299051276,
+          "profitability": 0.13902829424718707,
+          "financial_health": 0.006995979298230956,
+          "growth": 0.264347698863074,
+          "capital_allocation": 0.04589786449575659,
+          "accounting_quality": 0.4377496701052387
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 112,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2569010834069909,
+          "profitability": 0.0896975580530798,
+          "financial_health": 0.03391973499488832,
+          "growth": 0.07185778024421342,
+          "capital_allocation": 0.25054415314439066,
+          "accounting_quality": 0.29707969015643687
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 114,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.14983777552733255,
+          "profitability": 0.0017147963005587383,
+          "financial_health": 0.05851197564702262,
+          "growth": 0.10068019918878092,
+          "capital_allocation": 0.5205853562548601,
+          "accounting_quality": 0.1686698970814449
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 115,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.27583862433713957,
+          "profitability": 0.08265815057354906,
+          "financial_health": 0.034293858397807075,
+          "growth": 0.03636900481091846,
+          "capital_allocation": 0.4145297773872831,
+          "accounting_quality": 0.15631058449330273
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 117,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.22266356520910618,
+          "profitability": 0.5244361064490592,
+          "financial_health": 0.052030548780450124,
+          "growth": 0.007018129437417297,
+          "capital_allocation": 0.08346096462092156,
+          "accounting_quality": 0.11039068550304557
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 120,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06894151716098804,
+          "profitability": 0.5987477425684371,
+          "financial_health": 0.13507927668343966,
+          "growth": 0.040917513325685495,
+          "capital_allocation": 0.04985872129768828,
+          "accounting_quality": 0.10645522896376128
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 121,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.12700561519273648,
+          "profitability": 0.34478348900209566,
+          "financial_health": 0.01836588465845888,
+          "growth": 0.05801794768983982,
+          "capital_allocation": 0.027787083274560153,
+          "accounting_quality": 0.4240399801823089
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 122,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.029414892254186566,
+          "profitability": 0.010231008724458463,
+          "financial_health": 0.011919766903383814,
+          "growth": 0.09605045703060884,
+          "capital_allocation": 0.43905386799462215,
+          "accounting_quality": 0.41333000709274026
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 125,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.04421282785682554,
+          "profitability": 0.0006854275074067281,
+          "financial_health": 0.07825843665215593,
+          "growth": 0.10324669025083773,
+          "capital_allocation": 0.7421115344779912,
+          "accounting_quality": 0.03148508325478268
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 126,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.41536925142980596,
+          "profitability": 0.028977828973748808,
+          "financial_health": 0.05498291356142404,
+          "growth": 0.21487546950089062,
+          "capital_allocation": 0.2151793344477869,
+          "accounting_quality": 0.07061520208634381
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 128,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.37883476314843534,
+          "profitability": 0.005125110006703198,
+          "financial_health": 0.08816726157476139,
+          "growth": 0.2784024516476108,
+          "capital_allocation": 0.24255380996770584,
+          "accounting_quality": 0.006916603654783559
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 131,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06790612433084196,
+          "profitability": 0.057546105061694316,
+          "financial_health": 0.0006743675987108659,
+          "growth": 0.25148396077588125,
+          "capital_allocation": 0.4430217821240651,
+          "accounting_quality": 0.17936766010880648
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 132,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2862420377991139,
+          "profitability": 0.0024498557469489744,
+          "financial_health": 0.026577812288107013,
+          "growth": 0.06432157311212218,
+          "capital_allocation": 0.3134081674643958,
+          "accounting_quality": 0.30700055358931205
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 133,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10065118322642691,
+          "profitability": 0.05955009514134558,
+          "financial_health": 0.11577385064546591,
+          "growth": 0.14011661093665442,
+          "capital_allocation": 0.5422877452927767,
+          "accounting_quality": 0.04162051475733048
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 136,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.05157154441058885,
+          "profitability": 0.012148376307067592,
+          "financial_health": 0.006253672811488611,
+          "growth": 0.14600037729692186,
+          "capital_allocation": 0.07155188993983752,
+          "accounting_quality": 0.7124741392340956
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 137,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.27755339831912185,
+          "profitability": 0.5691781028104897,
+          "financial_health": 0.03973371392103562,
+          "growth": 0.011340127578365843,
+          "capital_allocation": 0.013091505523803264,
+          "accounting_quality": 0.08910315184718373
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 138,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.261810108819842,
+          "profitability": 0.12535763704989017,
+          "financial_health": 0.05647033313763285,
+          "growth": 0.11413342963078749,
+          "capital_allocation": 0.20494565996232036,
+          "accounting_quality": 0.2372828313995272
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 139,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.20686738164664914,
+          "profitability": 0.2817648815954251,
+          "financial_health": 0.1638912388296706,
+          "growth": 0.01938605296052263,
+          "capital_allocation": 0.2758823749195695,
+          "accounting_quality": 0.05220807004816293
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 145,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.27037684635540304,
+          "profitability": 0.08016745002750075,
+          "financial_health": 0.0404765518965754,
+          "growth": 0.20223418527649373,
+          "capital_allocation": 0.3917120996692146,
+          "accounting_quality": 0.015032866774812565
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 146,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.30630567710919643,
+          "profitability": 0.32682594427522343,
+          "financial_health": 0.0829177274156118,
+          "growth": 0.1553944286232094,
+          "capital_allocation": 0.05148983502845851,
+          "accounting_quality": 0.07706638754830049
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 148,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2624912161647373,
+          "profitability": 0.0473848999634496,
+          "financial_health": 0.08661420933948419,
+          "growth": 0.052630836851525344,
+          "capital_allocation": 0.3670807733452812,
+          "accounting_quality": 0.18379806433552232
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 150,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.03159823105607218,
+          "profitability": 0.21013773113291556,
+          "financial_health": 0.09320549823198147,
+          "growth": 0.05888144087442619,
+          "capital_allocation": 0.06497742433838123,
+          "accounting_quality": 0.5411996743662234
+        },
+        "return_pct": 4.36,
+        "final_value": 22958.18,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 151,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.03791250628360892,
+          "profitability": 0.08462499989247252,
+          "financial_health": 0.04473594345300164,
+          "growth": 0.054527994019184456,
+          "capital_allocation": 0.20216154965442715,
+          "accounting_quality": 0.5760370066973053
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 153,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0962200786537785,
+          "profitability": 0.29968916725796574,
+          "financial_health": 0.09098692009531203,
+          "growth": 0.37428625422381717,
+          "capital_allocation": 0.10785326043034944,
+          "accounting_quality": 0.03096431933877712
+        },
+        "return_pct": 4.32,
+        "final_value": 22949.68,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 155,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09286804774621724,
+          "profitability": 0.14071505098631054,
+          "financial_health": 0.03160398037261617,
+          "growth": 0.06675689970150861,
+          "capital_allocation": 0.14758392994071987,
+          "accounting_quality": 0.5204720912526276
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 157,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.27590149929258634,
+          "profitability": 0.35724165280178144,
+          "financial_health": 0.06345880958610156,
+          "growth": 0.0052803600360105145,
+          "capital_allocation": 0.2508653524799521,
+          "accounting_quality": 0.047252325803567904
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 158,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3340799804362641,
+          "profitability": 0.13793353816297807,
+          "financial_health": 0.24787552201144716,
+          "growth": 0.024878530225205937,
+          "capital_allocation": 0.21946674718348808,
+          "accounting_quality": 0.03576568198061666
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 160,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.14044201223716496,
+          "profitability": 0.0931330486761966,
+          "financial_health": 0.025277073062669853,
+          "growth": 0.05462394704452739,
+          "capital_allocation": 0.24842578270641003,
+          "accounting_quality": 0.4380981362730313
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 162,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2040692787278599,
+          "profitability": 0.17809640812464791,
+          "financial_health": 0.2199471264799304,
+          "growth": 0.0815286037582984,
+          "capital_allocation": 0.12150418203797594,
+          "accounting_quality": 0.19485440087128725
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 163,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1464557176441839,
+          "profitability": 0.28395154405973644,
+          "financial_health": 0.15631595893822497,
+          "growth": 0.15231958555025107,
+          "capital_allocation": 0.006245286228135005,
+          "accounting_quality": 0.2547119075794686
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 165,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.30030238432528555,
+          "profitability": 0.05306084250687088,
+          "financial_health": 0.06441519254275692,
+          "growth": 0.26385225428517367,
+          "capital_allocation": 0.04506855684821943,
+          "accounting_quality": 0.27330076949169363
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 167,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.14026191367707488,
+          "profitability": 0.01092384301699271,
+          "financial_health": 0.1372560699577107,
+          "growth": 0.09292227629556636,
+          "capital_allocation": 0.58997228825844,
+          "accounting_quality": 0.02866360879421548
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 168,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1321556904767677,
+          "profitability": 0.3772283248240359,
+          "financial_health": 0.0894725765821571,
+          "growth": 0.1146251574901582,
+          "capital_allocation": 0.014626412085378113,
+          "accounting_quality": 0.27189183854150306
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.62,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 171,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3015751562076001,
+          "profitability": 0.027643686135806974,
+          "financial_health": 0.1244249008067463,
+          "growth": 0.4502916109408519,
+          "capital_allocation": 0.041666040019548066,
+          "accounting_quality": 0.0543986058894467
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 172,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.16558288335583535,
+          "profitability": 0.09023195190184102,
+          "financial_health": 0.00881137668801808,
+          "growth": 0.047195612735807455,
+          "capital_allocation": 0.04128055521265321,
+          "accounting_quality": 0.6468976201058448
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 173,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.18985582942619927,
+          "profitability": 0.3765209844352565,
+          "financial_health": 0.030821468240096316,
+          "growth": 0.2562424697312163,
+          "capital_allocation": 0.020388629060579616,
+          "accounting_quality": 0.12617061910665203
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 176,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.5685854033411109,
+          "profitability": 0.10516682236622803,
+          "financial_health": 0.05454477887070421,
+          "growth": 0.17665089986271829,
+          "capital_allocation": 0.07130106917611383,
+          "accounting_quality": 0.023751026383124596
+        },
+        "return_pct": 4.04,
+        "final_value": 22887.92,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 177,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.15871602867983203,
+          "profitability": 0.00577215414864994,
+          "financial_health": 0.19986183078340253,
+          "growth": 0.03411809638457558,
+          "capital_allocation": 0.1188958454961046,
+          "accounting_quality": 0.4826360445074352
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 178,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3465076434679528,
+          "profitability": 0.4283302977245363,
+          "financial_health": 0.1473601119764734,
+          "growth": 0.0007045797904933222,
+          "capital_allocation": 0.013512175304995499,
+          "accounting_quality": 0.06358519173554877
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 179,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.19533688196829704,
+          "profitability": 0.11550739661104681,
+          "financial_health": 0.14668507941812176,
+          "growth": 0.46096822025326634,
+          "capital_allocation": 0.028893054983065665,
+          "accounting_quality": 0.05260936676620242
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 180,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.5098316794517941,
+          "profitability": 0.010854821680173352,
+          "financial_health": 0.0012611258781577276,
+          "growth": 0.21113163146101133,
+          "capital_allocation": 0.05415218023229034,
+          "accounting_quality": 0.2127685612965731
+        },
+        "return_pct": 4.04,
+        "final_value": 22887.92,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 182,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.03244338103328323,
+          "profitability": 0.6182573070618486,
+          "financial_health": 0.06257769015696296,
+          "growth": 0.036248625346613474,
+          "capital_allocation": 0.02257478883467938,
+          "accounting_quality": 0.22789820756661247
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 183,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.37672038244209005,
+          "profitability": 0.2800334024953267,
+          "financial_health": 0.094464163014389,
+          "growth": 0.05638442744325702,
+          "capital_allocation": 0.0021246532693757524,
+          "accounting_quality": 0.19027297133556142
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 184,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1185319362146818,
+          "profitability": 0.06186937812209969,
+          "financial_health": 0.14880681360371625,
+          "growth": 0.0841400591399613,
+          "capital_allocation": 0.3969438269167355,
+          "accounting_quality": 0.18970798600280558
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 185,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06770574586430261,
+          "profitability": 0.5541612439071805,
+          "financial_health": 0.010664798068977282,
+          "growth": 0.1797106431645821,
+          "capital_allocation": 0.1234423046366775,
+          "accounting_quality": 0.06431526435828
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 186,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.011213109076555145,
+          "profitability": 0.2812969395855455,
+          "financial_health": 0.002316527850421665,
+          "growth": 0.14923334963642423,
+          "capital_allocation": 0.5273330889119359,
+          "accounting_quality": 0.02860698493911764
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 188,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06423491885534756,
+          "profitability": 0.06195928477232906,
+          "financial_health": 0.008625393316300094,
+          "growth": 0.3820066648546361,
+          "capital_allocation": 0.2651063423830063,
+          "accounting_quality": 0.21806739581838086
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 190,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1039029155559666,
+          "profitability": 0.04513105600906602,
+          "financial_health": 0.10724380707865189,
+          "growth": 0.01606152298508517,
+          "capital_allocation": 0.16582183787812413,
+          "accounting_quality": 0.5618388604931062
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 191,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.19839785316835243,
+          "profitability": 0.31175764909225534,
+          "financial_health": 0.20773434541121943,
+          "growth": 0.05165043137827097,
+          "capital_allocation": 0.1347861729075738,
+          "accounting_quality": 0.09567354804232808
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 192,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.21482167879575387,
+          "profitability": 0.10244650571749878,
+          "financial_health": 0.04263644127493991,
+          "growth": 0.14206681507914887,
+          "capital_allocation": 0.46419786879669206,
+          "accounting_quality": 0.033830690335966564
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 193,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3045161150895698,
+          "profitability": 0.0022034621711425695,
+          "financial_health": 0.04330913391119716,
+          "growth": 0.03867487300343536,
+          "capital_allocation": 0.1955931018707388,
+          "accounting_quality": 0.41570331395391624
+        },
+        "return_pct": 4.05,
+        "final_value": 22889.9,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 195,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10377020920468799,
+          "profitability": 0.12296518426887816,
+          "financial_health": 0.11399945105044365,
+          "growth": 0.4025103699736988,
+          "capital_allocation": 0.06603743972778393,
+          "accounting_quality": 0.19071734577450747
+        },
+        "return_pct": 4.28,
+        "final_value": 22942.03,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 196,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.19224144274363456,
+          "profitability": 0.31319077837018383,
+          "financial_health": 0.09239558966383957,
+          "growth": 0.20727765944448528,
+          "capital_allocation": 0.13577717111527415,
+          "accounting_quality": 0.059117358662582636
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 197,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06117580010475096,
+          "profitability": 0.2502634999194607,
+          "financial_health": 0.0208005131216862,
+          "growth": 0.6206480747968224,
+          "capital_allocation": 0.04010863245594271,
+          "accounting_quality": 0.007003479601337036
+        },
+        "return_pct": 4.44,
+        "final_value": 22975.73,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 199,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.20790781825341612,
+          "profitability": 0.1770837582714121,
+          "financial_health": 0.21043870700712383,
+          "growth": 0.2352421819430983,
+          "capital_allocation": 0.011989158547111202,
+          "accounting_quality": 0.15733837597783845
+        },
+        "return_pct": 4.33,
+        "final_value": 22952.64,
+        "score_vs_spy": 4.7
+      },
+      {
+        "trial": 16,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10609126228845214,
+          "profitability": 0.2859480614365125,
+          "financial_health": 0.22765552708443298,
+          "growth": 0.2654712261657007,
+          "capital_allocation": 0.04342227792323052,
+          "accounting_quality": 0.07141164510167113
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 20,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.1300691120370752,
+          "profitability": 0.006402379329760175,
+          "financial_health": 0.26505976001702763,
+          "growth": 0.17463467785608067,
+          "capital_allocation": 0.2394097909596187,
+          "accounting_quality": 0.18442427980043755
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 22,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2240524444257542,
+          "profitability": 0.16945600264271402,
+          "financial_health": 0.3976608836688916,
+          "growth": 0.05167731597521156,
+          "capital_allocation": 0.0002232402243833117,
+          "accounting_quality": 0.15693011306304522
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 32,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.245730779509498,
+          "profitability": 0.3933553270566838,
+          "financial_health": 0.2756055005630031,
+          "growth": 0.04030909643711033,
+          "capital_allocation": 0.02213426596730894,
+          "accounting_quality": 0.02286503046639576
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 49,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.12845411131707943,
+          "profitability": 0.4495632573785243,
+          "financial_health": 0.28711951399351654,
+          "growth": 0.023108996968029018,
+          "capital_allocation": 0.02031733410911299,
+          "accounting_quality": 0.0914367862337376
+        },
+        "return_pct": 3.94,
+        "final_value": 22866.57,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 54,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.41185927296441854,
+          "profitability": 0.006327452875928095,
+          "financial_health": 0.2597037133282221,
+          "growth": 0.186729909402306,
+          "capital_allocation": 0.005868291000233088,
+          "accounting_quality": 0.12951136042889208
+        },
+        "return_pct": 4.0,
+        "final_value": 22878.94,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 63,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.42341120064237403,
+          "profitability": 0.11963134637573546,
+          "financial_health": 0.260266717653285,
+          "growth": 0.011194127663407452,
+          "capital_allocation": 0.1760521233104898,
+          "accounting_quality": 0.00944448435470837
+        },
+        "return_pct": 4.0,
+        "final_value": 22878.94,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 77,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.07800868396388798,
+          "profitability": 0.20020197061411638,
+          "financial_health": 0.1814948651649929,
+          "growth": 0.19460325611243498,
+          "capital_allocation": 0.09748954564613115,
+          "accounting_quality": 0.2482016784984366
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 80,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.13129619960889496,
+          "profitability": 0.0006486697216164269,
+          "financial_health": 0.3122353059046132,
+          "growth": 0.269520264881609,
+          "capital_allocation": 0.1366001634170071,
+          "accounting_quality": 0.14969939646625927
+        },
+        "return_pct": 3.94,
+        "final_value": 22866.57,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 81,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3411215573513224,
+          "profitability": 0.021648242311503835,
+          "financial_health": 0.4228719070594496,
+          "growth": 0.09206739313529579,
+          "capital_allocation": 0.024510385884673976,
+          "accounting_quality": 0.09778051425775429
+        },
+        "return_pct": 3.89,
+        "final_value": 22855.49,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 83,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.12234688609271281,
+          "profitability": 0.21598533727984937,
+          "financial_health": 0.27331642288498814,
+          "growth": 0.18007060230769012,
+          "capital_allocation": 0.19314983897123708,
+          "accounting_quality": 0.015130912463522578
+        },
+        "return_pct": 3.94,
+        "final_value": 22866.57,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 93,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.34868317212541833,
+          "profitability": 0.16683197920350545,
+          "financial_health": 0.3098309288929718,
+          "growth": 0.04573945888918093,
+          "capital_allocation": 0.06221926681934377,
+          "accounting_quality": 0.06669519406957963
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 98,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.27830610546534035,
+          "profitability": 0.1265604985868798,
+          "financial_health": 0.2949737180076466,
+          "growth": 0.21836634394525117,
+          "capital_allocation": 0.07119031093371614,
+          "accounting_quality": 0.010603023061165952
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 100,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.5515430695835644,
+          "profitability": 0.044412923990111375,
+          "financial_health": 0.1572776393897976,
+          "growth": 0.05274576286075229,
+          "capital_allocation": 0.12010816770532301,
+          "accounting_quality": 0.07391243647045137
+        },
+        "return_pct": 4.0,
+        "final_value": 22878.94,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 107,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3699384679674884,
+          "profitability": 0.22696908665061075,
+          "financial_health": 0.24792190076269313,
+          "growth": 0.002650465828287561,
+          "capital_allocation": 0.003939274828338331,
+          "accounting_quality": 0.14858080396258172
+        },
+        "return_pct": 4.0,
+        "final_value": 22878.94,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 109,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.22293130651179738,
+          "profitability": 0.2469147867435828,
+          "financial_health": 0.45754516914224513,
+          "growth": 0.03646343549370114,
+          "capital_allocation": 0.014739497239916775,
+          "accounting_quality": 0.0214058048687569
+        },
+        "return_pct": 3.89,
+        "final_value": 22855.22,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 116,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.12068169201394771,
+          "profitability": 0.007237702370600407,
+          "financial_health": 0.22663525175577326,
+          "growth": 0.3687416948705401,
+          "capital_allocation": 0.17898716948383325,
+          "accounting_quality": 0.09771648950530536
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 118,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.2190083469103093,
+          "profitability": 0.042131361668153594,
+          "financial_health": 0.30439451065257433,
+          "growth": 0.25646301611519196,
+          "capital_allocation": 0.13416470745967254,
+          "accounting_quality": 0.04383805719409812
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 119,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.46492816132221426,
+          "profitability": 0.04959521300209893,
+          "financial_health": 0.22767036890782544,
+          "growth": 0.034839905052850145,
+          "capital_allocation": 0.03323305189455899,
+          "accounting_quality": 0.18973329982045223
+        },
+        "return_pct": 4.0,
+        "final_value": 22878.94,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 123,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09878647136837458,
+          "profitability": 0.4494678214921301,
+          "financial_health": 0.20082008652437103,
+          "growth": 0.029898445948448822,
+          "capital_allocation": 0.015362631382187679,
+          "accounting_quality": 0.20566454328448783
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 124,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3569163241343497,
+          "profitability": 0.008434351758659319,
+          "financial_health": 0.28413192735662274,
+          "growth": 0.12381192302626083,
+          "capital_allocation": 0.12183625882498961,
+          "accounting_quality": 0.10486921489911784
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 134,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.21609549217982446,
+          "profitability": 0.17865518990153226,
+          "financial_health": 0.2304623702505817,
+          "growth": 0.19739491460038527,
+          "capital_allocation": 0.12448590336378954,
+          "accounting_quality": 0.05290612970388683
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 140,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.24387504690383263,
+          "profitability": 0.13604029341694684,
+          "financial_health": 0.39045302909967256,
+          "growth": 0.06474139518801249,
+          "capital_allocation": 0.08284903748782645,
+          "accounting_quality": 0.08204119790370915
+        },
+        "return_pct": 3.91,
+        "final_value": 22861.04,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 142,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.08331644883813054,
+          "profitability": 0.03097245285014592,
+          "financial_health": 0.19449825925751363,
+          "growth": 0.12468222241505207,
+          "capital_allocation": 0.5538248567550756,
+          "accounting_quality": 0.012705759884082271
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 164,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.14282541740126,
+          "profitability": 0.056973058687938304,
+          "financial_health": 0.30632948547194905,
+          "growth": 0.32160914633304327,
+          "capital_allocation": 0.13021924495344608,
+          "accounting_quality": 0.04204364715236336
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 166,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.15253886289131605,
+          "profitability": 0.008895915513063625,
+          "financial_health": 0.2162586198149322,
+          "growth": 0.01834292187933785,
+          "capital_allocation": 0.2826245066858184,
+          "accounting_quality": 0.3213391732155319
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 174,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.13780503635780292,
+          "profitability": 0.06075574958547877,
+          "financial_health": 0.28109195390491043,
+          "growth": 0.11036719470190878,
+          "capital_allocation": 0.11820362611403691,
+          "accounting_quality": 0.29177643933586206
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 187,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.04672269157204089,
+          "profitability": 0.196661617245601,
+          "financial_health": 0.14846455262708938,
+          "growth": 0.21541369158872375,
+          "capital_allocation": 0.3524406189568315,
+          "accounting_quality": 0.04029682800971361
+        },
+        "return_pct": 3.94,
+        "final_value": 22866.57,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 194,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.19751237166824792,
+          "profitability": 0.057022722668228595,
+          "financial_health": 0.30564879609143675,
+          "growth": 0.05738322466248183,
+          "capital_allocation": 0.039378432291800915,
+          "accounting_quality": 0.343054452617804
+        },
+        "return_pct": 3.87,
+        "final_value": 22850.43,
+        "score_vs_spy": 4.6
+      },
+      {
+        "trial": 1,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.13468744825388546,
+          "profitability": 0.05628174867617682,
+          "financial_health": 0.3622605970227616,
+          "growth": 0.025881103886622635,
+          "capital_allocation": 0.26420746233331693,
+          "accounting_quality": 0.15668163982723646
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 4,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.11550176330225577,
+          "profitability": 0.06781571638412226,
+          "financial_health": 0.5019847476163476,
+          "growth": 0.006402000122333683,
+          "capital_allocation": 0.2624051440226293,
+          "accounting_quality": 0.04589062855231135
+        },
+        "return_pct": 3.08,
+        "final_value": 22677.69,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 6,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.3865927017929057,
+          "profitability": 0.17679846142085565,
+          "financial_health": 0.3011516110800404,
+          "growth": 0.024610618821791875,
+          "capital_allocation": 0.02332192207637787,
+          "accounting_quality": 0.08752468480802868
+        },
+        "return_pct": 3.09,
+        "final_value": 22680.58,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 9,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.17088455775842068,
+          "profitability": 0.04439036676282834,
+          "financial_health": 0.5125178560237307,
+          "growth": 0.01642306553941512,
+          "capital_allocation": 0.0707830139280097,
+          "accounting_quality": 0.1850011399875954
+        },
+        "return_pct": 3.08,
+        "final_value": 22677.69,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 14,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.009226502976761558,
+          "profitability": 0.250390565663759,
+          "financial_health": 0.0743821009745508,
+          "growth": 0.05034998857115001,
+          "capital_allocation": 0.024566298286173165,
+          "accounting_quality": 0.5910845435276055
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 15,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.03794152755002648,
+          "profitability": 0.077937294991511,
+          "financial_health": 0.13583344742756479,
+          "growth": 0.5619072493095683,
+          "capital_allocation": 0.023014546570825516,
+          "accounting_quality": 0.16336593415050382
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 17,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06959286404741871,
+          "profitability": 0.33762556827793594,
+          "financial_health": 0.4954698158636489,
+          "growth": 0.02562194859339806,
+          "capital_allocation": 0.03035880469738038,
+          "accounting_quality": 0.04133099852021812
+        },
+        "return_pct": 3.08,
+        "final_value": 22677.69,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 18,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09949613113770302,
+          "profitability": 0.2484591581729999,
+          "financial_health": 0.3330667624151314,
+          "growth": 0.11414378095790431,
+          "capital_allocation": 0.0015360303572489254,
+          "accounting_quality": 0.20329813695901236
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 19,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0638766469051524,
+          "profitability": 0.11580472596452449,
+          "financial_health": 0.4240910885024742,
+          "growth": 0.16255359076876835,
+          "capital_allocation": 0.10043652008288716,
+          "accounting_quality": 0.1332374277761934
+        },
+        "return_pct": 3.08,
+        "final_value": 22678.64,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 29,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.039715970143056646,
+          "profitability": 0.025059053855736584,
+          "financial_health": 0.1656960243739801,
+          "growth": 0.41652334859453954,
+          "capital_allocation": 0.19013102556196274,
+          "accounting_quality": 0.16287457747072434
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 31,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0050929489557124345,
+          "profitability": 0.058900951723228755,
+          "financial_health": 0.05392086660766302,
+          "growth": 0.21197926537477738,
+          "capital_allocation": 0.5635531481025414,
+          "accounting_quality": 0.10655281923607696
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 33,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.03521516369529558,
+          "profitability": 0.03675707721863625,
+          "financial_health": 0.15729242176319455,
+          "growth": 0.3706931242957531,
+          "capital_allocation": 0.2950703323013219,
+          "accounting_quality": 0.10497188072579863
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 37,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.02189861059147772,
+          "profitability": 0.026413273944331878,
+          "financial_health": 0.3791491716230929,
+          "growth": 0.26473747216890375,
+          "capital_allocation": 0.025471108358948977,
+          "accounting_quality": 0.28233036331324485
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.02,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 44,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.04658706549676352,
+          "profitability": 0.15798800729887183,
+          "financial_health": 0.31812019652653967,
+          "growth": 0.20022844136353668,
+          "capital_allocation": 0.09715819487667081,
+          "accounting_quality": 0.17991809443761766
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 51,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.020377333664291956,
+          "profitability": 0.1529482335217585,
+          "financial_health": 0.13112852752392748,
+          "growth": 0.018741072536167167,
+          "capital_allocation": 0.2604381013336844,
+          "accounting_quality": 0.41636673142017055
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 53,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.07097211062852778,
+          "profitability": 0.2276232503453326,
+          "financial_health": 0.2921317655519179,
+          "growth": 0.16692214990282356,
+          "capital_allocation": 0.08779351120976824,
+          "accounting_quality": 0.15455721236162986
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 57,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.07164054903689136,
+          "profitability": 0.3165041084232105,
+          "financial_health": 0.22318471277816276,
+          "growth": 0.03907394485269754,
+          "capital_allocation": 0.021125126827248066,
+          "accounting_quality": 0.32847155808178985
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 59,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.010006140647742424,
+          "profitability": 0.3708917334251174,
+          "financial_health": 0.1339554626534287,
+          "growth": 0.21532664038011956,
+          "capital_allocation": 0.011641842057006042,
+          "accounting_quality": 0.2581781808365858
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 60,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.010619843612619168,
+          "profitability": 0.3059285412814526,
+          "financial_health": 0.09314662297091514,
+          "growth": 0.06380494264878706,
+          "capital_allocation": 0.12404834717357402,
+          "accounting_quality": 0.402451702312652
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 61,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.17684670273792966,
+          "profitability": 0.07848573170933207,
+          "financial_health": 0.42454588349633005,
+          "growth": 0.1544975344896594,
+          "capital_allocation": 0.06574972561171763,
+          "accounting_quality": 0.09987442195503128
+        },
+        "return_pct": 3.08,
+        "final_value": 22678.64,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 62,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0185791332180877,
+          "profitability": 0.08099585386402018,
+          "financial_health": 0.134404211528321,
+          "growth": 0.13077263653647045,
+          "capital_allocation": 0.5121727231926786,
+          "accounting_quality": 0.12307544166042197
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 70,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.02630855445629523,
+          "profitability": 0.28113525498129405,
+          "financial_health": 0.30985400616351827,
+          "growth": 0.06820695351795017,
+          "capital_allocation": 0.0241390419945837,
+          "accounting_quality": 0.2903561888863585
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 73,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.018287477139125784,
+          "profitability": 0.009775826641060859,
+          "financial_health": 0.15587227934224016,
+          "growth": 0.11387595471159612,
+          "capital_allocation": 0.37850477734932436,
+          "accounting_quality": 0.3236836848166528
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 79,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.01894952804109188,
+          "profitability": 0.30890054857602756,
+          "financial_health": 0.13978815560273755,
+          "growth": 0.1689543083501405,
+          "capital_allocation": 0.1682481522696024,
+          "accounting_quality": 0.19515930716040014
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 84,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.052702706065673906,
+          "profitability": 0.09680126270283805,
+          "financial_health": 0.4492367093832193,
+          "growth": 0.11995016110581178,
+          "capital_allocation": 0.2771629731108736,
+          "accounting_quality": 0.004146187631583277
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.02,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 85,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.015121435365546197,
+          "profitability": 0.07564021502508232,
+          "financial_health": 0.269365206790522,
+          "growth": 0.28471173898784685,
+          "capital_allocation": 0.2721110352401423,
+          "accounting_quality": 0.08305036859086035
+        },
+        "return_pct": 3.11,
+        "final_value": 22685.21,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 89,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.023455763073416114,
+          "profitability": 0.113938140285332,
+          "financial_health": 0.4683661502600465,
+          "growth": 0.021830945574778344,
+          "capital_allocation": 0.26333312807144765,
+          "accounting_quality": 0.10907587273497939
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.56,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 91,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.001625998115201703,
+          "profitability": 0.30589216200235786,
+          "financial_health": 0.2708783135808228,
+          "growth": 0.16249708235846863,
+          "capital_allocation": 0.06855157731865771,
+          "accounting_quality": 0.1905548666244913
+        },
+        "return_pct": 3.12,
+        "final_value": 22685.63,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 94,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.7477273233294718,
+          "profitability": 0.09899563016275328,
+          "financial_health": 0.04978715381190367,
+          "growth": 0.062174236065350254,
+          "capital_allocation": 0.0358103217556745,
+          "accounting_quality": 0.0055053348748465795
+        },
+        "return_pct": 3.05,
+        "final_value": 22672.1,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 97,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.11882851448390945,
+          "profitability": 0.2917110100056515,
+          "financial_health": 0.336826001575571,
+          "growth": 0.09499758358008815,
+          "capital_allocation": 0.15158719795139128,
+          "accounting_quality": 0.00604969240338849
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 110,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0870104546996334,
+          "profitability": 0.13494038118642213,
+          "financial_health": 0.33425602188310133,
+          "growth": 0.15063037187760098,
+          "capital_allocation": 0.12273316154701029,
+          "accounting_quality": 0.17042960880623187
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 113,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.04657157185357935,
+          "profitability": 0.02856531018271949,
+          "financial_health": 0.29104264485376236,
+          "growth": 0.3423990793392389,
+          "capital_allocation": 0.1923263993640892,
+          "accounting_quality": 0.09909499440661067
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 127,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.011624503419616381,
+          "profitability": 0.14761628070965338,
+          "financial_health": 0.10732384586760045,
+          "growth": 0.5798410137921242,
+          "capital_allocation": 0.0493555138689566,
+          "accounting_quality": 0.1042388423420489
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 129,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.005385333612751186,
+          "profitability": 0.009809951261696015,
+          "financial_health": 0.3835535544282013,
+          "growth": 0.04509712123892901,
+          "capital_allocation": 0.20880215854524045,
+          "accounting_quality": 0.34735188091318203
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.56,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 130,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06450814754439287,
+          "profitability": 0.04951930439727438,
+          "financial_health": 0.4926783340901579,
+          "growth": 0.14949326604232055,
+          "capital_allocation": 0.047363142438959345,
+          "accounting_quality": 0.19643780548689502
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.02,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 135,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09486008340413805,
+          "profitability": 0.11067735893837781,
+          "financial_health": 0.3755978143124656,
+          "growth": 0.020280734166664035,
+          "capital_allocation": 0.05415387530481947,
+          "accounting_quality": 0.344430133873535
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 141,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.018552925675595872,
+          "profitability": 0.2402914726026921,
+          "financial_health": 0.09624704997430027,
+          "growth": 0.044034594153981046,
+          "capital_allocation": 0.056215151611850506,
+          "accounting_quality": 0.5446588059815802
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 143,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09150979187688314,
+          "profitability": 0.24299508649288282,
+          "financial_health": 0.26093577050288735,
+          "growth": 0.34929261732813,
+          "capital_allocation": 0.005855073903243383,
+          "accounting_quality": 0.04941165989597341
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 144,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.01596726502926376,
+          "profitability": 0.02643873135192465,
+          "financial_health": 0.4541535929489993,
+          "growth": 0.11007641815037814,
+          "capital_allocation": 0.3348006568715703,
+          "accounting_quality": 0.058563335647863875
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.56,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 147,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10150536046738033,
+          "profitability": 0.3155838913440997,
+          "financial_health": 0.36376635292343523,
+          "growth": 0.07846219698298942,
+          "capital_allocation": 0.003948060219890742,
+          "accounting_quality": 0.1367341380622046
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 149,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.02524524652803998,
+          "profitability": 0.04129060627157011,
+          "financial_health": 0.19428605663809972,
+          "growth": 0.30853473656490243,
+          "capital_allocation": 0.3937271598836657,
+          "accounting_quality": 0.03691619411372204
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 152,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.09990143858369664,
+          "profitability": 0.048524730395520604,
+          "financial_health": 0.2876490384653597,
+          "growth": 0.05031115407450905,
+          "capital_allocation": 0.0013020683180080502,
+          "accounting_quality": 0.512311570162906
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 154,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.002813170117218975,
+          "profitability": 0.15095048180858217,
+          "financial_health": 0.19265280737920604,
+          "growth": 0.45281475919140196,
+          "capital_allocation": 0.01755165680611634,
+          "accounting_quality": 0.18321712469747456
+        },
+        "return_pct": 3.11,
+        "final_value": 22685.21,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 156,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.01861899690464388,
+          "profitability": 0.10901017714237277,
+          "financial_health": 0.2641096669332135,
+          "growth": 0.5508344567044633,
+          "capital_allocation": 0.035535689553676746,
+          "accounting_quality": 0.021891012761629733
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 159,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.10129218837868355,
+          "profitability": 0.36604060794379856,
+          "financial_health": 0.3453461121886604,
+          "growth": 0.03948951387190278,
+          "capital_allocation": 0.04808834807039794,
+          "accounting_quality": 0.09974322954655654
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 161,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.009827447277488447,
+          "profitability": 0.1934979352391415,
+          "financial_health": 0.3317211809243117,
+          "growth": 0.009103199239521395,
+          "capital_allocation": 0.42651873073833496,
+          "accounting_quality": 0.02933150658120192
+        },
+        "return_pct": 3.12,
+        "final_value": 22685.63,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 169,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.06330993751529751,
+          "profitability": 0.2934624684659778,
+          "financial_health": 0.23167171780085824,
+          "growth": 0.016875076580726418,
+          "capital_allocation": 0.14522282396539282,
+          "accounting_quality": 0.24945797567174716
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 170,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.014496645510811236,
+          "profitability": 0.09245636102493364,
+          "financial_health": 0.301935705389306,
+          "growth": 0.03698711134075578,
+          "capital_allocation": 0.4853274382704099,
+          "accounting_quality": 0.06879673846378336
+        },
+        "return_pct": 3.11,
+        "final_value": 22685.21,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 175,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.013051210425220186,
+          "profitability": 0.5853114171960998,
+          "financial_health": 0.117365999097438,
+          "growth": 0.05921153294655941,
+          "capital_allocation": 0.18873313107495684,
+          "accounting_quality": 0.03632670925972575
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 181,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.0656176032490072,
+          "profitability": 0.226382310230744,
+          "financial_health": 0.22981849404390844,
+          "growth": 0.05901575599993821,
+          "capital_allocation": 0.2527112810745943,
+          "accounting_quality": 0.16645455540180784
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 189,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.00109510448823271,
+          "profitability": 0.3198975412715708,
+          "financial_health": 0.23506119421941885,
+          "growth": 0.1076227832162203,
+          "capital_allocation": 0.2327607003240668,
+          "accounting_quality": 0.10356267648049058
+        },
+        "return_pct": 3.11,
+        "final_value": 22685.21,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 198,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.033132836768733305,
+          "profitability": 0.7766693331409116,
+          "financial_health": 0.12421279867615029,
+          "growth": 0.04492756840812544,
+          "capital_allocation": 0.008562625727206716,
+          "accounting_quality": 0.01249483727887282
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 200,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.055238181020663524,
+          "profitability": 0.20809171934016368,
+          "financial_health": 0.2094411196140119,
+          "growth": 0.2714042488218554,
+          "capital_allocation": 0.008344449546057639,
+          "accounting_quality": 0.2474802816572478
+        },
+        "return_pct": 3.11,
+        "final_value": 22684.29,
+        "score_vs_spy": 4.5
+      },
+      {
+        "trial": 105,
+        "is_baseline": false,
+        "weights": {
+          "valuation": 0.011341418514720984,
+          "profitability": 0.05754201615724095,
+          "financial_health": 0.607571673035039,
+          "growth": 0.023814514041708743,
+          "capital_allocation": 0.12390683443809897,
+          "accounting_quality": 0.17582354381319137
+        },
+        "return_pct": 1.78,
+        "final_value": 22392.02,
+        "score_vs_spy": 4.2
+      }
+    ]
+  }
+}

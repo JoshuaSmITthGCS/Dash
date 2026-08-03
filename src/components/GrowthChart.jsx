@@ -70,6 +70,7 @@ export default function GrowthChart({
   title,
   caption,
   zoomable = false,
+  valueFormatter = money,
 }) {
   const [zoom, setZoom] = useState('all')
   const availableLines = series.filter((line) =>
@@ -104,7 +105,7 @@ export default function GrowthChart({
   const labelIndexes = [0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1]
   const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {
     const values = line.values.filter((value) => value != null)
-    return `${line.label}: ${money(values[values.length - 1])}`
+    return `${line.label}: ${valueFormatter(values[values.length - 1])}`
   }).join('; ')} at the end of the period.`
 
   return (
@@ -138,12 +139,12 @@ export default function GrowthChart({
           {ticks.map((tick, index) => {
             const y = PAD.top + (index / (ticks.length - 1)) * innerHeight
             return (
-              <g key={tick}>
+              <g key={`${index}-${tick}`}>
                 <line x1={PAD.left} x2={width - PAD.right} y1={y} y2={y}
                   stroke="var(--border)" strokeWidth="1" />
                 <text x={PAD.left - 8} y={y + 4} textAnchor="end"
                   fill="var(--text-faint)" fontSize="10" fontFamily="var(--font-mono)">
-                  {money(tick)}
+                  {valueFormatter(tick)}
                 </text>
               </g>
             )
@@ -188,7 +189,7 @@ export default function GrowthChart({
                 opacity: line.dashPattern || line.dashed ? 0.85 : 1,
               }} />
               <span style={{ color: 'var(--text-dim)' }}>{line.label}</span>
-              <span className="mono" style={{ fontWeight: 600 }}>{money(latest)}</span>
+              <span className="mono" style={{ fontWeight: 600 }}>{valueFormatter(latest)}</span>
             </div>
           )
         })}

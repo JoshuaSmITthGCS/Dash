@@ -1,0 +1,25 @@
+{
+  "HIG": {
+    "ticker": "HIG", "sector": "Financial Services", "industry": "Insurance - Diversified",
+    "forward_pe": 10, "peg": 0.12, "current_ratio": 1.77, "free_cash_flow_yield": 0.14,
+    "revenue_growth": 0.08, "earnings_growth": 0.36, "forward_eps_revision_30d": -12,
+    "expected_profile": "diversified_insurer"
+  },
+  "BSX": {
+    "ticker": "BSX", "sector": "Healthcare", "industry": "Medical Devices",
+    "forward_pe": 30, "peg": 2.7, "price_to_sales": 7.5, "ev_to_ebitda": 25,
+    "revenue_growth": 0.18, "earnings_growth": 0.22, "forward_eps_revision_30d": -8,
+    "observations": {"forward_eps_revision_30d": [{"value": -8, "unit": "percentage_points", "source": "estimate_provider", "source_field": "revision30d", "quality_flags": []}]},
+    "expected_profile": "general"
+  },
+  "BANK": {"ticker": "BANK", "sector": "Financial Services", "industry": "Banks - Regional", "expected_profile": "bank"},
+  "REIT": {"ticker": "REIT", "sector": "Real Estate", "industry": "REIT - Industrial", "expected_profile": "reit"},
+  "UTILITY": {"ticker": "UTIL", "sector": "Utilities", "industry": "Utilities - Regulated Electric", "expected_profile": "utility"},
+  "SOFTWARE": {"ticker": "SOFT", "sector": "Technology", "industry": "Software - Application", "profit_margin": 0.2, "expected_profile": "general"},
+  "BIOTECH": {"ticker": "BIO", "sector": "Healthcare", "industry": "Biotechnology", "profit_margin": -2.0, "expected_profile": "pre_profit_biotechnology"},
+  "COMMODITY": {"ticker": "MINE", "sector": "Basic Materials", "industry": "Copper Mining", "expected_profile": "commodity_producer"},
+  "NEGATIVE_EPS": {"ticker": "LOSS", "sector": "Technology", "industry": "Software", "profit_margin": -0.2, "forward_pe": null, "expected_profile": "other_pre_profit"},
+  "NEGATIVE_EQUITY": {"ticker": "NEGEQ", "sector": "Industrials", "industry": "Manufacturing", "price_to_book": -4, "expected_profile": "general"},
+  "STALE": {"ticker": "STALE", "sector": "Industrials", "industry": "Manufacturing", "quality_flags": ["stale_fundamentals"], "expected_profile": "general"},
+  "CONFLICT": {"ticker": "CONFLICT", "sector": "Industrials", "industry": "Manufacturing", "expected_profile": "general"}
+}

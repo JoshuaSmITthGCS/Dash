@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "decision-v2.0.0",
+  "output_schema_version": "5.0.0",
+  "shadow_mode": true,
+  "score_matrix": {
+    "structural_strong": 75,
+    "structural_acceptable": 55,
+    "timeliness_buy": 70,
+    "timeliness_tactical": 75,
+    "timeliness_acceptable": 55,
+    "timeliness_weak": 50
+  },
+  "confidence_gates": {
+    "insufficient": 0.40,
+    "normal": 0.60,
+    "high_conviction": 0.80
+  },
+  "critical_fields": {
+    "general": ["forward_estimates"],
+    "diversified_insurer": ["insurer_capital", "underwriting_quality"],
+    "bank": ["capital_adequacy", "credit_quality"],
+    "etf": ["holdings_liquidity", "tracking_quality"]
+  },
+  "deterioration": {
+    "group_flag_threshold": 0.45,
+    "minimum_distinct_subfactors": 2,
+    "minimum_metric_confidence": 0.40,
+    "minimum_persistence_periods": 2,
+    "shared_signal_weight": 0.35,
+    "severity_bands": {"mild": 0.35, "moderate": 0.65, "severe": 1.0}
+  },
+  "trim": {
+    "base_by_flag_count": {"0": 0.0, "1": 0.0, "2": 0.20, "3": 0.50},
+    "severity_multipliers": {"mild": 0.75, "moderate": 1.0, "severe": 1.5},
+    "confidence_multipliers": {"limited": 0.50, "normal": 0.85, "high": 1.0},
+    "concentration_multipliers": {"below_target": 0.75, "near_target": 1.0, "overweight": 1.25, "severely_overweight": 1.5},
+    "liquidity_multipliers": {"high": 0.85, "normal": 1.0, "low": 1.10},
+    "tax_cost_multipliers": {"high": 0.60, "normal": 0.85, "low": 1.0},
+    "minimum": 0.10,
+    "maximum": 0.75,
+    "share_precision": 0.01,
+    "minimum_trade_value": 50.0,
+    "minimum_portfolio_fraction": 0.0005,
+    "transaction_cost_multiple": 5.0
+  },
+  "portfolio": {
+    "default_target_weight": 0.03,
+    "default_max_weight": 0.05,
+    "materially_overweight_ratio": 1.25,
+    "severely_overweight_ratio": 1.50,
+    "maximum_sector_weight": 0.25,
+    "maximum_theme_weight": 0.25,
+    "minimum_average_dollar_volume": 5000000
+  },
+  "stop_profiles": {
+    "default": {"mode": "fixed", "hard_cost_basis_pct": -20, "trailing_high_water_pct": -15, "persistence_closes": 1, "reentry_cooldown_days": 20},
+    "low_volatility_insurer": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -18, "trailing_high_water_pct": -12, "atr_multiple": 3.0, "persistence_closes": 2, "reentry_cooldown_days": 20},
+    "high_volatility_biotech": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -35, "trailing_high_water_pct": -25, "atr_multiple": 4.0, "persistence_closes": 2, "reentry_cooldown_days": 30},
+    "broad_etf": {"mode": "volatility_adjusted", "hard_cost_basis_pct": -15, "trailing_high_water_pct": -10, "atr_multiple": 3.0, "persistence_closes": 2, "reentry_cooldown_days": 10},
+    "leveraged_etf": {"mode": "fixed", "hard_cost_basis_pct": -12, "trailing_high_water_pct": -10, "persistence_closes": 1, "reentry_cooldown_days": 20},
+    "long_duration_compounder": {"mode": "none", "persistence_closes": 0, "reentry_cooldown_days": 0}
+  },
+  "thesis_break": {
+    "minimum_confidence": 0.80,
+    "minimum_materiality": 0.70,
+    "allowed_codes": [
+      "fraud_verified", "material_accounting_restatement", "going_concern_warning",
+      "covenant_breach", "liquidity_crisis", "thesis_central_dividend_suspension",
+      "critical_regulatory_approval_lost", "permanent_customer_loss",
+      "management_invalidated_thesis", "catastrophic_dilution", "bankruptcy_filing"
+    ]
+  },
+  "entry": {
+    "earnings_blackout_days": 3,
+    "average_down_minimum_interval_days": 30,
+    "average_down_maximum_additions": 2,
+    "reentry_requires_score_requalification": true
+  }
+}

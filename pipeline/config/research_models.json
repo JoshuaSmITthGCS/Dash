@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "screens-v2.0.0",
+  "momentum": {
+    "model_version": "momentum-v2.0.0",
+    "weights": { "momentum_12_1": 0.40, "momentum_12_7": 0.20, "momentum_6_1": 0.15, "high_52w_proximity": 0.15, "industry_relative_momentum": 0.10 },
+    "price_family_cap": 0.90,
+    "minimum_price": 5,
+    "minimum_market_cap": 300000000,
+    "minimum_median_dollar_volume_60d": 2000000,
+    "minimum_history_sessions": 253,
+    "recent_ipo_sessions": 253,
+    "entry_percentile": 90,
+    "exit_percentile": 75,
+    "minimum_holding_days": 30,
+    "maximum_monthly_turnover": 0.30,
+    "maximum_sector_weight": 0.25,
+    "maximum_position": 0.05,
+    "target_sleeve_volatility": 0.12,
+    "regime_variants": ["none", "warning", "reduce_25", "reduce_50", "volatility_only"]
+  },
+  "tactical": {
+    "model_version": "tactical-v1.0.0",
+    "weights": {
+      "revision_agreement": 0.12, "revision_magnitude": 0.15, "revision_acceleration": 0.08,
+      "fresh_estimate_delta": 0.05, "dispersion_trend": 0.05, "eps_surprise": 0.08,
+      "surprise_consistency": 0.04, "revenue_surprise": 0.03, "post_earnings_drift": 0.05,
+      "momentum_12_1": 0.08, "momentum_6_1": 0.04, "high_52w_proximity": 0.04,
+      "industry_relative_momentum": 0.04, "industry_revision_breadth": 0.10,
+      "risk_tradability": 0.05
+    }
+  },
+  "quality_value": {
+    "model_version": "quality-value-v2.0.0",
+    "own_history_weight": 0.50, "peer_value_weight": 0.15, "quality_weight": 0.35,
+    "actionable_min_quality": 65, "actionable_min_cheapness": 70,
+    "minimum_history_observations": 12
+  },
+  "promotion": {
+    "provisional": true,
+    "minimum_monthly_observations": 36,
+    "minimum_oos_mean_rank_ic": 0.0,
+    "minimum_net_excess_return": 0.0,
+    "maximum_drawdown": -0.35,
+    "maximum_alpha_sector_share": 0.50,
+    "minimum_bootstrap_probability_positive_excess": 0.75
+  }
+}

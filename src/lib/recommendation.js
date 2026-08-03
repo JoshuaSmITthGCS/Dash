@@ -20,6 +20,26 @@ const DEFAULT_TRIM = { HOLD: 0, WATCH: 0, TRIM: 33, SELL: 100 }
 export function getRecommendation(stock) {
   if (!stock) return null
   const published = stock.recommendation
+  const structural = stock.analysis_v2?.structural
+  if (structural && structural.confidence < 0.4) {
+    return {
+      action: 'WATCH',
+      confidence: 'low',
+      summary: `Insufficient evidence: ${Math.round(structural.coverage * 100)}% coverage and ${Math.round(structural.confidence * 100)}% confidence.`,
+      reasons: [...(structural.missing_metrics || []).slice(0, 3).map((metric) => `Missing ${metric.replace(/_/g, ' ')}`)],
+      agreementCount: 0,
+      suggestedTrimPct: 0,
+      source: 'canonical_confidence_gate',
+    }
+  }
+  if (structural && structural.confidence < 0.6 && ['TRIM', 'SELL'].includes(published?.action)) {
+    return {
+      action: 'WATCH', confidence: 'limited',
+      summary: 'Review only: evidence confidence is below the threshold for prescriptive company action.',
+      reasons: published.reasons || [], agreementCount: published.agreement_count ?? 0,
+      suggestedTrimPct: 0, source: 'canonical_confidence_gate',
+    }
+  }
   if (published?.action) {
     return {
       ...published,

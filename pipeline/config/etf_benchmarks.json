@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "default": {
+    "benchmark_name": "S&P 500",
+    "benchmark_identifier": "SPY",
+    "benchmark_ticker": "SPY",
+    "benchmark_type": "generic_market",
+    "return_type": "total_return",
+    "currency": "USD",
+    "hedging": "not_applicable",
+    "source": "configured fallback",
+    "confidence": 0.55,
+    "fallback_proxy": null
+  },
+  "funds": {
+    "SPY": { "benchmark_name": "S&P 500 Total Return Index", "benchmark_identifier": "SP500TR", "benchmark_ticker": "VOO", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.85, "fallback_proxy": "SPY" },
+    "VOO": { "benchmark_name": "S&P 500 Total Return Index", "benchmark_identifier": "SP500TR", "benchmark_ticker": "SPY", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.85, "fallback_proxy": "SPY" },
+    "VTI": { "benchmark_name": "CRSP US Total Market Index", "benchmark_identifier": "CRSPUSTMI", "benchmark_ticker": "ITOT", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.8, "fallback_proxy": "SPY" },
+    "QQQ": { "benchmark_name": "Nasdaq-100 Index", "benchmark_identifier": "NDX", "benchmark_ticker": "QQQM", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.82, "fallback_proxy": "SPY" },
+    "SCHD": { "benchmark_name": "Dow Jones U.S. Dividend 100 Index", "benchmark_identifier": "DJUSDIV", "benchmark_ticker": "VYM", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.7, "fallback_proxy": "SPY" },
+    "VXUS": { "benchmark_name": "FTSE Global All Cap ex US Index", "benchmark_identifier": "FTSEGAEXUS", "benchmark_ticker": "IXUS", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "unhedged", "source": "fund objective / configured proxy", "confidence": 0.78, "fallback_proxy": "SPY" },
+    "BND": { "benchmark_name": "Bloomberg U.S. Aggregate Float Adjusted Index", "benchmark_identifier": "LBUSTRUU", "benchmark_ticker": "AGG", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.8, "fallback_proxy": "SPY" },
+    "XLE": { "benchmark_name": "Energy Select Sector Index", "benchmark_identifier": "IXE", "benchmark_ticker": "VDE", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.72, "fallback_proxy": "SPY" },
+    "XLF": { "benchmark_name": "Financial Select Sector Index", "benchmark_identifier": "IXM", "benchmark_ticker": "VFH", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.72, "fallback_proxy": "SPY" },
+    "XLV": { "benchmark_name": "Health Care Select Sector Index", "benchmark_identifier": "IXV", "benchmark_ticker": "VHT", "benchmark_type": "investable_proxy", "return_type": "total_return", "currency": "USD", "hedging": "not_applicable", "source": "fund objective / configured proxy", "confidence": 0.72, "fallback_proxy": "SPY" }
+  }
+}

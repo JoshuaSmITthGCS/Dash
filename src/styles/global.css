@@ -134,6 +134,19 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .hero-score-row > div:first-child > strong { font: 760 clamp(64px, 8vw, 104px)/.8 var(--font-display); letter-spacing: -.075em; font-variant-numeric: tabular-nums; }
 .hero-score-row > div:first-child > small { color: var(--text-faint); font: 11px var(--font-mono); }
 .confidence-ring { width: 100px; aspect-ratio: 1; display: grid; place-content: center; border-radius: 50%; text-align: center; background: radial-gradient(circle closest-side, #153024 82%, transparent 84% 100%), conic-gradient(var(--accent) var(--confidence), var(--border) 0); }
+.analysis-layers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 20px; }
+.analysis-layer-card { padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elev); }
+.analysis-layer-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.analysis-layer-heading strong { display: block; margin-top: 3px; font-size: 28px; }
+.analysis-layer-card > p { margin: 8px 0 12px; color: var(--text-dim); font-size: 12px; line-height: 1.5; }
+.analysis-quality-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+.analysis-quality-grid div { min-width: 0; }.analysis-quality-grid dt { color: var(--text-faint); font-size: 10px; text-transform: uppercase; }.analysis-quality-grid dd { margin: 2px 0 0; font: 600 13px var(--font-mono); }
+.analysis-warning { display: block; margin-top: 10px; color: var(--warn); line-height: 1.4; }
+.metric-exception-list { display: grid; gap: 8px; }
+.metric-exception-list > div { display: grid; grid-template-columns: minmax(150px, 1fr) auto minmax(240px, 2fr); align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.metric-exception-list b { font-size: 12px; text-transform: capitalize; }.metric-exception-list small { color: var(--text-dim); line-height: 1.4; }
+.company-thesis-row { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; }.company-thesis-row small { color: var(--text-dim); }
+@media (max-width: 680px) { .analysis-layers { grid-template-columns: 1fr; }.metric-exception-list > div { grid-template-columns: 1fr auto; }.metric-exception-list small { grid-column: 1 / -1; }.company-thesis-row { grid-template-columns: auto auto; }.company-thesis-row small { grid-column: 1 / -1; } }
 .confidence-ring strong { font: 700 19px var(--font-mono); }.confidence-ring span { max-width: 70px; color: var(--text-dim); font-size: 9px; }
 .hero-stat-row { margin: 26px 0 22px; gap: 34px; }.hero-stat-row > div { display: grid; gap: 2px; }
 .hero-stat-row span { color: var(--text-faint); font-size: 10px; }.hero-stat-row b, .hero-stat-row .mono { font-size: 15px; }
@@ -388,3 +401,40 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* Versioned ETF comparison states and controls */
+.etf-comparison { display: grid; gap: 18px; }
+.etf-benchmark-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.etf-benchmark-heading h3 { margin: 3px 0 0; }
+.etf-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.etf-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 10px; }
+.etf-state { min-height: 150px; padding: 28px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; color: var(--text-dim); }
+.etf-state strong { color: var(--text); }
+.etf-state button { margin-top: 8px; }
+.etf-quality-note { margin: 0; color: var(--text-faint); font: 12px var(--font-mono); }
+@media (max-width: 640px) {
+  .etf-controls { align-items: stretch; }
+  .etf-controls .chart-zoom { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  .etf-controls .chart-zoom button { min-height: 44px; flex: 0 0 auto; }
+}
+.screen-nav { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 20px; }
+.screen-nav a { min-height: 44px; display: inline-flex; align-items: center; flex: 0 0 auto; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); text-decoration: none; }
+.screen-nav a.active { color: var(--text); border-color: var(--accent); background: var(--surface-raised); }
+.screen-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.screen-filters label { color: var(--text-dim); font-size: 12px; display: grid; gap: 6px; }
+.screen-filters select, .screen-filters input { min-height: 44px; width: 100%; }
+
+/* Shadow recommendation policy: independent company, portfolio, and position decisions. */
+.shadow-decision-panel { display: grid; gap: 14px; margin: 0 0 20px; padding: 18px; border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border)); border-radius: 18px; background: color-mix(in srgb, var(--accent) 4%, var(--bg-elev)); }
+.shadow-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.shadow-heading h3 { margin-top: 3px; }
+.shadow-comparison { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.shadow-comparison > div, .shadow-layer { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 13px; background: var(--bg-card); }
+.shadow-comparison span, .shadow-comparison strong, .shadow-comparison small, .shadow-layer span, .shadow-layer strong, .shadow-layer small { display: block; }
+.shadow-comparison span, .shadow-layer span { color: var(--text-faint); font: 9px var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+.shadow-comparison strong, .shadow-layer strong { margin: 5px 0; color: var(--text); }
+.shadow-comparison small, .shadow-layer small { color: var(--text-dim); font-size: 11px; line-height: 1.45; }
+.shadow-layers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.shadow-evidence { display: flex; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; color: var(--text-dim); font: 10px var(--font-mono); }
+.shadow-reasons { margin: 0; padding-left: 18px; color: var(--text-dim); font-size: 11px; }
+@media (max-width: 800px) { .shadow-comparison { grid-template-columns: 1fr; }.shadow-layers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 440px) { .shadow-layers { grid-template-columns: 1fr; } }

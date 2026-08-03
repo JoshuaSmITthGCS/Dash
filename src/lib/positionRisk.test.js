@@ -91,6 +91,8 @@ describe('withStopLoss', () => {
     expect(merged.action).toBe('SELL')
     expect(merged.source).toBe('stop_loss')
     expect(merged.reasons[0]).toMatch(/stop-loss/)
+    expect(merged.companyRecommendation.action).toBe('HOLD')
+    expect(merged.positionAction).toMatchObject({ action: 'SELL', reasonCode: 'hard_stop_breached' })
   })
 
   it('leaves a recommendation already at least as severe untouched', () => {

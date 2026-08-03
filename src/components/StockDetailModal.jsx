@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 import { Tier } from './Bits'
 import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
+import ETFComparisonPanel from './ETFComparisonPanel'
 import MetricSections from './MetricSections'
 import { getRecommendation } from '../lib/recommendation'
 import { bullBearScore } from '../lib/bullBearScore'
 import { fixedBasisAlternative, positionGrowthSeries } from '../lib/portfolioPerformance'
+import AnalysisLayers from './AnalysisLayers'
+import RecommendationShadowPanel from './RecommendationShadowPanel'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -43,9 +46,13 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   // stop-loss check) passes it here — recomputing from the raw research row would
   // silently drop that, since the row itself knows nothing about your cost basis.
   const recommendation = recommendationOverride || getRecommendation(stock)
+  const isEtf = stock.is_etf || String(stock.asset_type || '').toLowerCase() === 'etf' || stock.sector === 'ETF'
   const technical = stock.technical_detail || {}
   const categories = stock.fundamental_categories || {}
   const thesis = bullBearScore(stock)
+  const analysis = stock.analysis_v2
+  const structural = analysis?.structural
+  const percentile = stock.valuation_percentile
 
   // A held position with a purchase date gets its own since-you-bought-it comparison — the
   // full charted window (often a year) is the wrong question once you actually own the stock.
@@ -90,11 +97,15 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             <h2 style={{ marginBottom: 4 }}>{stock.ticker}</h2>
             <div style={{ opacity: 0.7, marginBottom: 8 }}>{stock.name} · {stock.industry || stock.sector || '—'}</div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Tier label={stock.stance} />
-              <span className="mono" style={{ fontSize: 24, fontWeight: 600 }}>{stock.score}</span>
-              <span style={{ opacity: 0.6, fontSize: 14 }}>{Math.round(stock.confidence * 100)}% confidence</span>
-              {stock.sector_valuation_percentile != null && (
-                <span className="chip">cheaper than {stock.sector_valuation_percentile.toFixed(0)}% of its sector</span>
+              <Tier label={analysis?.company_classification || stock.stance} />
+              <span className="mono" style={{ fontSize: 24, fontWeight: 600 }}>{structural?.effective_score ?? stock.score}</span>
+              <span style={{ opacity: 0.7, fontSize: 14 }}>
+                {Math.round((structural?.confidence ?? stock.confidence) * 100)}% confidence · {Math.round((structural?.coverage ?? 0) * 100)}% coverage
+              </span>
+              {percentile?.display_value != null && (
+                <span className="chip" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}`}>
+                  cheaper than approximately {percentile.display_value.toFixed(0)}% of {percentile.peer_group_label} · n={percentile.peer_count_with_valid_data}
+                </span>
               )}
             </div>
           </div>
@@ -105,6 +116,10 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
         </div>
 
+        <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
+
+        <AnalysisLayers analysis={analysis} />
+
         <div className="grid grid-4" style={{ marginBottom: 20 }}>
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />
           <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'} />
@@ -112,7 +127,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           <Kpi label="1-year move" value={signed(technical.return_252d)} color={moveColor(technical.return_252d)} />
         </div>
 
-        {thesis && (
+        {thesis && !analysis && (
           <section className="bull-bear-detail" aria-label={`Bull bear thesis score ${thesis.score} out of 10`}>
             <div>
               <span>Bull / bear thesis</span>
@@ -208,6 +223,16 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
 
         {tab === 'performance' && (
           <div style={{ display: 'grid', gap: 20 }}>
+            {isEtf ? <>
+              <ETFComparisonPanel ticker={stock.ticker} />
+              {chartSeries.length > 0 && <details className="card card-pad">
+                <summary>Legacy comparison view</summary>
+                <GrowthChart dates={chartDates} series={chartSeries}
+                  title={`Legacy growth comparison — ${stock.ticker}`}
+                  caption="Retained during the schema 4 rollout. This legacy series may use a generic SPY comparison and should not be interpreted as tracking difference."
+                  zoomable />
+              </details>}
+            </> : <>
             <GrowthChart
               dates={chartDates}
               series={chartSeries}
@@ -253,6 +278,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
               <Kpi label="Vs SPY (20d)" value={signed(technical.relative_strength_20d)} color={moveColor(technical.relative_strength_20d)} />
               <Kpi label="Beta" value={technical.beta != null ? technical.beta.toFixed(2) : '—'} />
             </div>
+            </>}
           </div>
         )}
 

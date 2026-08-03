@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
       - run: pip install -r pipeline/requirements.txt
       - run: python -m compileall -q pipeline
-      - run: python -m unittest discover -s pipeline/tests -v
+      - run: PYTHONPATH=pipeline python -m pytest pipeline/tests -q
       - run: python pipeline/validate_data.py
 
   site:

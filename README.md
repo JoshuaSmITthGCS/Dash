@@ -116,6 +116,7 @@ cp .env.example .env.local
 # This file is ignored by Git.
 python pipeline/fetch_news.py
 python pipeline/fetch_advisor.py
+python pipeline/build_etf_comparisons.py
 python pipeline/validate_data.py
 
 npm ci
@@ -173,7 +174,7 @@ to create each value, add the variables safely, verify the live function, and tr
 ## Quality controls
 
 ```bash
-python -m unittest discover -s pipeline/tests -v
+PYTHONPATH=pipeline python -m pytest pipeline/tests -q
 python pipeline/validate_data.py
 npm run lint
 npm test

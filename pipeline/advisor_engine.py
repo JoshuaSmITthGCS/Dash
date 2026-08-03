@@ -7,6 +7,8 @@ from risk_metrics import (annualized_volatility, beta_vs_benchmark, daily_return
                           drawdown_score, low_beta_score, max_drawdown, momentum_12_1,
                           ratio_to_score, sharpe_ratio, sortino_ratio)
 from scorer import SETTINGS, valuation_score
+from recommendation_policy_v2 import build_recommendation_v2
+from scoring_v2 import build_v2_analysis
 
 # Fundamentals deliberately dominate. News sentiment was cut from 10% because its alpha
 # decays in days: Tetlock (2007) finds media pessimism predicts downward price pressure
@@ -326,8 +328,9 @@ def sector_percentile_modifier(percentile):
     points = round((percentile - 50) / 50 * cap, 2)
     if abs(points) < 0.5:
         return 0.0, None
-    label = "cheaper" if points > 0 else "richer"
-    return points, f"Valuation {label} than {abs(percentile - 50) * 2:.0f}% of its sector peers"
+    if points > 0:
+        return points, f"Valuation cheaper than {percentile:.0f}% of its canonical peers"
+    return points, f"Valuation richer than {100 - percentile:.0f}% of its canonical peers"
 
 
 def macro_regime_modifier(snapshot, macro_regime):
@@ -538,6 +541,14 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, confidence)
     strengths, risks = build_evidence(categories, technical_parts, extended)
+    analysis_v2 = build_v2_analysis(snapshot, fundamental_parts)
+    recommendation_v2 = build_recommendation_v2(
+        symbol,
+        analysis_v2,
+        technical=technical_parts,
+        sentiment=sentiment_parts,
+        extended=extended,
+    )
     return {
         **snapshot, "score": score, "base_score": base, "stance": stance, "confidence": confidence,
         "components": components, "fundamental_categories": categories,
@@ -547,4 +558,8 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
         "recommendation": action_for(score, stance, fundamental_parts, technical_parts,
                                      extended, sentiment_parts),
         "strengths": strengths, "risks": risks,
+        "analysis_v2": analysis_v2,
+        # Shadow only: legacy ``recommendation`` remains the production field until the
+        # new policy has passed prospective, net-of-cost validation.
+        "recommendation_v2": recommendation_v2,
     }

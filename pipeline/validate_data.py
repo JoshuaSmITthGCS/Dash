@@ -137,6 +137,18 @@ def validate(production=False):
         recommendation = row.get("recommendation")
         if recommendation and recommendation.get("action") in ("TRIM", "SELL") and recommendation.get("agreement_count", 0) < 2:
             errors.append(f"advisor.json:research.{index}: sell guidance requires two agreeing factors")
+        percentile = row.get("valuation_percentile")
+        if percentile and row.get("sector_valuation_percentile") != percentile.get("value"):
+            errors.append(f"advisor.json:research.{index}: legacy and canonical percentile values disagree")
+        if percentile and percentile.get("value") is not None:
+            if percentile.get("peer_count_with_valid_data", 0) < percentile.get("minimum_peer_count", 4):
+                errors.append(f"advisor.json:research.{index}: percentile published below minimum peer count")
+            if percentile.get("value") == 100 and percentile.get("display_value", 100) > 99:
+                errors.append(f"advisor.json:research.{index}: user-facing percentile must cap at approximately 99")
+        analysis = row.get("analysis_v2", {})
+        structural = analysis.get("structural", {})
+        if structural.get("confidence", 1) < 0.4 and analysis.get("company_classification") != "insufficient_evidence":
+            errors.append(f"advisor.json:research.{index}: low confidence must classify as insufficient evidence")
     benchmark_history = advisor.get("benchmark_history", {})
     benchmark_dates = benchmark_history.get("dates", [])
     for key in ("closes", "growth"):

@@ -50,6 +50,7 @@ from common import LOG, load_json  # noqa: E402
 from advisor_engine import build_research  # noqa: E402
 from fundamentals_extended import at, derive_extended, line, statement_series  # noqa: E402
 from market_history import sector_percentiles  # noqa: E402
+from policy_backtest import compare_policies  # noqa: E402
 from scorer import valuation_score  # noqa: E402
 
 REPORT_LAG_DAYS_DEFAULT = 45
@@ -432,6 +433,12 @@ def main():
     parser.add_argument("--benchmarks", type=str, default="SPY,QQQ,DIA,IWM")
     parser.add_argument("--delay", type=float, default=0.3, help="Seconds between yfinance requests")
     parser.add_argument("--out", type=str, default=os.path.join(HERE, "backtest_historical_results.json"))
+    parser.add_argument("--policy-suite", action="store_true",
+                        help="Compare eight exit/trim policies with identical walk-forward entry signals")
+    parser.add_argument("--spread-bps", type=float, default=5.0)
+    parser.add_argument("--slippage-bps", type=float, default=5.0)
+    parser.add_argument("--tax-bps", type=float, default=0.0,
+                        help="Optional simplified realized-sale tax friction; tax-lot modeling remains provisional")
     args = parser.parse_args()
 
     try:
@@ -516,6 +523,12 @@ def main():
     print("=" * 72 + "\n")
 
     output = {"summary": summary, "portfolio": portfolio, "benchmarks": benchmark_results}
+    if args.policy_suite:
+        output["policy_comparison"] = compare_policies(
+            weekly_rankings, week_dates, top_n=args.top_n,
+            initial_capital=max(args.monthly_contribution * 12, 1),
+            spread_bps=args.spread_bps, slippage_bps=args.slippage_bps, tax_bps=args.tax_bps,
+        )
     with open(args.out, "w") as f:
         json.dump(output, f, indent=2, default=str)
     LOG.info(f"Wrote {args.out}")

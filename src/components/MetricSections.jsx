@@ -154,6 +154,8 @@ function Metric({ label, value, format, why, thresholds }) {
 }
 
 export default function MetricSections({ stock, sections = SECTIONS }) {
+  const status = stock.analysis_v2?.metric_status || {}
+  const canonicalKey = (key) => ({ revenue_growth: 'trailing_revenue_growth', earnings_growth: 'trailing_eps_growth' }[key] || key)
   const rendered = sections
     .map((section) => ({
       ...section,
@@ -161,7 +163,11 @@ export default function MetricSections({ stock, sections = SECTIONS }) {
         .map(([key, label, format, why, thresholds]) => ({
           key, label, format, why, thresholds, value: readValue(stock, key),
         }))
-        .filter((metric) => typeof metric.value === 'number' && Number.isFinite(metric.value)),
+        .filter((metric) => {
+          const state = status[canonicalKey(metric.key)]?.status
+          return !['suppressed', 'replaced', 'unavailable'].includes(state)
+            && typeof metric.value === 'number' && Number.isFinite(metric.value)
+        }),
     }))
     .filter((section) => section.resolved.length)
 
@@ -173,6 +179,7 @@ export default function MetricSections({ stock, sections = SECTIONS }) {
     )
   }
 
+  const exceptions = Object.entries(status).filter(([, detail]) => detail.status !== 'applied')
   return (
     <div style={{ display: 'grid', gap: 22 }}>
       {rendered.map((section) => (
@@ -186,6 +193,20 @@ export default function MetricSections({ stock, sections = SECTIONS }) {
           </div>
         </section>
       ))}
+      {exceptions.length > 0 && (
+        <section className="metric-exceptions">
+          <div className="sec-label">Applicability and data-quality exceptions</div>
+          <div className="metric-exception-list">
+            {exceptions.map(([metric, detail]) => (
+              <div key={metric}>
+                <b>{metric.replace(/_/g, ' ')}</b>
+                <span className="chip">{detail.status}</span>
+                <small>{detail.reason || (detail.replaced_by ? `Replaced by ${detail.replaced_by.replace(/_/g, ' ')}` : 'No canonical observation available.')}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

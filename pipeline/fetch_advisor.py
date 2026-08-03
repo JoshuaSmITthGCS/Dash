@@ -9,8 +9,12 @@ from datetime import datetime, timezone
 
 from advisor_engine import RANKING_WEIGHTS, build_research
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
+<<<<<<< Updated upstream
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from providers import YahooAdapter
+=======
+from canonical_metrics import Observation
+>>>>>>> Stashed changes
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import derive_extended, earnings_surprise_rows, extended_inputs
@@ -19,6 +23,8 @@ import pit_store
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload)
+from peer_groups import canonical_percentiles
+from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
 from scorer import SETTINGS, valuation_score
@@ -304,6 +310,30 @@ def yahoo_options_volatility(ticker_obj, price, closes):
 
 def overview_snapshot(symbol, overview, closes):
     market_cap = number(overview.get("MarketCapitalization"), 0)
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    observation_specs = {
+        "market_cap": ("MarketCapitalization", "usd", False, False),
+        "forward_pe": ("ForwardPE", "multiple", False, True),
+        "provider_peg": ("PEGRatio", "multiple", False, False),
+        "price_to_book": ("PriceToBookRatio", "multiple", False, False),
+        "trailing_revenue_growth": ("QuarterlyRevenueGrowthYOY", "decimal", False, False),
+        "quarterly_eps_growth": ("QuarterlyEarningsGrowthYOY", "decimal", False, False),
+    }
+    observations = {}
+    for metric_id, (field, unit, is_ttm, is_forward) in observation_specs.items():
+        value = number(overview.get(field))
+        if value is None:
+            continue
+        flags = [] if metric_id == "market_cap" else ["provider_period_not_supplied"]
+        if metric_id == "provider_peg":
+            flags.append("unknown_growth_definition_and_horizon")
+        if metric_id in ("trailing_revenue_growth", "quarterly_eps_growth"):
+            flags.append("quarterly_not_ttm")
+        observations[metric_id] = [Observation(
+            value=value, unit=unit, source="alpha_vantage", source_field=field,
+            observed_at=fetched_at, fetched_at=fetched_at, is_ttm=is_ttm,
+            is_forward=is_forward, quality_flags=flags,
+        ).to_dict()]
     return {
         "ticker": symbol,
         "name": overview.get("Name") or symbol,
@@ -325,6 +355,7 @@ def overview_snapshot(symbol, overview, closes):
         "profit_margin": number(overview.get("ProfitMargin")),
         "revenue_growth": number(overview.get("QuarterlyRevenueGrowthYOY")),
         "earnings_growth": number(overview.get("QuarterlyEarningsGrowthYOY")),
+        "observations": observations,
         "analyst_target_price": number(overview.get("AnalystTargetPrice"), 2),
         "week_52_high": number(overview.get("52WeekHigh"), 2),
         "week_52_low": number(overview.get("52WeekLow"), 2),
@@ -338,6 +369,12 @@ def merge_snapshots(primary, fallback):
     for key, value in fallback.items():
         if merged.get(key) is None or merged.get(key) == "":
             merged[key] = value
+    observations = {}
+    for source in (primary.get("observations", {}), fallback.get("observations", {})):
+        for metric_id, rows in source.items():
+            observations.setdefault(metric_id, []).extend(rows)
+    if observations:
+        merged["observations"] = observations
     return merged
 
 
@@ -751,8 +788,8 @@ def run():
 
     # Establish the five closest challengers from the inexpensive first-pass score.
     # Then statements are pulled for those names and the prior top 20 before final scoring.
-    preliminary_percentiles = sector_percentiles([
-        {"ticker": context["symbol"], "sector": context["snapshot"].get("sector"),
+    preliminary_peer_diagnostics = canonical_percentiles([
+        {**context["snapshot"], "ticker": context["symbol"],
          "categories": valuation_score(context["snapshot"])[1].get("categories", {})}
         for context in contexts
     ])
@@ -761,7 +798,7 @@ def run():
         row = build_research(
             context["symbol"], context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended={},
-            sector_percentile=preliminary_percentiles.get(context["symbol"]),
+            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("value"),
             macro_regime=fred_regime,
         )
         preliminary.append(row)
@@ -796,8 +833,8 @@ def run():
 
     # Valuation is scored once up front so 'cheap for its sector' can be measured against peers
     # before the final score is assembled.
-    percentiles = sector_percentiles([
-        {"ticker": context["symbol"], "sector": context["snapshot"].get("sector"),
+    peer_diagnostics = canonical_percentiles([
+        {**context["snapshot"], "ticker": context["symbol"],
          "categories": valuation_score(context["snapshot"])[1].get("categories", {})}
         for context in contexts
     ])
@@ -818,7 +855,11 @@ def run():
         row = build_research(
             symbol, context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended=context["extended"],
+<<<<<<< Updated upstream
             sector_percentile=percentiles.get(symbol),
+=======
+            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+>>>>>>> Stashed changes
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
         )
@@ -826,6 +867,7 @@ def run():
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["alpha_enriched"] = context["alpha_enriched"]
+        row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
@@ -901,10 +943,13 @@ def run():
     for row in research:
         row.setdefault("data_fetched_at", generated_at)
     payload = {
+<<<<<<< Updated upstream
         # Bumped to 2: market-behavior detail keys changed (12-1 momentum and real
         # risk-adjusted ratios replaced the invented trend/risk fields), and theme exposure
         # plus data-freshness blocks were added. All additive except the technical rename,
         # which the frontend migration in src/lib/schemaMigrations.js maps for v1 readers.
+=======
+>>>>>>> Stashed changes
         "schema_version": 2, "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
@@ -1013,7 +1058,13 @@ def run():
         },
         "disclaimer": "General research, not individualized investment advice. Verify filings, estimates, valuation context, and suitability before acting.",
     }
+    payload["run_manifest"] = run_manifest(payload, {
+        "provider_collection": len(research_failures),
+        "statement_enrichment": max(0, len(contexts) - enriched_count),
+        "publication_limit": max(0, len(research) - len(ranked)),
+    })
     save_json("advisor.json", payload)
+    save_json("diagnostics.json", diagnostics_payload(payload))
     all_failures = sorted(set(alpha_failures + marketaux_failures + research_failures))
     update_pipeline_status("advisor", status="healthy" if not all_failures else "degraded",
                            source="Alpha Vantage + Yahoo Finance + Marketaux",

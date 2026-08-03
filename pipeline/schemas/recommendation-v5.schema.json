@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://valuesignal.example/schemas/recommendation-v5.schema.json",
+  "title": "ValueSignal shadow recommendation decision",
+  "type": "object",
+  "required": [
+    "schema_version", "model_version", "policy_mode", "generated_at", "ticker",
+    "company_structural_state", "company_timeliness_state", "portfolio_fit_state",
+    "position_rule_state", "company", "company_action", "portfolio_fit", "position_rules",
+    "position_action", "entry_action", "data_quality", "legacy_recommendation_unchanged"
+  ],
+  "properties": {
+    "schema_version": {"const": "5.0.0"},
+    "model_version": {"const": "decision-v2.0.0"},
+    "policy_mode": {"enum": ["shadow", "active"]},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "ticker": {"type": "string", "minLength": 1},
+    "company_structural_state": {"$ref": "#/$defs/scoreState"},
+    "company_timeliness_state": {"$ref": "#/$defs/scoreState"},
+    "portfolio_fit_state": {"$ref": "#/$defs/portfolioFit"},
+    "position_rule_state": {"type": "object", "required": ["classification", "rules"]},
+    "company": {
+      "type": "object",
+      "required": ["structural", "timeliness", "matrix_classification", "deterioration_groups", "action"],
+      "properties": {
+        "structural": {"$ref": "#/$defs/scoreState"},
+        "timeliness": {"$ref": "#/$defs/scoreState"},
+        "matrix_classification": {"type": "string"},
+        "deterioration_groups": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/deteriorationGroup"}},
+        "action": {"$ref": "#/$defs/action"}
+      }
+    },
+    "company_action": {"$ref": "#/$defs/action"},
+    "portfolio_fit": {"$ref": "#/$defs/portfolioFit"},
+    "position_rules": {"type": "object"},
+    "position_action": {
+      "type": "object",
+      "required": ["label", "trim_percent", "confidence", "reason_namespace", "reason_codes", "economically_material"],
+      "properties": {
+        "label": {"enum": ["no_action", "hold", "trim", "review", "exit"]},
+        "trim_percent": {"type": "number", "minimum": 0, "maximum": 1},
+        "shares": {"type": ["number", "null"], "minimum": 0},
+        "estimated_value": {"type": ["number", "null"], "minimum": 0},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "reason_namespace": {"type": "string"},
+        "reason_codes": {"type": "array", "items": {"type": "string"}},
+        "trim_calculation": {"type": "object"},
+        "economically_material": {"type": "boolean"}
+      }
+    },
+    "entry_action": {
+      "type": "object",
+      "required": ["type", "allowed", "reason_codes"],
+      "properties": {
+        "type": {"enum": ["initial_buy", "add_to_winner", "average_down", "reentry_after_stop"]},
+        "strategy": {"enum": ["long_term_entry", "tactical_entry"]},
+        "allowed": {"type": "boolean"},
+        "reason_codes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "data_quality": {
+      "type": "object",
+      "required": ["score_confidence", "data_coverage", "data_freshness", "provider_conflicts", "stale_metrics", "missing_critical_metrics"],
+      "properties": {
+        "score_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "data_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "data_freshness": {"type": "string"},
+        "provider_conflicts": {"type": "array", "items": {"type": "string"}},
+        "stale_metrics": {"type": "array", "items": {"type": "string"}},
+        "missing_critical_metrics": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "thesis_break_event": {"type": ["object", "null"]},
+    "critical_field_requirements": {"type": "array", "items": {"type": "string"}},
+    "legacy_recommendation_unchanged": {"const": true}
+  },
+  "$defs": {
+    "scoreState": {
+      "type": "object",
+      "required": ["raw_score", "effective_score", "confidence", "coverage"],
+      "properties": {
+        "raw_score": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "effective_score": {"type": "number", "minimum": 0, "maximum": 100},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "classification": {"type": "string"}
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": ["label", "confidence", "reason_namespace", "reason_codes"],
+      "properties": {
+        "label": {"enum": ["buy", "accumulate", "hold_existing_position", "watch", "quality_watch", "tactical_candidate", "avoid", "sell_thesis", "insufficient_evidence"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "reason_namespace": {"type": "string"},
+        "reason_codes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "portfolioFit": {
+      "type": "object",
+      "required": ["current_weight", "target_weight", "maximum_weight", "classification", "reason_codes"],
+      "properties": {
+        "current_weight": {"type": "number", "minimum": 0},
+        "target_weight": {"type": "number", "minimum": 0},
+        "maximum_weight": {"type": "number", "minimum": 0},
+        "classification": {"enum": ["below_target", "near_target", "overweight", "severely_overweight"]},
+        "reason_codes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "deteriorationGroup": {
+      "type": "object",
+      "required": ["group", "state", "flagged", "severity", "confidence", "persistence_periods", "reason_codes"],
+      "properties": {
+        "group": {"enum": ["business_fundamentals", "market_behavior", "positioning_sentiment"]},
+        "state": {"enum": ["stable_or_unavailable", "mixed", "deteriorating"]},
+        "flagged": {"type": "boolean"},
+        "severity": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "persistence_periods": {"type": "integer", "minimum": 0},
+        "reason_codes": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -86,6 +86,7 @@ jobs:
         run: pip install -r pipeline/requirements.txt
       - name: Fetch and score stock research
         if: steps.refresh_window.outputs.should_run == 'true'
+<<<<<<< Updated upstream
         run: python pipeline/fetch_advisor.py
       - name: Fetch ETF growth screen
         if: steps.refresh_window.outputs.should_run == 'true'
@@ -95,17 +96,24 @@ jobs:
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py
+=======
+        run: python pipeline/fetch_advisor.py && python pipeline/build_etf_comparisons.py && python pipeline/validate_data.py
+>>>>>>> Stashed changes
       - name: Commit refreshed data with retry
         if: steps.refresh_window.outputs.should_run == 'true'
         shell: bash
         run: |
           git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
+<<<<<<< Updated upstream
           git add public/data/advisor.json public/data/etfs.json public/data/status.json
           # The point-in-time store is committed because the runner is ephemeral. It cannot
           # be rebuilt later - the providers only ever serve today's restated numbers - so
           # the history only exists if each run appends to it and pushes the result.
           git add --all pipeline/data/pit 2>/dev/null || true
+=======
+          git add public/data/advisor.json public/data/status.json public/data/etf/
+>>>>>>> Stashed changes
           git diff --cached --quiet && exit 0
           git commit -m "chore(data): refresh advisor research"
           for attempt in 1 2 3; do

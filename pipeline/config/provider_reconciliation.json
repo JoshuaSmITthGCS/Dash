@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "canonical_fields": {
+    "revenue_ttm": {"preferred_sources": ["sec_xbrl", "alpha_vantage", "yahoo"], "discrepancy_tolerance_pct": 2, "on_disagreement": "flag_and_use_preferred"},
+    "market_cap": {"preferred_sources": ["yahoo", "alpha_vantage"], "discrepancy_tolerance_pct": 3, "on_disagreement": "flag_and_use_preferred"},
+    "forward_eps_fy1": {"preferred_sources": ["estimate_provider", "alpha_vantage", "yahoo"], "discrepancy_tolerance_pct": 5, "on_disagreement": "lower_confidence"},
+    "forward_pe": {"preferred_sources": ["calculated_from_canonical_inputs", "alpha_vantage", "yahoo"], "discrepancy_tolerance_pct": 5, "on_disagreement": "flag_and_use_preferred"},
+    "current_ratio": {"preferred_sources": ["sec_xbrl", "alpha_vantage", "yahoo"], "discrepancy_tolerance_pct": 5, "on_disagreement": "flag_and_use_preferred"},
+    "price_to_book": {"preferred_sources": ["calculated_from_canonical_inputs", "yahoo", "alpha_vantage"], "discrepancy_tolerance_pct": 5, "on_disagreement": "flag_and_use_preferred"}
+  }
+}

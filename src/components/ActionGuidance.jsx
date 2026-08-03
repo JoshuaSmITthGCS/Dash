@@ -79,6 +79,13 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
           ? 'This guidance comes from a stop-loss/trailing-stop rule on your specific entry price, not the business thesis. The company\'s own fundamentals, market behaviour, and sentiment may still read Hold.'
           : 'Guidance never moves off Hold on price action alone, or on a single headline. Two of three independent factors — business fundamentals, market behaviour, and positioning/sentiment — have to agree first.'}
       </small>
+      {fromStopLoss && recommendation.companyRecommendation && (
+        <div className="company-thesis-row">
+          <span>Company thesis</span>
+          <b>{recommendation.companyRecommendation.action}</b>
+          <small>{recommendation.companyRecommendation.summary || 'Independent of your entry price and stop rule.'}</small>
+        </div>
+      )}
     </div>
   )
 }

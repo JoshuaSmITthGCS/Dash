@@ -40,6 +40,15 @@ describe('getRecommendation', () => {
     expect(getRecommendation(stock).action).toBe('HOLD')
   })
 
+  it('gates prescriptive company action when canonical confidence is low', () => {
+    const result = getRecommendation({
+      recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2 },
+      analysis_v2: { structural: { confidence: 0.39, coverage: 0.8, missing_metrics: ['forward_eps_revision_30d'] } },
+    })
+    expect(result.action).toBe('WATCH')
+    expect(result.summary).toMatch(/insufficient evidence/i)
+  })
+
   it('returns nothing for a missing stock', () => {
     expect(getRecommendation(null)).toBeNull()
   })

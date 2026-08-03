@@ -133,15 +133,19 @@ export default function Methodology() {
       </ul>
     </section>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Sell, trim, and watch guidance</div>
+    <div className="sec-label" style={{ marginTop: 28 }}>Active guidance and shadow policy</div>
     <section className="card card-pad">
+      <p className="body-copy" style={{ marginBottom: 12 }}>
+        The active legacy policy requires agreement across business fundamentals, market behaviour,
+        and positioning or sentiment before it trims or sells. Its fixed factor-count sizing remains
+        visible while the replacement policy is evaluated.
+      </p>
       <p className="body-copy">
-        Guidance never leaves Hold on price action alone, and never on a single headline. Two of
-        three independent factors have to agree first: deteriorating business fundamentals, broken
-        market behaviour, and persistent negative sentiment or crowded positioning. Two agreeing
-        factors produce a Trim with a suggested percentage of the position; two agreeing factors on
-        a company that has also fallen below the evidence threshold produce a Sell. One factor alone
-        is a Watch — a reason to look closer, not to act.
+        The shadow policy keeps the company thesis, one-to-three-month timeliness, portfolio fit,
+        and user position rules separate. A stop can trigger a position exit without turning the
+        company into a thesis sell. Company scores are shrunk toward neutral when confidence is low,
+        and trim size reflects severity, confidence, concentration, liquidity, tax friction, and
+        minimum economic trade size. Shadow results do not control production actions.
       </p>
     </section>
 

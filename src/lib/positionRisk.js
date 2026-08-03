@@ -128,6 +128,13 @@ export function withStopLoss(recommendation, position, thresholds = {}) {
       : base.summary,
     reasons: [...stopLoss.reasons, ...(base.reasons || [])],
     stopLossTrigger: stopLoss,
+    companyRecommendation: base,
+    positionAction: {
+      action: stopLoss.action,
+      suggestedTrimPct: STOP_LOSS_TRIM[stopLoss.action] || 0,
+      reasonCode: stopLoss.severity === 'severe' ? 'hard_stop_breached' : 'defensive_stop_breached',
+      reasons: stopLoss.reasons,
+    },
     source: upgraded ? 'stop_loss' : base.source,
   }
 }

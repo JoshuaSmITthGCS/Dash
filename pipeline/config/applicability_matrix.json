@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "profiles": ["general", "bank", "property_casualty_insurer", "life_insurer", "diversified_insurer", "reit", "utility", "commodity_producer", "pre_profit_biotechnology", "other_pre_profit"],
+  "rules": {
+    "general": {},
+    "bank": {
+      "current_ratio": ["suppressed", null, "Bank liquidity is governed by deposits, liquid assets and regulatory ratios."],
+      "peg": ["suppressed", "forward_pe", "Universal PEG is not comparable for leveraged financial institutions."],
+      "free_cash_flow_yield": ["suppressed", "price_to_book", "Bank cash flow statements do not describe distributable owner cash like industrial FCF."],
+      "return_on_invested_capital": ["suppressed", "return_on_equity", "Debt is an operating input for banks."],
+      "net_debt_to_ebitda": ["suppressed", "capital_ratio", "Deposits and borrowings are operating funding."],
+      "ev_to_ebitda": ["suppressed", "price_to_book", "Enterprise value is economically misleading for banks."],
+      "altman_z": ["suppressed", "capital_ratio", "Industrial bankruptcy model is not calibrated for banks."]
+    },
+    "property_casualty_insurer": {
+      "current_ratio": ["suppressed", "risk_based_capital_ratio", "Insurer liquidity and solvency require statutory measures."],
+      "peg": ["suppressed", "forward_pe", "Universal PEG does not normalize underwriting cycles or reserve development."],
+      "free_cash_flow_yield": ["suppressed", "total_capital_return_yield", "Industrial FCF is distorted by premiums, claims, reserves and investment flows."],
+      "return_on_invested_capital": ["suppressed", "normalized_roe", "Insurer leverage and float make generic ROIC misleading."],
+      "cash_conversion": ["suppressed", "combined_ratio", "Claims reserves break industrial earnings-to-cash comparisons."],
+      "net_debt_to_ebitda": ["suppressed", "debt_to_capital", "EBITDA leverage is not an insurer solvency measure."],
+      "ev_to_ebitda": ["suppressed", "price_to_book", "EV/EBITDA is not an insurer-standard valuation measure."],
+      "ev_to_fcf": ["suppressed", "price_to_book", "Industrial FCF is not comparable for insurers."],
+      "altman_z": ["suppressed", "risk_based_capital_ratio", "Industrial bankruptcy model is not calibrated for insurers."],
+      "piotroski_f": ["suppressed", "combined_ratio", "Generic accounting checklist omits underwriting and reserve quality."],
+      "capex_to_depreciation": ["suppressed", "book_value_growth", "Physical reinvestment is not the insurer value-creation engine."],
+      "days_sales_outstanding_trend": ["suppressed", "loss_ratio", "Receivable days do not represent insurer underwriting quality."]
+    },
+    "life_insurer": {"$inherits": "property_casualty_insurer", "combined_ratio": ["suppressed", "spread_margin", "Combined ratio applies to P&C underwriting, not life products."]},
+    "diversified_insurer": {"$inherits": "property_casualty_insurer"},
+    "reit": {
+      "peg": ["suppressed", "price_to_ffo", "EPS is distorted by property depreciation."],
+      "forward_pe": ["suppressed", "price_to_ffo", "P/FFO is the standard earnings multiple for REITs."],
+      "free_cash_flow_yield": ["suppressed", "affo_yield", "AFFO better reflects recurring property cash generation."],
+      "return_on_invested_capital": ["suppressed", "same_store_noi_growth", "Generic ROIC is distorted by property accounting."],
+      "current_ratio": ["suppressed", "fixed_charge_coverage", "REIT liquidity is better assessed through debt maturity and coverage."],
+      "altman_z": ["suppressed", "fixed_charge_coverage", "Industrial bankruptcy model is not calibrated for REITs."]
+    },
+    "utility": {"free_cash_flow_yield": ["replaced", "funds_from_operations_yield", "Regulated utilities commonly fund large mandated capital programs."]},
+    "commodity_producer": {"peg": ["replaced", "midcycle_ev_ebitda", "Point estimates are dominated by commodity-cycle assumptions."]},
+    "pre_profit_biotechnology": {"peg": ["suppressed", "cash_runway_months", "No positive earnings denominator."], "forward_pe": ["suppressed", "cash_runway_months", "No positive consensus earnings."], "price_to_book": ["suppressed", "cash_runway_months", "Book value does not capture pipeline probability."], "free_cash_flow_yield": ["suppressed", "cash_runway_months", "Cash burn should be evaluated as runway."]},
+    "other_pre_profit": {"peg": ["suppressed", "gross_margin_and_runway", "No positive earnings denominator."], "forward_pe": ["suppressed", "gross_margin_and_runway", "No positive consensus earnings."]}
+  }
+}

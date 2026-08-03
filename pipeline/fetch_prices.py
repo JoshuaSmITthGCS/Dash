@@ -18,6 +18,7 @@ from datetime import datetime, timezone, timedelta
 
 from common import (DATA_DIR, LOG, data_mode, load_json, load_store_json, save_json,
                     normalize_name, update_pipeline_status)
+from canonical_metrics import yahoo_observations
 
 TRACK_RECORD_CACHE = os.path.join(DATA_DIR, "politicians.json")
 TRACK_REFRESH_DAYS = 7
@@ -79,12 +80,14 @@ def fetch_snapshot(ticker, yf, etf_ids, ticker_obj=None):
     free_cash_flow = safe(info, "freeCashflow")
     debt_to_equity_percent = _round(safe(info, "debtToEquity"))
 
+    fetched_at = datetime.now(timezone.utc).isoformat()
     snap = {
         "ticker": ticker,
         "name": safe(info, "shortName", "longName") or ticker,
         "price": round(price, 2) if price else None,
         "pct_30d": pct_30d,
         "sector": safe(info, "sector") or ("ETF" if is_etf else None),
+        "industry": safe(info, "industry"),
         "market_cap": market_cap,
         "dividend_yield": safe(info, "dividendYield"),
         "is_etf": is_etf,
@@ -103,6 +106,7 @@ def fetch_snapshot(ticker, yf, etf_ids, ticker_obj=None):
         "free_cash_flow_yield": _round(free_cash_flow / market_cap, 4) if free_cash_flow is not None and market_cap else None,
         "revenue_growth": _round(safe(info, "revenueGrowth"), 4),
         "earnings_growth": _round(safe(info, "earningsGrowth")),
+        "observations": yahoo_observations(info, fetched_at),
     }
     return snap
 
