@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useData } from '../lib/useData'
-import { Move, Loading } from '../components/Bits.jsx'
+import { Move, Loading, RefreshProgress } from '../components/Bits.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
@@ -56,6 +56,7 @@ export default function Watchlist() {
           <div className="result-count"><strong>{list.length}</strong><span>saved</span></div>
         </div>
       </div>
+      <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel} />
       {refresh.message && (
         <div className={`sync-message refresh-message ${refresh.status}`} role="status" aria-live="polite">
           {refresh.message}

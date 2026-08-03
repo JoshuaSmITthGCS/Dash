@@ -80,3 +80,17 @@ export function Loading({ label = 'loading data' }) {
 export function Empty({ note }) {
   return <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{note || 'No data yet — run the pipeline.'}</div>
 }
+
+// A running GitHub Actions job has no step-by-step percentage to report honestly, so this
+// is deliberately indeterminate (a sliding highlight, not a fake number) — the elapsed-time
+// label is the one thing here that's actually true.
+export function RefreshProgress({ active, elapsedLabel }) {
+  if (!active) return null
+  return (
+    <div className="refresh-progress" role="progressbar" aria-label="Data refresh in progress"
+      aria-valuetext={elapsedLabel ? `Running for ${elapsedLabel}` : 'Running'}>
+      <div className="refresh-progress-track"><div className="refresh-progress-fill" /></div>
+      {elapsedLabel && <span className="refresh-progress-elapsed">Running for {elapsedLabel}</span>}
+    </div>
+  )
+}
