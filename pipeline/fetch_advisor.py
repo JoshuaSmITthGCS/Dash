@@ -14,7 +14,8 @@ from canonical_metrics import Observation
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
-from fundamentals_extended import derive_extended, earnings_surprise_rows, extended_inputs
+from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
+                                   extended_observations)
 from insider_signal import summarize as summarize_insiders
 import pit_store
 from fred import FredClient, FredError, fetch_regime
@@ -625,7 +626,13 @@ def enrich(contexts, limit, delay, priority=()):
                                   context["snapshot"], context["history"])
         if extended:
             context["extended"] = extended
-            context["snapshot"] = {**context["snapshot"], **extended}
+            # The derived values above carry no lineage on their own; without this, the v2
+            # scoring layer treats them as legacy scalars with no canonical observation and
+            # discards them (see scoring_v2.build_v2_analysis).
+            observations = dict(context["snapshot"].get("observations") or {})
+            for metric_id, rows in extended_observations(extended).items():
+                observations.setdefault(metric_id, []).extend(rows)
+            context["snapshot"] = {**context["snapshot"], **extended, "observations": observations}
             enriched += 1
         time.sleep(delay)
     LOG.info(f"Extended statement metrics derived for {enriched}/{min(limit, len(contexts))} shortlisted companies")
