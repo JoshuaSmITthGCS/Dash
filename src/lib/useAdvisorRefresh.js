@@ -4,6 +4,10 @@ import { formatElapsed } from './useData'
 
 const POLL_INTERVAL_MS = 20_000
 const REFRESH_TIMEOUT_MS = 55 * 60_000
+// A reanalysis never touches a data provider - it's a scoring pass over what's already
+// published (see pipeline/rescore.py) - so a much shorter timeout is enough to say
+// something is actually wrong rather than "still inside a normal 90-minute run".
+const REANALYZE_TIMEOUT_MS = 10 * 60_000
 const ELAPSED_TICK_MS = 1_000
 
 export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
@@ -12,6 +16,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const [elapsedMs, setElapsedMs] = useState(0)
   const baseline = useRef(generatedAt)
   const startedAt = useRef(null)
+  const mode = useRef('data')
 
   // There is no real progress signal from the GitHub Actions run - no step-by-step
   // percentage to show honestly. An elapsed-time counter is real, though, and it's what
@@ -50,21 +55,29 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
     const timeout = window.setTimeout(() => {
       setState({
         status: 'error',
-        message: 'The refresh is taking longer than expected. Try again or check the GitHub workflow.',
+        message: mode.current === 'rescore'
+          ? 'The reanalysis is taking longer than expected. Try again or check the GitHub workflow.'
+          : 'The refresh is taking longer than expected. Try again or check the GitHub workflow.',
       })
-    }, REFRESH_TIMEOUT_MS)
+    }, mode.current === 'rescore' ? REANALYZE_TIMEOUT_MS : REFRESH_TIMEOUT_MS)
     return () => {
       window.clearInterval(interval)
       window.clearTimeout(timeout)
     }
   }, [reload, state.status])
 
-  const requestRefresh = async () => {
+  const startRefresh = async (requestedMode) => {
     if (!currentUser || state.status === 'pending') return
+    mode.current = requestedMode
     baseline.current = generatedAt
     startedAt.current = Date.now()
     setElapsedMs(0)
-    setState({ status: 'starting', message: 'Connecting to the refresh service…' })
+    setState({
+      status: 'starting',
+      message: requestedMode === 'rescore'
+        ? 'Connecting to the reanalysis service…'
+        : 'Connecting to the refresh service…',
+    })
     try {
       const idToken = await currentUser.getIdToken()
       const response = await fetch('/.netlify/functions/refresh-data', {
@@ -74,6 +87,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          mode: requestedMode,
           symbols: [...new Set(
             symbols
               .map((symbol) => String(symbol || '').trim().toUpperCase())
@@ -86,29 +100,42 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
         await reload()
         setState({
           status: 'error',
-          message: 'No new Yahoo data was fetched: the refresh service is not configured on Netlify. Showing the latest previously published data.',
+          message: requestedMode === 'rescore'
+            ? 'Reanalysis is not configured on Netlify. Showing the latest previously published data.'
+            : 'No new Yahoo data was fetched: the refresh service is not configured on Netlify. Showing the latest previously published data.',
         })
         return
       }
       if (!response.ok && response.status !== 409) {
-        throw new Error(payload.error || 'The refresh could not be started.')
+        throw new Error(payload.error || (requestedMode === 'rescore'
+          ? 'The reanalysis could not be started.'
+          : 'The refresh could not be started.'))
       }
       setState({
         status: 'pending',
         message: response.status === 409
-          ? 'A refresh is already running. This page will update automatically.'
-          : 'Refresh started. This page will update automatically when new data is published.',
+          ? 'A refresh or reanalysis is already running. This page will update automatically.'
+          : requestedMode === 'rescore'
+            ? 'Reanalysis started. This page will update automatically in a couple of minutes.'
+            : 'Refresh started. This page will update automatically when new data is published.',
       })
     } catch (error) {
       setState({ status: 'error', message: error.message })
     }
   }
 
+  const requestRefresh = () => startRefresh('data')
+  const requestReanalyze = () => startRefresh('rescore')
+
   const refreshing = state.status === 'starting' || state.status === 'pending'
   return {
     ...state,
     requestRefresh,
+    requestReanalyze,
     refreshing,
+    // Which of the two this run actually is, so a UI with separate refresh/reanalyze
+    // buttons can label the one in flight instead of guessing from a shared "refreshing".
+    activeMode: mode.current,
     available: Boolean(currentUser),
     elapsedMs,
     elapsedLabel: refreshing ? formatElapsed(elapsedMs) : null,

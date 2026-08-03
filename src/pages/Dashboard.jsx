@@ -257,8 +257,17 @@ export default function Dashboard() {
             <button className="secondary-button compact refresh-button" onClick={refresh.requestRefresh}
               disabled={refresh.refreshing}>
               <Icon name="sync" size={17}
-                className={refresh.refreshing ? 'refresh-spin' : ''} />
-              {refresh.refreshing ? 'Refreshing…' : 'Refresh data'}
+                className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />
+              {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing…' : 'Refresh data'}
+            </button>
+          )}
+          {currentUser && (
+            <button className="secondary-button compact refresh-button" onClick={refresh.requestReanalyze}
+              disabled={refresh.refreshing}
+              title="Re-score the last published data without fetching anything new — takes a couple of minutes">
+              <Icon name="research" size={17}
+                className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
+              {refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}
             </button>
           )}
           <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel} />

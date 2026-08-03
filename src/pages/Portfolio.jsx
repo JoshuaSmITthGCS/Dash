@@ -232,8 +232,13 @@ export default function Portfolio() {
         </div>
         <div className="page-actions">
           <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}>
-            <Icon name="sync" size={17} className={refresh.refreshing ? 'refresh-spin' : ''} />
-            {refresh.refreshing ? 'Refreshing…' : 'Refresh prices'}
+            <Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />
+            {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing…' : 'Refresh prices'}
+          </button>
+          <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}
+            title="Re-score the last published data without fetching anything new — takes a couple of minutes">
+            <Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
+            {refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}
           </button>
           <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
           <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
