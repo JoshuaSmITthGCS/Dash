@@ -273,7 +273,6 @@
             "items": {
               "type": "string"
             }
-<<<<<<< HEAD
           },
           "analysis_v2": {
             "type": "object",
@@ -293,9 +292,6 @@
             "description": "Shadow-only decision-v2.0.0 output; legacy recommendation remains active."
           },
           "valuation_percentile": { "$ref": "#/$defs/peerPercentile" }
-=======
-          }
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
         },
         "additionalProperties": true
       }
@@ -610,13 +606,10 @@
     "cache": {
       "type": "object",
       "additionalProperties": true
-<<<<<<< HEAD
     },
     "run_manifest": {
       "type": "object",
       "required": ["run_id", "generated_at", "data_cutoff", "code_commit_hash", "config_hash", "schema_version", "model_version", "universe_version", "provider_status", "cache", "stale_field_count", "provider_conflict_count", "score_distribution", "rejected_at_each_step"]
-=======
->>>>>>> dfd30bf31be272164cd860f3eec5e2b7e300d26b
     }
   },
   "additionalProperties": true,
