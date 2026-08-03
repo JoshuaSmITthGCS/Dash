@@ -117,8 +117,10 @@ Next:
 5. Open GitHub **Dash → Actions → Refresh advisor data** and confirm a new run appears.
 6. Let the workflow and subsequent Netlify deploy finish, then reload the page.
 
-Portfolio tickers sent by the browser are included in that workflow run, so newly added symbols
-such as `MU`, `AMAT`, `NTNX`, or `VOO` can be fetched on the next refresh.
+Button-triggered runs use the fast interactive scope: the prior top 100 stocks plus every portfolio
+or watchlist ticker sent by the browser. The rest of the ranked universe carries forward from the
+full 08:00 Eastern weekday sweep, so newly added symbols such as `MU`, `AMAT`, `NTNX`, or `VOO`
+are refreshed without making the user wait for all ~900 stocks.
 
 ## Troubleshooting
 

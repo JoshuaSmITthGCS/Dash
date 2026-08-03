@@ -35,7 +35,9 @@ on:
     # 08:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and 15:00 ET are
     # fast refreshes limited to the prior top 100 plus portfolio holdings - see the
     # "Select the Eastern-time refresh window" step below for how that's enforced.
-    - cron: '0 12,13,16,17,19,20 * * 1-5'
+    # Avoid minute zero, when GitHub documents that scheduled events are most likely to
+    # be delayed or dropped under Actions load. The local-time gate below is unchanged.
+    - cron: '7 12,13,16,17,19,20 * * 1-5'
 
 permissions:
   contents: write

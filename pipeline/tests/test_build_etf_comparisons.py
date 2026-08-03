@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import pandas as pd
 
 import cache as cache_module
-from build_etf_comparisons import _fetch_rows
+from build_etf_comparisons import _fetch_histories, _fetch_rows
 
 
 class FakeTicker:
@@ -59,6 +59,20 @@ class FetchRowsTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(len(first), 2)
         self.assertEqual(first[0]["adjusted_close"], 100.0)
+
+    @patch("build_etf_comparisons.parallel_map")
+    def test_comparison_histories_are_deduplicated_and_fetched_in_parallel(self, parallel):
+        parallel.return_value = [("VTI", [{"adjusted_close": 1.0}]), ("SPY", None)]
+
+        result = _fetch_histories(["VTI", "SPY", "VTI"], object(), "max", self.cache,
+                                  max_workers=5)
+
+        self.assertEqual(result["VTI"], [{"adjusted_close": 1.0}])
+        self.assertIsNone(result["SPY"])
+        args, kwargs = parallel.call_args
+        self.assertEqual(args[1], ["VTI", "SPY"])
+        self.assertEqual(kwargs["provider"], "yahoo")
+        self.assertEqual(kwargs["max_workers"], 5)
 
     @patch("cache.time.sleep")
     def test_a_rate_limit_error_falls_back_to_the_last_cached_history(self, _sleep):

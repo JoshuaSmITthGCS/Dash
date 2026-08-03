@@ -92,10 +92,11 @@ export async function handler(event) {
         ref: 'main',
         inputs: {
           refresh_mode: 'data-only',
-          // A person clicking "refresh" wants everything current, not just the prior
-          // top 100 - always request the full sweep regardless of what the scheduled
-          // intraday runs default to.
-          universe_scope: 'full',
+          // Manual refreshes are interactive: poll the prior top 100 plus every symbol
+          // sent by the portfolio/watchlist, then carry the remaining rows forward from
+          // the morning full sweep. Rebuilding ~900 names on every click made the button
+          // take close to an hour without improving the user's own holdings.
+          universe_scope: 'fast',
           portfolio_symbols: symbols.join(','),
         },
       }),

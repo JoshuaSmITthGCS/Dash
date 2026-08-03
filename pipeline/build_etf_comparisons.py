@@ -8,7 +8,7 @@ import json
 import os
 from datetime import timezone
 
-from cache import CACHE, limiter_for, retry_with_backoff
+from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from common import CONFIG_DIR, DATA_DIR, LOG, load_json, update_pipeline_status
 from etf_comparison import build_contract
 
@@ -45,6 +45,20 @@ def _fetch_rows(symbol, yf, period, cache):
     return cache.fetch("etf_full_history", f"{symbol}:{period}", produce, source="yahoo")
 
 
+def _fetch_histories(symbols, yf, period, cache, max_workers=None):
+    """Fetch distinct histories concurrently while each request remains rate-limited."""
+    distinct = list(dict.fromkeys(symbol for symbol in symbols if symbol))
+    workers = max_workers or int(os.getenv("ETF_COMPARISON_WORKERS", "6"))
+    results = parallel_map(
+        lambda symbol: (symbol, _fetch_rows(symbol, yf, period, cache)),
+        distinct,
+        provider="yahoo",
+        max_workers=workers,
+        on_error=lambda symbol, _error: (symbol, None),
+    )
+    return dict(results)
+
+
 def build_all(period="max"):
     try:
         import yfinance as yf
@@ -56,14 +70,23 @@ def build_all(period="max"):
     output_dir = os.path.join(DATA_DIR, "etf")
     os.makedirs(output_dir, exist_ok=True)
     complete, failed = [], {}
-    fetched = {}
-    for ticker in universe.get("etfs", {}):
-        benchmark = {**registry["default"], **registry.get("funds", {}).get(ticker, {})}
+    etfs = universe.get("etfs", {})
+    benchmarks = {
+        ticker: {**registry["default"], **registry.get("funds", {}).get(ticker, {})}
+        for ticker in etfs
+    }
+    fetch_symbols = [
+        symbol
+        for ticker, benchmark in benchmarks.items()
+        for symbol in (ticker, benchmark.get("benchmark_ticker"))
+    ]
+    fetched = _fetch_histories(fetch_symbols, yf, period, CACHE)
+    for ticker in etfs:
+        benchmark = benchmarks[ticker]
         benchmark_ticker = benchmark.get("benchmark_ticker")
         try:
-            for symbol in (ticker, benchmark_ticker):
-                if symbol and symbol not in fetched:
-                    fetched[symbol] = _fetch_rows(symbol, yf, period, CACHE)
+            if not fetched.get(ticker):
+                raise ValueError(f"No adjusted history for {ticker}")
             payload = build_contract(ticker, fetched[ticker], fetched.get(benchmark_ticker) or [], benchmark)
             path = os.path.join(output_dir, f"{ticker}.json")
             temporary = f"{path}.tmp"
