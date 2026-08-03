@@ -7,13 +7,9 @@ import Watchlist from './pages/Watchlist.jsx'
 import Methodology from './pages/Methodology.jsx'
 import Glossary from './pages/Glossary.jsx'
 import Portfolio from './pages/Portfolio.jsx'
-<<<<<<< Updated upstream
 import Finances from './pages/Finances.jsx'
-=======
-import Backtest from './pages/Backtest.jsx'
 import ResearchScreen from './pages/ResearchScreen.jsx'
 import ShadowPortfolios from './pages/ShadowPortfolios.jsx'
->>>>>>> Stashed changes
 import { DataStatus } from './components/DataStatus.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
@@ -26,12 +22,8 @@ const NAV = [
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true, mobile: true },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist', mobile: true },
   { to: '/market', label: 'Market Pulse', icon: 'market' },
-<<<<<<< Updated upstream
   { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
-=======
-  { to: '/backtest', label: 'Backtest', icon: 'backtest', requireAuth: true },
   { to: '/screens/momentum', label: 'Screens', icon: 'research' },
->>>>>>> Stashed changes
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
 ]
@@ -126,16 +118,13 @@ function AppContent() {
           <Route path="/research" element={<Picks />} />
           <Route path="/market" element={<PolicyRadar />} />
           <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
-<<<<<<< Updated upstream
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
-=======
-          <Route path="/backtest" element={currentUser ? <Backtest /> : <Dashboard />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability—kept separate from structural quality." />} />
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
->>>>>>> Stashed changes
+
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
