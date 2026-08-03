@@ -92,6 +92,10 @@ export async function handler(event) {
         ref: 'main',
         inputs: {
           refresh_mode: 'data-only',
+          // A person clicking "refresh" wants everything current, not just the prior
+          // top 100 - always request the full sweep regardless of what the scheduled
+          // intraday runs default to.
+          universe_scope: 'full',
           portfolio_symbols: symbols.join(','),
         },
       }),
