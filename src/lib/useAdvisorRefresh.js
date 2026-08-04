@@ -56,6 +56,21 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
               })
               return
             }
+            // A completed, successful run is the authoritative "done" signal. A rescore
+            // never moves generated_at - it re-scores the last-fetched data rather than
+            // fetching anything new (see pipeline/rescore.py) - so waiting on that
+            // timestamp alone left every rescore stuck "pending" until the timeout even
+            // though the workflow itself finished in under a minute.
+            if (progress.conclusion === 'success') {
+              await reload()
+              setState({
+                status: 'success',
+                message: mode.current === 'rescore'
+                  ? 'Reanalysis complete. You are viewing the newly rescored data.'
+                  : 'Market data updated. You are viewing the latest published refresh.',
+              })
+              return
+            }
             if (progress.percent != null) {
               setState((current) => current.status === 'pending'
                 ? { ...current, progress: progress.percent, stage: progress.stage }

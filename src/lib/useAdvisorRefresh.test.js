@@ -1,0 +1,87 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, renderHook } from '@testing-library/react'
+import { useAdvisorRefresh } from './useAdvisorRefresh'
+import { useAuth } from './FirebaseAuthContext'
+
+vi.mock('./FirebaseAuthContext', () => ({ useAuth: vi.fn() }))
+
+const POLL_INTERVAL_MS = 20_000
+
+describe('useAdvisorRefresh', () => {
+  beforeEach(() => {
+    useAuth.mockReturnValue({ currentUser: { getIdToken: () => Promise.resolve('token') } })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  it('treats a successful GitHub Actions run as done, even when a rescore leaves generated_at unchanged', async () => {
+    vi.useFakeTimers()
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
+    vi.stubGlobal('fetch', vi.fn((url, init) => {
+      if (init?.method === 'POST') {
+        return Promise.resolve({ ok: true, status: 202, json: () => Promise.resolve({ ok: true }) })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          run_id: 1, status: 'completed', conclusion: 'success', percent: 100, stage: 'Publishing the website update',
+        }),
+      })
+    }))
+
+    const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, []))
+
+    await act(async () => { await result.current.requestReanalyze() })
+    expect(result.current.status).toBe('pending')
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS) })
+
+    expect(result.current.status).toBe('success')
+    expect(result.current.message).toBe('Reanalysis complete. You are viewing the newly rescored data.')
+    expect(reload).toHaveBeenCalled()
+  })
+
+  it('falls back to comparing generated_at when the progress endpoint is unavailable', async () => {
+    vi.useFakeTimers()
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-02T00:00:00Z' })
+    vi.stubGlobal('fetch', vi.fn((url, init) => {
+      if (init?.method === 'POST') {
+        return Promise.resolve({ ok: true, status: 202, json: () => Promise.resolve({ ok: true }) })
+      }
+      return Promise.resolve({ ok: false })
+    }))
+
+    const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, []))
+
+    await act(async () => { await result.current.requestRefresh() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS) })
+
+    expect(result.current.status).toBe('success')
+    expect(result.current.message).toBe('Market data updated. You are viewing the latest published refresh.')
+  })
+
+  it('reports a failed workflow run instead of waiting for the timeout', async () => {
+    vi.useFakeTimers()
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
+    vi.stubGlobal('fetch', vi.fn((url, init) => {
+      if (init?.method === 'POST') {
+        return Promise.resolve({ ok: true, status: 202, json: () => Promise.resolve({ ok: true }) })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ run_id: 1, status: 'completed', conclusion: 'failure', percent: 40, stage: 'Fetch and score stock research' }),
+      })
+    }))
+
+    const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, []))
+
+    await act(async () => { await result.current.requestRefresh() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS) })
+
+    expect(result.current.status).toBe('error')
+    expect(result.current.message).toMatch(/failed before it could publish/)
+  })
+})
