@@ -51,6 +51,27 @@ class CongressTradesClient:
     def house_latest(self, page=0, limit=100):
         return [self._normalize(row, "house") for row in self._get("house-latest", page=page, limit=limit)]
 
+    def price_history(self, symbol, from_date=None, to_date=None):
+        """Daily closes for a symbol since from_date, oldest first. Used to measure how
+        a stock actually performed after a disclosed purchase - one call per distinct
+        symbol, not per trade. Field name isn't independently confirmed against a live
+        key from this environment (network access to financialmodelingprep.com is
+        blocked here), so this reads whichever of close/price is present defensively,
+        the same pattern as marketstack.py."""
+        rows = self._get("historical-price-eod/light", symbol=symbol, **{"from": from_date, "to": to_date})
+        points = []
+        for row in rows:
+            date = row.get("date")
+            close = row.get("close")
+            close = close if close is not None else row.get("price")
+            if date and close is not None:
+                try:
+                    points.append({"date": str(date)[:10], "close": float(close)})
+                except (TypeError, ValueError):
+                    continue
+        points.sort(key=lambda point: point["date"])
+        return points
+
     @staticmethod
     def _normalize(row, chamber):
         """One shape for both chambers - FMP names a few fields differently between

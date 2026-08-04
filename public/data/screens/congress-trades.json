@@ -1,11 +1,19 @@
 {
   "schema_version": "1.0.0",
-  "model_version": "congress-trades-v1.0.0",
+  "model_version": "congress-trades-v1.1.0",
   "generated_at": null,
   "status": "success",
   "publish_window_days": 120,
   "history_days": 0,
   "late_filing_threshold_days": 45,
   "rare_trader_minimum_history_days": 90,
+  "concentrated_size_floor": 50000,
+  "summary": {
+    "trades": 0,
+    "filings_estimated": 0,
+    "volume_upper": 0,
+    "politicians": 0,
+    "issuers": 0
+  },
   "results": []
 }

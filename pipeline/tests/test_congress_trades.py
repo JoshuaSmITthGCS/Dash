@@ -60,6 +60,34 @@ class CongressTradesClientTests(unittest.TestCase):
         with self.assertRaisesRegex(CongressTradesError, "Invalid API KEY"):
             client.senate_latest()
 
+    @patch("congress_trades.requests.get")
+    def test_price_history_sorts_oldest_first_and_falls_back_to_price_field(self, get):
+        get.return_value = Mock(status_code=200, json=lambda: [
+            {"date": "2026-07-15", "close": 200.0},
+            {"date": "2026-07-10", "price": 195.0},
+        ])
+        client = CongressTradesClient(api_key="key")
+
+        points = client.price_history("AAPL", from_date="2026-07-01")
+
+        self.assertEqual(points, [
+            {"date": "2026-07-10", "close": 195.0},
+            {"date": "2026-07-15", "close": 200.0},
+        ])
+
+    @patch("congress_trades.requests.get")
+    def test_price_history_skips_rows_missing_a_date_or_close(self, get):
+        get.return_value = Mock(status_code=200, json=lambda: [
+            {"date": "2026-07-15", "close": 200.0},
+            {"date": None, "close": 100.0},
+            {"date": "2026-07-16"},
+        ])
+        client = CongressTradesClient(api_key="key")
+
+        points = client.price_history("AAPL")
+
+        self.assertEqual(points, [{"date": "2026-07-15", "close": 200.0}])
+
 
 if __name__ == "__main__":
     unittest.main()
