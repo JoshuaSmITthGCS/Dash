@@ -63,6 +63,61 @@ def collect(symbols, client=None, observed_at=None):
     return {"mode": mode, "requested": len(symbols), "collected": written, "observed_at": observed_at}
 
 
+def _closing_value(row):
+    """Marketstack's EOD and intraday endpoints don't share one confirmed field name for
+    a bar's close, so this tries every plausible one rather than assuming a schema that
+    was never exercised against a live key from this environment (network access to
+    Marketstack is blocked here - see the collect_marketstack module docstring)."""
+    for field in ("close", "last", "price"):
+        value = row.get(field)
+        if value is not None:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+def daily_closes():
+    """One closing price per (ticker, calendar day), oldest first, built from every
+    collected row. Two collections a day can both land on the same calendar day (the
+    pre-open run and, once available, the after-close run); the later one - by
+    observed_at - wins, since it reflects more of that session."""
+    path = os.path.join(MARKETSTACK_DIR, COLLECTED)
+    if not os.path.exists(path):
+        return {}
+    latest_by_ticker_day = {}
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            ticker = str(row.get("symbol") or "").upper()
+            close = _closing_value(row)
+            observed_at = row.get("observed_at") or ""
+            day = str(row.get("date") or observed_at)[:10]
+            if not ticker or close is None or not day:
+                continue
+            key = (ticker, day)
+            existing = latest_by_ticker_day.get(key)
+            if existing is None or observed_at >= existing[0]:
+                latest_by_ticker_day[key] = (observed_at, close)
+
+    by_ticker = {}
+    for (ticker, day), (_, close) in latest_by_ticker_day.items():
+        by_ticker.setdefault(ticker, {})[day] = close
+
+    result = {}
+    for ticker, days in by_ticker.items():
+        dates = sorted(days)
+        result[ticker] = {"dates": dates, "closes": [days[day] for day in dates]}
+    return result
+
+
 def depth():
     """How much premarket/intraday history exists, for the capability report to cite."""
     path = os.path.join(MARKETSTACK_DIR, COLLECTED)

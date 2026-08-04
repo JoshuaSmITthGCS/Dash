@@ -56,6 +56,9 @@ jobs:
       - name: Rebuild the early-session capability report
         if: steps.window.outputs.should_run == 'true'
         run: python pipeline/early_session_research.py
+      - name: Re-sort Stocks (movers) and Reversal from accumulated Marketstack closes
+        if: steps.window.outputs.should_run == 'true'
+        run: python pipeline/resort_marketstack_screens.py
       - name: Commit collected data with retry
         if: steps.window.outputs.should_run == 'true'
         shell: bash
@@ -64,6 +67,7 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add --all pipeline/data/marketstack 2>/dev/null || true
           git add public/data/screens/early-session.json
+          git add public/data/screens/marketstack-movers.json public/data/screens/marketstack-reversal.json
           git diff --cached --quiet && exit 0
           git commit -m "chore(data): collect Marketstack premarket/intraday data"
           for attempt in 1 2 3; do
