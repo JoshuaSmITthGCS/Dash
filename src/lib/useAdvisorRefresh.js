@@ -143,16 +143,12 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
       setState({
         status: 'pending',
         message: response.status === 409
-      setState({
-        status: 'pending',
-        message: response.status === 409
           ? 'A refresh or reanalysis is already running. This page will update automatically.'
           : requestedMode === 'rescore'
             ? 'Reanalysis started. This page will update automatically in a couple of minutes.'
             : 'Refresh started. This page will update automatically when new data is published.',
         progress: 0,
         stage: requestedMode === 'rescore' ? 'Waiting for reanalysis' : 'Waiting for a runner',
-      })
       })
     } catch (error) {
       setState({ status: 'error', message: error.message })
