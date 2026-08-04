@@ -319,39 +319,6 @@ export default function Portfolio() {
             Holdings, action guidance, and a fair same-dollar comparison with the S&amp;P 500.
           </p>
         </div>
-        <div className="page-actions">
-          <div style={{ display: 'grid', justifyItems: 'end', gap: 3 }}>
-            <button
-              className="primary-button compact"
-              onClick={portfolioQuotes.requestRefresh}
-              disabled={portfolioQuotes.refreshing || positions.length === 0}
-            >
-              <Icon name="sync" size={17} className={portfolioQuotes.refreshing ? 'refresh-spin' : ''} />
-              {portfolioQuotes.refreshing ? 'Updating portfolio…' : 'Refresh portfolio prices'}
-            </button>
-            <time
-              dateTime={pricesUpdatedAt || undefined}
-              title={pricesUpdatedAt ? new Date(pricesUpdatedAt).toLocaleString() : 'No price refresh yet'}
-              style={{ color: 'var(--text-faint)', font: '10px var(--font-mono)' }}
-            >
-              {pricesUpdatedAt
-                ? `Prices updated ${new Date(pricesUpdatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
-                : 'Prices not updated yet'}
-            </time>
-          </div>
-          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}>
-            <Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />
-            {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}
-          </button>
-          <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}
-            title="Re-score the last published data without fetching anything new — takes a couple of minutes">
-            <Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
-            {refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}
-          </button>
-          <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
-          <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
-          <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
-        </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
       {(portfolioQuotes.message || portfolioQuotes.error) && (
@@ -401,6 +368,21 @@ export default function Portfolio() {
           </div>
         </div>
       </div>
+
+      <details className="card portfolio-actions-menu">
+        <summary><span><span className="eyebrow">Data actions</span><strong>Refresh and manage portfolio data</strong></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
+        <div className="page-actions portfolio-toolbar">
+          <div className="portfolio-primary-refresh">
+            <button className="primary-button compact" onClick={portfolioQuotes.requestRefresh} disabled={portfolioQuotes.refreshing || positions.length === 0}><Icon name="sync" size={17} className={portfolioQuotes.refreshing ? 'refresh-spin' : ''} />{portfolioQuotes.refreshing ? 'Updating portfolio…' : 'Refresh portfolio prices'}</button>
+            <time dateTime={pricesUpdatedAt || undefined}>{pricesUpdatedAt ? `Prices updated ${new Date(pricesUpdatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'Prices not updated yet'}</time>
+          </div>
+          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}><Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}</button>
+          <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}</button>
+          <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
+          <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
+          <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
+        </div>
+      </details>
 
       {actionable.length > 0 && (
         <div className="card card-pad" style={{ marginBottom: 20 }}>

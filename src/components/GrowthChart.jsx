@@ -73,6 +73,7 @@ export default function GrowthChart({
   valueFormatter = money,
 }) {
   const [zoom, setZoom] = useState('all')
+  const [activeIndex, setActiveIndex] = useState(null)
   const availableLines = series.filter((line) =>
     Array.isArray(line.values) && line.values.some((value) => value != null))
   const fullDates = dates.length
@@ -107,6 +108,12 @@ export default function GrowthChart({
     const values = line.values.filter((value) => value != null)
     return `${line.label}: ${valueFormatter(values[values.length - 1])}`
   }).join('; ')} at the end of the period.`
+  const selectPoint = (clientX, target) => {
+    const bounds = target.getBoundingClientRect()
+    const relative = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width))
+    setActiveIndex(Math.round(relative * (usableDates.length - 1)))
+  }
+  const activeX = activeIndex == null ? null : PAD.left + (activeIndex / (usableDates.length - 1)) * (width - PAD.left - PAD.right)
 
   return (
     <figure style={{ margin: 0 }}>
@@ -134,13 +141,25 @@ export default function GrowthChart({
           height={height}
           role="img"
           aria-label={chartSummary}
+          tabIndex="0"
+          onPointerMove={(event) => selectPoint(event.clientX, event.currentTarget)}
+          onPointerLeave={() => setActiveIndex(null)}
+          onFocus={() => setActiveIndex((value) => value ?? usableDates.length - 1)}
+          onBlur={() => setActiveIndex(null)}
+          onKeyDown={(event) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+            event.preventDefault()
+            if (event.key === 'Home') setActiveIndex(0)
+            else if (event.key === 'End') setActiveIndex(usableDates.length - 1)
+            else setActiveIndex((value) => Math.max(0, Math.min(usableDates.length - 1, (value ?? usableDates.length - 1) + (event.key === 'ArrowRight' ? 1 : -1))))
+          }}
           style={{ display: 'block', minWidth: 320 }}
         >
           {ticks.map((tick, index) => {
             const y = PAD.top + (index / (ticks.length - 1)) * innerHeight
             return (
               <g key={`${index}-${tick}`}>
-                <line x1={PAD.left} x2={width - PAD.right} y1={y} y2={y}
+                <line className="chart-grid-line" x1={PAD.left} x2={width - PAD.right} y1={y} y2={y}
                   stroke="var(--border)" strokeWidth="1" />
                 <text x={PAD.left - 8} y={y + 4} textAnchor="end"
                   fill="var(--text-faint)" fontSize="10" fontFamily="var(--font-mono)">
@@ -155,7 +174,7 @@ export default function GrowthChart({
             const last = [...points].reverse().find(Boolean)
             return (
               <g key={line.label}>
-                <path d={pathFor(points)} fill="none" stroke={line.color}
+                <path className="chart-data-line" d={pathFor(points)} fill="none" stroke={line.color}
                   strokeWidth={line.emphasis ? 2.4 : 1.8}
                   strokeDasharray={line.dashPattern || (line.dashed ? '5 4' : undefined)}
                   strokeLinejoin="round" strokeLinecap="round" />
@@ -175,6 +194,12 @@ export default function GrowthChart({
               </text>
             )
           })}
+          {activeIndex != null && <g className="chart-tooltip">
+            <line x1={activeX} x2={activeX} y1={PAD.top} y2={height - PAD.bottom} stroke="var(--text-faint)" strokeDasharray="3 3" />
+            <rect x={Math.max(PAD.left, Math.min(width - 174, activeX - 76))} y={8} width="160" height={22 + lines.length * 17} rx="8" fill="var(--surface-primary)" stroke="var(--border-strong)" />
+            <text x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y="24" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)">{String(usableDates[activeIndex]).slice(0, 10)}</text>
+            {lines.map((line, index) => <text key={line.label} x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="10" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '—' : valueFormatter(line.values[activeIndex])}</text>)}
+          </g>}
         </svg>
       </div>
 

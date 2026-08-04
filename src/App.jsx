@@ -6,6 +6,7 @@ import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
 import PasswordChangeModal from './components/PasswordChangeModal.jsx'
+import { usePreferences } from './lib/PreferencesContext.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand — keeps first paint off the weight of pages the visit may
@@ -22,6 +23,7 @@ const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
+const Settings = lazy(() => import('./pages/Settings.jsx'))
 
 const NAV = [
   { to: '/', label: 'Overview', icon: 'overview', end: true, mobile: true },
@@ -33,10 +35,11 @@ const NAV = [
   { to: '/screens/momentum', label: 'Screens', icon: 'research' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
+  { to: '/settings', label: 'Settings', icon: 'settings' },
 ]
 
 function ProfilePanel() {
-  const { currentUser, userProfile, logout, toggleDarkMode } = useAuth()
+  const { currentUser, userProfile, logout } = useAuth()
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   if (!currentUser) return null
 
@@ -50,10 +53,7 @@ function ProfilePanel() {
           <strong>{userProfile?.displayName || 'Investor'}</strong>
           <span>{userProfile?.colorTheme?.name || 'ValueSignal member'}</span>
         </div>
-        <button className="icon-button" onClick={toggleDarkMode}
-          aria-label={userProfile?.darkMode ? 'Use light theme' : 'Use dark theme'}>
-          <Icon name={userProfile?.darkMode ? 'sun' : 'moon'} />
-        </button>
+        <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
         <button className="icon-button" onClick={() => setShowPasswordChange(true)}
           aria-label="Account settings"><Icon name="user" /></button>
         <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
@@ -74,6 +74,7 @@ function MoreLink() {
 
 function AppContent() {
   const { currentUser, loading, userProfile } = useAuth()
+  const { preferences, updatePreferences } = usePreferences()
   const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
 
   if (loading) {
@@ -114,6 +115,11 @@ function AppContent() {
           </NavLink>
           <div className="mobile-profile">
             <button className="icon-button" aria-label="Notifications"><Icon name="bell" /></button>
+            <button className="icon-button" onClick={() => updatePreferences({ privacyMode: !preferences.privacyMode })}
+              aria-pressed={preferences.privacyMode} aria-label={preferences.privacyMode ? 'Show balances' : 'Hide balances'}>
+              <Icon name={preferences.privacyMode ? 'eye-off' : 'eye'} />
+            </button>
+            <NavLink className="icon-button" to="/settings" aria-label="Settings"><Icon name="settings" /></NavLink>
             <div className="avatar" aria-label={`Profile: ${userProfile?.displayName || 'Investor'}`}>
               {(userProfile?.displayName || 'V').slice(0, 1).toUpperCase()}
             </div>
@@ -138,6 +144,7 @@ function AppContent() {
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
         </Suspense>
       </main>

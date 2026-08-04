@@ -1,0 +1,101 @@
+import { useState } from 'react'
+import { ACCENTS, DEFAULT_WIDGETS, usePreferences } from '../lib/PreferencesContext.jsx'
+import Icon from '../components/Icons.jsx'
+
+const Choice = ({ active, children, onClick, preview }) => (
+  <button type="button" className={`setting-choice${active ? ' active' : ''}`} aria-pressed={active} onClick={onClick}>
+    {preview && <span className={`theme-preview ${preview}`} aria-hidden="true"><i /><i /><i /></span>}
+    <span>{children}</span>
+  </button>
+)
+
+function SelectRow({ id, label, description, value, onChange, children }) {
+  return <div className="settings-row">
+    <label htmlFor={id}><strong>{label}</strong>{description && <span>{description}</span>}</label>
+    <select id={id} value={value} onChange={(event) => onChange(event.target.value)}>{children}</select>
+  </div>
+}
+
+function SwitchRow({ id, label, description, checked, onChange }) {
+  return <div className="settings-row">
+    <label htmlFor={id}><strong>{label}</strong>{description && <span>{description}</span>}</label>
+    <label className="switch"><input id={id} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span aria-hidden="true" /></label>
+  </div>
+}
+
+export default function Settings() {
+  const { preferences, updatePreferences, resetAppearance, resetAll, setWidgets } = usePreferences()
+  const [announcement, setAnnouncement] = useState('')
+
+  const resetEverything = () => {
+    if (!window.confirm('Reset all appearance, dashboard, chart, and data-display preferences?')) return
+    resetAll()
+    setAnnouncement('All preferences reset to defaults.')
+  }
+
+  const resetDashboard = () => {
+    setWidgets(DEFAULT_WIDGETS)
+    setAnnouncement('Overview dashboard reset to defaults.')
+  }
+
+  return <div className="settings-page">
+    <header className="page-head compact-page-head">
+      <div><span className="eyebrow">Personalize ValueSignal</span><h1 className="page-title">Settings</h1><p className="page-sub">Appearance and data presentation stay on this device.</p></div>
+    </header>
+    <p className="sr-only" aria-live="polite">{announcement}</p>
+
+    <section className="settings-card" aria-labelledby="appearance-heading">
+      <header><div><span className="settings-icon"><Icon name="sun" /></span><div><h2 id="appearance-heading">Appearance</h2><p>Theme, accent, surfaces, and spacing.</p></div></div></header>
+      <div className="settings-block">
+        <span className="settings-label">Theme mode</span>
+        <div className="theme-options">
+          {['system', 'light', 'dark'].map((theme) => <Choice key={theme} active={preferences.theme === theme} preview={theme} onClick={() => updatePreferences({ theme })}>{theme[0].toUpperCase() + theme.slice(1)}</Choice>)}
+        </div>
+      </div>
+      <div className="settings-block">
+        <span className="settings-label">Accent color</span>
+        <div className="accent-options">
+          {Object.entries(ACCENTS).map(([id, accent]) => <button key={id} type="button" className={preferences.accentColor === id ? 'active' : ''} aria-pressed={preferences.accentColor === id} onClick={() => updatePreferences({ accentColor: id })}><i style={{ background: accent.value }} />{accent.label}</button>)}
+        </div>
+      </div>
+      <SelectRow id="surface-style" label="Surface style" description="Outlined is the default wireframe treatment." value={preferences.surfaceStyle} onChange={(surfaceStyle) => updatePreferences({ surfaceStyle })}><option value="outlined">Outlined</option><option value="soft">Soft</option><option value="elevated">Elevated</option></SelectRow>
+      <SelectRow id="corner-style" label="Corner style" value={preferences.cornerStyle} onChange={(cornerStyle) => updatePreferences({ cornerStyle })}><option value="compact">Compact</option><option value="rounded">Rounded</option><option value="extra-rounded">Extra rounded</option></SelectRow>
+      <SelectRow id="density" label="Interface density" description="Touch targets always remain at least 44px." value={preferences.density} onChange={(density) => updatePreferences({ density })}><option value="compact">Compact</option><option value="comfortable">Comfortable</option><option value="spacious">Spacious</option></SelectRow>
+    </section>
+
+    <section className="settings-card" aria-labelledby="dashboard-heading">
+      <header><div><span className="settings-icon"><Icon name="overview" /></span><div><h2 id="dashboard-heading">Dashboard</h2><p>Control modules from Overview edit mode.</p></div></div></header>
+      <div className="settings-row"><div><strong>Visible Overview widgets</strong><span>{preferences.widgets.filter((widget) => widget.visible).length} of {preferences.widgets.length} shown</span></div><a className="secondary-button compact" href="/?customize=1">Customize Overview</a></div>
+      <div className="settings-row"><div><strong>Reset Overview layout</strong><span>Restore widget visibility, order, and sizes.</span></div><button className="ghost-button" type="button" onClick={resetDashboard}>Reset dashboard</button></div>
+    </section>
+
+    <section className="settings-card" aria-labelledby="charts-heading">
+      <header><div><span className="settings-icon"><Icon name="market" /></span><div><h2 id="charts-heading">Charts</h2><p>Defaults for supported financial visualizations.</p></div></div></header>
+      <SelectRow id="chart-period" label="Default period" value={preferences.defaultChartPeriod} onChange={(defaultChartPeriod) => updatePreferences({ defaultChartPeriod })}>{['1W', '1M', '3M', '6M', '1Y', 'All'].map((period) => <option key={period}>{period}</option>)}</SelectRow>
+      <SelectRow id="chart-style" label="Chart style" value={preferences.chartStyle} onChange={(chartStyle) => updatePreferences({ chartStyle })}><option value="line">Line</option><option value="area">Line with area fill</option><option value="step">Stepped line</option></SelectRow>
+      <SelectRow id="chart-weight" label="Line weight" value={preferences.chartLineWeight} onChange={(chartLineWeight) => updatePreferences({ chartLineWeight })}><option value="thin">Thin</option><option value="standard">Standard</option><option value="bold">Bold</option></SelectRow>
+      <SelectRow id="chart-grid" label="Grid visibility" value={preferences.chartGrid} onChange={(chartGrid) => updatePreferences({ chartGrid })}><option value="minimal">Minimal</option><option value="standard">Standard</option><option value="hidden">Hidden</option></SelectRow>
+      <SelectRow id="chart-animation" label="Animation" value={preferences.chartAnimation} onChange={(chartAnimation) => updatePreferences({ chartAnimation })}><option value="system">System</option><option value="on">On</option><option value="reduced">Reduced</option><option value="off">Off</option></SelectRow>
+    </section>
+
+    <section className="settings-card" aria-labelledby="display-heading">
+      <header><div><span className="settings-icon"><Icon name="finances" /></span><div><h2 id="display-heading">Data display</h2><p>Formatting preferences never alter source values.</p></div></div></header>
+      <SelectRow id="number-format" label="Number format" value={preferences.numberFormat} onChange={(numberFormat) => updatePreferences({ numberFormat })}><option value="full">Full values</option><option value="compact">Compact values</option><option value="automatic">Automatic</option></SelectRow>
+      <SelectRow id="gain-loss" label="Gain/loss display" value={preferences.gainLossFormat} onChange={(gainLossFormat) => updatePreferences({ gainLossFormat })}><option value="dollar-percent">Dollar and percent</option><option value="percent-first">Percent first</option><option value="dollar-first">Dollar first</option><option value="percent-only">Percent only</option></SelectRow>
+      <SwitchRow id="privacy" label="Hide balances" description="Masks portfolio balances and chart tooltips while keeping percentages visible." checked={preferences.privacyMode} onChange={(privacyMode) => updatePreferences({ privacyMode })} />
+    </section>
+
+    <section className="settings-card" aria-labelledby="accessibility-heading">
+      <header><div><span className="settings-icon"><Icon name="accessibility" /></span><div><h2 id="accessibility-heading">Accessibility</h2><p>System preferences remain the default.</p></div></div></header>
+      <SelectRow id="reduced-motion" label="Reduced motion" value={preferences.reducedMotion} onChange={(reducedMotion) => updatePreferences({ reducedMotion })}><option value="system">System</option><option value="on">On</option><option value="off">Off</option></SelectRow>
+      <SwitchRow id="contrast" label="Higher contrast" checked={preferences.higherContrast} onChange={(higherContrast) => updatePreferences({ higherContrast })} />
+      <SwitchRow id="chart-labels" label="Larger chart labels" checked={preferences.largerChartLabels} onChange={(largerChartLabels) => updatePreferences({ largerChartLabels })} />
+    </section>
+
+    <section className="settings-card reset-card" aria-labelledby="reset-heading">
+      <header><div><span className="settings-icon"><Icon name="sync" /></span><div><h2 id="reset-heading">Reset and defaults</h2><p>Resetting all settings requires confirmation.</p></div></div></header>
+      <div className="settings-row"><span>Theme, accent, surfaces, corners, and density</span><button className="secondary-button compact" type="button" onClick={() => { resetAppearance(); setAnnouncement('Appearance reset to defaults.') }}>Reset appearance</button></div>
+      <div className="settings-row"><span>Every local interface preference</span><button className="destructive-button compact" type="button" onClick={resetEverything}>Reset all settings</button></div>
+    </section>
+  </div>
+}

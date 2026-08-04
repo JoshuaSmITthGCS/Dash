@@ -44,4 +44,14 @@ describe('GrowthChart zoom', () => {
     expect(screen.getAllByText(dates.at(-2)).length).toBeGreaterThan(0)
     expect(screen.queryByText(dates.at(-3))).not.toBeInTheDocument()
   })
+
+  it('exposes exact values through a keyboard-operable tooltip', () => {
+    render(<GrowthChart dates={['2025-01-01', '2025-01-02', '2025-01-03']} series={[{ label: 'Holdings', values: [100, 105, 110], color: 'green' }]} title="Portfolio" />)
+    const chart = screen.getByRole('img', { name: /Portfolio/ })
+    fireEvent.focus(chart)
+    expect(screen.getAllByText('2025-01-03').length).toBeGreaterThan(1)
+    expect(screen.getByText(/Holdings: \$110/)).toBeInTheDocument()
+    fireEvent.keyDown(chart, { key: 'ArrowLeft' })
+    expect(screen.getAllByText('2025-01-02').length).toBeGreaterThan(1)
+  })
 })

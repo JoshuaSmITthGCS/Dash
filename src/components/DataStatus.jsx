@@ -12,8 +12,8 @@ export function freshness(generatedAt, now = Date.now()) {
 }
 
 export function DataStatus() {
-  const { data: advisor } = useData('advisor.json')
-  const { data: status } = useData('status.json')
+  const { data: advisor, reload: reloadAdvisor } = useData('advisor.json')
+  const { data: status, reload: reloadStatus } = useData('status.json')
   if (!advisor && !status) return null
 
   const mode = advisor?.data_mode || 'unknown'
@@ -28,6 +28,7 @@ export function DataStatus() {
   return (
     <section className={`data-status ${level}`} aria-label="Pipeline data status" role="status">
       <div className="data-status-main">
+        <span className="status-indicator" aria-hidden="true" />
         <strong>{mode === 'demo' ? 'Demo data' : level === 'live' ? 'Live data' : 'Data needs attention'}</strong>
         <span>{mode === 'demo'
           ? 'Generated fixtures are active. Do not use them for decisions.'
@@ -47,6 +48,10 @@ export function DataStatus() {
           ))}
         </div>
       )}
+      <details className="data-status-details">
+        <summary>Details</summary>
+        <div><span>Generated {fmtDate(advisor?.generated_at || status?.generated_at)}</span><button type="button" onClick={() => { reloadAdvisor(); reloadStatus() }}>Refresh status</button></div>
+      </details>
     </section>
   )
 }

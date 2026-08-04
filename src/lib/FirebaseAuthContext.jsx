@@ -92,29 +92,9 @@ export function AuthProvider({ children }) {
 
   // Switch palettes by flipping one attribute. The full light and dark token sets live in
   // variables.css, so a theme change can never leave light text sitting on a white card.
-  const applyTheme = (theme, darkMode = true) => {
-    const root = document.documentElement
-    root.setAttribute('data-theme', darkMode ? 'dark' : 'light')
-
-    // Keep iOS Safari's status bar/chrome color matching the active theme, not just the OS setting.
-    const themeColorMeta = document.getElementById('theme-color-meta')
-    if (themeColorMeta) themeColorMeta.setAttribute('content', darkMode ? '#07100d' : '#f2f2e8')
-
-    // A personal accent is the only per-user override, and only where it stays readable:
-    // the family accents are bright hues built for dark surfaces.
-    root.style.setProperty('--primary', theme.primary)
-    if (darkMode && theme.accent) {
-      root.style.setProperty('--accent', theme.accent)
-      root.style.setProperty('--accent-dim', theme.accent)
-      root.style.setProperty('--accent-glow', `${theme.accent}22`)
-      root.style.setProperty('--tier-high', theme.accent)
-      root.style.setProperty('--series-stock', theme.accent)
-    } else {
-      for (const token of ['--accent', '--accent-dim', '--accent-glow', '--tier-high', '--series-stock']) {
-        root.style.removeProperty(token)
-      }
-    }
-  }
+  // Legacy profile colors remain stored for backwards compatibility. Interface appearance
+  // is now owned by PreferencesContext so a profile fetch cannot override System mode.
+  const applyTheme = () => {}
 
   // Sign up new user
   const signup = async (email, password, displayName) => {
