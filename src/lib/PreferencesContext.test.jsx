@@ -43,7 +43,7 @@ describe('interface preferences', () => {
       theme: 'sepia',
       widgets: [{ id: 'portfolio-summary', visible: false }, { id: 'market-pulse', visible: false, order: 0, size: 'huge' }],
     })
-    expect(value.version).toBe(2)
+    expect(value.version).toBe(3)
     expect(value.theme).toBe('system')
     expect(value.widgets).toHaveLength(DEFAULT_WIDGETS.length)
     expect(value.widgets.find((widget) => widget.id === 'portfolio-summary').visible).toBe(true)
@@ -75,9 +75,10 @@ describe('interface preferences', () => {
     expect(stored.widgets.map((widget) => widget.order)).toEqual(stored.widgets.map((_, index) => index))
   })
 
-  it('never accepts a retirement age earlier than the current age', () => {
-    const value = validatePreferences({ forecast: { currentAge: 72, retirementAge: 60 } })
-    expect(value.forecast.retirementAge).toBe(72)
+  it('calculates age from birthdate and limits retirement age to supported options', () => {
+    const value = validatePreferences({ forecast: { birthDate: '2000-01-01', currentAge: 72, retirementAge: 47 } })
+    expect(value.forecast.currentAge).toBe(new Date().getFullYear() - 2000)
+    expect(value.forecast.retirementAge).toBe(65)
   })
 
   it('keeps one to three unique supported benchmarks with the first as primary', () => {

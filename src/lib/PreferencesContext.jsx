@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { calculateAge, isValidBirthDate, RETIREMENT_AGES } from './age.js'
 
 export const PREFERENCES_KEY = 'valuesignal.ui-preferences.v1'
 
@@ -24,7 +25,7 @@ export const DEFAULT_WIDGETS = [
 ]
 
 export const DEFAULT_PREFERENCES = {
-  version: 2,
+  version: 3,
   theme: 'system',
   accentColor: 'valuesignal',
   surfaceStyle: 'outlined',
@@ -43,7 +44,7 @@ export const DEFAULT_PREFERENCES = {
   defaultBenchmarks: ['SPY', 'QQQ', 'VTI'],
   suggestedActionsDefault: 'collapsed',
   mobileResearchView: 'visual',
-  forecast: { horizonYears: 5, recurringAnnual: 0, conservativeRate: 4, baseRate: 7, optimisticRate: 10, currentAge: 30, retirementAge: 65 },
+  forecast: { horizonYears: 5, recurringAnnual: 0, conservativeRate: 4, baseRate: 7, optimisticRate: 10, birthDate: '', currentAge: 30, retirementAge: 65 },
   chartAnimation: 'system',
   reducedMotion: 'system',
   higherContrast: false,
@@ -66,8 +67,10 @@ export function validatePreferences(raw) {
       size: pick(stored.size, ['small', 'medium', 'large', 'full'], fallback.size),
     }
   }).sort((a, b) => a.order - b.order).map((item, order) => ({ ...item, order }))
-  const currentAge = Math.max(18, Math.min(90, Number(raw.forecast?.currentAge) || 30))
-  const retirementAge = Math.max(currentAge, Math.max(40, Math.min(100, Number(raw.forecast?.retirementAge) || 65)))
+  const birthDate = isValidBirthDate(raw.forecast?.birthDate) ? raw.forecast.birthDate : ''
+  const calculatedAge = calculateAge(birthDate)
+  const currentAge = calculatedAge ?? Math.max(0, Math.min(120, Number(raw.forecast?.currentAge) || 30))
+  const retirementAge = pick(Number(raw.forecast?.retirementAge), RETIREMENT_AGES, 65)
   const allowedBenchmarks = ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'VEA', 'VWO', 'VXUS']
   const legacyBenchmark = pick(raw.defaultBenchmark, allowedBenchmarks, 'SPY')
   const storedBenchmarks = Array.isArray(raw.defaultBenchmarks)
@@ -79,7 +82,7 @@ export function validatePreferences(raw) {
   return {
     ...DEFAULT_PREFERENCES,
     ...raw,
-    version: 2,
+    version: 3,
     theme: pick(raw.theme, ['system', 'light', 'dark'], 'system'),
     accentColor: ACCENTS[raw.accentColor] ? raw.accentColor : 'valuesignal',
     surfaceStyle: pick(raw.surfaceStyle, ['outlined', 'soft', 'elevated'], 'outlined'),
@@ -106,6 +109,7 @@ export function validatePreferences(raw) {
       conservativeRate: Number.isFinite(Number(raw.forecast?.conservativeRate)) ? Number(raw.forecast.conservativeRate) : 4,
       baseRate: Number.isFinite(Number(raw.forecast?.baseRate)) ? Number(raw.forecast.baseRate) : 7,
       optimisticRate: Number.isFinite(Number(raw.forecast?.optimisticRate)) ? Number(raw.forecast.optimisticRate) : 10,
+      birthDate,
       currentAge,
       retirementAge,
     },

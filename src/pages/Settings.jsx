@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ACCENTS, DEFAULT_WIDGETS, usePreferences } from '../lib/PreferencesContext.jsx'
 import Icon from '../components/Icons.jsx'
 import { BENCHMARKS } from '../lib/portfolioAnalytics.js'
+import { calculateAge, RETIREMENT_AGES } from '../lib/age.js'
 
 const Choice = ({ active, children, onClick, preview }) => (
   <button type="button" className={`setting-choice${active ? ' active' : ''}`} aria-pressed={active} onClick={onClick}>
@@ -27,6 +28,9 @@ function SwitchRow({ id, label, description, checked, onChange }) {
 export default function Settings() {
   const { preferences, updatePreferences, resetAppearance, resetAll, setWidgets } = usePreferences()
   const [announcement, setAnnouncement] = useState('')
+  const calculatedAge = calculateAge(preferences.forecast.birthDate)
+  const today = new Date()
+  const maxBirthDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const toggleBenchmark = (symbol) => {
     const selected = preferences.defaultBenchmarks
     const next = selected.includes(symbol)
@@ -98,8 +102,9 @@ export default function Settings() {
     <section className="settings-card" aria-labelledby="planning-heading">
       <header><div><span className="settings-icon"><Icon name="finances" /></span><div><h2 id="planning-heading">Planning scenario</h2><p>Return paths come from the annualized performance of your currently held positions.</p></div></div></header>
       <div className="settings-row"><label htmlFor="recurring-annual"><strong>Annual contribution</strong><span>Added at the end of each modeled year.</span></label><input id="recurring-annual" type="number" min="0" step="100" value={preferences.forecast.recurringAnnual} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, recurringAnnual: Math.max(0, Number(event.target.value)) } })} /></div>
-      <div className="settings-row"><label htmlFor="current-age"><strong>Current age</strong><span>Used only to calculate years until retirement.</span></label><input id="current-age" type="number" min="18" max="90" value={preferences.forecast.currentAge} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, currentAge: Number(event.target.value) } })} /></div>
-      <div className="settings-row"><label htmlFor="retirement-age"><strong>Retirement age</strong><span>The report adds a retirement-value checkpoint beside 1, 5, and 10 years.</span></label><input id="retirement-age" type="number" min={Math.max(40, preferences.forecast.currentAge)} max="100" value={preferences.forecast.retirementAge} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, retirementAge: Number(event.target.value) } })} /></div>
+      <div className="settings-row"><label htmlFor="birth-date"><strong>Birthdate</strong><span>Your age is calculated automatically and used only for retirement planning.</span></label><input id="birth-date" type="date" max={maxBirthDate} value={preferences.forecast.birthDate} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, birthDate: event.target.value } })} /></div>
+      <div className="settings-row"><div><strong>Current age</strong><span>{calculatedAge === null ? 'Add your birthdate to calculate your age.' : 'Calculated from your birthdate.'}</span></div><b className="settings-value">{calculatedAge === null ? 'Not set' : calculatedAge}</b></div>
+      <SelectRow id="retirement-age" label="Retirement age" description="The report adds a retirement-value checkpoint beside 1, 5, and 10 years." value={preferences.forecast.retirementAge} onChange={(retirementAge) => updatePreferences({ forecast: { ...preferences.forecast, retirementAge: Number(retirementAge) } })}>{RETIREMENT_AGES.map((age) => <option key={age} value={age}>Age {age}</option>)}</SelectRow>
       <div className="settings-row"><div><strong>Scenario rates</strong><span>Base is the money-weighted annualized return for current holdings. Conservative and optimistic subtract or add a bounded volatility band.</span></div><b className="settings-value">Automatic</b></div>
       <SelectRow id="mobile-research" label="Mobile research view" value={preferences.mobileResearchView} onChange={(mobileResearchView) => updatePreferences({ mobileResearchView })}><option value="visual">Visual summary</option><option value="detailed">Detailed cards</option></SelectRow>
     </section>
