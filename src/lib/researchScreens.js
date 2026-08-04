@@ -110,6 +110,40 @@ export function rankMomentum(rows, limit = 5) {
     .slice(0, limit)
 }
 
+// Short-term reversal (Jegadeesh 1990; Lehmann 1990): a stock that pulled back over the
+// medium term but has just turned up over the most recent week is a reversal candidate,
+// not a falling knife. This is a daily-close screen built from already-published fields —
+// unrelated to the Early-Session premarket/intraday screens, which stay killed until real
+// reversal-detection logic (support zones, confirmation, trigger/invalidation) exists; see
+// pipeline/early_session_research.py. A fundamentals floor keeps a genuinely deteriorating
+// business from qualifying just because its price bounced.
+export function rankReversal(rows, limit = 5) {
+  return rows
+    .map((row) => {
+      const technical = row.technical_detail || {}
+      const fundamentals = row.components?.fundamentals
+      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
+      const monthReturn = technical.return_20d
+      const drawdown = technical.drawdown_60d
+
+      if (![weekReturn, monthReturn, drawdown, fundamentals].every(finite)) return null
+      if (weekReturn <= 0 || monthReturn >= 0 || fundamentals < 50) return null
+
+      const bounce = clamp(50 + weekReturn * 6)
+      const pulledBack = clamp(50 + Math.abs(drawdown) * 1.2)
+      return {
+        ...row,
+        screen: {
+          weekReturn, monthReturn, drawdown,
+          rankScore: bounce * 0.45 + pulledBack * 0.35 + clamp(fundamentals) * 0.20,
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
 // Structural-trend exposure is deliberately its own screen rather than a component of the
 // research score. Blending a forward-looking thematic bet into the fundamentals score would
 // make that score unreadable — you could no longer tell whether a stock ranked well because

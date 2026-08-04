@@ -10,7 +10,7 @@ import { humanDate } from '../lib/formatters'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
 import {
-  activeThemes, rankGrowingEtfs, rankMomentum, rankThemeExposure, rankValueTurnarounds,
+  activeThemes, rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
 } from '../lib/researchScreens'
 
 const WATCH_KEY = 'valuesignal.watchlist'
@@ -91,12 +91,13 @@ function TrendCard({ row, direction, onOpen }) {
 
 function ScreenRow({ row, rank, type, onOpen }) {
   const isValue = type === 'value'
+  const secondaryLabel = isValue ? 'This week' : type === 'reversal' ? '20-day pullback' : '20 days'
   return (
     <button onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}>
       <span className="screen-rank">#{rank}</span>
       <span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span>
       <span><small>{isValue ? 'Above 52w low' : 'This week'}</small><Move pct={isValue ? row.screen.aboveLow : row.screen.weekReturn} /></span>
-      <span><small>{isValue ? 'This week' : '20 days'}</small><Move pct={isValue ? row.screen.weekReturn : row.screen.monthReturn} /></span>
+      <span><small>{secondaryLabel}</small><Move pct={isValue ? row.screen.weekReturn : row.screen.monthReturn} /></span>
       <Icon name="chevron" size={17} />
     </button>
   )
@@ -234,6 +235,7 @@ export default function Dashboard() {
   const screenRows = [...rows, ...(data.screen_universe || [])]
   const valueTurnarounds = rankValueTurnarounds(screenRows)
   const momentumLeaders = rankMomentum(screenRows)
+  const reversalCandidates = rankReversal(screenRows)
   // ETFs are ranked against each other in a separate dataset (public/data/etfs.json),
   // not folded into the stock screen universe — a diversified fund doesn't clear the same
   // fundamentals/momentum bars a single stock does, so a blended score decides its rank.
@@ -321,7 +323,7 @@ export default function Dashboard() {
       </section>
 
       <div className="section-heading">
-        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds, momentum, and top ETFs</h2></div>
+        <div><span className="eyebrow">Focused screens</span><h2>Value turnarounds, momentum, reversals, and top ETFs</h2></div>
         <Link to="/research">Compare research <Icon name="arrow" size={17} /></Link>
       </div>
       <section className="stock-screen-grid" aria-label="Focused stock and ETF research screens">
@@ -347,6 +349,18 @@ export default function Dashboard() {
               <ScreenRow key={row.ticker} row={row} rank={index + 1} type="momentum" onOpen={setSelectedStock} />
             ))}
             {!momentumLeaders.length && <div className="inline-empty">No published stock currently clears every momentum requirement.</div>}
+          </div>
+        </article>
+        <article className="stock-screen-panel">
+          <header>
+            <div><span>Top 5</span><h3>Short-term reversals</h3></div>
+            <small>Pulled back over 20 days · turned up this week</small>
+          </header>
+          <div className="stock-screen-list">
+            {reversalCandidates.map((row, index) => (
+              <ScreenRow key={row.ticker} row={row} rank={index + 1} type="reversal" onOpen={setSelectedStock} />
+            ))}
+            {!reversalCandidates.length && <div className="inline-empty">No published stock currently clears every reversal requirement.</div>}
           </div>
         </article>
         <article className="stock-screen-panel">

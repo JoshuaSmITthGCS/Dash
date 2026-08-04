@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
 import {
-  activeThemes, rankGrowingEtfs, rankMomentum, rankThemeExposure, rankValueTurnarounds,
+  activeThemes, rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
 } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
@@ -79,6 +79,35 @@ describe('momentum screen uses the rebuilt technical fields', () => {
       technical_detail: { return_20d: 8, return_5d: 2, trend: 80, risk: 70 },
     })
     expect(rankMomentum([legacy]).map((item) => item.ticker)).toEqual(['OLD'])
+  })
+})
+
+describe('short-term reversal screen', () => {
+  const reversalRow = (ticker, overrides = {}) => row(ticker, {
+    technical_detail: { return_20d: -8, return_5d: 3, drawdown_60d: -15 },
+    ...overrides,
+  })
+
+  it('requires a medium-term pullback that has just turned up this week', () => {
+    const bouncing = reversalRow('BOUNCE')
+    const stillFalling = reversalRow('DOWN', { technical_detail: { return_20d: -8, return_5d: -1, drawdown_60d: -15 } })
+    const noPullback = reversalRow('UP', { technical_detail: { return_20d: 8, return_5d: 3, drawdown_60d: -2 } })
+
+    expect(rankReversal([bouncing, stillFalling, noPullback]).map((item) => item.ticker))
+      .toEqual(['BOUNCE'])
+  })
+
+  it('excludes a bounce with weak fundamentals rather than call it a reversal candidate', () => {
+    const weak = reversalRow('WEAK', { components: { fundamentals: 30, market_behavior: 40, news_sentiment: 50 } })
+    const solid = reversalRow('SOLID')
+    expect(rankReversal([weak, solid]).map((item) => item.ticker)).toEqual(['SOLID'])
+  })
+
+  it('ranks a deeper pullback with a stronger bounce higher', () => {
+    const sharperBounce = reversalRow('SHARP', { technical_detail: { return_20d: -12, return_5d: 6, drawdown_60d: -20 } })
+    const mildBounce = reversalRow('MILD', { technical_detail: { return_20d: -4, return_5d: 1, drawdown_60d: -6 } })
+    expect(rankReversal([mildBounce, sharperBounce]).map((item) => item.ticker))
+      .toEqual(['SHARP', 'MILD'])
   })
 })
 
