@@ -62,8 +62,10 @@ export function useData(file) {
       : { data: null, loading: true, error: null, fromCache: false, cachedAt: null }
   })
   const mounted = useRef(false)
+  const requestId = useRef(0)
 
   const load = useCallback(async ({ initial = false } = {}) => {
+    const activeRequest = ++requestId.current
     // A cached copy is already on screen, so an initial mount revalidates quietly in the
     // background rather than showing a spinner over data the user can already see.
     if (initial && mounted.current && !hadCache.current) {
@@ -81,10 +83,10 @@ export function useData(file) {
       const data = dataset ? migrate(dataset, raw) : raw
       const cachedAt = Date.now()
       writeCachedPayload(file, data)
-      if (mounted.current) setState({ data, loading: false, error: null, fromCache: false, cachedAt })
+      if (mounted.current && activeRequest === requestId.current) setState({ data, loading: false, error: null, fromCache: false, cachedAt })
       return data
     } catch (error) {
-      if (mounted.current) {
+      if (mounted.current && activeRequest === requestId.current) {
         setState((current) => ({ ...current, loading: false, error }))
       }
       throw error
@@ -93,8 +95,13 @@ export function useData(file) {
 
   useEffect(() => {
     mounted.current = true
+    const cached = readCachedPayload(file)
+    hadCache.current = Boolean(cached)
+    setState(cached
+      ? { data: cached.data, loading: false, error: null, fromCache: true, cachedAt: cached.cachedAt }
+      : { data: null, loading: true, error: null, fromCache: false, cachedAt: null })
     load({ initial: true }).catch(() => {})
-    return () => { mounted.current = false }
+    return () => { requestId.current += 1; mounted.current = false }
   }, [load])
 
   return { ...state, reload: load }

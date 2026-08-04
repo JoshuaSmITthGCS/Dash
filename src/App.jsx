@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
 import Icon from './components/Icons.jsx'
@@ -24,18 +24,29 @@ const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
+const Search = lazy(() => import('./pages/Search.jsx'))
+const Diversification = lazy(() => import('./pages/Diversification.jsx'))
 
 const NAV = [
-  { to: '/', label: 'Overview', icon: 'overview', end: true, mobile: true },
-  { to: '/research', label: 'Research', icon: 'research', mobile: true },
-  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true, mobile: true },
-  { to: '/watchlist', label: 'Watchlist', icon: 'watchlist', mobile: true },
+  { to: '/', label: 'Financial Report', icon: 'overview', end: true },
+  { to: '/research', label: 'Research', icon: 'research' },
+  { to: '/search', label: 'Search', icon: 'search' },
+  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true },
+  { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/market', label: 'Market Pulse', icon: 'market' },
   { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
   { to: '/screens/momentum', label: 'Screens', icon: 'research' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
+]
+
+export const MOBILE_NAV = [
+  { to: '/research', label: 'Research', icon: 'research' },
+  { to: '/search', label: 'Search', icon: 'search' },
+  { to: '/', label: 'Report', icon: 'overview', end: true, primary: true },
+  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
+  { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
 ]
 
 function ProfilePanel() {
@@ -60,15 +71,6 @@ function ProfilePanel() {
       </div>
       {showPasswordChange && <PasswordChangeModal onClose={() => setShowPasswordChange(false)} />}
     </>
-  )
-}
-
-function MoreLink() {
-  return (
-    <NavLink to="/market" className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
-      <span className="mobile-nav-icon"><Icon name="more" size={19} /></span>
-      <span>More</span>
-    </NavLink>
   )
 }
 
@@ -130,8 +132,10 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/research" element={<Picks />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/market" element={<PolicyRadar />} />
           <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
+          <Route path="/portfolio/diversification" element={currentUser ? <Diversification /> : <Dashboard />} />
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />
@@ -145,22 +149,19 @@ function AppContent() {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
-        {NAV.filter((item) => item.mobile).map((item) => {
-          if (item.requireAuth && !currentUser) return null
-          return (
+        {MOBILE_NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end}
-              className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
+              className={({ isActive }) => `mobile-nav-item${item.primary ? ' mobile-nav-report' : ''}${isActive ? ' active' : ''}`}>
               <span className="mobile-nav-icon"><Icon name={item.icon} size={19} /></span>
               <span>{item.label}</span>
             </NavLink>
-          )
-        })}
-        <MoreLink />
+        ))}
       </nav>
       {!currentUser && !previewMode && <FirebaseLoginModal />}
     </div>

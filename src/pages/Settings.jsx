@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ACCENTS, DEFAULT_WIDGETS, usePreferences } from '../lib/PreferencesContext.jsx'
 import Icon from '../components/Icons.jsx'
+import { BENCHMARKS } from '../lib/portfolioAnalytics.js'
 
 const Choice = ({ active, children, onClick, preview }) => (
   <button type="button" className={`setting-choice${active ? ' active' : ''}`} aria-pressed={active} onClick={onClick}>
@@ -64,18 +65,29 @@ export default function Settings() {
     </section>
 
     <section className="settings-card" aria-labelledby="dashboard-heading">
-      <header><div><span className="settings-icon"><Icon name="overview" /></span><div><h2 id="dashboard-heading">Dashboard</h2><p>Control modules from Overview edit mode.</p></div></div></header>
-      <div className="settings-row"><div><strong>Visible Overview widgets</strong><span>{preferences.widgets.filter((widget) => widget.visible).length} of {preferences.widgets.length} shown</span></div><a className="secondary-button compact" href="/?customize=1">Customize Overview</a></div>
-      <div className="settings-row"><div><strong>Reset Overview layout</strong><span>Restore widget visibility, order, and sizes.</span></div><button className="ghost-button" type="button" onClick={resetDashboard}>Reset dashboard</button></div>
+      <header><div><span className="settings-icon"><Icon name="overview" /></span><div><h2 id="dashboard-heading">Financial Report</h2><p>Report modules are managed here, away from the daily reading view.</p></div></div></header>
+      <div className="settings-row"><div><strong>Visible report widgets</strong><span>{preferences.widgets.filter((widget) => widget.visible).length} of {preferences.widgets.length} shown</span></div><a className="secondary-button compact" href="/?customize=1">Customize report</a></div>
+      <div className="settings-row"><div><strong>Reset report layout</strong><span>Restore widget visibility, order, and sizes.</span></div><button className="ghost-button" type="button" onClick={resetDashboard}>Reset report</button></div>
+      <SelectRow id="benchmark" label="Default benchmark" description="Exchange-traded funds are labeled as investable index proxies." value={preferences.defaultBenchmark} onChange={(defaultBenchmark) => updatePreferences({ defaultBenchmark })}>{BENCHMARKS.map((item) => <option key={item.symbol} value={item.symbol}>{item.label} ({item.symbol}) proxy</option>)}</SelectRow>
+      <SelectRow id="holding-sort" label="Default holdings order" value={preferences.holdingSort.key} onChange={(key) => updatePreferences({ holdingSort: { key, direction: key === 'ticker' ? 'asc' : 'desc' } })}><option value="allocation">Allocation, largest first</option><option value="ticker">Ticker, A–Z</option><option value="value">Value, largest first</option><option value="gain">Dollar gain, largest first</option><option value="gainPct">Percent gain, largest first</option></SelectRow>
+      <SelectRow id="actions-default" label="Suggested actions" value={preferences.suggestedActionsDefault} onChange={(suggestedActionsDefault) => updatePreferences({ suggestedActionsDefault })}><option value="collapsed">Collapsed by default</option><option value="expanded">Expanded by default</option></SelectRow>
     </section>
 
     <section className="settings-card" aria-labelledby="charts-heading">
       <header><div><span className="settings-icon"><Icon name="market" /></span><div><h2 id="charts-heading">Charts</h2><p>Defaults for supported financial visualizations.</p></div></div></header>
-      <SelectRow id="chart-period" label="Default period" value={preferences.defaultChartPeriod} onChange={(defaultChartPeriod) => updatePreferences({ defaultChartPeriod })}>{['1W', '1M', '3M', '6M', '1Y', 'All'].map((period) => <option key={period}>{period}</option>)}</SelectRow>
+      <SelectRow id="chart-period" label="Default period" value={preferences.defaultChartPeriod} onChange={(defaultChartPeriod) => updatePreferences({ defaultChartPeriod })}>{['1D', '1W', '1M', '3M', '6M', '1Y', 'All'].map((period) => <option key={period}>{period}</option>)}</SelectRow>
       <SelectRow id="chart-style" label="Chart style" value={preferences.chartStyle} onChange={(chartStyle) => updatePreferences({ chartStyle })}><option value="line">Line</option><option value="area">Line with area fill</option><option value="step">Stepped line</option></SelectRow>
       <SelectRow id="chart-weight" label="Line weight" value={preferences.chartLineWeight} onChange={(chartLineWeight) => updatePreferences({ chartLineWeight })}><option value="thin">Thin</option><option value="standard">Standard</option><option value="bold">Bold</option></SelectRow>
       <SelectRow id="chart-grid" label="Grid visibility" value={preferences.chartGrid} onChange={(chartGrid) => updatePreferences({ chartGrid })}><option value="minimal">Minimal</option><option value="standard">Standard</option><option value="hidden">Hidden</option></SelectRow>
       <SelectRow id="chart-animation" label="Animation" value={preferences.chartAnimation} onChange={(chartAnimation) => updatePreferences({ chartAnimation })}><option value="system">System</option><option value="on">On</option><option value="reduced">Reduced</option><option value="off">Off</option></SelectRow>
+    </section>
+
+    <section className="settings-card" aria-labelledby="planning-heading">
+      <header><div><span className="settings-icon"><Icon name="finances" /></span><div><h2 id="planning-heading">Planning scenario</h2><p>Manual assumptions only. These are illustrations, not forecasts.</p></div></div></header>
+      <SelectRow id="forecast-horizon" label="Horizon" value={preferences.forecast.horizonYears} onChange={(horizonYears) => updatePreferences({ forecast: { ...preferences.forecast, horizonYears: Number(horizonYears) } })}>{[1, 3, 5, 10, 15, 20, 25, 30].map((years) => <option key={years} value={years}>{years} years</option>)}</SelectRow>
+      <div className="settings-row"><label htmlFor="recurring-annual"><strong>Annual contribution</strong><span>Added at the end of each modeled year.</span></label><input id="recurring-annual" type="number" min="0" step="100" value={preferences.forecast.recurringAnnual} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, recurringAnnual: Math.max(0, Number(event.target.value)) } })} /></div>
+      {['conservativeRate', 'baseRate', 'optimisticRate'].map((key) => <div className="settings-row" key={key}><label htmlFor={key}><strong>{key.replace('Rate', ' rate')}</strong><span>Annual percentage assumption.</span></label><input id={key} type="number" step="0.5" value={preferences.forecast[key]} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, [key]: Number(event.target.value) } })} /></div>)}
+      <SelectRow id="mobile-research" label="Mobile research view" value={preferences.mobileResearchView} onChange={(mobileResearchView) => updatePreferences({ mobileResearchView })}><option value="visual">Visual summary</option><option value="detailed">Detailed cards</option></SelectRow>
     </section>
 
     <section className="settings-card" aria-labelledby="display-heading">
