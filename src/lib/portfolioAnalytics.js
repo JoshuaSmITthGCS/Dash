@@ -158,8 +158,28 @@ export function intradayPortfolioHigh(points = []) {
 export function netInvestedCapital(transactions) {
   if (!Array.isArray(transactions) || !transactions.length) return { available: false, value: null, reason: 'Complete contribution and withdrawal history is unavailable.' }
   const external = transactions.filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount))
-  if (!external.length || external.some((row) => !row.date)) return { available: false, value: null, reason: 'Complete dated external cash flows are unavailable.' }
-  return { available: true, value: external.reduce((sum, row) => sum + (row.type === 'deposit' ? Number(row.amount) : -Number(row.amount)), 0), reason: 'External deposits minus external withdrawals.' }
+  if (!external.length || external.some((row) => !(row.effectiveDate || row.date))) return { available: false, value: null, reason: 'Complete dated external cash flows are unavailable.' }
+  const deposits = external.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount), 0)
+  const withdrawals = external.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount), 0)
+  return { available: true, value: deposits - withdrawals, deposits, withdrawals, count: external.length, reason: 'External deposits minus external withdrawals.' }
+}
+
+export function contributionAdjustedPerformance(currentValue, transactions, historyComplete = false) {
+  if (!historyComplete) return { available: false, value: null, returnPct: null, reason: 'Confirm the complete deposit and withdrawal history first.' }
+  if (!finite(currentValue)) return { available: false, value: null, returnPct: null, reason: 'Current account value is unavailable.' }
+  const capital = netInvestedCapital(transactions)
+  if (!capital.available || capital.value <= 0) return { ...capital, available: false, returnPct: null }
+  const value = Number(currentValue) - capital.value
+  return {
+    available: true,
+    value,
+    returnPct: value / capital.value * 100,
+    netContributions: capital.value,
+    deposits: capital.deposits,
+    withdrawals: capital.withdrawals,
+    count: capital.count,
+    reason: 'Current account value minus net external contributions. The percentage is a simple contribution-adjusted return, not Fidelity’s time-weighted return.',
+  }
 }
 
 export function scenarioProjection(currentValue, annualRate, years, recurringAnnual = 0) {

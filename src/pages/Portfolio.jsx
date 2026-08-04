@@ -32,17 +32,18 @@ import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import {
   alignSeries,
   concentrationLiquidityScore,
+  contributionAdjustedPerformance,
   currentHoldingsSeries,
   diversificationScore,
   performanceRating,
-  portfolioAnnualizedReturn,
   portfolioScore,
   resilienceIndex,
   selectPeriod,
 } from '../lib/portfolioAnalytics.js'
+import { FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from '../lib/referenceCashFlows.js'
 
 const money = (value, digits = 0) =>
-  value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
+  value == null ? '—' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
 
 const signedPct = (value, digits = 1) =>
   value == null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`
@@ -156,7 +157,12 @@ export default function Portfolio() {
   const [editSaving, setEditSaving] = useState(false)
   const [activityForm, setActivityForm] = useState({ type: 'realized_gain', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
   const [activitySaving, setActivitySaving] = useState(false)
+  const [cashForm, setCashForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
+  const [cashSaving, setCashSaving] = useState(false)
+  const [cashBalanceForm, setCashBalanceForm] = useState('')
+  const [fidelityPeriod, setFidelityPeriod] = useState('1Y')
   const recordedSnapshot = useRef(null)
+  const referenceCashFlowSyncStarted = useRef(false)
   const refresh = useAdvisorRefresh(
     data?.generated_at,
     reload,
@@ -219,15 +225,30 @@ export default function Portfolio() {
     }
   }, { totalCost: 0, totalValue: 0, totalGain: 0, positions: [] })
 
+  const uninvestedCash = tracking.trackingState?.cashTrackingEnabled
+    ? Number(tracking.trackingState.cashBalance || 0)
+    : null
+  const trackedAccountValue = portfolioStats.totalValue + (uninvestedCash || 0)
+  const contributionPerformance = contributionAdjustedPerformance(
+    trackedAccountValue,
+    tracking.activities,
+    tracking.trackingState?.cashFlowHistoryComplete,
+  )
+  const fidelityCashSummary = summarizeCashFlows()
+  const fidelityReferencePerformance = contributionAdjustedPerformance(
+    FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue,
+    FIDELITY_CASH_FLOWS,
+    true,
+  )
+  const cashFlowRows = tracking.activities
+    .filter((row) => ['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase'].includes(row.type))
+    .sort((left, right) => String(right.effectiveDate || '').localeCompare(String(left.effectiveDate || '')))
+
   const totalGainPct = portfolioStats.totalCost > 0
     ? ((portfolioStats.totalValue - portfolioStats.totalCost) / portfolioStats.totalCost) * 100
     : 0
 
   const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
-  const annualizedReturn = portfolioAnnualizedReturn(
-    portfolioPositions,
-    String(pricesUpdatedAt || new Date().toISOString()).slice(0, 10),
-  )
   const scoreHoldingsSeries = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
@@ -264,8 +285,24 @@ export default function Portfolio() {
   useEffect(() => {
     if (!quoteRefreshIsNewest || !portfolioQuotes.fetchedAt || !portfolioStats.totalValue || recordedSnapshot.current === portfolioQuotes.fetchedAt) return
     recordedSnapshot.current = portfolioQuotes.fetchedAt
-    tracking.recordSnapshot({ value: portfolioStats.totalValue, coveragePct: positions.length ? portfolioStats.positions.filter((position) => position.currentValue != null).length / positions.length * 100 : 0, source: 'portfolio_price_refresh', recordedAt: portfolioQuotes.fetchedAt })
-  }, [portfolioQuotes.fetchedAt, quoteRefreshIsNewest, portfolioStats.totalValue])
+    tracking.recordSnapshot({ value: trackedAccountValue, coveragePct: positions.length ? portfolioStats.positions.filter((position) => position.currentValue != null).length / positions.length * 100 : 0, source: 'portfolio_price_refresh', recordedAt: portfolioQuotes.fetchedAt })
+  }, [portfolioQuotes.fetchedAt, quoteRefreshIsNewest, trackedAccountValue])
+
+  // The supplied Fidelity cash history belongs with the supplied Fidelity holdings snapshot.
+  // Import once, automatically, after that portfolio is connected; stable document IDs make it safe to retry.
+  useEffect(() => {
+    const hasReferencePortfolio = positions.some((position) => position.snapshotSource === 'User-provided brokerage snapshot')
+    const referenceReady = tracking.trackingState?.fidelityHistoryImported && tracking.trackingState?.cashTrackingEnabled
+    if (!syncState.connected || !hasReferencePortfolio || referenceReady || referenceCashFlowSyncStarted.current) return
+    referenceCashFlowSyncStarted.current = true
+    tracking.syncReferenceCashFlows().then((result) => {
+      if (result?.success) setSyncMessage(`${result.count} Fidelity cash-flow records added to Joshua’s portfolio.`)
+      else {
+        referenceCashFlowSyncStarted.current = false
+        setSyncMessage(`Could not add Fidelity cash history: ${result?.error || 'Unknown error'}`)
+      }
+    })
+  }, [positions, syncState.connected, tracking.trackingState?.fidelityHistoryImported, tracking.trackingState?.cashTrackingEnabled])
 
   if (dataLoading || portfolioLoading) return <Loading />
 
@@ -322,6 +359,27 @@ export default function Portfolio() {
     if (!result.success) { setSyncMessage(`Could not save earnings activity: ${result.error}`); return }
     setActivityForm((current) => ({ ...current, amount: '', note: '' }))
     setSyncMessage('Earnings activity saved to Firebase.')
+  }
+
+  const handleCashMovement = async (event) => {
+    event.preventDefault()
+    setCashSaving(true)
+    const result = await tracking.recordActivity({ ...cashForm, amount: Number(cashForm.amount) })
+    setCashSaving(false)
+    if (!result.success) { setSyncMessage(`Could not update cash: ${result.error}`); return }
+    const labels = { deposit: 'Deposit added', withdrawal: 'Withdrawal saved', sale_proceeds: 'Sale proceeds moved to cash', stock_purchase: 'Investment deducted from cash' }
+    setCashForm((current) => ({ ...current, amount: '', note: '' }))
+    setSyncMessage(`${labels[cashForm.type]}. Uninvested cash updated.`)
+  }
+
+  const handleCashReconciliation = async (event) => {
+    event.preventDefault()
+    setCashSaving(true)
+    const result = await tracking.setCashBalance({ amount: Number(cashBalanceForm), effectiveDate: new Date().toISOString().split('T')[0], note: 'Manual uninvested cash reconciliation' })
+    setCashSaving(false)
+    if (!result.success) { setSyncMessage(`Could not set cash balance: ${result.error}`); return }
+    setCashBalanceForm('')
+    setSyncMessage('Uninvested cash balance reconciled.')
   }
 
   const toggleLedgerComplete = async () => {
@@ -403,11 +461,13 @@ export default function Portfolio() {
       <div className="portfolio-summary">
         <div className="portfolio-value-card">
           <div className="kpi-label">Total Value</div>
-          <div className="kpi-value">{money(portfolioStats.totalValue)}</div>
-          <div className="portfolio-delta" style={{ color: moveColor(portfolioStats.totalGain) }}>
-            {portfolioStats.totalGain >= 0 ? '+' : '−'}{money(Math.abs(portfolioStats.totalGain))} · {signedPct(totalGainPct, 2)}
+          <div className="kpi-value">{money(trackedAccountValue, 2)}</div>
+          <div className="portfolio-delta" style={{ color: moveColor(contributionPerformance.available ? contributionPerformance.value : portfolioStats.totalGain) }}>
+            {contributionPerformance.available
+              ? `${contributionPerformance.value >= 0 ? '+' : '−'}${money(Math.abs(contributionPerformance.value), 2)} · ${signedPct(contributionPerformance.returnPct, 2)} actually made`
+              : `${portfolioStats.totalGain >= 0 ? '+' : '−'}${money(Math.abs(portfolioStats.totalGain))} · ${signedPct(totalGainPct, 2)}`}
           </div>
-          <div className="kpi-note">{positions.length} positions · {money(portfolioStats.totalCost)} cost basis</div>
+          <div className="kpi-note">{contributionPerformance.available ? `${money(contributionPerformance.netContributions)} net deposits · cash-flow adjusted` : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
         </div>
         <div className="card kpi portfolio-score-kpi">
           <div className="kpi-label">Portfolio Score</div>
@@ -429,14 +489,12 @@ export default function Portfolio() {
           </div>
         </div>
         <div className="card kpi">
-          <div className="kpi-label">Annualized return</div>
-          <div className="kpi-value" style={{ color: moveColor(annualizedReturn.rate) }}>
-            {annualizedReturn.available ? signedPct(annualizedReturn.rate, 2) : '—'}
+          <div className="kpi-label">Uninvested cash</div>
+          <div className="kpi-value">
+            {uninvestedCash == null ? '—' : money(uninvestedCash, 2)}
           </div>
           <div className="kpi-note">
-            {annualizedReturn.available
-              ? `Money-weighted since ${annualizedReturn.startDate} · ${Math.round(annualizedReturn.coveragePct)}% value coverage`
-              : annualizedReturn.reason}
+            {uninvestedCash == null ? 'Sync Fidelity or set a cash balance below' : 'Available for your next purchase'}
           </div>
         </div>
         <div className="card kpi">
@@ -451,6 +509,51 @@ export default function Portfolio() {
           </div>
         </div>
       </div>
+
+      <section className="card cash-account" aria-labelledby="cash-account-title">
+        <div className="cash-account-copy">
+          <span className="eyebrow">Buying power</span>
+          <h2 id="cash-account-title">Uninvested cash</h2>
+          <strong>{uninvestedCash == null ? 'Not set' : money(uninvestedCash, 2)}</strong>
+          <p>Deposits and sale proceeds add cash. Withdrawals and new stock purchases use it without changing lifetime contributions. After a trade, edit or add the holding’s shares so total account value stays accurate.</p>
+        </div>
+        <form className="cash-movement-form" onSubmit={handleCashMovement}>
+          <label><span>Cash action</span><select value={cashForm.type} onChange={(event) => setCashForm({ ...cashForm, type: event.target.value })}><option value="deposit">Deposit cash</option><option value="sale_proceeds">Trim / sale proceeds</option><option value="stock_purchase">Buy / invest cash</option><option value="withdrawal">Withdraw cash</option></select></label>
+          <label><span>Amount</span><input type="number" inputMode="decimal" min="0.01" step="0.01" required value={cashForm.amount} onChange={(event) => setCashForm({ ...cashForm, amount: event.target.value })} placeholder="0.00" /></label>
+          <label><span>Date</span><input type="date" required value={cashForm.effectiveDate} onChange={(event) => setCashForm({ ...cashForm, effectiveDate: event.target.value })} /></label>
+          <label><span>Ticker or note</span><input value={cashForm.note} onChange={(event) => setCashForm({ ...cashForm, note: event.target.value })} placeholder="Optional, e.g. trimmed OXY" /></label>
+          <button className="primary-button compact" disabled={cashSaving}>{cashSaving ? 'Saving…' : 'Update cash'}</button>
+        </form>
+        <details className="cash-reconcile">
+          <summary>Cash does not match your brokerage?</summary>
+          <form onSubmit={handleCashReconciliation}>
+            <label><span>Current uninvested cash</span><input type="number" inputMode="decimal" min="0" step="0.01" required value={cashBalanceForm} onChange={(event) => setCashBalanceForm(event.target.value)} placeholder="0.00" /></label>
+            <button className="secondary-button compact" disabled={cashSaving}>Set balance</button>
+          </form>
+        </details>
+      </section>
+
+      <section className="card fidelity-performance" aria-labelledby="fidelity-performance-title">
+        <div className="fidelity-performance-head">
+          <div>
+            <span className="eyebrow">Brokerage check · Aug 4, 2026</span>
+            <h2 id="fidelity-performance-title">Fidelity performance reference</h2>
+            <p>Your screenshots reconcile deposits separately from market performance.</p>
+          </div>
+          <div className="period-control" aria-label="Fidelity reference return period">
+            {Object.keys(FIDELITY_REFERENCE_SNAPSHOT.periodReturns).map((period) => (
+              <button key={period} className={fidelityPeriod === period ? 'active' : ''} aria-pressed={fidelityPeriod === period} onClick={() => setFidelityPeriod(period)}>{period}</button>
+            ))}
+          </div>
+        </div>
+        <div className="fidelity-performance-grid">
+          <div><span>Account value</span><strong>{money(FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue, 2)}</strong><small>{money(FIDELITY_REFERENCE_SNAPSHOT.investments, 2)} invested · {money(FIDELITY_REFERENCE_SNAPSHOT.cash, 2)} cash</small></div>
+          <div><span>Net contributed</span><strong>{money(fidelityCashSummary.netContributions)}</strong><small>{money(fidelityCashSummary.deposits)} deposited · {money(fidelityCashSummary.withdrawals)} withdrawn</small></div>
+          <div><span>Actually made</span><strong style={{ color: moveColor(fidelityReferencePerformance.value) }}>{fidelityReferencePerformance.value >= 0 ? '+' : '−'}{money(Math.abs(fidelityReferencePerformance.value), 2)}</strong><small>{signedPct(fidelityReferencePerformance.returnPct, 2)} simple cash-flow-adjusted return</small></div>
+          <div><span>Fidelity {fidelityPeriod} return</span><strong style={{ color: moveColor(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod]) }}>{signedPct(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod], 2)}</strong><small>Time-weighted pre-tax return from Fidelity</small></div>
+        </div>
+        <p className="fidelity-method-note">“Actually made” is account value minus net deposits. Fidelity’s period return is time-weighted, so it measures investment performance without a large late deposit diluting the percentage.</p>
+      </section>
 
       <details className="card portfolio-actions-menu">
         <summary><span><span className="eyebrow">Data actions</span><strong>Refresh and manage portfolio data</strong></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
@@ -468,9 +571,9 @@ export default function Portfolio() {
       </details>
 
       <details className="card earnings-tracker">
-        <summary><span><span className="eyebrow">All-time earnings</span><strong>Cloud earnings ledger</strong><small>{tracking.trackingState?.trackingStartedAt ? `Storing activity since ${tracking.trackingState.trackingStartedAt.slice(0, 10)}` : 'Tracking starts with your next saved activity or price refresh'}</small></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
+        <summary><span><span className="eyebrow">Cash flows &amp; earnings</span><strong>Cloud portfolio ledger</strong><small>{tracking.trackingState?.trackingStartedAt ? `Storing activity since ${tracking.trackingState.trackingStartedAt.slice(0, 10)}` : 'Tracking starts with your next saved activity or price refresh'}</small></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
         <div className="earnings-tracker-body">
-          <p>Current unrealized gains are automatic. Add prior and future realized gains, dividends, and fees so the Financial Report can calculate all-time earnings honestly.</p>
+          <p>Deposits, withdrawals, trims, and purchases are managed in the uninvested-cash card above. Record realized gains, dividends, and fees here for the earnings report.</p>
           <form className="earnings-activity-form" onSubmit={handleActivity}>
             <label><span>Activity</span><select value={activityForm.type} onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })}><option value="realized_gain">Realized gain/loss</option><option value="dividend">Dividend</option><option value="fee">Fee</option></select></label>
             <label><span>Amount</span><input type="number" step="0.01" required value={activityForm.amount} onChange={(event) => setActivityForm({ ...activityForm, amount: event.target.value })} placeholder={activityForm.type === 'realized_gain' ? 'Negative for a loss' : '0.00'} /></label>
@@ -478,6 +581,17 @@ export default function Portfolio() {
             <label><span>Note</span><input value={activityForm.note} onChange={(event) => setActivityForm({ ...activityForm, note: event.target.value })} placeholder="Optional" /></label>
             <button className="primary-button compact" disabled={activitySaving}>{activitySaving ? 'Saving…' : 'Save activity'}</button>
           </form>
+          {cashFlowRows.length > 0 && (
+            <div className="cash-flow-history" aria-label="Deposit and withdrawal history">
+              <div className="cash-flow-history-head"><strong>Cash activity</strong><span>{cashFlowRows.length} movements · {money(contributionPerformance.netContributions ?? fidelityCashSummary.netContributions)} lifetime net deposits</span></div>
+              {cashFlowRows.map((row) => (
+                <div className="cash-flow-row" key={row.id}>
+                  <span><b>{{ deposit: 'Deposit', withdrawal: 'Withdrawal', sale_proceeds: 'Trim / sale proceeds', stock_purchase: 'Buy / invest cash' }[row.type]}</b><small>{row.effectiveDate}{row.note ? ` · ${row.note}` : ''}{row.status === 'processing' ? ' · Processing' : ''}</small></span>
+                  <strong style={{ color: ['deposit', 'sale_proceeds'].includes(row.type) ? 'var(--pos)' : 'var(--text-primary)' }}>{['deposit', 'sale_proceeds'].includes(row.type) ? '+' : '−'}{money(Number(row.amount), 2)}</strong>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="ledger-confirmation"><div><strong>{tracking.trackingState?.ledgerComplete ? 'History confirmed complete' : 'Prior history not yet confirmed'}</strong><span>{tracking.activities.length} stored ledger event{tracking.activities.length === 1 ? '' : 's'}. Position removals are not assumed to be sales.</span></div><button className="secondary-button compact" onClick={toggleLedgerComplete}>{tracking.trackingState?.ledgerComplete ? 'Mark incomplete' : 'Confirm history is complete'}</button></div>
           {tracking.error && <p className="form-error" role="alert">Firebase tracking error: {tracking.error}</p>}
         </div>

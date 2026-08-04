@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore, enrichPortfolio,
-  intradayPortfolioHigh, latestMarketDayReturn, netInvestedCapital, opportunityCost, performanceRating,
+  contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, netInvestedCapital, opportunityCost, performanceRating,
   planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
 } from './portfolioAnalytics.js'
 
@@ -29,6 +29,21 @@ describe('portfolio report analytics', () => {
   it('does not call cost basis invested capital without a cash-flow ledger', () => {
     expect(netInvestedCapital(null).available).toBe(false)
     expect(netInvestedCapital([{ type: 'deposit', amount: 1000, date: '2026-01-01' }, { type: 'withdrawal', amount: 100, date: '2026-02-01' }]).value).toBe(900)
+    expect(netInvestedCapital([{ type: 'deposit', amount: 1000, effectiveDate: '2026-01-01' }])).toMatchObject({ deposits: 1000, withdrawals: 0 })
+    expect(netInvestedCapital([
+      { type: 'deposit', amount: 1000, effectiveDate: '2026-01-01' },
+      { type: 'sale_proceeds', amount: 250, effectiveDate: '2026-01-02' },
+      { type: 'stock_purchase', amount: 200, effectiveDate: '2026-01-03' },
+    ]).value).toBe(1000)
+  })
+
+  it('calculates actual account growth from complete external cash flows', () => {
+    const rows = [{ type: 'deposit', amount: 2880, effectiveDate: '2026-01-01' }, { type: 'withdrawal', amount: 200, effectiveDate: '2026-02-01' }]
+    expect(contributionAdjustedPerformance(2827.96, rows, false).available).toBe(false)
+    const result = contributionAdjustedPerformance(2827.96, rows, true)
+    expect(result.netContributions).toBe(2680)
+    expect(result.value).toBeCloseTo(147.96, 2)
+    expect(result.returnPct).toBeCloseTo(5.52, 2)
   })
 
   it('aligns exact dates before benchmark and opportunity-cost comparisons', () => {
