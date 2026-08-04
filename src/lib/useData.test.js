@@ -7,11 +7,13 @@ describe('useData local caching', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    clearCachedData()
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
     localStorage.clear()
+    clearCachedData()
   })
 
   it('caches a successful fetch and serves it instantly on the next mount', async () => {

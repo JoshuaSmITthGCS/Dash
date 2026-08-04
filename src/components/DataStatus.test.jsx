@@ -10,7 +10,7 @@ vi.mock('../lib/useData', async () => {
 
 describe('DataStatus', () => {
   it('makes demo fixtures unmistakable', () => {
-    useData.mockImplementation((file) => file === 'advisor.json'
+    useData.mockImplementation((file) => file === 'report.json'
       ? { data: { data_mode: 'demo', generated_at: new Date().toISOString() } }
       : { data: { status: 'degraded', stages: {} } })
     render(<DataStatus />)
@@ -19,7 +19,7 @@ describe('DataStatus', () => {
   })
 
   it('shows source-level failures', () => {
-    useData.mockImplementation((file) => file === 'advisor.json'
+    useData.mockImplementation((file) => file === 'report.json'
       ? { data: { data_mode: 'live', generated_at: new Date().toISOString() } }
       : { data: { status: 'error', stages: { advisor: { status: 'error', message: 'provider failure' } } } })
     render(<DataStatus />)

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  alignSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore, enrichPortfolio,
-  latestMarketDayReturn, netInvestedCapital, opportunityCost, performanceRating,
-  portfolioScore, resilienceIndex, scenarioProjection, selectPeriod,
+  alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore, enrichPortfolio,
+  intradayPortfolioHigh, latestMarketDayReturn, netInvestedCapital, opportunityCost, performanceRating,
+  planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -40,6 +40,20 @@ describe('portfolio report analytics', () => {
     expect(cost.startDate).toBe('b')
   })
 
+  it('uses one exact-date, equal-start calculation for multi-benchmark charts and potential earnings', () => {
+    const comparison = compareBenchmarkSeries(
+      { period: '1M', dates: ['a', 'b', 'c'], values: [100, 110, 120], methodology: 'test' },
+      [
+        { symbol: 'SPY', dates: ['a', 'b', 'c'], closes: [200, 210, 220] },
+        { symbol: 'QQQ', dates: ['a', 'b', 'c'], closes: [50, 60, 70] },
+      ],
+    )
+    expect(comparison.dates).toEqual(['a', 'b', 'c'])
+    expect(comparison.portfolio.endValue).toBe(120)
+    expect(comparison.benchmarks[0]).toMatchObject({ symbol: 'SPY', endValue: 110, potentialEarnings: 10, differenceVsPortfolio: 10 })
+    expect(comparison.benchmarks[1]).toMatchObject({ symbol: 'QQQ', endValue: 140, potentialEarnings: 40, differenceVsPortfolio: -20 })
+  })
+
   it('marks sparse resilience and concentrated diversification transparently', () => {
     const sparse = resilienceIndex([100, 101])
     expect(sparse.available).toBe(false)
@@ -48,14 +62,35 @@ describe('portfolio report analytics', () => {
     expect(concentrated.warnings[0]).toContain('Largest holding')
   })
 
-  it('requires real history and liquidity coverage before issuing a portfolio score', () => {
+  it('issues a clearly provisional score without turning missing components into zero', () => {
     const liquidity = concentrationLiquidityScore([{ currentValue: 1000, allocationPct: 100, priceInfo: { average_dollar_volume: 1_000_000 } }])
     expect(liquidity.available).toBe(true)
-    expect(portfolioScore({ diversification: { score: 50 }, resilience: { score: null }, performance: { score: 50 }, benchmarkEfficiency: 50, concentrationLiquidity: liquidity, dataCompleteness: 100 }).available).toBe(false)
+    const score = portfolioScore({ diversification: { score: 50 }, resilience: { score: null }, performance: { score: 50 }, benchmarkEfficiency: 50, concentrationLiquidity: liquidity, dataCompleteness: 100 })
+    expect(score.available).toBe(true)
+    expect(score.provisional).toBe(true)
+    expect(score.components.resilience).toBeNull()
   })
 
   it('calculates manual planning scenarios without presenting a forecast', () => {
     expect(scenarioProjection(1000, 10, 2, 100)).toBe(1420)
     expect(scenarioProjection(null, 10, 2)).toBeNull()
+  })
+
+  it('derives planning rates from the money-weighted annualized return of current holdings', () => {
+    const positions = [{ purchaseDate: '2025-01-01', totalCost: 1000, currentValue: 1100 }]
+    const annualized = portfolioAnnualizedReturn(positions, '2026-01-01')
+    expect(annualized.available).toBe(true)
+    expect(annualized.rate).toBeCloseTo(10, 1)
+    const rates = planningReturnRates(positions, [100, 101, 102, 103], '2026-01-01')
+    expect(rates.conservative).toBeLessThan(rates.base)
+    expect(rates.optimistic).toBeGreaterThan(rates.base)
+  })
+
+  it('stores observed intraday highs and only calculates all-time earnings after ledger confirmation', () => {
+    expect(intradayPortfolioHigh([{ recordedAt: '2026-08-04T14:00:00Z', value: 100 }, { recordedAt: '2026-08-04T15:00:00Z', value: 110 }])).toMatchObject({ value: 110, observations: 2 })
+    const incomplete = trackedAllTimeEarnings({ gain: 20 }, [{ type: 'dividend', amount: 5 }], { trackingStartedAt: '2026-01-01' })
+    expect(incomplete.available).toBe(false)
+    const complete = trackedAllTimeEarnings({ gain: 20 }, [{ type: 'realized_gain', amount: -4 }, { type: 'dividend', amount: 5 }, { type: 'fee', amount: 1 }], { trackingStartedAt: '2026-01-01', ledgerComplete: true })
+    expect(complete.value).toBe(20)
   })
 })

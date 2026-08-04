@@ -96,12 +96,63 @@ export function alignSeries(left, right, period = left?.period || right?.period 
   return { dates: rows.map((row) => row.date), left: { ...make('left'), period }, right: { ...make('right'), period } }
 }
 
+/**
+ * Put the portfolio and every selected benchmark on the same exact dates and starting
+ * dollar value. The returned chart series and opportunity-cost figures therefore cannot
+ * disagree: both are calculated from these same normalized observations.
+ */
+export function compareBenchmarkSeries(portfolioPeriod, benchmarkSeries = []) {
+  if (!portfolioPeriod?.dates?.length || !portfolioPeriod?.values?.length) return null
+  const usableBenchmarks = benchmarkSeries.filter((series) => series?.symbol && series?.dates?.length && (series.values?.length || series.closes?.length))
+  if (!usableBenchmarks.length) return null
+  const maps = usableBenchmarks.map((series) => ({
+    ...series,
+    valuesByDate: new Map(series.dates.map((date, index) => [date, (series.values || series.closes)[index]])),
+  }))
+  const rows = portfolioPeriod.dates.map((date, index) => ({
+    date,
+    portfolio: portfolioPeriod.values[index],
+    benchmarks: maps.map((series) => series.valuesByDate.get(date)),
+  })).filter((row) => finite(row.portfolio) && row.benchmarks.every(finite))
+  if (rows.length < 2) return null
+  const dates = rows.map((row) => row.date)
+  const portfolioValues = rows.map((row) => Number(row.portfolio))
+  const startingValue = portfolioValues[0]
+  const portfolio = { ...selectPeriod({ dates, values: portfolioValues, methodology: portfolioPeriod.methodology }, 'All'), period: portfolioPeriod.period }
+  const benchmarks = maps.map((series, benchmarkIndex) => {
+    const raw = rows.map((row) => Number(row.benchmarks[benchmarkIndex]))
+    const values = raw.map((value) => startingValue * value / raw[0])
+    const period = selectPeriod({ dates, values }, 'All')
+    return {
+      symbol: series.symbol,
+      label: series.label || series.symbol,
+      dates,
+      values,
+      startValue: startingValue,
+      endValue: period.endValue,
+      returnPct: period.returnPct,
+      period: portfolioPeriod.period,
+      potentialEarnings: period.endValue - startingValue,
+      differenceVsPortfolio: portfolio.endValue - period.endValue,
+    }
+  })
+  return {
+    dates,
+    portfolio,
+    benchmarks,
+    startingValue,
+    startDate: dates[0],
+    endDate: dates.at(-1),
+    methodology: 'Portfolio and selected ETF proxies use identical market dates and the same starting dollar value. Potential earnings are ending value minus that shared starting value.',
+  }
+}
+
 export function intradayPortfolioHigh(points = []) {
-  const usable = points.filter((point) => point?.timestamp && finite(point.value))
+  const usable = points.filter((point) => (point?.timestamp || point?.recordedAt) && finite(point.value))
   if (!usable.length) return null
   const high = usable.reduce((best, point) => Number(point.value) > Number(best.value) ? point : best)
   const current = Number(usable.at(-1).value)
-  return { value: Number(high.value), timestamp: high.timestamp, belowHigh: Number(high.value) - current }
+  return { value: Number(high.value), timestamp: high.timestamp || high.recordedAt, belowHigh: Number(high.value) - current, observations: usable.length }
 }
 
 export function netInvestedCapital(transactions) {
@@ -117,6 +168,51 @@ export function scenarioProjection(currentValue, annualRate, years, recurringAnn
   let value = Number(currentValue)
   for (let year = 0; year < Number(years); year += 1) value = value * (1 + rate) + Number(recurringAnnual || 0)
   return value
+}
+
+function xnpv(rate, flows) {
+  const origin = Date.parse(flows[0].date)
+  return flows.reduce((sum, flow) => sum + flow.amount / ((1 + rate) ** ((Date.parse(flow.date) - origin) / 31557600000)), 0)
+}
+
+export function portfolioAnnualizedReturn(positions = [], endDate = new Date().toISOString().slice(0, 10)) {
+  const allCurrentValue = positions.reduce((sum, row) => sum + (finite(row.currentValue) ? Number(row.currentValue) : 0), 0)
+  const dated = positions.filter((row) => row.purchaseDate && row.purchaseDate <= endDate && finite(row.totalCost) && row.totalCost > 0 && finite(row.currentValue))
+  const currentValue = dated.reduce((sum, row) => sum + Number(row.currentValue), 0)
+  if (!dated.length || !currentValue) return { available: false, rate: null, reason: 'Dated cost basis and current values are required.' }
+  const coveragePct = allCurrentValue > 0 ? currentValue / allCurrentValue * 100 : 0
+  if (coveragePct < 80) return { available: false, rate: null, coveragePct, reason: 'At least 80% of current portfolio value needs a dated cost basis for a reliable annualized return.' }
+  const flows = [...dated.map((row) => ({ date: row.purchaseDate, amount: -Number(row.totalCost) })), { date: endDate, amount: currentValue }].sort((a, b) => a.date.localeCompare(b.date))
+  const spanDays = (Date.parse(endDate) - Date.parse(flows[0].date)) / 86400000
+  if (spanDays < 30) return { available: false, rate: null, reason: 'At least 30 days of dated holding history are required.' }
+  let low = -.999; let high = 100
+  let lowValue = xnpv(low, flows); let highValue = xnpv(high, flows)
+  if (!finite(lowValue) || !finite(highValue) || lowValue * highValue > 0) return { available: false, rate: null, reason: 'The dated cash flows do not produce a stable annualized return.' }
+  for (let index = 0; index < 120; index += 1) {
+    const middle = (low + high) / 2
+    const value = xnpv(middle, flows)
+    if (Math.abs(value) < .0001) { low = middle; high = middle; break }
+    if (value * lowValue > 0) { low = middle; lowValue = value } else { high = middle }
+  }
+  return { available: true, rate: ((low + high) / 2) * 100, spanDays, coveragePct, startDate: flows[0].date, endDate, methodology: 'Money-weighted annualized return for currently held positions using entered purchase dates, cost basis, and latest stored values.' }
+}
+
+export function planningReturnRates(positions = [], historicalValues = [], endDate) {
+  const annualized = portfolioAnnualizedReturn(positions, endDate)
+  if (!annualized.available) return { available: false, ...annualized }
+  const volatility = annualizedVolatility(historicalValues)
+  const band = finite(volatility) ? clamp(Number(volatility) * .35, 2, 12) : 5
+  const base = clamp(annualized.rate, -40, 40)
+  return { available: true, base, conservative: clamp(base - band, -50, 40), optimistic: clamp(base + band, -40, 50), volatility, band, annualized, methodology: `${annualized.methodology} Conservative and optimistic rates subtract or add 35% of observed annualized volatility, bounded to a 2–12 percentage-point range.` }
+}
+
+export function trackedAllTimeEarnings(portfolio, activities = [], trackingState = null) {
+  if (!trackingState?.trackingStartedAt) return { available: false, value: null, reason: 'Earnings tracking has not started.' }
+  if (!trackingState.ledgerComplete) return { available: false, value: null, reason: `Activity is being stored from ${trackingState.trackingStartedAt.slice(0, 10)}, but the prior realized-gain, dividend, and fee history has not been confirmed complete.` }
+  if (!finite(portfolio?.gain)) return { available: false, value: null, reason: 'Current unrealized gain is unavailable.' }
+  const total = (type) => activities.filter((row) => row.type === type && finite(row.amount)).reduce((sum, row) => sum + Number(row.amount), 0)
+  const components = { unrealized: Number(portfolio.gain), realized: total('realized_gain'), dividends: total('dividend'), fees: total('fee') }
+  return { available: true, value: components.unrealized + components.realized + components.dividends - components.fees, components, reason: 'Current unrealized gain plus recorded realized gains and dividends, minus recorded fees.' }
 }
 
 export function diversificationScore(positions = []) {
@@ -155,9 +251,9 @@ export function concentrationLiquidityScore(positions = []) {
   if (!weighted.length) return { available: false, score: null, reason: 'Priced position weights are required.' }
   const liquid = weighted.filter((row) => finite(row.priceInfo?.average_dollar_volume) && row.priceInfo.average_dollar_volume > 0)
   const coveragePct = liquid.reduce((sum, row) => sum + row.allocationPct, 0)
-  if (coveragePct < 80) return { available: false, score: null, coveragePct, reason: 'Average dollar-volume coverage is below 80% of portfolio value.' }
   const largest = Math.max(...weighted.map((row) => row.allocationPct))
   const concentration = clamp(100 - Math.max(0, largest - 10) * 2.5)
+  if (coveragePct < 80) return { available: true, score: Math.round(concentration), provisional: true, coveragePct, components: { concentration, liquidity: null }, reason: 'Liquidity coverage is below 80%, so this provisional component reflects concentration only.' }
   const liquidity = liquid.reduce((sum, row) => {
     const daysAtTenPctAdv = row.currentValue / (Number(row.priceInfo.average_dollar_volume) * .1)
     return sum + clamp(100 - Math.max(0, daysAtTenPctAdv - 1) * 12) * row.allocationPct / coveragePct
@@ -173,9 +269,13 @@ export function opportunityCost(portfolioPeriod, benchmarkPeriod) {
 }
 
 export function portfolioScore({ diversification, resilience, performance, benchmarkEfficiency, concentrationLiquidity, dataCompleteness = 0 }) {
-  const required = [diversification?.score, resilience?.score, performance?.score, benchmarkEfficiency, concentrationLiquidity?.score, dataCompleteness]
-  if (required.some((value) => !finite(value))) return { available: false, score: null, provisional: false, reason: 'Diversification, sufficient daily history, an aligned benchmark, liquidity coverage, and price coverage are all required.' }
-  const values = { diversification: diversification.score, resilience: resilience.score, riskAdjustedPerformance: performance.score, benchmarkEfficiency, concentrationLiquidity: concentrationLiquidity.score, dataCompleteness }
-  const score = Math.round(values.diversification * .25 + values.resilience * .25 + values.riskAdjustedPerformance * .2 + values.benchmarkEfficiency * .15 + values.concentrationLiquidity * .1 + values.dataCompleteness * .05)
-  return { available: true, score, provisional: Boolean(diversification.provisional || resilience.provisional || concentrationLiquidity.coveragePct < 100 || dataCompleteness < 100), components: values, strongest: Object.entries(values).sort((a, b) => b[1] - a[1])[0][0], weakest: Object.entries(values).sort((a, b) => a[1] - b[1])[0][0] }
+  if (!finite(diversification?.score)) return { available: false, score: null, provisional: false, reason: 'Priced position weights are required.' }
+  const values = { diversification: diversification.score, resilience: resilience?.score, riskAdjustedPerformance: performance?.score, benchmarkEfficiency, concentrationLiquidity: concentrationLiquidity?.score, dataCompleteness }
+  const weights = { diversification: .25, resilience: .25, riskAdjustedPerformance: .2, benchmarkEfficiency: .15, concentrationLiquidity: .1, dataCompleteness: .05 }
+  const available = Object.entries(values).filter(([, value]) => finite(value))
+  const availableWeight = available.reduce((sum, [key]) => sum + weights[key], 0)
+  if (available.length < 3 || availableWeight <= 0) return { available: false, score: null, provisional: true, reason: 'At least three real portfolio components are required.' }
+  const score = Math.round(available.reduce((sum, [key, value]) => sum + Number(value) * weights[key], 0) / availableWeight)
+  const ranked = available.slice().sort((a, b) => b[1] - a[1])
+  return { available: true, score, provisional: available.length < Object.keys(values).length || Boolean(diversification.provisional || resilience?.provisional || concentrationLiquidity?.provisional || dataCompleteness < 100), components: values, strongest: ranked[0][0], weakest: ranked.at(-1)[0], reason: available.length < Object.keys(values).length ? `Provisional score reweighted across ${available.length} available real-data components; missing components are not treated as zero.` : 'All six components available.' }
 }

@@ -27,6 +27,18 @@ function SwitchRow({ id, label, description, checked, onChange }) {
 export default function Settings() {
   const { preferences, updatePreferences, resetAppearance, resetAll, setWidgets } = usePreferences()
   const [announcement, setAnnouncement] = useState('')
+  const toggleBenchmark = (symbol) => {
+    const selected = preferences.defaultBenchmarks
+    const next = selected.includes(symbol)
+      ? selected.filter((item) => item !== symbol)
+      : [...selected, symbol].slice(0, 3)
+    if (!next.length) {
+      setAnnouncement('Keep at least one comparison benchmark selected.')
+      return
+    }
+    updatePreferences({ defaultBenchmarks: next, defaultBenchmark: next[0] })
+    setAnnouncement(`${next.join(', ')} selected for performance comparisons.`)
+  }
 
   const resetEverything = () => {
     if (!window.confirm('Reset all appearance, dashboard, chart, and data-display preferences?')) return
@@ -69,7 +81,7 @@ export default function Settings() {
       <div className="settings-row"><div><strong>Visible report widgets</strong><span>{preferences.widgets.filter((widget) => widget.visible).length} of {preferences.widgets.length} shown</span></div><a className="secondary-button compact" href="/?customize=1">Customize report</a></div>
       <div className="settings-row"><div><strong>Default landing page</strong><span>Cold starts and invalid destinations return to the Financial Report.</span></div><b className="settings-value">Report</b></div>
       <div className="settings-row"><div><strong>Reset report layout</strong><span>Restore widget visibility, order, and sizes.</span></div><button className="ghost-button" type="button" onClick={resetDashboard}>Reset report</button></div>
-      <SelectRow id="benchmark" label="Default benchmark" description="Exchange-traded funds are labeled as investable index proxies." value={preferences.defaultBenchmark} onChange={(defaultBenchmark) => updatePreferences({ defaultBenchmark })}>{BENCHMARKS.map((item) => <option key={item.symbol} value={item.symbol}>{item.label} ({item.symbol}) proxy</option>)}</SelectRow>
+      <fieldset className="settings-row benchmark-settings"><legend><strong>Default benchmarks</strong><span>Select up to three ETF proxies. The first selected benchmark is primary for portfolio scoring.</span></legend><div className="benchmark-choice-grid">{BENCHMARKS.map((item) => { const selected = preferences.defaultBenchmarks.includes(item.symbol); const primary = preferences.defaultBenchmarks[0] === item.symbol; const atLimit = preferences.defaultBenchmarks.length >= 3; return <label key={item.symbol} className={selected ? 'selected' : ''}><input type="checkbox" checked={selected} disabled={!selected && atLimit} onChange={() => toggleBenchmark(item.symbol)} /><span><b>{item.symbol}</b><small>{item.label}{primary ? ' · Primary' : ''}</small></span></label> })}</div></fieldset>
       <SelectRow id="holding-sort" label="Default holdings order" value={preferences.holdingSort.key} onChange={(key) => updatePreferences({ holdingSort: { key, direction: key === 'ticker' ? 'asc' : 'desc' } })}><option value="allocation">Allocation, largest first</option><option value="ticker">Ticker, A–Z</option><option value="value">Value, largest first</option><option value="gain">Dollar gain, largest first</option><option value="return">Percent gain, largest first</option></SelectRow>
       <SelectRow id="actions-default" label="Suggested actions" value={preferences.suggestedActionsDefault} onChange={(suggestedActionsDefault) => updatePreferences({ suggestedActionsDefault })}><option value="collapsed">Collapsed by default</option><option value="expanded">Expanded by default</option></SelectRow>
     </section>
@@ -84,10 +96,11 @@ export default function Settings() {
     </section>
 
     <section className="settings-card" aria-labelledby="planning-heading">
-      <header><div><span className="settings-icon"><Icon name="finances" /></span><div><h2 id="planning-heading">Planning scenario</h2><p>Manual assumptions only. These are illustrations, not forecasts.</p></div></div></header>
-      <SelectRow id="forecast-horizon" label="Horizon" value={preferences.forecast.horizonYears} onChange={(horizonYears) => updatePreferences({ forecast: { ...preferences.forecast, horizonYears: Number(horizonYears) } })}>{[1, 3, 5, 10, 15, 20, 25, 30].map((years) => <option key={years} value={years}>{years} years</option>)}</SelectRow>
+      <header><div><span className="settings-icon"><Icon name="finances" /></span><div><h2 id="planning-heading">Planning scenario</h2><p>Return paths come from the annualized performance of your currently held positions.</p></div></div></header>
       <div className="settings-row"><label htmlFor="recurring-annual"><strong>Annual contribution</strong><span>Added at the end of each modeled year.</span></label><input id="recurring-annual" type="number" min="0" step="100" value={preferences.forecast.recurringAnnual} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, recurringAnnual: Math.max(0, Number(event.target.value)) } })} /></div>
-      {['conservativeRate', 'baseRate', 'optimisticRate'].map((key) => <div className="settings-row" key={key}><label htmlFor={key}><strong>{key.replace('Rate', ' rate')}</strong><span>Annual percentage assumption.</span></label><input id={key} type="number" step="0.5" value={preferences.forecast[key]} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, [key]: Number(event.target.value) } })} /></div>)}
+      <div className="settings-row"><label htmlFor="current-age"><strong>Current age</strong><span>Used only to calculate years until retirement.</span></label><input id="current-age" type="number" min="18" max="90" value={preferences.forecast.currentAge} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, currentAge: Number(event.target.value) } })} /></div>
+      <div className="settings-row"><label htmlFor="retirement-age"><strong>Retirement age</strong><span>The report adds a retirement-value checkpoint beside 1, 5, and 10 years.</span></label><input id="retirement-age" type="number" min={Math.max(40, preferences.forecast.currentAge)} max="100" value={preferences.forecast.retirementAge} onChange={(event) => updatePreferences({ forecast: { ...preferences.forecast, retirementAge: Number(event.target.value) } })} /></div>
+      <div className="settings-row"><div><strong>Scenario rates</strong><span>Base is the money-weighted annualized return for current holdings. Conservative and optimistic subtract or add a bounded volatility band.</span></div><b className="settings-value">Automatic</b></div>
       <SelectRow id="mobile-research" label="Mobile research view" value={preferences.mobileResearchView} onChange={(mobileResearchView) => updatePreferences({ mobileResearchView })}><option value="visual">Visual summary</option><option value="detailed">Detailed cards</option></SelectRow>
     </section>
 

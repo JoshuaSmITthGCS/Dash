@@ -3,46 +3,27 @@ import {
   collection,
   doc,
   getDocs,
+  onSnapshot,
   setDoc,
   deleteDoc,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
 import { planReferencePortfolioSync } from './referencePortfolio'
 import { normalizePortfolioPosition, PER_SHARE_COST } from './portfolioPosition'
 
-// A failed (or merely slow) Firestore delete must never look like "Remove" did nothing —
-// this is a permanent, per-device record of positions the user asked to remove, applied on
-// top of whatever Firestore returns. The backend delete is still attempted so it stays
-// gone for other devices too, but this list is what actually guarantees it disappears here.
 const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
-
-function readHiddenIds(userId) {
-  try {
-    const raw = localStorage.getItem(hiddenStorageKey(userId))
-    const parsed = raw ? JSON.parse(raw) : []
-    return new Set(Array.isArray(parsed) ? parsed : [])
-  } catch {
-    return new Set()
-  }
-}
-
-function hidePositionLocally(userId, positionId) {
-  const hidden = readHiddenIds(userId)
-  hidden.add(positionId)
-  try {
-    localStorage.setItem(hiddenStorageKey(userId), JSON.stringify([...hidden]))
-  } catch {
-    // Storage unavailable (private browsing, quota) - the in-memory filter in removePosition
-    // still hides it for the rest of this session even if it can't persist across reloads.
-  }
-}
+const isRetiredReferencePosition = (documentId, stored = {}) =>
+  String(stored.ticker || '').trim().toUpperCase() === 'DECJ'
+  && (documentId === 'DECJ-reference' || stored.snapshotSource === 'User-provided brokerage snapshot')
 
 export function useFirebasePortfolio() {
   const { currentUser } = useAuth()
   const [positions, setPositions] = useState([])
   const [loading, setLoading] = useState(true)
   const [migrated, setMigrated] = useState(false)
+  const [syncState, setSyncState] = useState({ connected: false, lastSyncedAt: null, error: '' })
 
   // Migrate from localStorage to Firestore (one-time)
   const migrateFromLocalStorage = async (userId) => {
@@ -118,11 +99,13 @@ export function useFirebasePortfolio() {
       // query made otherwise valid holdings disappear from the portfolio.
       const snapshot = await getDocs(positionsRef)
 
-      const hidden = readHiddenIds(userId)
       const loadedPositions = []
       const repairWrites = []
       snapshot.forEach((snapshotDoc) => {
-        if (hidden.has(snapshotDoc.id)) return
+        if (isRetiredReferencePosition(snapshotDoc.id, snapshotDoc.data())) {
+          repairWrites.push(deleteDoc(snapshotDoc.ref))
+          return
+        }
         const { position, firestoreUpdates } = normalizePortfolioPosition(
           snapshotDoc.id,
           snapshotDoc.data(),
@@ -148,30 +131,43 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Initialize portfolio on auth change
+  // Subscribe instead of reading once: changes committed on one signed-in device now
+  // reach every other device using the same Firebase account without a reload.
   useEffect(() => {
-    const init = async () => {
-      if (!currentUser) {
-        setPositions([])
-        setLoading(false)
-        return
-      }
-
-      setLoading(true)
-
-      // Try to migrate from localStorage first
-      if (!migrated) {
-        await migrateFromLocalStorage(currentUser.uid)
-        setMigrated(true)
-      }
-
-      // Load from Firestore
-      await loadPositions(currentUser.uid)
+    if (!currentUser) {
+      setPositions([])
       setLoading(false)
+      setSyncState({ connected: false, lastSyncedAt: null, error: '' })
+      return undefined
     }
-
-    init()
-  }, [currentUser])
+    const userId = currentUser.uid
+    setLoading(true)
+    try { localStorage.removeItem(hiddenStorageKey(userId)) } catch { /* legacy cleanup only */ }
+    if (!migrated) migrateFromLocalStorage(userId).finally(() => setMigrated(true))
+    const unsubscribe = onSnapshot(collection(db, 'portfolios', userId, 'positions'), async (snapshot) => {
+      const loadedPositions = []
+      const repairWrites = []
+      snapshot.forEach((snapshotDoc) => {
+        if (isRetiredReferencePosition(snapshotDoc.id, snapshotDoc.data())) {
+          repairWrites.push(deleteDoc(snapshotDoc.ref))
+          return
+        }
+        const { position, firestoreUpdates } = normalizePortfolioPosition(snapshotDoc.id, snapshotDoc.data())
+        loadedPositions.push(position)
+        if (firestoreUpdates) repairWrites.push(setDoc(snapshotDoc.ref, firestoreUpdates, { merge: true }))
+      })
+      await Promise.allSettled(repairWrites)
+      loadedPositions.sort((left, right) => String(right.purchaseDate || right.addedAt || '').localeCompare(String(left.purchaseDate || left.addedAt || '')))
+      setPositions(loadedPositions)
+      setLoading(false)
+      setSyncState({ connected: true, lastSyncedAt: new Date().toISOString(), error: '' })
+    }, (error) => {
+      console.error('Portfolio subscription failed:', error)
+      setLoading(false)
+      setSyncState({ connected: false, lastSyncedAt: null, error: error.message })
+    })
+    return unsubscribe
+  }, [currentUser, migrated])
 
   // Add new position
   const addPosition = async (ticker, shares, costBasis, purchaseDate = new Date().toISOString().split('T')[0], costBasisInputMode = 'share') => {
@@ -193,9 +189,17 @@ export function useFirebasePortfolio() {
         id: positionId
       }
 
-      await setDoc(doc(db, 'portfolios', currentUser.uid, 'positions', positionId), newPosition)
-
-      setPositions(prev => [...prev, newPosition])
+      const batch = writeBatch(db)
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'positions', positionId), newPosition)
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-added-${Date.now()}`), {
+        type: 'position_added', ticker: newPosition.ticker, shares: newPosition.shares,
+        pricePerShare: newPosition.costBasis, amount: newPosition.shares * newPosition.costBasis,
+        effectiveDate: purchaseDate, recordedAt: new Date().toISOString(), source: 'manual_holding_entry',
+      })
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
+        lastActivityAt: new Date().toISOString(), ledgerComplete: false,
+      }, { merge: true })
+      await batch.commit()
       return { success: true }
     } catch (error) {
       console.error('Failed to add position:', error)
@@ -203,22 +207,25 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Remove position. Hide it locally first - regardless of whether the Firestore delete
-  // that follows succeeds - so a permission error or slow network can never make "Remove"
-  // look broken. The backend delete still runs so it stays gone on the user's other devices
-  // too, but this device's UI and portfolio totals never depend on it succeeding.
   const removePosition = async (positionId) => {
     if (!currentUser) return
 
-    hidePositionLocally(currentUser.uid, positionId)
-    setPositions(prev => prev.filter(p => p.id !== positionId))
-
     try {
-      await deleteDoc(doc(db, 'portfolios', currentUser.uid, 'positions', positionId))
+      const removed = positions.find((position) => position.id === positionId)
+      const batch = writeBatch(db)
+      batch.delete(doc(db, 'portfolios', currentUser.uid, 'positions', positionId))
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-removed-${Date.now()}`), {
+        type: 'position_removed', ticker: removed?.ticker || null, shares: removed?.shares || null,
+        recordedAt: new Date().toISOString(), source: 'manual_holding_removal',
+        note: 'Removal is not treated as a sale; realized proceeds must be recorded separately.',
+      })
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), { ledgerComplete: false }, { merge: true })
+      await batch.commit()
       return { success: true }
     } catch (error) {
-      console.error('Firestore delete failed; position stays hidden on this device:', error)
-      return { success: true, backendError: error.message }
+      console.error('Firestore delete failed:', error)
+      setSyncState((current) => ({ ...current, connected: false, error: error.message }))
+      return { success: false, error: error.message }
     }
   }
 
@@ -228,11 +235,14 @@ export function useFirebasePortfolio() {
 
     try {
       const positionRef = doc(db, 'portfolios', currentUser.uid, 'positions', positionId)
-      await setDoc(positionRef, updates, { merge: true })
-
-      setPositions(prev => prev.map(p =>
-        p.id === positionId ? { ...p, ...updates } : p
-      ))
+      const batch = writeBatch(db)
+      batch.set(positionRef, { ...updates, updatedAt: new Date().toISOString() }, { merge: true })
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-updated-${Date.now()}`), {
+        type: 'position_updated', positionId,
+        ticker: positions.find((position) => position.id === positionId)?.ticker || null,
+        updates, recordedAt: new Date().toISOString(), source: 'manual_holding_edit',
+      })
+      await batch.commit()
       return { success: true }
     } catch (error) {
       console.error('Failed to update position:', error)
@@ -248,7 +258,10 @@ export function useFirebasePortfolio() {
     if (!currentUser) return { success: false, error: 'Please sign in first' }
     try {
       const importedAt = new Date().toISOString()
-      const operations = planReferencePortfolioSync(positions)
+      const staleReferencePositions = positions.filter((position) => isRetiredReferencePosition(position.id, position))
+      await Promise.all(staleReferencePositions.map((position) => deleteDoc(doc(db, 'portfolios', currentUser.uid, 'positions', position.id))))
+      const activePositions = positions.filter((position) => !staleReferencePositions.some((stale) => stale.id === position.id))
+      const operations = planReferencePortfolioSync(activePositions)
       const synced = await Promise.all(operations.map(async (operation) => {
         const record = operation.kind === 'add'
           ? { ...operation.record, id: operation.id, purchaseDate: '', importedAt }
@@ -260,16 +273,8 @@ export function useFirebasePortfolio() {
         )
         return { ...operation, record }
       }))
-      const syncedById = new Map(synced.map((operation) => [operation.id, operation.record]))
-      setPositions((previous) => {
-        const updated = previous.map((position) => syncedById.get(position.id) || position)
-        return [
-          ...updated,
-          ...synced.filter((operation) => operation.kind === 'add').map((operation) => operation.record),
-        ]
-      })
       const added = synced.filter((operation) => operation.kind === 'add').length
-      return { success: true, added, updated: synced.length - added }
+      return { success: true, added, updated: synced.length - added, removed: staleReferencePositions.length }
     } catch (error) {
       console.error('Failed to sync reference portfolio:', error)
       return { success: false, error: error.message }
@@ -366,6 +371,7 @@ export function useFirebasePortfolio() {
   return {
     positions,
     loading,
+    syncState,
     addPosition,
     removePosition,
     updatePosition,

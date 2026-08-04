@@ -21,7 +21,6 @@ export const DEFAULT_WIDGETS = [
   { id: 'action-needed', label: 'Action-needed summary', visible: true, order: 4, size: 'medium' },
   { id: 'allocation', label: 'Sector allocation', visible: true, order: 5, size: 'medium' },
   { id: 'watchlist-preview', label: 'Watchlist preview', visible: true, order: 6, size: 'medium' },
-  { id: 'market-pulse', label: 'Market Pulse preview', visible: false, order: 7, size: 'medium' },
 ]
 
 export const DEFAULT_PREFERENCES = {
@@ -41,9 +40,10 @@ export const DEFAULT_PREFERENCES = {
   defaultLandingPage: 'report',
   holdingSort: { key: 'allocation', direction: 'desc' },
   defaultBenchmark: 'SPY',
+  defaultBenchmarks: ['SPY', 'QQQ', 'VTI'],
   suggestedActionsDefault: 'collapsed',
   mobileResearchView: 'visual',
-  forecast: { horizonYears: 5, recurringAnnual: 0, conservativeRate: 4, baseRate: 7, optimisticRate: 10 },
+  forecast: { horizonYears: 5, recurringAnnual: 0, conservativeRate: 4, baseRate: 7, optimisticRate: 10, currentAge: 30, retirementAge: 65 },
   chartAnimation: 'system',
   reducedMotion: 'system',
   higherContrast: false,
@@ -66,6 +66,15 @@ export function validatePreferences(raw) {
       size: pick(stored.size, ['small', 'medium', 'large', 'full'], fallback.size),
     }
   }).sort((a, b) => a.order - b.order).map((item, order) => ({ ...item, order }))
+  const currentAge = Math.max(18, Math.min(90, Number(raw.forecast?.currentAge) || 30))
+  const retirementAge = Math.max(currentAge, Math.max(40, Math.min(100, Number(raw.forecast?.retirementAge) || 65)))
+  const allowedBenchmarks = ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'VEA', 'VWO', 'VXUS']
+  const legacyBenchmark = pick(raw.defaultBenchmark, allowedBenchmarks, 'SPY')
+  const storedBenchmarks = Array.isArray(raw.defaultBenchmarks)
+    ? raw.defaultBenchmarks
+    : [legacyBenchmark, 'QQQ', 'VTI']
+  const defaultBenchmarks = [...new Set(storedBenchmarks.filter((symbol) => allowedBenchmarks.includes(symbol)))].slice(0, 3)
+  if (!defaultBenchmarks.length) defaultBenchmarks.push('SPY')
 
   return {
     ...DEFAULT_PREFERENCES,
@@ -87,7 +96,8 @@ export function validatePreferences(raw) {
       key: pick(raw.holdingSort?.key === 'gainPct' ? 'return' : raw.holdingSort?.key, ['allocation', 'ticker', 'value', 'gain', 'return', 'price'], 'allocation'),
       direction: pick(raw.holdingSort?.direction, ['asc', 'desc'], 'desc'),
     },
-    defaultBenchmark: pick(raw.defaultBenchmark, ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'VEA', 'VWO', 'VXUS'], 'SPY'),
+    defaultBenchmark: defaultBenchmarks[0],
+    defaultBenchmarks,
     suggestedActionsDefault: pick(raw.suggestedActionsDefault, ['collapsed', 'expanded'], 'collapsed'),
     mobileResearchView: pick(raw.mobileResearchView, ['visual', 'detailed'], 'visual'),
     forecast: {
@@ -96,6 +106,8 @@ export function validatePreferences(raw) {
       conservativeRate: Number.isFinite(Number(raw.forecast?.conservativeRate)) ? Number(raw.forecast.conservativeRate) : 4,
       baseRate: Number.isFinite(Number(raw.forecast?.baseRate)) ? Number(raw.forecast.baseRate) : 7,
       optimisticRate: Number.isFinite(Number(raw.forecast?.optimisticRate)) ? Number(raw.forecast.optimisticRate) : 10,
+      currentAge,
+      retirementAge,
     },
     chartAnimation: pick(raw.chartAnimation, ['system', 'on', 'reduced', 'off'], 'system'),
     reducedMotion: pick(raw.reducedMotion, ['system', 'on', 'off'], 'system'),

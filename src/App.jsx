@@ -33,7 +33,6 @@ const NAV = [
   { to: '/search', label: 'Search', icon: 'search' },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
-  { to: '/market', label: 'Market Pulse', icon: 'market' },
   { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
   { to: '/screens/momentum', label: 'Screens', icon: 'research' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
@@ -79,12 +78,8 @@ function AppContent() {
   const { preferences, updatePreferences } = usePreferences()
   const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
 
-  if (loading) {
-    return <div className="app-loading" role="status"><span className="loading-mark" />Loading ValueSignal</div>
-  }
-
   return (
-    <div className="shell">
+    <div className="shell" data-auth-resolving={loading ? 'true' : 'false'}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="rail" aria-label="Primary navigation">
         <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
@@ -163,7 +158,7 @@ function AppContent() {
             </NavLink>
         ))}
       </nav>
-      {!currentUser && !previewMode && <FirebaseLoginModal />}
+      {!loading && !currentUser && !previewMode && <FirebaseLoginModal />}
     </div>
   )
 }

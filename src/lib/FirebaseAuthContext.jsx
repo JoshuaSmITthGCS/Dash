@@ -209,24 +209,28 @@ export function AuthProvider({ children }) {
   // Listen for auth state changes
   useEffect(() => {
     // Auth should never hold the research UI hostage when Firebase is slow or offline.
-    // The observer can still populate the session later; after four seconds we render the
+    // The observer can still populate the session later; after a short fallback we render the
     // signed-out state with a recoverable login surface.
-    const fallback = window.setTimeout(() => setLoading(false), 4000)
+    const fallback = window.setTimeout(() => setLoading(false), 1200)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user)
+      setLoading(false)
+      window.clearTimeout(fallback)
 
       if (user) {
-        const profile = await loadUserProfile(user)
-        if (profile) {
-          setUserProfile(profile)
-          applyTheme(profile.colorTheme, profile.darkMode)
+        try {
+          const profile = await loadUserProfile(user)
+          if (profile) {
+            setUserProfile(profile)
+            applyTheme(profile.colorTheme, profile.darkMode)
+          }
+        } catch (error) {
+          // A profile metadata failure must not invalidate the authenticated Firebase user.
+          console.error('Profile load error:', error)
         }
       } else {
         setUserProfile(null)
       }
-
-      setLoading(false)
-      window.clearTimeout(fallback)
     })
 
     return () => {

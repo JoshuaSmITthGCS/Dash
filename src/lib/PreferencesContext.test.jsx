@@ -15,7 +15,7 @@ function Harness() {
     <span data-testid="accent">{preferences.accentColor}</span>
     <span data-testid="visible">{preferences.widgets.filter((widget) => widget.visible).length}</span>
     <button onClick={() => updatePreferences({ theme: 'dark', accentColor: 'blue', privacyMode: true })}>Update</button>
-    <button onClick={() => setWidgets(preferences.widgets.map((widget) => widget.id === 'market-pulse' ? { ...widget, visible: false } : widget).reverse())}>Widgets</button>
+    <button onClick={() => setWidgets(preferences.widgets.map((widget) => widget.id === 'top-signal' ? { ...widget, visible: false } : widget).reverse())}>Widgets</button>
   </div>
 }
 
@@ -47,9 +47,10 @@ describe('interface preferences', () => {
     expect(value.theme).toBe('system')
     expect(value.widgets).toHaveLength(DEFAULT_WIDGETS.length)
     expect(value.widgets.find((widget) => widget.id === 'portfolio-summary').visible).toBe(true)
-    expect(value.widgets.find((widget) => widget.id === 'market-pulse').size).toBe('medium')
+    expect(value.widgets.some((widget) => widget.id === 'market-pulse')).toBe(false)
     expect(value.defaultLandingPage).toBe('report')
     expect(value.holdingSort).toEqual({ key: 'allocation', direction: 'desc' })
+    expect(value.defaultBenchmarks).toEqual(['SPY', 'QQQ', 'VTI'])
   })
 
   it('follows live system-theme changes until the user selects an override', () => {
@@ -70,7 +71,18 @@ describe('interface preferences', () => {
     render(<PreferencesProvider><Harness /></PreferencesProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Widgets' }))
     const stored = JSON.parse(localStorage.getItem(PREFERENCES_KEY))
-    expect(stored.widgets.find((widget) => widget.id === 'market-pulse').visible).toBe(false)
+    expect(stored.widgets.find((widget) => widget.id === 'top-signal').visible).toBe(false)
     expect(stored.widgets.map((widget) => widget.order)).toEqual(stored.widgets.map((_, index) => index))
+  })
+
+  it('never accepts a retirement age earlier than the current age', () => {
+    const value = validatePreferences({ forecast: { currentAge: 72, retirementAge: 60 } })
+    expect(value.forecast.retirementAge).toBe(72)
+  })
+
+  it('keeps one to three unique supported benchmarks with the first as primary', () => {
+    const value = validatePreferences({ defaultBenchmarks: ['QQQ', 'QQQ', 'NOPE', 'DIA', 'VTI', 'SPY'] })
+    expect(value.defaultBenchmarks).toEqual(['QQQ', 'DIA', 'VTI'])
+    expect(value.defaultBenchmark).toBe('QQQ')
   })
 })

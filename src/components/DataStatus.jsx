@@ -12,7 +12,7 @@ export function freshness(generatedAt, now = Date.now()) {
 }
 
 export function DataStatus() {
-  const { data: advisor, reload: reloadAdvisor } = useData('advisor.json')
+  const { data: advisor, reload: reloadAdvisor } = useData('report.json')
   const { data: status, reload: reloadStatus } = useData('status.json')
   if (!advisor && !status) return null
 

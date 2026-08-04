@@ -52,6 +52,48 @@ SCREEN_TECHNICAL_FIELDS = (
     "pct_above_52w_low",
 )
 
+# The signed-in Financial Report and Portfolio views need prices, chart history, scoring
+# inputs, and published action guidance, but not the several megabytes of statement-level
+# research evidence used by the dedicated Research view. Publishing this projection keeps
+# the initial route fast while advisor.json remains the complete source for deep research.
+REPORT_ROW_FIELDS = (
+    "ticker", "name", "price", "sector", "industry", "average_dollar_volume",
+    "score", "stance", "strengths", "recommendation", "components",
+    "fundamental_detail", "technical_detail", "sentiment_detail", "debt_to_equity",
+    "current_ratio", "return_on_equity", "revenue_growth", "data_fetched_at",
+)
+RETIRED_REPORT_SYMBOLS = {"DECJ"}
+
+
+def report_row(row):
+    history = row.get("history") or {}
+    projected = {key: row.get(key) for key in REPORT_ROW_FIELDS if row.get(key) is not None}
+    structural = (row.get("analysis_v2") or {}).get("structural")
+    if structural:
+        projected["analysis_v2"] = {"structural": structural}
+    if history.get("dates") and history.get("closes"):
+        projected["history"] = {"dates": history["dates"], "closes": history["closes"]}
+    return projected
+
+
+def report_snapshot(payload):
+    """Create the compact, route-critical subset consumed by portfolio reporting."""
+    def active(rows):
+        return [row for row in rows if str(row.get("ticker") or "").upper() not in RETIRED_REPORT_SYMBOLS]
+
+    return {
+        "schema_version": payload.get("schema_version"),
+        "generated_at": payload.get("generated_at"),
+        "data_mode": payload.get("data_mode"),
+        "universe_count": payload.get("universe_count"),
+        "hypothetical_basis": payload.get("hypothetical_basis"),
+        "benchmark_history": payload.get("benchmark_history"),
+        "source_status": payload.get("source_status"),
+        "research": [report_row(row) for row in active(payload.get("research", []))],
+        "portfolio_coverage": [report_row(row) for row in active(payload.get("portfolio_coverage", []))],
+        "screen_universe": [report_row(row) for row in active(payload.get("screen_universe", []))],
+    }
+
 
 def _screen_row(row):
     """Project a full or already-lightweight row into the screen_universe shape.
@@ -1144,6 +1186,7 @@ def run():
         "publication_limit": max(0, len(research) - len(ranked)),
     })
     save_json("advisor.json", payload)
+    save_json("report.json", report_snapshot(payload))
     save_json("diagnostics.json", diagnostics_payload(payload))
     all_failures = sorted(set(alpha_failures + marketaux_failures + research_failures))
     update_pipeline_status("advisor", status="healthy" if not all_failures else "degraded",

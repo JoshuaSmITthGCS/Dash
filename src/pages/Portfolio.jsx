@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useAuth } from '../lib/FirebaseAuthContext'
@@ -28,6 +28,18 @@ import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioP
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import {
+  alignSeries,
+  concentrationLiquidityScore,
+  currentHoldingsSeries,
+  diversificationScore,
+  performanceRating,
+  portfolioAnnualizedReturn,
+  portfolioScore,
+  resilienceIndex,
+  selectPeriod,
+} from '../lib/portfolioAnalytics.js'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -117,8 +129,8 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
 }
 
 export default function Portfolio() {
-  const { logout } = useAuth()
-  const { data, loading: dataLoading, reload } = useData('advisor.json')
+  const { currentUser, logout } = useAuth()
+  const { data, loading: dataLoading, reload } = useData('report.json')
   const {
     positions,
     loading: portfolioLoading,
@@ -127,7 +139,9 @@ export default function Portfolio() {
     updatePosition,
     exportPortfolio,
     syncReferencePortfolio,
+    syncState,
   } = useFirebasePortfolio()
+  const tracking = usePortfolioTracking()
   const { preferences, updatePreferences } = usePreferences()
 
   const [showAddForm, setShowAddForm] = useState(false)
@@ -140,14 +154,15 @@ export default function Portfolio() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({ shares: '', costBasis: '', costMode: 'share', purchaseDate: '' })
   const [editSaving, setEditSaving] = useState(false)
+  const [activityForm, setActivityForm] = useState({ type: 'realized_gain', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
+  const [activitySaving, setActivitySaving] = useState(false)
+  const recordedSnapshot = useRef(null)
   const refresh = useAdvisorRefresh(
     data?.generated_at,
     reload,
     positions.map((position) => position.ticker),
   )
   const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
-
-  if (dataLoading || portfolioLoading) return <Loading />
 
   const research = data?.research || []
   const portfolioCoverage = data?.portfolio_coverage || []
@@ -209,6 +224,26 @@ export default function Portfolio() {
     : 0
 
   const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
+  const annualizedReturn = portfolioAnnualizedReturn(
+    portfolioPositions,
+    String(pricesUpdatedAt || new Date().toISOString()).slice(0, 10),
+  )
+  const scoreHoldingsSeries = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
+  const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
+  const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
+  const scoreComparable = alignSeries(scorePortfolioPeriod, scoreBenchmarkPeriod, scorePortfolioPeriod?.period)
+  const scoreDiversification = diversificationScore(portfolioPositions)
+  const scoreResilience = resilienceIndex(scoreComparable?.left.values || scorePortfolioPeriod?.values || [], scoreDiversification)
+  const scorePerformance = performanceRating(scoreComparable?.left, scoreComparable?.right)
+  const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
+  const overallScore = portfolioScore({
+    diversification: scoreDiversification,
+    resilience: scoreResilience,
+    performance: scorePerformance,
+    benchmarkEfficiency: scorePerformance.available ? scorePerformance.score : null,
+    concentrationLiquidity: scoreConcentration,
+    dataCompleteness: positions.length ? Math.round(portfolioPositions.filter((position) => position.currentValue != null).length / positions.length * 100) : 0,
+  })
   const versusIndex = portfolioVsBenchmark(portfolioPositions, benchmarkHistory)
   const basis = data?.hypothetical_basis || 500
   const fixedBasisTotal = portfolioFixedBasisVsBenchmark(portfolioStats.positions, priceData, benchmarkHistory, basis)
@@ -226,7 +261,15 @@ export default function Portfolio() {
   const toggleSortDirection = () => commitSort({ ...portfolioSort, direction: portfolioSort.direction === 'asc' ? 'desc' : 'asc' })
   const selectedSort = PORTFOLIO_SORT_OPTIONS.find((option) => option.key === portfolioSort.key)
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (!quoteRefreshIsNewest || !portfolioQuotes.fetchedAt || !portfolioStats.totalValue || recordedSnapshot.current === portfolioQuotes.fetchedAt) return
+    recordedSnapshot.current = portfolioQuotes.fetchedAt
+    tracking.recordSnapshot({ value: portfolioStats.totalValue, coveragePct: positions.length ? portfolioStats.positions.filter((position) => position.currentValue != null).length / positions.length * 100 : 0, source: 'portfolio_price_refresh', recordedAt: portfolioQuotes.fetchedAt })
+  }, [portfolioQuotes.fetchedAt, quoteRefreshIsNewest, portfolioStats.totalValue])
+
+  if (dataLoading || portfolioLoading) return <Loading />
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.ticker || !formData.shares || !formData.costBasis) {
       alert('Please fill in all required fields')
@@ -238,7 +281,12 @@ export default function Portfolio() {
       alert('Enter a valid share count and cost')
       return
     }
-    addPosition(formData.ticker, shares, costBasis, formData.purchaseDate, formData.costMode)
+    const result = await addPosition(formData.ticker, shares, costBasis, formData.purchaseDate, formData.costMode)
+    if (result?.success === false) {
+      setSyncMessage(`Could not sync position: ${result.error}`)
+      return
+    }
+    setSyncMessage(`${formData.ticker} saved to your cloud portfolio.`)
     setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
     setShowAddForm(false)
   }
@@ -247,7 +295,7 @@ export default function Portfolio() {
     setSyncMessage('Syncing…')
     const result = await syncReferencePortfolio()
     setSyncMessage(result.success
-      ? `${result.added} holding${result.added === 1 ? '' : 's'} added · ${result.updated} refreshed`
+      ? `${result.added} holding${result.added === 1 ? '' : 's'} added · ${result.updated} refreshed${result.removed ? ` · ${result.removed} retired reference holding removed` : ''}`
       : `Sync failed: ${result.error}`)
   }
 
@@ -256,9 +304,6 @@ export default function Portfolio() {
     setSyncMessage(result?.success ? 'Purchase date saved' : `Could not save date: ${result?.error || 'Unknown error'}`)
   }
 
-  // removePosition hides the position on this device immediately, whether or not the
-  // Firestore delete behind it succeeds - see useFirebasePortfolio for why. A backend
-  // failure still gets a quiet note (worth knowing about) without implying Remove failed.
   const handleRemove = async (positionId) => {
     if (removingId) return
     setRemovingId(positionId)
@@ -266,9 +311,24 @@ export default function Portfolio() {
     setRemovingId(null)
     if (result?.success === false) {
       setSyncMessage(`Could not remove position: ${result.error || 'Unknown error'}`)
-    } else if (result?.backendError) {
-      setSyncMessage('Removed. (Could not sync the removal to the server, so it may still show on your other devices.)')
-    }
+    } else setSyncMessage('Position removed from the cloud portfolio on every signed-in device.')
+  }
+
+  const handleActivity = async (event) => {
+    event.preventDefault()
+    setActivitySaving(true)
+    const result = await tracking.recordActivity({ ...activityForm, amount: Number(activityForm.amount) })
+    setActivitySaving(false)
+    if (!result.success) { setSyncMessage(`Could not save earnings activity: ${result.error}`); return }
+    setActivityForm((current) => ({ ...current, amount: '', note: '' }))
+    setSyncMessage('Earnings activity saved to Firebase.')
+  }
+
+  const toggleLedgerComplete = async () => {
+    const next = !tracking.trackingState?.ledgerComplete
+    if (next && !window.confirm('Confirm that all prior realized gains and losses, dividends, and fees have been entered. This enables the All-time earnings value.')) return
+    const result = await tracking.setLedgerComplete(next)
+    setSyncMessage(result.success ? (next ? 'All-time earnings history confirmed.' : 'Earnings history marked incomplete.') : `Could not update earnings history: ${result.error}`)
   }
 
   const startEdit = (pos) => {
@@ -321,6 +381,10 @@ export default function Portfolio() {
             Holdings, action guidance, and a fair same-dollar comparison with the S&amp;P 500.
           </p>
         </div>
+        <div className={`cloud-sync-state ${syncState.connected ? 'connected' : 'disconnected'}`} role="status">
+          <span aria-hidden="true" />
+          <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Signed-in account'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Waiting for your signed-in account'}</small></div>
+        </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
       {(portfolioQuotes.message || portfolioQuotes.error) && (
@@ -345,6 +409,12 @@ export default function Portfolio() {
           </div>
           <div className="kpi-note">{positions.length} positions · {money(portfolioStats.totalCost)} cost basis</div>
         </div>
+        <div className="card kpi portfolio-score-kpi">
+          <div className="kpi-label">Portfolio Score</div>
+          <div className="kpi-value">{overallScore.available ? overallScore.score : '—'}<small>/100</small></div>
+          <div className="kpi-note">{overallScore.available ? `${overallScore.provisional ? 'Provisional · ' : ''}${overallScore.reason}` : overallScore.reason}</div>
+          <a href="/portfolio/diversification">See score details →</a>
+        </div>
         <div className="card kpi">
           <div className="kpi-label">Vs S&P 500</div>
           <div className="kpi-value" style={{ color: moveColor(versusIndex?.excessReturnPct) }}>
@@ -356,6 +426,17 @@ export default function Portfolio() {
             {versusIndex
               ? `${versusIndex.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(versusIndex.dollarsAhead))} versus the index · ${versusIndex.comparable} compared position${versusIndex.comparable === 1 ? '' : 's'}`
               : 'Add a purchase date inside the charted window'}
+          </div>
+        </div>
+        <div className="card kpi">
+          <div className="kpi-label">Annualized return</div>
+          <div className="kpi-value" style={{ color: moveColor(annualizedReturn.rate) }}>
+            {annualizedReturn.available ? signedPct(annualizedReturn.rate, 2) : '—'}
+          </div>
+          <div className="kpi-note">
+            {annualizedReturn.available
+              ? `Money-weighted since ${annualizedReturn.startDate} · ${Math.round(annualizedReturn.coveragePct)}% value coverage`
+              : annualizedReturn.reason}
           </div>
         </div>
         <div className="card kpi">
@@ -383,6 +464,22 @@ export default function Portfolio() {
           <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
           <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
           <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
+        </div>
+      </details>
+
+      <details className="card earnings-tracker">
+        <summary><span><span className="eyebrow">All-time earnings</span><strong>Cloud earnings ledger</strong><small>{tracking.trackingState?.trackingStartedAt ? `Storing activity since ${tracking.trackingState.trackingStartedAt.slice(0, 10)}` : 'Tracking starts with your next saved activity or price refresh'}</small></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
+        <div className="earnings-tracker-body">
+          <p>Current unrealized gains are automatic. Add prior and future realized gains, dividends, and fees so the Financial Report can calculate all-time earnings honestly.</p>
+          <form className="earnings-activity-form" onSubmit={handleActivity}>
+            <label><span>Activity</span><select value={activityForm.type} onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })}><option value="realized_gain">Realized gain/loss</option><option value="dividend">Dividend</option><option value="fee">Fee</option></select></label>
+            <label><span>Amount</span><input type="number" step="0.01" required value={activityForm.amount} onChange={(event) => setActivityForm({ ...activityForm, amount: event.target.value })} placeholder={activityForm.type === 'realized_gain' ? 'Negative for a loss' : '0.00'} /></label>
+            <label><span>Date</span><input type="date" required value={activityForm.effectiveDate} onChange={(event) => setActivityForm({ ...activityForm, effectiveDate: event.target.value })} /></label>
+            <label><span>Note</span><input value={activityForm.note} onChange={(event) => setActivityForm({ ...activityForm, note: event.target.value })} placeholder="Optional" /></label>
+            <button className="primary-button compact" disabled={activitySaving}>{activitySaving ? 'Saving…' : 'Save activity'}</button>
+          </form>
+          <div className="ledger-confirmation"><div><strong>{tracking.trackingState?.ledgerComplete ? 'History confirmed complete' : 'Prior history not yet confirmed'}</strong><span>{tracking.activities.length} stored ledger event{tracking.activities.length === 1 ? '' : 's'}. Position removals are not assumed to be sales.</span></div><button className="secondary-button compact" onClick={toggleLedgerComplete}>{tracking.trackingState?.ledgerComplete ? 'Mark incomplete' : 'Confirm history is complete'}</button></div>
+          {tracking.error && <p className="form-error" role="alert">Firebase tracking error: {tracking.error}</p>}
         </div>
       </details>
 

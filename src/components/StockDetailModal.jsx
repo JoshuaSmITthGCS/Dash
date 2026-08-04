@@ -11,6 +11,7 @@ import AnalysisLayers from './AnalysisLayers'
 import RecommendationShadowPanel from './RecommendationShadowPanel'
 import DipWatchBadge from './DipWatchBadge'
 import useBodyScrollLock from '../lib/useBodyScrollLock'
+import ResearchRadarChart from './ResearchRadarChart'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -171,6 +172,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
 
         {tab === 'evidence' && (
           <div style={{ display: 'grid', gap: 20 }}>
+            <ResearchRadarChart stock={stock} />
             <div>
               <div className="sec-label">Score components</div>
               <div className="component-scores">

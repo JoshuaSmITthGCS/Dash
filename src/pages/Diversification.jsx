@@ -14,7 +14,7 @@ function groupedWeights(weights, field) {
 }
 
 export default function Diversification() {
-  const { data, loading } = useData('advisor.json')
+  const { data, loading } = useData('report.json')
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const { preferences } = usePreferences()
   if (loading || portfolioLoading) return <Loading />

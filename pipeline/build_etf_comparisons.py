@@ -9,8 +9,44 @@ import os
 from datetime import timezone
 
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
-from common import CONFIG_DIR, DATA_DIR, LOG, load_json, update_pipeline_status
+from common import CONFIG_DIR, DATA_DIR, LOG, load_json, save_json, update_pipeline_status
 from etf_comparison import build_contract
+
+REPORT_BENCHMARKS = ("SPY", "QQQ", "DIA", "IWM", "VTI", "VEA", "VWO", "VXUS")
+REPORT_OBSERVATIONS = 800
+
+
+def publish_benchmark_report(symbols=REPORT_BENCHMARKS):
+    """Publish only the adjusted closes needed by the Financial Report.
+
+    Full ETF comparison contracts are several megabytes each. The report compares at most
+    three proxies and its portfolio history is much shorter, so the latest 800 aligned
+    trading-day observations preserve every useful range without multiplying page weight.
+    """
+    histories = {}
+    generated_at = None
+    for symbol in symbols:
+        path = os.path.join(DATA_DIR, "etf", f"{symbol}.json")
+        if not os.path.exists(path):
+            continue
+        with open(path) as handle:
+            contract = json.load(handle)
+        points = (contract.get("price_series") or {}).get("fund") or []
+        usable = [row for row in points if row.get("date") and row.get("adjusted_close") is not None][-REPORT_OBSERVATIONS:]
+        if len(usable) < 2:
+            continue
+        histories[symbol] = {
+            "dates": [row["date"] for row in usable],
+            "closes": [row["adjusted_close"] for row in usable],
+            "return_basis": (contract.get("price_series") or {}).get("return_basis"),
+        }
+        generated_at = max(generated_at or "", contract.get("generated_at") or "")
+    save_json("benchmark-report.json", {
+        "schema_version": 1,
+        "generated_at": generated_at,
+        "histories": histories,
+    })
+    return histories
 
 
 def _rows(frame):
@@ -101,6 +137,7 @@ def build_all(period="max"):
     status = "healthy" if not failed else ("degraded" if complete else "error")
     update_pipeline_status("etf_comparisons", status=status, source="Yahoo Finance adjusted history",
                            details={"complete": complete, "failed": failed, "output": "public/data/etf/<ticker>.json"})
+    publish_benchmark_report()
     return {"complete": complete, "failed": failed}
 
 

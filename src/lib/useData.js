@@ -7,23 +7,31 @@ import { datasetFor, migrate } from './schemaMigrations'
 // effort only: private browsing and quota limits (a handful of the larger ETF snapshots
 // won't fit) both fail silently and just fall back to a network fetch.
 const CACHE_PREFIX = 'dash:last-refresh:'
+const memoryPayloads = new Map()
+const inFlightRequests = new Map()
 
 function cacheKey(file) {
   return `${CACHE_PREFIX}${file}`
 }
 
 function readCachedPayload(file) {
+  if (!file) return null
+  if (memoryPayloads.has(file)) return memoryPayloads.get(file)
   try {
     const raw = localStorage.getItem(cacheKey(file))
-    return raw ? JSON.parse(raw) : null
+    const cached = raw ? JSON.parse(raw) : null
+    if (cached) memoryPayloads.set(file, cached)
+    return cached
   } catch {
     return null
   }
 }
 
 function writeCachedPayload(file, data) {
+  const payload = { data, cachedAt: Date.now() }
+  memoryPayloads.set(file, payload)
   try {
-    localStorage.setItem(cacheKey(file), JSON.stringify({ data, cachedAt: Date.now() }))
+    localStorage.setItem(cacheKey(file), JSON.stringify(payload))
   } catch {
     // Quota exceeded or storage unavailable - caching is a nice-to-have, not load-bearing.
   }
@@ -36,11 +44,15 @@ export function clearCachedData(file) {
   try {
     if (file) {
       localStorage.removeItem(cacheKey(file))
+      memoryPayloads.delete(file)
+      inFlightRequests.delete(file)
       return
     }
     Object.keys(localStorage)
       .filter((key) => key.startsWith(CACHE_PREFIX))
       .forEach((key) => localStorage.removeItem(key))
+    memoryPayloads.clear()
+    inFlightRequests.clear()
   } catch {
     // ignore
   }
@@ -59,30 +71,39 @@ export function useData(file) {
     hadCache.current = Boolean(cached)
     return cached
       ? { data: cached.data, loading: false, error: null, fromCache: true, cachedAt: cached.cachedAt }
-      : { data: null, loading: true, error: null, fromCache: false, cachedAt: null }
+      : { data: null, loading: Boolean(file), error: null, fromCache: false, cachedAt: null }
   })
   const mounted = useRef(false)
   const requestId = useRef(0)
 
   const load = useCallback(async ({ initial = false } = {}) => {
     const activeRequest = ++requestId.current
+    if (!file) {
+      if (mounted.current) setState({ data: null, loading: false, error: null, fromCache: false, cachedAt: null })
+      return null
+    }
     // A cached copy is already on screen, so an initial mount revalidates quietly in the
     // background rather than showing a spinner over data the user can already see.
     if (initial && mounted.current && !hadCache.current) {
       setState((current) => ({ ...current, loading: true, error: null }))
     }
     try {
-      const separator = file.includes('?') ? '&' : '?'
-      const response = await fetch(
-        `${import.meta.env.BASE_URL}data/${file}${separator}v=${Date.now()}`,
-        { cache: 'no-store' }
-      )
-      if (!response.ok) throw new Error(`${file}: ${response.status}`)
-      const raw = await response.json()
-      const dataset = datasetFor(file)
-      const data = dataset ? migrate(dataset, raw) : raw
-      const cachedAt = Date.now()
-      writeCachedPayload(file, data)
+      let request = inFlightRequests.get(file)
+      if (!request) {
+        request = (async () => {
+          const separator = file.includes('?') ? '&' : '?'
+          const response = await fetch(`${import.meta.env.BASE_URL}data/${file}${separator}v=${Date.now()}`, { cache: 'no-store' })
+          if (!response.ok) throw new Error(`${file}: ${response.status}`)
+          const raw = await response.json()
+          const dataset = datasetFor(file)
+          const data = dataset ? migrate(dataset, raw) : raw
+          writeCachedPayload(file, data)
+          return data
+        })().finally(() => inFlightRequests.delete(file))
+        inFlightRequests.set(file, request)
+      }
+      const data = await request
+      const cachedAt = memoryPayloads.get(file)?.cachedAt || Date.now()
       if (mounted.current && activeRequest === requestId.current) setState({ data, loading: false, error: null, fromCache: false, cachedAt })
       return data
     } catch (error) {
@@ -99,7 +120,7 @@ export function useData(file) {
     hadCache.current = Boolean(cached)
     setState(cached
       ? { data: cached.data, loading: false, error: null, fromCache: true, cachedAt: cached.cachedAt }
-      : { data: null, loading: true, error: null, fromCache: false, cachedAt: null })
+      : { data: null, loading: Boolean(file), error: null, fromCache: false, cachedAt: null })
     load({ initial: true }).catch(() => {})
     return () => { requestId.current += 1; mounted.current = false }
   }, [load])

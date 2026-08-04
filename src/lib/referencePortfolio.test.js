@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planReferencePortfolioSync } from './referencePortfolio'
+import { planReferencePortfolioSync, REFERENCE_PORTFOLIO } from './referencePortfolio'
 
 describe('planReferencePortfolioSync', () => {
   it('refreshes snapshot fields without replacing user position data', () => {
@@ -40,5 +40,9 @@ describe('planReferencePortfolioSync', () => {
     expect(operation.kind).toBe('update')
     expect(operation.id).toBe('DECJ-reference')
     expect(operation.record.ticker).toBe('DECJ')
+  })
+
+  it('does not include the retired DECJ reference holding', () => {
+    expect(REFERENCE_PORTFOLIO.some((position) => position.ticker === 'DECJ')).toBe(false)
   })
 })

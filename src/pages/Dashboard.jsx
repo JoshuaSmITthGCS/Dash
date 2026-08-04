@@ -7,18 +7,24 @@ import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
-  BENCHMARKS, alignSeries, benchmarkHistoryFromSnapshot, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
-  enrichPortfolio, latestMarketDayReturn, opportunityCost, performanceRating, portfolioScore,
-  resilienceIndex, scenarioProjection, selectPeriod,
+  BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
+  enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceRating, planningReturnRates, portfolioScore,
+  resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
 } from '../lib/portfolioAnalytics.js'
 import { Loading, Empty, Tier } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import { getRecommendation } from '../lib/recommendation.js'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
+const BENCHMARK_STYLES = [
+  { color: 'var(--series-benchmark)', dashPattern: '7 5' },
+  { color: 'var(--series-benchmark-2)', dashPattern: '3 4' },
+  { color: 'var(--series-benchmark-3)', dashPattern: '10 4 2 4' },
+]
 
 function Metric({ label, value, note, tone = '' }) {
   return <article className="report-metric"><span>{label}</span><strong className={tone}>{value}</strong><small>{note}</small></article>
@@ -39,17 +45,18 @@ function Customizer({ widgets, onChange, onDone }) {
 }
 
 export default function Dashboard() {
-  const { data, loading } = useData('advisor.json')
+  const { data, loading } = useData('report.json')
   const { currentUser } = useAuth()
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
+  const tracking = usePortfolioTracking()
   const { preferences, setWidgets, updatePreferences } = usePreferences()
-  const { data: benchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark}.json`)
+  const { data: benchmarkReport, loading: benchmarkLoading } = useData(positions.length ? 'benchmark-report.json' : null)
   const [period, setPeriod] = useState(preferences.defaultChartPeriod)
   const [draftWidgets, setDraftWidgets] = useState(preferences.widgets)
   const customize = new window.URLSearchParams(window.location.search).get('customize') === '1'
 
   const watchlist = useMemo(() => { try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || [] } catch { return [] } }, [])
-  if (loading || (currentUser && portfolioLoading)) return <Loading />
+  if (loading || (currentUser && (portfolioLoading || (positions.length > 0 && benchmarkLoading)))) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset is available yet." />
 
   const rows = data.research
@@ -57,26 +64,43 @@ export default function Dashboard() {
   const portfolio = enrichPortfolio(positions, prices)
   const holdingsSeries = currentHoldingsSeries(positions, prices, data.benchmark_history?.dates || [])
   const selected = selectPeriod(holdingsSeries, period)
-  const benchmarkRaw = benchmarkHistoryFromSnapshot(benchmarkSnapshot) || (data.benchmark_history?.dates ? { dates: data.benchmark_history.dates, values: data.benchmark_history.closes, closes: data.benchmark_history.closes } : null)
-  const benchmarkSeries = benchmarkRaw ? { dates: benchmarkRaw.dates, values: benchmarkRaw.values || benchmarkRaw.closes, methodology: `${preferences.defaultBenchmark} ETF as an investable index proxy.` } : null
-  const benchmarkPeriod = selectPeriod(benchmarkSeries, period)
-  const comparable = alignSeries(selected, benchmarkPeriod, period)
+  const selectedBenchmarkSymbols = preferences.defaultBenchmarks || [preferences.defaultBenchmark]
+  const selectedBenchmarkSeries = selectedBenchmarkSymbols.map((symbol) => {
+    const history = benchmarkReport?.histories?.[symbol]
+    const definition = BENCHMARKS.find((item) => item.symbol === symbol)
+    return history ? { symbol, label: definition?.label || symbol, dates: history.dates, closes: history.closes } : null
+  }).filter(Boolean)
+  const comparison = compareBenchmarkSeries(selected, selectedBenchmarkSeries)
+  const chartedPortfolio = comparison?.portfolio || selected
   const today = latestMarketDayReturn(holdingsSeries)
   const diversification = diversificationScore(portfolio.positions)
-  const resilience = resilienceIndex(selected?.values || [], diversification)
-  const performance = performanceRating(comparable?.left, comparable?.right)
-  const opportunity = opportunityCost(comparable?.left, comparable?.right)
+  const scorePortfolioPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
+  const scoreComparison = compareBenchmarkSeries(scorePortfolioPeriod, selectedBenchmarkSeries.slice(0, 1))
+  const resilience = resilienceIndex(scoreComparison?.portfolio.values || scorePortfolioPeriod?.values || [], diversification)
+  const performance = performanceRating(scoreComparison?.portfolio, scoreComparison?.benchmarks[0])
   const concentrationLiquidity = concentrationLiquidityScore(portfolio.positions)
   const overall = portfolioScore({ diversification, resilience, performance, benchmarkEfficiency: performance.available ? performance.score : null, concentrationLiquidity, dataCompleteness: Math.round(portfolio.coveragePct || 0) })
   const leader = rows[0]
   const watchRows = watchlist.map((ticker) => rows.find((row) => row.ticker === ticker)).filter(Boolean).slice(0, 4)
-  const benchmark = BENCHMARKS.find((item) => item.symbol === preferences.defaultBenchmark)
   const money = (value) => preferences.privacyMode ? '••••••' : formatPreferenceMoney(value, preferences.numberFormat)
   const tone = (value) => value == null ? '' : value >= 0 ? 'positive' : 'negative'
-  const normalizedBenchmark = comparable ? comparable.right.values.map((value) => comparable.left.startValue * value / comparable.right.startValue) : []
   const forecast = preferences.forecast
-  const scenario = ['conservative', 'base', 'optimistic'].map((label) => ({ label, rate: forecast[`${label}Rate`], value: scenarioProjection(portfolio.totalValue, forecast[`${label}Rate`], forecast.horizonYears, forecast.recurringAnnual) }))
+  const planningRates = planningReturnRates(portfolio.positions, holdingsSeries?.values || [], today?.date)
+  const scenarioHorizons = [1, 5, 10].map((years) => ({ years, values: planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, rate: planningRates[label], value: scenarioProjection(portfolio.totalValue, planningRates[label], years, forecast.recurringAnnual) })) : [] }))
+  const yearsToRetirement = Math.max(0, forecast.retirementAge - forecast.currentAge)
+  const retirementValues = planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, value: scenarioProjection(portfolio.totalValue, planningRates[label], yearsToRetirement, forecast.recurringAnnual) })) : []
+  const latestTrackingDate = tracking.snapshots.at(-1)?.marketDate
+  const intraday = intradayPortfolioHigh(tracking.snapshots.filter((snapshot) => snapshot.marketDate === latestTrackingDate))
+  const allTimeEarnings = trackedAllTimeEarnings(portfolio, tracking.activities, tracking.trackingState)
   const actionable = portfolio.positions.map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null })).filter((row) => row.recommendation && row.recommendation.action !== 'HOLD')
+
+  const toggleBenchmark = (symbol) => {
+    const next = selectedBenchmarkSymbols.includes(symbol)
+      ? selectedBenchmarkSymbols.filter((item) => item !== symbol)
+      : [...selectedBenchmarkSymbols, symbol].slice(0, 3)
+    if (!next.length) return
+    updatePreferences({ defaultBenchmarks: next, defaultBenchmark: next[0] })
+  }
 
   const saveCustomization = () => { setWidgets(draftWidgets); window.history.replaceState({}, '', '/'); window.location.reload() }
 
@@ -93,16 +117,18 @@ export default function Dashboard() {
       </section>
 
       <section className="report-chart-card">
-        <header className="section-heading"><div><span className="eyebrow">Performance</span><h2>{period} portfolio view</h2></div><div className="chart-controls"><label className="benchmark-picker"><span>Benchmark</span><select value={preferences.defaultBenchmark} onChange={(event) => updatePreferences({ defaultBenchmark: event.target.value })}>{BENCHMARKS.map((item) => <option key={item.symbol} value={item.symbol}>{item.symbol} · {item.label}</option>)}</select></label><div className="period-control" aria-label="Performance period">{PERIODS.map((item) => <button key={item} className={period === item ? 'active' : ''} aria-pressed={period === item} onClick={() => { setPeriod(item); updatePreferences({ defaultChartPeriod: item }) }}>{item}</button>)}</div></div></header>
-        {selected ? <GrowthChart dates={comparable?.dates || selected.dates} series={[{ label: 'Current holdings', values: comparable?.left.values || selected.values, color: 'var(--series-stock)', emphasis: true }, ...(normalizedBenchmark.length ? [{ label: `${preferences.defaultBenchmark} proxy`, values: normalizedBenchmark, color: 'var(--series-market)', dashed: true }] : [])]} valueFormatter={money} caption={`${selected.methodology} Benchmark is ${benchmark?.label || preferences.defaultBenchmark} via the ${preferences.defaultBenchmark} ETF proxy. Period selection recalculates the displayed observations and returns.`} /> : <div className="unavailable-panel"><strong>{period} history unavailable</strong><p>The current dataset does not contain two aligned daily closes for this period.</p></div>}
-        <div className="report-chart-summary"><Metric label="Period return" value={selected ? `${selected.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(selected.dollarReturn))}` : '—'} note={selected ? `${signedPct(selected.returnPct)} · ${selected.startDate} to ${selected.endDate}` : 'Unavailable'} tone={tone(selected?.dollarReturn)} /><Metric label="Period high" value={selected ? money(selected.high) : '—'} note="Highest daily-close value in selected period; not intraday high" /><Metric label="Intraday high" value="Unavailable" note="No time-stamped intraday portfolio series is stored" /><Metric label="All-time earnings" value="Unavailable" note="Complete trades, cash flows, fees, dividends, and realized gains are not stored" /></div>
+        <header className="section-heading"><div><span className="eyebrow">Performance</span><h2>{period} equal-start comparison</h2></div><div className="chart-controls"><div className="period-control" aria-label="Performance period">{PERIODS.map((item) => <button key={item} className={period === item ? 'active' : ''} aria-pressed={period === item} onClick={() => { setPeriod(item); updatePreferences({ defaultChartPeriod: item }) }}>{item}</button>)}</div></div></header>
+        <fieldset className="benchmark-picker" aria-label="Comparison benchmarks"><legend>Compare with up to three ETF proxies</legend><div>{BENCHMARKS.map((item) => { const checked = selectedBenchmarkSymbols.includes(item.symbol); return <label key={item.symbol} className={checked ? 'selected' : ''}><input type="checkbox" checked={checked} disabled={!checked && selectedBenchmarkSymbols.length >= 3} onChange={() => toggleBenchmark(item.symbol)} /><span>{item.symbol}</span></label> })}</div></fieldset>
+        {chartedPortfolio ? <GrowthChart dates={comparison?.dates || chartedPortfolio.dates} series={[{ label: 'Current holdings', values: chartedPortfolio.values, color: 'var(--series-stock)', emphasis: true }, ...(comparison?.benchmarks || []).map((item, index) => ({ label: `${item.symbol} proxy`, values: item.values, ...BENCHMARK_STYLES[index] }))]} valueFormatter={money} caption={comparison ? `${comparison.methodology} Current holdings use current quantities applied to historical daily closes; this is not reconstructed account history.` : selected.methodology} /> : <div className="unavailable-panel"><strong>{period} history unavailable</strong><p>The current dataset does not contain two aligned daily closes for this period.</p></div>}
+        {comparison?.benchmarks?.length > 0 && <div className="benchmark-result-strip" aria-label="Benchmark return comparison">{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol}<small>{item.label}</small></span><strong>{signedPct(item.returnPct)}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? '+' : '−'}{money(Math.abs(item.differenceVsPortfolio))} vs portfolio</em></div>)}</div>}
+        <div className="report-chart-summary"><Metric label="Charted portfolio earnings" value={chartedPortfolio ? `${chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(chartedPortfolio.dollarReturn))}` : '—'} note={chartedPortfolio ? `${signedPct(chartedPortfolio.returnPct)} · ${chartedPortfolio.startDate} to ${chartedPortfolio.endDate}` : 'Unavailable'} tone={tone(chartedPortfolio?.dollarReturn)} /><Metric label="Charted portfolio high" value={chartedPortfolio ? money(chartedPortfolio.high) : '—'} note="Highest daily-close value on the exact chart comparison dates" /><Metric label="Observed intraday high" value={intraday ? money(intraday.value) : 'Tracking'} note={intraday ? `${intraday.observations} stored observation${intraday.observations === 1 ? '' : 's'} on ${latestTrackingDate}` : 'Stored after signed-in portfolio price refreshes'} /><Metric label="All-time earnings" value={allTimeEarnings.available ? money(allTimeEarnings.value) : 'Tracking'} note={allTimeEarnings.reason} tone={tone(allTimeEarnings.value)} /></div>
       </section>
 
-      <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.strongest || 'Coverage'} is strongest; ${overall.weakest || 'history'} has the most room to improve.`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown; ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /><ScoreCard label="Performance" result={performance} note={performance.reason} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{Math.round(value)}/100</em></span>)}</div><p>Weights: diversification 25%, resilience 25%, risk-adjusted performance 20%, benchmark efficiency 15%, concentration/liquidity 10%, and data completeness 5%. Missing required history or coverage suppresses the score instead of being treated as zero or neutral.</p></details>}</section>
+      <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest; ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown; ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /><ScoreCard label="Performance" result={performance} note={performance.reason} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>Weights: diversification 25%, resilience 25%, risk-adjusted performance 20%, benchmark efficiency 15%, concentration/liquidity 10%, and data completeness 5%. A provisional score reweights only available real-data components; missing components are never treated as zero.</p></details>}</section>
 
       <section className="report-two-column">
-        <article className="planning-card"><span className="eyebrow">If all goes to plan</span><h2>{forecast.horizonYears}-year planning scenario</h2><div className="scenario-values">{scenario.map((item) => <div key={item.label}><span>{item.label} · {item.rate}%</span><strong>{money(item.value)}</strong></div>)}</div><p>Illustration using manual annual-return assumptions and {money(forecast.recurringAnnual)} annual contributions. Not a prediction, guarantee, or investment recommendation.</p><Link to="/settings">Edit assumptions</Link></article>
-        <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>{benchmark?.label || preferences.defaultBenchmark} comparison</h2>{opportunity ? <><strong className={tone(opportunity.difference)}>{opportunity.difference >= 0 ? '+' : '−'}{money(Math.abs(opportunity.difference))}</strong><p>Your current-holdings backtest {opportunity.difference >= 0 ? 'finished above' : 'finished below'} an equal-starting-value {preferences.defaultBenchmark} ETF proxy over the selected period.</p><small>{opportunity.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
+        <article className="planning-card"><span className="eyebrow">If all goes to plan</span><h2>1, 5, and 10-year outlook</h2>{planningRates.available ? <><div className="scenario-horizon-grid">{scenarioHorizons.map((horizon) => <section key={horizon.years}><h3>{horizon.years} year{horizon.years === 1 ? '' : 's'}</h3>{horizon.values.map((item) => <div key={item.label}><span>{item.label}<small>{item.rate.toFixed(1)}% annualized</small></span><strong>{money(item.value)}</strong></div>)}</section>)}</div><div className="retirement-outlook"><span>At retirement · age {forecast.retirementAge}</span><strong>{yearsToRetirement ? money(retirementValues.find((item) => item.label === 'base')?.value) : money(portfolio.totalValue)}</strong><small>{yearsToRetirement} years away · base annualized path</small></div><p>{planningRates.methodology} Includes {money(forecast.recurringAnnual)} at each year end. These are scenarios, not predictions.</p></> : <div className="unavailable-panel compact-unavailable"><strong>Annualized scenario unavailable</strong><p>{planningRates.reason}</p></div>}<Link to="/settings">Edit contribution and retirement age</Link></article>
+        <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}
 
