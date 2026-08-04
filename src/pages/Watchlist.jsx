@@ -5,6 +5,7 @@ import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
 import { watchlistGuidance } from '../lib/watchlistGuidance'
+import CompanyLogo from '../components/CompanyLogo.jsx'
 
 const KEY = 'valuesignal.watchlist'
 const SETTINGS_KEY = 'valuesignal.watchlistSizing'
@@ -97,7 +98,7 @@ export default function Watchlist() {
           return (
             <article className="watchlist-card" key={ticker}>
               <div className="watchlist-card-head">
-                <div><strong>{ticker}</strong><span>{row?.name || 'Not in published research'}</span></div>
+                <CompanyLogo company={row || { ticker }} size={42} /><div><strong>{ticker}</strong><span>{row?.name || 'Not in published research'}</span></div>
                 <button className="icon-button danger" onClick={() => save(list.filter((item) => item !== ticker))}
                   aria-label={`Remove ${ticker} from watchlist`}><Icon name="close" /></button>
               </div>

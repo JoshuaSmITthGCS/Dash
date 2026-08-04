@@ -36,7 +36,7 @@ export default function Settings() {
 
   const resetDashboard = () => {
     setWidgets(DEFAULT_WIDGETS)
-    setAnnouncement('Overview dashboard reset to defaults.')
+    setAnnouncement('Financial Report reset to defaults.')
   }
 
   return <div className="settings-page">
@@ -67,9 +67,10 @@ export default function Settings() {
     <section className="settings-card" aria-labelledby="dashboard-heading">
       <header><div><span className="settings-icon"><Icon name="overview" /></span><div><h2 id="dashboard-heading">Financial Report</h2><p>Report modules are managed here, away from the daily reading view.</p></div></div></header>
       <div className="settings-row"><div><strong>Visible report widgets</strong><span>{preferences.widgets.filter((widget) => widget.visible).length} of {preferences.widgets.length} shown</span></div><a className="secondary-button compact" href="/?customize=1">Customize report</a></div>
+      <div className="settings-row"><div><strong>Default landing page</strong><span>Cold starts and invalid destinations return to the Financial Report.</span></div><b className="settings-value">Report</b></div>
       <div className="settings-row"><div><strong>Reset report layout</strong><span>Restore widget visibility, order, and sizes.</span></div><button className="ghost-button" type="button" onClick={resetDashboard}>Reset report</button></div>
       <SelectRow id="benchmark" label="Default benchmark" description="Exchange-traded funds are labeled as investable index proxies." value={preferences.defaultBenchmark} onChange={(defaultBenchmark) => updatePreferences({ defaultBenchmark })}>{BENCHMARKS.map((item) => <option key={item.symbol} value={item.symbol}>{item.label} ({item.symbol}) proxy</option>)}</SelectRow>
-      <SelectRow id="holding-sort" label="Default holdings order" value={preferences.holdingSort.key} onChange={(key) => updatePreferences({ holdingSort: { key, direction: key === 'ticker' ? 'asc' : 'desc' } })}><option value="allocation">Allocation, largest first</option><option value="ticker">Ticker, A–Z</option><option value="value">Value, largest first</option><option value="gain">Dollar gain, largest first</option><option value="gainPct">Percent gain, largest first</option></SelectRow>
+      <SelectRow id="holding-sort" label="Default holdings order" value={preferences.holdingSort.key} onChange={(key) => updatePreferences({ holdingSort: { key, direction: key === 'ticker' ? 'asc' : 'desc' } })}><option value="allocation">Allocation, largest first</option><option value="ticker">Ticker, A–Z</option><option value="value">Value, largest first</option><option value="gain">Dollar gain, largest first</option><option value="return">Percent gain, largest first</option></SelectRow>
       <SelectRow id="actions-default" label="Suggested actions" value={preferences.suggestedActionsDefault} onChange={(suggestedActionsDefault) => updatePreferences({ suggestedActionsDefault })}><option value="collapsed">Collapsed by default</option><option value="expanded">Expanded by default</option></SelectRow>
     </section>
 

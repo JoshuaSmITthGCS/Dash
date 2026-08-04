@@ -3,13 +3,18 @@ import { nextPortfolioSort, sortPortfolioPositions } from './portfolioSort'
 
 describe('portfolio sorting', () => {
   const positions = [
-    { ticker: 'ZZZ', currentValue: null, gainPct: null, priceInfo: null },
-    { ticker: 'AAA', currentValue: 50, gainPct: -2, priceInfo: { score: 40, name: 'Alpha' } },
-    { ticker: 'BBB', currentValue: 200, gainPct: 12, priceInfo: { score: 80, name: 'Beta' } },
+    { ticker: 'ZZZ', currentValue: null, allocationPct: null, gainPct: null, priceInfo: null },
+    { ticker: 'AAA', currentValue: 50, allocationPct: 20, gainPct: -2, priceInfo: { score: 40, name: 'Alpha' } },
+    { ticker: 'BBB', currentValue: 200, allocationPct: 80, gainPct: 12, priceInfo: { score: 80, name: 'Beta' } },
   ]
 
   it('sorts numeric columns and keeps unavailable values last', () => {
     expect(sortPortfolioPositions(positions, 'value', 'desc').map((row) => row.ticker))
+      .toEqual(['BBB', 'AAA', 'ZZZ'])
+  })
+
+  it('sorts holdings by allocation descending by default', () => {
+    expect(sortPortfolioPositions(positions, 'allocation', 'desc').map((row) => row.ticker))
       .toEqual(['BBB', 'AAA', 'ZZZ'])
   })
 

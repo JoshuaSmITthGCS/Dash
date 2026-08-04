@@ -66,6 +66,20 @@ describe('useData local caching', () => {
     expect(localStorage.getItem('dash:last-refresh:' + file)).toBeNull()
     expect(localStorage.getItem('dash:last-refresh:' + other)).toBeTruthy()
   })
+
+  it('ignores a stale response after the requested file changes', async () => {
+    let resolveFirst
+    const firstResponse = new Promise((resolve) => { resolveFirst = resolve })
+    vi.stubGlobal('fetch', vi.fn((url) => url.includes('first.json')
+      ? firstResponse
+      : Promise.resolve({ ok: true, json: () => Promise.resolve({ id: 'second' }) })))
+    const hook = renderHook(({ file: requested }) => useData(requested), { initialProps: { file: 'first.json' } })
+    hook.rerender({ file: 'second.json' })
+    await waitFor(() => expect(hook.result.current.data).toEqual({ id: 'second' }))
+    resolveFirst({ ok: true, json: () => Promise.resolve({ id: 'first' }) })
+    await act(async () => { await Promise.resolve(); await Promise.resolve() })
+    expect(hook.result.current.data).toEqual({ id: 'second' })
+  })
 })
 
 describe('formatElapsed', () => {

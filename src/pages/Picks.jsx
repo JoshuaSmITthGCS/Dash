@@ -5,6 +5,8 @@ import { ActionPill } from '../components/ActionGuidance.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import { getRecommendation } from '../lib/recommendation'
+import CompanyLogo from '../components/CompanyLogo.jsx'
+import Sparkline from '../components/Sparkline.jsx'
 
 const SORTS = {
   score: ['Research score', (a, b) => b.score - a.score],
@@ -20,6 +22,7 @@ function ResearchCard({ row, rank, onOpen }) {
     <article className="research-mobile-card">
       <div className="research-card-head">
         <span className="rank-badge">#{rank}</span>
+        <CompanyLogo company={row} size={42} />
         <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
         <span className="mobile-score">{row.score}</span>
       </div>
@@ -29,6 +32,7 @@ function ResearchCard({ row, rank, onOpen }) {
         <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} /></dd></div>
         <div><dt>Data confidence</dt><dd>{Math.round((row.confidence || 0) * 100)}%</dd></div>
       </dl>
+      <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
       <button className="expand-button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
         {expanded ? 'Hide secondary metrics' : 'Show secondary metrics'}
         <Icon name="chevron" size={17} className={expanded ? 'rotated' : ''} />
@@ -102,7 +106,7 @@ export default function Picks() {
           <tbody>{rows.map((row) => (
             <tr key={row.ticker}>
               <td className="rank">#{research.findIndex((item) => item.ticker === row.ticker) + 1}</td>
-              <td><div className="table-company"><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></td>
+              <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
               <td><Tier label={row.stance} /></td><td><ActionPill recommendation={getRecommendation(row)} /></td>
               <td className="mono num score-cell">{row.score}</td>
               <td className="mono num">{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</td>

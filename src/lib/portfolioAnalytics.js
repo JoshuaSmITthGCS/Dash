@@ -59,7 +59,7 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
     let value = 0
     let covered = 0
     tracked.forEach(({ position, prices }) => { const price = prices.get(date); if (finite(price)) { value += Number(position.shares) * Number(price); covered += 1 } })
-    return covered ? { date, value, coveragePct: positions.length ? covered / positions.length * 100 : 0 } : null
+    return covered === tracked.length ? { date, value, coveragePct: positions.length ? covered / positions.length * 100 : 0 } : null
   }).filter(Boolean)
   if (rows.length < 2) return null
   return { dates: rows.map((row) => row.date), values: rows.map((row) => row.value), coverage: rows.map((row) => row.coveragePct), methodology: 'Current quantities applied to historical daily closes; not actual historical account value.' }
@@ -85,6 +85,15 @@ export function latestMarketDayReturn(series) {
   const previous = series.values.at(-2)
   const current = series.values.at(-1)
   return { date: series.dates.at(-1), previousDate: series.dates.at(-2), dollarReturn: current - previous, returnPct: previous ? (current - previous) / previous * 100 : null, currentValue: current }
+}
+
+export function alignSeries(left, right, period = left?.period || right?.period || 'All') {
+  if (!left?.dates?.length || !right?.dates?.length) return null
+  const rightValues = new Map(right.dates.map((date, index) => [date, right.values[index]]))
+  const rows = left.dates.map((date, index) => ({ date, left: left.values[index], right: rightValues.get(date) })).filter((row) => finite(row.left) && finite(row.right))
+  if (rows.length < 2) return null
+  const make = (key) => selectPeriod({ dates: rows.map((row) => row.date), values: rows.map((row) => row[key]) }, 'All')
+  return { dates: rows.map((row) => row.date), left: { ...make('left'), period }, right: { ...make('right'), period } }
 }
 
 export function intradayPortfolioHigh(points = []) {
@@ -141,6 +150,21 @@ export function performanceRating(portfolioPeriod, benchmarkPeriod) {
   return { available: true, score, rating, excessReturnPct: excess, period: portfolioPeriod.period, reason: `${excess >= 0 ? 'Outperformed' : 'Trailed'} the benchmark by ${Math.abs(excess).toFixed(1)} percentage points; maximum drawdown ${Math.abs(drawdown || 0).toFixed(1)}%.` }
 }
 
+export function concentrationLiquidityScore(positions = []) {
+  const weighted = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0 && finite(row.allocationPct))
+  if (!weighted.length) return { available: false, score: null, reason: 'Priced position weights are required.' }
+  const liquid = weighted.filter((row) => finite(row.priceInfo?.average_dollar_volume) && row.priceInfo.average_dollar_volume > 0)
+  const coveragePct = liquid.reduce((sum, row) => sum + row.allocationPct, 0)
+  if (coveragePct < 80) return { available: false, score: null, coveragePct, reason: 'Average dollar-volume coverage is below 80% of portfolio value.' }
+  const largest = Math.max(...weighted.map((row) => row.allocationPct))
+  const concentration = clamp(100 - Math.max(0, largest - 10) * 2.5)
+  const liquidity = liquid.reduce((sum, row) => {
+    const daysAtTenPctAdv = row.currentValue / (Number(row.priceInfo.average_dollar_volume) * .1)
+    return sum + clamp(100 - Math.max(0, daysAtTenPctAdv - 1) * 12) * row.allocationPct / coveragePct
+  }, 0)
+  return { available: true, score: Math.round(concentration * .55 + liquidity * .45), coveragePct, components: { concentration, liquidity }, reason: 'Combines largest-position concentration with estimated days to liquidate at 10% of published average dollar volume.' }
+}
+
 export function opportunityCost(portfolioPeriod, benchmarkPeriod) {
   if (!portfolioPeriod || !benchmarkPeriod || !portfolioPeriod.startValue || !benchmarkPeriod.startValue) return null
   const benchmarkEndingValue = portfolioPeriod.startValue * (benchmarkPeriod.endValue / benchmarkPeriod.startValue)
@@ -148,10 +172,10 @@ export function opportunityCost(portfolioPeriod, benchmarkPeriod) {
   return { portfolioEndingValue: portfolioPeriod.endValue, benchmarkEndingValue, difference, differencePct: benchmarkEndingValue ? difference / benchmarkEndingValue * 100 : null, startDate: portfolioPeriod.startDate > benchmarkPeriod.startDate ? portfolioPeriod.startDate : benchmarkPeriod.startDate, endDate: portfolioPeriod.endDate < benchmarkPeriod.endDate ? portfolioPeriod.endDate : benchmarkPeriod.endDate, methodology: 'Approximation from the earliest common date using current holdings and no external cash-flow adjustments.' }
 }
 
-export function portfolioScore({ diversification, resilience, performance, benchmarkEfficiency, liquidity = 70, dataCompleteness = 0 }) {
-  const available = [diversification?.score, resilience?.score, performance?.score, benchmarkEfficiency, liquidity, dataCompleteness]
-  if (!finite(diversification?.score)) return { available: false, score: null, reason: 'Priced holdings are required.' }
-  const values = { diversification: diversification.score, resilience: finite(resilience?.score) ? resilience.score : 50, riskAdjustedPerformance: finite(performance?.score) ? performance.score : 50, benchmarkEfficiency: finite(benchmarkEfficiency) ? benchmarkEfficiency : 50, concentrationLiquidity: liquidity, dataCompleteness }
+export function portfolioScore({ diversification, resilience, performance, benchmarkEfficiency, concentrationLiquidity, dataCompleteness = 0 }) {
+  const required = [diversification?.score, resilience?.score, performance?.score, benchmarkEfficiency, concentrationLiquidity?.score, dataCompleteness]
+  if (required.some((value) => !finite(value))) return { available: false, score: null, provisional: false, reason: 'Diversification, sufficient daily history, an aligned benchmark, liquidity coverage, and price coverage are all required.' }
+  const values = { diversification: diversification.score, resilience: resilience.score, riskAdjustedPerformance: performance.score, benchmarkEfficiency, concentrationLiquidity: concentrationLiquidity.score, dataCompleteness }
   const score = Math.round(values.diversification * .25 + values.resilience * .25 + values.riskAdjustedPerformance * .2 + values.benchmarkEfficiency * .15 + values.concentrationLiquidity * .1 + values.dataCompleteness * .05)
-  return { available: true, score, provisional: available.some((value) => !finite(value)), components: values, strongest: Object.entries(values).sort((a, b) => b[1] - a[1])[0][0], weakest: Object.entries(values).sort((a, b) => a[1] - b[1])[0][0] }
+  return { available: true, score, provisional: Boolean(diversification.provisional || resilience.provisional || concentrationLiquidity.coveragePct < 100 || dataCompleteness < 100), components: values, strongest: Object.entries(values).sort((a, b) => b[1] - a[1])[0][0], weakest: Object.entries(values).sort((a, b) => a[1] - b[1])[0][0] }
 }

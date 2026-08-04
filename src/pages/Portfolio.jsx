@@ -26,6 +26,8 @@ import {
 } from '../lib/portfolioSort'
 import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
+import { usePreferences } from '../lib/PreferencesContext.jsx'
+import CompanyLogo from '../components/CompanyLogo.jsx'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -126,13 +128,14 @@ export default function Portfolio() {
     exportPortfolio,
     syncReferencePortfolio,
   } = useFirebasePortfolio()
+  const { preferences, updatePreferences } = usePreferences()
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
-  const [portfolioSort, setPortfolioSort] = useState({ key: 'ticker', direction: 'asc' })
+  const [portfolioSort, setPortfolioSort] = useState(preferences.holdingSort)
   const [removingId, setRemovingId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({ shares: '', costBasis: '', costMode: 'share', purchaseDate: '' })
@@ -169,7 +172,7 @@ export default function Portfolio() {
     const totalCost = pos.shares * pos.costBasis
     const currentValue = currentPrice == null ? null : pos.shares * currentPrice
     const gain = currentValue == null ? null : currentValue - totalCost
-    const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-5) || []
+    const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-22) || []
     const gainPct = gain == null || !totalCost ? null : (gain / totalCost) * 100
     const riskPosition = { gainPct, currentPrice, costBasis: pos.costBasis, purchaseDate: pos.purchaseDate, priceInfo: current }
     const recommendation = current
@@ -205,23 +208,22 @@ export default function Portfolio() {
     ? ((portfolioStats.totalValue - portfolioStats.totalCost) / portfolioStats.totalCost) * 100
     : 0
 
-  const versusIndex = portfolioVsBenchmark(portfolioStats.positions, benchmarkHistory)
+  const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
+  const versusIndex = portfolioVsBenchmark(portfolioPositions, benchmarkHistory)
   const basis = data?.hypothetical_basis || 500
   const fixedBasisTotal = portfolioFixedBasisVsBenchmark(portfolioStats.positions, priceData, benchmarkHistory, basis)
   const growth = portfolioGrowthSeries(portfolioStats.positions, priceData, benchmarkHistory)
-  const actionable = portfolioStats.positions.filter(
+  const actionable = portfolioPositions.filter(
     (pos) => pos.recommendation && pos.recommendation.action !== 'HOLD')
-  const exposure = assessPortfolioExposure(portfolioStats.positions)
+  const exposure = assessPortfolioExposure(portfolioPositions)
   const sortedPositions = sortPortfolioPositions(
-    portfolioStats.positions,
+    portfolioPositions,
     portfolioSort.key,
     portfolioSort.direction,
   )
-  const setSortKey = (key) => setPortfolioSort((current) => nextPortfolioSort(current, key))
-  const toggleSortDirection = () => setPortfolioSort((current) => ({
-    ...current,
-    direction: current.direction === 'asc' ? 'desc' : 'asc',
-  }))
+  const commitSort = (next) => { setPortfolioSort(next); updatePreferences({ holdingSort: next }) }
+  const setSortKey = (key) => commitSort(nextPortfolioSort(portfolioSort, key))
+  const toggleSortDirection = () => commitSort({ ...portfolioSort, direction: portfolioSort.direction === 'asc' ? 'desc' : 'asc' })
   const selectedSort = PORTFOLIO_SORT_OPTIONS.find((option) => option.key === portfolioSort.key)
 
   const handleSubmit = (e) => {
@@ -385,8 +387,8 @@ export default function Portfolio() {
       </details>
 
       {actionable.length > 0 && (
-        <div className="card card-pad" style={{ marginBottom: 20 }}>
-          <div className="sec-label">Suggested actions</div>
+        <details className="card card-pad suggested-actions" style={{ marginBottom: 20 }} defaultOpen={preferences.suggestedActionsDefault === 'expanded'}>
+          <summary><span><span className="sec-label">Suggested actions</span><strong>{actionable.length} holding{actionable.length === 1 ? '' : 's'} to review</strong></span><Icon name="chevron" /></summary>
           <div style={{ display: 'grid', gap: 10 }}>
             {actionable.map((pos) => (
               <div key={pos.id || pos.ticker} style={{
@@ -408,7 +410,7 @@ export default function Portfolio() {
               </div>
             ))}
           </div>
-        </div>
+        </details>
       )}
 
       {exposure.warnings.length > 0 && (
@@ -527,7 +529,7 @@ export default function Portfolio() {
           {sortedPositions.map((pos) => (
             <article className="holding-card" key={pos.id || pos.ticker}>
               <div className="holding-card-head">
-                <div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span></div>
+                <CompanyLogo company={pos.priceInfo || pos} size={40} /><div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span><small>{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</small></div>
                 <ActionPill recommendation={pos.recommendation} />
               </div>
               <div className="holding-value">
@@ -603,6 +605,7 @@ export default function Portfolio() {
                 <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Avg. cost/share</SortableHeader>
                 <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
                 <SortableHeader numeric sortKey="value" sort={portfolioSort} onSort={setSortKey}>Value</SortableHeader>
+                <SortableHeader numeric sortKey="allocation" sort={portfolioSort} onSort={setSortKey}>Allocation</SortableHeader>
                 <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>
                 <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
                 <SortableHeader numeric sortKey="score" sort={portfolioSort} onSort={setSortKey}>Score</SortableHeader>
@@ -640,6 +643,7 @@ export default function Portfolio() {
                   </td>
                   <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
                   <td className="mono num">{pos.currentValue == null ? '—' : money(pos.currentValue)}</td>
+                  <td className="mono num">{pos.allocationPct == null ? '—' : `${pos.allocationPct.toFixed(1)}%`}</td>
                   <td className="mono num" style={{ color: moveColor(pos.gain) }}>
                     {pos.gain == null ? '—' : `${pos.gain >= 0 ? '+' : '−'}${money(Math.abs(pos.gain))}`}
                   </td>

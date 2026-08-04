@@ -84,7 +84,7 @@ export function validatePreferences(raw) {
     defaultChartPeriod: pick(raw.defaultChartPeriod, ['1D', '1W', '1M', '3M', '6M', '1Y', 'All'], '1M'),
     defaultLandingPage: pick(raw.defaultLandingPage, ['report'], 'report'),
     holdingSort: {
-      key: pick(raw.holdingSort?.key, ['allocation', 'ticker', 'value', 'gain', 'gainPct', 'price'], 'allocation'),
+      key: pick(raw.holdingSort?.key === 'gainPct' ? 'return' : raw.holdingSort?.key, ['allocation', 'ticker', 'value', 'gain', 'return', 'price'], 'allocation'),
       direction: pick(raw.holdingSort?.direction, ['asc', 'desc'], 'desc'),
     },
     defaultBenchmark: pick(raw.defaultBenchmark, ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'VEA', 'VWO', 'VXUS'], 'SPY'),
