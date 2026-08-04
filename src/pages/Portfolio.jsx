@@ -33,6 +33,16 @@ const signedPct = (value, digits = 1) =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
+// Cost basis is stored per share everywhere downstream (totalCost = shares * costBasis), but
+// that's easy to enter wrong: a $200 total investment typed into a bare "Cost Basis" field
+// reads as $200/share, inflating cost basis by the share count. Letting the form accept
+// either unit and normalizing here keeps the stored value's meaning consistent.
+function perShareCost(rawValue, shares, mode) {
+  const amount = parseFloat(rawValue)
+  if (!Number.isFinite(amount) || !Number.isFinite(shares) || shares <= 0) return NaN
+  return mode === 'total' ? amount / shares : amount
+}
+
 function Move({ value, digits = 1 }) {
   return <span className="mono" style={{ color: moveColor(value) }}>{signedPct(value, digits)}</span>
 }
@@ -116,14 +126,14 @@ export default function Portfolio() {
   } = useFirebasePortfolio()
 
   const [showAddForm, setShowAddForm] = useState(false)
-  const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', purchaseDate: new Date().toISOString().split('T')[0] })
+  const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
   const [portfolioSort, setPortfolioSort] = useState({ key: 'ticker', direction: 'asc' })
   const [removingId, setRemovingId] = useState(null)
   const [editingId, setEditingId] = useState(null)
-  const [editForm, setEditForm] = useState({ shares: '', costBasis: '', purchaseDate: '' })
+  const [editForm, setEditForm] = useState({ shares: '', costBasis: '', costMode: 'share', purchaseDate: '' })
   const [editSaving, setEditSaving] = useState(false)
   const refresh = useAdvisorRefresh(
     data?.generated_at,
@@ -206,8 +216,14 @@ export default function Portfolio() {
       alert('Please fill in all required fields')
       return
     }
-    addPosition(formData.ticker, formData.shares, formData.costBasis, formData.purchaseDate)
-    setFormData({ ticker: '', shares: '', costBasis: '', purchaseDate: new Date().toISOString().split('T')[0] })
+    const shares = parseFloat(formData.shares)
+    const costBasis = perShareCost(formData.costBasis, shares, formData.costMode)
+    if (!Number.isFinite(costBasis) || costBasis <= 0) {
+      alert('Enter a valid share count and cost')
+      return
+    }
+    addPosition(formData.ticker, shares, costBasis, formData.purchaseDate)
+    setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
     setShowAddForm(false)
   }
 
@@ -224,16 +240,18 @@ export default function Portfolio() {
     setSyncMessage(result?.success ? 'Purchase date saved' : `Could not save date: ${result?.error || 'Unknown error'}`)
   }
 
-  // removePosition previously failed silently on error (console.error only), which on a
-  // slow mobile connection is indistinguishable from the button not working at all. This
-  // gives the tap immediate feedback and surfaces the real reason if the delete fails.
+  // removePosition hides the position on this device immediately, whether or not the
+  // Firestore delete behind it succeeds - see useFirebasePortfolio for why. A backend
+  // failure still gets a quiet note (worth knowing about) without implying Remove failed.
   const handleRemove = async (positionId) => {
     if (removingId) return
     setRemovingId(positionId)
     const result = await removePosition(positionId)
     setRemovingId(null)
-    if (result && result.success === false) {
+    if (result?.success === false) {
       setSyncMessage(`Could not remove position: ${result.error || 'Unknown error'}`)
+    } else if (result?.backendError) {
+      setSyncMessage('Removed. (Could not sync the removal to the server, so it may still show on your other devices.)')
     }
   }
 
@@ -242,18 +260,19 @@ export default function Portfolio() {
     setEditForm({
       shares: String(pos.shares ?? ''),
       costBasis: String(pos.costBasis ?? ''),
+      costMode: 'share',
       purchaseDate: pos.purchaseDate || '',
     })
   }
 
   const cancelEdit = () => {
     setEditingId(null)
-    setEditForm({ shares: '', costBasis: '', purchaseDate: '' })
+    setEditForm({ shares: '', costBasis: '', costMode: 'share', purchaseDate: '' })
   }
 
   const saveEdit = async (positionId) => {
     const shares = parseFloat(editForm.shares)
-    const costBasis = parseFloat(editForm.costBasis)
+    const costBasis = perShareCost(editForm.costBasis, shares, editForm.costMode)
     if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(costBasis) || costBasis <= 0) {
       setSyncMessage('Shares and cost basis must be positive numbers')
       return
@@ -447,8 +466,16 @@ export default function Portfolio() {
                 onChange={(e) => setFormData({ ...formData, shares: e.target.value })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Cost Basis</label>
-              <input type="number" step="0.01" placeholder="150.00" value={formData.costBasis} required
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6, marginBottom: 4, fontSize: 13 }}>
+                <span>Cost basis</span>
+                <select value={formData.costMode} onChange={(e) => setFormData({ ...formData, costMode: e.target.value })}
+                  style={{ minHeight: 'auto', height: 20, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 10 }}>
+                  <option value="share">$/share</option>
+                  <option value="total">Total $</option>
+                </select>
+              </label>
+              <input type="number" step="0.01" placeholder={formData.costMode === 'total' ? '200.00' : '150.00'}
+                value={formData.costBasis} required
                 onChange={(e) => setFormData({ ...formData, costBasis: e.target.value })} />
             </div>
             <div>
@@ -486,7 +513,15 @@ export default function Portfolio() {
                     <input className="inline-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
                       onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
                   </label>
-                  <label><span>Cost basis</span>
+                  <label>
+                    <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      Cost basis
+                      <select value={editForm.costMode} onChange={(e) => setEditForm({ ...editForm, costMode: e.target.value })}
+                        style={{ minHeight: 'auto', height: 18, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 9, textTransform: 'none', letterSpacing: 0 }}>
+                        <option value="share">$/share</option>
+                        <option value="total">Total $</option>
+                      </select>
+                    </span>
                     <input className="inline-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
                       onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
                   </label>
@@ -563,8 +598,17 @@ export default function Portfolio() {
                   </td>
                   <td className="mono num">
                     {editingId === pos.id
-                      ? <input className="inline-edit-input table-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
-                          onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
+                      ? (
+                        <div style={{ display: 'grid', gap: 2, justifyItems: 'end' }}>
+                          <select value={editForm.costMode} onChange={(e) => setEditForm({ ...editForm, costMode: e.target.value })}
+                            style={{ minHeight: 'auto', height: 16, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 8, textTransform: 'none', letterSpacing: 0 }}>
+                            <option value="share">$/share</option>
+                            <option value="total">Total $</option>
+                          </select>
+                          <input className="inline-edit-input table-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
+                            onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
+                        </div>
+                      )
                       : `$${pos.costBasis.toFixed(2)}`}
                   </td>
                   <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
