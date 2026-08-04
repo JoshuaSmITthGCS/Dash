@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
@@ -33,6 +34,7 @@ export default function Insights() {
   const { currentUser } = useAuth()
   const { preferences } = usePreferences()
   const { data: benchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark}.json`)
+  const [shareStatus, setShareStatus] = useState('')
 
   if (loading || portfolioLoading || !currentUser) return <Loading />
   if (!positions.length) return <Empty note="Add portfolio holdings to see how you're doing versus the market and as a trader." />
@@ -73,6 +75,25 @@ export default function Insights() {
 
   const money = (value) => preferences.privacyMode ? '••••••' : formatPreferenceMoney(value, preferences.numberFormat)
 
+  const shareRecap = async () => {
+    const lines = [
+      `${mood.emoji} ${mood.label} — my portfolio today`,
+      todayMove ? `Today: ${signedPct(todayMove.returnPct, 2)} (${money(Math.abs(todayMove.dollarReturn))})` : null,
+      contributionPerformance.available ? `Vs. contributions: ${signedPct(contributionPerformance.returnPct, 1)}` : null,
+      topMover ? `Biggest mover: ${topMover.ticker} ${signedPct(topMover.dailyMovePct, 1)}` : null,
+      beatStreak.available && beatStreak.days >= 1 ? `${beatStreak.beating ? 'Beating' : 'Trailing'} ${benchmarkLabel} for ${beatStreak.days} day${beatStreak.days === 1 ? '' : 's'} running` : null,
+    ].filter(Boolean)
+    const text = lines.join('\n')
+    try {
+      if (navigator.share) { await navigator.share({ text, title: 'My portfolio today' }); return }
+      await navigator.clipboard.writeText(text)
+      setShareStatus('Copied to clipboard.')
+      setTimeout(() => setShareStatus(''), 3000)
+    } catch {
+      // Share was cancelled or clipboard access was denied — nothing to recover from here.
+    }
+  }
+
   return <div className="insights-page">
     <header className="page-head compact-page-head">
       <div>
@@ -83,13 +104,14 @@ export default function Insights() {
       <Link className="secondary-button compact" to="/portfolio">Back to portfolio</Link>
     </header>
 
-    <section className="card insights-recap" aria-labelledby="recap-title">
+    <section className="card insights-recap insights-recap-hero" aria-labelledby="recap-title">
       <div className="insights-mood">
         <span className="insights-mood-emoji" aria-hidden="true">{mood.emoji}</span>
         <div>
           <h2 id="recap-title">{mood.label}</h2>
           <p>{mood.blurb}{mood.note ? ` ${mood.note}` : ''}</p>
         </div>
+        <button type="button" className="secondary-button compact" onClick={shareRecap}>Share today</button>
       </div>
       <div className="insights-recap-stats">
         <div><span>Today</span><b style={{ color: moveColor(todayMove?.dollarReturn) }}>{todayMove ? `${signedPct(todayMove.returnPct, 2)} · ${money(Math.abs(todayMove.dollarReturn))}` : '—'}</b></div>
@@ -97,6 +119,8 @@ export default function Insights() {
         {topMover && <div><span>Today's biggest mover</span><b style={{ color: moveColor(topMover.dailyMovePct) }}>{topMover.ticker} {signedPct(topMover.dailyMovePct, 1)}</b></div>}
         {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${benchmarkLabel}` : `Trailing ${benchmarkLabel}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
       </div>
+      {shareStatus && <p className="sr-only" aria-live="polite">{shareStatus}</p>}
+      {shareStatus && <p className="insights-share-status" aria-hidden="true">{shareStatus}</p>}
     </section>
 
     <section className="report-section" aria-labelledby="vs-market-title">
