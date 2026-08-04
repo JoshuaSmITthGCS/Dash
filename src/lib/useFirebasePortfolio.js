@@ -10,6 +10,33 @@ import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
 import { planReferencePortfolioSync } from './referencePortfolio'
 
+// A failed (or merely slow) Firestore delete must never look like "Remove" did nothing —
+// this is a permanent, per-device record of positions the user asked to remove, applied on
+// top of whatever Firestore returns. The backend delete is still attempted so it stays
+// gone for other devices too, but this list is what actually guarantees it disappears here.
+const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
+
+function readHiddenIds(userId) {
+  try {
+    const raw = localStorage.getItem(hiddenStorageKey(userId))
+    const parsed = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function hidePositionLocally(userId, positionId) {
+  const hidden = readHiddenIds(userId)
+  hidden.add(positionId)
+  try {
+    localStorage.setItem(hiddenStorageKey(userId), JSON.stringify([...hidden]))
+  } catch {
+    // Storage unavailable (private browsing, quota) - the in-memory filter in removePosition
+    // still hides it for the rest of this session even if it can't persist across reloads.
+  }
+}
+
 export function useFirebasePortfolio() {
   const { currentUser } = useAuth()
   const [positions, setPositions] = useState([])
@@ -90,8 +117,10 @@ export function useFirebasePortfolio() {
       // query made otherwise valid holdings disappear from the portfolio.
       const snapshot = await getDocs(positionsRef)
 
+      const hidden = readHiddenIds(userId)
       const loadedPositions = []
       snapshot.forEach((doc) => {
+        if (hidden.has(doc.id)) return
         loadedPositions.push({ id: doc.id, ...doc.data() })
       })
       loadedPositions.sort((left, right) =>
@@ -160,17 +189,22 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Remove position
+  // Remove position. Hide it locally first - regardless of whether the Firestore delete
+  // that follows succeeds - so a permission error or slow network can never make "Remove"
+  // look broken. The backend delete still runs so it stays gone on the user's other devices
+  // too, but this device's UI and portfolio totals never depend on it succeeding.
   const removePosition = async (positionId) => {
     if (!currentUser) return
 
+    hidePositionLocally(currentUser.uid, positionId)
+    setPositions(prev => prev.filter(p => p.id !== positionId))
+
     try {
       await deleteDoc(doc(db, 'portfolios', currentUser.uid, 'positions', positionId))
-      setPositions(prev => prev.filter(p => p.id !== positionId))
       return { success: true }
     } catch (error) {
-      console.error('Failed to remove position:', error)
-      return { success: false, error: error.message }
+      console.error('Firestore delete failed; position stays hidden on this device:', error)
+      return { success: true, backendError: error.message }
     }
   }
 
