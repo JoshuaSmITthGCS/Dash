@@ -26,6 +26,8 @@ import {
 } from '../lib/portfolioSort'
 import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
+import { usePullToRefresh } from '../lib/usePullToRefresh'
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
@@ -169,6 +171,11 @@ export default function Portfolio() {
     positions.map((position) => position.ticker),
   )
   const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: portfolioQuotes.requestRefresh,
+    enabled: positions.length > 0,
+    refreshing: portfolioQuotes.refreshing,
+  })
 
   const research = data?.research || []
   const portfolioCoverage = data?.portfolio_coverage || []
@@ -431,6 +438,7 @@ export default function Portfolio() {
 
   return (
     <>
+      <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={portfolioQuotes.refreshing} />
       <div className="page-head">
         <div>
           <span className="eyebrow">Your money</span>
