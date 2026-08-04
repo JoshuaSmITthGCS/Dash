@@ -1270,8 +1270,12 @@ body { background: var(--app-background); background-image: none; }
 .insights-milestone strong, .insights-milestone small { display: block; }
 .insights-milestone small { color: var(--text-tertiary); font-size: 9px; }
 .insights-streak-note { margin-top: 12px; color: var(--text-secondary); font-size: 11px; }
+.dashboard-pulse.insights-recap { margin-bottom: var(--section-gap); }
+.dashboard-pulse .insights-mood > div { flex: 1; min-width: 0; }
+.dashboard-pulse .insights-mood a { flex-shrink: 0; }
 @media (max-width: 620px) {
-  .insights-mood { align-items: flex-start; }
+  .insights-mood { align-items: flex-start; flex-wrap: wrap; }
+  .dashboard-pulse .insights-mood a { margin-left: 56px; }
   .insights-holdings-row { grid-template-columns: 50px minmax(0, 1fr) 58px; }
 }
 .suggested-actions > summary { min-height: 54px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; }.suggested-actions > summary::-webkit-details-marker { display: none; }.suggested-actions > summary strong { display: block; font-size: 13px; }.suggested-actions[open] > summary > svg { transform: rotate(90deg); }.holding-card-head { grid-template-columns: auto minmax(0, 1fr) auto; }.holding-card-head small { display: block; color: var(--text-tertiary); font-size: 9px; }.settings-row > input[type="number"] { width: 180px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-secondary); color: var(--text-primary); }
