@@ -72,5 +72,64 @@ class CollectTests(unittest.TestCase):
         self.assertEqual(info["last_observed"], "2026-08-04T21:00:00+00:00")
 
 
+class DailyClosesTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self._orig_dir = module.MARKETSTACK_DIR
+        module.MARKETSTACK_DIR = os.path.join(self.tmp, "marketstack")
+
+    def tearDown(self):
+        module.MARKETSTACK_DIR = self._orig_dir
+
+    def test_empty_store_returns_no_series(self):
+        self.assertEqual(module.daily_closes(), {})
+
+    def test_builds_one_close_per_ticker_per_calendar_day(self):
+        client = Mock()
+        client.intraday.return_value = [{"symbol": "AAPL", "last": 200.0, "date": "2026-08-03"}]
+        module.collect(["AAPL"], client=client, observed_at="2026-08-03T12:00:00+00:00")
+        client.intraday.return_value = [{"symbol": "AAPL", "last": 202.5, "date": "2026-08-04"}]
+        module.collect(["AAPL"], client=client, observed_at="2026-08-04T12:00:00+00:00")
+
+        series = module.daily_closes()
+
+        self.assertEqual(series["AAPL"], {"dates": ["2026-08-03", "2026-08-04"], "closes": [200.0, 202.5]})
+
+    def test_two_collections_the_same_day_keep_the_later_observation(self):
+        client = Mock()
+        client.intraday.return_value = [{"symbol": "AAPL", "last": 198.0, "date": "2026-08-04"}]
+        module.collect(["AAPL"], client=client, observed_at="2026-08-04T12:00:00+00:00")
+        client.intraday.return_value = [{"symbol": "AAPL", "last": 205.0, "date": "2026-08-04"}]
+        module.collect(["AAPL"], client=client, observed_at="2026-08-04T21:00:00+00:00")
+
+        series = module.daily_closes()
+
+        self.assertEqual(series["AAPL"], {"dates": ["2026-08-04"], "closes": [205.0]})
+
+    def test_falls_back_to_the_observed_at_date_when_the_row_has_no_date(self):
+        client = Mock()
+        client.intraday.return_value = [{"symbol": "MSFT", "close": 410.2}]
+        module.collect(["MSFT"], client=client, observed_at="2026-08-04T21:00:00+00:00")
+
+        series = module.daily_closes()
+
+        self.assertEqual(series["MSFT"], {"dates": ["2026-08-04"], "closes": [410.2]})
+
+    def test_falls_back_from_close_to_last_to_price(self):
+        client = Mock()
+        client.intraday.return_value = [
+            {"symbol": "AAA", "close": 10.0, "date": "2026-08-01"},
+            {"symbol": "BBB", "last": 20.0, "date": "2026-08-01"},
+            {"symbol": "CCC", "price": 30.0, "date": "2026-08-01"},
+        ]
+        module.collect(["AAA", "BBB", "CCC"], client=client, observed_at="2026-08-01T21:00:00+00:00")
+
+        series = module.daily_closes()
+
+        self.assertEqual(series["AAA"]["closes"], [10.0])
+        self.assertEqual(series["BBB"]["closes"], [20.0])
+        self.assertEqual(series["CCC"]["closes"], [30.0])
+
+
 if __name__ == "__main__":
     unittest.main()
