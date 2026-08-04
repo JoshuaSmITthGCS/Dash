@@ -74,6 +74,26 @@ export function workflowProgress(jobs = []) {
   return { percent: Math.min(100, completed), stage }
 }
 
+// Polls for the one workflow run that appears after a dispatch and wasn't in the
+// pre-dispatch run list, since GitHub's dispatch endpoint itself returns no run ID.
+// Correlating by "not previously seen" rather than by timestamp sidesteps any clock-skew
+// ambiguity between this function and GitHub's servers.
+export async function locateDispatchedRun(workflowUrl, headers, priorRunIds, {
+  attempts = 5,
+  delayMs = 700,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+} = {}) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) await sleep(delayMs)
+    const pollResponse = await fetch(`${workflowUrl}/runs?branch=main&event=workflow_dispatch&per_page=5`, { headers })
+    if (!pollResponse.ok) continue
+    const polled = await pollResponse.json()
+    const created = polled.workflow_runs?.find((run) => !priorRunIds.has(run.id))
+    if (created) return created.id
+  }
+  return null
+}
+
 async function refreshStatus(event, workflowUrl, headers) {
   const requestedRunId = event.queryStringParameters?.run_id
   let run
@@ -151,8 +171,9 @@ export async function handler(event) {
     const runs = await runsResponse.json()
     const active = runs.workflow_runs?.find((run) => ['queued', 'in_progress'].includes(run.status))
     if (active) {
-      return json(409, { error: 'A refresh or reanalysis is already running. Please wait for it to finish.' })
+      return json(409, { error: 'A refresh or reanalysis is already running. Please wait for it to finish.', run_id: active.id })
     }
+    const priorRunIds = new Set((runs.workflow_runs || []).map((run) => run.id))
 
     const dispatchResponse = await fetch(`${workflowUrl}/dispatches`, {
       method: 'POST',
@@ -175,7 +196,16 @@ export async function handler(event) {
     if (!dispatchResponse.ok) {
       throw new Error(`GitHub workflow dispatch failed (${dispatchResponse.status})`)
     }
-    return json(202, { ok: true, mode: refreshMode, symbols })
+    // GitHub's dispatch endpoint returns no run ID (204, no body), and a rescore run can
+    // complete in under a minute - faster than the client's own poll interval. Without
+    // pinning the exact run ID down here, the client's first status check can find the
+    // "queued/in_progress" list already empty (the run finished and dropped out of it)
+    // and never learn what happened, waiting out the full timeout for a run that's long
+    // since succeeded. A short poll for the one new run ID that appears after dispatch
+    // removes that race entirely: every later status check targets that exact run by ID,
+    // which works whether it's still running or already done.
+    const runId = await locateDispatchedRun(workflowUrl, headers, priorRunIds)
+    return json(202, { ok: true, mode: refreshMode, symbols, run_id: runId })
   } catch (error) {
     console.error('Manual refresh failed:', error)
     return json(500, { error: 'The refresh could not be started. Check the server configuration.' })

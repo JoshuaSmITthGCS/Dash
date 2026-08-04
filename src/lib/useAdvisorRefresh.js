@@ -5,9 +5,10 @@ import { formatElapsed } from './useData'
 const POLL_INTERVAL_MS = 20_000
 const REFRESH_TIMEOUT_MS = 55 * 60_000
 // A reanalysis never touches a data provider - it's a scoring pass over what's already
-// published (see pipeline/rescore.py) - so a much shorter timeout is enough to say
-// something is actually wrong rather than "still inside a normal 90-minute run".
-const REANALYZE_TIMEOUT_MS = 10 * 60_000
+// published (see pipeline/rescore.py) that GitHub Actions typically finishes in under a
+// minute - so 5 minutes is already a generous margin for a genuinely stuck run, not a
+// normal one still working.
+const REANALYZE_TIMEOUT_MS = 5 * 60_000
 const ELAPSED_TICK_MS = 1_000
 
 export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
@@ -155,6 +156,11 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
           ? 'The reanalysis could not be started.'
           : 'The refresh could not be started.'))
       }
+      // Locking onto the run's own ID (returned by the dispatch or the 409 conflict) up
+      // front means every later status poll targets that exact run instead of scanning
+      // for one still "queued/in_progress" - a run that finishes inside one poll interval
+      // would otherwise vanish from that scan before it's ever seen as complete.
+      if (payload.run_id) runId.current = payload.run_id
       setState({
         status: 'pending',
         message: response.status === 409
