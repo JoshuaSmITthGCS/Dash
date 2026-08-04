@@ -6,6 +6,7 @@ import { Loading } from '../components/Bits'
 import GrowthChart from '../components/GrowthChart'
 import { summarizeBudget, splitAmount } from '../lib/financeSplit'
 import { projectRetirement } from '../lib/retirementCalculator'
+import { ACCOUNT_TYPES, getAnnualLimit, accountTypeLabel } from '../lib/retirementLimits'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -38,10 +39,14 @@ export default function Finances() {
   const [budgetForm, setBudgetForm] = useState({ name: '', amount: '', type: 'expense' })
   const [poolForm, setPoolForm] = useState({ name: '', percent: '' })
   const [depositAmount, setDepositAmount] = useState('')
+  const [accountForm, setAccountForm] = useState({ name: '', type: ACCOUNT_TYPES[0].key })
 
   const portfolioValue = useMemo(() => currentPortfolioValue(positions, data), [positions, data])
   const budgetSummary = useMemo(() => summarizeBudget(finances.budgetItems), [finances.budgetItems])
   const totalPoolBalance = finances.pools.reduce((sum, pool) => sum + (pool.balance || 0), 0)
+  const accounts = finances.accounts || []
+  const totalAnnualFromAccounts = accounts.reduce((sum, account) => sum + (account.annualContribution || 0), 0)
+  const monthlyFromAccounts = totalAnnualFromAccounts / 12
   const projection = useMemo(() => projectRetirement({
     currentSavings: finances.settings.currentSavings,
     monthlyContribution: finances.settings.monthlyContribution,
@@ -73,6 +78,13 @@ export default function Finances() {
     if (!amount || !finances.pools.length) return
     finances.depositToPools(splitAmount(amount, finances.pools).map(({ id, share }) => ({ id, share })))
     setDepositAmount('')
+  }
+
+  const handleAddAccount = (event) => {
+    event.preventDefault()
+    if (!accountForm.name || !accountForm.type) return
+    finances.addAccount(accountForm)
+    setAccountForm({ name: '', type: accountForm.type })
   }
 
   return (
@@ -275,6 +287,76 @@ export default function Finances() {
               onClick={() => finances.updateSettings({ currentSavings: Math.round(portfolioValue) })}>
               Sync current savings from portfolio ({money(portfolioValue)})
             </button>
+          </div>
+
+          <div className="card card-pad" style={{ marginBottom: 20 }}>
+            <div className="sec-label">Retirement & investing accounts</div>
+            <p className="body-copy" style={{ marginBottom: 12 }}>
+              Track contribution room against the 2026 IRS limits for each account.
+              Roth IRA room can phase out at higher incomes — this assumes you're eligible.
+            </p>
+            <form onSubmit={handleAddAccount}
+              style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: 12, alignItems: 'end', marginBottom: 20 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
+                <input type="text" placeholder="Fidelity 401(k)" value={accountForm.name} required
+                  onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Type</label>
+                <select value={accountForm.type} onChange={(e) => setAccountForm({ ...accountForm, type: e.target.value })}>
+                  {ACCOUNT_TYPES.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </select>
+              </div>
+              <div><button type="submit" className="tab active">Add account</button></div>
+            </form>
+
+            {accounts.length === 0 ? (
+              <p className="body-copy">Add a 401(k), IRA, HSA, or taxable account to track contributions toward the annual max.</p>
+            ) : (
+              accounts.map((account) => {
+                const limit = getAnnualLimit(account.type, finances.settings.currentAge)
+                const contributed = account.annualContribution || 0
+                const pct = limit ? Math.min(100, (contributed / limit) * 100) : 0
+                return (
+                  <div key={account.id} className="finance-pool-row">
+                    <div className="finance-pool-head">
+                      <span>{account.name} <span className="mono" style={{ color: 'var(--text-faint)', fontWeight: 400 }}>· {accountTypeLabel(account.type)}</span></span>
+                      <button className="text-button danger" onClick={() => finances.removeAccount(account.id)}>Remove</button>
+                    </div>
+                    {limit ? (
+                      <>
+                        <div className="pool-bar"><div className="pool-bar-fill" style={{ width: `${pct}%` }} /></div>
+                        <div className="finance-pool-foot">
+                          <span className="mono">{money(contributed)} of {money(limit)} maxed ({pct.toFixed(0)}%)</span>
+                          <span className="mono" style={{ color: 'var(--text-faint)' }}>{money(Math.max(0, limit - contributed))} room left</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="finance-pool-foot">
+                        <span className="mono">{money(contributed)} contributed this year</span>
+                        <span className="mono" style={{ color: 'var(--text-faint)' }}>No IRS cap</span>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Annual contribution</label>
+                      <input type="number" step="1" min="0" value={contributed}
+                        onChange={(e) => finances.updateAccountContribution(account.id, parseFloat(e.target.value) || 0)} />
+                    </div>
+                  </div>
+                )
+              })
+            )}
+
+            {accounts.length > 0 && (
+              <div className="callout" style={{ marginTop: 20 }}>
+                <strong>{money(monthlyFromAccounts, 2)}/mo</strong> equivalent across all accounts ({money(totalAnnualFromAccounts)}/yr).{' '}
+                <button className="text-button" style={{ padding: 0, minHeight: 'auto' }}
+                  onClick={() => finances.updateSettings({ monthlyContribution: Math.round(monthlyFromAccounts) })}>
+                  Use as retirement contribution
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-3" style={{ marginBottom: 20 }}>

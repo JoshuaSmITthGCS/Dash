@@ -13,6 +13,8 @@ describe('Finances page', () => {
   const addPool = vi.fn()
   const depositToPools = vi.fn()
   const updateSettings = vi.fn()
+  const addAccount = vi.fn()
+  const updateAccountContribution = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -28,6 +30,7 @@ describe('Finances page', () => {
         { id: 'expense-1', name: 'Rent', amount: 1500, type: 'expense' },
       ],
       pools: [{ id: 'pool-1', name: 'Emergency fund', percent: 50, balance: 300 }],
+      accounts: [{ id: 'account-1', name: 'Fidelity 401(k)', type: '401k', annualContribution: 12000 }],
       loading: false,
       updateSettings,
       addBudgetItem,
@@ -35,6 +38,9 @@ describe('Finances page', () => {
       addPool,
       removePool: vi.fn(),
       depositToPools,
+      addAccount,
+      removeAccount: vi.fn(),
+      updateAccountContribution,
     })
   })
 
@@ -65,5 +71,21 @@ describe('Finances page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retirement' }))
     expect(screen.getByText('At Retirement (Nominal)')).toBeInTheDocument()
     expect(screen.getByText(/Sync current savings from portfolio/)).toBeInTheDocument()
+  })
+
+  it('tracks a retirement account against its 2026 IRS limit and lets you add another', () => {
+    render(<Finances />)
+    fireEvent.click(screen.getByRole('button', { name: 'Retirement' }))
+
+    expect(screen.getByText(/Fidelity 401\(k\)/)).toBeInTheDocument()
+    expect(screen.getByText('$12,000 of $24,500 maxed (49%)')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByPlaceholderText('Fidelity 401(k)'), { target: { value: 'Vanguard Roth IRA' } })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'roth_ira' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add account' }))
+    expect(addAccount).toHaveBeenCalledWith({ name: 'Vanguard Roth IRA', type: 'roth_ira' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use as retirement contribution' }))
+    expect(updateSettings).toHaveBeenCalledWith({ monthlyContribution: 1000 })
   })
 })
