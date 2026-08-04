@@ -495,6 +495,7 @@ export default function Portfolio() {
               ? `${versusIndex.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(versusIndex.dollarsAhead))} versus the index · ${versusIndex.comparable} compared position${versusIndex.comparable === 1 ? '' : 's'}`
               : 'Add a purchase date inside the charted window'}
           </div>
+          <a href="/portfolio/insights">Trader insights →</a>
         </div>
         <div className="card kpi">
           <div className="kpi-label">Uninvested cash</div>
