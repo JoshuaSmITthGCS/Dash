@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
@@ -19,6 +19,11 @@ export function useFirebaseFinances() {
   const [pools, setPools] = useState([])
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
+  const contributionTimers = useRef({})
+
+  useEffect(() => () => {
+    Object.values(contributionTimers.current).forEach(clearTimeout)
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -138,6 +143,8 @@ export function useFirebaseFinances() {
 
   const removeAccount = async (id) => {
     if (!currentUser) return
+    clearTimeout(contributionTimers.current[id])
+    delete contributionTimers.current[id]
     try {
       await deleteDoc(doc(db, 'finances', currentUser.uid, 'accounts', id))
       setAccounts((prev) => prev.filter((account) => account.id !== id))
@@ -146,14 +153,20 @@ export function useFirebaseFinances() {
     }
   }
 
-  const updateAccountContribution = async (id, annualContribution) => {
+  // Debounced so typing a multi-digit contribution doesn't fire one Firestore write per
+  // keystroke — concurrent writes for the same doc can resolve out of order and let an
+  // earlier keystroke's value silently overwrite a later one.
+  const updateAccountContribution = (id, annualContribution) => {
     if (!currentUser) return
     setAccounts((prev) => prev.map((account) => (account.id === id ? { ...account, annualContribution } : account)))
-    try {
-      await setDoc(doc(db, 'finances', currentUser.uid, 'accounts', id), { annualContribution }, { merge: true })
-    } catch (error) {
-      console.error('Failed to update account contribution:', error)
-    }
+    clearTimeout(contributionTimers.current[id])
+    contributionTimers.current[id] = setTimeout(async () => {
+      try {
+        await setDoc(doc(db, 'finances', currentUser.uid, 'accounts', id), { annualContribution }, { merge: true })
+      } catch (error) {
+        console.error('Failed to update account contribution:', error)
+      }
+    }, 600)
   }
 
   return {
