@@ -8,6 +8,7 @@ export const SCREEN_NAV = [
   ['/screens/earnings', 'Earnings timeliness'], ['/screens/matrix', 'Structural vs tactical'],
   ['/screens/early-session', 'Early session'],
   ['/screens/shadow', 'Shadow portfolios'], ['/screens/validation', 'Live validation'],
+  ['/screens/politics', 'Politics trade alert'],
 ]
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'
