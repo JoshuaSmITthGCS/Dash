@@ -26,6 +26,7 @@ const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
+const Insights = lazy(() => import('./pages/Insights.jsx'))
 
 const NAV = [
   { to: '/', label: 'Financial Report', icon: 'overview', end: true },
@@ -131,6 +132,7 @@ function AppContent() {
           <Route path="/market" element={<PolicyRadar />} />
           <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
           <Route path="/portfolio/diversification" element={currentUser ? <Diversification /> : <Dashboard />} />
+          <Route path="/portfolio/insights" element={currentUser ? <Insights /> : <Dashboard />} />
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />

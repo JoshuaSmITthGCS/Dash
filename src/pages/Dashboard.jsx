@@ -7,10 +7,11 @@ import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
-  BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
+  BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, contributionAdjustedPerformance, currentHoldingsSeries, diversificationScore,
   enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceRating, planningReturnRates, portfolioScore,
   resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
 } from '../lib/portfolioAnalytics.js'
+import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
 import { Loading, Empty, Tier } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
@@ -94,6 +95,15 @@ export default function Dashboard() {
   const allTimeEarnings = trackedAllTimeEarnings(portfolio, tracking.activities, tracking.trackingState)
   const actionable = portfolio.positions.map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null })).filter((row) => row.recommendation && row.recommendation.action !== 'HOLD')
 
+  const uninvestedCash = tracking.trackingState?.cashTrackingEnabled ? Number(tracking.trackingState.cashBalance || 0) : 0
+  const contributionPerformance = contributionAdjustedPerformance(portfolio.totalValue + uninvestedCash, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
+  const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
+    ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
+    : null
+  const beatStreak = primaryBenchmarkHistory ? beatMarketStreak(tracking.snapshots, primaryBenchmarkHistory) : { available: false }
+  const greenStreak = valueStreak(tracking.snapshots)
+  const mood = portfolioMood({ returnPct: contributionPerformance.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
+
   const toggleBenchmark = (symbol) => {
     const next = selectedBenchmarkSymbols.includes(symbol)
       ? selectedBenchmarkSymbols.filter((item) => item !== symbol)
@@ -114,6 +124,22 @@ export default function Dashboard() {
         <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '—'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
         <Metric label="Total unrealized return" value={portfolio.gain == null ? '—' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} />
         <Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost; not net contributed capital" />
+      </section>
+
+      <section className="card insights-recap dashboard-pulse" aria-labelledby="dashboard-pulse-title">
+        <div className="insights-mood">
+          <span className="insights-mood-emoji" aria-hidden="true">{mood.emoji}</span>
+          <div>
+            <h2 id="dashboard-pulse-title">{mood.label}</h2>
+            <p>{mood.blurb}{mood.note ? ` ${mood.note}` : ''}</p>
+          </div>
+          <Link className="secondary-button compact" to="/portfolio/insights">Trader insights →</Link>
+        </div>
+        <div className="insights-recap-stats">
+          <div><span>Today</span><b className={tone(today?.dollarReturn)}>{today ? `${signedPct(today.returnPct, 2)} · ${money(Math.abs(today.dollarReturn))}` : '—'}</b></div>
+          <div><span>Vs. contributions</span><b className={tone(contributionPerformance.returnPct)}>{contributionPerformance.available ? signedPct(contributionPerformance.returnPct, 1) : '—'}</b></div>
+          {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${preferences.defaultBenchmark}` : `Trailing ${preferences.defaultBenchmark}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
+        </div>
       </section>
 
       <section className="report-chart-card">
