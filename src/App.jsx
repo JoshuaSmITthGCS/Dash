@@ -1,23 +1,27 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
-import Picks from './pages/Picks.jsx'
-import PolicyRadar from './pages/PolicyRadar.jsx'
-import Watchlist from './pages/Watchlist.jsx'
-import Methodology from './pages/Methodology.jsx'
-import Glossary from './pages/Glossary.jsx'
-import Portfolio from './pages/Portfolio.jsx'
-import Finances from './pages/Finances.jsx'
-import ResearchScreen from './pages/ResearchScreen.jsx'
-import ShadowPortfolios from './pages/ShadowPortfolios.jsx'
-import LiveValidation from './pages/LiveValidation.jsx'
-import EarlySessionResearch from './pages/EarlySessionResearch.jsx'
-import CongressTrades from './pages/CongressTrades.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
 import PasswordChangeModal from './components/PasswordChangeModal.jsx'
+
+// Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
+// Every other page loads on demand — keeps first paint off the weight of pages the visit may
+// never touch (Finances, ETF comparisons, shadow portfolios, congress trades, etc).
+const Picks = lazy(() => import('./pages/Picks.jsx'))
+const PolicyRadar = lazy(() => import('./pages/PolicyRadar.jsx'))
+const Watchlist = lazy(() => import('./pages/Watchlist.jsx'))
+const Methodology = lazy(() => import('./pages/Methodology.jsx'))
+const Glossary = lazy(() => import('./pages/Glossary.jsx'))
+const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
+const Finances = lazy(() => import('./pages/Finances.jsx'))
+const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
+const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
+const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
+const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
+const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
 
 const NAV = [
   { to: '/', label: 'Overview', icon: 'overview', end: true, mobile: true },
@@ -116,6 +120,7 @@ function AppContent() {
           </div>
         </header>
         <DataStatus />
+        <Suspense fallback={<div className="route-loading" role="status"><span className="loading-mark" /></div>}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/research" element={<Picks />} />
@@ -134,6 +139,7 @@ function AppContent() {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
         </Routes>
+        </Suspense>
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
