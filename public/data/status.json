@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-04T13:18:46.239613+00:00",
+  "generated_at": "2026-08-04T22:52:54.209554+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-04T13:17:10.276466+00:00",
+      "checked_at": "2026-08-04T22:51:47.370849+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
-        "universe": 917,
-        "scored": 106,
+        "universe": 918,
+        "scored": 107,
         "ranked": 40,
         "failed": [
           "DECJ",
@@ -43,7 +43,7 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-04T13:17:25.201671+00:00",
+      "checked_at": "2026-08-04T22:52:08.965958+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
@@ -59,7 +59,7 @@
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-04T13:18:46.239592+00:00",
+      "checked_at": "2026-08-04T22:52:54.209531+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
