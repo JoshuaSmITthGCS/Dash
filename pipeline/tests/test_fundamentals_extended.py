@@ -265,5 +265,28 @@ class AssemblyTests(unittest.TestCase):
         self.assertIsNone(metrics["accruals_ratio"])
 
 
+class ExtendedObservationsTests(unittest.TestCase):
+    def test_every_populated_metric_gets_lineage(self):
+        metrics = fx.derive_extended(
+            annual={"income": INCOME, "balance": BALANCE, "cashflow": CASHFLOW},
+            info={"beta": 1.1}, market_cap=4000, price=40, sector="Technology")
+        observations = fx.extended_observations(metrics)
+        for metric_id in fx.EXTENDED_METRIC_UNITS:
+            if metrics.get(metric_id) is not None:
+                with self.subTest(metric_id=metric_id):
+                    self.assertIn(metric_id, observations)
+                    row = observations[metric_id][0]
+                    self.assertEqual(row["value"], metrics[metric_id])
+                    self.assertEqual(row["source"], "yahoo")
+                    self.assertEqual(row["period_end"], metrics["statement_periods"][0])
+
+    def test_missing_metrics_produce_no_observation(self):
+        empty = {"periods": [], "rows": {}}
+        metrics = fx.derive_extended(annual={"income": empty, "balance": empty, "cashflow": empty},
+                                     info={}, market_cap=None, price=None)
+        observations = fx.extended_observations(metrics)
+        self.assertEqual(observations, {})
+
+
 if __name__ == "__main__":
     unittest.main()

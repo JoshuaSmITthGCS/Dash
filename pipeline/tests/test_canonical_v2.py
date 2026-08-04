@@ -7,7 +7,8 @@ PIPELINE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PIPELINE_DIR)
 
 from canonical_metrics import (Observation, applicability_for, calculate_peg,
-                               classify_profile, METRIC_REGISTRY, reconcile)
+                               classify_profile, METRIC_REGISTRY, reconcile, yahoo_observations)
+from fundamentals_extended import extended_observations
 from migrate_advisor_v2 import migrate
 from peer_groups import canonical_percentiles
 from scoring_v2 import build_v2_analysis
@@ -45,6 +46,28 @@ class RegistryTests(unittest.TestCase):
         for metric_id, declaration in METRIC_REGISTRY["metrics"].items():
             with self.subTest(metric_id=metric_id):
                 self.assertFalse(required - set(declaration))
+
+
+class YahooObservationsTests(unittest.TestCase):
+    def test_debt_to_equity_is_converted_from_a_percentage(self):
+        observations = yahoo_observations({"debtToEquity": 80})
+        self.assertEqual(observations["debt_to_equity"][0]["value"], 0.8)
+
+    def test_free_cash_flow_yield_is_derived_from_the_quote(self):
+        observations = yahoo_observations({"freeCashflow": 500, "marketCap": 10000})
+        self.assertEqual(observations["free_cash_flow_yield"][0]["value"], 0.05)
+
+    def test_free_cash_flow_yield_is_skipped_without_a_market_cap(self):
+        observations = yahoo_observations({"freeCashflow": 500})
+        self.assertNotIn("free_cash_flow_yield", observations)
+
+    def test_covers_the_remaining_directly_mapped_quote_fields(self):
+        observations = yahoo_observations({
+            "priceToSalesTrailing12Months": 3.5, "returnOnEquity": 0.2, "profitMargins": 0.15,
+        })
+        self.assertEqual(observations["price_to_sales"][0]["value"], 3.5)
+        self.assertEqual(observations["return_on_equity"][0]["value"], 0.2)
+        self.assertEqual(observations["profit_margin"][0]["value"], 0.15)
 
 
 class ProfileTests(unittest.TestCase):
@@ -147,6 +170,41 @@ class DecisionLayerTests(unittest.TestCase):
     def test_negative_book_multiple_is_not_a_valid_observation(self):
         rows = [Observation(-4, "multiple", "yahoo", "priceToBook").to_dict()]
         self.assertIsNone(reconcile("price_to_book", rows)["canonical"])
+
+    def test_statement_derived_metrics_are_no_longer_discarded_for_missing_lineage(self):
+        # Regression for the gap that left most companies at ~7% v2 confidence despite
+        # derive_extended() having computed real values: those values never got a canonical
+        # observation, so build_v2_analysis treated them as unlineaged legacy scalars and
+        # dropped them. extended_observations() is the fix - wired into fetch_advisor.py's
+        # enrich() step, it gives them the same lineage a directly-observed metric gets.
+        extended = {
+            "altman_z": 10.13, "accruals_ratio": -0.04, "asset_growth": 0.01,
+            "statement_periods": ["2025-12-31", "2024-12-31"],
+        }
+        legacy = {"altman_z": 70, "accruals_ratio": 60, "asset_growth": 55, "categories": {}}
+        snapshot = {
+            "sector": "Healthcare", "altman_z": 10.13, "accruals_ratio": -0.04, "asset_growth": 0.01,
+            "observations": extended_observations(extended),
+        }
+        result = build_v2_analysis(snapshot, legacy)
+        for metric_id in ("altman_z", "accruals_ratio", "asset_growth"):
+            with self.subTest(metric_id=metric_id):
+                self.assertEqual(result["metric_status"][metric_id]["status"], "applied")
+                self.assertNotIn("legacy_value_missing_lineage",
+                                 result["metric_status"][metric_id]["quality_flags"])
+        self.assertNotIn("altman_z", result["structural"]["missing_metrics"])
+        self.assertGreater(result["structural"]["confidence"], 0)
+
+    def test_sales_multiple_aliases_to_the_registered_price_to_sales_metric(self):
+        # settings.json's valuation weights key this "sales_multiple"; the canonical metric
+        # (and every observation for it) is registered as "price_to_sales". Without the
+        # alias, applicability/observation lookups miss and this metric is always dropped.
+        observations = {"price_to_sales": [Observation(3.5, "multiple", "yahoo",
+                                                        "priceToSalesTrailing12Months").to_dict()]}
+        snapshot = {"sector": "Technology", "price_to_sales": 3.5, "observations": observations}
+        result = build_v2_analysis(snapshot, {"sales_multiple": 65, "categories": {}})
+        self.assertEqual(result["metric_status"]["price_to_sales"]["status"], "applied")
+        self.assertEqual(result["metric_status"]["price_to_sales"]["score_contribution"], 65)
 
 
 class MigrationTests(unittest.TestCase):

@@ -197,6 +197,9 @@ def yahoo_observations(info, fetched_at=None):
         "provider_peg": ("trailingPegRatio", "multiple", False, False),
         "current_ratio": ("currentRatio", "multiple", False, False),
         "price_to_book": ("priceToBook", "multiple", False, False),
+        "price_to_sales": ("priceToSalesTrailing12Months", "multiple", True, False),
+        "return_on_equity": ("returnOnEquity", "decimal", True, False),
+        "profit_margin": ("profitMargins", "decimal", True, False),
         "trailing_revenue_growth": ("revenueGrowth", "decimal", True, False),
         "quarterly_eps_growth": ("earningsGrowth", "decimal", True, False),
     }
@@ -215,4 +218,22 @@ def yahoo_observations(info, fetched_at=None):
             observed_at=fetched_at, fetched_at=fetched_at, is_ttm=is_ttm,
             is_forward=is_forward, quality_flags=flags,
         ).to_dict())
+
+    # Yahoo reports debt-to-equity as a percentage (80 means 0.8x); every other consumer of
+    # this field (the flat snapshot value, the legacy scorer) expects the ratio itself.
+    debt_to_equity_pct = info.get("debtToEquity")
+    if debt_to_equity_pct is not None:
+        result["debt_to_equity"] = [Observation(
+            value=debt_to_equity_pct / 100, unit="multiple", source="yahoo",
+            source_field="debtToEquity", observed_at=fetched_at, fetched_at=fetched_at,
+            is_ttm=False, is_forward=False, quality_flags=["provider_period_not_supplied"],
+        ).to_dict()]
+
+    free_cash_flow, market_cap = info.get("freeCashflow"), info.get("marketCap")
+    if free_cash_flow is not None and market_cap:
+        result["free_cash_flow_yield"] = [Observation(
+            value=free_cash_flow / market_cap, unit="decimal", source="yahoo",
+            source_field="freeCashflow/marketCap", observed_at=fetched_at, fetched_at=fetched_at,
+            is_ttm=True, is_forward=False, quality_flags=["provider_period_not_supplied"],
+        ).to_dict()]
     return result

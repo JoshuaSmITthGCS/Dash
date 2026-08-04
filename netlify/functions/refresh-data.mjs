@@ -26,20 +26,24 @@ function githubHeaders(token) {
   }
 }
 
-function portfolioSymbols(body) {
+function parseRequestBody(body) {
   let payload = {}
   try {
     payload = JSON.parse(body || '{}')
   } catch {
-    return []
+    payload = {}
   }
-  if (!Array.isArray(payload.symbols)) return []
-
-  return [...new Set(
-    payload.symbols
-      .map((symbol) => String(symbol || '').trim().toUpperCase())
-      .filter((symbol) => /^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol))
-  )].slice(0, 50)
+  const symbols = Array.isArray(payload.symbols)
+    ? [...new Set(
+        payload.symbols
+          .map((symbol) => String(symbol || '').trim().toUpperCase())
+          .filter((symbol) => /^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol))
+      )].slice(0, 50)
+    : []
+  // "rescore" re-scores the last published data with no new provider requests at all - see
+  // pipeline/rescore.py. Anything else falls back to a real data refresh.
+  const mode = payload.mode === 'rescore' ? 'rescore' : 'data'
+  return { symbols, mode }
 }
 
 const PROGRESS_STEPS = [
@@ -132,7 +136,8 @@ export async function handler(event) {
     if (!user.email || !allowedEmails.has(user.email.toLowerCase())) {
       return json(403, { error: 'Your account is not allowed to start data refreshes.' })
     }
-    const symbols = portfolioSymbols(event.body)
+    const { symbols, mode } = parseRequestBody(event.body)
+    const refreshMode = mode === 'rescore' ? 'rescore-only' : 'data-only'
 
     const workflowUrl = `https://api.github.com/repos/${repository}/actions/workflows/refresh-advisor.yml`
     const headers = githubHeaders(githubToken)
@@ -146,7 +151,7 @@ export async function handler(event) {
     const runs = await runsResponse.json()
     const active = runs.workflow_runs?.find((run) => ['queued', 'in_progress'].includes(run.status))
     if (active) {
-      return json(409, { error: 'A data refresh is already running. Please wait for it to finish.' })
+      return json(409, { error: 'A refresh or reanalysis is already running. Please wait for it to finish.' })
     }
 
     const dispatchResponse = await fetch(`${workflowUrl}/dispatches`, {
@@ -155,11 +160,13 @@ export async function handler(event) {
       body: JSON.stringify({
         ref: 'main',
         inputs: {
-          refresh_mode: 'data-only',
+          refresh_mode: refreshMode,
           // Manual refreshes are interactive: poll the prior top 100 plus every symbol
           // sent by the portfolio/watchlist, then carry the remaining rows forward from
           // the morning full sweep. Rebuilding ~900 names on every click made the button
-          // take close to an hour without improving the user's own holdings.
+          // take close to an hour without improving the user's own holdings. Irrelevant
+          // for a rescore - the workflow skips straight to pipeline/rescore.py - but
+          // harmless to pass along either way.
           universe_scope: 'fast',
           portfolio_symbols: symbols.join(','),
         },
@@ -168,7 +175,7 @@ export async function handler(event) {
     if (!dispatchResponse.ok) {
       throw new Error(`GitHub workflow dispatch failed (${dispatchResponse.status})`)
     }
-    return json(202, { ok: true, mode: 'data-only', symbols })
+    return json(202, { ok: true, mode: refreshMode, symbols })
   } catch (error) {
     console.error('Manual refresh failed:', error)
     return json(500, { error: 'The refresh could not be started. Check the server configuration.' })
