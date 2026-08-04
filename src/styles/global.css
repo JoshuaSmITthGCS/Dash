@@ -17,6 +17,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 /* iOS Safari auto-zooms the page on focus for any text input under 16px — this holds every
    form control at 16px regardless of the smaller body copy sizes used at mobile breakpoints. */
 input, select, textarea { font-size: 16px; }
+.inline-edit-input { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-lit); border-radius: 12px; background: var(--bg-elev); color: var(--text); }
+.table-edit-input { min-width: 76px; max-width: 110px; min-height: 36px; padding: 0 8px; }
 body { overscroll-behavior-y: contain; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
@@ -409,7 +411,8 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .research-toolbar { grid-template-columns: 1fr 1fr; }.research-toolbar .search-field { grid-column: 1 / -1; }
   .portfolio-mobile-list { display: grid; gap: 12px; }.portfolio-table { display: none; }
   .portfolio-sort-toolbar { display: flex; justify-content: stretch; }.portfolio-sort-toolbar label { flex: 1; }.portfolio-sort-toolbar select { width: 100%; min-width: 0; }
-  .holding-card { padding: 18px; border: 1px solid var(--border); border-radius: 22px; background: var(--bg-card); }.holding-card-head, .holding-value, .holding-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.holding-card-head strong, .holding-card-head span, .holding-value span, .holding-value strong { display: block; }.holding-card-head strong { font-size: 20px; }.holding-card-head span { color: var(--text-faint); font-size: 10px; }.holding-value { margin: 20px 0 14px; }.holding-value span { color: var(--text-faint); font-size: 9px; }.holding-value strong { font: 730 28px var(--font-display); }.holding-meta { display: flex; gap: 7px; flex-wrap: wrap; }.holding-meta span { padding: 5px 8px; border-radius: 999px; background: var(--bg-elev); color: var(--text-faint); font-size: 9px; }.holding-actions { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .holding-card { padding: 18px; border: 1px solid var(--border); border-radius: 22px; background: var(--bg-card); }.holding-card-head, .holding-value, .holding-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }.holding-card-head strong, .holding-card-head span, .holding-value span, .holding-value strong { display: block; }.holding-card-head strong { font-size: 20px; }.holding-card-head span { color: var(--text-faint); font-size: 10px; }.holding-value { margin: 20px 0 14px; }.holding-value span { color: var(--text-faint); font-size: 9px; }.holding-value strong { font: 730 28px var(--font-display); }.holding-meta { display: flex; gap: 7px; flex-wrap: wrap; }.holding-meta span { padding: 5px 8px; border-radius: 999px; background: var(--bg-elev); color: var(--text-faint); font-size: 9px; }.holding-actions { margin-top: 14px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 10px; }
+  .holding-edit-form { display: grid; gap: 10px; margin-top: 14px; }.holding-edit-form label > span { display: block; margin-bottom: 4px; color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
   .holding-trend { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 12px; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: var(--bg-elev); }
   .holding-trend > div > span { display: block; color: var(--text-faint); font-size: 9px; }
   .holding-trend .mono { font-size: 12px; }

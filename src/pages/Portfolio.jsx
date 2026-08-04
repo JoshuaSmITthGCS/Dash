@@ -121,6 +121,10 @@ export default function Portfolio() {
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
   const [portfolioSort, setPortfolioSort] = useState({ key: 'ticker', direction: 'asc' })
+  const [removingId, setRemovingId] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({ shares: '', costBasis: '', purchaseDate: '' })
+  const [editSaving, setEditSaving] = useState(false)
   const refresh = useAdvisorRefresh(
     data?.generated_at,
     reload,
@@ -218,6 +222,51 @@ export default function Portfolio() {
   const handlePurchaseDateChange = async (positionId, purchaseDate) => {
     const result = await updatePosition(positionId, { purchaseDate })
     setSyncMessage(result?.success ? 'Purchase date saved' : `Could not save date: ${result?.error || 'Unknown error'}`)
+  }
+
+  // removePosition previously failed silently on error (console.error only), which on a
+  // slow mobile connection is indistinguishable from the button not working at all. This
+  // gives the tap immediate feedback and surfaces the real reason if the delete fails.
+  const handleRemove = async (positionId) => {
+    if (removingId) return
+    setRemovingId(positionId)
+    const result = await removePosition(positionId)
+    setRemovingId(null)
+    if (result && result.success === false) {
+      setSyncMessage(`Could not remove position: ${result.error || 'Unknown error'}`)
+    }
+  }
+
+  const startEdit = (pos) => {
+    setEditingId(pos.id)
+    setEditForm({
+      shares: String(pos.shares ?? ''),
+      costBasis: String(pos.costBasis ?? ''),
+      purchaseDate: pos.purchaseDate || '',
+    })
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditForm({ shares: '', costBasis: '', purchaseDate: '' })
+  }
+
+  const saveEdit = async (positionId) => {
+    const shares = parseFloat(editForm.shares)
+    const costBasis = parseFloat(editForm.costBasis)
+    if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(costBasis) || costBasis <= 0) {
+      setSyncMessage('Shares and cost basis must be positive numbers')
+      return
+    }
+    setEditSaving(true)
+    const result = await updatePosition(positionId, { shares, costBasis, purchaseDate: editForm.purchaseDate })
+    setEditSaving(false)
+    if (result?.success === false) {
+      setSyncMessage(`Could not save changes: ${result.error || 'Unknown error'}`)
+      return
+    }
+    setSyncMessage('Position updated')
+    cancelEdit()
   }
 
   return (
@@ -431,20 +480,51 @@ export default function Portfolio() {
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
                 <Move value={pos.gainPct} />
               </div>
-              <div className="holding-meta">
-                <span>{pos.shares} shares</span><span>Cost {money(pos.costBasis, 2)}</span>
-                <span>{pos.quoteSource || 'Live quote unavailable'}</span>
-                <StopLossNote stopLoss={pos.stopLoss} />
-              </div>
-              {pos.trendValues.length > 1 && (
+              {editingId === pos.id ? (
+                <div className="holding-edit-form">
+                  <label><span>Shares</span>
+                    <input className="inline-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
+                      onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
+                  </label>
+                  <label><span>Cost basis</span>
+                    <input className="inline-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
+                      onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
+                  </label>
+                  <label><span>Purchase date</span>
+                    <input className="inline-edit-input" type="date" value={editForm.purchaseDate}
+                      onChange={(e) => setEditForm({ ...editForm, purchaseDate: e.target.value })} />
+                  </label>
+                </div>
+              ) : (
+                <div className="holding-meta">
+                  <span>{pos.shares} shares</span><span>Cost {money(pos.costBasis, 2)}</span>
+                  <span>{pos.quoteSource || 'Live quote unavailable'}</span>
+                  <StopLossNote stopLoss={pos.stopLoss} />
+                </div>
+              )}
+              {editingId !== pos.id && pos.trendValues.length > 1 && (
                 <div className="holding-trend">
                   <div><span>1-month trend</span><Move value={pos.trendPct} /></div>
                   <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={48} />
                 </div>
               )}
               <div className="holding-actions">
-                {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
-                <button className="text-button danger" onClick={() => removePosition(pos.id)}>Remove</button>
+                {editingId === pos.id ? (
+                  <>
+                    <button className="secondary-button" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
+                    <button className="text-button" onClick={() => saveEdit(pos.id)} disabled={editSaving}>
+                      {editSaving ? 'Saving…' : 'Save'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
+                    <button className="text-button" onClick={() => startEdit(pos)}>Edit</button>
+                    <button className="text-button danger" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
+                      {removingId === pos.id ? 'Removing…' : 'Remove'}
+                    </button>
+                  </>
+                )}
               </div>
             </article>
           ))}
@@ -475,8 +555,18 @@ export default function Portfolio() {
                   <td>{pos.priceInfo?.name || '—'}</td>
                   <td><ActionPill recommendation={pos.recommendation} /></td>
                   <td>{pos.stopLoss ? <StopLossNote stopLoss={pos.stopLoss} /> : <span className="mono">—</span>}</td>
-                  <td className="mono num">{pos.shares}</td>
-                  <td className="mono num">${pos.costBasis.toFixed(2)}</td>
+                  <td className="mono num">
+                    {editingId === pos.id
+                      ? <input className="inline-edit-input table-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
+                          onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
+                      : pos.shares}
+                  </td>
+                  <td className="mono num">
+                    {editingId === pos.id
+                      ? <input className="inline-edit-input table-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
+                          onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
+                      : `$${pos.costBasis.toFixed(2)}`}
+                  </td>
                   <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
                   <td className="mono num">{pos.currentValue == null ? '—' : money(pos.currentValue)}</td>
                   <td className="mono num" style={{ color: moveColor(pos.gain) }}>
@@ -492,11 +582,25 @@ export default function Portfolio() {
                       </>
                     ) : <span className="mono">—</span>}
                   </td>
-                  <td style={{ display: 'flex', gap: 6 }}>
-                    {pos.priceInfo && (
-                      <button className="chip button-chip" onClick={() => setSelectedStock(pos)}>Details</button>
+                  <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {editingId === pos.id ? (
+                      <>
+                        <button className="chip button-chip" onClick={() => saveEdit(pos.id)} disabled={editSaving}>
+                          {editSaving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button className="chip button-chip" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        {pos.priceInfo && (
+                          <button className="chip button-chip" onClick={() => setSelectedStock(pos)}>Details</button>
+                        )}
+                        <button className="chip button-chip" onClick={() => startEdit(pos)}>Edit</button>
+                        <button className="chip button-chip" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
+                          {removingId === pos.id ? 'Removing…' : 'Remove'}
+                        </button>
+                      </>
                     )}
-                    <button className="chip button-chip" onClick={() => removePosition(pos.id)}>Remove</button>
                   </td>
                 </tr>
               ))}
