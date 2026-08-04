@@ -1,43 +1,55 @@
 """Capability-gated early-session research infrastructure.
 
-The current platform does not collect extended-hours OHLCV or sub-15-minute bars.  This
-module therefore publishes an honest capability report and kills the two live screens.
-It deliberately contains no synthetic premarket/first-hour scoring fallback: daily closes
-must never masquerade as early-session observations.
+Two of the six capabilities below - premarket/after-hours OHLCV and first-hour intraday
+bars - are computed from what pipeline/collect_marketstack.py has actually collected,
+not hardcoded, so a real Marketstack collection run flips them to available with real
+evidence instead of a guess. Even once real data exists, the two live screens stay
+killed: reversal detection (support zones, confirmation, trigger/invalidation) is a
+separate module that does not exist yet. This module deliberately contains no synthetic
+premarket/first-hour scoring fallback: daily closes must never masquerade as
+early-session observations, and raw bars must never masquerade as a detected reversal.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from collect_marketstack import depth as marketstack_depth
 from common import save_json
 
 
-CAPABILITIES = (
-    {
-        "capability": "Premarket and after-hours OHLCV",
-        "available": False,
-        "provider": "None",
-        "granularity": "Daily regular-session history only",
-        "freshness": "Not collected",
-        "verdict": "KILL_PREMARKET_SCREEN",
-        "evidence": [
-            "pipeline/fetch_advisor.py:yahoo_history requests period only; no interval or prepost",
-            "pipeline/providers.py:PriceSeries stores dates, closes, and volumes only",
-        ],
-    },
-    {
-        "capability": "First-hour intraday bars",
-        "available": False,
-        "provider": "None",
-        "granularity": "Daily",
-        "freshness": "Not collected or retained",
-        "verdict": "KILL_FIRST_HOUR_SCREEN",
-        "evidence": [
-            "pipeline/providers.py:YahooAdapter price contract is adjusted daily history",
-            "pipeline/fetch_advisor.py:daily_history consumes Time Series (Daily)",
-        ],
-    },
+def _marketstack_capabilities():
+    info = marketstack_depth()
+    available = info["rows"] > 0
+    freshness = f"Last collected {info['last_observed']}" if info["last_observed"] else "Not collected"
+    provider = f"Marketstack ({'/'.join(info['modes'])})" if available else "None"
+    granularity = "Intraday bars" if "intraday" in info["modes"] else (
+        "End-of-day only (intraday not available on the configured plan)"
+        if available else "Daily regular-session history only")
+    evidence = [
+        "pipeline/collect_marketstack.py collects the top-100 published tickers via Marketstack",
+        f"pipeline/data/marketstack/collected.jsonl: {info['rows']} row(s) collected",
+    ] if available else [
+        "pipeline/collect_marketstack.py has not collected any rows yet",
+        "pipeline/fetch_advisor.py:yahoo_history requests period only; no interval or prepost",
+    ]
+    verdict = ("PREMARKET_DATA_AVAILABLE_NO_REVERSAL_ENGINE" if available
+               else "KILL_PREMARKET_SCREEN")
+    return {
+        "capability": "Premarket and after-hours OHLCV", "available": available,
+        "provider": provider, "granularity": granularity, "freshness": freshness,
+        "verdict": verdict, "evidence": evidence,
+    }, {
+        "capability": "First-hour intraday bars", "available": "intraday" in info["modes"],
+        "provider": provider if "intraday" in info["modes"] else "None",
+        "granularity": granularity, "freshness": freshness,
+        "verdict": ("INTRADAY_DATA_AVAILABLE_NO_REVERSAL_ENGINE" if "intraday" in info["modes"]
+                    else "KILL_FIRST_HOUR_SCREEN"),
+        "evidence": evidence,
+    }
+
+
+STATIC_CAPABILITIES = (
     {
         "capability": "Stock bid/ask, spread, quote timestamp, and halt flags",
         "available": False,
@@ -105,23 +117,33 @@ CAPABILITIES = (
 def capability_report(*, generated_at=None):
     """Build the published gate report from repository-audited capabilities."""
     generated_at = generated_at or datetime.now(timezone.utc).isoformat()
+    premarket_capability, intraday_capability = _marketstack_capabilities()
+    capabilities = [premarket_capability, intraday_capability, *(dict(row) for row in STATIC_CAPABILITIES)]
+    # Real bars unblock the data half of each screen but not the screen itself - reversal
+    # detection (support zones, confirmation, trigger/invalidation) is a separate module
+    # that still does not exist, so both stay killed either way. Only the reason changes,
+    # from "no data at all" to the honest, narrower reason once data is actually flowing.
+    premarket_reason = ("SUPPORT_ZONE_ENGINE_NOT_BUILT" if premarket_capability["available"]
+                        else "NO_EXTENDED_HOURS_OHLCV")
+    first_hour_reason = ("SUPPORT_ZONE_ENGINE_NOT_BUILT" if intraday_capability["available"]
+                         else "NO_SUB_15_MINUTE_BARS")
     return {
         "schema_version": "1.0.0",
         "model_version": "early-session-gate-v1.0.0",
         "generated_at": generated_at,
         "mode": "shadow_only",
         "status": "gated",
-        "capabilities": [dict(row) for row in CAPABILITIES],
+        "capabilities": capabilities,
         "screens": {
             "premarket_reversal": {
                 "status": "killed",
-                "reason_code": "NO_EXTENDED_HOURS_OHLCV",
+                "reason_code": premarket_reason,
                 "fallback": "next_open_daily_research_only",
                 "candidate_count": 0,
             },
             "first_hour_reversal": {
                 "status": "killed",
-                "reason_code": "NO_SUB_15_MINUTE_BARS",
+                "reason_code": first_hour_reason,
                 "fallback": "end_of_day_studies_only",
                 "candidate_count": 0,
             },
