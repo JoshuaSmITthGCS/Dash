@@ -119,7 +119,7 @@ Next:
 
 Button-triggered runs use the fast interactive scope: the prior top 100 stocks plus every portfolio
 or watchlist ticker sent by the browser. The rest of the ranked universe carries forward from the
-full 08:00 Eastern weekday sweep, so newly added symbols such as `MU`, `AMAT`, `NTNX`, or `VOO`
+full 07:00 Eastern weekday sweep, so newly added symbols such as `MU`, `AMAT`, `NTNX`, or `VOO`
 are refreshed without making the user wait for all ~900 stocks.
 
 ## Troubleshooting

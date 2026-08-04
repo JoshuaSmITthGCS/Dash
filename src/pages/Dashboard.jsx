@@ -261,7 +261,8 @@ export default function Dashboard() {
               {refresh.refreshing ? 'Refreshing…' : 'Refresh data'}
             </button>
           )}
-          <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel} />
+          <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+            percent={refresh.progress} stage={refresh.stage} />
           {refresh.message && (
             <span className={`refresh-message ${refresh.status}`} role="status" aria-live="polite">
               {refresh.message}

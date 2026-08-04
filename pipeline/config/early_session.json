@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "mode": "shadow_only",
+  "universe": {
+    "reuse_existing_security_master": true,
+    "security_types": ["common_stock"],
+    "min_price": 5,
+    "min_market_cap": 500000000,
+    "min_median_dollar_volume_20d": 5000000,
+    "min_history_days": 252,
+    "exclude_recent_ipo_days": 90,
+    "exclude_reverse_split_days": 180,
+    "exclude_etfs": true,
+    "exclude_leveraged": true,
+    "exclude_otc": true,
+    "exclude_severe_distress": true,
+    "exclude_clinical_biotech": true
+  },
+  "gates": {
+    "max_quote_age_seconds": 30,
+    "max_spread_pct": 1.0,
+    "minimum_reward_to_invalidation": 2.0,
+    "minimum_confirmed_categories": 3,
+    "minimum_confirmed_confidence": 0.75,
+    "minimum_support_evidence_count": 3
+  },
+  "premarket_reversal": {
+    "enabled": false,
+    "reason_code": "NO_EXTENDED_HOURS_OHLCV",
+    "min_gap_abs_pct": 2,
+    "max_gap_abs_pct": 15,
+    "min_premarket_volume": 100000,
+    "min_premarket_dollar_volume": 2000000,
+    "min_relative_premarket_volume": 0.1
+  },
+  "first_hour_reversal": {
+    "enabled": false,
+    "reason_code": "NO_SUB_15_MINUTE_BARS",
+    "window": "09:30-10:30 America/New_York"
+  }
+}

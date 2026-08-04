@@ -56,7 +56,8 @@ export default function Watchlist() {
           <div className="result-count"><strong>{list.length}</strong><span>saved</span></div>
         </div>
       </div>
-      <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel} />
+      <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+        percent={refresh.progress} stage={refresh.stage} />
       {refresh.message && (
         <div className={`sync-message refresh-message ${refresh.status}`} role="status" aria-live="polite">
           {refresh.message}

@@ -12,6 +12,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const [elapsedMs, setElapsedMs] = useState(0)
   const baseline = useRef(generatedAt)
   const startedAt = useRef(null)
+  const runId = useRef(null)
 
   // There is no real progress signal from the GitHub Actions run - no step-by-step
   // percentage to show honestly. An elapsed-time counter is real, though, and it's what
@@ -32,6 +33,31 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
       if (checking) return
       checking = true
       try {
+        const idToken = await currentUser?.getIdToken()
+        if (idToken) {
+          const query = runId.current ? `?run_id=${runId.current}` : ''
+          const progressResponse = await fetch(`/.netlify/functions/refresh-data${query}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          })
+          if (progressResponse.ok) {
+            const progress = await progressResponse.json()
+            if (progress.run_id) runId.current = progress.run_id
+            if (progress.conclusion === 'failure') {
+              setState({
+                status: 'error',
+                message: 'The data workflow failed before it could publish. Check GitHub Actions for the failed stage.',
+                progress: progress.percent,
+                stage: progress.stage,
+              })
+              return
+            }
+            if (progress.percent != null) {
+              setState((current) => current.status === 'pending'
+                ? { ...current, progress: progress.percent, stage: progress.stage }
+                : current)
+            }
+          }
+        }
         const latest = await reload()
         if (latest?.generated_at && latest.generated_at !== baseline.current) {
           setState({
@@ -57,14 +83,15 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
       window.clearInterval(interval)
       window.clearTimeout(timeout)
     }
-  }, [reload, state.status])
+  }, [currentUser, reload, state.status])
 
   const requestRefresh = async () => {
     if (!currentUser || state.status === 'pending') return
     baseline.current = generatedAt
     startedAt.current = Date.now()
+    runId.current = null
     setElapsedMs(0)
-    setState({ status: 'starting', message: 'Connecting to the refresh service…' })
+    setState({ status: 'starting', message: 'Connecting to the refresh service…', progress: 0, stage: 'Starting refresh' })
     try {
       const idToken = await currentUser.getIdToken()
       const response = await fetch('/.netlify/functions/refresh-data', {
@@ -98,6 +125,8 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
         message: response.status === 409
           ? 'A refresh is already running. This page will update automatically.'
           : 'Refresh started. This page will update automatically when new data is published.',
+        progress: 0,
+        stage: 'Waiting for a runner',
       })
     } catch (error) {
       setState({ status: 'error', message: error.message })

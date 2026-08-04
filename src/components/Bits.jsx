@@ -81,16 +81,21 @@ export function Empty({ note }) {
   return <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{note || 'No data yet — run the pipeline.'}</div>
 }
 
-// A running GitHub Actions job has no step-by-step percentage to report honestly, so this
-// is deliberately indeterminate (a sliding highlight, not a fake number) — the elapsed-time
-// label is the one thing here that's actually true.
-export function RefreshProgress({ active, elapsedLabel }) {
+export function RefreshProgress({ active, elapsedLabel, percent = 0, stage }) {
   if (!active) return null
+  const complete = Math.max(0, Math.min(100, Math.round(percent)))
+  const left = 100 - complete
   return (
     <div className="refresh-progress" role="progressbar" aria-label="Data refresh in progress"
-      aria-valuetext={elapsedLabel ? `Running for ${elapsedLabel}` : 'Running'}>
-      <div className="refresh-progress-track"><div className="refresh-progress-fill" /></div>
-      {elapsedLabel && <span className="refresh-progress-elapsed">Running for {elapsedLabel}</span>}
+      aria-valuemin="0" aria-valuemax="100" aria-valuenow={complete}
+      aria-valuetext={`${complete}% complete, ${left}% left${stage ? `, ${stage}` : ''}`}>
+      <div className="refresh-progress-track">
+        <div className="refresh-progress-fill" style={{ width: `${complete}%` }} />
+      </div>
+      <span className="refresh-progress-elapsed">
+        {complete}% complete · {left}% left{elapsedLabel ? ` · ${elapsedLabel}` : ''}
+      </span>
+      {stage && <span className="refresh-progress-stage">{stage}</span>}
     </div>
   )
 }

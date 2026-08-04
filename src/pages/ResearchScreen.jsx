@@ -6,6 +6,7 @@ import { Empty, Loading } from '../components/Bits'
 export const SCREEN_NAV = [
   ['/screens/momentum', 'Momentum'], ['/screens/quality-value', 'Quality at valuation lows'],
   ['/screens/earnings', 'Earnings timeliness'], ['/screens/matrix', 'Structural vs tactical'],
+  ['/screens/early-session', 'Early session'],
   ['/screens/shadow', 'Shadow portfolios'], ['/screens/validation', 'Live validation'],
 ]
 

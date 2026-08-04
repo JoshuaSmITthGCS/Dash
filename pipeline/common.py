@@ -83,7 +83,9 @@ def save_json(name, obj, to_config=False, to_store=False):
     """Atomically write JSON so readers never observe a partially-written payload."""
     base = STORE_DIR if to_store else (CONFIG_DIR if to_config else DATA_DIR)
     path = os.path.join(base, name)
-    fd, tmp = tempfile.mkstemp(prefix=f".{name}.", dir=base, text=True)
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=f".{os.path.basename(name)}.", dir=directory, text=True)
     try:
         with os.fdopen(fd, "w") as f:
             json.dump(obj, f, indent=2, default=str)

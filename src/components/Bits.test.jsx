@@ -28,17 +28,19 @@ describe('RefreshProgress', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('shows an indeterminate bar and the real elapsed time while running', () => {
-    render(<RefreshProgress active elapsedLabel="1m 42s" />)
+  it('shows workflow-backed completion, remaining percentage, stage, and elapsed time', () => {
+    render(<RefreshProgress active elapsedLabel="1m 42s" percent={65} stage="Fetch ETF growth screen" />)
 
-    expect(screen.getByRole('progressbar')).toBeVisible()
-    expect(screen.getByText('Running for 1m 42s')).toBeVisible()
+    const progress = screen.getByRole('progressbar')
+    expect(progress).toHaveAttribute('aria-valuenow', '65')
+    expect(screen.getByText('65% complete · 35% left · 1m 42s')).toBeVisible()
+    expect(screen.getByText('Fetch ETF growth screen')).toBeVisible()
   })
 
   it('still shows the bar even before the first elapsed tick', () => {
     render(<RefreshProgress active elapsedLabel={null} />)
 
     expect(screen.getByRole('progressbar')).toBeVisible()
-    expect(screen.queryByText(/Running for/)).not.toBeInTheDocument()
+    expect(screen.getByText('0% complete · 100% left')).toBeVisible()
   })
 })

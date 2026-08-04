@@ -150,7 +150,7 @@ Form 4 insider layer and the theme-exposure screen both report themselves unavai
 spoofing a client. `refresh-advisor.yml` fetches news and research, scores, validates, and commits
 data in one job. It has explicit `contents: write`, shared push concurrency, and three push retries.
 
-The workflow refreshes shortly after 08:00, 12:00, and 15:00 Eastern on weekdays. It gates paired UTC cron
+The workflow refreshes shortly after 07:00, 12:00, and 15:00 Eastern on weekdays. It gates paired UTC cron
 times against `America/New_York`, so daylight-saving changes do not shift the local schedule.
 Only the morning run spends Alpha Vantage quota; the later runs refresh the other providers.
 

@@ -32,12 +32,12 @@ on:
         type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
-    # 08:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and 15:00 ET are
+    # 07:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and 15:00 ET are
     # fast refreshes limited to the prior top 100 plus portfolio holdings - see the
     # "Select the Eastern-time refresh window" step below for how that's enforced.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
     # be delayed or dropped under Actions load. The local-time gate below is unchanged.
-    - cron: '7 12,13,16,17,19,20 * * 1-5'
+    - cron: '7 11,12,16,17,19,20 * * 1-5'
 
 permissions:
   contents: write
@@ -65,6 +65,10 @@ jobs:
       ALPHA_ENRICH_LIMIT: '5'
       ALPHA_VANTAGE_CALL_DELAY: '0'
       ADVISOR_PORTFOLIO_SYMBOLS: ${{ inputs.portfolio_symbols || '' }}
+      # Price histories are downloaded in batches, while quote snapshots use bounded
+      # concurrency behind cache.py's shared 4-request/second Yahoo limiter.
+      YAHOO_BATCH_SIZE: '100'
+      YAHOO_QUOTE_WORKERS: '10'
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window
@@ -82,7 +86,7 @@ jobs:
           else
             local_hour="$(TZ=America/New_York date +%H)"
             case "$local_hour" in
-              08)
+              07)
                 should_run=true
                 alpha_disable=0
                 universe_mode=full

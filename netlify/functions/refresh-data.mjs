@@ -42,8 +42,69 @@ function portfolioSymbols(body) {
   )].slice(0, 50)
 }
 
+const PROGRESS_STEPS = [
+  ['Select the Eastern-time refresh window', 1],
+  ['actions/checkout', 2],
+  ['Restore the Yahoo/Alpha Vantage/SEC response cache', 3],
+  ['actions/setup-python', 2],
+  ['pip install', 2],
+  ['Append point-in-time estimate snapshots', 3],
+  ['Fetch and score stock research', 37],
+  ['Fetch ETF growth screen', 15],
+  ['Build ETF comparison', 20],
+  ['Validate', 5],
+  ['Commit refreshed data with retry', 10],
+]
+
+export function workflowProgress(jobs = []) {
+  const steps = jobs.flatMap((job) => job.steps || [])
+  let completed = 0
+  let stage = 'Waiting for a runner'
+
+  for (const [label, weight] of PROGRESS_STEPS) {
+    const step = steps.find((candidate) => candidate.name?.includes(label))
+    if (step?.status === 'completed' && step.conclusion === 'success') completed += weight
+    if (step?.status === 'in_progress') stage = step.name
+  }
+
+  return { percent: Math.min(100, completed), stage }
+}
+
+async function refreshStatus(event, workflowUrl, headers) {
+  const requestedRunId = event.queryStringParameters?.run_id
+  let run
+
+  if (requestedRunId && /^\d+$/.test(requestedRunId)) {
+    const response = await fetch(`https://api.github.com/repos/${process.env.REFRESH_GITHUB_REPOSITORY}/actions/runs/${requestedRunId}`, { headers })
+    if (!response.ok) throw new Error(`GitHub run lookup failed (${response.status})`)
+    run = await response.json()
+  } else {
+    const response = await fetch(`${workflowUrl}/runs?branch=main&per_page=10`, { headers })
+    if (!response.ok) throw new Error(`GitHub workflow lookup failed (${response.status})`)
+    const runs = await response.json()
+    run = runs.workflow_runs?.find((candidate) => ['queued', 'in_progress'].includes(candidate.status))
+  }
+
+  if (!run) return json(200, { active: false })
+  const jobsResponse = await fetch(`https://api.github.com/repos/${process.env.REFRESH_GITHUB_REPOSITORY}/actions/runs/${run.id}/jobs?per_page=100`, { headers })
+  if (!jobsResponse.ok) throw new Error(`GitHub jobs lookup failed (${jobsResponse.status})`)
+  const jobs = await jobsResponse.json()
+  const progress = workflowProgress(jobs.jobs)
+  if (run.status === 'completed' && run.conclusion === 'success') {
+    progress.percent = 100
+    progress.stage = 'Publishing the website update'
+  }
+  return json(200, {
+    active: ['queued', 'in_progress'].includes(run.status),
+    run_id: run.id,
+    status: run.status,
+    conclusion: run.conclusion,
+    ...progress,
+  })
+}
+
 export async function handler(event) {
-  if (event.httpMethod !== 'POST') {
+  if (!['GET', 'POST'].includes(event.httpMethod)) {
     return json(405, { error: 'Method not allowed.' })
   }
 
@@ -75,6 +136,9 @@ export async function handler(event) {
 
     const workflowUrl = `https://api.github.com/repos/${repository}/actions/workflows/refresh-advisor.yml`
     const headers = githubHeaders(githubToken)
+    if (event.httpMethod === 'GET') {
+      return await refreshStatus(event, workflowUrl, headers)
+    }
     const runsResponse = await fetch(`${workflowUrl}/runs?branch=main&per_page=10`, { headers })
     if (!runsResponse.ok) {
       throw new Error(`GitHub workflow lookup failed (${runsResponse.status})`)
