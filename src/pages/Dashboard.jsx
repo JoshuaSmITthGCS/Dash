@@ -188,6 +188,187 @@ function ThemePanel({ theme, onOpen, rows }) {
   )
 }
 
+function MobileDashboard({
+  averageConfidence,
+  currentUser,
+  generatedAt,
+  leader,
+  leaderTrendReturn,
+  leaderTrendValues,
+  macro,
+  onOpen,
+  refresh,
+  rows,
+  topSector,
+  universeSize,
+  watchRows,
+}) {
+  const candidateRows = rows.slice(1, 5)
+  const marketStrip = [...watchRows, ...rows]
+    .filter((row, index, collection) => collection.findIndex((item) => item.ticker === row.ticker) === index)
+    .slice(0, 5)
+
+  return (
+    <div className="mobile-dashboard">
+      <section className="mobile-brief-head" aria-labelledby="mobile-brief-title">
+        <div>
+          <span className="eyebrow">Today’s research brief</span>
+          <h1 id="mobile-brief-title">Your signal,<br /><span>made simple.</span></h1>
+          <p>{humanDate(generatedAt)} · Evidence-led market research</p>
+        </div>
+        {currentUser && (
+          <div className="mobile-brief-actions" aria-label="Research update actions">
+            <button className="icon-button" onClick={refresh.requestRefresh}
+              disabled={refresh.refreshing} aria-label="Refresh market data">
+              <Icon name="sync" size={18}
+                className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />
+            </button>
+            <button className="icon-button" onClick={refresh.requestReanalyze}
+              disabled={refresh.refreshing} aria-label="Reanalyze published data">
+              <Icon name="research" size={18}
+                className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
+            </button>
+          </div>
+        )}
+      </section>
+
+      {(refresh.refreshing || refresh.message) && (
+        <div className="mobile-refresh-status">
+          <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+            percent={refresh.progress} stage={refresh.stage} />
+          {refresh.message && (
+            <span className={`refresh-message ${refresh.status}`} role="status" aria-live="polite">
+              {refresh.message}
+            </span>
+          )}
+        </div>
+      )}
+
+      <section className="mobile-market-strip" aria-label="Market watch strip">
+        {marketStrip.map((row) => (
+          <button key={row.ticker} onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}>
+            <span className="mobile-symbol">{row.ticker.slice(0, 1)}</span>
+            <span><b>{row.ticker}</b><small>{row.price ? `$${row.price.toFixed(2)}` : `${row.score}/100`}</small></span>
+            <Move pct={row.pct_30d ?? recentReturn(historyValues(row))} />
+          </button>
+        ))}
+      </section>
+
+      <section className="mobile-signal-card" aria-labelledby="mobile-top-signal">
+        <div className="mobile-signal-topline">
+          <span className="mobile-live-pill"><i /> Top signal</span>
+          <span className="mobile-rank-label">Rank #1</span>
+        </div>
+        <div className="mobile-signal-company">
+          <div className="mobile-company-mark">{leader.ticker.slice(0, 1)}</div>
+          <div>
+            <h2 id="mobile-top-signal">{leader.ticker}</h2>
+            <p>{leader.name} · {leader.sector || 'Sector unavailable'}</p>
+          </div>
+          <Tier label={leader.stance} />
+        </div>
+        <div className="mobile-signal-value">
+          <div><span>Research score</span><strong>{leader.score}</strong><small>/100</small></div>
+          <div className="mobile-confidence">
+            <span>{Math.round(leader.confidence * 100)}%</span>
+            <small>confidence</small>
+          </div>
+        </div>
+        <div className="mobile-signal-chart">
+          <div className="chart-caption"><span>One-month trend</span><Move pct={leaderTrendReturn} /></div>
+          <Sparkline values={leaderTrendValues} label={`${leader.name} one-month price trend`} height={132} />
+        </div>
+        <div className="mobile-signal-footer">
+          <div><span>30-day move</span><Move pct={leaderTrendReturn} /></div>
+          <div><span>Research view</span><b>{leader.stance}</b></div>
+          <button onClick={() => onOpen(leader)} aria-label={`View ${leader.name} research`}>
+            <Icon name="arrow" size={20} />
+          </button>
+        </div>
+      </section>
+
+      <section className="mobile-glance" aria-labelledby="glance-heading">
+        <div className="mobile-section-title">
+          <div><span className="eyebrow">At a glance</span><h2 id="glance-heading">Research pulse</h2></div>
+          <Link to="/research">View all</Link>
+        </div>
+        <div className="mobile-glance-grid">
+          <article><span>Coverage</span><strong>{universeSize}</strong><small>companies scanned</small></article>
+          <article><span>Confidence</span><strong>{Math.round(averageConfidence * 100)}%</strong><small>average coverage</small></article>
+          <article className="wide"><span>Leading sector</span><strong>{topSector}</strong><small>Strongest representation today</small></article>
+        </div>
+      </section>
+
+      <section className="mobile-ranked" aria-labelledby="mobile-ranked-heading">
+        <div className="mobile-section-title">
+          <div><span className="eyebrow">Ranked next</span><h2 id="mobile-ranked-heading">Names to know</h2></div>
+          <Link to="/research">See all</Link>
+        </div>
+        <div className="mobile-ranked-list">
+          {candidateRows.map((row, index) => (
+            <button key={row.ticker} onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}>
+              <span className="mobile-list-rank">{String(index + 2).padStart(2, '0')}</span>
+              <span className="mobile-company-mark small">{row.ticker.slice(0, 1)}</span>
+              <span className="mobile-list-company"><b>{row.ticker}</b><small>{row.name}</small></span>
+              <span className="mobile-list-value"><b>{row.score}</b><Move pct={recentReturn(historyValues(row))} /></span>
+              <Icon name="chevron" size={18} />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="mobile-pulse-card" aria-labelledby="mobile-pulse-heading">
+        <div className="mobile-section-title inverse">
+          <div><span className="eyebrow">Market context</span><h2 id="mobile-pulse-heading">The backdrop</h2></div>
+          <Link to="/market">Explore</Link>
+        </div>
+        <div className="mobile-regime">
+          <span>FRED regime</span>
+          <strong>{macro.regime?.score ?? '—'}<small>/100</small></strong>
+          <p>{macro.regime?.label || 'Regime data pending'}</p>
+        </div>
+        <div className="mobile-macro-row">
+          <div><span>10Y Treasury</span><b>{macro.treasury_10y?.value ?? '—'}{macro.treasury_10y?.value != null ? '%' : ''}</b></div>
+          <div><span>Fed funds</span><b>{macro.federal_funds_rate?.value ?? '—'}{macro.federal_funds_rate?.value != null ? '%' : ''}</b></div>
+          <div><span>Inflation</span><b>{macro.inflation?.value ?? '—'}{macro.inflation?.value != null ? '%' : ''}</b></div>
+        </div>
+      </section>
+
+      <section className="mobile-discover" aria-labelledby="mobile-discover-heading">
+        <div className="mobile-section-title">
+          <div><span className="eyebrow">Explore</span><h2 id="mobile-discover-heading">Go deeper</h2></div>
+        </div>
+        <div className="mobile-discover-grid">
+          <Link to="/research"><Icon name="research" /><span><b>Research</b><small>All ranked companies</small></span><Icon name="chevron" size={16} /></Link>
+          <Link to="/screens/momentum"><Icon name="market" /><span><b>Momentum</b><small>What is moving now</small></span><Icon name="chevron" size={16} /></Link>
+          <Link to="/watchlist"><Icon name="watchlist" /><span><b>Watchlist</b><small>Your saved names</small></span><Icon name="chevron" size={16} /></Link>
+          <Link to="/methodology"><Icon name="method" /><span><b>Method</b><small>How scores are built</small></span><Icon name="chevron" size={16} /></Link>
+        </div>
+      </section>
+
+      {watchRows.length > 0 && (
+        <section className="mobile-watch" aria-labelledby="mobile-watch-heading">
+          <div className="mobile-section-title">
+            <div><span className="eyebrow">Saved names</span><h2 id="mobile-watch-heading">Your watchlist</h2></div>
+            <Link to="/watchlist">Edit</Link>
+          </div>
+          <div className="mobile-ranked-list compact">
+            {watchRows.map((row) => (
+              <button key={row.ticker} onClick={() => onOpen(row)}>
+                <span className="mobile-company-mark small">{row.ticker.slice(0, 1)}</span>
+                <span className="mobile-list-company"><b>{row.ticker}</b><small>{row.name}</small></span>
+                <span className="mobile-list-value"><b>{row.price ? `$${row.price.toFixed(2)}` : `${row.score}/100`}</b><Move pct={row.pct_30d} /></span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <p className="mobile-research-note">Research, not trade instructions. Confirm current prices, liquidity, news, and your own risk limits before acting.</p>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { data, loading, reload } = useData('advisor.json')
   const { data: etfData } = useData('etfs.json')
@@ -248,6 +429,22 @@ export default function Dashboard() {
 
   return (
     <>
+      <MobileDashboard
+        averageConfidence={averageConfidence}
+        currentUser={currentUser}
+        generatedAt={data.generated_at}
+        leader={leader}
+        leaderTrendReturn={leaderTrendReturn}
+        leaderTrendValues={leaderTrendValues}
+        macro={macro}
+        onOpen={setSelectedStock}
+        refresh={refresh}
+        rows={rows}
+        topSector={topSector}
+        universeSize={universeSize}
+        watchRows={watchRows}
+      />
+      <div className="desktop-dashboard">
       <header className="dashboard-intro">
         <div>
           <span className="eyebrow">Research overview</span>
@@ -474,6 +671,7 @@ export default function Dashboard() {
 
       <p className="method-link">Ranked using fundamentals, valuation, market behavior, and recent news. <Link to="/methodology">Read the methodology.</Link></p>
       <div className="disclaimer">{data.disclaimer}</div>
+      </div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )
