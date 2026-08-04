@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth, FAMILY_THEMES } from '../lib/FirebaseAuthContext'
 import Icon from './Icons'
+import useBodyScrollLock from '../lib/useBodyScrollLock'
 
 const PROFILES = [
   { displayName: 'Josh', email: 'jbmsmusic05@gmail.com', theme: FAMILY_THEMES.default, label: 'Primary', isMain: true },
@@ -16,6 +17,7 @@ export default function FirebaseLoginModal() {
   const [formData, setFormData] = useState({ email: '', password: '', displayName: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  useBodyScrollLock(!currentUser)
   if (currentUser) return null
 
   const selectProfile = (profile) => {

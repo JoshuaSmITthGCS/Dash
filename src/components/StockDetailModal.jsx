@@ -10,6 +10,7 @@ import { fixedBasisAlternative, positionGrowthSeries } from '../lib/portfolioPer
 import AnalysisLayers from './AnalysisLayers'
 import RecommendationShadowPanel from './RecommendationShadowPanel'
 import DipWatchBadge from './DipWatchBadge'
+import useBodyScrollLock from '../lib/useBodyScrollLock'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -34,6 +35,8 @@ const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--po
 
 export default function StockDetailModal({ stock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
+
+  useBodyScrollLock(!!stock)
 
   useEffect(() => {
     const handleEscape = (e) => { if (e.key === 'Escape') onClose() }

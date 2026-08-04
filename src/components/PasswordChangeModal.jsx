@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/FirebaseAuthContext'
+import useBodyScrollLock from '../lib/useBodyScrollLock'
 
 export default function PasswordChangeModal({ onClose }) {
   const { changePassword } = useAuth()
+  useBodyScrollLock()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

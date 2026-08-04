@@ -96,6 +96,10 @@ export function AuthProvider({ children }) {
     const root = document.documentElement
     root.setAttribute('data-theme', darkMode ? 'dark' : 'light')
 
+    // Keep iOS Safari's status bar/chrome color matching the active theme, not just the OS setting.
+    const themeColorMeta = document.getElementById('theme-color-meta')
+    if (themeColorMeta) themeColorMeta.setAttribute('content', darkMode ? '#07100d' : '#f2f2e8')
+
     // A personal accent is the only per-user override, and only where it stays readable:
     // the family accents are bright hues built for dark surfaces.
     root.style.setProperty('--primary', theme.primary)
