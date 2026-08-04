@@ -11,7 +11,8 @@ export const REFERENCE_PORTFOLIO = [
   ['NTNX', 1.284, 38.93, 38.93], ['BSX', 1.466, 68.19, 46.04],
   ['VOO', 0.146, 633.36, 633.36],
 ].map(([ticker, shares, costBasis, snapshotPrice]) => ({
-  ticker, shares, costBasis, snapshotPrice, snapshotSource: 'User-provided brokerage snapshot',
+  ticker, shares, costBasis, costBasisUnit: 'per_share', costBasisInputMode: 'share',
+  snapshotPrice, snapshotSource: 'User-provided brokerage snapshot',
 }))
 
 export function planReferencePortfolioSync(positions, reference = REFERENCE_PORTFOLIO) {

@@ -24,6 +24,8 @@ import {
   PORTFOLIO_SORT_OPTIONS,
   sortPortfolioPositions,
 } from '../lib/portfolioSort'
+import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -140,15 +142,25 @@ export default function Portfolio() {
     reload,
     positions.map((position) => position.ticker),
   )
+  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
 
   if (dataLoading || portfolioLoading) return <Loading />
 
   const research = data?.research || []
   const portfolioCoverage = data?.portfolio_coverage || []
+  const screenUniverse = data?.screen_universe || []
   const benchmarkHistory = data?.benchmark_history
-  const priceData = Object.fromEntries([...research, ...portfolioCoverage]
-    .filter((row) => row.ticker && row.price != null)
-    .map((row) => [String(row.ticker).trim().toUpperCase(), row]))
+  // Lightweight screen rows are a useful quote fallback for a holding that has been
+  // fetched but has not reached full published coverage yet (EXPE is one such case).
+  // Full coverage is listed last so it always wins when both versions exist.
+  const publishedPriceData = buildPortfolioPriceData(screenUniverse, portfolioCoverage, research)
+  const quoteRefreshIsNewest = portfolioQuotes.fetchedAt
+    && new Date(portfolioQuotes.fetchedAt) >= new Date(data?.generated_at || 0)
+  const priceData = mergePortfolioQuotes(
+    publishedPriceData,
+    quoteRefreshIsNewest ? portfolioQuotes.quotes : {},
+  )
+  const pricesUpdatedAt = quoteRefreshIsNewest ? portfolioQuotes.fetchedAt : data?.generated_at
 
   const portfolioStats = positions.reduce((acc, pos) => {
     const ticker = String(pos.ticker || '').trim().toUpperCase()
@@ -173,7 +185,9 @@ export default function Portfolio() {
       gainPct,
       trendValues,
       trendPct: recentReturn(trendValues),
-      quoteSource: current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
+      quoteSource: current?.portfolioQuote
+        ? 'Portfolio price refresh'
+        : current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
       recommendation,
       stopLoss: current ? stopLossLevels(riskPosition) : null,
@@ -222,7 +236,7 @@ export default function Portfolio() {
       alert('Enter a valid share count and cost')
       return
     }
-    addPosition(formData.ticker, shares, costBasis, formData.purchaseDate)
+    addPosition(formData.ticker, shares, costBasis, formData.purchaseDate, formData.costMode)
     setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
     setShowAddForm(false)
   }
@@ -256,11 +270,12 @@ export default function Portfolio() {
   }
 
   const startEdit = (pos) => {
+    const costMode = pos.costBasisInputMode === 'total' ? 'total' : 'share'
     setEditingId(pos.id)
     setEditForm({
       shares: String(pos.shares ?? ''),
-      costBasis: String(pos.costBasis ?? ''),
-      costMode: 'share',
+      costBasis: String(costMode === 'total' ? pos.shares * pos.costBasis : pos.costBasis ?? ''),
+      costMode,
       purchaseDate: pos.purchaseDate || '',
     })
   }
@@ -278,7 +293,13 @@ export default function Portfolio() {
       return
     }
     setEditSaving(true)
-    const result = await updatePosition(positionId, { shares, costBasis, purchaseDate: editForm.purchaseDate })
+    const result = await updatePosition(positionId, {
+      shares,
+      costBasis,
+      costBasisUnit: 'per_share',
+      costBasisInputMode: editForm.costMode,
+      purchaseDate: editForm.purchaseDate,
+    })
     setEditSaving(false)
     if (result?.success === false) {
       setSyncMessage(`Could not save changes: ${result.error || 'Unknown error'}`)
@@ -299,9 +320,28 @@ export default function Portfolio() {
           </p>
         </div>
         <div className="page-actions">
+          <div style={{ display: 'grid', justifyItems: 'end', gap: 3 }}>
+            <button
+              className="primary-button compact"
+              onClick={portfolioQuotes.requestRefresh}
+              disabled={portfolioQuotes.refreshing || positions.length === 0}
+            >
+              <Icon name="sync" size={17} className={portfolioQuotes.refreshing ? 'refresh-spin' : ''} />
+              {portfolioQuotes.refreshing ? 'Updating portfolio…' : 'Refresh portfolio prices'}
+            </button>
+            <time
+              dateTime={pricesUpdatedAt || undefined}
+              title={pricesUpdatedAt ? new Date(pricesUpdatedAt).toLocaleString() : 'No price refresh yet'}
+              style={{ color: 'var(--text-faint)', font: '10px var(--font-mono)' }}
+            >
+              {pricesUpdatedAt
+                ? `Prices updated ${new Date(pricesUpdatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+                : 'Prices not updated yet'}
+            </time>
+          </div>
           <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}>
             <Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />
-            {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing…' : 'Refresh prices'}
+            {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}
           </button>
           <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}
             title="Re-score the last published data without fetching anything new — takes a couple of minutes">
@@ -314,6 +354,11 @@ export default function Portfolio() {
         </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
+      {(portfolioQuotes.message || portfolioQuotes.error) && (
+        <div className={`sync-message refresh-message ${portfolioQuotes.error ? 'error' : 'success'}`} role="status" aria-live="polite">
+          {portfolioQuotes.error || portfolioQuotes.message}
+        </div>
+      )}
       <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
         percent={refresh.progress} stage={refresh.stage} />
       {refresh.message && (
@@ -532,7 +577,7 @@ export default function Portfolio() {
                 </div>
               ) : (
                 <div className="holding-meta">
-                  <span>{pos.shares} shares</span><span>Cost {money(pos.costBasis, 2)}</span>
+                  <span>{pos.shares} shares</span><span>Avg. cost/share {money(pos.costBasis, 2)}</span>
                   <span>{pos.quoteSource || 'Live quote unavailable'}</span>
                   <StopLossNote stopLoss={pos.stopLoss} />
                 </div>
@@ -573,7 +618,7 @@ export default function Portfolio() {
                 <SortableHeader sortKey="signal" sort={portfolioSort} onSort={setSortKey}>Signal</SortableHeader>
                 <th scope="col">Stop-loss</th>
                 <SortableHeader numeric sortKey="shares" sort={portfolioSort} onSort={setSortKey}>Shares</SortableHeader>
-                <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Cost</SortableHeader>
+                <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Avg. cost/share</SortableHeader>
                 <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
                 <SortableHeader numeric sortKey="value" sort={portfolioSort} onSort={setSortKey}>Value</SortableHeader>
                 <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>

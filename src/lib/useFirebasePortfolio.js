@@ -9,6 +9,7 @@ import {
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
 import { planReferencePortfolioSync } from './referencePortfolio'
+import { normalizePortfolioPosition, PER_SHARE_COST } from './portfolioPosition'
 
 // A failed (or merely slow) Firestore delete must never look like "Remove" did nothing —
 // this is a permanent, per-device record of positions the user asked to remove, applied on
@@ -119,10 +120,21 @@ export function useFirebasePortfolio() {
 
       const hidden = readHiddenIds(userId)
       const loadedPositions = []
-      snapshot.forEach((doc) => {
-        if (hidden.has(doc.id)) return
-        loadedPositions.push({ id: doc.id, ...doc.data() })
+      const repairWrites = []
+      snapshot.forEach((snapshotDoc) => {
+        if (hidden.has(snapshotDoc.id)) return
+        const { position, firestoreUpdates } = normalizePortfolioPosition(
+          snapshotDoc.id,
+          snapshotDoc.data(),
+        )
+        loadedPositions.push(position)
+        if (firestoreUpdates) {
+          repairWrites.push(setDoc(snapshotDoc.ref, firestoreUpdates, { merge: true }))
+        }
       })
+      // The repaired value is already used in memory. Persist it best-effort so all devices
+      // converge without making a transient write failure hide the rest of the portfolio.
+      await Promise.allSettled(repairWrites)
       loadedPositions.sort((left, right) =>
         String(right.purchaseDate || right.addedAt || '').localeCompare(
           String(left.purchaseDate || left.addedAt || '')
@@ -162,7 +174,7 @@ export function useFirebasePortfolio() {
   }, [currentUser])
 
   // Add new position
-  const addPosition = async (ticker, shares, costBasis, purchaseDate = new Date().toISOString().split('T')[0]) => {
+  const addPosition = async (ticker, shares, costBasis, purchaseDate = new Date().toISOString().split('T')[0], costBasisInputMode = 'share') => {
     if (!currentUser) {
       alert('Please log in to add positions')
       return
@@ -174,6 +186,8 @@ export function useFirebasePortfolio() {
         ticker: ticker.toUpperCase(),
         shares: parseFloat(shares),
         costBasis: parseFloat(costBasis),
+        costBasisUnit: PER_SHARE_COST,
+        costBasisInputMode,
         purchaseDate,
         addedAt: new Date().toISOString(),
         id: positionId
