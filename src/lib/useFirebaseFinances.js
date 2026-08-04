@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
@@ -17,7 +17,13 @@ export function useFirebaseFinances() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [budgetItems, setBudgetItems] = useState([])
   const [pools, setPools] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
+  const contributionTimers = useRef({})
+
+  useEffect(() => () => {
+    Object.values(contributionTimers.current).forEach(clearTimeout)
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -25,20 +31,23 @@ export function useFirebaseFinances() {
         setSettings(DEFAULT_SETTINGS)
         setBudgetItems([])
         setPools([])
+        setAccounts([])
         setLoading(false)
         return
       }
 
       setLoading(true)
       try {
-        const [settingsSnap, budgetSnap, poolsSnap] = await Promise.all([
+        const [settingsSnap, budgetSnap, poolsSnap, accountsSnap] = await Promise.all([
           getDoc(doc(db, 'finances', currentUser.uid)),
           getDocs(collection(db, 'finances', currentUser.uid, 'budgetItems')),
           getDocs(collection(db, 'finances', currentUser.uid, 'pools')),
+          getDocs(collection(db, 'finances', currentUser.uid, 'accounts')),
         ])
         setSettings(settingsSnap.exists() ? { ...DEFAULT_SETTINGS, ...settingsSnap.data() } : DEFAULT_SETTINGS)
         setBudgetItems(budgetSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
         setPools(poolsSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setAccounts(accountsSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
       } catch (error) {
         console.error('Failed to load finances:', error)
       } finally {
@@ -120,10 +129,51 @@ export function useFirebaseFinances() {
     }
   }
 
+  const addAccount = async ({ name, type }) => {
+    if (!currentUser) return
+    const id = `account-${Date.now()}`
+    const record = { id, name, type, annualContribution: 0 }
+    try {
+      await setDoc(doc(db, 'finances', currentUser.uid, 'accounts', id), record)
+      setAccounts((prev) => [...prev, record])
+    } catch (error) {
+      console.error('Failed to add account:', error)
+    }
+  }
+
+  const removeAccount = async (id) => {
+    if (!currentUser) return
+    clearTimeout(contributionTimers.current[id])
+    delete contributionTimers.current[id]
+    try {
+      await deleteDoc(doc(db, 'finances', currentUser.uid, 'accounts', id))
+      setAccounts((prev) => prev.filter((account) => account.id !== id))
+    } catch (error) {
+      console.error('Failed to remove account:', error)
+    }
+  }
+
+  // Debounced so typing a multi-digit contribution doesn't fire one Firestore write per
+  // keystroke — concurrent writes for the same doc can resolve out of order and let an
+  // earlier keystroke's value silently overwrite a later one.
+  const updateAccountContribution = (id, annualContribution) => {
+    if (!currentUser) return
+    setAccounts((prev) => prev.map((account) => (account.id === id ? { ...account, annualContribution } : account)))
+    clearTimeout(contributionTimers.current[id])
+    contributionTimers.current[id] = setTimeout(async () => {
+      try {
+        await setDoc(doc(db, 'finances', currentUser.uid, 'accounts', id), { annualContribution }, { merge: true })
+      } catch (error) {
+        console.error('Failed to update account contribution:', error)
+      }
+    }, 600)
+  }
+
   return {
     settings,
     budgetItems,
     pools,
+    accounts,
     loading,
     updateSettings,
     addBudgetItem,
@@ -131,5 +181,8 @@ export function useFirebaseFinances() {
     addPool,
     removePool,
     depositToPools,
+    addAccount,
+    removeAccount,
+    updateAccountContribution,
   }
 }

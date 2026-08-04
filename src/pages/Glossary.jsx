@@ -129,6 +129,12 @@ const GROUPS = [
       ['Retirement projection', 'A compounding-growth estimate of a savings balance at a future retirement age, given a starting balance, a monthly contribution, and an assumed annual return.'],
       ['Nominal balance', 'A projected future balance in future dollars, not adjusted for inflation.'],
       ['Inflation-adjusted balance', 'A projected future balance restated in today’s purchasing power by discounting for assumed inflation — a more honest read of what the balance will actually buy.'],
+      ['401(k) / 403(b)', 'An employer-sponsored retirement account with pre-tax (traditional) or after-tax (Roth) contributions, deducted straight from payroll. The 2026 IRS employee deferral limit is $24,500, plus a $8,000 catch-up at 50+ or $11,250 at ages 60–63.'],
+      ['Roth IRA', 'An individual retirement account funded with after-tax dollars; qualified withdrawals in retirement are tax-free. The 2026 IRS limit is $7,500, plus a $1,100 catch-up at 50+. Eligibility to contribute phases out at higher incomes.'],
+      ['Traditional IRA', 'An individual retirement account funded with pre-tax dollars (subject to income and workplace-plan rules); withdrawals in retirement are taxed as income. Shares the same 2026 IRS limit as a Roth IRA: $7,500, plus a $1,100 catch-up at 50+.'],
+      ['HSA (Health Savings Account)', 'A triple-tax-advantaged account for medical expenses, available with a qualifying high-deductible health plan. 2026 IRS limits are $4,400 self-only or $8,750 family coverage, plus a $1,000 catch-up at 55+.'],
+      ['Contribution limit', 'The maximum an account holder may contribute to a tax-advantaged account in a calendar year under IRS rules. Exceeding it can trigger excise taxes, so it is tracked separately from an account’s balance.'],
+      ['Catch-up contribution', 'An additional amount the IRS allows account holders past a certain age to contribute on top of the standard limit, meant to help late savers close the gap before retirement.'],
     ],
   },
 ]

@@ -1,4 +1,4 @@
-import { workflowProgress } from './refresh-data.mjs'
+import { workflowProgress } from '../../netlify/functions/refresh-data.mjs'
 
 describe('workflowProgress', () => {
   it('weights completed workflow stages and reports the active stage', () => {
