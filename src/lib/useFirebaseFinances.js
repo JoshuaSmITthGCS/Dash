@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
+import modelSettings from '../../pipeline/config/settings.json'
 
 const DEFAULT_SETTINGS = {
   currentAge: 30,
   retireAge: 65,
-  annualReturnPct: 7,
   inflationPct: 2.5,
   monthlyContribution: 0,
   currentSavings: 0,
+  retirementEndAge: modelSettings.projection.default_retirement_end_age,
+  monthlyWithdrawal: modelSettings.projection.default_monthly_withdrawal,
 }
 
 export function useFirebaseFinances() {

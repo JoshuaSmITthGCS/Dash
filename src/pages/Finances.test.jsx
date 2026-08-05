@@ -3,10 +3,12 @@ import Finances from './Finances'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances'
+import { usePreferences } from '../lib/PreferencesContext.jsx'
 
 vi.mock('../lib/useData', () => ({ useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../lib/useFirebaseFinances', () => ({ useFirebaseFinances: vi.fn() }))
+vi.mock('../lib/PreferencesContext.jsx', () => ({ usePreferences: vi.fn() }))
 
 describe('Finances page', () => {
   const addBudgetItem = vi.fn()
@@ -18,12 +20,16 @@ describe('Finances page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    useData.mockReturnValue({ data: { research: [], portfolio_coverage: [] } })
+    const benchmarkDates = Array.from({ length: 40 }, (_, index) => new Date(Date.UTC(2022, index + 1, 0)).toISOString().slice(0, 10))
+    useData.mockImplementation((file) => file === 'benchmark-report.json'
+      ? { data: { histories: { SPY: { dates: benchmarkDates, closes: benchmarkDates.map((_, index) => 100 + index) } } } }
+      : { data: { research: [], portfolio_coverage: [] } })
+    usePreferences.mockReturnValue({ preferences: { defaultBenchmark: 'SPY' } })
     useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'AAPL', shares: 10, costBasis: 100 }] })
     useFirebaseFinances.mockReturnValue({
       settings: {
-        currentAge: 30, retireAge: 65, annualReturnPct: 7, inflationPct: 2.5,
-        monthlyContribution: 200, currentSavings: 1000,
+        currentAge: 30, retireAge: 65, retirementEndAge: 95, inflationPct: 2.5,
+        monthlyContribution: 200, monthlyWithdrawal: 3000, currentSavings: 1000,
       },
       budgetItems: [
         { id: 'income-1', name: 'Paycheck', amount: 4000, type: 'income' },
@@ -69,7 +75,7 @@ describe('Finances page', () => {
   it('projects a retirement balance from the current assumptions', () => {
     render(<Finances />)
     fireEvent.click(screen.getByRole('button', { name: 'Retirement' }))
-    expect(screen.getByText('At Retirement (Nominal)')).toBeInTheDocument()
+    expect(screen.getAllByText('Median at Retirement').length).toBeGreaterThan(0)
     expect(screen.getByText(/Sync current savings from portfolio/)).toBeInTheDocument()
   })
 

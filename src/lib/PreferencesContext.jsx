@@ -26,7 +26,7 @@ export const DEFAULT_WIDGETS = [
 ]
 
 export const DEFAULT_PREFERENCES = {
-  version: 4,
+  version: 5,
   theme: 'system',
   accentColor: 'valuesignal',
   surfaceStyle: 'outlined',
@@ -46,7 +46,7 @@ export const DEFAULT_PREFERENCES = {
   suggestedActionsDefault: 'collapsed',
   mobileResearchView: 'visual',
   watchlistSizingMode: modelSettings.watchlist_setup.default_sizing_mode,
-  forecast: { horizonYears: 5, recurringAnnual: 0, conservativeRate: 4, baseRate: 7, optimisticRate: 10, birthDate: '', currentAge: 30, retirementAge: 65 },
+  forecast: { horizonYears: 5, recurringAnnual: 0, birthDate: '', currentAge: 30, retirementAge: 65 },
   chartAnimation: 'system',
   reducedMotion: 'system',
   higherContrast: false,
@@ -84,7 +84,7 @@ export function validatePreferences(raw) {
   return {
     ...DEFAULT_PREFERENCES,
     ...raw,
-    version: 4,
+    version: 5,
     theme: pick(raw.theme, ['system', 'light', 'dark'], 'system'),
     accentColor: ACCENTS[raw.accentColor] ? raw.accentColor : 'valuesignal',
     surfaceStyle: pick(raw.surfaceStyle, ['outlined', 'soft', 'elevated'], 'outlined'),
@@ -109,9 +109,6 @@ export function validatePreferences(raw) {
     forecast: {
       horizonYears: pick(Number(raw.forecast?.horizonYears), [1, 3, 5, 10, 15, 20, 25, 30], 5),
       recurringAnnual: Math.max(0, Number(raw.forecast?.recurringAnnual) || 0),
-      conservativeRate: Number.isFinite(Number(raw.forecast?.conservativeRate)) ? Number(raw.forecast.conservativeRate) : 4,
-      baseRate: Number.isFinite(Number(raw.forecast?.baseRate)) ? Number(raw.forecast.baseRate) : 7,
-      optimisticRate: Number.isFinite(Number(raw.forecast?.optimisticRate)) ? Number(raw.forecast.optimisticRate) : 10,
       birthDate,
       currentAge,
       retirementAge,

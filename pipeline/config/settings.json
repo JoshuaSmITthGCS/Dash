@@ -130,6 +130,20 @@
     "top_five_warning_pct": 70.0,
     "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration."
   },
+  "projection": {
+    "paths": 5000,
+    "minimum_paths": 5000,
+    "block_months": 12,
+    "months_per_year": 12,
+    "portfolio_minimum_history_months": 36,
+    "percentiles": [0.1, 0.25, 0.5, 0.75, 0.9],
+    "default_retirement_end_age": 95,
+    "default_monthly_withdrawal": 3000.0,
+    "default_inflation_pct": 2.5,
+    "minimum_horizon_years": 1,
+    "maximum_horizon_years": 70,
+    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of monthly returns or the selected benchmark becomes the disclosed fallback."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

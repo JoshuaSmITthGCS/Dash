@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, sectorLookThrough, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
+  portfolioAnnualizedReturn, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -162,28 +162,11 @@ describe('portfolio report analytics', () => {
     expect(score.components.resilience).toBeNull()
   })
 
-  it('calculates manual planning scenarios without presenting a forecast', () => {
-    expect(scenarioProjection(1000, 10, 2, 100)).toBe(1420)
-    expect(scenarioProjection(null, 10, 2)).toBeNull()
-  })
-
-  it('derives planning rates from the money-weighted annualized return of current holdings', () => {
+  it('derives a money-weighted annualized return from current holdings', () => {
     const positions = [{ purchaseDate: '2025-01-01', totalCost: 1000, currentValue: 1100 }]
     const annualized = portfolioAnnualizedReturn(positions, '2026-01-01')
     expect(annualized.available).toBe(true)
     expect(annualized.rate).toBeCloseTo(10, 1)
-    const rates = planningReturnRates(positions, [100, 101, 102, 103], '2026-01-01')
-    expect(rates.conservative).toBeLessThan(rates.base)
-    expect(rates.optimistic).toBeGreaterThan(rates.base)
-  })
-
-  it('uses an authoritative trailing-year brokerage return when one is supplied', () => {
-    const rates = planningReturnRates([], [100, 101, 102, 103], '2026-08-04', {
-      trailingYearReturn: 32.2,
-      trailingYearStartDate: '2025-08-04',
-    })
-    expect(rates).toMatchObject({ available: true, base: 32.2, source: 'trailing-year-brokerage-return' })
-    expect(rates.annualized.startDate).toBe('2025-08-04')
   })
 
   it('stores observed intraday highs and only calculates all-time earnings after ledger confirmation', () => {

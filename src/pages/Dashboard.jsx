@@ -8,8 +8,8 @@ import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext
 import { signedPct } from '../lib/formatters.js'
 import {
   BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
-  enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceMetrics, planningReturnRates, portfolioReturnSummary, portfolioScore,
-  resilienceIndex, riskFreeAnnualRate, scenarioProjection, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
+  enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceMetrics, portfolioReturnSummary, portfolioScore,
+  resilienceIndex, riskFreeAnnualRate, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from '../lib/portfolioAnalytics.js'
 import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
 import { Loading, Empty, Move, Tier } from '../components/Bits.jsx'
@@ -21,10 +21,12 @@ import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
 import { rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
-import { FIDELITY_REFERENCE_SNAPSHOT } from '../lib/referenceCashFlows.js'
 import { actualRecordedValueSeries } from '../lib/portfolioPerformance.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import ProjectionPanel from '../components/ProjectionPanel.jsx'
+import { projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
+import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -92,6 +94,19 @@ function Customizer({ widgets, onChange, onDone }) {
   return <aside className="customizer-panel"><div className="customizer-head"><div><span className="eyebrow">Settings</span><h2>Customize report</h2></div><button className="icon-button" onClick={onDone} aria-label="Close customization"><Icon name="close" /></button></div><p>Choose supporting modules and their reading order. Core financial-report metrics always remain visible.</p><div className="customizer-list">{widgets.map((widget, index) => <div className="customizer-row" key={widget.id}><Icon name="grip" /><div><strong>{widget.label}</strong><small>{widget.locked ? 'Required' : `Position ${index + 1}`}</small></div><label className="switch compact-switch"><span className="sr-only">Show {widget.label}</span><input type="checkbox" checked={widget.visible} disabled={widget.locked} onChange={(event) => onChange(widgets.map((item) => item.id === widget.id ? { ...item, visible: event.target.checked } : item))} /><span /></label><div className="reorder-buttons"><button onClick={() => move(index, -1)} disabled={!index}><Icon name="up" /></button><button onClick={() => move(index, 1)} disabled={index === widgets.length - 1}><Icon name="down" /></button></div></div>)}</div><button className="primary-button" onClick={onDone}>Save report</button></aside>
 }
 
+function ReportProjection({ input, source, money, currentAge, retirementAge, contribution }) {
+  const state = useProjectionSimulation(input)
+  return <ProjectionPanel
+    state={state}
+    source={source}
+    money={money}
+    startAge={currentAge}
+    retirementAge={retirementAge}
+    title="Long-range outcome distribution"
+    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments.`}
+  />
+}
+
 export default function Dashboard() {
   const { data, loading } = useData('report.json')
   // Start the larger Market Pulse payload on the landing report so /market is warm when it
@@ -155,25 +170,21 @@ export default function Dashboard() {
   const trackedAccountValue = portfolio.totalValue + uninvestedCash
   const cashHistoryComplete = tracking.trackingState?.cashFlowHistoryComplete
   const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, cashHistoryComplete)
-  const useFidelityTrailingYear = Boolean(tracking.trackingState?.fidelityHistoryImported)
-  const planningReportDate = today?.date || (useFidelityTrailingYear ? FIDELITY_REFERENCE_SNAPSHOT.asOf.slice(0, 10) : null)
+  const planningReportDate = today?.date || null
   const contributionPace = trailingCashFlowPace(tracking.activities, planningReportDate, cashHistoryComplete)
-  const planningRates = planningReturnRates(portfolio.positions, holdingsSeries?.values || [], planningReportDate, useFidelityTrailingYear ? {
-    trailingYearReturn: FIDELITY_REFERENCE_SNAPSHOT.periodReturns['1Y'],
-    trailingYearStartDate: '2025-08-04',
-    trailingYearMethodology: 'Fidelity’s trailing one-year time-weighted return, used as the base case because it isolates investment performance from the size and timing of deposits and withdrawals.',
-  } : {})
   const projectedAnnualContribution = contributionPace.available ? contributionPace.netContributions : forecast.recurringAnnual
-  const scenarioHorizons = [1, 5, 10].map((years) => ({
-    years,
-    contributionOnly: scenarioProjection(trackedAccountValue, 0, years, projectedAnnualContribution),
-    values: planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, rate: planningRates[label], value: scenarioProjection(trackedAccountValue, planningRates[label], years, projectedAnnualContribution) })) : [],
-  }))
-  const yearsToRetirement = Math.max(0, forecast.retirementAge - forecast.currentAge)
-  const retirementValues = planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, value: scenarioProjection(trackedAccountValue, planningRates[label], yearsToRetirement, projectedAnnualContribution) })) : []
   const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
     ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
     : null
+  const projectionSource = selectProjectionReturnSource(holdingsSeries, primaryBenchmarkHistory, preferences.defaultBenchmark)
+  const projectionInput = projectionSource.available ? {
+    monthlyReturns: projectionSource.returns,
+    currentBalance: trackedAccountValue,
+    monthlyContribution: projectedAnnualContribution / projectionConfig.months_per_year,
+    accumulationMonths: Math.max(1, (forecast.retirementAge - forecast.currentAge) * projectionConfig.months_per_year),
+    withdrawalMonths: 0,
+    inflationPct: projectionConfig.default_inflation_pct,
+  } : null
   const beatStreak = primaryBenchmarkHistory ? beatMarketStreak(tracking.snapshots, primaryBenchmarkHistory) : { available: false }
   const greenStreak = valueStreak(tracking.snapshots)
   const mood = portfolioMood({ returnPct: returnSummary.strategy.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
@@ -255,7 +266,7 @@ export default function Dashboard() {
       <PerformanceMetrics metrics={performance} benchmarkLabel={preferences.defaultBenchmark} riskFree={riskFree} />
 
       <section className="report-two-column">
-        <article className="planning-card"><span className="eyebrow">If your last year repeated</span><h2>1, 5, and 10-year illustration</h2>{planningRates.available ? <><div className="scenario-basis-grid"><div><span>Trailing 1Y return</span><strong>{signedPct(planningRates.base, 1)}</strong><small>{planningRates.source === 'trailing-year-brokerage-return' ? 'Fidelity time-weighted' : 'Current-holdings money-weighted'}</small></div><div><span>Observed annual funding</span><strong>{money(projectedAnnualContribution)}</strong><small>{contributionPace.available ? 'Settled trailing-year net deposits' : 'Manual setting'}</small></div><div><span>Recorded strategy return</span><strong className={tone(returnSummary.strategy.returnPct)}>{returnSummary.strategy.available ? signedPct(returnSummary.strategy.returnPct, 2) : 'Tracking'}</strong><small>{returnSummary.strategy.available ? 'Modified Dietz over stored account values' : returnSummary.strategy.reason}</small></div></div><div className="scenario-horizon-grid">{scenarioHorizons.map((horizon) => <section key={horizon.years}><h3>{horizon.years} year{horizon.years === 1 ? '' : 's'}<small>No-return baseline {money(horizon.contributionOnly)}</small></h3>{horizon.values.map((item) => <div key={item.label}><span>{item.label}<small>{item.rate.toFixed(1)}% annualized</small></span><strong>{money(item.value)}</strong></div>)}</section>)}</div><div className="retirement-outlook"><span>Same-return illustration · age {forecast.retirementAge}</span><strong>{yearsToRetirement ? money(retirementValues.find((item) => item.label === 'base')?.value) : money(trackedAccountValue)}</strong><small>{yearsToRetirement} years away · repeats the trailing-year base case</small></div><p>{planningRates.methodology} Adds {money(projectedAnnualContribution)} at each year end based on {contributionPace.available ? `${contributionPace.startDate}–${contributionPace.endDate} settled cash flows` : 'your manual setting'}.{useFidelityTrailingYear ? ` The processing ${money(100)} Aug. 4 transfer is excluded until posted.` : ''} This is a historical what-if, not a prediction.</p></> : <div className="unavailable-panel compact-unavailable"><strong>Annualized scenario unavailable</strong><p>{planningRates.reason}</p></div>}<div className="planning-links"><Link to="/portfolio/insights">Open cash-flow performance chart</Link><Link to="/settings">Edit contribution and retirement age</Link></div></article>
+        <ReportProjection input={projectionInput} source={projectionSource} money={money} currentAge={forecast.currentAge} retirementAge={forecast.retirementAge} contribution={projectedAnnualContribution} />
         <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}

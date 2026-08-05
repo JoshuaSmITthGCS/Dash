@@ -127,7 +127,7 @@ const GROUPS = [
     terms: [
       ['Leftover', 'Monthly income minus monthly expenses in the budget subsection — the amount available to save, invest, or split into pools.'],
       ['Auto-split pool', 'A named savings bucket with a target percentage. Logging a deposit divides that dollar amount across every pool in proportion to its percentage.'],
-      ['Retirement projection', 'A compounding-growth estimate of a savings balance at a future retirement age, given a starting balance, a monthly contribution, and an assumed annual return.'],
+      ['Retirement simulation', 'A range built from 5,000 paths that resample consecutive 12-month blocks of historical returns. It uses portfolio history after three years, otherwise the selected benchmark, and reports percentiles plus the probability savings last through the planned withdrawal period. Simulated outcomes are not predictions.'],
       ['Nominal balance', 'A projected future balance in future dollars, not adjusted for inflation.'],
       ['Inflation-adjusted balance', 'A projected future balance restated in today’s purchasing power by discounting for assumed inflation — a more honest read of what the balance will actually buy.'],
       ['401(k) / 403(b)', 'An employer-sponsored retirement account with pre-tax (traditional) or after-tax (Roth) contributions, deducted straight from payroll. The 2026 IRS employee deferral limit is $24,500, plus a $8,000 catch-up at 50+ or $11,250 at ages 60–63.'],

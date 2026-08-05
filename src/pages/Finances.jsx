@@ -3,10 +3,14 @@ import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances'
 import { Loading } from '../components/Bits'
-import GrowthChart from '../components/GrowthChart'
 import { summarizeBudget, splitAmount } from '../lib/financeSplit'
-import { projectRetirement } from '../lib/retirementCalculator'
 import { ACCOUNT_TYPES, getAnnualLimit, accountTypeLabel } from '../lib/retirementLimits'
+import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
+import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
+import { usePreferences } from '../lib/PreferencesContext.jsx'
+import { projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
+import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
+import ProjectionPanel from '../components/ProjectionPanel.jsx'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -33,7 +37,9 @@ function currentPortfolioValue(positions, data) {
 
 export default function Finances() {
   const { data } = useData('advisor.json')
+  const { data: benchmarkReport } = useData('benchmark-report.json')
   const { positions } = useFirebasePortfolio()
+  const { preferences } = usePreferences()
   const finances = useFirebaseFinances()
   const [tab, setTab] = useState('budget')
   const [budgetForm, setBudgetForm] = useState({ name: '', amount: '', type: 'expense' })
@@ -47,14 +53,26 @@ export default function Finances() {
   const accounts = finances.accounts || []
   const totalAnnualFromAccounts = accounts.reduce((sum, account) => sum + (account.annualContribution || 0), 0)
   const monthlyFromAccounts = totalAnnualFromAccounts / 12
-  const projection = useMemo(() => projectRetirement({
-    currentSavings: finances.settings.currentSavings,
+  const projectionSource = useMemo(() => {
+    const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
+    const portfolioSeries = currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
+    const benchmarkSymbol = preferences.defaultBenchmark
+    const benchmark = benchmarkReport?.histories?.[benchmarkSymbol]
+    return selectProjectionReturnSource(portfolioSeries, benchmark, benchmarkSymbol)
+  }, [benchmarkReport, data, positions, preferences.defaultBenchmark])
+  const projectionInput = useMemo(() => projectionSource.available ? {
+    monthlyReturns: projectionSource.returns,
+    currentBalance: finances.settings.currentSavings,
     monthlyContribution: finances.settings.monthlyContribution,
-    annualReturnPct: finances.settings.annualReturnPct,
+    monthlyWithdrawal: finances.settings.monthlyWithdrawal,
     inflationPct: finances.settings.inflationPct,
-    years: Math.max(1, (finances.settings.retireAge || 0) - (finances.settings.currentAge || 0)),
-  }), [finances.settings])
+    accumulationMonths: Math.max(1, (finances.settings.retireAge - finances.settings.currentAge) * projectionConfig.months_per_year),
+    withdrawalMonths: Math.max(0, (finances.settings.retirementEndAge - finances.settings.retireAge) * projectionConfig.months_per_year),
+  } : null, [finances.settings, projectionSource])
+  const projection = useProjectionSimulation(projectionInput)
   const depositPreview = splitAmount(parseFloat(depositAmount) || 0, finances.pools)
+  const projectedMedian = projection.result?.retirementPercentiles?.p50
+  const successProbability = projection.result?.successProbability
 
   if (finances.loading) return <Loading />
 
@@ -113,9 +131,9 @@ export default function Finances() {
           <div className="kpi-note">{finances.pools.length} pool{finances.pools.length === 1 ? '' : 's'}</div>
         </div>
         <div className="card kpi">
-          <div className="kpi-label">Projected at Retirement</div>
-          <div className="kpi-value">{money(projection.nominalFinal)}</div>
-          <div className="kpi-note">{money(projection.realFinal)} in today's dollars</div>
+          <div className="kpi-label">Median at Retirement</div>
+          <div className="kpi-value">{projection.loading ? 'Simulating…' : money(projectedMedian)}</div>
+          <div className="kpi-note">From 5,000 historical return paths</div>
         </div>
       </div>
 
@@ -263,11 +281,6 @@ export default function Finances() {
                   onChange={(e) => finances.updateSettings({ retireAge: parseInt(e.target.value, 10) || 0 })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Expected annual return %</label>
-                <input type="number" step="0.1" value={finances.settings.annualReturnPct}
-                  onChange={(e) => finances.updateSettings({ annualReturnPct: parseFloat(e.target.value) || 0 })} />
-              </div>
-              <div>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Inflation %</label>
                 <input type="number" step="0.1" value={finances.settings.inflationPct}
                   onChange={(e) => finances.updateSettings({ inflationPct: parseFloat(e.target.value) || 0 })} />
@@ -281,6 +294,16 @@ export default function Finances() {
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Monthly contribution</label>
                 <input type="number" step="1" value={finances.settings.monthlyContribution}
                   onChange={(e) => finances.updateSettings({ monthlyContribution: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Plan through age</label>
+                <input type="number" min={finances.settings.retireAge} max="120" value={finances.settings.retirementEndAge}
+                  onChange={(e) => finances.updateSettings({ retirementEndAge: parseInt(e.target.value, 10) || projectionConfig.default_retirement_end_age })} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Monthly retirement spending</label>
+                <input type="number" min="0" step="100" value={finances.settings.monthlyWithdrawal}
+                  onChange={(e) => finances.updateSettings({ monthlyWithdrawal: parseFloat(e.target.value) || 0 })} />
               </div>
             </div>
             <button className="text-button" style={{ padding: 0, minHeight: 'auto', marginTop: 12 }}
@@ -361,31 +384,29 @@ export default function Finances() {
 
           <div className="grid grid-3" style={{ marginBottom: 20 }}>
             <div className="card kpi">
-              <div className="kpi-label">At Retirement (Nominal)</div>
-              <div className="kpi-value">{money(projection.nominalFinal)}</div>
+              <div className="kpi-label">Median at Retirement</div>
+              <div className="kpi-value">{projection.loading ? 'Simulating…' : money(projectedMedian)}</div>
             </div>
             <div className="card kpi">
-              <div className="kpi-label">At Retirement (Today's $)</div>
-              <div className="kpi-value">{money(projection.realFinal)}</div>
+              <div className="kpi-label">Median in Today's Dollars</div>
+              <div className="kpi-value">{money(projection.result?.retirementPercentilesReal?.p50)}</div>
             </div>
             <div className="card kpi">
-              <div className="kpi-label">Total Growth</div>
-              <div className="kpi-value" style={{ color: 'var(--pos)' }}>{money(projection.totalGrowth)}</div>
-              <div className="kpi-note">On {money(projection.totalContributed)} contributed</div>
+              <div className="kpi-label">Savings Last Through Age {finances.settings.retirementEndAge}</div>
+              <div className="kpi-value" style={{ color: 'var(--pos)' }}>{successProbability == null ? '—' : `${(successProbability * 100).toFixed(0)}%`}</div>
+              <div className="kpi-note">Given {money(finances.settings.monthlyWithdrawal)} monthly spending</div>
             </div>
           </div>
 
-          <div className="card card-pad">
-            <GrowthChart
-              title="Projected balance to retirement"
-              dates={projection.series.map((point) => `Year ${point.year}`)}
-              series={[
-                { label: 'Nominal', values: projection.series.map((point) => point.nominal), color: 'var(--accent)', emphasis: true },
-                { label: 'Inflation-adjusted', values: projection.series.map((point) => point.real), color: 'var(--text-dim)', dashed: true },
-              ]}
-              caption="General projection only, not a guarantee — actual markets don't compound smoothly."
-            />
-          </div>
+          <ProjectionPanel
+            state={projection}
+            source={projectionSource}
+            money={money}
+            startAge={finances.settings.currentAge}
+            retirementAge={finances.settings.retireAge}
+            endAge={finances.settings.retirementEndAge}
+            title="Retirement outcome range"
+          />
         </>
       )}
     </>

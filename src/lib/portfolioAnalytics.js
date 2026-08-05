@@ -279,14 +279,6 @@ function accountValueEndpoints(snapshots = []) {
   return { first: usable[0], last: usable.at(-1), observations: usable.length }
 }
 
-export function scenarioProjection(currentValue, annualRate, years, recurringAnnual = 0) {
-  if (!finite(currentValue) || !finite(annualRate) || !finite(years)) return null
-  const rate = Number(annualRate) / 100
-  let value = Number(currentValue)
-  for (let year = 0; year < Number(years); year += 1) value = value * (1 + rate) + Number(recurringAnnual || 0)
-  return value
-}
-
 function xnpv(rate, flows) {
   const origin = Date.parse(flows[0].date)
   return flows.reduce((sum, flow) => sum + flow.amount / ((1 + rate) ** ((Date.parse(flow.date) - origin) / 31557600000)), 0)
@@ -362,25 +354,6 @@ export function portfolioAnnualizedReturn(positions = [], endDate = new Date().t
   return result.available
     ? { ...result, coveragePct, startDate: flows[0].date, endDate, methodology: 'Money-weighted annualized return for currently held positions using entered purchase dates, cost basis, and latest stored values.' }
     : result
-}
-
-export function planningReturnRates(positions = [], historicalValues = [], endDate, options = {}) {
-  const observedTrailingYear = finite(options.trailingYearReturn) ? Number(options.trailingYearReturn) : null
-  const annualized = observedTrailingYear == null
-    ? portfolioAnnualizedReturn(positions, endDate)
-    : {
-        available: true,
-        rate: observedTrailingYear,
-        spanDays: 365,
-        startDate: options.trailingYearStartDate,
-        endDate,
-        methodology: options.trailingYearMethodology || 'Trailing one-year time-weighted brokerage return, which minimizes the effect of deposit and withdrawal timing.',
-      }
-  if (!annualized.available) return { available: false, ...annualized }
-  const volatility = annualizedVolatility(historicalValues)
-  const band = finite(volatility) ? clamp(Number(volatility) * .35, 2, 12) : 5
-  const base = clamp(annualized.rate, -40, 40)
-  return { available: true, base, conservative: clamp(base - band, -50, 40), optimistic: clamp(base + band, -40, 50), volatility, band, annualized, source: observedTrailingYear == null ? 'current-holdings-irr' : 'trailing-year-brokerage-return', methodology: `${annualized.methodology} Conservative and optimistic rates subtract or add 35% of observed annualized volatility, bounded to a 2–12 percentage-point range.` }
 }
 
 export function trackedAllTimeEarnings(portfolio, activities = [], trackingState = null) {
