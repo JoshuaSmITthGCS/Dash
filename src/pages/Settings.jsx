@@ -107,6 +107,7 @@ export default function Settings() {
       <SelectRow id="retirement-age" label="Retirement age" description="The report adds a retirement-value checkpoint beside 1, 5, and 10 years." value={preferences.forecast.retirementAge} onChange={(retirementAge) => updatePreferences({ forecast: { ...preferences.forecast, retirementAge: Number(retirementAge) } })}>{RETIREMENT_AGES.map((age) => <option key={age} value={age}>Age {age}</option>)}</SelectRow>
       <div className="settings-row"><div><strong>Scenario rates</strong><span>Base is the money-weighted annualized return for current holdings. Conservative and optimistic subtract or add a bounded volatility band.</span></div><b className="settings-value">Automatic</b></div>
       <SelectRow id="mobile-research" label="Mobile research view" value={preferences.mobileResearchView} onChange={(mobileResearchView) => updatePreferences({ mobileResearchView })}><option value="visual">Visual summary</option><option value="detailed">Detailed cards</option></SelectRow>
+      <SelectRow id="watchlist-sizing-mode" label="Watchlist sizing method" description="Capped uses one ceiling per eligible name. Equal risk lowers dollar size as published volatility rises." value={preferences.watchlistSizingMode} onChange={(watchlistSizingMode) => updatePreferences({ watchlistSizingMode })}><option value="capped">Capped maximum</option><option value="inverse-volatility">Equal risk by volatility</option></SelectRow>
     </section>
 
     <section className="settings-card" aria-labelledby="display-heading">

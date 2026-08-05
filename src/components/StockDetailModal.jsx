@@ -13,6 +13,9 @@ import DipWatchBadge from './DipWatchBadge'
 import useBodyScrollLock from '../lib/useBodyScrollLock'
 import ResearchRadarChart from './ResearchRadarChart'
 import Icon from './Icons'
+import SetupQualityBreakdown from './SetupQualityBreakdown'
+import { watchlistGuidance } from '../lib/watchlistGuidance'
+import { usePreferences } from '../lib/PreferencesContext.jsx'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -68,6 +71,7 @@ function InsiderActivityView({ insider }) {
 export default function StockDetailModal({ stock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
   const [showMore, setShowMore] = useState(false)
+  const { preferences } = usePreferences()
 
   useBodyScrollLock(!!stock)
 
@@ -90,6 +94,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const analysis = stock.analysis_v2
   const structural = analysis?.structural
   const percentile = stock.valuation_percentile
+  const setupGuidance = watchlistGuidance(stock, null, null, { sizingMode: preferences.watchlistSizingMode })
 
   // A held position with a purchase date gets its own since-you-bought-it comparison — the
   // full charted window (often a year) is the wrong question once you actually own the stock.
@@ -152,6 +157,8 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         <div style={{ marginBottom: 22 }}>
           <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
         </div>
+
+        <SetupQualityBreakdown guidance={setupGuidance} />
 
         <div className="grid grid-4" style={{ marginBottom: 20 }}>
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />

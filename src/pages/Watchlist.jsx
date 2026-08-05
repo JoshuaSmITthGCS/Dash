@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData'
-import { Move, Loading, RefreshProgress } from '../components/Bits.jsx'
+import { Loading, RefreshProgress } from '../components/Bits.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
-import { watchlistGuidance } from '../lib/watchlistGuidance'
+import { inverseVolatilityAllocations, watchlistGuidance } from '../lib/watchlistGuidance'
 import CompanyLogo from '../components/CompanyLogo.jsx'
+import SetupQualityBreakdown from '../components/SetupQualityBreakdown.jsx'
+import { usePreferences } from '../lib/PreferencesContext.jsx'
 
 const KEY = 'valuesignal.watchlist'
 const SETTINGS_KEY = 'valuesignal.watchlistSizing'
 
 export default function Watchlist() {
   const { data, loading, reload } = useData('advisor.json')
+  const { preferences } = usePreferences()
   const [list, setList] = useState([])
   const [input, setInput] = useState('')
   const [sizing, setSizing] = useState({ budget: '', maxPositionPct: '5' })
@@ -43,6 +47,11 @@ export default function Watchlist() {
   ].map((row) => [row.ticker, row]))
   const budget = Number(sizing.budget)
   const maxPositionPct = Number(sizing.maxPositionPct)
+  const watchRows = list.map((ticker) => byTicker[ticker]).filter(Boolean)
+  const volatilityAllocations = inverseVolatilityAllocations(watchRows, budget, maxPositionPct)
+  const sizingModeLabel = preferences.watchlistSizingMode === 'inverse-volatility'
+    ? 'Equal risk by volatility'
+    : 'Capped maximum'
 
   return (
     <>
@@ -76,9 +85,9 @@ export default function Watchlist() {
       </div>
       <div className="watchlist-sizing card">
         <div>
-          <span className="eyebrow">Illustrative sizing cap</span>
+          <span className="eyebrow">Illustrative position sizing</span>
           <strong>Set the most this screen may allocate</strong>
-          <small>Stored only in this browser. “Don’t buy yet” always allocates $0.</small>
+          <small>{sizingModeLabel}. Only a low-confidence block or published Sell forces $0. Change the method in <Link to="/settings">Settings</Link>.</small>
         </div>
         <label>
           <span>Investable budget</span>
@@ -94,7 +103,10 @@ export default function Watchlist() {
       <div className="watchlist-grid">
         {list.map((ticker) => {
           const row = byTicker[ticker]
-          const guidance = watchlistGuidance(row, budget, maxPositionPct)
+          const guidance = watchlistGuidance(row, budget, maxPositionPct, {
+            sizingMode: preferences.watchlistSizingMode,
+            volatilityAllocation: volatilityAllocations[ticker],
+          })
           return (
             <article className="watchlist-card" key={ticker}>
               <div className="watchlist-card-head">
@@ -107,13 +119,10 @@ export default function Watchlist() {
                   <Sparkline values={row.history?.closes || row.history?.growth || []} label={`${ticker} trend`} height={92} />
                   <div className="watchlist-stats">
                     <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : 'Unavailable'}</b></div>
-                    <div><span>20-day move</span><Move pct={row.technical_detail?.return_20d} /></div>
+                    <div><span>Setup quality</span><b>{guidance.setupScore.toFixed(0)}</b></div>
                     <div><span>Score</span><b>{row.score}</b></div>
                   </div>
-                  <div className={`watchlist-verdict ${guidance.buySetup ? 'buy' : 'wait'}`}>
-                    <strong>{guidance.verdict}</strong>
-                    <span>Bull/bear thesis {guidance.thesisScore == null ? '—' : `${guidance.thesisScore.toFixed(1)} / 10`}</span>
-                  </div>
+                  <SetupQualityBreakdown guidance={guidance} compact />
                   <div className="watchlist-plan">
                     <div>
                       <span>Yahoo consensus target</span>
@@ -123,9 +132,13 @@ export default function Watchlist() {
                         : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '—'} analysts`}</small>
                     </div>
                     <div>
-                      <span>Illustrative maximum</span>
+                      <span>{guidance.sizingMode === 'inverse-volatility' ? 'Equal-risk maximum' : 'Capped maximum'}</span>
                       <b>{guidance.allocation > 0 ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b>
-                      <small>{guidance.shares > 0 ? `Up to ${guidance.shares} shares` : sizing.budget ? 'No entry while setup is negative' : 'Enter a budget above'}</small>
+                      <small>{guidance.shares > 0
+                        ? guidance.sizingFallback
+                          ? `Up to ${guidance.shares} shares with capped fallback`
+                          : `Up to ${guidance.shares} shares${guidance.annualizedVolatility == null ? '' : ` at ${guidance.annualizedVolatility.toFixed(0)}% volatility`}`
+                        : guidance.hardBlocked ? 'Sizing blocked by published evidence' : 'Enter a budget above'}</small>
                     </div>
                   </div>
                 </>

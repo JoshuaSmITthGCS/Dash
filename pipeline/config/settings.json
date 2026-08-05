@@ -69,6 +69,37 @@
     "fallback_exit_pct": 20.0,
     "_comment": "Position decisions reference the highest observed close since purchase. Cost basis remains display-only."
   },
+  "watchlist_setup": {
+    "thesis_center": 5.5,
+    "thesis_transition_width": 2.0,
+    "research_center": 65.0,
+    "research_transition_width": 20.0,
+    "confidence_center": 0.5,
+    "confidence_transition_width": 0.3,
+    "transition_slope": 4.0,
+    "neutral_subscore": 0.5,
+    "hard_confidence_floor": 0.45,
+    "weights": {
+      "thesis": 0.3,
+      "research": 0.3,
+      "confidence": 0.2,
+      "guidance": 0.2
+    },
+    "guidance_scores": {
+      "HOLD": 1.0,
+      "WATCH": 0.6,
+      "TRIM": 0.15,
+      "SELL": 0.0
+    },
+    "labels": {
+      "strong_min": 75.0,
+      "workable_min": 55.0,
+      "weak_min": 30.0
+    },
+    "default_sizing_mode": "capped",
+    "minimum_annualized_volatility_pct": 5.0,
+    "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, confidence, and published-guidance subscores. Only confidence below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { calculateAge, isValidBirthDate, RETIREMENT_AGES } from './age.js'
+import modelSettings from '../../pipeline/config/settings.json'
 
 export const PREFERENCES_KEY = 'valuesignal.ui-preferences.v1'
 
@@ -25,7 +26,7 @@ export const DEFAULT_WIDGETS = [
 ]
 
 export const DEFAULT_PREFERENCES = {
-  version: 3,
+  version: 4,
   theme: 'system',
   accentColor: 'valuesignal',
   surfaceStyle: 'outlined',
@@ -44,6 +45,7 @@ export const DEFAULT_PREFERENCES = {
   defaultBenchmarks: ['SPY', 'QQQ', 'VTI'],
   suggestedActionsDefault: 'collapsed',
   mobileResearchView: 'visual',
+  watchlistSizingMode: modelSettings.watchlist_setup.default_sizing_mode,
   forecast: { horizonYears: 5, recurringAnnual: 0, conservativeRate: 4, baseRate: 7, optimisticRate: 10, birthDate: '', currentAge: 30, retirementAge: 65 },
   chartAnimation: 'system',
   reducedMotion: 'system',
@@ -82,7 +84,7 @@ export function validatePreferences(raw) {
   return {
     ...DEFAULT_PREFERENCES,
     ...raw,
-    version: 3,
+    version: 4,
     theme: pick(raw.theme, ['system', 'light', 'dark'], 'system'),
     accentColor: ACCENTS[raw.accentColor] ? raw.accentColor : 'valuesignal',
     surfaceStyle: pick(raw.surfaceStyle, ['outlined', 'soft', 'elevated'], 'outlined'),
@@ -103,6 +105,7 @@ export function validatePreferences(raw) {
     defaultBenchmarks,
     suggestedActionsDefault: pick(raw.suggestedActionsDefault, ['collapsed', 'expanded'], 'collapsed'),
     mobileResearchView: pick(raw.mobileResearchView, ['visual', 'detailed'], 'visual'),
+    watchlistSizingMode: pick(raw.watchlistSizingMode, ['capped', 'inverse-volatility'], modelSettings.watchlist_setup.default_sizing_mode),
     forecast: {
       horizonYears: pick(Number(raw.forecast?.horizonYears), [1, 3, 5, 10, 15, 20, 25, 30], 5),
       recurringAnnual: Math.max(0, Number(raw.forecast?.recurringAnnual) || 0),

@@ -43,7 +43,7 @@ describe('interface preferences', () => {
       theme: 'sepia',
       widgets: [{ id: 'portfolio-summary', visible: false }, { id: 'market-pulse', visible: false, order: 0, size: 'huge' }],
     })
-    expect(value.version).toBe(3)
+    expect(value.version).toBe(4)
     expect(value.theme).toBe('system')
     expect(value.widgets).toHaveLength(DEFAULT_WIDGETS.length)
     expect(value.widgets.find((widget) => widget.id === 'portfolio-summary').visible).toBe(true)
@@ -51,6 +51,7 @@ describe('interface preferences', () => {
     expect(value.defaultLandingPage).toBe('report')
     expect(value.holdingSort).toEqual({ key: 'allocation', direction: 'desc' })
     expect(value.defaultBenchmarks).toEqual(['SPY', 'QQQ', 'VTI'])
+    expect(value.watchlistSizingMode).toBe('capped')
   })
 
   it('follows live system-theme changes until the user selects an override', () => {
