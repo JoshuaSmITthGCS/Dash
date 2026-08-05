@@ -187,6 +187,12 @@ jobs:
           git add --all pipeline/data/pit 2>/dev/null || true
           git add --all pipeline/data/estimates 2>/dev/null || true
           git add --all pipeline/data/factors 2>/dev/null || true
+          # fetch_advisor.py also appends prospective validation snapshots and rewrites
+          # normalization audit artifacts outside pipeline/data/. Leaving either tracked
+          # output unstaged makes the pull --rebase below reject the otherwise valid
+          # refresh commit with "You have unstaged changes."
+          git add --all pipeline/pit_store 2>/dev/null || true
+          git add --all pipeline/reports 2>/dev/null || true
           git diff --cached --quiet && exit 0
           if [[ "${{ steps.refresh_window.outputs.is_rescore }}" == "true" ]]; then
             git commit -m "chore(data): rescore published research (no data refresh)"
