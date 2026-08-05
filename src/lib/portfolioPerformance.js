@@ -28,9 +28,9 @@ export function latestBenchmarkClose(history) {
  */
 export function actualRecordedValueSeries(snapshots = [], transactions = []) {
   const byDate = new Map()
-  snapshots.filter((row) => row?.marketDate && Number.isFinite(Number(row.value)))
+  snapshots.filter((row) => (row?.marketDate || row?.recordedAt) && Number.isFinite(Number(row.value)))
     .sort((left, right) => String(left.recordedAt || '').localeCompare(String(right.recordedAt || '')))
-    .forEach((row) => byDate.set(row.marketDate, Number(row.value)))
+    .forEach((row) => byDate.set(row.marketDate || String(row.recordedAt).slice(0, 10), Number(row.value)))
   const rows = [...byDate.entries()].sort((left, right) => left[0].localeCompare(right[0]))
   if (rows.length < 2) return null
   const startDate = rows[0][0]
@@ -48,6 +48,47 @@ export function actualRecordedValueSeries(snapshots = [], transactions = []) {
     values: rows.map(([, value]) => value),
     settledFlows,
     methodology: `Actual account values recorded in Firestore. ${settledFlows.length} settled external cash flow${settledFlows.length === 1 ? '' : 's'} falls inside this window.`,
+  }
+}
+
+export const PORTFOLIO_HISTORY_LABELS = {
+  actual: 'Your actual recorded value',
+  backtest: "Today's basket, backtested",
+}
+
+/**
+ * Chooses the historical series with the most observations until the user overrides it.
+ * Keeping the rule here makes the default deterministic and testable across desktop and mobile.
+ */
+export function selectPortfolioHistorySeries(backtestedSeries, actualSeries, requestedMode = null) {
+  const seriesByMode = { backtest: backtestedSeries, actual: actualSeries }
+  const backtestObservations = backtestedSeries?.dates?.length || 0
+  const actualObservations = actualSeries?.dates?.length || 0
+  const requestedSeries = seriesByMode[requestedMode]
+  const mode = requestedSeries
+    ? requestedMode
+    : actualObservations > backtestObservations
+      ? 'actual'
+      : backtestObservations
+        ? 'backtest'
+        : actualObservations
+          ? 'actual'
+          : 'backtest'
+  const selectedSeries = seriesByMode[mode] || null
+  const selectedObservations = selectedSeries?.dates?.length || 0
+  const defaultReason = actualObservations === backtestObservations
+    ? 'both series have equal observation coverage and the backtested view is the tie breaker'
+    : 'it has the greater available observation coverage'
+  const note = requestedSeries
+    ? `Showing ${PORTFOLIO_HISTORY_LABELS[mode]} by your selection. ${selectedObservations} observations are available.`
+    : `Defaulted to ${PORTFOLIO_HISTORY_LABELS[mode]} because ${defaultReason}. ${selectedObservations} observations are available.`
+  return {
+    mode,
+    series: selectedSeries,
+    selectedObservations,
+    observations: { actual: actualObservations, backtest: backtestObservations },
+    defaulted: !requestedSeries,
+    note,
   }
 }
 

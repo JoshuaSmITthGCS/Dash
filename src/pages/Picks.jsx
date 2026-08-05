@@ -10,6 +10,7 @@ import Sparkline from '../components/Sparkline.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { rankMomentum, rankReversal } from '../lib/researchScreens.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
+import MobileVirtualList from '../components/MobileVirtualList.jsx'
 
 const SORTS = {
   score: ['Research score', (a, b) => (b.score ?? -1) - (a.score ?? -1)],
@@ -238,12 +239,11 @@ export default function Picks() {
         )}
       </section>
 
-      <div className="research-mobile-list">
-        {rows.map((row) => <ResearchCard key={row.ticker} row={row}
-          rank={rows.findIndex((item) => item.ticker === row.ticker) + 1} onOpen={setSelectedStock}
+      <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={390}
+        renderItem={(row, index) => <ResearchCard row={row}
+          rank={index + 1} onOpen={setSelectedStock}
           held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
-          buyStatus={buyStatuses[row.ticker]} onBuy={handleQuickBuy} />)}
-      </div>
+          buyStatus={buyStatuses[row.ticker]} onBuy={handleQuickBuy} />} />
 
       <div className="research-table card">
         <table>

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { Empty, Loading, Move } from '../components/Bits'
 import { ScreenNavigation } from './ResearchScreen'
+import ResultCards from '../components/ResultCards.jsx'
+import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 const FLAG_LABELS = {
   LATE_FILING: 'Late filing',
@@ -73,7 +75,7 @@ export default function CongressTrades() {
       <div className="card etf-state" role="alert"><strong>Congress trades screen unavailable</strong><span>{error.message}</span></div>
     ) : <>
       {summary && (
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', marginBottom: 20 }}>
+        <div className="grid congress-kpi-grid">
           <div className="card kpi">
             <div className="kpi-label">Trades</div>
             <div className="kpi-value">{summary.trades.toLocaleString('en-US')}</div>
@@ -99,7 +101,7 @@ export default function CongressTrades() {
         </div>
       )}
 
-      <div className="screen-filters" aria-label="Disclosure filters">
+      <ResponsiveControlPanel label="Filter and sort" title="Filter disclosures"><div className="screen-filters" aria-label="Disclosure filters">
         <label>Chamber
           <select value={filters.chamber} onChange={update('chamber')}>
             <option value="all">All</option>
@@ -120,11 +122,24 @@ export default function CongressTrades() {
             <option value="performance">Best performance since purchase</option>
           </select>
         </label>
-      </div>
+      </div></ResponsiveControlPanel>
 
       {!filtered.length ? (
         <Empty note={rows.length ? 'No disclosures match these filters.' : 'No disclosures collected yet — this screen updates weekly.'} />
       ) : (
+        <>
+        <ResultCards rows={filtered} getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}
+          title={(row) => row.representative || 'Unknown representative'}
+          subtitle={(row) => `${row.chamber || 'Chamber unavailable'}${row.district ? ` · ${row.district}` : ''}`}
+          fields={[
+            { label: 'Issuer', value: (row) => row.asset_description || row.symbol || '—' },
+            { label: 'Type', value: (row) => row.transaction_type || '—' },
+            { label: 'Size', value: (row) => row.amount || '—' },
+            { label: 'Traded', value: (row) => row.transaction_date || '—' },
+            { label: 'Filed after', value: (row) => row.filing_delay_days != null ? `${row.filing_delay_days}d` : '—' },
+            { label: 'Since purchase', value: (row) => row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : '—' },
+            { label: 'Flags', value: (row) => <FlagChips flags={row.flags} /> },
+          ]} />
         <div className="research-table card">
           <table>
             <thead>
@@ -160,6 +175,7 @@ export default function CongressTrades() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <p className="disclaimer">

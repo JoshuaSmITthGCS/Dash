@@ -148,8 +148,7 @@ export default function Finances() {
       {tab === 'budget' && (
         <div className="card card-pad">
           <div className="sec-label">Add income or expense</div>
-          <form onSubmit={handleAddBudgetItem}
-            style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 12, alignItems: 'end', marginBottom: 20 }}>
+          <form onSubmit={handleAddBudgetItem} className="finance-form finance-form-budget">
             <div>
               <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
               <input type="text" placeholder="Paycheck" value={budgetForm.name} required
@@ -208,7 +207,7 @@ export default function Finances() {
         <>
           <div className="card card-pad" style={{ marginBottom: 20 }}>
             <div className="sec-label">Add a pool</div>
-            <form onSubmit={handleAddPool} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: 12, alignItems: 'end' }}>
+            <form onSubmit={handleAddPool} className="finance-form finance-form-pool">
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
                 <input type="text" placeholder="Emergency fund" value={poolForm.name} required
@@ -245,8 +244,7 @@ export default function Finances() {
 
           <div className="card card-pad">
             <div className="sec-label">Log a deposit</div>
-            <form onSubmit={handleDeposit}
-              style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'end', marginBottom: 16 }}>
+            <form onSubmit={handleDeposit} className="finance-form finance-form-deposit">
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Amount to split</label>
                 <input type="number" step="0.01" placeholder={budgetSummary.leftover > 0 ? budgetSummary.leftover.toFixed(0) : '0'}
@@ -318,8 +316,7 @@ export default function Finances() {
               Track contribution room against the 2026 IRS limits for each account.
               Roth IRA room can phase out at higher incomes — this assumes you're eligible.
             </p>
-            <form onSubmit={handleAddAccount}
-              style={{ display: 'grid', gridTemplateColumns: '2fr 1fr auto', gap: 12, alignItems: 'end', marginBottom: 20 }}>
+            <form onSubmit={handleAddAccount} className="finance-form finance-form-account">
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
                 <input type="text" placeholder="Fidelity 401(k)" value={accountForm.name} required

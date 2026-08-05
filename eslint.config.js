@@ -2,9 +2,9 @@ import js from '@eslint/js'
 
 const globals = Object.fromEntries([
   // browser
-  'alert', 'Blob', 'confirm', 'console', 'document', 'fetch', 'FileReader', 'import.meta',
+  'alert', 'Blob', 'clients', 'confirm', 'console', 'crypto', 'document', 'fetch', 'FileReader', 'import.meta',
   'localStorage', 'navigator', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-  'URL', 'window',
+  'Notification', 'TextEncoder', 'URL', 'window',
   // test runner
   'afterEach', 'beforeEach', 'describe', 'expect', 'it', 'vi',
 ].map((name) => [name, 'readonly']))
@@ -21,6 +21,10 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals,
     },
+  },
+  {
+    files: ['public/sw.js'],
+    languageOptions: { globals: { self: 'readonly', clients: 'readonly' } },
   },
   {
     // Unimplemented connector stubs: the parameter names are the documented contract for

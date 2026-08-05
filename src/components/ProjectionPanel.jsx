@@ -37,6 +37,7 @@ export default function ProjectionPanel({ state, source, money, startAge = null,
       <span className="projection-path-count">{result.pathCount.toLocaleString()} paths</span>
     </header>
     {assumptionNote && <p className="projection-assumption">{assumptionNote}</p>}
+    {source.synthetic && <aside className="projection-source-warning" role="note"><strong>Short portfolio history extended</strong><span>{source.fallbackReason}</span></aside>}
     {hasWithdrawalPhase && <div className="projection-success" aria-label={`Retirement success probability ${successPct.toFixed(0)} percent`}>
       <span>Probability savings last to age {endAge}</span>
       <strong>{successPct.toFixed(0)}%</strong>

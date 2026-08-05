@@ -33,7 +33,6 @@ export const DEFAULT_PREFERENCES = {
   cornerStyle: 'rounded',
   density: 'comfortable',
   numberFormat: 'automatic',
-  gainLossFormat: 'dollar-percent',
   privacyMode: false,
   chartStyle: 'area',
   chartLineWeight: 'standard',
@@ -91,7 +90,6 @@ export function validatePreferences(raw) {
     cornerStyle: pick(raw.cornerStyle, ['compact', 'rounded', 'extra-rounded'], 'rounded'),
     density: pick(raw.density, ['compact', 'comfortable', 'spacious'], 'comfortable'),
     numberFormat: pick(raw.numberFormat, ['full', 'compact', 'automatic'], 'automatic'),
-    gainLossFormat: pick(raw.gainLossFormat, ['dollar-percent', 'percent-first', 'dollar-first', 'percent-only'], 'dollar-percent'),
     chartStyle: pick(raw.chartStyle, ['line', 'area', 'step'], 'area'),
     chartLineWeight: pick(raw.chartLineWeight, ['thin', 'standard', 'bold'], 'standard'),
     chartGrid: pick(raw.chartGrid, ['minimal', 'standard', 'hidden'], 'standard'),
@@ -152,6 +150,9 @@ export function PreferencesProvider({ children }) {
     root.dataset.motion = preferences.reducedMotion
     root.dataset.chartGrid = preferences.chartGrid
     root.dataset.chartWeight = preferences.chartLineWeight
+    root.dataset.chartStyle = preferences.chartStyle
+    root.dataset.chartAnimation = preferences.chartAnimation
+    root.dataset.chartLabels = preferences.largerChartLabels ? 'large' : 'standard'
     root.style.setProperty('--brand-primary', resolvedTheme === 'dark' ? accent.dark : accent.value)
     root.style.setProperty('--brand-secondary', resolvedTheme === 'dark' ? accent.dark : accent.value)
     root.style.setProperty('--accent', resolvedTheme === 'dark' ? accent.dark : accent.value)

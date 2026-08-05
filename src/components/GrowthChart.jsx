@@ -24,12 +24,14 @@ function scalePoints(series, dates, width, height, bounds) {
   }))
 }
 
-function pathFor(points) {
+function pathFor(points, stepped = false) {
   let path = ''
   let open = false
   for (const point of points) {
     if (!point) { open = false; continue }
-    path += `${open ? 'L' : 'M'}${point.x.toFixed(1)} ${point.y.toFixed(1)} `
+    if (!open) path += `M${point.x.toFixed(1)} ${point.y.toFixed(1)} `
+    else if (stepped) path += `H${point.x.toFixed(1)} V${point.y.toFixed(1)} `
+    else path += `L${point.x.toFixed(1)} ${point.y.toFixed(1)} `
     open = true
   }
   return path.trim()
@@ -103,18 +105,27 @@ export default function GrowthChart({
   const bounds = { min: min - (max - min) * 0.08 || 0, max: max + (max - min) * 0.08 }
   const ticks = [bounds.max, (bounds.max + bounds.min) / 2, bounds.min]
   const innerHeight = height - PAD.top - PAD.bottom
+  const chartStyle = document.documentElement.dataset.chartStyle || 'line'
 
-  const labelIndexes = [0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1]
+  const labelIndexes = [...new Set([0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1])]
   const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {
     const values = line.values.filter((value) => value != null)
     return `${line.label}: ${valueFormatter(values[values.length - 1])}`
   }).join('; ')} at the end of the period.`
   const selectPoint = (clientX, target) => {
     const bounds = target.getBoundingClientRect()
-    const relative = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width))
+    const plotLeft = bounds.left + PAD.left / width * bounds.width
+    const plotWidth = (width - PAD.left - PAD.right) / width * bounds.width
+    const relative = Math.max(0, Math.min(1, (clientX - plotLeft) / plotWidth))
     setActiveIndex(Math.round(relative * (usableDates.length - 1)))
   }
   const activeX = activeIndex == null ? null : PAD.left + (activeIndex / (usableDates.length - 1)) * (width - PAD.left - PAD.right)
+  const displayedIndex = activeIndex ?? usableDates.length - 1
+  const changeZoom = (key) => {
+    setZoom(key)
+    setActiveIndex(null)
+    if (navigator.vibrate && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) navigator.vibrate(8)
+  }
 
   // The pipeline only has an aggregate "recent quarters, newest weighted heaviest" earnings-surprise
   // number, not a dated per-quarter actual-vs-estimate history — so this marks the latest point on
@@ -134,7 +145,7 @@ export default function GrowthChart({
                 key={range.key}
                 className={zoom === range.key ? 'active' : ''}
                 aria-pressed={zoom === range.key}
-                onClick={() => setZoom(range.key)}
+                onClick={() => changeZoom(range.key)}
               >
                 {range.label}
               </button>
@@ -142,7 +153,11 @@ export default function GrowthChart({
           </div>
         )}
       </div>
-      <div style={{ overflowX: 'auto' }}>
+      <div className="chart-scrub-summary" role="status" aria-live="polite">
+        <span>{String(usableDates[displayedIndex]).slice(0, 10)}</span>
+        <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '—' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
+      </div>
+      <div className="chart-scroll-region" style={{ overflowX: 'auto' }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           width="100%"
@@ -150,6 +165,10 @@ export default function GrowthChart({
           role="img"
           aria-label={chartSummary}
           tabIndex="0"
+          onPointerDown={(event) => {
+            event.currentTarget.setPointerCapture?.(event.pointerId)
+            selectPoint(event.clientX, event.currentTarget)
+          }}
           onPointerMove={(event) => selectPoint(event.clientX, event.currentTarget)}
           onPointerLeave={() => setActiveIndex(null)}
           onFocus={() => setActiveIndex((value) => value ?? usableDates.length - 1)}
@@ -161,7 +180,7 @@ export default function GrowthChart({
             else if (event.key === 'End') setActiveIndex(usableDates.length - 1)
             else setActiveIndex((value) => Math.max(0, Math.min(usableDates.length - 1, (value ?? usableDates.length - 1) + (event.key === 'ArrowRight' ? 1 : -1))))
           }}
-          style={{ display: 'block', minWidth: 320 }}
+          style={{ display: 'block', minWidth: 320, touchAction: 'pan-y' }}
         >
           {ticks.map((tick, index) => {
             const y = PAD.top + (index / (ticks.length - 1)) * innerHeight
@@ -180,9 +199,12 @@ export default function GrowthChart({
           {lines.map((line) => {
             const points = scalePoints(line.values, usableDates, width, height, bounds)
             const last = [...points].reverse().find(Boolean)
+            const connected = points.filter(Boolean)
+            const areaPath = connected.length > 1 ? `${pathFor(points, chartStyle === 'step')} L${connected.at(-1).x.toFixed(1)} ${(height - PAD.bottom).toFixed(1)} L${connected[0].x.toFixed(1)} ${(height - PAD.bottom).toFixed(1)} Z` : ''
             return (
               <g key={line.label}>
-                <path className="chart-data-line" d={pathFor(points)} fill="none" stroke={line.color}
+                {chartStyle === 'area' && line.emphasis && <path className="chart-data-area" d={areaPath} fill={line.color} opacity=".1" />}
+                <path className="chart-data-line" d={pathFor(points, chartStyle === 'step')} fill="none" stroke={line.color}
                   strokeWidth={line.emphasis ? 2.4 : 1.8}
                   strokeDasharray={line.dashPattern || (line.dashed ? '5 4' : undefined)}
                   strokeLinejoin="round" strokeLinecap="round" />

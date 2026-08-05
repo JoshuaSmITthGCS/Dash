@@ -113,7 +113,6 @@ export default function Settings() {
     <section className="settings-card" aria-labelledby="display-heading">
       <header><div><span className="settings-icon"><Icon name="finances" /></span><div><h2 id="display-heading">Data display</h2><p>Formatting preferences never alter source values.</p></div></div></header>
       <SelectRow id="number-format" label="Number format" value={preferences.numberFormat} onChange={(numberFormat) => updatePreferences({ numberFormat })}><option value="full">Full values</option><option value="compact">Compact values</option><option value="automatic">Automatic</option></SelectRow>
-      <SelectRow id="gain-loss" label="Gain/loss display" value={preferences.gainLossFormat} onChange={(gainLossFormat) => updatePreferences({ gainLossFormat })}><option value="dollar-percent">Dollar and percent</option><option value="percent-first">Percent first</option><option value="dollar-first">Dollar first</option><option value="percent-only">Percent only</option></SelectRow>
       <SwitchRow id="privacy" label="Hide balances" description="Masks portfolio balances and chart tooltips while keeping percentages visible." checked={preferences.privacyMode} onChange={(privacyMode) => updatePreferences({ privacyMode })} />
     </section>
 

@@ -103,8 +103,17 @@
   "portfolio_analytics": {
     "trading_days_per_year": 252,
     "performance_minimum_observations": 20,
+    "performance_metric_tones": {
+      "informationRatio": { "good_min": 0.25, "bad_max": -0.25 },
+      "sharpe": { "good_min": 0.5, "bad_max": 0.0 },
+      "sortino": { "good_min": 0.5, "bad_max": 0.0 },
+      "calmar": { "good_min": 0.5, "bad_max": 0.0 },
+      "maxDrawdown": { "good_min": -10.0, "bad_max": -20.0 },
+      "currentDrawdown": { "good_min": -5.0, "bad_max": -10.0 }
+    },
     "risk_free_series": "fed_funds",
     "risk_free_fallback_annual_pct": 0.0,
+    "annualized_return_minimum_coverage_pct": 80.0,
     "xirr_minimum_days": 30,
     "xirr_lower_bound": -0.999,
     "xirr_upper_bound": 100.0,
@@ -128,7 +137,17 @@
     "largest_holding_warning_pct": 25.0,
     "largest_sector_warning_pct": 35.0,
     "top_five_warning_pct": 70.0,
-    "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration."
+    "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration. Performance metric tones use configured good minimums and bad maximums. Values between those boundaries remain neutral, and drawdowns are better when they are closer to zero."
+  },
+  "alerts": {
+    "maximum_rules_per_user": 25,
+    "default_pipeline_stale_hours": 36,
+    "default_earnings_notice_days": 7,
+    "default_move_threshold_pct": 5.0,
+    "default_quiet_hours_start": "22:00",
+    "default_quiet_hours_end": "07:00",
+    "maximum_grouped_push_events": 15,
+    "_comment": "Rules always create in-app events. Push is an optional enhancement, repeated active conditions are deduplicated, and quiet hours suppress delivery without suppressing the in-app event."
   },
   "projection": {
     "paths": 5000,
@@ -136,13 +155,15 @@
     "block_months": 12,
     "months_per_year": 12,
     "portfolio_minimum_history_months": 36,
+    "sparse_history_minimum_days": 30,
+    "sparse_history_extension_months": 36,
     "percentiles": [0.1, 0.25, 0.5, 0.75, 0.9],
     "default_retirement_end_age": 95,
     "default_monthly_withdrawal": 3000.0,
     "default_inflation_pct": 2.5,
     "minimum_horizon_years": 1,
     "maximum_horizon_years": 70,
-    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of monthly returns or the selected benchmark becomes the disclosed fallback."
+    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of observed monthly returns for the standard model. Shorter portfolio histories spanning at least 30 days are extended to 36 months by annualizing the longest first-to-last return and repeating the centered observed monthly pattern. This synthetic extension is disclosed in the interface. The selected benchmark is used only when even that minimum portfolio span is unavailable."
   },
   "signal_weights": {
     "track_record": 25,

@@ -47,6 +47,7 @@ import {
 import { FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from '../lib/referenceCashFlows.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
@@ -92,7 +93,7 @@ function StopLossNote({ stopLoss }) {
 }
 
 function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirection }) {
-  return (
+  const controls = (
     <div className="portfolio-sort-toolbar" aria-label="Portfolio sorting controls">
       <label>
         <span>Sort holdings</span>
@@ -111,6 +112,7 @@ function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirectio
       </button>
     </div>
   )
+  return <ResponsiveControlPanel label={`Sort: ${selectedLabel || 'holdings'}`} title="Sort holdings">{controls}</ResponsiveControlPanel>
 }
 
 function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
@@ -772,7 +774,7 @@ export default function Portfolio() {
                 <Move value={pos.gainPct} />
               </div>
               {editingId === pos.id ? (
-                <div className="holding-edit-form">
+                <MobileSheet open title={`Edit ${pos.ticker}`} onClose={cancelEdit} className="holding-edit-sheet"><div className="holding-edit-form">
                   <label><span>Shares</span>
                     <input className="inline-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
                       onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
@@ -793,7 +795,7 @@ export default function Portfolio() {
                     <input className="inline-edit-input" type="date" value={editForm.purchaseDate}
                       onChange={(e) => setEditForm({ ...editForm, purchaseDate: e.target.value })} />
                   </label>
-                </div>
+                </div><div className="holding-edit-sheet-actions"><button className="secondary-button" onClick={cancelEdit} disabled={editSaving}>Cancel</button><button className="primary-button" onClick={() => saveEdit(pos.id)} disabled={editSaving}>{editSaving ? 'Saving…' : 'Save changes'}</button></div></MobileSheet>
               ) : (
                 <div className="holding-meta">
                   <span>{pos.shares} shares</span><span>Avg. cost/share {money(pos.costBasis, 2)}</span>
@@ -808,14 +810,7 @@ export default function Portfolio() {
                 </div>
               )}
               <div className="holding-actions">
-                {editingId === pos.id ? (
-                  <>
-                    <button className="secondary-button" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
-                    <button className="text-button" onClick={() => saveEdit(pos.id)} disabled={editSaving}>
-                      {editSaving ? 'Saving…' : 'Save'}
-                    </button>
-                  </>
-                ) : (
+                {editingId !== pos.id && (
                   <>
                     {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
                     <button className="text-button" onClick={() => startEdit(pos)}>Edit</button>

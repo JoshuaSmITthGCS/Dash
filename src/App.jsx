@@ -8,6 +8,7 @@ import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
 import PasswordChangeModal from './components/PasswordChangeModal.jsx'
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
+import AlertBadge from './components/AlertBadge.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand — keeps first paint off the weight of pages the visit may
@@ -28,6 +29,7 @@ const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
 const Insights = lazy(() => import('./pages/Insights.jsx'))
+const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 
 const NAV = [
   { to: '/', label: 'Financial Report', icon: 'overview', end: true },
@@ -40,6 +42,7 @@ const NAV = [
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
+  { to: '/alerts', label: 'Alerts', icon: 'bell', requireAuth: true },
 ]
 
 export const MOBILE_NAV = [
@@ -113,7 +116,7 @@ function AppContent() {
             <span className="brand">Value<em>Signal</em></span>
           </NavLink>
           <div className="mobile-profile">
-            <button className="icon-button" aria-label="Notifications"><Icon name="bell" /></button>
+            {currentUser && <AlertBadge />}
             <button className="icon-button" onClick={() => updatePreferences({ privacyMode: !preferences.privacyMode })}
               aria-pressed={preferences.privacyMode} aria-label={preferences.privacyMode ? 'Show balances' : 'Hide balances'}>
               <Icon name={preferences.privacyMode ? 'eye-off' : 'eye'} />
@@ -147,6 +150,7 @@ function AppContent() {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/alerts" element={currentUser ? <Alerts /> : <Dashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>

@@ -8,6 +8,7 @@ import {
   portfolioGrowthSeries,
   portfolioVsBenchmark,
   positionGrowthSeries,
+  selectPortfolioHistorySeries,
 } from './portfolioPerformance'
 
 const HISTORY = {
@@ -27,6 +28,40 @@ describe('actualRecordedValueSeries', () => {
     ])
     expect(result.values).toEqual([105, 120])
     expect(result.settledFlows).toHaveLength(1)
+  })
+
+  it('uses the recorded timestamp date when an older snapshot has no market date', () => {
+    const result = actualRecordedValueSeries([
+      { recordedAt: '2026-01-02T20:00:00Z', value: 105 },
+      { recordedAt: '2026-01-03T20:00:00Z', value: 120 },
+    ])
+    expect(result.dates).toEqual(['2026-01-02', '2026-01-03'])
+  })
+})
+
+describe('selectPortfolioHistorySeries', () => {
+  const backtest = { dates: ['a', 'b'], values: [100, 110] }
+  const actual = { dates: ['a', 'b', 'c'], values: [100, 105, 112] }
+
+  it('defaults to the series with greater observation coverage and discloses the choice', () => {
+    const result = selectPortfolioHistorySeries(backtest, actual)
+    expect(result.mode).toBe('actual')
+    expect(result.series).toBe(actual)
+    expect(result.defaulted).toBe(true)
+    expect(result.note).toContain('Defaulted to Your actual recorded value')
+  })
+
+  it('honors an available user selection even when the other series has more coverage', () => {
+    const result = selectPortfolioHistorySeries(backtest, actual, 'backtest')
+    expect(result.mode).toBe('backtest')
+    expect(result.series).toBe(backtest)
+    expect(result.defaulted).toBe(false)
+  })
+
+  it('uses the backtested series as the disclosed tie breaker', () => {
+    const result = selectPortfolioHistorySeries(backtest, { dates: ['a', 'b'], values: [100, 109] })
+    expect(result.mode).toBe('backtest')
+    expect(result.note).toContain('tie breaker')
   })
 })
 

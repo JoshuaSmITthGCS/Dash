@@ -346,10 +346,10 @@ export function portfolioAnnualizedReturn(positions = [], endDate = new Date().t
   const currentValue = dated.reduce((sum, row) => sum + Number(row.currentValue), 0)
   if (!dated.length || !currentValue) return { available: false, rate: null, reason: 'Dated cost basis and current values are required.' }
   const coveragePct = allCurrentValue > 0 ? currentValue / allCurrentValue * 100 : 0
-  if (coveragePct < 80) return { available: false, rate: null, coveragePct, reason: 'At least 80% of current portfolio value needs a dated cost basis for a reliable annualized return.' }
+  if (coveragePct < analyticsConfig.annualized_return_minimum_coverage_pct) return { available: false, rate: null, coveragePct, reason: `At least ${analyticsConfig.annualized_return_minimum_coverage_pct}% of current portfolio value needs a dated cost basis for a reliable annualized return.` }
   const flows = [...dated.map((row) => ({ date: row.purchaseDate, amount: -Number(row.totalCost) })), { date: endDate, amount: currentValue }].sort((a, b) => a.date.localeCompare(b.date))
   const spanDays = (Date.parse(endDate) - Date.parse(flows[0].date)) / 86400000
-  if (spanDays < 30) return { available: false, rate: null, reason: 'At least 30 days of dated holding history are required.' }
+  if (spanDays < analyticsConfig.xirr_minimum_days) return { available: false, rate: null, reason: `At least ${analyticsConfig.xirr_minimum_days} days of dated holding history are required.` }
   const result = solveXirr(flows)
   return result.available
     ? { ...result, coveragePct, startDate: flows[0].date, endDate, methodology: 'Money-weighted annualized return for currently held positions using entered purchase dates, cost basis, and latest stored values.' }
@@ -617,7 +617,7 @@ export function diversificationScore(positions = [], options = {}) {
 }
 
 export function maximumDrawdown(values = []) { let peak = null; let worst = 0; values.filter(finite).forEach((raw) => { const value = Number(raw); peak = peak == null ? value : Math.max(peak, value); if (peak) worst = Math.min(worst, (value / peak - 1) * 100) }); return values.length > 1 ? worst : null }
-export function annualizedVolatility(values = []) { const returns = values.slice(1).map((value, index) => finite(value) && finite(values[index]) && values[index] ? Number(value) / Number(values[index]) - 1 : null).filter(finite); if (returns.length < 2) return null; const mean = returns.reduce((a, b) => a + b, 0) / returns.length; const variance = returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (returns.length - 1); return Math.sqrt(variance) * Math.sqrt(252) * 100 }
+export function annualizedVolatility(values = []) { const returns = values.slice(1).map((value, index) => finite(value) && finite(values[index]) && values[index] ? Number(value) / Number(values[index]) - 1 : null).filter(finite); if (returns.length < 2) return null; const mean = returns.reduce((a, b) => a + b, 0) / returns.length; const variance = returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (returns.length - 1); return Math.sqrt(variance) * Math.sqrt(analyticsConfig.trading_days_per_year) * 100 }
 
 export function resilienceIndex(values = [], diversification = null) {
   if (values.length < 20) return { available: false, score: null, provisional: true, coverage: values.length, reason: 'At least 20 daily observations are required.' }

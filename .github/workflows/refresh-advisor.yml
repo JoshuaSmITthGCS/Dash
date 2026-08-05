@@ -66,6 +66,9 @@ jobs:
       # insider layer and the theme-exposure screen both report themselves unavailable
       # rather than spoofing a client.
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      ALERT_DELIVERY_URL: ${{ secrets.ALERT_DELIVERY_URL }}
+      ALERT_DELIVERY_SECRET: ${{ secrets.ALERT_DELIVERY_SECRET }}
       ALPHA_ENRICH_LIMIT: '5'
       ALPHA_VANTAGE_CALL_DELAY: '0'
       ADVISOR_PORTFOLIO_SYMBOLS: ${{ inputs.portfolio_symbols || '' }}
@@ -158,6 +161,9 @@ jobs:
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py
+      - name: Evaluate user alert rules
+        if: steps.refresh_window.outputs.should_run == 'true'
+        run: python pipeline/evaluate_alerts.py
       - name: Commit refreshed data with retry
         if: steps.refresh_window.outputs.should_run == 'true'
         shell: bash

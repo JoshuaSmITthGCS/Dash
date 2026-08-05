@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthlyReturnsFromSeries, selectProjectionReturnSource, simulateProjection } from './projectionEngine.js'
+import { extendSparsePortfolioHistory, monthlyReturnsFromSeries, selectProjectionReturnSource, simulateProjection } from './projectionEngine.js'
 
 function monthlySeries(months, monthlyReturn = 0.01) {
   const dates = []
@@ -24,13 +24,30 @@ describe('historical block bootstrap projections', () => {
     expect(result.returns[1]).toBeCloseTo(0.1)
   })
 
-  it('uses the selected benchmark until portfolio history clears three years', () => {
+  it('annualizes and extends a shorter portfolio history to the three-year model window', () => {
     const fallback = selectProjectionReturnSource(monthlySeries(20), monthlySeries(40), 'VTI')
-    expect(fallback).toMatchObject({ available: true, type: 'benchmark-fallback', label: 'VTI monthly returns' })
+    expect(fallback).toMatchObject({ available: true, type: 'portfolio-annualized-extension', months: 36, synthetic: true })
     expect(fallback.fallbackReason).toContain('below the 36-month gate')
+    expect(fallback.fallbackReason).toContain('repeated to 36 months')
 
     const portfolio = selectProjectionReturnSource(monthlySeries(37), monthlySeries(40), 'VTI')
     expect(portfolio).toMatchObject({ available: true, type: 'portfolio', months: 36 })
+  })
+
+  it('annualizes the longest first-to-last return instead of hiding a sparse projection', () => {
+    const extension = extendSparsePortfolioHistory({ dates: ['2025-01-01', '2025-07-01'], values: [100, 110] })
+    expect(extension.months).toBe(36)
+    expect(extension.elapsedDays).toBe(181)
+    expect(extension.annualizedReturn).toBeCloseTo((1.1 ** (365.25 / 181)) - 1)
+  })
+
+  it('keeps the benchmark fallback when portfolio history spans less than 30 days', () => {
+    const result = selectProjectionReturnSource(
+      { dates: ['2025-01-01', '2025-01-10'], values: [100, 101] },
+      monthlySeries(40),
+      'VTI',
+    )
+    expect(result).toMatchObject({ available: true, type: 'benchmark-fallback', label: 'VTI monthly returns' })
   })
 
   it('returns five terminal percentiles from at least 5,000 paths', () => {

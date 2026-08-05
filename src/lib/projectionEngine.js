@@ -39,9 +39,50 @@ export function monthlyReturnsFromSeries(series) {
 }
 
 /**
- * Uses portfolio returns only after 36 observed monthly changes. Below that gate,
- * the selected benchmark supplies the resampling history because a partial market
- * cycle can give a misleadingly narrow distribution.
+ * Extends a short portfolio record to the configured 36-month modeling window.
+ * The first-to-last total return is annualized as
+ * (ending / starting)^(365.25 / elapsedDays) - 1, then converted to a monthly
+ * geometric rate. When observed monthly changes exist, their centered log-return
+ * pattern is retained around that rate and repeated. This creates a visible but
+ * explicitly synthetic bootstrap input without silently substituting a benchmark.
+ */
+export function extendSparsePortfolioHistory(series) {
+  const dates = series?.dates || []
+  const values = series?.values || series?.closes || []
+  const observations = dates.map((date, index) => ({
+    date: String(date).slice(0, 10),
+    timestamp: new Date(`${String(date).slice(0, 10)}T00:00:00Z`).getTime(),
+    value: Number(values[index]),
+  })).filter((row) => Number.isFinite(row.timestamp) && finite(row.value) && row.value > 0)
+    .sort((left, right) => left.timestamp - right.timestamp)
+  if (observations.length < 2) return null
+  const first = observations[0]
+  const last = observations.at(-1)
+  const elapsedDays = (last.timestamp - first.timestamp) / 86400000
+  if (elapsedDays < projectionConfig.sparse_history_minimum_days) return null
+  const annualizedReturn = (last.value / first.value) ** (365.25 / elapsedDays) - 1
+  if (!finite(annualizedReturn) || annualizedReturn <= -1) return null
+  const targetMonthlyLog = Math.log1p(annualizedReturn) / projectionConfig.months_per_year
+  const observed = monthlyReturnsFromSeries(series).returns.filter((value) => value > -1)
+  const pattern = observed.length ? observed.map((value) => Math.log1p(value)) : [targetMonthlyLog]
+  const observedMean = pattern.reduce((sum, value) => sum + value, 0) / pattern.length
+  const adjustedPattern = pattern.map((value) => Math.expm1(value - observedMean + targetMonthlyLog))
+  const targetMonths = projectionConfig.sparse_history_extension_months
+  return {
+    returns: Array.from({ length: targetMonths }, (_, index) => adjustedPattern[index % adjustedPattern.length]),
+    months: targetMonths,
+    observedMonths: observed.length,
+    elapsedDays: Math.round(elapsedDays),
+    annualizedReturn,
+    startDate: first.date,
+    endDate: last.date,
+  }
+}
+
+/**
+ * Uses observed portfolio returns after the 36-month gate. A shorter record is
+ * annualized and extended so the outcome distribution remains visible, while the
+ * selected benchmark remains the fallback for records shorter than 30 days.
  */
 export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, benchmarkSymbol = 'SPY') {
   const portfolio = monthlyReturnsFromSeries(portfolioSeries)
@@ -54,6 +95,18 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
       type: 'portfolio',
       label: 'portfolio monthly returns',
       ...portfolio,
+    }
+  }
+  const extended = extendSparsePortfolioHistory(portfolioSeries)
+  if (extended) {
+    const observedLabel = `${extended.observedMonths} observed monthly return${extended.observedMonths === 1 ? '' : 's'}`
+    return {
+      available: true,
+      type: 'portfolio-annualized-extension',
+      label: 'annualized portfolio history extension',
+      synthetic: true,
+      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. The longest ${extended.elapsedDays}-day portfolio return was annualized, then its ${observedLabel} pattern was centered and repeated to ${extended.months} months. Percentile ranges may cluster when little month-to-month variation has been observed.`,
+      ...extended,
     }
   }
   if (benchmark.months >= blockMonths) {
