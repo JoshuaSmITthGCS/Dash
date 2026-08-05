@@ -63,6 +63,30 @@ describe('useAdvisorRefresh', () => {
     expect(result.current.message).toBe('Market data updated. You are viewing the latest published refresh.')
   })
 
+  it('requests a full-universe workflow and exposes its loading state', async () => {
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+      json: () => Promise.resolve({ ok: true, run_id: 888 }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, ['AAPL']))
+    await act(async () => { await result.current.requestFullRefresh() })
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body)).toEqual({ mode: 'data', universe_scope: 'full', symbols: ['AAPL'] })
+    expect(result.current).toMatchObject({
+      status: 'pending',
+      refreshing: true,
+      activeMode: 'data',
+      activeScope: 'full',
+      stage: 'Waiting for a full-universe runner',
+    })
+    expect(result.current.message).toMatch(/Full-universe refresh started/)
+  })
+
   it('locks onto the run_id returned by the dispatch so the first poll targets it directly', async () => {
     vi.useFakeTimers()
     const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })

@@ -26,7 +26,7 @@ function githubHeaders(token) {
   }
 }
 
-function parseRequestBody(body) {
+export function parseRequestBody(body) {
   let payload = {}
   try {
     payload = JSON.parse(body || '{}')
@@ -43,7 +43,8 @@ function parseRequestBody(body) {
   // "rescore" re-scores the last published data with no new provider requests at all - see
   // pipeline/rescore.py. Anything else falls back to a real data refresh.
   const mode = payload.mode === 'rescore' ? 'rescore' : 'data'
-  return { symbols, mode }
+  const universeScope = payload.universe_scope === 'full' ? 'full' : 'fast'
+  return { symbols, mode, universeScope }
 }
 
 const PROGRESS_STEPS = [
@@ -156,7 +157,7 @@ export async function handler(event) {
     if (!user.email || !allowedEmails.has(user.email.toLowerCase())) {
       return json(403, { error: 'Your account is not allowed to start data refreshes.' })
     }
-    const { symbols, mode } = parseRequestBody(event.body)
+    const { symbols, mode, universeScope } = parseRequestBody(event.body)
     const refreshMode = mode === 'rescore' ? 'rescore-only' : 'data-only'
 
     const workflowUrl = `https://api.github.com/repos/${repository}/actions/workflows/refresh-advisor.yml`
@@ -182,13 +183,10 @@ export async function handler(event) {
         ref: 'main',
         inputs: {
           refresh_mode: refreshMode,
-          // Manual refreshes are interactive: poll the prior top 100 plus every symbol
-          // sent by the portfolio/watchlist, then carry the remaining rows forward from
-          // the morning full sweep. Rebuilding ~900 names on every click made the button
-          // take close to an hour without improving the user's own holdings. Irrelevant
-          // for a rescore - the workflow skips straight to pipeline/rescore.py - but
-          // harmless to pass along either way.
-          universe_scope: 'fast',
+          // Portfolio and watchlist controls use the fast prior-top-100 sweep. The home
+          // control may explicitly request a complete ~900-name rebuild. Rescoring skips
+          // provider requests, so the scope is harmless for that mode.
+          universe_scope: universeScope,
           portfolio_symbols: symbols.join(','),
         },
       }),
@@ -205,7 +203,7 @@ export async function handler(event) {
     // removes that race entirely: every later status check targets that exact run by ID,
     // which works whether it's still running or already done.
     const runId = await locateDispatchedRun(workflowUrl, headers, priorRunIds)
-    return json(202, { ok: true, mode: refreshMode, symbols, run_id: runId })
+    return json(202, { ok: true, mode: refreshMode, universe_scope: universeScope, symbols, run_id: runId })
   } catch (error) {
     console.error('Manual refresh failed:', error)
     return json(500, { error: 'The refresh could not be started. Check the server configuration.' })

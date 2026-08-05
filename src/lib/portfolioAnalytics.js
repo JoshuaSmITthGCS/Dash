@@ -396,6 +396,18 @@ function normalizeSectorWeights(raw) {
   ]))
 }
 
+function normalizeHoldingWeights(raw) {
+  const rows = Array.isArray(raw)
+    ? raw.map((row) => [row.ticker || row.symbol || row.holding_symbol, row.weight ?? row.pct ?? row.holding_percent])
+    : Object.entries(raw || {})
+  const usable = rows
+    .map(([ticker, value]) => [String(ticker || '').toUpperCase(), Number(value)])
+    .filter(([ticker, value]) => ticker && finite(value) && value > 0)
+  if (!usable.length) return null
+  const scale = usable.some(([, value]) => value > 1) ? 100 : 1
+  return usable.map(([ticker, value]) => ({ ticker, weight: value / scale }))
+}
+
 /**
  * Decomposes each ETF allocation across its published sector weights before aggregating.
  * Missing fund exposures stay in one explicit unknown bucket and are flagged, rather than
@@ -406,17 +418,26 @@ export function sectorLookThrough(positions = [], etfs = []) {
   const byTicker = new Map(rows.map((row) => [String(row.ticker || '').toUpperCase(), row]))
   const total = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0)
     .reduce((sum, row) => sum + Number(row.currentValue), 0)
-  if (!total) return { exposures: [], unavailableEtfs: [], coveragePct: 0 }
+  if (!total) return { exposures: [], positionExposures: [], unavailableEtfs: [], unresolvedDollars: 0, coveragePct: 0 }
   const exposures = new Map()
+  const positionExposures = new Map()
   const unavailableEtfs = []
+  let unresolvedDollars = 0
   let coveredWeight = 0
   const add = (label, weight) => exposures.set(label, (exposures.get(label) || 0) + weight)
+  const addPosition = (ticker, weight, source) => {
+    const current = positionExposures.get(ticker) || { ticker, weight: 0, sources: [] }
+    current.weight += weight
+    if (!current.sources.includes(source)) current.sources.push(source)
+    positionExposures.set(ticker, current)
+  }
   positions.filter((row) => finite(row.currentValue) && row.currentValue > 0).forEach((position) => {
     const allocation = Number(position.currentValue) / total
     const ticker = String(position.ticker || '').toUpperCase()
     const etf = byTicker.get(ticker)
     if (!etf) {
       add(position.priceInfo?.sector || 'Unclassified', allocation)
+      addPosition(ticker, allocation, 'direct')
       coveredWeight += allocation
       return
     }
@@ -424,15 +445,34 @@ export function sectorLookThrough(positions = [], etfs = []) {
     if (!sectorWeights) {
       add('ETF look-through unavailable', allocation)
       unavailableEtfs.push(ticker)
+      unresolvedDollars += Number(position.currentValue)
+      addPosition(`Unresolved ${ticker}`, allocation, ticker)
       return
     }
     Object.entries(sectorWeights).forEach(([sector, weight]) => add(sector, allocation * weight))
+    const holdings = normalizeHoldingWeights(etf.top_holdings)
+    if (holdings) {
+      let disclosedWeight = 0
+      holdings.forEach((holding) => {
+        disclosedWeight += holding.weight
+        addPosition(holding.ticker, allocation * holding.weight, ticker)
+      })
+      if (disclosedWeight < 1) addPosition(`Other ${ticker} holdings`, allocation * (1 - disclosedWeight), ticker)
+    } else {
+      addPosition(`Unresolved ${ticker}`, allocation, ticker)
+    }
     coveredWeight += allocation
   })
   return {
     exposures: [...exposures.entries()].map(([label, weight]) => ({ label, pct: weight * 100 }))
       .sort((left, right) => right.pct - left.pct),
     unavailableEtfs,
+    unresolvedDollars,
+    positionExposures: [...positionExposures.values()].map((row) => ({
+      ticker: row.ticker,
+      pct: row.weight * 100,
+      sources: row.sources,
+    })).sort((left, right) => right.pct - left.pct),
     coveragePct: coveredWeight * 100,
   }
 }
@@ -543,6 +583,11 @@ export function correlationDiversification(positions = []) {
         tickers: eligible.map((item) => item.row.ticker),
         observations: commonDates.length,
         matrix,
+        covarianceMatrix: matrix.map((row, rowIndex) => row.map((value, columnIndex) => (
+          value * volatilities[rowIndex] * volatilities[columnIndex]
+        ))),
+        dates: commonDates,
+        returnSeries: series,
         weights,
         effectiveBets,
         diversificationRatio: portfolioVolatility > 0 ? weightedAverageVolatility / portfolioVolatility : null,
@@ -553,6 +598,89 @@ export function correlationDiversification(positions = []) {
     eligible = eligible.slice().sort((left, right) => right.returns.size - left.returns.size).slice(0, -1)
   }
   return { available: false, effectiveBets: null, diversificationRatio: null, tickers: [], excludedTickers: requestedTickers, observations: 0, reason: `At least two holdings need ${analyticsConfig.correlation_minimum_observations} common daily returns.` }
+}
+
+function historicalExpectedShortfall(returns, confidence) {
+  if (!returns.length) return null
+  const tailCount = Math.max(1, Math.ceil(returns.length * (1 - confidence)))
+  return mean([...returns].sort((left, right) => left - right).slice(0, tailCount)) * 100
+}
+
+function normalizedWeightMap(raw) {
+  const entries = Array.isArray(raw)
+    ? raw.map((row) => [row.ticker || row.symbol, row.weight ?? row.pct])
+    : Object.entries(raw || {})
+  const usable = entries.map(([ticker, value]) => [String(ticker || '').toUpperCase(), Number(value)])
+    .filter(([ticker, value]) => ticker && finite(value) && value >= 0)
+  if (!usable.length) return null
+  const scale = usable.some(([, value]) => value > 1) ? 100 : 1
+  return new Map(usable.map(([ticker, value]) => [ticker, value / scale]))
+}
+
+/**
+ * Euler decomposition of annualized portfolio volatility, plus historical tail loss and
+ * benchmark-relative measures. Risk contributions reconcile to 100% apart from rounding.
+ */
+export function portfolioRiskDecomposition(positions = [], options = {}) {
+  const correlationResult = correlationDiversification(positions)
+  if (!correlationResult.available) return { available: false, reason: correlationResult.reason, contributions: [] }
+  const { covarianceMatrix, weights, returnSeries, dates, tickers } = correlationResult
+  const covarianceTimesWeights = covarianceMatrix.map((row) => row.reduce(
+    (sum, value, index) => sum + value * weights[index], 0,
+  ))
+  const variance = weights.reduce((sum, weight, index) => sum + weight * covarianceTimesWeights[index], 0)
+  const volatility = Math.sqrt(Math.max(0, variance))
+  const componentRisks = weights.map((weight, index) => (
+    volatility > 0 ? weight * covarianceTimesWeights[index] / volatility : 0
+  ))
+  const componentTotal = componentRisks.reduce((sum, value) => sum + value, 0)
+  const contributions = tickers.map((ticker, index) => ({
+    ticker,
+    weightPct: weights[index] * 100,
+    marginalContributionToRiskPct: volatility > 0 ? covarianceTimesWeights[index] / volatility * 100 : 0,
+    componentContributionToRiskPct: componentRisks[index] * 100,
+    percentContributionToRisk: componentTotal ? componentRisks[index] / componentTotal * 100 : 0,
+  })).sort((left, right) => right.percentContributionToRisk - left.percentContributionToRisk)
+  const portfolioReturns = dates.map((_, dateIndex) => returnSeries.reduce(
+    (sum, series, holdingIndex) => sum + weights[holdingIndex] * series[dateIndex], 0,
+  ))
+
+  let trackingErrorPct = null
+  const benchmarkReturns = returnMap(options.benchmarkHistory)
+  if (benchmarkReturns.size) {
+    const activeReturns = dates.map((date, index) => (
+      benchmarkReturns.has(date) ? portfolioReturns[index] - benchmarkReturns.get(date) : null
+    )).filter(finite)
+    if (activeReturns.length >= analyticsConfig.correlation_minimum_observations) {
+      trackingErrorPct = sampleDeviation(activeReturns) * Math.sqrt(analyticsConfig.trading_days_per_year) * 100
+    }
+  }
+
+  let activeSharePct = null
+  const benchmarkWeights = normalizedWeightMap(options.benchmarkWeights)
+  if (benchmarkWeights) {
+    const lookThrough = sectorLookThrough(positions, options.etfs || [])
+    const portfolioWeights = new Map(lookThrough.positionExposures
+      .filter((row) => !row.ticker.startsWith('Other ') && !row.ticker.startsWith('Unresolved '))
+      .map((row) => [row.ticker, row.pct / 100]))
+    const coveredPct = [...portfolioWeights.values()].reduce((sum, value) => sum + value, 0) * 100
+    if (coveredPct >= analyticsConfig.active_share_minimum_coverage_pct) {
+      const symbols = new Set([...portfolioWeights.keys(), ...benchmarkWeights.keys()])
+      activeSharePct = [...symbols].reduce((sum, ticker) => (
+        sum + Math.abs((portfolioWeights.get(ticker) || 0) - (benchmarkWeights.get(ticker) || 0))
+      ), 0) * 50
+    }
+  }
+
+  return {
+    available: true,
+    observations: dates.length,
+    portfolioVolatilityPct: volatility * 100,
+    expectedShortfall95Pct: historicalExpectedShortfall(portfolioReturns, analyticsConfig.expected_shortfall_confidence),
+    trackingErrorPct,
+    activeSharePct,
+    contributions,
+  }
 }
 
 export function diversificationScore(positions = [], options = {}) {

@@ -148,7 +148,26 @@
     "largest_holding_warning_pct": 25.0,
     "largest_sector_warning_pct": 35.0,
     "top_five_warning_pct": 70.0,
+    "expected_shortfall_confidence": 0.95,
+    "active_share_minimum_coverage_pct": 80.0,
+    "factor_minimum_monthly_observations": 24,
+    "factor_annualization_months": 12,
+    "factor_loading_summary_threshold": 0.15,
+    "factor_standard_error_tolerance": 0.000000000001,
     "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration. Performance metric tones use configured good minimums and bad maximums. Values between those boundaries remain neutral, and drawdowns are better when they are closer to zero."
+  },
+  "etf_lookthrough": {
+    "top_holdings_limit": 25,
+    "minimum_holding_weight": 0.0001,
+    "_comment": "ETF sector weights and the largest published underlying positions are retained from the existing free Yahoo fund snapshot. Unreported residual weight remains explicit rather than being assigned to a synthetic holding."
+  },
+  "factor_data": {
+    "five_factor_url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip",
+    "momentum_url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip",
+    "cache_max_age_days": 35,
+    "request_timeout_seconds": 30,
+    "schema_version": 1,
+    "_comment": "Official monthly US research factors from the Ken French Data Library. The cache refreshes at most monthly and publishes percentage returns as decimal values."
   },
   "alerts": {
     "maximum_rules_per_user": 25,

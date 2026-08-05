@@ -12,7 +12,7 @@ import {
   resilienceIndex, riskFreeAnnualRate, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from '../lib/portfolioAnalytics.js'
 import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
-import { Loading, Empty, Move, Tier } from '../components/Bits.jsx'
+import { Loading, Empty, Move, RefreshProgress, Tier } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
@@ -34,6 +34,7 @@ import { projectionConfig, selectProjectionReturnSource } from '../lib/projectio
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import { usePullToRefresh } from '../lib/usePullToRefresh.js'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
+import { useAdvisorRefresh } from '../lib/useAdvisorRefresh.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -140,17 +141,27 @@ export default function Dashboard() {
   const [draftWidgets, setDraftWidgets] = useState(preferences.widgets)
   const [pullRefreshing, setPullRefreshing] = useState(false)
   const customize = new window.URLSearchParams(window.location.search).get('customize') === '1'
+  const watchlist = useMemo(() => { try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || [] } catch { return [] } }, [])
+
+  const reloadHomeData = useCallback(async () => {
+    const [latestReport] = await Promise.all([reloadReport(), reloadAdvisor(), reloadEtfs(), reloadBenchmarks()])
+    return latestReport
+  }, [reloadAdvisor, reloadBenchmarks, reloadEtfs, reloadReport])
+  const universeRefresh = useAdvisorRefresh(
+    data?.generated_at,
+    reloadHomeData,
+    [...positions.map((position) => position.ticker), ...watchlist],
+  )
 
   const refreshReport = useCallback(async () => {
     setPullRefreshing(true)
     try {
-      await Promise.all([reloadReport(), reloadAdvisor(), reloadEtfs(), reloadBenchmarks()])
+      await reloadHomeData()
       await portfolioQuotes.requestRefresh()
     } finally { setPullRefreshing(false) }
-  }, [portfolioQuotes, reloadAdvisor, reloadBenchmarks, reloadEtfs, reloadReport])
+  }, [portfolioQuotes, reloadHomeData])
   const pullToRefresh = usePullToRefresh({ onRefresh: refreshReport, refreshing: pullRefreshing })
 
-  const watchlist = useMemo(() => { try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || [] } catch { return [] } }, [])
   if (loading || (currentUser && (portfolioLoading || (positions.length > 0 && benchmarkLoading)))) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset is available yet." />
 
@@ -239,7 +250,22 @@ export default function Dashboard() {
   return <div className="financial-report-page">
     <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={pullRefreshing} />
     {customize && <Customizer widgets={draftWidgets} onChange={setDraftWidgets} onDone={saveCustomization} />}
-    <header className="page-head report-head"><div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)}</span><h1 className="page-title">Financial Report</h1><p className="page-sub">Your portfolio, explained with traceable daily-close data.</p></div><button className="icon-button desktop-only" onClick={() => updatePreferences({ privacyMode: !preferences.privacyMode })} aria-label={preferences.privacyMode ? 'Show balances' : 'Hide balances'}><Icon name={preferences.privacyMode ? 'eye-off' : 'eye'} /></button></header>
+    <header className="page-head report-head">
+      <div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)}</span><h1 className="page-title">Financial Report</h1><p className="page-sub">Your portfolio, explained with traceable daily-close data.</p></div>
+      <div className="report-head-actions">
+        {currentUser && <button type="button" className="secondary-button home-universe-refresh" onClick={universeRefresh.requestFullRefresh} disabled={universeRefresh.refreshing}
+          title="Rebuild research for the complete covered universe">
+          <Icon name="sync" size={17} className={universeRefresh.refreshing ? 'refresh-spin' : ''} />
+          {universeRefresh.refreshing ? 'Refreshing full universe…' : 'Refresh full universe'}
+        </button>}
+        <button className="icon-button desktop-only" onClick={() => updatePreferences({ privacyMode: !preferences.privacyMode })} aria-label={preferences.privacyMode ? 'Show balances' : 'Hide balances'}><Icon name={preferences.privacyMode ? 'eye-off' : 'eye'} /></button>
+      </div>
+    </header>
+    {(universeRefresh.refreshing || universeRefresh.message) && <div className="home-refresh-feedback">
+      <RefreshProgress active={universeRefresh.refreshing} elapsedLabel={universeRefresh.elapsedLabel}
+        percent={universeRefresh.progress} stage={universeRefresh.stage} />
+      {universeRefresh.message && <div className={`sync-message refresh-message ${universeRefresh.status}`} role="status" aria-live="polite">{universeRefresh.message}</div>}
+    </div>}
 
     {!currentUser || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{currentUser ? 'Add holdings to unlock your report' : 'Sign in to see your financial report'}</h2><p>Research remains available now. Portfolio analytics appear only after holdings and per-share cost basis are available.</p><Link className="primary-button" to={currentUser ? '/portfolio' : '/research'}>{currentUser ? 'Add holdings' : 'Explore research'}</Link></section> : <>
       <div className="dashboard-widget-stack">

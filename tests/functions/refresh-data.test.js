@@ -1,5 +1,23 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { locateDispatchedRun, workflowProgress } from '../../netlify/functions/refresh-data.mjs'
+import { locateDispatchedRun, parseRequestBody, workflowProgress } from '../../netlify/functions/refresh-data.mjs'
+
+describe('parseRequestBody', () => {
+  it('allows an explicit full-universe refresh request', () => {
+    expect(parseRequestBody(JSON.stringify({
+      mode: 'data',
+      universe_scope: 'full',
+      symbols: ['aapl', 'BRK.B'],
+    }))).toEqual({ symbols: ['AAPL', 'BRK.B'], mode: 'data', universeScope: 'full' })
+  })
+
+  it('keeps fast refresh as the safe default for existing controls', () => {
+    expect(parseRequestBody(JSON.stringify({ universe_scope: 'unexpected' }))).toEqual({
+      symbols: [],
+      mode: 'data',
+      universeScope: 'fast',
+    })
+  })
+})
 
 describe('workflowProgress', () => {
   it('weights completed workflow stages and reports the active stage', () => {

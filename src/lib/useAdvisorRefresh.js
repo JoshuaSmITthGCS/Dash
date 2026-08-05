@@ -4,6 +4,10 @@ import { formatElapsed } from './useData'
 
 const POLL_INTERVAL_MS = 20_000
 const REFRESH_TIMEOUT_MS = 55 * 60_000
+// A complete sweep can legitimately use most of the workflow's 90-minute allowance.
+// Keep polling slightly beyond that limit so the UI does not report a false timeout while
+// GitHub still considers a full-universe run healthy.
+const FULL_REFRESH_TIMEOUT_MS = 95 * 60_000
 // A reanalysis never touches a data provider - it's a scoring pass over what's already
 // published (see pipeline/rescore.py) that GitHub Actions typically finishes in under a
 // minute - so 5 minutes is already a generous margin for a genuinely stuck run, not a
@@ -19,6 +23,11 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const startedAt = useRef(null)
   const runId = useRef(null)
   const mode = useRef('data')
+  const scope = useRef('fast')
+
+  const refreshCompleteMessage = () => scope.current === 'full'
+    ? 'Full universe updated. You are viewing the latest published refresh.'
+    : 'Market data updated. You are viewing the latest published refresh.'
 
   // There is no real progress signal from the GitHub Actions run - no step-by-step
   // percentage to show honestly. An elapsed-time counter is real, though, and it's what
@@ -68,7 +77,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
                 status: 'success',
                 message: mode.current === 'rescore'
                   ? 'Reanalysis complete. You are viewing the newly rescored data.'
-                  : 'Market data updated. You are viewing the latest published refresh.',
+                  : refreshCompleteMessage(),
               })
               return
             }
@@ -83,7 +92,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
         if (latest?.generated_at && latest.generated_at !== baseline.current) {
           setState({
             status: 'success',
-            message: 'Market data updated. You are viewing the latest published refresh.',
+            message: refreshCompleteMessage(),
           })
         }
       } catch {
@@ -99,18 +108,23 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
         status: 'error',
         message: mode.current === 'rescore'
           ? 'The reanalysis is taking longer than expected. Try again or check the GitHub workflow.'
-          : 'The refresh is taking longer than expected. Try again or check the GitHub workflow.',
+          : scope.current === 'full'
+            ? 'The full-universe refresh is taking longer than expected. Try again or check the GitHub workflow.'
+            : 'The refresh is taking longer than expected. Try again or check the GitHub workflow.',
       })
-    }, mode.current === 'rescore' ? REANALYZE_TIMEOUT_MS : REFRESH_TIMEOUT_MS)
+    }, mode.current === 'rescore'
+      ? REANALYZE_TIMEOUT_MS
+      : scope.current === 'full' ? FULL_REFRESH_TIMEOUT_MS : REFRESH_TIMEOUT_MS)
     return () => {
       window.clearInterval(interval)
       window.clearTimeout(timeout)
     }
   }, [currentUser, reload, state.status])
 
-  const startRefresh = async (requestedMode) => {
+  const startRefresh = async (requestedMode, requestedScope = 'fast') => {
     if (!currentUser || state.status === 'pending') return
     mode.current = requestedMode
+    scope.current = requestedMode === 'data' && requestedScope === 'full' ? 'full' : 'fast'
     baseline.current = generatedAt
     startedAt.current = Date.now()
     runId.current = null
@@ -119,9 +133,13 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
       status: 'starting',
       message: requestedMode === 'rescore'
         ? 'Connecting to the reanalysis service…'
-        : 'Connecting to the refresh service…',
+        : scope.current === 'full'
+          ? 'Connecting to the full-universe refresh service…'
+          : 'Connecting to the refresh service…',
       progress: 0,
-      stage: requestedMode === 'rescore' ? 'Starting reanalysis' : 'Starting refresh'
+      stage: requestedMode === 'rescore'
+        ? 'Starting reanalysis'
+        : scope.current === 'full' ? 'Starting full-universe refresh' : 'Starting refresh'
     })
     try {
       const idToken = await currentUser.getIdToken()
@@ -133,6 +151,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
         },
         body: JSON.stringify({
           mode: requestedMode,
+          universe_scope: scope.current,
           symbols: [...new Set(
             symbols
               .map((symbol) => String(symbol || '').trim().toUpperCase())
@@ -147,7 +166,9 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
           status: 'error',
           message: requestedMode === 'rescore'
             ? 'Reanalysis is not configured on Netlify. Showing the latest previously published data.'
-            : 'No new Yahoo data was fetched: the refresh service is not configured on Netlify. Showing the latest previously published data.',
+            : scope.current === 'full'
+              ? 'No full-universe data was fetched: the refresh service is not configured on Netlify. Showing the latest previously published data.'
+              : 'No new Yahoo data was fetched: the refresh service is not configured on Netlify. Showing the latest previously published data.',
         })
         return
       }
@@ -167,9 +188,13 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
           ? 'A refresh or reanalysis is already running. This page will update automatically.'
           : requestedMode === 'rescore'
             ? 'Reanalysis started. This page will update automatically in a couple of minutes.'
-            : 'Refresh started. This page will update automatically when new data is published.',
+            : scope.current === 'full'
+              ? 'Full-universe refresh started. This page will update automatically when all names are published.'
+              : 'Refresh started. This page will update automatically when new data is published.',
         progress: 0,
-        stage: requestedMode === 'rescore' ? 'Waiting for reanalysis' : 'Waiting for a runner',
+        stage: requestedMode === 'rescore'
+          ? 'Waiting for reanalysis'
+          : scope.current === 'full' ? 'Waiting for a full-universe runner' : 'Waiting for a runner',
       })
     } catch (error) {
       setState({ status: 'error', message: error.message })
@@ -177,17 +202,20 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   }
 
   const requestRefresh = () => startRefresh('data')
+  const requestFullRefresh = () => startRefresh('data', 'full')
   const requestReanalyze = () => startRefresh('rescore')
 
   const refreshing = state.status === 'starting' || state.status === 'pending'
   return {
     ...state,
     requestRefresh,
+    requestFullRefresh,
     requestReanalyze,
     refreshing,
     // Which of the two this run actually is, so a UI with separate refresh/reanalyze
     // buttons can label the one in flight instead of guessing from a shared "refreshing".
     activeMode: mode.current,
+    activeScope: scope.current,
     available: Boolean(currentUser),
     elapsedMs,
     elapsedLabel: refreshing ? formatElapsed(elapsedMs) : null,
