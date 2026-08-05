@@ -119,6 +119,7 @@ def main():
     payload["methodology"]["signal_corrections"] = {
         key: value for key, value in signal_config.items() if not key.startswith("_")
     }
+    payload["methodology"]["position_risk"] = SETTINGS.get("position_risk", {})
     validation_report = write_ic_report()
     payload["validation_harness"] = {
         "snapshot_refreshes": validation_report["snapshot_refreshes"],

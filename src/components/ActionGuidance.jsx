@@ -62,21 +62,20 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
       {stopLoss?.bindingPrice != null && (
         <div className="action-impact" aria-label="Stop-loss levels">
           <span>
-            {stopLoss.bindingSource === 'trailing' ? 'Trailing stop' : 'Cost-basis stop'}:
+            {stopLoss.rule === 'atr' ? 'ATR position rule' : stopLoss.rule === 'sigma' ? 'Volatility position rule' : 'Fixed fallback rule'}:
             {' '}<b>{money(stopLoss.bindingPrice)}</b>
           </span>
           {stopLoss.distancePct != null && (
             <span>{stopLoss.distancePct >= 0 ? '' : 'past it, '}<b>{Math.abs(stopLoss.distancePct).toFixed(1)}%</b> {stopLoss.distancePct >= 0 ? 'away' : ''}</span>
           )}
-          {stopLoss.trailingStopPrice != null && stopLoss.bindingSource !== 'trailing' && (
-            <span>trailing stop at <b>{money(stopLoss.trailingStopPrice)}</b> once it leads</span>
-          )}
+          <span>trim <b>{money(stopLoss.trimPrice)}</b>, exit <b>{money(stopLoss.exitPrice)}</b></span>
         </div>
       )}
+      {stopLoss?.explanation && <p className="position-risk-explanation">{stopLoss.explanation}</p>}
 
       <small style={{ color: 'var(--text-faint)', fontSize: 11 }}>
         {fromStopLoss
-          ? 'This guidance comes from a stop-loss/trailing-stop rule on your specific entry price, not the business thesis. The company\'s own fundamentals, market behaviour, and sentiment may still read Hold.'
+          ? 'This guidance comes from a high-water-mark position rule, not the business thesis. The company\'s own fundamentals, market behaviour, and sentiment may still read Hold.'
           : 'Guidance never moves off Hold on price action alone, or on a single headline. Two of three independent factors — business fundamentals, market behaviour, and positioning/sentiment — have to agree first.'}
       </small>
       {fromStopLoss && recommendation.companyRecommendation && (

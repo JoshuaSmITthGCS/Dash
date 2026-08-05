@@ -1,101 +1,86 @@
 import { describe, expect, it } from 'vitest'
-import { assessPositionStopLoss, peakSincePurchase, stopLossLevels, withStopLoss } from './positionRisk'
+import {
+  assessPositionStopLoss,
+  averageTrueRange,
+  highWaterMark,
+  peakSincePurchase,
+  stopLossLevels,
+  withStopLoss,
+} from './positionRisk'
 
 const history = {
   dates: ['2024-01-05', '2024-02-02', '2024-03-01', '2024-04-05', '2024-05-03'],
-  closes: [100, 120, 90, 80, 78],
+  closes: [100, 120, 110, 105, 100],
 }
 
-describe('peakSincePurchase', () => {
-  it('finds the highest close on or after the purchase date', () => {
+describe('high-water mark', () => {
+  it('finds the highest close on or after purchase', () => {
     expect(peakSincePurchase({ purchaseDate: '2024-01-15' }, history)).toBe(120)
   })
 
-  it('ignores closes before the purchase date', () => {
-    expect(peakSincePurchase({ purchaseDate: '2024-03-15' }, history)).toBe(80)
+  it('can equal the purchase price before a position makes a new high', () => {
+    const position = { purchasePrice: 100, currentPrice: 96 }
+    expect(highWaterMark(position)).toBe(100)
   })
 
-  it('returns null without a purchase date', () => {
-    expect(peakSincePurchase({}, history)).toBeNull()
-  })
-})
-
-describe('assessPositionStopLoss', () => {
-  it('flags a hard stop-loss once a position is down enough from cost', () => {
-    const result = assessPositionStopLoss({
-      gainPct: -22, currentPrice: 78, purchaseDate: '2024-01-15', priceInfo: { history },
-    })
-    expect(result.action).toBe('SELL')
-  })
-
-  it('flags a defensive trim on a smaller cost-basis drawdown', () => {
-    const result = assessPositionStopLoss({
-      gainPct: -14, currentPrice: 86, purchaseDate: '2024-01-15', priceInfo: { history },
-    })
-    expect(result.action).toBe('TRIM')
-  })
-
-  it('flags a trailing stop even while still profitable overall', () => {
-    const result = assessPositionStopLoss({
-      gainPct: 5, currentPrice: 100, purchaseDate: '2024-01-15',
-      priceInfo: { history: { dates: history.dates, closes: [100, 140, 130, 120, 100] } },
-    })
-    expect(result.action).toBe('TRIM')
-    expect(result.reasons[0]).toMatch(/peak/)
-  })
-
-  it('stays quiet when neither trigger fires', () => {
-    expect(assessPositionStopLoss({
-      gainPct: 3, currentPrice: 103, purchaseDate: '2024-01-15',
-      priceInfo: { history: { dates: history.dates, closes: [100, 101, 102, 103, 103] } },
-    })).toBeNull()
-  })
-
-  it('returns null without enough position data', () => {
-    expect(assessPositionStopLoss({})).toBeNull()
+  it('moves up when the position reaches a new high', () => {
+    const position = { highWaterMark: 120, currentPrice: 126 }
+    expect(highWaterMark(position)).toBe(126)
+    expect(stopLossLevels({ ...position, atr: 4 }).triggeredAction).toBeNull()
   })
 })
 
-describe('stopLossLevels', () => {
-  it('reports the trailing stop as binding once it sits above the cost-basis stop', () => {
-    // cost basis 100 -> hard stop 80, trim 88; peak-since-purchase 120 -> trailing stop 102
+describe('volatility-scaled position levels', () => {
+  it('uses ATR when it is present', () => {
+    const levels = stopLossLevels({ highWaterMark: 120, currentPrice: 100, atr: 6 })
+    expect(levels.rule).toBe('atr')
+    expect(levels.trimPrice).toBeCloseTo(105)
+    expect(levels.exitPrice).toBeCloseTo(96)
+    expect(levels.triggeredAction).toBe('TRIM')
+    expect(levels.explanation).toMatch(/high-water mark/)
+  })
+
+  it('uses realized sigma when ATR is missing', () => {
     const levels = stopLossLevels({
-      costBasis: 100, currentPrice: 110, purchaseDate: '2024-01-15', priceInfo: { history },
+      highWaterMark: 100,
+      currentPrice: 85,
+      annualizedVolatility: 0.8,
     })
-    expect(levels.costStopPrice).toBeCloseTo(80)
-    expect(levels.trailingStopPrice).toBeCloseTo(102)
-    expect(levels.bindingPrice).toBeCloseTo(102)
-    expect(levels.bindingSource).toBe('trailing')
-    expect(levels.distancePct).toBeCloseTo((110 / 102 - 1) * 100)
+    expect(levels.rule).toBe('sigma')
+    expect(levels.trimDistancePct).toBeGreaterThanOrEqual(8)
+    expect(levels.explanation).toMatch(/realized volatility/)
   })
 
-  it('falls back to the cost-basis stop without enough history for a peak', () => {
-    const levels = stopLossLevels({ costBasis: 100, currentPrice: 90, purchaseDate: '2024-01-15' })
-    expect(levels.trailingStopPrice).toBeNull()
-    expect(levels.bindingPrice).toBeCloseTo(80)
-    expect(levels.bindingSource).toBe('cost_basis')
+  it('labels the fixed rule when ATR and sigma are both missing', () => {
+    const levels = stopLossLevels({ highWaterMark: 100, currentPrice: 79 })
+    expect(levels.rule).toBe('fallback_fixed')
+    expect(levels.trimPrice).toBeCloseTo(88)
+    expect(levels.exitPrice).toBeCloseTo(80)
+    expect(levels.triggeredAction).toBe('SELL')
   })
 
-  it('returns null without a cost basis and current price', () => {
-    expect(stopLossLevels({})).toBeNull()
+  it('computes ATR from high, low, and prior close', () => {
+    const atr = averageTrueRange({
+      highs: [101, 104, 106],
+      lows: [99, 100, 101],
+      closes: [100, 103, 102],
+    }, 2)
+    expect(atr).toBeCloseTo(4.5)
   })
 })
 
-describe('withStopLoss', () => {
-  const stoppedPosition = {
-    gainPct: -25, currentPrice: 75, purchaseDate: '2024-01-15', priceInfo: { history },
-  }
+describe('position and company separation', () => {
+  const stoppedPosition = { highWaterMark: 100, currentPrice: 75 }
 
-  it('upgrades a Hold recommendation when the stop-loss is more severe', () => {
+  it('upgrades Hold when the position exit is more defensive', () => {
     const merged = withStopLoss({ action: 'HOLD', reasons: [], suggestedTrimPct: 0 }, stoppedPosition)
     expect(merged.action).toBe('SELL')
     expect(merged.source).toBe('stop_loss')
-    expect(merged.reasons[0]).toMatch(/stop-loss/)
+    expect(merged.reasons[0]).toMatch(/high-water mark/)
     expect(merged.companyRecommendation.action).toBe('HOLD')
-    expect(merged.positionAction).toMatchObject({ action: 'SELL', reasonCode: 'hard_stop_breached' })
   })
 
-  it('leaves a recommendation already at least as severe untouched', () => {
+  it('keeps company guidance when it is already equally defensive', () => {
     const base = { action: 'SELL', reasons: ['Thesis broke'], suggestedTrimPct: 100, source: 'pipeline' }
     const merged = withStopLoss(base, stoppedPosition)
     expect(merged.action).toBe('SELL')
@@ -103,9 +88,7 @@ describe('withStopLoss', () => {
     expect(merged.reasons).toContain('Thesis broke')
   })
 
-  it('passes through unchanged when no stop-loss triggers', () => {
-    const base = { action: 'HOLD', reasons: [] }
-    const quiet = { gainPct: 2, currentPrice: 102, purchaseDate: '2024-01-15', priceInfo: { history: { dates: history.dates, closes: [100, 101, 102, 102, 102] } } }
-    expect(withStopLoss(base, quiet)).toBe(base)
+  it('returns no position action above both levels', () => {
+    expect(assessPositionStopLoss({ highWaterMark: 100, currentPrice: 95 })).toBeNull()
   })
 })

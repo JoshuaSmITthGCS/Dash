@@ -57,6 +57,18 @@
     "snapshot_schema_version": 1,
     "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
   },
+  "position_risk": {
+    "atr_multiple_trim": 2.5,
+    "atr_multiple_exit": 4.0,
+    "atr_lookback_days": 14,
+    "sigma_lookback_days": 60,
+    "trading_days_per_year": 252,
+    "min_stop_distance_pct": 8.0,
+    "max_stop_distance_pct": 35.0,
+    "fallback_trim_pct": 12.0,
+    "fallback_exit_pct": 20.0,
+    "_comment": "Position decisions reference the highest observed close since purchase. Cost basis remains display-only."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

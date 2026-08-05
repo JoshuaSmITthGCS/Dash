@@ -1177,6 +1177,7 @@ def run():
             "metric_weights": fundamentals_cfg["metric_weights"],
             "market_behavior_weights": SETTINGS.get("market_behavior", {}).get("weights", {}),
             "modifiers": SETTINGS.get("modifiers", {}),
+            "position_risk": SETTINGS.get("position_risk", {}),
             "principle": "Fundamentals lead. Price behavior and news modify confidence; they do not replace business quality.",
             "evidence": {
                 "valuation": "EV/EBITDA and EV/EBIT carry the valuation bucket (Loughran & Wellman's "
