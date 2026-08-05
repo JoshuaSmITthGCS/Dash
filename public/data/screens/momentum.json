@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "momentum-v2.0.0",
   "config_version": "screens-v2.0.0",
-  "generated_at": "2026-08-05T13:01:35.047395+00:00",
+  "generated_at": "2026-08-05T14:14:49.397596+00:00",
   "status": "success",
   "results": [
     {
@@ -147,7 +147,7 @@
       "eligibility": true,
       "peer_group": "Healthcare",
       "percentile": 86.15,
-      "structural_score": 73.8,
+      "structural_score": 74.1,
       "tactical_score": null,
       "confidence": 0.89,
       "current_membership": false,
@@ -167,6 +167,20 @@
     },
     {
       "rank": 14,
+      "ticker": "BWA",
+      "eligibility": false,
+      "peer_group": "Consumer Cyclical",
+      "percentile": null,
+      "structural_score": 71.6,
+      "tactical_score": null,
+      "confidence": 0.86,
+      "current_membership": false,
+      "reason_codes": [
+        "MINIMUM_MARKET_CAP"
+      ]
+    },
+    {
+      "rank": 15,
       "ticker": "EXEL",
       "eligibility": true,
       "peer_group": "Profitable Biotechnology",
@@ -176,20 +190,6 @@
       "confidence": 0.89,
       "current_membership": false,
       "reason_codes": []
-    },
-    {
-      "rank": 15,
-      "ticker": "BWA",
-      "eligibility": false,
-      "peer_group": "Consumer Cyclical",
-      "percentile": null,
-      "structural_score": 73.1,
-      "tactical_score": null,
-      "confidence": 0.86,
-      "current_membership": false,
-      "reason_codes": [
-        "MINIMUM_MARKET_CAP"
-      ]
     },
     {
       "rank": 16,
@@ -341,18 +341,6 @@
     },
     {
       "rank": 28,
-      "ticker": "SCHW",
-      "eligibility": true,
-      "peer_group": "Financial Services",
-      "percentile": 66.15,
-      "structural_score": 66.3,
-      "tactical_score": null,
-      "confidence": 0.7,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 29,
       "ticker": "UPS",
       "eligibility": false,
       "peer_group": "Industrials",
@@ -364,6 +352,18 @@
       "reason_codes": [
         "MINIMUM_MARKET_CAP"
       ]
+    },
+    {
+      "rank": 29,
+      "ticker": "SCHW",
+      "eligibility": true,
+      "peer_group": "Financial Services",
+      "percentile": 66.15,
+      "structural_score": 66.3,
+      "tactical_score": null,
+      "confidence": 0.7,
+      "current_membership": false,
+      "reason_codes": []
     },
     {
       "rank": 30,
@@ -395,7 +395,7 @@
       "eligibility": true,
       "peer_group": "Commodity producers",
       "percentile": 60.0,
-      "structural_score": 70.7,
+      "structural_score": 72.2,
       "tactical_score": null,
       "confidence": 0.87,
       "current_membership": false,
@@ -407,7 +407,7 @@
       "eligibility": true,
       "peer_group": "Commodity producers",
       "percentile": 61.54,
-      "structural_score": 70.7,
+      "structural_score": 72.2,
       "tactical_score": null,
       "confidence": 0.87,
       "current_membership": false,
@@ -465,25 +465,25 @@
     },
     {
       "rank": 38,
-      "ticker": "ACGL",
+      "ticker": "FSLR",
       "eligibility": true,
-      "peer_group": "Diversified insurers",
+      "peer_group": "Technology",
       "percentile": 53.85,
-      "structural_score": 78.0,
+      "structural_score": 71.4,
       "tactical_score": null,
-      "confidence": 0.88,
+      "confidence": 0.87,
       "current_membership": false,
       "reason_codes": []
     },
     {
       "rank": 39,
-      "ticker": "FSLR",
+      "ticker": "ACGL",
       "eligibility": true,
-      "peer_group": "Technology",
+      "peer_group": "Diversified insurers",
       "percentile": 52.31,
-      "structural_score": 71.4,
+      "structural_score": 78.0,
       "tactical_score": null,
-      "confidence": 0.87,
+      "confidence": 0.88,
       "current_membership": false,
       "reason_codes": []
     },
@@ -529,7 +529,7 @@
       "eligibility": true,
       "peer_group": "Commodity producers",
       "percentile": 46.15,
-      "structural_score": 56.4,
+      "structural_score": 56.6,
       "tactical_score": null,
       "confidence": 0.87,
       "current_membership": false,
@@ -573,18 +573,6 @@
     },
     {
       "rank": 47,
-      "ticker": "COLM",
-      "eligibility": true,
-      "peer_group": "Consumer Cyclical",
-      "percentile": 40.0,
-      "structural_score": 70.9,
-      "tactical_score": null,
-      "confidence": 0.86,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 48,
       "ticker": "AGO",
       "eligibility": false,
       "peer_group": "Specialty insurers",
@@ -598,11 +586,11 @@
       ]
     },
     {
-      "rank": 49,
+      "rank": 48,
       "ticker": "MSFT",
       "eligibility": true,
       "peer_group": "Technology",
-      "percentile": 38.46,
+      "percentile": 40.0,
       "structural_score": 63.3,
       "tactical_score": null,
       "confidence": 0.89,
@@ -610,11 +598,11 @@
       "reason_codes": []
     },
     {
-      "rank": 50,
+      "rank": 49,
       "ticker": "NTNX",
       "eligibility": true,
       "peer_group": "Technology",
-      "percentile": 36.92,
+      "percentile": 38.46,
       "structural_score": 52.3,
       "tactical_score": null,
       "confidence": 0.84,
@@ -622,19 +610,7 @@
       "reason_codes": []
     },
     {
-      "rank": 51,
-      "ticker": "CI",
-      "eligibility": true,
-      "peer_group": "Healthcare",
-      "percentile": 33.85,
-      "structural_score": 76.1,
-      "tactical_score": null,
-      "confidence": 0.87,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 52,
+      "rank": 50,
       "ticker": "CI",
       "eligibility": true,
       "peer_group": "Healthcare",
@@ -646,11 +622,23 @@
       "reason_codes": []
     },
     {
-      "rank": 53,
+      "rank": 51,
+      "ticker": "CI",
+      "eligibility": true,
+      "peer_group": "Healthcare",
+      "percentile": 36.92,
+      "structural_score": 76.1,
+      "tactical_score": null,
+      "confidence": 0.87,
+      "current_membership": false,
+      "reason_codes": []
+    },
+    {
+      "rank": 52,
       "ticker": "FNF",
       "eligibility": true,
       "peer_group": "Diversified insurers",
-      "percentile": 32.31,
+      "percentile": 33.85,
       "structural_score": 71.7,
       "tactical_score": null,
       "confidence": 0.87,
@@ -658,19 +646,19 @@
       "reason_codes": []
     },
     {
-      "rank": 54,
+      "rank": 53,
       "ticker": "RIGL",
       "eligibility": true,
       "peer_group": "Biopharmaceutical companies",
-      "percentile": 30.77,
-      "structural_score": 66.1,
+      "percentile": 32.31,
+      "structural_score": 60.8,
       "tactical_score": null,
       "confidence": 0.85,
       "current_membership": false,
       "reason_codes": []
     },
     {
-      "rank": 55,
+      "rank": 54,
       "ticker": "GAP",
       "eligibility": false,
       "peer_group": "Consumer Cyclical",
@@ -682,6 +670,18 @@
       "reason_codes": [
         "MINIMUM_MARKET_CAP"
       ]
+    },
+    {
+      "rank": 55,
+      "ticker": "CMG",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "percentile": 30.77,
+      "structural_score": 59.1,
+      "tactical_score": null,
+      "confidence": 0.89,
+      "current_membership": false,
+      "reason_codes": []
     },
     {
       "rank": 56,
@@ -697,30 +697,6 @@
     },
     {
       "rank": 57,
-      "ticker": "CMG",
-      "eligibility": true,
-      "peer_group": "Consumer Cyclical",
-      "percentile": 27.69,
-      "structural_score": 60.3,
-      "tactical_score": null,
-      "confidence": 0.89,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 58,
-      "ticker": "QCOM",
-      "eligibility": true,
-      "peer_group": "Technology",
-      "percentile": 24.62,
-      "structural_score": 77.1,
-      "tactical_score": null,
-      "confidence": 0.89,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 59,
       "ticker": "QCOM",
       "eligibility": true,
       "peer_group": "Technology",
@@ -732,11 +708,23 @@
       "reason_codes": []
     },
     {
-      "rank": 60,
+      "rank": 58,
+      "ticker": "QCOM",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "percentile": 27.69,
+      "structural_score": 77.1,
+      "tactical_score": null,
+      "confidence": 0.89,
+      "current_membership": false,
+      "reason_codes": []
+    },
+    {
+      "rank": 59,
       "ticker": "GNTX",
       "eligibility": true,
       "peer_group": "Consumer Cyclical",
-      "percentile": 23.08,
+      "percentile": 24.62,
       "structural_score": 75.3,
       "tactical_score": null,
       "confidence": 0.84,
@@ -744,19 +732,7 @@
       "reason_codes": []
     },
     {
-      "rank": 61,
-      "ticker": "DECK",
-      "eligibility": true,
-      "peer_group": "Consumer Cyclical",
-      "percentile": 20.0,
-      "structural_score": 81.7,
-      "tactical_score": null,
-      "confidence": 0.89,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 62,
+      "rank": 60,
       "ticker": "DECK",
       "eligibility": true,
       "peer_group": "Consumer Cyclical",
@@ -768,11 +744,23 @@
       "reason_codes": []
     },
     {
-      "rank": 63,
+      "rank": 61,
+      "ticker": "DECK",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "percentile": 23.08,
+      "structural_score": 81.7,
+      "tactical_score": null,
+      "confidence": 0.89,
+      "current_membership": false,
+      "reason_codes": []
+    },
+    {
+      "rank": 62,
       "ticker": "DEO",
       "eligibility": true,
       "peer_group": "Consumer Defensive",
-      "percentile": 18.46,
+      "percentile": 20.0,
       "structural_score": 48.1,
       "tactical_score": null,
       "confidence": 0.87,
@@ -780,11 +768,11 @@
       "reason_codes": []
     },
     {
-      "rank": 64,
+      "rank": 63,
       "ticker": "META",
       "eligibility": true,
       "peer_group": "Communication Services",
-      "percentile": 16.92,
+      "percentile": 18.46,
       "structural_score": 67.0,
       "tactical_score": null,
       "confidence": 0.88,
@@ -792,19 +780,7 @@
       "reason_codes": []
     },
     {
-      "rank": 65,
-      "ticker": "ADBE",
-      "eligibility": true,
-      "peer_group": "Technology",
-      "percentile": 13.85,
-      "structural_score": 76.6,
-      "tactical_score": null,
-      "confidence": 0.88,
-      "current_membership": false,
-      "reason_codes": []
-    },
-    {
-      "rank": 66,
+      "rank": 64,
       "ticker": "ADBE",
       "eligibility": true,
       "peer_group": "Technology",
@@ -816,14 +792,38 @@
       "reason_codes": []
     },
     {
-      "rank": 67,
+      "rank": 65,
+      "ticker": "ADBE",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "percentile": 16.92,
+      "structural_score": 76.6,
+      "tactical_score": null,
+      "confidence": 0.88,
+      "current_membership": false,
+      "reason_codes": []
+    },
+    {
+      "rank": 66,
       "ticker": "PGY",
       "eligibility": true,
       "peer_group": "Technology",
-      "percentile": 12.31,
+      "percentile": 13.85,
       "structural_score": 70.1,
       "tactical_score": null,
       "confidence": 0.86,
+      "current_membership": false,
+      "reason_codes": []
+    },
+    {
+      "rank": 67,
+      "ticker": "EPAM",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "percentile": 12.31,
+      "structural_score": 72.1,
+      "tactical_score": null,
+      "confidence": 0.88,
       "current_membership": false,
       "reason_codes": []
     },
@@ -881,9 +881,9 @@
       "eligibility": true,
       "peer_group": "Medical device companies",
       "percentile": 4.62,
-      "structural_score": 67.4,
+      "structural_score": 66.1,
       "tactical_score": null,
-      "confidence": 0.89,
+      "confidence": 0.84,
       "current_membership": false,
       "reason_codes": []
     },
