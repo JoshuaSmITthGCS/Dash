@@ -63,9 +63,12 @@ export function MetricPills({ peg, forward_pe, price_to_sales, price_to_book,
   )
 }
 
-export function Move({ pct }) {
-  if (pct == null) return <span className="mono">—</span>
-  return <span className={`mono ${pct >= 0 ? 'pos' : 'neg'}`}>{fmtPct(pct)}</span>
+export function Move({ pct, value, capsule = false }) {
+  const movement = pct ?? value
+  if (movement == null) return <span className="mono">—</span>
+  return <span className={`mono direction-value ${movement >= 0 ? 'pos' : 'neg'}${capsule ? ' value-capsule' : ''}`}>
+    <span aria-hidden="true">{movement >= 0 ? '▲' : '▼'}</span>{fmtPct(movement)}
+  </span>
 }
 
 export function Lag({ days }) {

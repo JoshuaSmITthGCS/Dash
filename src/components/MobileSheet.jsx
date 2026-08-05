@@ -26,7 +26,7 @@ export function ResponsiveControlPanel({ label, title, children }) {
   const [open, setOpen] = useState(false)
   return <>
     <div className="desktop-control-panel">{children}</div>
-    <button type="button" className="secondary-button mobile-sheet-trigger" onClick={() => setOpen(true)}>{label}</button>
+    <button type="button" className="secondary-button mobile-sheet-trigger" onClick={() => setOpen(true)}><span>{label}</span><Icon name="chevron" size={17} /></button>
     <MobileSheet open={open} title={title} onClose={() => setOpen(false)}>{children}<button type="button" className="primary-button mobile-sheet-done" onClick={() => setOpen(false)}>Done</button></MobileSheet>
   </>
 }

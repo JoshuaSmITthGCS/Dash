@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 
 function ResultCard({ row, index, title, subtitle, fields, footer, variant }) {
+  const asOf = row.as_of || row.data_as_of || row.generated_at || row.date
   return <article className={`result-card ${variant || ''}`} data-index={index}>
     <header>
       <div><strong>{title(row, index)}</strong>{subtitle && <span>{subtitle(row, index)}</span>}</div>
@@ -11,7 +12,7 @@ function ResultCard({ row, index, title, subtitle, fields, footer, variant }) {
       if (field.hideEmpty && (value == null || value === '—')) return null
       return <div key={field.label} className={field.className?.(row, index) || ''}><dt>{field.label}</dt><dd>{value ?? '—'}</dd></div>
     })}</dl>
-    {footer && <footer>{footer(row, index)}</footer>}
+    {(footer || asOf) && <footer>{footer && footer(row, index)}{asOf && <small className="as-of-line">As of {String(asOf).slice(0, 10)}</small>}</footer>}
   </article>
 }
 

@@ -45,7 +45,7 @@ export default function ProjectionFanChart({ fan = [], startAge = null, retireme
         const value = maximum * fraction
         return <g key={fraction}>
           <line className="projection-grid-line" x1={PAD.left} x2={WIDTH - PAD.right} y1={y(value)} y2={y(value)} />
-          <text className="projection-axis-label" x={PAD.left - 9} y={y(value) + 4} textAnchor="end">{money(value)}</text>
+          <text className="projection-axis-label projection-y-label" x={PAD.left - 9} y={y(value) + 4} textAnchor="end">{money(value)}</text>
         </g>
       })}
       <path className="projection-band outer" d={pathBetween(fan, 'p90', 'p10', x, y)} />

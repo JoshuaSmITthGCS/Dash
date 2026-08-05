@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { Tier } from './Bits'
+import { useEffect, useId, useState } from 'react'
 import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
 import ETFComparisonPanel from './ETFComparisonPanel'
@@ -18,6 +17,7 @@ import { watchlistGuidance } from '../lib/watchlistGuidance'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import ScoreExplainability, { FactorBars } from './ScoreExplainability.jsx'
 import { useData } from '../lib/useData.js'
+import modelSettings from '../../pipeline/config/settings.json'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -40,6 +40,30 @@ const signed = (value, digits = 1, suffix = '%') =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
+function ConfidenceScoreDial({ score, confidence }) {
+  const dial = modelSettings.interface.score_dial
+  const maskId = `score-mask-${useId().replaceAll(':', '')}`
+  const safeScore = Math.max(0, Math.min(100, Number(score) || 0))
+  const safeConfidence = Math.max(0, Math.min(1, Number(confidence) || 0))
+  const dash = dial.minimum_dash + safeConfidence * (dial.maximum_dash - dial.minimum_dash)
+  const gap = dial.maximum_gap - safeConfidence * (dial.maximum_gap - dial.minimum_gap)
+  const opacity = dial.minimum_opacity + safeConfidence * (1 - dial.minimum_opacity)
+  return <div className="confidence-score-dial" style={{ width: dial.size }}>
+    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeConfidence * 100)} percent confidence`}>
+      <circle className="score-dial-track" cx={dial.center} cy={dial.center} r={dial.radius} strokeWidth={dial.stroke_width} />
+      <defs><mask id={maskId}><circle cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" stroke="white" strokeWidth={dial.stroke_width} fill="none" strokeDasharray={`${safeScore} ${100 - safeScore}`} /></mask></defs>
+      <circle className="score-dial-arc" cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" strokeWidth={dial.stroke_width} mask={`url(#${maskId})`} style={{ opacity, strokeDasharray: `${dash} ${gap}` }} />
+    </svg>
+    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{Math.round(safeConfidence * 100)}% evidence confidence</small></div>
+  </div>
+}
+
+function primaryTheme(stock) {
+  const themes = Array.isArray(stock.theme_exposure) ? stock.theme_exposure : []
+  if (!themes.length) return null
+  return themes.slice().sort((left, right) => Number(right.exposure_score ?? right.score ?? 0) - Number(left.exposure_score ?? left.score ?? 0))[0]
+}
+
 // SEC Form 4 buys vs sells (pipeline/insider_signal.py). The pipeline already scores this
 // into the modifier, but never surfaced the raw grouping — show it only once real filings
 // were reviewed, so a quiet run (no SEC_USER_AGENT, no filings this window) renders nothing
@@ -51,7 +75,7 @@ function InsiderActivityView({ insider }) {
   const buyPct = (buys / (buys + sells)) * 100
   return (
     <div>
-      <div className="sec-label">Insider activity — buys vs. sells</div>
+      <div className="sec-label">Insider activity: buys vs. sells</div>
       <div className="insider-activity-view" aria-label="Insider buying versus selling">
         <div className="insider-activity-bar" aria-hidden="true">
           <span className="insider-buys" style={{ width: `${buyPct}%` }} />
@@ -101,6 +125,12 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const structural = analysis?.structural
   const percentile = stock.valuation_percentile
   const setupGuidance = watchlistGuidance(stock, null, null, { sizingMode: preferences.watchlistSizingMode })
+  const score = stock.score ?? structural?.effective_score
+  const confidence = stock.confidence ?? structural?.confidence ?? 0
+  const theme = primaryTheme(stock)
+  const themeName = theme?.theme || theme?.name || 'No material theme identified'
+  const themeScore = theme?.exposure_score ?? theme?.score
+  const dataAsOf = stock.generated_at || stock.recommendation_v2?.generated_at || fullResearch?.generated_at
 
   // A held position with a purchase date gets its own since-you-bought-it comparison — the
   // full charted window (often a year) is the wrong question once you actually own the stock.
@@ -140,35 +170,30 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal stock-modal" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 20, gap: 16 }}>
-          <div>
-            <h2 style={{ marginBottom: 4 }}>{stock.ticker}</h2>
-            <div style={{ opacity: 0.7, marginBottom: 8 }}>{stock.name} · {stock.industry || stock.sector || '—'}</div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Tier label={analysis?.company_classification || stock.stance} />
-              <span className="mono" style={{ fontSize: 24, fontWeight: 600 }}>{structural?.effective_score ?? stock.score}</span>
-              <span style={{ opacity: 0.7, fontSize: 14 }}>
-                {Math.round((structural?.confidence ?? stock.confidence) * 100)}% confidence · {Math.round((structural?.coverage ?? 0) * 100)}% coverage
-              </span>
-              {percentile?.display_value != null && (
-                <span className="chip" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}`}>
-                  cheaper than approximately {percentile.display_value.toFixed(0)}% of {percentile.peer_group_label} · n={percentile.peer_count_with_valid_data}
-                </span>
-              )}
-            </div>
+        <header className="stock-detail-head">
+          <div><span className="eyebrow">Company research</span><h2>{stock.ticker}</h2><p>{stock.name} · {stock.industry || stock.sector || 'Unclassified'}</p>{dataAsOf && <small>As of {String(dataAsOf).slice(0, 10)}</small>}</div>
+          <button className="icon-button" onClick={onClose} aria-label="Close stock research"><Icon name="close" /></button>
+        </header>
+
+        <section className="stock-concept-hero" aria-label="Research summary">
+          <ConfidenceScoreDial score={score} confidence={confidence} />
+          <div className="stock-concept-list">
+            <article><span>2 · Confidence</span><strong>{Math.round(confidence * 100)}%</strong><p>How complete and reliable the evidence is. The score arc becomes lighter and more broken when certainty falls.</p></article>
+            <article><span>3 · Guidance</span><strong>{recommendation?.action || 'Watch'}</strong><p>{recommendation?.summary || 'Review the evidence before acting.'}</p></article>
+            <article><span>4 · Theme exposure</span><strong>{themeName}</strong><p>{themeScore == null ? 'No material long-term theme exposure is published for this company.' : `${Number(themeScore).toFixed(0)} out of 100. Theme exposure stays independent from the research score.`}</p></article>
           </div>
-          <button className="chip button-chip" onClick={onClose}>✕ Close</button>
-        </div>
+        </section>
 
-        <div style={{ marginBottom: 22 }}>
+        <button className="expand-button show-more-toggle" aria-expanded={showMore} onClick={() => setShowMore((value) => !value)}>
+          {showMore ? 'Hide full research detail' : 'Explore the evidence'}
+          <Icon name="chevron" size={17} className={showMore ? 'rotated' : ''} />
+        </button>
+
+        {showMore && <div className="stock-detail-expanded">
           <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
-        </div>
-
-        <SetupQualityBreakdown guidance={setupGuidance} />
-
-        <FactorBars bars={explainability?.factor_bars} />
-
-        <div className="grid grid-4" style={{ marginBottom: 20 }}>
+          <SetupQualityBreakdown guidance={setupGuidance} />
+          <FactorBars bars={explainability?.factor_bars} />
+          <div className="grid grid-4">
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />
           <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'} />
           <Kpi label="20-day move" value={signed(technical.return_20d)} color={moveColor(technical.return_20d)} />
@@ -177,9 +202,9 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             <Kpi label="Earnings vs. estimate" value={signed(stock.earnings_surprise)} color={moveColor(stock.earnings_surprise)}
               note="Recent quarters vs. expectations, newest weighted heaviest" />
           )}
-        </div>
+          </div>
 
-        <DipWatchBadge stock={stock} />
+          <DipWatchBadge stock={stock} />
 
         {thesis && !analysis && (
           <section className="bull-bear-detail" aria-label={`Bull bear thesis score ${thesis.score} out of 10`}>
@@ -209,17 +234,12 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           </section>
         )}
 
-        <button className="expand-button show-more-toggle" aria-expanded={showMore} onClick={() => setShowMore((value) => !value)}>
-          {showMore ? 'Hide full research detail' : 'Show full research detail'}
-          <Icon name="chevron" size={17} className={showMore ? 'rotated' : ''} />
-        </button>
-
-        {showMore && (
-          <div style={{ display: 'grid', gap: 20, marginTop: 16 }}>
+          <div className="stock-shadow-detail">
             <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
             <AnalysisLayers analysis={analysis} />
           </div>
-        )}
+          {percentile?.display_value != null && <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}`}>Cheaper than approximately {percentile.display_value.toFixed(0)}% of {percentile.peer_group_label}, based on {percentile.peer_count_with_valid_data} valid peers.</p>}
+        </div>}
 
         <div className="tabs">
           {TABS.map(([key, label]) => (
@@ -234,7 +254,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             {!showMore && (
               <p style={{ color: 'var(--text-faint)', fontSize: 12.5 }}>
                 Score breakdowns, fundamental categories, the evidence list, modifiers, and insider activity are
-                collapsed. Use “Show full research detail” above to expand them.
+                collapsed. Use “Explore the evidence” above to expand them.
               </p>
             )}
             {showMore && <>
@@ -306,7 +326,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
               {chartSeries.length > 0 && <details className="card card-pad">
                 <summary>Legacy comparison view</summary>
                 <GrowthChart dates={chartDates} series={chartSeries}
-                  title={`Legacy growth comparison — ${stock.ticker}`}
+                  title={`Legacy growth comparison: ${stock.ticker}`}
                   caption="Retained during the schema 4 rollout. This legacy series may use a generic SPY comparison and should not be interpreted as tracking difference."
                   zoomable />
               </details>}
@@ -315,15 +335,15 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
               dates={chartDates}
               series={chartSeries}
               title={scopedSeries
-                ? `Growth of $${basis.toFixed(0)} — ${stock.ticker} vs the S&P 500 since you bought it (${position.purchaseDate})`
-                : `Growth of $${basis.toFixed(0)} — ${stock.ticker} vs the S&P 500`}
+                ? `Growth of $${basis.toFixed(0)}: ${stock.ticker} vs the S&P 500 since you bought it (${position.purchaseDate})`
+                : `Growth of $${basis.toFixed(0)}: ${stock.ticker} vs the S&P 500`}
               caption={scopedSeries
                 ? 'Same dollars, invested the day you actually bought this position, in the stock and in the S&P 500. The gap is what picking this name earned or cost against simply buying the index from that same day.'
                 : 'Same dollars, same start date, same window. The gap is what picking this name earned or cost against simply buying the index.'}
               zoomable
               earningsMarker={typeof stock.earnings_surprise === 'number' ? {
                 value: stock.earnings_surprise,
-                label: `Latest earnings vs. estimate: ${signed(stock.earnings_surprise)} (recent quarters, newest weighted heaviest — not a single dated report)`,
+                label: `Latest earnings vs. estimate: ${signed(stock.earnings_surprise)} (recent quarters, newest weighted heaviest, not a single dated report)`,
               } : null}
             />
             {hypothetical && (

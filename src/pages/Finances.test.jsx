@@ -83,7 +83,7 @@ describe('Finances page', () => {
     render(<Finances />)
     fireEvent.click(screen.getByRole('button', { name: 'Retirement' }))
 
-    expect(screen.getByText(/Fidelity 401\(k\)/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Fidelity 401\(k\)/).length).toBeGreaterThan(0)
     expect(screen.getByText('$12,000 of $24,500 maxed (49%)')).toBeInTheDocument()
 
     fireEvent.change(screen.getByPlaceholderText('Fidelity 401(k)'), { target: { value: 'Vanguard Roth IRA' } })

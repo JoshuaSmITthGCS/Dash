@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-08-05T23:30:44.142Z",
+  "simulation": "Machado-style full-severity RGB matrices",
+  "minimum_rgb_distance": 0.12,
+  "minimum_text_contrast_ratio": 4.5,
+  "themes": {
+    "light": {
+      "gain": "#087a5c",
+      "loss": "#c9423d",
+      "simulated_distances": {
+        "protanopia": 0.1798893333712993,
+        "deuteranopia": 0.18865389139140046,
+        "tritanopia": 0.9864174416607895
+      },
+      "positive_capsule_contrast": 5.3182334925156365,
+      "negative_capsule_contrast": 4.849692228112347,
+      "passes": true,
+      "non_color_signal": "Every directional value pairs color with an upward or downward triangle glyph."
+    },
+    "dark": {
+      "gain": "#58d795",
+      "loss": "#ff746d",
+      "simulated_distances": {
+        "protanopia": 0.3990105390610986,
+        "deuteranopia": 0.2042022509833106,
+        "tritanopia": 0.9107614538585515
+      },
+      "positive_capsule_contrast": 10.231842736879328,
+      "negative_capsule_contrast": 7.047535324823299,
+      "passes": true,
+      "non_color_signal": "Every directional value pairs color with an upward or downward triangle glyph."
+    }
+  },
+  "passes": true
+}

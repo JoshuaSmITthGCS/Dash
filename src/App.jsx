@@ -140,7 +140,7 @@ function AppContent() {
           <Route path="/portfolio/diversification" element={currentUser ? <Diversification /> : <Dashboard />} />
           <Route path="/portfolio/insights" element={currentUser ? <Insights /> : <Dashboard />} />
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
-          <Route path="/planning" element={currentUser ? <Planning /> : <Dashboard />} />
+          <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability—kept separate from structural quality." />} />

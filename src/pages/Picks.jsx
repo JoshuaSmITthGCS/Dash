@@ -69,7 +69,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
         <span className="rank-badge">#{rank}</span>
         <CompanyLogo company={row} size={42} />
         <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
-        <span className="mobile-score">{row.score}</span>
+        <span className="mobile-score">{row.score}<small>score</small></span>
       </div>
       <div className="research-card-badges">
         <Tier label={row.stance} />
@@ -79,10 +79,11 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
       </div>
       <dl className="research-card-metrics">
         <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</dd></div>
-        <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} /></dd></div>
+        <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} capsule /></dd></div>
         <div><dt>Data confidence</dt><dd>{Math.round((row.confidence || 0) * 100)}%</dd></div>
       </dl>
       <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
+      <small className="as-of-line">As of {row.history?.dates?.at(-1) || row.data_as_of || 'the latest published close'}</small>
       <button className="expand-button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
         {expanded ? 'Hide secondary metrics' : 'Show secondary metrics'}
         <Icon name="chevron" size={17} className={expanded ? 'rotated' : ''} />
@@ -216,7 +217,7 @@ export default function Picks() {
           </label>
         </header>
         <p className="allocation-planner-note">
-          Weighted by score against the top {Math.min(rows.length, 8)} companies in the current sort and filters — not an
+          Weighted by score against the top {Math.min(rows.length, 8)} companies in the current sort and filters. This is not an
           even split. A higher-scored company gets a disproportionately larger bucket, the way a real allocation would.
         </p>
         {allocation.available ? (

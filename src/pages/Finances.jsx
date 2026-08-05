@@ -11,6 +11,7 @@ import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
+import Icon from '../components/Icons.jsx'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -46,6 +47,7 @@ export default function Finances() {
   const [poolForm, setPoolForm] = useState({ name: '', percent: '' })
   const [depositAmount, setDepositAmount] = useState('')
   const [accountForm, setAccountForm] = useState({ name: '', type: ACCOUNT_TYPES[0].key })
+  const [selectedAccountId, setSelectedAccountId] = useState(null)
 
   const portfolioValue = useMemo(() => currentPortfolioValue(positions, data), [positions, data])
   const budgetSummary = useMemo(() => summarizeBudget(finances.budgetItems), [finances.budgetItems])
@@ -314,8 +316,9 @@ export default function Finances() {
             <div className="sec-label">Retirement & investing accounts</div>
             <p className="body-copy" style={{ marginBottom: 12 }}>
               Track contribution room against the 2026 IRS limits for each account.
-              Roth IRA room can phase out at higher incomes — this assumes you're eligible.
+              Roth IRA room can phase out at higher incomes. This assumes you're eligible.
             </p>
+            {accounts.length > 0 && <nav className="finance-account-tabs" aria-label="Retirement accounts">{accounts.map((account, index) => <button type="button" className={(selectedAccountId || accounts[0]?.id) === account.id ? 'active' : ''} key={account.id} onClick={() => { setSelectedAccountId(account.id); document.getElementById(`finance-account-${account.id}`)?.scrollIntoView({ block: 'nearest' }) }}><span>{account.name}<small>{accountTypeLabel(account.type)}</small></span>{index === 0 && <Icon name="chevron" size={16} />}</button>)}</nav>}
             <form onSubmit={handleAddAccount} className="finance-form finance-form-account">
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
@@ -339,7 +342,7 @@ export default function Finances() {
                 const contributed = account.annualContribution || 0
                 const pct = limit ? Math.min(100, (contributed / limit) * 100) : 0
                 return (
-                  <div key={account.id} className="finance-pool-row">
+                  <div key={account.id} id={`finance-account-${account.id}`} className={`finance-pool-row${(selectedAccountId || accounts[0]?.id) === account.id ? ' selected-account' : ''}`}>
                     <div className="finance-pool-head">
                       <span>{account.name} <span className="mono" style={{ color: 'var(--text-faint)', fontWeight: 400 }}>· {accountTypeLabel(account.type)}</span></span>
                       <button className="text-button danger" onClick={() => finances.removeAccount(account.id)}>Remove</button>

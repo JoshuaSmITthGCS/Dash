@@ -302,6 +302,27 @@
     "milliseconds_per_day": 86400000,
     "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of observed monthly returns for the standard model. With shorter portfolio history spanning at least 30 days, the model uses the selected benchmark's full monthly history and shifts its geometric mean to the annualized return actually observed for the portfolio. Observed months are never repeated or synthesized. Allocation scenarios rescale that historical return structure to the configured annual return and volatility pair."
   },
+  "interface": {
+    "home_signal_limit": 4,
+    "home_theme_limit": 6,
+    "score_dial": {
+      "size": 220,
+      "viewbox_size": 220,
+      "center": 110,
+      "radius": 86,
+      "stroke_width": 13,
+      "minimum_opacity": 0.34,
+      "minimum_dash": 1.5,
+      "maximum_dash": 11.0,
+      "minimum_gap": 0.8,
+      "maximum_gap": 5.0
+    },
+    "mobile_acceptance_widths": [390, 430],
+    "minimum_touch_target_px": 44,
+    "colorblind_minimum_rgb_distance": 0.12,
+    "minimum_text_contrast_ratio": 4.5,
+    "_comment": "Presentation constants shared by the responsive report and confidence-encoded research score dial. Confidence controls arc opacity and dash density while the research score controls arc length."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

@@ -1,14 +1,36 @@
-import { mkdir } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { chromium } from 'playwright-core'
+import settings from '../pipeline/config/settings.json' with { type: 'json' }
 
 const chrome = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-const baseUrl = process.env.MOBILE_SCREENSHOT_URL || 'http://127.0.0.1:5173/research?preview=1'
+const origin = process.env.MOBILE_SCREENSHOT_ORIGIN || 'http://127.0.0.1:5173'
 const outputDirectory = new URL('../docs/mobile-screenshots/', import.meta.url)
-const cases = [
-  { width: 390, height: 844, theme: 'light' },
-  { width: 390, height: 844, theme: 'dark' },
-  { width: 430, height: 932, theme: 'light' },
-  { width: 430, height: 932, theme: 'dark' },
+const heights = { 390: 844, 430: 932 }
+const cases = settings.interface.mobile_acceptance_widths.flatMap((width) => [
+  { width, height: heights[width], theme: 'light' },
+  { width, height: heights[width], theme: 'dark' },
+])
+const pages = [
+  { name: 'home', path: '/?preview=1', ready: '.report-empty-state, .report-hero-grid' },
+  {
+    name: 'planning',
+    path: '/planning?preview=1',
+    ready: '.planning-verdict',
+    async settle(page) {
+      await page.waitForFunction(() => document.querySelector('.success-gauge strong')?.textContent?.trim() !== '…')
+    },
+  },
+  { name: 'research', path: '/research?preview=1', ready: '.research-mobile-card' },
+  {
+    name: 'stock-detail',
+    path: '/research?preview=1',
+    ready: '.stock-concept-hero',
+    async prepare(page) {
+      const card = page.locator('.research-mobile-card').first()
+      await card.locator('.expand-button').click()
+      await card.locator('.research-expanded .primary-button').click()
+    },
+  },
 ]
 
 await mkdir(outputDirectory, { recursive: true })
@@ -22,35 +44,62 @@ for (const entry of cases) {
     isMobile: true,
     hasTouch: true,
     colorScheme: entry.theme,
+    reducedMotion: 'reduce',
   })
   await context.addInitScript(({ theme }) => {
     localStorage.setItem('valuesignal.ui-preferences.v1', JSON.stringify({ theme }))
   }, { theme: entry.theme })
-  const page = await context.newPage()
-  await page.goto(baseUrl, { waitUntil: 'load' })
-  await page.locator('.research-mobile-card').first().waitFor({ state: 'visible' })
-  const validation = await page.evaluate(() => {
-    const nav = document.querySelector('.mobile-nav')?.getBoundingClientRect()
-    const toolbar = document.querySelector('.research-toolbar')?.getBoundingClientRect()
-    const firstFilter = document.querySelector('.research-toolbar select')?.getBoundingClientRect()
-    return {
-      innerWidth: window.innerWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      noHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth,
-      mobileNavInsideViewport: Boolean(nav && nav.left >= 0 && nav.right <= window.innerWidth),
-      filterUsesFullRow: Boolean(toolbar && firstFilter && firstFilter.width >= toolbar.width - 1),
-    }
-  })
-  const name = `research-${entry.width}-${entry.theme}.png`
-  await page.screenshot({ path: new URL(name, outputDirectory).pathname })
-  results.push({ ...entry, file: name, ...validation })
+  for (const target of pages) {
+    const page = await context.newPage()
+    await page.goto(`${origin}${target.path}`, { waitUntil: 'load' })
+    if (target.prepare) await target.prepare(page)
+    await page.locator(target.ready).first().waitFor({ state: 'visible' })
+    if (target.settle) await target.settle(page)
+    const validation = await page.evaluate((minimumTarget) => {
+      const nav = document.querySelector('.mobile-nav')?.getBoundingClientRect()
+      const interactive = [...document.querySelectorAll('button, input, select, [role="button"]')]
+        .filter((element) => {
+          const style = getComputedStyle(element)
+          const rect = element.getBoundingClientRect()
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+        })
+      const undersizedTargets = interactive.map((element) => {
+        const rect = element.getBoundingClientRect()
+        return { label: element.getAttribute('aria-label') || element.textContent?.trim().slice(0, 50) || element.tagName, width: rect.width, height: rect.height }
+      }).filter((target) => target.width < minimumTarget || target.height < minimumTarget)
+      const animated = [...document.querySelectorAll('*')].filter((element) => {
+        const style = getComputedStyle(element)
+        return style.animationName !== 'none' && parseFloat(style.animationDuration) > 0.001
+      }).length
+      return {
+        innerWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        noHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+        mobileNavInsideViewport: Boolean(nav && nav.left >= 0 && nav.right <= window.innerWidth),
+        undersizedTargets,
+        reducedMotionStatic: animated === 0,
+      }
+    }, settings.interface.minimum_touch_target_px)
+    const name = `${target.name}-${entry.width}-${entry.theme}.png`
+    await page.screenshot({ path: new URL(name, outputDirectory).pathname })
+    results.push({ ...entry, page: target.name, file: name, ...validation })
+    await page.close()
+  }
   await context.close()
 }
 await browser.close()
 
-if (results.some((entry) => !entry.noHorizontalOverflow || !entry.mobileNavInsideViewport || !entry.filterUsesFullRow || entry.innerWidth !== entry.width)) {
-  console.error(JSON.stringify(results, null, 2))
-  process.exitCode = 1
-} else {
-  console.log(JSON.stringify(results, null, 2))
+const failed = results.some((entry) => !entry.noHorizontalOverflow
+  || !entry.mobileNavInsideViewport
+  || entry.innerWidth !== entry.width
+  || entry.undersizedTargets.length
+  || !entry.reducedMotionStatic)
+const report = {
+  generated_at: new Date().toISOString(),
+  result: failed ? 'fail' : 'pass',
+  minimum_touch_target_px: settings.interface.minimum_touch_target_px,
+  cases: results,
 }
+await writeFile(new URL('../pipeline/reports/mobile_visual_check.json', import.meta.url), `${JSON.stringify(report, null, 2)}\n`)
+process.stdout.write(`${JSON.stringify(results, null, 2)}\n`)
+if (failed) process.exitCode = 1

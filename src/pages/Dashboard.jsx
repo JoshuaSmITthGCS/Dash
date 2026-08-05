@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
   BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
   enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceMetrics, portfolioReturnSummary, portfolioScore,
-  resilienceIndex, riskFreeAnnualRate, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
+  resilienceIndex, riskFreeAnnualRate, selectPeriod, trackedAllTimeEarnings,
 } from '../lib/portfolioAnalytics.js'
 import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
 import { Loading, Empty, Move, RefreshProgress, Tier } from '../components/Bits.jsx'
@@ -30,11 +31,13 @@ import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
-import { projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
+import { applyAllocationAssumption, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import { usePullToRefresh } from '../lib/usePullToRefresh.js'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh.js'
+import { aggregateThemeExposure } from '../lib/factorAnalytics.js'
+import modelSettings from '../../pipeline/config/settings.json'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -43,6 +46,7 @@ const BENCHMARK_STYLES = [
   { color: 'var(--series-benchmark-2)', dashPattern: '3 4' },
   { color: 'var(--series-benchmark-3)', dashPattern: '10 4 2 4' },
 ]
+const interfaceConfig = modelSettings.interface
 
 function Metric({ label, value, note, tone = '' }) {
   return <article className="report-metric"><span>{label}</span><strong className={tone}>{value}</strong><small>{note}</small></article>
@@ -58,6 +62,31 @@ function DirectionPill({ value, children }) {
     {value != null && <span className="value-pill-arrow" aria-hidden="true">{value >= 0 ? '▲' : '▼'}</span>}
     <span>{children}</span>
   </span>
+}
+
+function PlanningMetric({ input, endAge }) {
+  const state = useProjectionSimulation(input)
+  const probability = state.result?.successProbability
+  return <Link className="report-metric home-fact-link" to="/planning">
+    <span>Planning success</span>
+    <strong>{probability == null ? state.loading ? 'Calculating' : 'Unavailable' : `${(probability * 100).toFixed(0)}%`}</strong>
+    <small>{probability == null ? 'Open Planning to complete the assumptions' : `Savings survive through age ${endAge}`}</small>
+  </Link>
+}
+
+function HomeResearchShelves({ rows, themes }) {
+  return <section className="home-research-shelves" aria-label="Top signals and theme exposure">
+    <header className="section-heading"><div><span className="eyebrow">What is moving</span><h2>Top research signals</h2></div><Link to="/research">See all research</Link></header>
+    <div className="horizontal-card-rail">
+      {rows.slice(0, interfaceConfig.home_signal_limit).map((row, index) => <Link className="signal-rail-card" to="/research" key={row.ticker}>
+        <span>#{index + 1} · {row.sector || 'Unclassified'}</span><strong>{row.ticker}</strong><p>{row.name}</p><div><b>{row.score}</b><small>research score</small></div>
+      </Link>)}
+    </div>
+    <header className="section-heading theme-shelf-heading"><div><span className="eyebrow">Independent lens</span><h2>Theme exposure</h2></div><Link to="/portfolio/diversification">Full exposure</Link></header>
+    <div className="horizontal-card-rail theme-card-rail">
+      {themes.length ? themes.slice(0, interfaceConfig.home_theme_limit).map((theme) => <article className="theme-rail-card" key={theme.theme}><span>{theme.theme}</span><strong>{theme.exposureScore.toFixed(0)}</strong><small>{theme.portfolioCoveragePct.toFixed(0)}% portfolio coverage</small></article>) : <article className="theme-rail-card unavailable"><span>Theme exposure</span><strong>Accumulating</strong><small>No material mapped themes in this snapshot</small></article>}
+    </div>
+  </section>
 }
 
 function DashboardWidget({ id, widgets, children }) {
@@ -129,6 +158,7 @@ export default function Dashboard() {
   const { data: etfData, loading: etfLoading, reload: reloadEtfs } = useData('etfs.json')
   const { currentUser } = useAuth()
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
+  const finances = useFirebaseFinances()
   const tracking = usePortfolioTracking()
   // Quietly refreshes at 9pm local time (see src/lib/nightlyRefresh.js) so after-hours has
   // real Yahoo data by the time anyone looks at the report, not just when someone happens to
@@ -162,7 +192,7 @@ export default function Dashboard() {
   }, [portfolioQuotes, reloadHomeData])
   const pullToRefresh = usePullToRefresh({ onRefresh: refreshReport, refreshing: pullRefreshing })
 
-  if (loading || (currentUser && (portfolioLoading || (positions.length > 0 && benchmarkLoading)))) return <Loading />
+  if (loading || (currentUser && (portfolioLoading || finances.loading || (positions.length > 0 && benchmarkLoading)))) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset is available yet." />
 
   const rows = data.research
@@ -195,11 +225,11 @@ export default function Dashboard() {
   const watchRows = watchlist.map((ticker) => rows.find((row) => row.ticker === ticker)).filter(Boolean).slice(0, 4)
   const money = (value) => preferences.privacyMode ? '••••••' : formatPreferenceMoney(value, preferences.numberFormat)
   const tone = (value) => value == null ? '' : value >= 0 ? 'positive' : 'negative'
-  const forecast = preferences.forecast
   const latestTrackingDate = tracking.snapshots.at(-1)?.marketDate
   const intraday = intradayPortfolioHigh(tracking.snapshots.filter((snapshot) => snapshot.marketDate === latestTrackingDate))
   const allTimeEarnings = trackedAllTimeEarnings(portfolio, tracking.activities, tracking.trackingState)
   const actionable = portfolio.positions.map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null })).filter((row) => row.recommendation && row.recommendation.action !== 'HOLD')
+  const portfolioThemes = aggregateThemeExposure(portfolio.positions, advisorData?.theme_screen?.by_ticker || {})
   const sectorAllocation = Object.entries(portfolio.positions.reduce((totals, position) => {
     const sector = position.priceInfo?.sector || 'Unclassified'
     totals[sector] = (totals[sector] || 0) + Number(position.currentValue || 0)
@@ -211,20 +241,21 @@ export default function Dashboard() {
   const trackedAccountValue = portfolio.totalValue + uninvestedCash
   const cashHistoryComplete = tracking.trackingState?.cashFlowHistoryComplete
   const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, cashHistoryComplete)
-  const planningReportDate = today?.date || null
-  const contributionPace = trailingCashFlowPace(tracking.activities, planningReportDate, cashHistoryComplete)
-  const projectedAnnualContribution = contributionPace.available ? contributionPace.netContributions : forecast.recurringAnnual
   const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
     ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
     : null
   const projectionSource = selectProjectionReturnSource(holdingsSeries, primaryBenchmarkHistory, preferences.defaultBenchmark)
+  const planningReturns = projectionSource.available
+    ? applyAllocationAssumption(projectionSource.returns, finances.settings.allocationAggressiveness || projectionConfig.allocation_default)
+    : []
   const projectionInput = projectionSource.available ? {
-    monthlyReturns: projectionSource.returns,
-    currentBalance: trackedAccountValue,
-    monthlyContribution: projectedAnnualContribution / projectionConfig.months_per_year,
-    accumulationMonths: Math.max(1, (forecast.retirementAge - forecast.currentAge) * projectionConfig.months_per_year),
-    withdrawalMonths: 0,
-    inflationPct: projectionConfig.default_inflation_pct,
+    monthlyReturns: planningReturns,
+    currentBalance: finances.settings.currentSavings || trackedAccountValue,
+    monthlyContribution: finances.settings.monthlyContribution,
+    monthlyWithdrawal: finances.settings.monthlyWithdrawal,
+    accumulationMonths: Math.max(1, (finances.settings.retireAge - finances.settings.currentAge) * projectionConfig.months_per_year),
+    withdrawalMonths: Math.max(0, (finances.settings.retirementEndAge - finances.settings.retireAge) * projectionConfig.months_per_year),
+    inflationPct: finances.settings.inflationPct,
   } : null
   const beatStreak = primaryBenchmarkHistory ? beatMarketStreak(tracking.snapshots, primaryBenchmarkHistory) : { available: false }
   const greenStreak = valueStreak(tracking.snapshots)
@@ -275,10 +306,10 @@ export default function Dashboard() {
           <span>Current portfolio value</span>
           <strong>{money(portfolio.totalValue)}</strong>
           <div className="report-hero-pills">
-            <DirectionPill value={today?.dollarReturn}>{today ? `${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today — unavailable'}</DirectionPill>
+            <DirectionPill value={today?.dollarReturn}>{today ? `${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today: unavailable'}</DirectionPill>
             <DirectionPill value={afterHours.available ? afterHours.dollarReturn : null}>{afterHours.available
               ? `${money(Math.abs(afterHours.dollarReturn))}${afterHours.returnPct != null ? ` · ${signedPct(afterHours.returnPct, 2)}` : ''} after-hours`
-              : 'After-hours — refreshes at 9pm'}</DirectionPill>
+              : 'After-hours refreshes at 9pm'}</DirectionPill>
           </div>
           <button type="button" className="secondary-button compact after-hours-refresh" onClick={portfolioQuotes.requestRefresh} disabled={portfolioQuotes.refreshing}
             aria-label="Refresh after-hours quotes from Yahoo for portfolio holdings"
@@ -290,9 +321,13 @@ export default function Dashboard() {
           <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>
         </article>
         <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '—'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
-        <Metric label="Total unrealized return" value={portfolio.gain == null ? '—' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} />
-        <Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost; not net contributed capital" />
+        <PlanningMetric input={projectionInput} endAge={finances.settings.retirementEndAge} />
+        <Metric label="Action needed" value={String(actionable.length)} note={actionable.length ? `${actionable.slice(0, 3).map((row) => row.ticker).join(', ')} need review` : 'No holding has guidance beyond Hold'} />
       </section>
+
+      <div className="report-secondary-facts"><Metric label="Total unrealized return" value={portfolio.gain == null ? '—' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} /><Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost" /></div>
+
+      <HomeResearchShelves rows={rows} themes={portfolioThemes} />
 
       <PortfolioReturnSummary summary={returnSummary} />
 
@@ -347,7 +382,7 @@ export default function Dashboard() {
       </div>
 
       <section className="report-two-column">
-        <ReportProjection input={projectionInput} source={projectionSource} money={money} currentAge={forecast.currentAge} retirementAge={forecast.retirementAge} contribution={projectedAnnualContribution} />
+        <ReportProjection input={projectionInput} source={projectionSource} money={money} currentAge={finances.settings.currentAge} retirementAge={finances.settings.retireAge} contribution={finances.settings.monthlyContribution * projectionConfig.months_per_year} />
         <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData'
-import { Loading, RefreshProgress } from '../components/Bits.jsx'
+import { Loading, Move, RefreshProgress } from '../components/Bits.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
@@ -111,12 +111,14 @@ export default function Watchlist() {
             <article className="watchlist-card" key={ticker}>
               <div className="watchlist-card-head">
                 <CompanyLogo company={row || { ticker }} size={42} /><div><strong>{ticker}</strong><span>{row?.name || 'Not in published research'}</span></div>
+                {row && <Move pct={row.technical_detail?.return_20d} capsule />}
                 <button className="icon-button danger" onClick={() => save(list.filter((item) => item !== ticker))}
                   aria-label={`Remove ${ticker} from watchlist`}><Icon name="close" /></button>
               </div>
               {row ? (
                 <>
                   <Sparkline values={row.history?.closes || row.history?.growth || []} label={`${ticker} trend`} height={92} />
+                  <small className="as-of-line">As of {row.history?.dates?.at(-1) || row.data_as_of || 'the latest published close'}</small>
                   <div className="watchlist-stats">
                     <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : 'Unavailable'}</b></div>
                     <div><span>Setup quality</span><b>{guidance.setupScore.toFixed(0)}</b></div>

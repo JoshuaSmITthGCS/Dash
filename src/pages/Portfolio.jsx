@@ -771,8 +771,9 @@ export default function Portfolio() {
               </div>
               <div className="holding-value">
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
-                <Move value={pos.gainPct} />
+                <Move value={pos.gainPct} capsule />
               </div>
+              <small className="as-of-line">As of {pos.priceInfo?.history?.dates?.at(-1) || pos.priceInfo?.data_as_of || 'the latest available close'}</small>
               {editingId === pos.id ? (
                 <MobileSheet open title={`Edit ${pos.ticker}`} onClose={cancelEdit} className="holding-edit-sheet"><div className="holding-edit-form">
                   <label><span>Shares</span>
