@@ -18,6 +18,8 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
+import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -50,6 +52,10 @@ export default function Dashboard() {
   const { currentUser } = useAuth()
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const tracking = usePortfolioTracking()
+  // Quietly refreshes at 9pm local time (see src/lib/nightlyRefresh.js) so after-hours has
+  // real Yahoo data by the time anyone looks at the report, not just when someone happens to
+  // hit refresh on the Portfolio page.
+  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
   const { preferences, setWidgets, updatePreferences } = usePreferences()
   const { data: benchmarkReport, loading: benchmarkLoading } = useData(positions.length ? 'benchmark-report.json' : null)
   const [period, setPeriod] = useState(preferences.defaultChartPeriod)
@@ -74,6 +80,7 @@ export default function Dashboard() {
   const comparison = compareBenchmarkSeries(selected, selectedBenchmarkSeries)
   const chartedPortfolio = comparison?.portfolio || selected
   const today = latestMarketDayReturn(holdingsSeries)
+  const afterHours = afterHoursPortfolioReturn(positions, portfolioQuotes.quotes)
   const diversification = diversificationScore(portfolio.positions)
   const scorePortfolioPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
   const scoreComparison = compareBenchmarkSeries(scorePortfolioPeriod, selectedBenchmarkSeries.slice(0, 1))
@@ -120,7 +127,24 @@ export default function Dashboard() {
 
     {!currentUser || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{currentUser ? 'Add holdings to unlock your report' : 'Sign in to see your financial report'}</h2><p>Research remains available now. Portfolio analytics appear only after holdings and per-share cost basis are available.</p><Link className="primary-button" to={currentUser ? '/portfolio' : '/research'}>{currentUser ? 'Add holdings' : 'Explore research'}</Link></section> : <>
       <section className="report-hero-grid">
-        <article className="report-hero"><span>Current portfolio value</span><strong>{money(portfolio.totalValue)}</strong><small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small></article>
+        <article className="report-hero">
+          <span>Current portfolio value</span>
+          <strong>{money(portfolio.totalValue)}</strong>
+          <div className="report-hero-pills">
+            <span className={`value-pill ${today?.dollarReturn == null ? 'neutral' : today.dollarReturn >= 0 ? 'positive' : 'negative'}`}>
+              {today ? `${today.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today — unavailable'}
+            </span>
+            <span className={`value-pill ${!afterHours.available ? 'neutral' : afterHours.dollarReturn >= 0 ? 'positive' : 'negative'}`}
+              title={afterHours.available
+                ? `${afterHours.coverage} of ${positions.length} holdings had a post-market quote from Yahoo`
+                : 'Refreshes automatically at 9pm local time from Yahoo, once the after-hours session has quotes for a held position.'}>
+              {afterHours.available
+                ? `${afterHours.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(afterHours.dollarReturn))}${afterHours.returnPct != null ? ` · ${signedPct(afterHours.returnPct, 2)}` : ''} after-hours`
+                : 'After-hours — refreshes at 9pm'}
+            </span>
+          </div>
+          <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>
+        </article>
         <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '—'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
         <Metric label="Total unrealized return" value={portfolio.gain == null ? '—' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} />
         <Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost; not net contributed capital" />

@@ -71,6 +71,7 @@ export default function GrowthChart({
   caption,
   zoomable = false,
   valueFormatter = money,
+  earningsMarker = null, // { value, label } — most recent earnings-surprise reading, if the pipeline has one
 }) {
   const [zoom, setZoom] = useState('all')
   const [activeIndex, setActiveIndex] = useState(null)
@@ -114,6 +115,13 @@ export default function GrowthChart({
     setActiveIndex(Math.round(relative * (usableDates.length - 1)))
   }
   const activeX = activeIndex == null ? null : PAD.left + (activeIndex / (usableDates.length - 1)) * (width - PAD.left - PAD.right)
+
+  // The pipeline only has an aggregate "recent quarters, newest weighted heaviest" earnings-surprise
+  // number, not a dated per-quarter actual-vs-estimate history — so this marks the latest point on
+  // the primary line rather than pretending to know which past date the report landed on.
+  const earningsPoint = earningsMarker?.value != null
+    ? [...scalePoints(lines[0]?.values || [], usableDates, width, height, bounds)].reverse().find(Boolean)
+    : null
 
   return (
     <figure style={{ margin: 0 }}>
@@ -183,6 +191,14 @@ export default function GrowthChart({
             )
           })}
 
+          {earningsPoint && (
+            <g>
+              <circle cx={earningsPoint.x} cy={earningsPoint.y} r="7.5" fill="none"
+                stroke={earningsMarker.value >= 0 ? 'var(--pos)' : 'var(--neg)'} strokeWidth="2" />
+              <title>{earningsMarker.label}</title>
+            </g>
+          )}
+
           {labelIndexes.map((index) => {
             const step = (width - PAD.left - PAD.right) / (usableDates.length - 1)
             const x = PAD.left + index * step
@@ -219,6 +235,11 @@ export default function GrowthChart({
           )
         })}
       </div>
+      {earningsMarker?.value != null && (
+        <p style={{ marginTop: 4, fontSize: 12, color: earningsMarker.value >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
+          ○ {earningsMarker.label}
+        </p>
+      )}
       {caption && (
         <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-faint)' }}>{caption}</p>
       )}
