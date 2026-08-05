@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPushPayload, isQuietTime } from './alert-push.mjs'
+import { buildPushPayload, isQuietTime } from '../../netlify/functions/alert-push.mjs'
 
 describe('grouped alert push delivery', () => {
   it('groups several events into one payload', () => {
