@@ -51,6 +51,17 @@ def _metric_scores(detail):
     return {metric: detail.get(metric) for metric in sorted(metric_names)}
 
 
+def _modifier_contract(detail):
+    """Keep original detail and add an explicit zero-inclusive modifier point map."""
+    detail = dict(detail or {})
+    applied = detail.get("applied") or {}
+    detail["all_points"] = {
+        name: applied.get(name, 0.0)
+        for name in CONFIG["modifier_fields"]
+    }
+    return detail
+
+
 def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, published,
                  model_version, config_hash):
     """Project one scored row into the immutable validation contract."""
@@ -87,8 +98,8 @@ def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, publishe
             "challenger": challenger.get("confidence"),
         },
         "modifiers": {
-            "champion": row.get("modifiers") or {},
-            "challenger": challenger.get("modifiers") or {},
+            "champion": _modifier_contract(row.get("modifiers")),
+            "challenger": _modifier_contract(challenger.get("modifiers")),
         },
         "scores": {
             "champion": champion.get("score", row.get("score")),

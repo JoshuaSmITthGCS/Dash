@@ -14,7 +14,10 @@
       "winsor_upper_percentile": 0.99,
       "sector_minimum_count": 8,
       "largest_movers_count": 20,
-      "_comment": "The live champion remains on bands. The challenger fits metric distributions on the complete refreshed universe and publishes beside it."
+      "own_history_years": 5,
+      "own_history_days_per_year": 365,
+      "own_history_minimum_observations": 12,
+      "_comment": "The live champion remains on bands. The challenger fits metric distributions on the complete refreshed universe and publishes beside it. Valuation own-history percentiles use only prospectively stored observations from the trailing five years and remain unavailable until twelve distinct dated observations exist."
     },
     "signal_corrections": {
       "enabled": true,
@@ -55,6 +58,14 @@
     "long_short_cost_bps": 10.0,
     "shadow_strategy_trials": 5,
     "snapshot_schema_version": 1,
+    "modifier_fields": [
+      "sector_valuation",
+      "short_interest",
+      "liquidity",
+      "expectations",
+      "macro_regime",
+      "insider_activity"
+    ],
     "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
   },
   "position_risk": {

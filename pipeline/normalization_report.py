@@ -17,13 +17,20 @@ def _ranks(rows, key):
     return {row.get("ticker"): index + 1 for index, row in enumerate(ordered)}
 
 
-def _sector_means(rows, key, minimum_count):
+def _sector_statistics(rows, key, minimum_count):
     grouped = {}
     for row in rows:
         sector = row.get("sector") or "Unclassified"
         grouped.setdefault(sector, []).append(row[key])
-    return {sector: round(statistics.fmean(values), 3)
-            for sector, values in sorted(grouped.items()) if len(values) >= minimum_count}
+    return {
+        sector: {
+            "count": len(values),
+            "mean": round(statistics.fmean(values), 3),
+            "standard_deviation": round(statistics.pstdev(values), 3),
+        }
+        for sector, values in sorted(grouped.items())
+        if len(values) >= minimum_count
+    }
 
 
 def build_normalization_report(rows, mover_limit, minimum_sector_count, generated_at=None):
@@ -35,8 +42,10 @@ def build_normalization_report(rows, mover_limit, minimum_sector_count, generate
             comparable.append({**row, "challenger_score": challenger["score"]})
     champion_ranks = _ranks(comparable, "score")
     challenger_ranks = _ranks(comparable, "challenger_score")
-    champion_means = _sector_means(comparable, "score", minimum_sector_count)
-    challenger_means = _sector_means(comparable, "challenger_score", minimum_sector_count)
+    champion_statistics = _sector_statistics(comparable, "score", minimum_sector_count)
+    challenger_statistics = _sector_statistics(comparable, "challenger_score", minimum_sector_count)
+    champion_means = {sector: values["mean"] for sector, values in champion_statistics.items()}
+    challenger_means = {sector: values["mean"] for sector, values in challenger_statistics.items()}
     champion_dispersion = statistics.pstdev(champion_means.values()) if len(champion_means) > 1 else 0.0
     challenger_dispersion = statistics.pstdev(challenger_means.values()) if len(challenger_means) > 1 else 0.0
     by_sector = {}
@@ -75,6 +84,13 @@ def build_normalization_report(rows, mover_limit, minimum_sector_count, generate
         "sector_mean_scores": {
             "champion": champion_means,
             "challenger": challenger_means,
+        },
+        "sector_score_statistics": {
+            sector: {
+                "champion": champion_statistics[sector],
+                "challenger": challenger_statistics.get(sector),
+            }
+            for sector in champion_statistics
         },
         "sector_mean_dispersion": {
             "champion": round(champion_dispersion, 6),

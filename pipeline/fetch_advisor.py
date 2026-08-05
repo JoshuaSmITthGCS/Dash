@@ -26,9 +26,11 @@ from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
-from scorer import (CrossSectionalNormalizer, SETTINGS, sector_percentile_ranks,
-                    valuation_score)
+from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
+                    sector_percentile_ranks, valuation_score)
 from normalization_report import write_normalization_report
+from normalization_audit import write_normalization_audit
+from bias_report import write_bias_report
 from signal_report import write_signal_report
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals
@@ -990,11 +992,21 @@ def run():
             cross_normalizer = CrossSectionalNormalizer(
                 ({**context["snapshot"], "ticker": context["symbol"]} for context in contexts),
                 challenger_cfg,
+                pit_store.valuation_histories(
+                    years=challenger_cfg["own_history_years"],
+                    days_per_year=challenger_cfg["own_history_days_per_year"],
+                    metrics=VALUATION_MULTIPLES,
+                ),
             )
             normalization_fit_source = "current_full_refresh"
         else:
             cross_normalizer = CrossSectionalNormalizer.from_published(
-                previous_payload.get("normalization_distributions")
+                previous_payload.get("normalization_distributions"),
+                pit_store.valuation_histories(
+                    years=challenger_cfg["own_history_years"],
+                    days_per_year=challenger_cfg["own_history_days_per_year"],
+                    metrics=VALUATION_MULTIPLES,
+                ),
             )
             if cross_normalizer:
                 normalization_fit_source = "prior_full_refresh"
@@ -1148,6 +1160,7 @@ def run():
             generated_at,
         )
     signal_comparison = write_signal_report(research, generated_at) if signal_cfg.get("enabled") else None
+    bias_check = write_bias_report(research, generated_at) if signal_cfg.get("enabled") else None
     for row in research:
         row.setdefault("data_fetched_at", generated_at)
     payload = {
@@ -1171,6 +1184,10 @@ def run():
             "fit_source": normalization_fit_source,
         },
         "normalization_comparison": normalization_comparison,
+        "bias_check": ({
+            "comparable_universe_count": bias_check["comparable_universe_count"],
+            "market_cap_correlation_drop_passed": bias_check["market_cap_correlation_absolute_drop"]["passed"],
+        } if bias_check else None),
         "signal_comparison": signal_comparison,
         "methodology": {
             "weights": RANKING_WEIGHTS,
@@ -1283,6 +1300,13 @@ def run():
         published=ranked_tickers,
         model_version=SETTINGS["model"]["semantic_version"],
     )
+    if cross_normalizer:
+        normalization_audit = write_normalization_audit(cross_normalizer, payload, generated_at)
+        payload["normalization_audit"] = {
+            "all_metrics_cross_sectional": normalization_audit["all_configured_metrics_have_cross_sectional_challenger"],
+            "pit_file_count": normalization_audit["point_in_time_store"]["file_count"],
+            "pit_row_count": normalization_audit["point_in_time_store"]["total_row_count"],
+        }
     validation_report = write_ic_report()
     payload["validation_harness"] = {
         "snapshot": {key: value for key, value in validation_append.items() if key != "path"},

@@ -284,6 +284,51 @@ def history(ticker, field, *, rows=None):
     return series
 
 
+def valuation_histories(*, rows=None, years, days_per_year, as_of=None, metrics=()):
+    """Trailing, prospectively observed valuation histories keyed by ticker and metric.
+
+    One value per observation date is retained. This prevents three scheduled refreshes on
+    the same day from pretending to be three independent historical observations. Nothing
+    is reconstructed before the store began, so the result accumulates honestly forward.
+    """
+    rows = rows if rows is not None else _read(OBSERVATIONS)
+    end = as_of or _now()
+    if isinstance(end, str):
+        end = datetime.fromisoformat(end.replace("Z", "+00:00"))
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=timezone.utc)
+    cutoff = end - timedelta(days=int(days_per_year) * int(years))
+    selected = set(metrics)
+    dated = {}
+    for row in rows:
+        ticker = str(row.get("ticker") or "").upper()
+        stamp = row.get("observed_at")
+        try:
+            observed = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        if observed.tzinfo is None:
+            observed = observed.replace(tzinfo=timezone.utc)
+        if not ticker or observed < cutoff or observed > end:
+            continue
+        day = observed.date().isoformat()
+        values = dict(row.get("values") or {})
+        if "sales_multiple" in selected:
+            values["sales_multiple"] = values.get("ev_to_sales", values.get("price_to_sales"))
+        for metric, value in values.items():
+            if selected and metric not in selected:
+                continue
+            if isinstance(value, (int, float)):
+                dated[(ticker, metric, day)] = float(value)
+    histories = {}
+    for (ticker, metric, day), value in sorted(dated.items()):
+        histories.setdefault(ticker, {}).setdefault(metric, []).append({
+            "observed_at": day,
+            "value": value,
+        })
+    return histories
+
+
 def depth():
     """How much point-in-time history exists, so the UI can say when backtests become honest."""
     rows = _read(OBSERVATIONS)

@@ -10,12 +10,14 @@ from advisor_engine import (cross_sectional_challenger, normalized_metric_scores
 from common import load_json, save_json
 from fetch_advisor import report_snapshot
 from normalization_report import write_normalization_report
+from normalization_audit import write_normalization_audit
+from bias_report import write_bias_report
 from signal_report import write_signal_report
 from validation.ic_harness import write_report as write_ic_report
 from observability import diagnostics_payload
 import pit_store
-from scorer import (CrossSectionalNormalizer, SETTINGS, sector_percentile_ranks,
-                    valuation_score)
+from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
+                    sector_percentile_ranks, valuation_score)
 
 
 def main():
@@ -26,7 +28,15 @@ def main():
     snapshots = pit_store.latest_snapshots(payload.get("universe"))
     if not snapshots:
         raise SystemExit("no point-in-time observations are available")
-    normalizer = CrossSectionalNormalizer(snapshots, config)
+    normalizer = CrossSectionalNormalizer(
+        snapshots,
+        config,
+        pit_store.valuation_histories(
+            years=config["own_history_years"],
+            days_per_year=config["own_history_days_per_year"],
+            metrics=VALUATION_MULTIPLES,
+        ),
+    )
     signal_config = (SETTINGS.get("challengers") or {}).get("signal_corrections", {})
     short_interest_ranks = sector_percentile_ranks(
         snapshots,
@@ -101,12 +111,26 @@ def main():
         config["sector_minimum_count"],
         payload.get("generated_at"),
     )
+    bias = write_bias_report(
+        payload.get("research") or [],
+        payload.get("generated_at"),
+    )
+    audit = write_normalization_audit(normalizer, payload, payload.get("generated_at"))
     payload["normalization_distributions"] = {
         **normalizer.published_distributions(),
         "fit_source": "point_in_time_observations",
         "observed_universe_count": len(snapshots),
     }
     payload["normalization_comparison"] = comparison
+    payload["normalization_audit"] = {
+        "all_metrics_cross_sectional": audit["all_configured_metrics_have_cross_sectional_challenger"],
+        "pit_file_count": audit["point_in_time_store"]["file_count"],
+        "pit_row_count": audit["point_in_time_store"]["total_row_count"],
+    }
+    payload["bias_check"] = {
+        "comparable_universe_count": bias["comparable_universe_count"],
+        "market_cap_correlation_drop_passed": bias["market_cap_correlation_absolute_drop"]["passed"],
+    }
     payload["signal_comparison"] = (
         write_signal_report(payload.get("research", []), payload.get("generated_at"))
         if signal_config.get("enabled") else None

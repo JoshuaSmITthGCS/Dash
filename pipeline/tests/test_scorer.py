@@ -281,6 +281,28 @@ class CrossSectionalNormalizationTests(unittest.TestCase):
         self.assertEqual(ranks["T0"]["percentile"], 0.0)
         self.assertEqual(ranks["T0"]["normalization_scope"], "sector")
 
+    def test_valuation_metric_publishes_own_history_percentile_without_blending_it(self):
+        history = {
+            "ABC": {
+                "forward_pe": [
+                    {"observed_at": f"2025-{month:02d}-01", "value": value}
+                    for month, value in enumerate(range(10, 22), start=1)
+                ]
+            }
+        }
+        snapshots = [
+            {"ticker": f"T{index}", "sector": "Technology", "forward_pe": 10 + index}
+            for index in range(12)
+        ]
+        normalizer = scorer.CrossSectionalNormalizer(snapshots, self.config, history)
+        score, detail = normalizer.score("forward_pe", 15, "Technology", "ABC")
+        score_without_history, _ = scorer.CrossSectionalNormalizer(
+            snapshots, self.config
+        ).score("forward_pe", 15, "Technology", "ABC")
+        self.assertEqual(score, score_without_history)
+        self.assertEqual(detail["own_history_status"], "scored")
+        self.assertIsNotNone(detail["own_history_percentile"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -302,17 +302,20 @@ class CrossSectionalNormalizer:
     Range inputs first become distance from their configured ideal band.
     """
 
-    def __init__(self, snapshots, config=None):
+    def __init__(self, snapshots, config=None, own_history=None):
         config = config or {}
         self.lower = float(config.get("winsor_lower_percentile", 0.01))
         self.upper = float(config.get("winsor_upper_percentile", 0.99))
         self.sector_minimum = int(config.get("sector_minimum_count", 8))
+        self.own_history_years = int(config.get("own_history_years", 5))
+        self.own_history_minimum = int(config.get("own_history_minimum_observations", 12))
+        self.own_history = own_history or {}
         self.fundamentals = SETTINGS["fundamentals"]
         self.distributions = {}
         self._fit(list(snapshots or []))
 
     @classmethod
-    def from_published(cls, payload):
+    def from_published(cls, payload, own_history=None):
         """Restore an exact prior full-refresh fit for an intraday partial refresh."""
         if not payload or payload.get("mode") != "cross_sectional" or not payload.get("metrics"):
             return None
@@ -321,6 +324,10 @@ class CrossSectionalNormalizer:
         normalizer.lower = first.get("winsor_lower_percentile", 0.01)
         normalizer.upper = first.get("winsor_upper_percentile", 0.99)
         normalizer.sector_minimum = payload.get("sector_minimum_count", 8)
+        config = (SETTINGS.get("challengers") or {}).get("cross_sectional_normalization", {})
+        normalizer.own_history_years = int(config.get("own_history_years", 5))
+        normalizer.own_history_minimum = int(config.get("own_history_minimum_observations", 12))
+        normalizer.own_history = own_history or {}
         normalizer.fundamentals = SETTINGS["fundamentals"]
         normalizer.distributions = payload["metrics"]
         return normalizer
@@ -367,15 +374,43 @@ class CrossSectionalNormalizer:
                 "sector_values": sector_values,
             }
 
-    def score(self, metric, value, sector):
+    def _own_history_detail(self, ticker, metric, value):
+        if metric not in VALUATION_MULTIPLES:
+            return {}
+        series = ((self.own_history.get(str(ticker or "").upper()) or {}).get(metric) or [])
+        values = sorted(float(row["value"] if isinstance(row, dict) else row) for row in series
+                        if isinstance(row.get("value") if isinstance(row, dict) else row, (int, float))
+                        and float(row.get("value") if isinstance(row, dict) else row) > 0)
+        metadata = {
+            "own_history_percentile": None,
+            "own_history_observations": len(values),
+            "own_history_years": self.own_history_years,
+            "own_history_status": "accumulating",
+        }
+        if len(values) < self.own_history_minimum or not isinstance(value, (int, float)) or value <= 0:
+            return metadata
+        left = bisect_left(values, float(value))
+        right = bisect_right(values, float(value))
+        average_rank = (left + right - 1) / 2
+        percentile = 50.0 if len(values) == 1 else 100 * average_rank / (len(values) - 1)
+        return {
+            **metadata,
+            "own_history_percentile": round(max(0.0, min(100.0, percentile)), 1),
+            "own_history_status": "scored",
+        }
+
+    def score(self, metric, value, sector, ticker=None):
         """Map one raw input to 0 through 100 and return its reproducibility metadata."""
         if value is None:
-            return None, {"normalization_scope": "universe", "status": "missing"}
+            return None, {"normalization_scope": "universe", "status": "missing",
+                          **self._own_history_detail(ticker, metric, value)}
         if metric in VALUATION_MULTIPLES and value <= 0:
-            return None, {"normalization_scope": "universe", "status": "not_applicable_nonpositive"}
+            return None, {"normalization_scope": "universe", "status": "not_applicable_nonpositive",
+                          **self._own_history_detail(ticker, metric, value)}
         distribution = self.distributions.get(metric)
         if not distribution:
-            return None, {"normalization_scope": "universe", "status": "insufficient_universe"}
+            return None, {"normalization_scope": "universe", "status": "insufficient_universe",
+                          **self._own_history_detail(ticker, metric, value)}
         sector_values = distribution["sector_values"].get(sector, [])
         if len(sector_values) >= self.sector_minimum:
             values, scope = sector_values, "sector"
@@ -399,6 +434,7 @@ class CrossSectionalNormalizer:
             "raw_value": value,
             "winsorized_value": transformed,
             "peer_count": len(values),
+            **self._own_history_detail(ticker, metric, value),
         }
 
     def published_distributions(self):
@@ -559,7 +595,7 @@ def _cross_sectional_valuation_score(snap, normalizer):
     sector = raw_metadata["sector"]
     metrics, normalization = {}, {}
     for metric, raw in raw_metrics.items():
-        score, detail = normalizer.score(metric, raw, sector)
+        score, detail = normalizer.score(metric, raw, sector, snap.get("ticker"))
         metrics[metric] = score
         normalization[metric] = detail
     categories = {}

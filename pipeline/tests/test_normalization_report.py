@@ -32,6 +32,7 @@ class NormalizationReportTests(unittest.TestCase):
         self.assertEqual(len(report["largest_rank_movers"]), 4)
         self.assertIn("spearman_rank_correlation", report)
         self.assertIn("champion", report["sector_mean_dispersion"])
+        self.assertIn("standard_deviation", report["sector_score_statistics"]["Technology"]["champion"])
         self.assertTrue(report["largest_rank_movers"][0]["reasons"])
 
     def test_writer_creates_requested_artifact(self):
