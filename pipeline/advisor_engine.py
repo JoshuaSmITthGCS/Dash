@@ -39,10 +39,19 @@ TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weight
 # sentiment mostly mean-reverts within days while a week's aggregate extends predictability,
 # so the window is a week rather than a snapshot.
 SENTIMENT_WINDOW_DAYS = int((SETTINGS.get("market_behavior") or {}).get("sentiment_window_days", 7))
+FUNDAMENTAL_METRIC_NAMES = {
+    metric for weights in SETTINGS["fundamentals"]["metric_weights"].values()
+    for metric in weights
+}
 
 
 def clamp(value, low=0.0, high=100.0):
     return max(low, min(high, value))
+
+
+def normalized_metric_scores(detail):
+    """Project only per-metric 0 to 100 scores from a fundamental detail block."""
+    return {metric: detail.get(metric) for metric in sorted(FUNDAMENTAL_METRIC_NAMES)}
 
 
 def volume_confirmation(closes, volumes):
@@ -686,6 +695,7 @@ def cross_sectional_challenger(row, snapshot, normalizer):
         "components": components,
         "fundamental_categories": detail.get("categories", {}),
         "fundamental_detail": detail,
+        "normalized_metric_scores": normalized_metric_scores(detail),
         "largest_metric_changes": deltas[:5],
     }
 
@@ -765,6 +775,7 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "score": final_score,
         "components": final_components,
         "fundamental_categories": normalization.get("fundamental_categories"),
+        "normalized_metric_scores": normalization.get("normalized_metric_scores"),
         "largest_metric_changes": normalization.get("largest_metric_changes"),
         "modifiers": final_modifiers,
     }

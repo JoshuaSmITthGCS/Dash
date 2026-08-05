@@ -40,6 +40,23 @@
     }
   },
   "short_horizon_treatment": "legacy_momentum",
+  "validation": {
+    "horizons_days": {
+      "1M": 30,
+      "3M": 91,
+      "6M": 182,
+      "12M": 365
+    },
+    "periods_per_year": 12,
+    "minimum_icir_periods": 24,
+    "lookahead_rank_ic_threshold": 0.1,
+    "confidence_interval_z": 1.96,
+    "quantile_counts": [5, 10],
+    "long_short_cost_bps": 10.0,
+    "shadow_strategy_trials": 5,
+    "snapshot_schema_version": 1,
+    "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

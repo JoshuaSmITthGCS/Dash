@@ -7,7 +7,8 @@ import statistics
 import time
 from datetime import datetime, timezone
 
-from advisor_engine import RANKING_WEIGHTS, build_research, cross_sectional_challenger, signal_correction_variants
+from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_challenger,
+                            normalized_metric_scores, signal_correction_variants)
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
@@ -32,6 +33,9 @@ from signal_report import write_signal_report
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals
 from themes import build_theme_screen, empty_screen, load_themes
+from validation.ic_harness import (append_refresh as append_ic_refresh,
+                                   rows_from_advisor as ic_rows_from_advisor,
+                                   write_report as write_ic_report)
 
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
@@ -79,7 +83,7 @@ def report_row(row):
         projected["score_variants"] = {
             key: {field: variant.get(field) for field in (
                 "variant", "normalization_mode", "score", "base_score", "confidence",
-                "fundamental_categories", "largest_metric_changes",
+                "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
             ) if variant.get(field) is not None}
             for key, variant in variants.items()
         }
@@ -117,7 +121,7 @@ def _screen_row(row):
     variants = {
         key: {field: variant.get(field) for field in (
             "variant", "normalization_mode", "score", "base_score", "confidence",
-            "fundamental_categories", "largest_metric_changes",
+            "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
         ) if variant.get(field) is not None}
         for key, variant in (row.get("score_variants") or {}).items()
     }
@@ -1041,6 +1045,7 @@ def run():
             "confidence": row["confidence"],
             "components": row["components"],
             "fundamental_categories": row["fundamental_categories"],
+            "normalized_metric_scores": normalized_metric_scores(row["fundamental_detail"]),
         }
         row["score_variants"] = {"champion": champion_variant}
         if cross_normalizer and signal_cfg.get("enabled"):
@@ -1265,6 +1270,22 @@ def run():
             },
         },
         "disclaimer": "General research, not individualized investment advice. Verify filings, estimates, valuation context, and suitability before acting.",
+    }
+    validation_append = append_ic_refresh(
+        ic_rows_from_advisor(payload),
+        refresh_id=f"advisor-{generated_at}",
+        recorded_at=generated_at,
+        data_as_of=generated_at,
+        universe=symbols,
+        published=ranked_tickers,
+        model_version=SETTINGS["model"]["semantic_version"],
+    )
+    validation_report = write_ic_report()
+    payload["validation_harness"] = {
+        "snapshot": {key: value for key, value in validation_append.items() if key != "path"},
+        "snapshot_refreshes": validation_report["snapshot_refreshes"],
+        "champion_1m_status": validation_report["variants"]["champion"]["1M"]["status_message"],
+        "challenger_1m_status": validation_report["variants"]["challenger"]["1M"]["status_message"],
     }
     payload["run_manifest"] = run_manifest(payload, {
         "provider_collection": len(research_failures),

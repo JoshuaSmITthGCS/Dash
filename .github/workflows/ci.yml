@@ -26,6 +26,7 @@ jobs:
       - run: python -m compileall -q pipeline
       - run: python pipeline/check_ui_weights.py
       - run: PYTHONPATH=pipeline python -m pytest pipeline/tests -q
+      - run: python pipeline/validation/ic_harness.py --snapshot public/data/advisor.json
       - run: python pipeline/validate_data.py
 
   site:

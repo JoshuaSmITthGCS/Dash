@@ -5,11 +5,13 @@ it fits on the broadest universe that was actually observed, then adds the chall
 full published research rows without changing the production champion.
 """
 
-from advisor_engine import cross_sectional_challenger, signal_correction_variants
+from advisor_engine import (cross_sectional_challenger, normalized_metric_scores,
+                            signal_correction_variants)
 from common import load_json, save_json
 from fetch_advisor import report_snapshot
 from normalization_report import write_normalization_report
 from signal_report import write_signal_report
+from validation.ic_harness import write_report as write_ic_report
 from observability import diagnostics_payload
 import pit_store
 from scorer import (CrossSectionalNormalizer, SETTINGS, sector_percentile_ranks,
@@ -46,6 +48,9 @@ def main():
                     "confidence": row.get("confidence"),
                     "components": row.get("components"),
                     "fundamental_categories": row.get("fundamental_categories"),
+                    "normalized_metric_scores": normalized_metric_scores(
+                        row.get("fundamental_detail") or {}
+                    ),
                 },
             }
             if signal_config.get("enabled"):
@@ -113,6 +118,13 @@ def main():
     }
     payload["methodology"]["signal_corrections"] = {
         key: value for key, value in signal_config.items() if not key.startswith("_")
+    }
+    validation_report = write_ic_report()
+    payload["validation_harness"] = {
+        "snapshot_refreshes": validation_report["snapshot_refreshes"],
+        "monthly_score_snapshots": validation_report["monthly_score_snapshots"],
+        "champion_1m_status": validation_report["variants"]["champion"]["1M"]["status_message"],
+        "challenger_1m_status": validation_report["variants"]["challenger"]["1M"]["status_message"],
     }
     save_json("advisor.json", payload)
     save_json("report.json", report_snapshot(payload))
