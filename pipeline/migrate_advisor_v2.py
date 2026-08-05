@@ -23,28 +23,30 @@ def migrate(payload):
         for row in collection:
             if not row.get("ticker"):
                 continue
-            row["analysis_v2"] = build_v2_analysis(row, row.get("fundamental_detail", {}))
-            row["recommendation_v2"] = build_recommendation_v2(
-                row["ticker"], row["analysis_v2"],
-                technical=row.get("technical_detail"), sentiment=row.get("sentiment_detail"),
-                extended=row,
-                generated_at=output.get("generated_at"),
-            )
-            row["valuation_percentile"] = peers.get(row["ticker"])
-            canonical_percentile = (peers.get(row["ticker"]) or {}).get("value")
-            row["sector_valuation_percentile"] = canonical_percentile
-            if row.get("modifiers", {}).get("notes") is not None:
-                notes = [note for note in row["modifiers"]["notes"] if not note.startswith("Valuation ")]
-                if canonical_percentile is not None:
-                    notes.insert(0, f"Valuation cheaper than {canonical_percentile:.0f}% of its canonical peers")
-                row["modifiers"]["notes"] = notes
+            if not row.get("analysis_v2"):
+                row["analysis_v2"] = build_v2_analysis(row, row.get("fundamental_detail", {}))
+            if not row.get("recommendation_v2"):
+                row["recommendation_v2"] = build_recommendation_v2(
+                    row["ticker"], row["analysis_v2"],
+                    technical=row.get("technical_detail"), sentiment=row.get("sentiment_detail"),
+                    extended=row,
+                    generated_at=output.get("generated_at"),
+                )
+            if not row.get("valuation_percentile"):
+                row["valuation_percentile"] = peers.get(row["ticker"])
+            if row.get("sector_valuation_percentile") is None:
+                canonical_percentile = (row.get("valuation_percentile") or {}).get("value")
+                row["sector_valuation_percentile"] = canonical_percentile
             seen.add(row["ticker"])
-    output["schema_version"] = 2
+    from scorer import SETTINGS
+    output["schema_version"] = SETTINGS["model"]["advisor_schema_version"]
+    output["model_version"] = SETTINGS["model"]["semantic_version"]
     output.setdefault("methodology", {})["canonical_layer"] = {
         "model_version": "structural-timeliness-2.0.0",
         "migration": "legacy fields retained; v2 decisions are independently versioned",
     }
-    output["run_manifest"] = run_manifest(output, {"migration": 0})
+    rejected = (output.get("run_manifest") or {}).get("rejected_at_each_step") or {"migration": 0}
+    output["run_manifest"] = run_manifest(output, rejected)
     return output
 
 

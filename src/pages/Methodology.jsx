@@ -1,25 +1,37 @@
 import { useData } from '../lib/useData'
 
-const CATEGORIES = [
-  ['Valuation · 28%', 'EV/EBITDA and EV/EBIT carry this bucket. The enterprise multiple is the best-validated single value measure in the published research, and enterprise multiples are capital-structure neutral, so a levered company cannot look cheap purely because debt flatters its equity ratios. PEG is now a minor sanity check rather than the largest input: it ignores the time value of money, risk, and the cost of capital. Both book-value multiples are trimmed, because book value systematically mismeasures intangible-heavy businesses, and price-to-tangible-book is scored only in the sectors it describes.'],
-  ['Profitability + cash · 26%', 'ROIC leads rather than ROE: leverage inflates return on equity but cannot inflate return on invested capital. Gross profits over assets sits alongside it — measured above the line where accounting discretion operates, it has been about as predictive as book-to-market and adds information a value screen cannot. Cash conversion tests whether reported earnings arrive as money, weighted down slightly because it measures nearly the same thing as the accruals ratio.'],
-  ['Financial health · 15%', 'Interest coverage and net debt to EBITDA answer the question debt-to-equity cannot: can this business comfortably service its debt at current rates? The Altman Z-score is computed with the variant fitted for the filer’s sector — the original 1968 model for manufacturers, Altman’s non-manufacturer revision otherwise — and suppressed entirely for financials, where it has no meaning.'],
-  ['Accounting quality · 10%', 'The Piotroski F-score leads this bucket. The accruals ratio remains, at a much smaller weight: it is the most-studied earnings-quality flag in the literature, but its predictive power has largely decayed in US data since the early 2000s. Receivable and inventory day trends round out the check.'],
-  ['Growth · 11%', 'Revenue and earnings year over year, three-year free-cash-flow growth, the direction of operating margin, and earnings surprise against expectations. Trailing growth on its own predicts forward returns weakly; the surprise component is the part that carries drift.'],
-  ['Capital allocation · 10%', 'Net buyback yield after dilution, stock compensation as a share of revenue, capex against depreciation, and total asset growth. Aggressive balance-sheet expansion has historically preceded weak returns, and under-investment flatters near-term cash flow while quietly eroding competitiveness — so both tails are penalised.'],
-]
+const CATEGORIES = {
+  valuation: ['Valuation', 'EV/EBITDA and EV/EBIT carry this bucket. The enterprise multiple is the best-validated single value measure in the published research, and enterprise multiples are capital-structure neutral, so a levered company cannot look cheap purely because debt flatters its equity ratios. PEG is now a minor sanity check rather than the largest input. Both book-value multiples are trimmed because book value systematically mismeasures intangible-heavy businesses.'],
+  profitability: ['Profitability + cash', 'ROIC leads rather than ROE because leverage inflates return on equity but cannot inflate return on invested capital. Gross profits over assets adds information a value screen cannot. Cash conversion tests whether reported earnings arrive as money.'],
+  financial_health: ['Financial health', 'Interest coverage and net debt to EBITDA answer the question debt-to-equity cannot: can this business comfortably service its debt at current rates? The Altman Z-score uses the variant fitted for the filer’s sector and is suppressed for financials, where it has no meaning.'],
+  accounting_quality: ['Accounting quality', 'The Piotroski F-score leads this bucket. The accruals ratio remains at a smaller weight because its predictive power has decayed in recent US data. Receivable and inventory day trends round out the check.'],
+  growth: ['Growth', 'Revenue and earnings year over year, three-year free-cash-flow growth, the direction of operating margin, and earnings surprise against expectations. Trailing growth on its own predicts forward returns weakly. The surprise component is the part that carries drift.'],
+  capital_allocation: ['Capital allocation', 'Net buyback yield after dilution, stock compensation as a share of revenue, capex against depreciation, and total asset growth. Aggressive expansion and under-investment can both weaken future returns, so both tails are penalized.'],
+}
 
 const MODIFIERS = [
-  ['Sector-relative valuation', '±3 points. Being cheap for a utility and being cheap outright are different claims; a percentile against sector peers separates them.'],
-  ['Short interest', 'Up to −6 points. Crowded shorts are not automatically bearish, but heavily shorted stocks have underperformed lightly shorted ones by a wide margin over the following month, so the penalty is larger than a token adjustment.'],
-  ['Insider activity', '+5 / −3 points. SEC Form 4 open-market trades are split into routine and opportunistic: an executive who sells every March is on a schedule, and scheduled trades have historically carried no information at all, so they score zero. Fresh clusters of irregular open-market buying score positively and decay over one to three months. Buys count for more than sells, which have many innocent explanations.'],
-  ['Liquidity', 'Up to −3 points. A name you cannot exit without moving the price carries a real cost that fundamentals never show.'],
-  ['Analyst expectations', '±3 points, and only where at least three analysts cover the name.'],
-  ['Macro regime', '±3 points. FRED rates, inflation, labor, and yield-curve conditions are weighted by sector sensitivity and never replace company evidence. Regime timing is genuinely contested, which is why the cap is small.'],
+  ['sector_valuation_percentile', 'Sector-relative valuation', 'Being cheap for a utility and being cheap outright are different claims. A percentile against sector peers separates them.'],
+  ['short_interest', 'Short interest', 'Crowded shorts are not automatically bearish, but unusually high and low short interest can carry useful cross-sectional information.'],
+  ['insider_activity', 'Insider activity', 'SEC Form 4 open-market trades are split into routine and opportunistic. Scheduled trades score zero. Fresh clusters of irregular open-market buying score positively and decay over time.'],
+  ['liquidity', 'Liquidity', 'A name you cannot exit without moving the price carries a real cost that fundamentals never show.'],
+  ['expectations', 'Analyst expectations', 'Consensus is used only when the published minimum analyst coverage is present.'],
+  ['macro_regime', 'Macro regime', 'FRED rates, inflation, labor, and yield-curve conditions are weighted by sector sensitivity and never replace company evidence.'],
 ]
 
-const percent = (value, fallback) =>
-  Math.round((typeof value === 'number' ? value : fallback) * 100)
+const percent = (value) => typeof value === 'number' ? Math.round(value * 100) : null
+
+const componentLabel = (key) => ({
+  fundamentals: 'fundamentals', market_behavior: 'behaviour', news_sentiment: 'news',
+})[key] || key.replace(/_/g, ' ')
+
+function modifierRange(config = {}) {
+  const positive = config.max_points
+  const negative = config.max_penalty
+  if (typeof positive === 'number' && typeof negative === 'number') return `+${positive} / -${negative} points. `
+  if (typeof positive === 'number') return `Up to +${positive} points. `
+  if (typeof negative === 'number') return `Up to -${negative} points. `
+  return ''
+}
 
 export default function Methodology() {
   const { data } = useData('advisor.json')
@@ -27,9 +39,10 @@ export default function Methodology() {
   // Read the blend from the snapshot so this page cannot drift from the config that
   // produced the scores it is describing.
   const blend = data?.methodology?.weights
-  const fundamentalsPct = percent(blend?.fundamentals, 0.78)
-  const behaviourPct = percent(blend?.market_behavior, 0.18)
-  const newsPct = percent(blend?.news_sentiment, 0.04)
+  const blendEntries = Object.entries(blend || {}).filter(([, value]) => typeof value === 'number')
+  const categoryWeights = data?.methodology?.fundamental_weights || {}
+  const modifierConfig = data?.methodology?.modifiers || {}
+  const version = data?.model_metadata
   const capabilities = data?.capability_status || {
     form4_insider_transactions: { status: 'available_next_refresh', source: 'SEC EDGAR', note: 'Free Form 4 parser is included in the pipeline.' },
     implied_vs_realized_volatility: { status: 'opt_in', source: 'Option chains + calculated returns', note: 'Enable options requests in the pipeline.' },
@@ -48,11 +61,9 @@ export default function Methodology() {
     <div className="grid grid-2">
       <section className="card card-pad">
         <div className="sec-label">Overall research score</div>
-        <div className="weight-stack">
-          <div style={{ width: `${fundamentalsPct}%` }}>{fundamentalsPct}% fundamentals</div>
-          <div style={{ width: `${behaviourPct}%` }}>{behaviourPct}% behaviour</div>
-          <div style={{ width: `${newsPct}%` }}>{newsPct}% news</div>
-        </div>
+        {blendEntries.length ? <div className="weight-stack">
+          {blendEntries.map(([key, value]) => <div key={key} style={{ width: `${percent(value)}%` }}>{percent(value)}% {componentLabel(key)}</div>)}
+        </div> : <p className="body-copy">The scoring blend will appear after the first published research refresh.</p>}
         <p className="body-copy">
           Fundamentals dominate. Market behaviour is measured with the same arithmetic the ETF
           screen uses — 12-month momentum skipping the most recent month (to avoid the
@@ -114,9 +125,9 @@ export default function Methodology() {
 
     <div className="sec-label" style={{ marginTop: 28 }}>Fundamental framework</div>
     <div className="grid grid-2">
-      {CATEGORIES.map(([title, body]) => (
-        <section className="card card-pad" key={title}>
-          <h2 className="method-title">{title}</h2>
+      {Object.entries(CATEGORIES).map(([key, [title, body]]) => (
+        <section className="card card-pad" key={key}>
+          <h2 className="method-title">{title}{percent(categoryWeights[key]) != null ? ` · ${percent(categoryWeights[key])}%` : ''}</h2>
           <p className="body-copy">{body}</p>
         </section>
       ))}
@@ -125,12 +136,22 @@ export default function Methodology() {
     <div className="sec-label" style={{ marginTop: 28 }}>Modifiers</div>
     <section className="card card-pad">
       <p className="body-copy" style={{ marginBottom: 12 }}>
-        Applied after the 75/15/10 blend and reported on every company. They refine a ranking;
+        Applied after the published blend and reported on every company. They refine a ranking,
         they are capped so they can never outweigh the fundamental evidence behind it.
       </p>
       <ul className="method-list">
-        {MODIFIERS.map(([title, body]) => <li key={title}><b>{title}</b> — {body}</li>)}
+        {MODIFIERS.map(([key, title, body]) => <li key={key}><b>{title}</b>: {modifierRange(modifierConfig[key])}{body}</li>)}
       </ul>
+    </section>
+
+    <div className="sec-label" style={{ marginTop: 28 }}>Published model version</div>
+    <section className="card card-pad model-version-card">
+      <dl>
+        <div><dt>Semantic version</dt><dd>{version?.semantic_version || data?.model_version || 'Pending refresh'}</dd></div>
+        <div><dt>Git commit</dt><dd>{version?.git_commit_sha?.slice(0, 12) || 'Pending refresh'}</dd></div>
+        <div><dt>Config hash</dt><dd>{version?.config_hash?.slice(0, 12) || 'Pending refresh'}</dd></div>
+        <div><dt>Generated</dt><dd>{version?.generated_at ? new Date(version.generated_at).toLocaleString() : 'Pending refresh'}</dd></div>
+      </dl>
     </section>
 
     <div className="sec-label" style={{ marginTop: 28 }}>Active guidance and shadow policy</div>

@@ -36,6 +36,16 @@ class BackfillRowObservationsTests(unittest.TestCase):
         backfill_row_observations(row)
         self.assertEqual(row["observations"]["return_on_equity"], existing)
 
+    def test_repeated_rescore_is_idempotent(self):
+        row = {
+            "ticker": "TEST", "data_fetched_at": "2026-08-03T00:00:00+00:00",
+            "asset_growth": 0.01, "statement_periods": ["2025-12-31", "2024-12-31"],
+        }
+        backfill_row_observations(row)
+        first = list(row["observations"]["asset_growth"])
+        backfill_row_observations(row)
+        self.assertEqual(row["observations"]["asset_growth"], first)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,7 @@ import subprocess
 from datetime import datetime, timezone
 
 from canonical_metrics import APPLICABILITY, BUSINESS_PROFILES, METRIC_REGISTRY, RECONCILIATION
+from common import load_json
 
 
 def _hash(value):
@@ -31,14 +32,16 @@ def run_manifest(payload, rejected=None):
     conflicts = sum(len(row.get("analysis_v2", {}).get("structural", {}).get("provider_conflicts", [])) for row in rows)
     stale = sum(len(row.get("analysis_v2", {}).get("structural", {}).get("stale_metrics", [])) for row in rows)
     generated_at = payload.get("generated_at") or datetime.now(timezone.utc).isoformat()
+    settings = load_json("settings.json", from_config=True) or {}
+    model_version = (settings.get("model") or {}).get("semantic_version", "0.0.0")
     return {
         "run_id": f"advisor-{generated_at.replace(':', '').replace('+00:00', 'Z')}",
         "generated_at": generated_at,
         "data_cutoff": generated_at,
         "code_commit_hash": _commit_hash(),
-        "config_hash": _hash({"metrics": METRIC_REGISTRY, "applicability": APPLICABILITY, "reconciliation": RECONCILIATION, "business_profiles": BUSINESS_PROFILES}),
+        "config_hash": _hash(settings),
         "schema_version": payload.get("schema_version"),
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": model_version,
         "universe_version": _hash(payload.get("universe", []))[:16],
         "provider_status": payload.get("source_status", {}),
         "cache": {"hits": None, "misses": None, "quality_flags": ["cache_counters_not_instrumented"]},

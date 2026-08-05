@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import Icon from '../components/Icons.jsx'
+import { useData } from '../lib/useData'
 
 /**
- * Plain-language definitions for every term used elsewhere in the app. Static reference
- * content only — it never reads advisor.json, so it renders the same with no data published.
+ * Plain-language definitions for every term used elsewhere in the app. Scoring definitions
+ * are hydrated from advisor.json so the glossary always describes the published model.
  */
 const GROUPS = [
   {
@@ -105,7 +106,7 @@ const GROUPS = [
     title: 'Scoring & guidance',
     note: 'How the research score is built and how buy/hold/sell-style guidance is decided.',
     terms: [
-      ['Research score', 'The overall 0–100 ranking for a company: 75% fundamentals, 15% market behaviour, 10% news sentiment, then adjusted by capped modifiers such as sector-relative valuation, short interest, liquidity, analyst expectations, and macro regime.'],
+      ['Research score', null],
       ['Confidence', 'A measure of how complete the underlying data was for a given score, not a measure of how good the company is. Missing key inputs lowers confidence even if the metrics that are available look strong.'],
       ['Buy', 'A shadow-policy entry classification: structural quality, timing, confidence, data quality, valuation, liquidity, and portfolio capacity all pass. It is distinct from Hold.'],
       ['Accumulate', 'The shadow policy permits gradual additions because business quality is strong and timing is improving, while concentration remains acceptable.'],
@@ -140,21 +141,39 @@ const GROUPS = [
 ]
 
 export default function Glossary() {
+  const { data } = useData('advisor.json')
   const [query, setQuery] = useState('')
   const normalized = query.trim().toLowerCase()
+  const groups = useMemo(() => {
+    const weights = data?.methodology?.weights || {}
+    const blend = Object.entries(weights)
+      .filter(([, value]) => typeof value === 'number')
+      .map(([key, value]) => `${Math.round(value * 100)}% ${key.replace(/_/g, ' ')}`)
+      .join(', ')
+    const scoringDefinition = blend
+      ? `The overall 0 to 100 company ranking uses ${blend}, then applies the capped modifiers published with the snapshot.`
+      : 'The overall 0 to 100 company ranking uses the component weights in the latest published snapshot, then applies its capped modifiers.'
+    return GROUPS.map((group) => ({
+      ...group,
+      terms: group.terms.map(([term, definition]) => [
+        term,
+        term === 'Research score' ? scoringDefinition : definition,
+      ]),
+    }))
+  }, [data])
 
   const filtered = useMemo(() => {
-    if (!normalized) return GROUPS
-    return GROUPS
+    if (!normalized) return groups
+    return groups
       .map((group) => ({
         ...group,
         terms: group.terms.filter(([term, def]) =>
           term.toLowerCase().includes(normalized) || def.toLowerCase().includes(normalized)),
       }))
       .filter((group) => group.terms.length)
-  }, [normalized])
+  }, [groups, normalized])
 
-  const totalTerms = useMemo(() => GROUPS.reduce((sum, group) => sum + group.terms.length, 0), [])
+  const totalTerms = useMemo(() => groups.reduce((sum, group) => sum + group.terms.length, 0), [groups])
   const shownTerms = filtered.reduce((sum, group) => sum + group.terms.length, 0)
 
   return <>
@@ -162,7 +181,7 @@ export default function Glossary() {
       <div>
         <span className="eyebrow">Reference</span>
         <h1 className="page-title">Terminology <span className="accent">glossary</span></h1>
-        <p className="page-sub">Every metric and guidance term used across the app, defined in plain language. Reference only — nothing here reads live data.</p>
+        <p className="page-sub">Every metric and guidance term used across the app, defined in plain language. Scoring weights reflect the latest published model.</p>
       </div>
       <div className="result-count"><strong>{shownTerms}</strong><span>of {totalTerms} terms</span></div>
     </div>

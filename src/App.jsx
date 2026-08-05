@@ -7,6 +7,7 @@ import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAut
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
 import PasswordChangeModal from './components/PasswordChangeModal.jsx'
 import { usePreferences } from './lib/PreferencesContext.jsx'
+import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand — keeps first paint off the weight of pages the visit may
@@ -149,6 +150,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        <ModelVersionFooter />
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">

@@ -10,7 +10,7 @@
 // So: deploy readers before writers, and migrate N -> N+1 here at load time. Each migration
 // only has to know how to get from one version to the next; the runner chains them.
 
-export const ADVISOR_SCHEMA_VERSION = 2
+export const ADVISOR_SCHEMA_VERSION = 3
 export const ETF_SCHEMA_VERSION = 3
 
 // v1 -> v2: market-behavior detail keys changed when the ad hoc trend/risk formulas were
@@ -49,6 +49,26 @@ function advisorV1ToV2(payload) {
   }
 }
 
+// v2 -> v3: all artifacts now publish one reproducible model metadata envelope. Older
+// advisor snapshots already carried most of the same facts in run_manifest, so the reader
+// promotes them without inventing values and labels unavailable facts explicitly.
+function advisorV2ToV3(payload) {
+  const manifest = payload.run_manifest || {}
+  const generatedAt = payload.generated_at || manifest.generated_at || null
+  const semanticVersion = payload.model_version || manifest.model_version || 'unknown'
+  return {
+    ...payload,
+    schema_version: 3,
+    model_version: semanticVersion,
+    model_metadata: payload.model_metadata || {
+      semantic_version: semanticVersion,
+      git_commit_sha: manifest.code_commit_hash || 'unknown',
+      config_hash: manifest.config_hash || 'unknown',
+      generated_at: generatedAt,
+    },
+  }
+}
+
 // v2 -> v3: peer-group ranking. Older ETF snapshots ranked every fund against one mixed
 // batch, so their ranks are cross-asset-class whether they said so or not. Labelling them
 // is more honest than leaving the field blank and letting the UI imply a like-for-like rank.
@@ -66,7 +86,7 @@ function etfV2ToV3(payload) {
 }
 
 const MIGRATIONS = {
-  advisor: { 1: advisorV1ToV2 },
+  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3 },
   etfs: { 2: etfV2ToV3 },
 }
 

@@ -4,7 +4,9 @@ No external dependencies beyond `requests` (and stdlib). Keeps every script cons
 """
 
 import json
+import hashlib
 import os
+import subprocess
 import tempfile
 import time
 from datetime import datetime, date, timezone
@@ -79,9 +81,59 @@ def load_json(name, from_config=False):
         return json.load(f)
 
 
+def _git_commit_sha():
+    """Return the exact code revision that produced an artifact for reproducibility."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=os.path.dirname(HERE), text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
+def _settings_version():
+    """Read semantic version and hash the full settings source of truth.
+
+    Hashing the serialized config, rather than a hand-selected subset, makes any weight,
+    threshold, or band change reproduce a distinct published model configuration.
+    """
+    settings = load_json("settings.json", from_config=True) or {}
+    encoded = json.dumps(settings, sort_keys=True, separators=(",", ":")).encode()
+    return (
+        (settings.get("model") or {}).get("semantic_version", "0.0.0"),
+        hashlib.sha256(encoded).hexdigest(),
+    )
+
+
+def versioned_artifact(obj):
+    """Add an additive model-version envelope to a public JSON object.
+
+    Existing dataset-specific ``model_version`` strings remain untouched for schema
+    compatibility. ``model_metadata`` supplies the shared semantic version, exact code
+    revision, complete settings hash, and generation time requested for reproducibility.
+    """
+    if not isinstance(obj, dict):
+        return obj
+    generated_at = obj.get("generated_at") or datetime.now(timezone.utc).isoformat()
+    semantic_version, config_hash = _settings_version()
+    artifact = dict(obj)
+    artifact.setdefault("generated_at", generated_at)
+    artifact.setdefault("model_version", semantic_version)
+    artifact["model_metadata"] = {
+        "semantic_version": semantic_version,
+        "git_commit_sha": _git_commit_sha(),
+        "config_hash": config_hash,
+        "generated_at": generated_at,
+    }
+    return artifact
+
+
 def save_json(name, obj, to_config=False, to_store=False):
     """Atomically write JSON so readers never observe a partially-written payload."""
     base = STORE_DIR if to_store else (CONFIG_DIR if to_config else DATA_DIR)
+    if not to_config and not to_store:
+        obj = versioned_artifact(obj)
     path = os.path.join(base, name)
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)

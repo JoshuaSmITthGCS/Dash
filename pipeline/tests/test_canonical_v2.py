@@ -217,7 +217,7 @@ class MigrationTests(unittest.TestCase):
             "source_status": {}, "methodology": {}
         }
         migrated = migrate(payload)
-        self.assertEqual(migrated["schema_version"], 2)
+        self.assertEqual(migrated["schema_version"], 3)
         self.assertEqual(migrated["research"][0]["score"], 77)
         self.assertIn("analysis_v2", migrated["research"][0])
         self.assertIn("run_manifest", migrated)

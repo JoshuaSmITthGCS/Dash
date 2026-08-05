@@ -1,5 +1,10 @@
 {
   "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
+  "model": {
+    "semantic_version": "3.0.0",
+    "advisor_schema_version": 3,
+    "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

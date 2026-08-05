@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "generated_at": "2026-08-04T23:48:29.535571+00:00",
   "data_mode": "live",
   "count": 40,
@@ -1118,6 +1118,10 @@
       "news_sentiment": "Weighted as a 4% tilt over a 7-day window; daily headline sentiment largely mean-reverts (Tetlock 2007).",
       "insider_activity": "Form 4 trades split routine vs opportunistic per Cohen, Malloy & Pomorski (JF 2012); only opportunistic cluster activity scores.",
       "caveat": "Published factor premia are historical in-sample estimates. They indicate which signals have mattered, not what any of them will return next."
+    },
+    "canonical_layer": {
+      "model_version": "structural-timeliness-2.0.0",
+      "migration": "legacy fields retained; v2 decisions are independently versioned"
     }
   },
   "market": {
@@ -151381,10 +151385,10 @@
     "run_id": "advisor-2026-08-04T234829.535571+0000",
     "generated_at": "2026-08-04T23:48:29.535571+00:00",
     "data_cutoff": "2026-08-04T23:48:29.535571+00:00",
-    "code_commit_hash": "3eb30688d86ec5f9e5671c677dbcd203cf16694d",
-    "config_hash": "09d6a72eac3895e5fe10047f8e64586e0b8b5a11c1bf568d94e5c99401295246",
-    "schema_version": 2,
-    "model_version": "structural-timeliness-2.0.0",
+    "code_commit_hash": "5bc627bd4f02ff4f94242f45e3c210eba1aa590e",
+    "config_hash": "b50e99713677195cacea03334bab0039194e116f804c1f516cb1fe354c027228",
+    "schema_version": 3,
+    "model_version": "3.0.0",
     "universe_version": "52c2b00d4fa693bd",
     "provider_status": {
       "alpha_vantage": {
@@ -151438,5 +151442,12 @@
       "statement_enrichment": 0,
       "publication_limit": 67
     }
+  },
+  "model_version": "3.0.0",
+  "model_metadata": {
+    "semantic_version": "3.0.0",
+    "git_commit_sha": "5bc627bd4f02ff4f94242f45e3c210eba1aa590e",
+    "config_hash": "b50e99713677195cacea03334bab0039194e116f804c1f516cb1fe354c027228",
+    "generated_at": "2026-08-04T23:48:29.535571+00:00"
   }
 }

@@ -14,6 +14,8 @@ migrate_advisor_v2's scoring pass over every row. Finishes in well under a secon
 Usage: python pipeline/rescore.py
 """
 
+import json
+
 from canonical_metrics import Observation
 from common import load_json, save_json
 from fundamentals_extended import extended_observations
@@ -36,7 +38,15 @@ def backfill_row_observations(row):
     fetched_at = row.get("data_fetched_at")
     observations = dict(row.get("observations") or {})
     for metric_id, rows in extended_observations(row, fetched_at=fetched_at).items():
-        observations.setdefault(metric_id, []).extend(rows)
+        if observations.get(metric_id):
+            continue
+        existing = observations.setdefault(metric_id, [])
+        fingerprints = {json.dumps(item, sort_keys=True, default=str) for item in existing}
+        for item in rows:
+            fingerprint = json.dumps(item, sort_keys=True, default=str)
+            if fingerprint not in fingerprints:
+                existing.append(item)
+                fingerprints.add(fingerprint)
     for metric_id, unit in YAHOO_INFO_BACKFILL.items():
         if metric_id in observations or row.get(metric_id) is None:
             continue
@@ -45,7 +55,23 @@ def backfill_row_observations(row):
             observed_at=fetched_at, fetched_at=fetched_at, is_ttm=True,
             quality_flags=["backfilled_from_legacy_snapshot"],
         ).to_dict()]
-    row["observations"] = observations
+    # Older versions of this command appended identical lineage rows each time. Collapse
+    # those exact duplicates so rescoring is idempotent and cannot inflate provider counts.
+    def observation_identity(item):
+        """Canonical identity excluding collection timestamps.
+
+        A rescore does not constitute a new observation. Values with the same provider,
+        source field, period, unit, and value are the same lineage record even if an older
+        rescore accidentally stamped a later fetch time onto its duplicate.
+        """
+        keys = ("value", "unit", "source", "source_field", "period_start", "period_end",
+                "fiscal_period", "is_ttm", "is_forward", "transform_version")
+        return json.dumps({key: item.get(key) for key in keys}, sort_keys=True, default=str)
+
+    row["observations"] = {
+        metric_id: list({observation_identity(item): item for item in reversed(rows)}.values())[::-1]
+        for metric_id, rows in observations.items()
+    }
     return row
 
 

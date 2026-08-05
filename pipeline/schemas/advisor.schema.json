@@ -3,6 +3,8 @@
   "type": "object",
   "required": [
     "schema_version",
+    "model_version",
+    "model_metadata",
     "generated_at",
     "data_mode",
     "count",
@@ -21,7 +23,21 @@
     "schema_version": {
       "_comment": "Integer, additive-only. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js); writers never rename or remove a field.",
       "type": "integer",
-      "const": 2
+      "const": 3
+    },
+    "model_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model_metadata": {
+      "type": "object",
+      "required": ["semantic_version", "git_commit_sha", "config_hash", "generated_at"],
+      "properties": {
+        "semantic_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "git_commit_sha": {"type": "string", "minLength": 7},
+        "config_hash": {"type": "string", "minLength": 12},
+        "generated_at": {"type": "string", "format": "date-time"}
+      }
     },
     "generated_at": {
       "type": "string",

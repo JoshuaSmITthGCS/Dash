@@ -1071,7 +1071,9 @@ def run():
         # risk-adjusted ratios replaced the invented trend/risk fields), and theme exposure
         # plus data-freshness blocks were added. All additive except the technical rename,
         # which the frontend migration in src/lib/schemaMigrations.js maps for v1 readers.
-        "schema_version": 2, "generated_at": generated_at, "data_mode": "live",
+        "schema_version": SETTINGS["model"]["advisor_schema_version"],
+        "model_version": SETTINGS["model"]["semantic_version"],
+        "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
         "universe_mode": universe_mode, "polled_count": len(refresh_symbols),

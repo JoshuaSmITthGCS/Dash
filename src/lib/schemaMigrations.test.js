@@ -36,8 +36,24 @@ describe('advisor migrations', () => {
   })
 
   it('leaves a current-version payload untouched', () => {
-    const current = { schema_version: 2, research: [], theme_screen: { themes: [] } }
+    const current = { schema_version: 3, research: [], theme_screen: { themes: [] } }
     expect(migrate('advisor', current)).toBe(current)
+  })
+
+  it('promotes legacy run metadata into the reproducible model envelope', () => {
+    const migrated = migrate('advisor', {
+      schema_version: 2,
+      generated_at: '2026-08-05T00:00:00Z',
+      model_version: '2.4.0',
+      run_manifest: { code_commit_hash: 'abc123', config_hash: 'cfg123' },
+      research: [],
+    })
+    expect(migrated.model_metadata).toEqual({
+      semantic_version: '2.4.0',
+      git_commit_sha: 'abc123',
+      config_hash: 'cfg123',
+      generated_at: '2026-08-05T00:00:00Z',
+    })
   })
 
   it('does not downgrade a payload newer than this build', () => {
