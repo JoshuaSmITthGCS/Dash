@@ -63,6 +63,10 @@ def etf_peer_group_errors(payload):
         if row.get("ranked_against") == "_pooled" and not row.get("cross_asset_class_rank"):
             errors.append(f"etfs.json:etfs.{index}: pooled ranking must be flagged as "
                           "cross-asset-class so it is not read as a like-for-like comparison")
+        if payload.get("schema_version", 0) >= 4:
+            available = bool(row.get("sector_weights"))
+            if row.get("sector_lookthrough_available") is not available:
+                errors.append(f"etfs.json:etfs.{index}: sector look-through flag does not match sector weights")
     groups = {row.get("ranked_against") for row in rows}
     if len(groups) == 1 and len(rows) > 10:
         errors.append("etfs.json: every fund landed in one peer group, so the whole batch is "

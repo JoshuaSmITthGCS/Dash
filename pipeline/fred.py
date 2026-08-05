@@ -141,6 +141,15 @@ def derive_regime(series_rows):
         (rows[0]["date"] for rows in series_rows.values() if rows),
         default=datetime.now(timezone.utc).date().isoformat(),
     )
+    risk_free_rates = {
+        name: {
+            "annual_percent": round(rows[0]["value"], 4),
+            "as_of": rows[0]["date"],
+            "series_id": SERIES[name]["id"],
+        }
+        for name, rows in series_rows.items()
+        if name in {"fed_funds", "treasury_10y"} and rows
+    }
     return {
         "score": round(score, 1),
         "label": label(score),
@@ -148,6 +157,7 @@ def derive_regime(series_rows):
         "freshness_date": freshness,
         "factors": factors,
         "series": {name: config["id"] for name, config in SERIES.items() if name in series_rows},
+        "risk_free_rates": risk_free_rates,
         "attribution": "Federal Reserve Economic Data (FRED), Federal Reserve Bank of St. Louis",
         "notice": NOTICE,
         "terms_url": TERMS_URL,

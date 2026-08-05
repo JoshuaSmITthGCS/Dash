@@ -37,12 +37,16 @@ import {
   contributionAdjustedPerformance,
   currentHoldingsSeries,
   diversificationScore,
-  performanceRating,
+  performanceMetrics,
+  portfolioReturnSummary,
   portfolioScore,
   resilienceIndex,
+  riskFreeAnnualRate,
   selectPeriod,
 } from '../lib/portfolioAnalytics.js'
 import { FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from '../lib/referenceCashFlows.js'
+import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
+import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 
 const money = (value, digits = 0) =>
   value == null ? '—' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
@@ -134,6 +138,7 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
 export default function Portfolio() {
   const { currentUser, logout } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
+  const { data: etfData } = useData('etfs.json')
   const {
     positions,
     loading: portfolioLoading,
@@ -241,6 +246,11 @@ export default function Portfolio() {
     tracking.activities,
     tracking.trackingState?.cashFlowHistoryComplete,
   )
+  const returnSummary = portfolioReturnSummary(
+    tracking.snapshots,
+    tracking.activities,
+    tracking.trackingState?.cashFlowHistoryComplete,
+  )
   const fidelityCashSummary = summarizeCashFlows()
   const fidelityReferencePerformance = contributionAdjustedPerformance(
     FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue,
@@ -260,15 +270,16 @@ export default function Portfolio() {
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
   const scoreComparable = alignSeries(scorePortfolioPeriod, scoreBenchmarkPeriod, scorePortfolioPeriod?.period)
-  const scoreDiversification = diversificationScore(portfolioPositions)
+  const scoreDiversification = diversificationScore(portfolioPositions, { etfs: etfData?.etfs || [] })
   const scoreResilience = resilienceIndex(scoreComparable?.left.values || scorePortfolioPeriod?.values || [], scoreDiversification)
-  const scorePerformance = performanceRating(scoreComparable?.left, scoreComparable?.right)
+  const riskFree = riskFreeAnnualRate(data)
+  const scorePerformance = performanceMetrics(scoreComparable?.left, scoreComparable?.right, riskFree.annualPct)
   const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
   const overallScore = portfolioScore({
     diversification: scoreDiversification,
     resilience: scoreResilience,
     performance: scorePerformance,
-    benchmarkEfficiency: scorePerformance.available ? scorePerformance.score : null,
+    benchmarkEfficiency: null,
     concentrationLiquidity: scoreConcentration,
     dataCompleteness: positions.length ? Math.round(portfolioPositions.filter((position) => position.currentValue != null).length / positions.length * 100) : 0,
   })
@@ -470,12 +481,12 @@ export default function Portfolio() {
         <div className="portfolio-value-card">
           <div className="kpi-label">Total Value</div>
           <div className="kpi-value">{money(trackedAccountValue, 2)}</div>
-          <div className="portfolio-delta" style={{ color: moveColor(contributionPerformance.available ? contributionPerformance.value : portfolioStats.totalGain) }}>
-            {contributionPerformance.available
-              ? `${contributionPerformance.value >= 0 ? '+' : '−'}${money(Math.abs(contributionPerformance.value), 2)} · ${signedPct(contributionPerformance.returnPct, 2)} actually made`
+          <div className="portfolio-delta" style={{ color: moveColor(returnSummary.strategy.available ? returnSummary.strategy.gain : portfolioStats.totalGain) }}>
+            {returnSummary.strategy.available
+              ? `${returnSummary.strategy.gain >= 0 ? '+' : '−'}${money(Math.abs(returnSummary.strategy.gain), 2)} · ${signedPct(returnSummary.strategy.returnPct, 2)} strategy return`
               : `${portfolioStats.totalGain >= 0 ? '+' : '−'}${money(Math.abs(portfolioStats.totalGain))} · ${signedPct(totalGainPct, 2)}`}
           </div>
-          <div className="kpi-note">{contributionPerformance.available ? `${money(contributionPerformance.netContributions)} net deposits · cash-flow adjusted` : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
+          <div className="kpi-note">{returnSummary.strategy.available ? 'Modified Dietz with settled external flows' : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
         </div>
         <div className="card kpi portfolio-score-kpi">
           <div className="kpi-label">Portfolio Score</div>
@@ -519,6 +530,10 @@ export default function Portfolio() {
         </div>
       </div>
 
+      <PortfolioReturnSummary summary={returnSummary} />
+
+      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
+
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">
           <span className="eyebrow">Buying power</span>
@@ -558,10 +573,10 @@ export default function Portfolio() {
         <div className="fidelity-performance-grid">
           <div><span>Account value</span><strong>{money(FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue, 2)}</strong><small>{money(FIDELITY_REFERENCE_SNAPSHOT.investments, 2)} invested · {money(FIDELITY_REFERENCE_SNAPSHOT.cash, 2)} cash</small></div>
           <div><span>Net contributed</span><strong>{money(fidelityCashSummary.netContributions)}</strong><small>{money(fidelityCashSummary.deposits)} settled deposits · {money(fidelityCashSummary.withdrawals)} withdrawn{fidelityCashSummary.pendingDeposits ? ` · ${money(fidelityCashSummary.pendingDeposits)} processing` : ''}</small></div>
-          <div><span>Actually made</span><strong style={{ color: moveColor(fidelityReferencePerformance.value) }}>{fidelityReferencePerformance.value >= 0 ? '+' : '−'}{money(Math.abs(fidelityReferencePerformance.value), 2)}</strong><small>{signedPct(fidelityReferencePerformance.returnPct, 2)} simple cash-flow-adjusted return</small></div>
           <div><span>Fidelity {fidelityPeriod} return</span><strong style={{ color: moveColor(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod]) }}>{signedPct(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod], 2)}</strong><small>Time-weighted pre-tax return from Fidelity</small></div>
         </div>
-        <p className="fidelity-method-note">“Actually made” is account value minus settled net deposits. The Aug. 4 $100 transfer remains excluded while Fidelity labels it Processing. Fidelity’s period return is time-weighted, so it measures investment performance without a large late deposit diluting the percentage.</p>
+        <p className="fidelity-method-note">The Aug. 4 $100 transfer remains excluded while Fidelity labels it Processing. Fidelity’s period return is time-weighted, so it measures investment performance without a large late deposit diluting the percentage.</p>
+        <details className="fidelity-method-note"><summary>Contribution-adjusted gain detail</summary><p>{fidelityReferencePerformance.value >= 0 ? '+' : '−'}{money(Math.abs(fidelityReferencePerformance.value), 2)} is the reference account value minus settled net deposits. Its simple percentage is {signedPct(fidelityReferencePerformance.returnPct, 2)} and is not the primary reported return.</p></details>
       </section>
 
       <details className="card portfolio-actions-menu">

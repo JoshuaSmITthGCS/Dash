@@ -11,7 +11,7 @@
 // only has to know how to get from one version to the next; the runner chains them.
 
 export const ADVISOR_SCHEMA_VERSION = 3
-export const ETF_SCHEMA_VERSION = 3
+export const ETF_SCHEMA_VERSION = 4
 
 // v1 -> v2: market-behavior detail keys changed when the ad hoc trend/risk formulas were
 // replaced with 12-1 momentum and real Sharpe/Sortino ratios, and the theme screen and
@@ -85,9 +85,23 @@ function etfV2ToV3(payload) {
   }
 }
 
+// v3 -> v4: ETF rows may carry holdings-sector weights for portfolio look-through.
+// Older snapshots cannot reconstruct those weights, so the migration marks them missing.
+function etfV3ToV4(payload) {
+  return {
+    ...payload,
+    schema_version: 4,
+    etfs: (payload.etfs || []).map((row) => ({
+      ...row,
+      sector_weights: row.sector_weights || null,
+      sector_lookthrough_available: Boolean(row.sector_weights),
+    })),
+  }
+}
+
 const MIGRATIONS = {
   advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3 },
-  etfs: { 2: etfV2ToV3 },
+  etfs: { 2: etfV2ToV3, 3: etfV3ToV4 },
 }
 
 const TARGETS = { advisor: ADVISOR_SCHEMA_VERSION, etfs: ETF_SCHEMA_VERSION }

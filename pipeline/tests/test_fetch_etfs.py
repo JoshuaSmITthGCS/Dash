@@ -89,6 +89,16 @@ class BuildEtfRowTests(unittest.TestCase):
         self.assertAlmostEqual(row["bid_ask_spread_pct"], 0.2 / 520.0 * 100, places=2)
         self.assertEqual(row["beta"], 1.0)  # benchmark passed in was its own daily returns
 
+    def test_publishes_sector_weights_for_portfolio_lookthrough(self):
+        closes = rising_closes(260)
+        row = build_etf_row(
+            "VOO", {"name": "VOO", "category": "broad_market", "issuer": "Vanguard"},
+            {"price": closes[-1], "sector_weights": {"technology": 0.3, "healthcare": 0.2}},
+            closes, [1_000_000.0] * len(closes), daily_returns(closes),
+        )
+        self.assertTrue(row["sector_lookthrough_available"])
+        self.assertEqual(row["sector_weights"]["technology"], 0.3)
+
 
 class ScoreEtfUniverseTests(unittest.TestCase):
     def _row(self, ticker, issuer, expense_ratio, daily_gain, aum=1e10):

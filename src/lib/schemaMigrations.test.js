@@ -87,6 +87,13 @@ describe('etf migrations', () => {
   it('falls back to the category when no peer group was recorded', () => {
     expect(migrate('etfs', legacyEtfs).etfs[0].peer_group).toBe('broad_market')
   })
+
+  it('marks older ETF snapshots as unavailable for sector look-through', () => {
+    expect(migrate('etfs', { schema_version: 3, etfs: [{ ticker: 'SPY' }] }).etfs[0]).toMatchObject({
+      sector_weights: null,
+      sector_lookthrough_available: false,
+    })
+  })
 })
 
 describe('dataset resolution', () => {

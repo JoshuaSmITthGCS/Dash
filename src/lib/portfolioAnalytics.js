@@ -1,4 +1,7 @@
+import modelSettings from '../../pipeline/config/settings.json'
+
 const PERIOD_DAYS = { '1D': 2, '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 366, All: null }
+const analyticsConfig = modelSettings.portfolio_analytics
 
 const finite = (value) => value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
 const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, value))
@@ -207,6 +210,75 @@ export function contributionAdjustedPerformance(currentValue, transactions, hist
   }
 }
 
+function settledExternalFlows(transactions = [], startDate = null, endDate = null) {
+  const start = startDate == null ? null : Date.parse(startDate)
+  const end = endDate == null ? null : Date.parse(endDate)
+  return transactions.filter((row) => {
+    const date = Date.parse(row.effectiveDate || row.date)
+    return ['deposit', 'withdrawal'].includes(row.type)
+      && finite(row.amount)
+      && !['pending', 'processing'].includes(row.status)
+      && Number.isFinite(date)
+      && (start == null || date >= start)
+      && (end == null || date <= end)
+  }).map((row) => ({
+    date: row.effectiveDate || row.date,
+    amount: (row.type === 'deposit' ? 1 : -1) * Number(row.amount),
+    type: row.type,
+  })).sort((left, right) => left.date.localeCompare(right.date))
+}
+
+/**
+ * Modified Dietz estimates strategy return without daily valuations:
+ * R = (V1 - V0 - sum(CF_i)) / (V0 + sum(w_i * CF_i)), where
+ * w_i is the fraction of the measurement period remaining after each external flow.
+ * This removes deposit and withdrawal timing from the reported strategy result.
+ */
+export function modifiedDietzReturn(beginningValue, endingValue, transactions = [], startDate, endDate, historyComplete = false) {
+  if (!historyComplete) return { available: false, returnPct: null, reason: 'Confirm the complete deposit and withdrawal history first.' }
+  const start = Date.parse(startDate)
+  const end = Date.parse(endDate)
+  if (!finite(beginningValue) || !finite(endingValue) || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+    return { available: false, returnPct: null, reason: 'Two dated account values are required for Modified Dietz.' }
+  }
+  const flows = settledExternalFlows(transactions, startDate, endDate)
+  const duration = end - start
+  const weightedFlows = flows.map((flow) => ({
+    ...flow,
+    weight: (end - Date.parse(flow.date)) / duration,
+  }))
+  const netExternalFlows = weightedFlows.reduce((sum, flow) => sum + flow.amount, 0)
+  const denominator = Number(beginningValue) + weightedFlows.reduce((sum, flow) => sum + flow.weight * flow.amount, 0)
+  if (!finite(denominator) || denominator <= 0) return { available: false, returnPct: null, reason: 'Weighted invested capital must be positive.' }
+  const gain = Number(endingValue) - Number(beginningValue) - netExternalFlows
+  return {
+    available: true,
+    returnPct: gain / denominator * 100,
+    gain,
+    beginningValue: Number(beginningValue),
+    endingValue: Number(endingValue),
+    netExternalFlows,
+    weightedCapital: denominator,
+    startDate,
+    endDate,
+    flowCount: weightedFlows.length,
+    methodology: 'Modified Dietz weights each settled external cash flow by the fraction of the period it was invested.',
+  }
+}
+
+function accountValueEndpoints(snapshots = []) {
+  const byDay = new Map()
+  snapshots.filter((row) => finite(row.value) && (row.recordedAt || row.marketDate))
+    .sort((left, right) => String(left.recordedAt || '').localeCompare(String(right.recordedAt || '')))
+    .forEach((row) => {
+      const date = row.marketDate || String(row.recordedAt).slice(0, 10)
+      byDay.set(date, { date, value: Number(row.value) })
+    })
+  const usable = [...byDay.values()].sort((left, right) => left.date.localeCompare(right.date))
+  if (usable.length < 2) return null
+  return { first: usable[0], last: usable.at(-1), observations: usable.length }
+}
+
 export function scenarioProjection(currentValue, annualRate, years, recurringAnnual = 0) {
   if (!finite(currentValue) || !finite(annualRate) || !finite(years)) return null
   const rate = Number(annualRate) / 100
@@ -220,6 +292,62 @@ function xnpv(rate, flows) {
   return flows.reduce((sum, flow) => sum + flow.amount / ((1 + rate) ** ((Date.parse(flow.date) - origin) / 31557600000)), 0)
 }
 
+function solveXirr(flows) {
+  const spanDays = (Date.parse(flows.at(-1).date) - Date.parse(flows[0].date)) / 86400000
+  if (spanDays < analyticsConfig.xirr_minimum_days) return { available: false, rate: null, spanDays, reason: `At least ${analyticsConfig.xirr_minimum_days} days are required for an annualized money-weighted return.` }
+  let low = analyticsConfig.xirr_lower_bound
+  let high = analyticsConfig.xirr_upper_bound
+  let lowValue = xnpv(low, flows)
+  const highValue = xnpv(high, flows)
+  if (!finite(lowValue) || !finite(highValue) || lowValue * highValue > 0) return { available: false, rate: null, spanDays, reason: 'The dated cash flows do not produce a stable annualized return.' }
+  for (let index = 0; index < analyticsConfig.xirr_max_iterations; index += 1) {
+    const middle = (low + high) / 2
+    const value = xnpv(middle, flows)
+    if (Math.abs(value) < analyticsConfig.xirr_tolerance) { low = middle; high = middle; break }
+    if (value * lowValue > 0) { low = middle; lowValue = value } else { high = middle }
+  }
+  return { available: true, rate: ((low + high) / 2) * 100, spanDays }
+}
+
+/**
+ * XIRR solves NPV = 0 across beginning value, external flows, and ending value.
+ * Unlike Modified Dietz, this intentionally includes the size and timing of the user's cash flows.
+ */
+export function moneyWeightedAccountReturn(snapshots = [], transactions = [], historyComplete = false) {
+  if (!historyComplete) return { available: false, rate: null, reason: 'Confirm the complete deposit and withdrawal history first.' }
+  const endpoints = accountValueEndpoints(snapshots)
+  if (!endpoints) return { available: false, rate: null, reason: 'Two dated recorded account values are required.' }
+  const startDate = endpoints.first.date
+  const endDate = endpoints.last.date
+  const external = settledExternalFlows(transactions, startDate, endDate)
+  const flows = [
+    { date: startDate, amount: -endpoints.first.value },
+    ...external.map((flow) => ({ date: flow.date, amount: -flow.amount })),
+    { date: endDate, amount: endpoints.last.value },
+  ].sort((left, right) => left.date.localeCompare(right.date))
+  const result = solveXirr(flows)
+  return {
+    ...result,
+    startDate,
+    endDate,
+    observations: endpoints.observations,
+    flowCount: external.length,
+    methodology: result.available ? 'Annualized XIRR from recorded account values and settled external cash flows.' : undefined,
+  }
+}
+
+export function portfolioReturnSummary(snapshots = [], transactions = [], historyComplete = false) {
+  const endpoints = accountValueEndpoints(snapshots)
+  const strategy = endpoints
+    ? modifiedDietzReturn(endpoints.first.value, endpoints.last.value, transactions, endpoints.first.date, endpoints.last.date, historyComplete)
+    : { available: false, returnPct: null, reason: 'Two dated recorded account values are required.' }
+  return {
+    strategy,
+    moneyWeighted: moneyWeightedAccountReturn(snapshots, transactions, historyComplete),
+    explanation: 'Strategy return reduces the effect of cash-flow timing. Your return includes when deposits and withdrawals entered the account.',
+  }
+}
+
 export function portfolioAnnualizedReturn(positions = [], endDate = new Date().toISOString().slice(0, 10)) {
   const allCurrentValue = positions.reduce((sum, row) => sum + (finite(row.currentValue) ? Number(row.currentValue) : 0), 0)
   const dated = positions.filter((row) => row.purchaseDate && row.purchaseDate <= endDate && finite(row.totalCost) && row.totalCost > 0 && finite(row.currentValue))
@@ -230,16 +358,10 @@ export function portfolioAnnualizedReturn(positions = [], endDate = new Date().t
   const flows = [...dated.map((row) => ({ date: row.purchaseDate, amount: -Number(row.totalCost) })), { date: endDate, amount: currentValue }].sort((a, b) => a.date.localeCompare(b.date))
   const spanDays = (Date.parse(endDate) - Date.parse(flows[0].date)) / 86400000
   if (spanDays < 30) return { available: false, rate: null, reason: 'At least 30 days of dated holding history are required.' }
-  let low = -.999; let high = 100
-  let lowValue = xnpv(low, flows); let highValue = xnpv(high, flows)
-  if (!finite(lowValue) || !finite(highValue) || lowValue * highValue > 0) return { available: false, rate: null, reason: 'The dated cash flows do not produce a stable annualized return.' }
-  for (let index = 0; index < 120; index += 1) {
-    const middle = (low + high) / 2
-    const value = xnpv(middle, flows)
-    if (Math.abs(value) < .0001) { low = middle; high = middle; break }
-    if (value * lowValue > 0) { low = middle; lowValue = value } else { high = middle }
-  }
-  return { available: true, rate: ((low + high) / 2) * 100, spanDays, coveragePct, startDate: flows[0].date, endDate, methodology: 'Money-weighted annualized return for currently held positions using entered purchase dates, cost basis, and latest stored values.' }
+  const result = solveXirr(flows)
+  return result.available
+    ? { ...result, coveragePct, startDate: flows[0].date, endDate, methodology: 'Money-weighted annualized return for currently held positions using entered purchase dates, cost basis, and latest stored values.' }
+    : result
 }
 
 export function planningReturnRates(positions = [], historicalValues = [], endDate, options = {}) {
@@ -270,19 +392,255 @@ export function trackedAllTimeEarnings(portfolio, activities = [], trackingState
   return { available: true, value: components.unrealized + components.realized + components.dividends - components.fees, components, reason: 'Current unrealized gain plus recorded realized gains and dividends, minus recorded fees.' }
 }
 
-export function diversificationScore(positions = []) {
+function herfindahl(weights = []) {
+  return weights.reduce((sum, weight) => sum + Number(weight) ** 2, 0)
+}
+
+function effectiveCount(weights = []) {
+  const value = herfindahl(weights)
+  return value > 0 ? 1 / value : null
+}
+
+/**
+ * Converts HHI into a 0..100 breadth score through its reciprocal effective count.
+ * Unlike linear penalties on the largest holding, this uses every portfolio weight and
+ * reaches 100 at the configured effective-count target.
+ */
+function hhiBreadthScore(weights, target) {
+  const count = effectiveCount(weights)
+  if (count == null) return null
+  return clamp((count - 1) / (target - 1) * 100)
+}
+
+function normalizeSectorWeights(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const rows = Object.entries(raw).filter(([, value]) => finite(value) && Number(value) > 0)
+  if (!rows.length) return null
+  const total = rows.reduce((sum, [, value]) => sum + Number(value), 0)
+  return Object.fromEntries(rows.map(([label, value]) => [
+    label.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    Number(value) / total,
+  ]))
+}
+
+/**
+ * Decomposes each ETF allocation across its published sector weights before aggregating.
+ * Missing fund exposures stay in one explicit unknown bucket and are flagged, rather than
+ * being mislabeled as a standalone ETF sector that appears diversified.
+ */
+export function sectorLookThrough(positions = [], etfs = []) {
+  const rows = Array.isArray(etfs) ? etfs : etfs?.etfs || []
+  const byTicker = new Map(rows.map((row) => [String(row.ticker || '').toUpperCase(), row]))
+  const total = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0)
+    .reduce((sum, row) => sum + Number(row.currentValue), 0)
+  if (!total) return { exposures: [], unavailableEtfs: [], coveragePct: 0 }
+  const exposures = new Map()
+  const unavailableEtfs = []
+  let coveredWeight = 0
+  const add = (label, weight) => exposures.set(label, (exposures.get(label) || 0) + weight)
+  positions.filter((row) => finite(row.currentValue) && row.currentValue > 0).forEach((position) => {
+    const allocation = Number(position.currentValue) / total
+    const ticker = String(position.ticker || '').toUpperCase()
+    const etf = byTicker.get(ticker)
+    if (!etf) {
+      add(position.priceInfo?.sector || 'Unclassified', allocation)
+      coveredWeight += allocation
+      return
+    }
+    const sectorWeights = normalizeSectorWeights(etf.sector_weights)
+    if (!sectorWeights) {
+      add('ETF look-through unavailable', allocation)
+      unavailableEtfs.push(ticker)
+      return
+    }
+    Object.entries(sectorWeights).forEach(([sector, weight]) => add(sector, allocation * weight))
+    coveredWeight += allocation
+  })
+  return {
+    exposures: [...exposures.entries()].map(([label, weight]) => ({ label, pct: weight * 100 }))
+      .sort((left, right) => right.pct - left.pct),
+    unavailableEtfs,
+    coveragePct: coveredWeight * 100,
+  }
+}
+
+function returnMap(history) {
+  const dates = history?.dates || []
+  const closes = history?.closes || []
+  const values = new Map()
+  for (let index = 1; index < Math.min(dates.length, closes.length); index += 1) {
+    if (!finite(closes[index]) || !finite(closes[index - 1]) || Number(closes[index - 1]) <= 0) continue
+    values.set(dates[index], Number(closes[index]) / Number(closes[index - 1]) - 1)
+  }
+  return values
+}
+
+function mean(values) {
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function sampleDeviation(values) {
+  if (values.length < 2) return null
+  const average = mean(values)
+  return Math.sqrt(values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1))
+}
+
+function correlation(left, right) {
+  const leftMean = mean(left)
+  const rightMean = mean(right)
+  const numerator = left.reduce((sum, value, index) => sum + (value - leftMean) * (right[index] - rightMean), 0)
+  const leftScale = Math.sqrt(left.reduce((sum, value) => sum + (value - leftMean) ** 2, 0))
+  const rightScale = Math.sqrt(right.reduce((sum, value) => sum + (value - rightMean) ** 2, 0))
+  return leftScale && rightScale ? numerator / (leftScale * rightScale) : 0
+}
+
+function symmetricEigenvalues(input) {
+  const matrix = input.map((row) => [...row])
+  const size = matrix.length
+  for (let iteration = 0; iteration < analyticsConfig.eigenvalue_max_iterations * size * size; iteration += 1) {
+    let row = 0
+    let column = 1
+    let largest = 0
+    for (let left = 0; left < size; left += 1) {
+      for (let right = left + 1; right < size; right += 1) {
+        if (Math.abs(matrix[left][right]) > largest) {
+          largest = Math.abs(matrix[left][right])
+          row = left
+          column = right
+        }
+      }
+    }
+    if (largest < analyticsConfig.eigenvalue_tolerance) break
+    const angle = Math.atan2(2 * matrix[row][column], matrix[column][column] - matrix[row][row]) / 2
+    const cosine = Math.cos(angle)
+    const sine = Math.sin(angle)
+    const rowDiagonal = matrix[row][row]
+    const columnDiagonal = matrix[column][column]
+    const offDiagonal = matrix[row][column]
+    matrix[row][row] = cosine ** 2 * rowDiagonal - 2 * sine * cosine * offDiagonal + sine ** 2 * columnDiagonal
+    matrix[column][column] = sine ** 2 * rowDiagonal + 2 * sine * cosine * offDiagonal + cosine ** 2 * columnDiagonal
+    matrix[row][column] = 0
+    matrix[column][row] = 0
+    for (let index = 0; index < size; index += 1) {
+      if (index === row || index === column) continue
+      const first = matrix[index][row]
+      const second = matrix[index][column]
+      matrix[index][row] = cosine * first - sine * second
+      matrix[row][index] = matrix[index][row]
+      matrix[index][column] = sine * first + cosine * second
+      matrix[column][index] = matrix[index][column]
+    }
+  }
+  return matrix.map((row, index) => row[index])
+}
+
+/**
+ * Builds a common-date trailing return matrix, then uses the eigenvalue concentration of
+ * sqrt(W) * Corr * sqrt(W). Its reciprocal HHI is the effective number of independent bets.
+ * Diversification ratio is weighted standalone volatility divided by portfolio volatility.
+ */
+export function correlationDiversification(positions = []) {
+  const requestedTickers = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0).map((row) => row.ticker)
+  let eligible = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0)
+    .map((row) => ({ row, returns: returnMap(row.priceInfo?.history) }))
+    .filter((item) => item.returns.size >= analyticsConfig.correlation_minimum_observations)
+  while (eligible.length >= 2) {
+    const commonDates = [...eligible[0].returns.keys()]
+      .filter((date) => eligible.every((item) => item.returns.has(date)))
+      .sort().slice(-analyticsConfig.correlation_lookback_days)
+    if (commonDates.length >= analyticsConfig.correlation_minimum_observations) {
+      const series = eligible.map((item) => commonDates.map((date) => item.returns.get(date)))
+      const total = eligible.reduce((sum, item) => sum + Number(item.row.currentValue), 0)
+      const weights = eligible.map((item) => Number(item.row.currentValue) / total)
+      const matrix = series.map((left, leftIndex) => series.map((right, rightIndex) => leftIndex === rightIndex ? 1 : correlation(left, right)))
+      const weightedMatrix = matrix.map((row, rowIndex) => row.map((value, columnIndex) => value * Math.sqrt(weights[rowIndex] * weights[columnIndex])))
+      const eigenvalues = symmetricEigenvalues(weightedMatrix).map((value) => Math.max(0, value))
+      const eigenTotal = eigenvalues.reduce((sum, value) => sum + value, 0)
+      const normalizedEigenvalues = eigenvalues.map((value) => value / eigenTotal)
+      const effectiveBets = Math.min(eligible.length, 1 / herfindahl(normalizedEigenvalues))
+      const volatilities = series.map((values) => sampleDeviation(values) * Math.sqrt(analyticsConfig.trading_days_per_year))
+      const portfolioVariance = weights.reduce((outer, leftWeight, leftIndex) => outer + weights.reduce(
+        (inner, rightWeight, rightIndex) => inner + leftWeight * rightWeight * volatilities[leftIndex] * volatilities[rightIndex] * matrix[leftIndex][rightIndex],
+        0,
+      ), 0)
+      const portfolioVolatility = Math.sqrt(Math.max(0, portfolioVariance))
+      const weightedAverageVolatility = weights.reduce((sum, weight, index) => sum + weight * volatilities[index], 0)
+      return {
+        available: true,
+        tickers: eligible.map((item) => item.row.ticker),
+        observations: commonDates.length,
+        matrix,
+        weights,
+        effectiveBets,
+        diversificationRatio: portfolioVolatility > 0 ? weightedAverageVolatility / portfolioVolatility : null,
+        portfolioVolatility: portfolioVolatility * 100,
+        excludedTickers: requestedTickers.filter((ticker) => !eligible.some((item) => item.row.ticker === ticker)),
+      }
+    }
+    eligible = eligible.slice().sort((left, right) => right.returns.size - left.returns.size).slice(0, -1)
+  }
+  return { available: false, effectiveBets: null, diversificationRatio: null, tickers: [], excludedTickers: requestedTickers, observations: 0, reason: `At least two holdings need ${analyticsConfig.correlation_minimum_observations} common daily returns.` }
+}
+
+export function diversificationScore(positions = [], options = {}) {
   const priced = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0)
   const total = priced.reduce((sum, row) => sum + Number(row.currentValue), 0)
   if (!total) return { available: false, score: null, coveragePct: 0, components: {}, warnings: [] }
   const weights = priced.map((row) => ({ ...row, pct: Number(row.currentValue) / total * 100 })).sort((a, b) => b.pct - a.pct)
-  const group = (field) => Object.values(weights.reduce((acc, row) => { const key = row.priceInfo?.[field] || 'Unclassified'; acc[key] = (acc[key] || 0) + row.pct; return acc }, {})).sort((a, b) => b - a)
-  const sectors = group('sector'); const industries = group('industry')
-  const largest = weights[0]?.pct || 100; const topFive = weights.slice(0, 5).reduce((sum, row) => sum + row.pct, 0)
-  const meaningful = weights.filter((row) => row.pct >= 2).length
-  const components = { positionBalance: clamp(100 - Math.max(0, largest - 10) * 2.7), topFiveBalance: clamp(100 - Math.max(0, topFive - 50) * 1.5), sectorBalance: clamp(100 - Math.max(0, (sectors[0] || 100) - 25) * 1.8), industryBalance: clamp(100 - Math.max(0, (industries[0] || 100) - 20) * 1.5), meaningfulPositions: clamp(meaningful / 12 * 100) }
-  const score = Math.round(components.positionBalance * .3 + components.topFiveBalance * .2 + components.sectorBalance * .25 + components.industryBalance * .15 + components.meaningfulPositions * .1)
-  const warnings = []; if (largest > 25) warnings.push(`Largest holding is ${largest.toFixed(1)}% of portfolio`); if ((sectors[0] || 0) > 35) warnings.push(`Largest sector is ${(sectors[0]).toFixed(1)}%`); if (topFive > 70) warnings.push(`Top five positions represent ${topFive.toFixed(1)}%`)
-  return { available: true, score, coveragePct: priced.length / positions.length * 100, components, warnings, weights, sectors, industries, provisional: priced.length < 5 }
+  const fractions = weights.map((row) => row.pct / 100)
+  const groupFractions = (field) => Object.values(weights.reduce((result, row) => {
+    const key = row.priceInfo?.[field] || 'Unclassified'
+    result[key] = (result[key] || 0) + row.pct / 100
+    return result
+  }, {})).sort((left, right) => right - left)
+  const lookThrough = sectorLookThrough(priced, options.etfs || [])
+  const sectorFractions = lookThrough.exposures.map((row) => row.pct / 100)
+  const industryFractions = groupFractions('industry')
+  const correlationResult = correlationDiversification(priced)
+  const holdingHhi = herfindahl(fractions)
+  const components = {
+    holdingHhi: hhiBreadthScore(fractions, analyticsConfig.diversification_target_effective_holdings),
+    sectorHhi: hhiBreadthScore(sectorFractions, analyticsConfig.diversification_target_effective_sectors),
+    industryHhi: hhiBreadthScore(industryFractions, analyticsConfig.diversification_target_effective_industries),
+    effectiveBets: correlationResult.available
+      ? clamp((correlationResult.effectiveBets - 1) / (analyticsConfig.diversification_target_effective_holdings - 1) * 100)
+      : null,
+    diversificationRatio: correlationResult.available && correlationResult.diversificationRatio != null
+      ? clamp((correlationResult.diversificationRatio - 1) / (analyticsConfig.diversification_ratio_target - 1) * 100)
+      : null,
+  }
+  const availableComponents = Object.entries(components).filter(([, value]) => finite(value))
+  const scoreWeights = analyticsConfig.diversification_score_weights
+  const availableWeight = availableComponents.reduce((sum, [key]) => sum + scoreWeights[key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)], 0)
+  const score = Math.round(availableComponents.reduce((sum, [key, value]) => sum + value * scoreWeights[key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)], 0) / availableWeight)
+  const largest = weights[0]?.pct || 100
+  const topFive = weights.slice(0, 5).reduce((sum, row) => sum + row.pct, 0)
+  const largestSector = lookThrough.exposures[0]?.pct || 0
+  const warnings = []
+  if (largest > analyticsConfig.largest_holding_warning_pct) warnings.push(`Largest holding is ${largest.toFixed(1)}% of portfolio`)
+  if (largestSector > analyticsConfig.largest_sector_warning_pct) warnings.push(`Largest look-through sector is ${largestSector.toFixed(1)}%`)
+  if (topFive > analyticsConfig.top_five_warning_pct) warnings.push(`Top five positions represent ${topFive.toFixed(1)}%`)
+  if (lookThrough.unavailableEtfs.length) warnings.push(`ETF look-through unavailable for ${lookThrough.unavailableEtfs.join(', ')}`)
+  if (correlationResult.available && correlationResult.excludedTickers.length) warnings.push(`Correlation history unavailable for ${correlationResult.excludedTickers.join(', ')}`)
+  return {
+    available: true,
+    score,
+    coveragePct: priced.length / positions.length * 100,
+    components,
+    warnings,
+    weights,
+    sectors: sectorFractions.map((value) => value * 100),
+    sectorExposures: lookThrough.exposures,
+    industries: industryFractions.map((value) => value * 100),
+    hhi: holdingHhi,
+    effectiveHoldings: 1 / holdingHhi,
+    rawHoldingCount: priced.length,
+    effectiveBets: correlationResult.effectiveBets,
+    diversificationRatio: correlationResult.diversificationRatio,
+    correlation: correlationResult,
+    lookThrough,
+    provisional: priced.length < 5 || !correlationResult.available || correlationResult.excludedTickers.length > 0 || lookThrough.unavailableEtfs.length > 0,
+  }
 }
 
 export function maximumDrawdown(values = []) { let peak = null; let worst = 0; values.filter(finite).forEach((raw) => { const value = Number(raw); peak = peak == null ? value : Math.max(peak, value); if (peak) worst = Math.min(worst, (value / peak - 1) * 100) }); return values.length > 1 ? worst : null }
@@ -295,10 +653,74 @@ export function resilienceIndex(values = [], diversification = null) {
   return { available: true, score: Math.round(drawdownScore * .45 + volatilityScore * .35 + concentrationScore * .2), provisional: values.length < 60, coverage: values.length, components: { drawdown: drawdownScore, downsideVolatility: volatilityScore, concentration: concentrationScore }, maxDrawdown: drawdown, volatility }
 }
 
-export function performanceRating(portfolioPeriod, benchmarkPeriod) {
-  if (!portfolioPeriod || !benchmarkPeriod) return { available: false, score: null, rating: 'Unavailable', reason: 'Comparable portfolio and benchmark history is required.' }
-  const excess = portfolioPeriod.returnPct - benchmarkPeriod.returnPct; const drawdown = maximumDrawdown(portfolioPeriod.values); const score = Math.round(clamp(65 + excess * 2 + (drawdown || 0) * .8)); const rating = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F'
-  return { available: true, score, rating, excessReturnPct: excess, period: portfolioPeriod.period, reason: `${excess >= 0 ? 'Outperformed' : 'Trailed'} the benchmark by ${Math.abs(excess).toFixed(1)} percentage points; maximum drawdown ${Math.abs(drawdown || 0).toFixed(1)}%.` }
+function periodReturns(values = []) {
+  return values.slice(1).map((value, index) => finite(value) && finite(values[index]) && Number(values[index]) > 0
+    ? Number(value) / Number(values[index]) - 1
+    : null).filter(finite)
+}
+
+function annualizedGrowth(values, periods) {
+  if (values.length < 2 || Number(values[0]) <= 0 || Number(values.at(-1)) <= 0 || periods <= 0) return null
+  return ((Number(values.at(-1)) / Number(values[0])) ** (analyticsConfig.trading_days_per_year / periods) - 1) * 100
+}
+
+export function riskFreeAnnualRate(payload) {
+  const selected = analyticsConfig.risk_free_series
+  const reading = payload?.market?.macro?.regime?.risk_free_rates?.[selected]
+  return {
+    annualPct: finite(reading?.annual_percent) ? Number(reading.annual_percent) : analyticsConfig.risk_free_fallback_annual_pct,
+    series: reading?.series_id || selected,
+    asOf: reading?.as_of || null,
+    fallback: !finite(reading?.annual_percent),
+  }
+}
+
+/**
+ * Reports standard return and risk measures directly. Sharpe uses the configured FRED
+ * risk-free rate, Sortino uses downside deviation, Calmar divides annualized return by
+ * maximum drawdown, and information ratio annualizes active return over tracking error.
+ */
+export function performanceMetrics(portfolioPeriod, benchmarkPeriod = null, riskFreeAnnualPct = analyticsConfig.risk_free_fallback_annual_pct) {
+  if (!portfolioPeriod?.values?.length) return { available: false, score: null, reason: 'Portfolio return history is required.' }
+  const portfolioReturns = periodReturns(portfolioPeriod.values)
+  if (portfolioReturns.length < analyticsConfig.performance_minimum_observations) {
+    return { available: false, score: null, observations: portfolioReturns.length, reason: `At least ${analyticsConfig.performance_minimum_observations} daily returns are required.` }
+  }
+  const riskFreeDaily = (1 + Number(riskFreeAnnualPct) / 100) ** (1 / analyticsConfig.trading_days_per_year) - 1
+  const excess = portfolioReturns.map((value) => value - riskFreeDaily)
+  const excessDeviation = sampleDeviation(excess)
+  const downsideDeviation = Math.sqrt(mean(excess.map((value) => Math.min(0, value) ** 2)))
+  const annualizedReturn = annualizedGrowth(portfolioPeriod.values, portfolioReturns.length)
+  const maxDrawdown = maximumDrawdown(portfolioPeriod.values)
+  const peak = Math.max(...portfolioPeriod.values.filter(finite).map(Number))
+  const currentDrawdown = peak > 0 ? (Number(portfolioPeriod.values.at(-1)) / peak - 1) * 100 : null
+  let informationRatio = null
+  if (benchmarkPeriod?.values?.length === portfolioPeriod.values.length) {
+    const benchmarkReturns = periodReturns(benchmarkPeriod.values)
+    if (benchmarkReturns.length === portfolioReturns.length) {
+      const active = portfolioReturns.map((value, index) => value - benchmarkReturns[index])
+      const trackingError = sampleDeviation(active)
+      informationRatio = trackingError ? mean(active) / trackingError * Math.sqrt(analyticsConfig.trading_days_per_year) : null
+    }
+  }
+  const sharpe = excessDeviation ? mean(excess) / excessDeviation * Math.sqrt(analyticsConfig.trading_days_per_year) : null
+  const sortino = downsideDeviation ? mean(excess) / downsideDeviation * Math.sqrt(analyticsConfig.trading_days_per_year) : null
+  const calmar = annualizedReturn != null && maxDrawdown < 0 ? annualizedReturn / Math.abs(maxDrawdown) : null
+  return {
+    available: true,
+    score: null,
+    observations: portfolioReturns.length,
+    sharpe,
+    sortino,
+    calmar,
+    informationRatio,
+    annualizedReturn,
+    maxDrawdown,
+    currentDrawdown,
+    riskFreeAnnualPct: Number(riskFreeAnnualPct),
+    period: portfolioPeriod.period,
+    reason: informationRatio == null ? 'Benchmark information ratio is unavailable for this period.' : `Information ratio versus the selected benchmark is ${informationRatio.toFixed(2)}.`,
+  }
 }
 
 export function concentrationLiquidityScore(positions = []) {

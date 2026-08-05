@@ -105,6 +105,7 @@ def report_snapshot(payload):
         "hypothetical_basis": payload.get("hypothetical_basis"),
         "benchmark_history": payload.get("benchmark_history"),
         "source_status": payload.get("source_status"),
+        "market": payload.get("market"),
         "research": [report_row(row) for row in active(payload.get("research", []))],
         "portfolio_coverage": [report_row(row) for row in active(payload.get("portfolio_coverage", []))],
         "screen_universe": [report_row(row) for row in active(payload.get("screen_universe", []))],
@@ -1178,6 +1179,7 @@ def run():
             "market_behavior_weights": SETTINGS.get("market_behavior", {}).get("weights", {}),
             "modifiers": SETTINGS.get("modifiers", {}),
             "position_risk": SETTINGS.get("position_risk", {}),
+            "portfolio_analytics": SETTINGS.get("portfolio_analytics", {}),
             "principle": "Fundamentals lead. Price behavior and news modify confidence; they do not replace business quality.",
             "evidence": {
                 "valuation": "EV/EBITDA and EV/EBIT carry the valuation bucket (Loughran & Wellman's "

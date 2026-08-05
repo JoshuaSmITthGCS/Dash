@@ -100,6 +100,36 @@
     "minimum_annualized_volatility_pct": 5.0,
     "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, confidence, and published-guidance subscores. Only confidence below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap."
   },
+  "portfolio_analytics": {
+    "trading_days_per_year": 252,
+    "performance_minimum_observations": 20,
+    "risk_free_series": "fed_funds",
+    "risk_free_fallback_annual_pct": 0.0,
+    "xirr_minimum_days": 30,
+    "xirr_lower_bound": -0.999,
+    "xirr_upper_bound": 100.0,
+    "xirr_tolerance": 0.0001,
+    "xirr_max_iterations": 120,
+    "correlation_lookback_days": 252,
+    "correlation_minimum_observations": 60,
+    "eigenvalue_tolerance": 0.0000000001,
+    "eigenvalue_max_iterations": 100,
+    "diversification_target_effective_holdings": 12.0,
+    "diversification_target_effective_sectors": 6.0,
+    "diversification_target_effective_industries": 10.0,
+    "diversification_ratio_target": 1.5,
+    "diversification_score_weights": {
+      "holding_hhi": 0.25,
+      "sector_hhi": 0.15,
+      "industry_hhi": 0.1,
+      "effective_bets": 0.35,
+      "diversification_ratio": 0.15
+    },
+    "largest_holding_warning_pct": 25.0,
+    "largest_sector_warning_pct": 35.0,
+    "top_five_warning_pct": 70.0,
+    "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration."
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

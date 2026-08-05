@@ -25,6 +25,8 @@ class FredTests(unittest.TestCase):
         self.assertEqual(regime["coverage"], 1.0)
         self.assertEqual(regime["notice"], NOTICE)
         self.assertNotIn("observations", regime)
+        self.assertEqual(regime["risk_free_rates"]["fed_funds"]["annual_percent"], 4.0)
+        self.assertEqual(regime["risk_free_rates"]["fed_funds"]["series_id"], "DFF")
 
     @patch("fred.requests.get")
     def test_client_omits_missing_observations_and_hides_key(self, get):

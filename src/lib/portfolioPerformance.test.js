@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  actualRecordedValueSeries,
   benchmarkAlternative,
   benchmarkCloseOn,
   fixedBasisAlternative,
@@ -13,6 +14,21 @@ const HISTORY = {
   dates: ['2025-01-06', '2025-04-07', '2025-07-07', '2025-10-06', '2026-01-05'],
   closes: [400, 420, 450, 480, 500],
 }
+
+describe('actualRecordedValueSeries', () => {
+  it('uses the last observation per market date and reports covered settled flows', () => {
+    const result = actualRecordedValueSeries([
+      { marketDate: '2026-01-02', recordedAt: '2026-01-02T15:00:00Z', value: 100 },
+      { marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z', value: 105 },
+      { marketDate: '2026-01-03', recordedAt: '2026-01-03T20:00:00Z', value: 120 },
+    ], [
+      { type: 'deposit', effectiveDate: '2026-01-03', amount: 10 },
+      { type: 'deposit', effectiveDate: '2026-01-03', amount: 5, status: 'processing' },
+    ])
+    expect(result.values).toEqual([105, 120])
+    expect(result.settledFlows).toHaveLength(1)
+  })
+})
 
 describe('benchmarkCloseOn', () => {
   it('uses the last close at or before the purchase date', () => {

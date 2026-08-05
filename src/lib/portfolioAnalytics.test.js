@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore, enrichPortfolio,
-  contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, netInvestedCapital, opportunityCost, performanceRating,
-  planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
+  alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
+  contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
+  planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, sectorLookThrough, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -46,6 +46,14 @@ describe('portfolio report analytics', () => {
     expect(result.returnPct).toBeCloseTo(5.52, 2)
   })
 
+  it('calculates Modified Dietz for a worked mid-period deposit example', () => {
+    const result = modifiedDietzReturn(100, 165, [
+      { type: 'deposit', amount: 50, effectiveDate: '2026-01-06' },
+    ], '2026-01-01', '2026-01-11', true)
+    expect(result.returnPct).toBeCloseTo(12, 8)
+    expect(result.weightedCapital).toBe(125)
+  })
+
   it('excludes processing transfers from actual gains and the observed contribution pace', () => {
     const rows = [
       { type: 'deposit', amount: 60, effectiveDate: '2025-08-04' },
@@ -63,8 +71,12 @@ describe('portfolio report analytics', () => {
   it('aligns exact dates before benchmark and opportunity-cost comparisons', () => {
     const aligned = alignSeries({ period: '1M', dates: ['a', 'b', 'c'], values: [100, 105, 110] }, { dates: ['b', 'c', 'd'], values: [200, 204, 210] })
     expect(aligned.dates).toEqual(['b', 'c'])
-    const performance = performanceRating(aligned.left, aligned.right)
+    const longLeft = { values: Array.from({ length: 25 }, (_, index) => 100 + index), period: '1M' }
+    const longRight = { values: Array.from({ length: 25 }, (_, index) => 100 + index * 0.8), period: '1M' }
+    const performance = performanceMetrics(longLeft, longRight)
     expect(performance.available).toBe(true)
+    expect(performance.score).toBeNull()
+    expect(performance.rating).toBeUndefined()
     const cost = opportunityCost(aligned.left, aligned.right)
     expect(cost.startDate).toBe('b')
   })
@@ -89,6 +101,56 @@ describe('portfolio report analytics', () => {
     const concentrated = diversificationScore([{ ticker: 'AAA', currentValue: 90, priceInfo: { sector: 'Tech', industry: 'Software' } }, { ticker: 'BBB', currentValue: 10, priceInfo: { sector: 'Health', industry: 'Care' } }])
     expect(concentrated.score).toBeLessThan(60)
     expect(concentrated.warnings[0]).toContain('Largest holding')
+  })
+
+  it('computes HHI and effective holdings for a hand-calculated four-position case', () => {
+    const positions = [40, 30, 20, 10].map((currentValue, index) => ({
+      ticker: `P${index}`,
+      currentValue,
+      priceInfo: { sector: `S${index}`, industry: `I${index}` },
+    }))
+    const result = diversificationScore(positions)
+    expect(result.hhi).toBeCloseTo(0.3, 10)
+    expect(result.effectiveHoldings).toBeCloseTo(10 / 3, 10)
+    expect(result.rawHoldingCount).toBe(4)
+  })
+
+  it('collapses perfectly correlated holdings to one effective bet', () => {
+    const dates = Array.from({ length: 70 }, (_, index) => `2026-01-${String(index + 1).padStart(2, '0')}`)
+    const closes = dates.map((_, index) => 100 * (1.01 ** index))
+    const positions = ['AAA', 'BBB'].map((ticker) => ({
+      ticker,
+      currentValue: 50,
+      priceInfo: { history: { dates, closes } },
+    }))
+    const result = correlationDiversification(positions)
+    expect(result.available).toBe(true)
+    expect(result.effectiveBets).toBeCloseTo(1, 6)
+    expect(result.diversificationRatio).toBeCloseTo(1, 6)
+  })
+
+  it('looks through an ETF before aggregating direct sector exposure', () => {
+    const positions = [
+      { ticker: 'VOO', currentValue: 50, priceInfo: { sector: 'ETF' } },
+      { ticker: 'MSFT', currentValue: 50, priceInfo: { sector: 'Technology' } },
+    ]
+    const result = sectorLookThrough(positions, [{
+      ticker: 'VOO',
+      sector_weights: { technology: 0.6, healthcare: 0.4 },
+    }])
+    expect(result.exposures).toEqual([
+      { label: 'Technology', pct: 80 },
+      { label: 'Healthcare', pct: 20 },
+    ])
+    expect(result.unavailableEtfs).toEqual([])
+  })
+
+  it('flags an ETF when sector look-through is unavailable', () => {
+    const result = sectorLookThrough([
+      { ticker: 'VOO', currentValue: 100, priceInfo: { sector: 'ETF' } },
+    ], [{ ticker: 'VOO', sector_weights: null }])
+    expect(result.unavailableEtfs).toEqual(['VOO'])
+    expect(result.exposures[0].label).toBe('ETF look-through unavailable')
   })
 
   it('issues a clearly provisional score without turning missing components into zero', () => {

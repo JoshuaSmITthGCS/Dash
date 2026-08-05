@@ -21,6 +21,36 @@ export function latestBenchmarkClose(history) {
   return closes.length ? closes[closes.length - 1] : null
 }
 
+/**
+ * Uses the last stored account valuation on each market date as the recorded-value series.
+ * Settled external flows are attached to the covered window so the UI can distinguish this
+ * observed account path from a backtest that applies today's shares to old closes.
+ */
+export function actualRecordedValueSeries(snapshots = [], transactions = []) {
+  const byDate = new Map()
+  snapshots.filter((row) => row?.marketDate && Number.isFinite(Number(row.value)))
+    .sort((left, right) => String(left.recordedAt || '').localeCompare(String(right.recordedAt || '')))
+    .forEach((row) => byDate.set(row.marketDate, Number(row.value)))
+  const rows = [...byDate.entries()].sort((left, right) => left[0].localeCompare(right[0]))
+  if (rows.length < 2) return null
+  const startDate = rows[0][0]
+  const endDate = rows.at(-1)[0]
+  const settledFlows = transactions.filter((row) => {
+    const date = row.effectiveDate || row.date
+    return ['deposit', 'withdrawal'].includes(row.type)
+      && date >= startDate
+      && date <= endDate
+      && !['pending', 'processing'].includes(row.status)
+      && Number.isFinite(Number(row.amount))
+  })
+  return {
+    dates: rows.map(([date]) => date),
+    values: rows.map(([, value]) => value),
+    settledFlows,
+    methodology: `Actual account values recorded in Firestore. ${settledFlows.length} settled external cash flow${settledFlows.length === 1 ? '' : 's'} falls inside this window.`,
+  }
+}
+
 /** Last usable close at or before a date for any aligned price history. */
 export function closeOnDates(dates, closes, date) {
   const target = String(date || '').slice(0, 10)

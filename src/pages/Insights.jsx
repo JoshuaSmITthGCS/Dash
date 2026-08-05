@@ -9,7 +9,7 @@ import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext
 import { signedPct } from '../lib/formatters.js'
 import {
   benchmarkHistoryFromSnapshot, contributionAdjustedPerformance, currentHoldingsSeries,
-  diversificationScore, enrichPortfolio, latestMarketDayReturn,
+  diversificationScore, enrichPortfolio, latestMarketDayReturn, portfolioReturnSummary,
 } from '../lib/portfolioAnalytics.js'
 import {
   alignForChart, beatMarketStreak, benchmarkShadowPortfolio, detectMilestones,
@@ -34,6 +34,7 @@ export default function Insights() {
   const { currentUser } = useAuth()
   const { preferences } = usePreferences()
   const { data: benchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark}.json`)
+  const { data: etfData } = useData('etfs.json')
   const [shareStatus, setShareStatus] = useState('')
 
   if (loading || portfolioLoading || !currentUser) return <Loading />
@@ -48,7 +49,8 @@ export default function Insights() {
   const uninvestedCash = tracking.trackingState?.cashTrackingEnabled ? Number(tracking.trackingState.cashBalance || 0) : 0
   const trackedAccountValue = (portfolio.totalValue || 0) + uninvestedCash
   const contributionPerformance = contributionAdjustedPerformance(trackedAccountValue, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
-  const diversification = diversificationScore(portfolio.positions)
+  const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
+  const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
 
   const actualDaily = snapshotDailySeries(tracking.snapshots)
   const shadow = benchmarkHistory ? benchmarkShadowPortfolio(tracking.activities, benchmarkHistory) : { available: false }
@@ -64,7 +66,7 @@ export default function Insights() {
     .filter((row) => row.timing.available)
 
   const milestones = detectMilestones({ snapshots: tracking.snapshots, trackedAccountValue, contributionPerformance })
-  const mood = portfolioMood({ returnPct: contributionPerformance.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
+  const mood = portfolioMood({ returnPct: returnSummary.strategy.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
 
   const holdingsSeries = currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
   const todayMove = latestMarketDayReturn(holdingsSeries)
@@ -79,7 +81,7 @@ export default function Insights() {
     const lines = [
       `${mood.emoji} ${mood.label} — my portfolio today`,
       todayMove ? `Today: ${signedPct(todayMove.returnPct, 2)} (${money(Math.abs(todayMove.dollarReturn))})` : null,
-      contributionPerformance.available ? `Vs. contributions: ${signedPct(contributionPerformance.returnPct, 1)}` : null,
+      returnSummary.strategy.available ? `Strategy return: ${signedPct(returnSummary.strategy.returnPct, 1)}` : null,
       topMover ? `Biggest mover: ${topMover.ticker} ${signedPct(topMover.dailyMovePct, 1)}` : null,
       beatStreak.available && beatStreak.days >= 1 ? `${beatStreak.beating ? 'Beating' : 'Trailing'} ${benchmarkLabel} for ${beatStreak.days} day${beatStreak.days === 1 ? '' : 's'} running` : null,
     ].filter(Boolean)
@@ -115,7 +117,8 @@ export default function Insights() {
       </div>
       <div className="insights-recap-stats">
         <div><span>Today</span><b style={{ color: moveColor(todayMove?.dollarReturn) }}>{todayMove ? `${signedPct(todayMove.returnPct, 2)} · ${money(Math.abs(todayMove.dollarReturn))}` : '—'}</b></div>
-        <div><span>Vs. contributions</span><b style={{ color: moveColor(contributionPerformance.returnPct) }}>{contributionPerformance.available ? signedPct(contributionPerformance.returnPct, 1) : '—'}</b></div>
+        <div><span>Strategy return (time-weighted)</span><b style={{ color: moveColor(returnSummary.strategy.returnPct) }}>{returnSummary.strategy.available ? signedPct(returnSummary.strategy.returnPct, 1) : 'Unavailable'}</b></div>
+        <div><span>Your return (money-weighted, includes timing of deposits)</span><b style={{ color: moveColor(returnSummary.moneyWeighted.rate) }}>{returnSummary.moneyWeighted.available ? signedPct(returnSummary.moneyWeighted.rate, 1) : 'Unavailable'}</b></div>
         {topMover && <div><span>Today's biggest mover</span><b style={{ color: moveColor(topMover.dailyMovePct) }}>{topMover.ticker} {signedPct(topMover.dailyMovePct, 1)}</b></div>}
         {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${benchmarkLabel}` : `Trailing ${benchmarkLabel}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
       </div>
