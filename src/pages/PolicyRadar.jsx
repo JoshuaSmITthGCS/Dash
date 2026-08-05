@@ -7,6 +7,7 @@ function NewsCard({ item, index }) {
     <div>
       <span className="chip">{item.ticker}</span>{' '}
       <span className="chip">{item.source || 'Unknown source'}</span>{' '}
+      <span className="chip">{item.content_type === 'filing' ? 'Source filing' : 'News commentary'}</span>{' '}
       {item.research_score != null && <span className="chip">Score {item.research_score}</span>}
     </div>
     <strong>{item.title}</strong>

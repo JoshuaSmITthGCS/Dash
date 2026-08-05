@@ -23,7 +23,7 @@
     "schema_version": {
       "_comment": "Integer, additive-only. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js); writers never rename or remove a field.",
       "type": "integer",
-      "const": 4
+      "const": 5
     },
     "model_version": {
       "type": "string",
@@ -134,6 +134,45 @@
                 "maximum": 100
               }
             }
+          },
+          "sentiment_detail": {
+            "type": "object",
+            "required": [
+              "article_count",
+              "raw_article_count",
+              "coverage",
+              "window_days",
+              "full_coverage_article_count",
+              "syndicated_copies_removed",
+              "discarded_low_confidence",
+              "weighting_method",
+              "articles"
+            ],
+            "properties": {
+              "article_count": {"type": "integer", "minimum": 0},
+              "raw_article_count": {"type": "integer", "minimum": 0},
+              "coverage": {"type": "number", "minimum": 0, "maximum": 1},
+              "window_days": {"type": "integer", "minimum": 1},
+              "full_coverage_article_count": {"type": "integer", "minimum": 6},
+              "syndicated_copies_removed": {"type": "integer", "minimum": 0},
+              "discarded_low_confidence": {"type": "integer", "minimum": 0},
+              "weighting_method": {"enum": ["recency_source_filing_entity_novelty"]},
+              "articles": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["content_type", "source_quality_tier", "entity_confidence", "composite_weight"],
+                  "properties": {
+                    "content_type": {"enum": ["filing", "commentary"]},
+                    "source_quality_tier": {"type": "string"},
+                    "entity_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                    "composite_weight": {"type": "number", "minimum": 0}
+                  },
+                  "additionalProperties": true
+                }
+              }
+            },
+            "additionalProperties": true
           },
           "recommendation": {
             "type": "object",
@@ -421,6 +460,9 @@
           "type": "object"
         },
         "market_behavior_weights": {
+          "type": "object"
+        },
+        "news_intelligence": {
           "type": "object"
         },
         "evidence": {

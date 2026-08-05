@@ -64,6 +64,23 @@ describe('advisor migrations', () => {
     })
   })
 
+  it('labels pre-weighting news detail without inventing weighted evidence', () => {
+    const migrated = migrate('advisor', {
+      schema_version: 4,
+      research: [{ ticker: 'AAA', sentiment_detail: { article_count: 3, average: 0.2 } }],
+      news: [{ ticker: 'AAA', title: 'Legacy story' }],
+    })
+    expect(migrated.research[0].sentiment_detail).toMatchObject({
+      article_count: 3,
+      weighting_method: 'legacy_flat_average',
+      articles: [],
+    })
+    expect(migrated.news[0]).toMatchObject({
+      content_type: 'commentary',
+      source_quality_tier: 'legacy_unclassified',
+    })
+  })
+
   it('does not downgrade a payload newer than this build', () => {
     // Additive-only means a newer writer just adds fields an older reader ignores.
     const future = { schema_version: 99, research: [], brand_new_field: 1 }

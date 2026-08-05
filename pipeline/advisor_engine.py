@@ -1,12 +1,13 @@
 """Explainable, fundamentals-first research scoring. No political inputs."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from insider_signal import score_insider_activity
 from risk_metrics import (annualized_volatility, beta_vs_benchmark, daily_returns,
                           drawdown_score, low_beta_score, max_drawdown, momentum_12_1,
                           ratio_to_score, sharpe_ratio, sortino_ratio)
 from scorer import SETTINGS, valuation_score
+from news_intelligence import weighted_sentiment
 from recommendation_policy_v2 import build_recommendation_v2
 from scoring_v2 import build_v2_analysis
 
@@ -35,10 +36,8 @@ DEFAULT_TECHNICAL_WEIGHTS = {
 }
 TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weights"),
                              DEFAULT_TECHNICAL_WEIGHTS)
-# How many days of headlines are aggregated. Tetlock's result is that a single day of
-# sentiment mostly mean-reverts within days while a week's aggregate extends predictability,
-# so the window is a week rather than a snapshot.
-SENTIMENT_WINDOW_DAYS = int((SETTINGS.get("market_behavior") or {}).get("sentiment_window_days", 7))
+NEWS_INTELLIGENCE = SETTINGS["news_intelligence"]
+SENTIMENT_WINDOW_DAYS = int(NEWS_INTELLIGENCE["window_days"])
 FUNDAMENTAL_METRIC_NAMES = {
     metric for weights in SETTINGS["fundamentals"]["metric_weights"].values()
     for metric in weights
@@ -211,27 +210,6 @@ def technical_score_from_parts(parts, treatment, reversal_weight=None):
     return score, {"coverage": coverage, "weights": weights, "parts": values}
 
 
-def _published_within(item, days, now=None):
-    """Whether an article falls inside the aggregation window. Undated articles are kept."""
-    stamp = item.get("published_at")
-    if not stamp:
-        return True
-    text = str(stamp)
-    # Alpha Vantage stamps as YYYYMMDDTHHMMSS; Marketaux uses ISO 8601.
-    for parse in (lambda t: datetime.strptime(t[:15], "%Y%m%dT%H%M%S").replace(tzinfo=timezone.utc),
-                  lambda t: datetime.fromisoformat(t.replace("Z", "+00:00"))):
-        try:
-            published = parse(text)
-            break
-        except (ValueError, TypeError):
-            continue
-    else:
-        return True
-    if published.tzinfo is None:
-        published = published.replace(tzinfo=timezone.utc)
-    return published >= (now or datetime.now(timezone.utc)) - timedelta(days=days)
-
-
 def sentiment_score(news_items, ticker, *, window_days=None, now=None):
     """Aggregate entity-level headline sentiment over a window, not a single snapshot.
 
@@ -241,27 +219,10 @@ def sentiment_score(news_items, ticker, *, window_days=None, now=None):
     So this aggregates a week of coverage and the blend weights it as a tilt (4%), not as a
     core component.
     """
-    window_days = SENTIMENT_WINDOW_DAYS if window_days is None else window_days
-    scores = []
-    for item in news_items:
-        if not _published_within(item, window_days, now):
-            continue
-        for row in item.get("ticker_sentiment", []):
-            if row.get("ticker") == ticker:
-                try:
-                    scores.append(float(row.get("ticker_sentiment_score")))
-                except (TypeError, ValueError):
-                    pass
-    if not scores:
-        return 50.0, {"article_count": 0, "average": None, "coverage": 0.0,
-                      "window_days": window_days}
-    avg = sum(scores) / len(scores)
-    return round(clamp(50 + avg * 100), 1), {
-        "article_count": len(scores), "average": round(avg, 3),
-        # Confidence scales with how many articles actually mention the company. One
-        # headline is an anecdote; five is a read on coverage.
-        "coverage": min(1.0, len(scores) / 5), "window_days": window_days,
-    }
+    config = {**NEWS_INTELLIGENCE}
+    config["window_days"] = SENTIMENT_WINDOW_DAYS if window_days is None else window_days
+    config["window_delta"] = timedelta(days=config["window_days"])
+    return weighted_sentiment(news_items, ticker, config, now=now)
 
 
 # ---------------- post-blend modifiers ----------------

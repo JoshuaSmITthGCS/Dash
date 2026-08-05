@@ -1,8 +1,8 @@
 {
   "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
   "model": {
-    "semantic_version": "3.1.0",
-    "advisor_schema_version": 4,
+    "semantic_version": "3.2.0",
+    "advisor_schema_version": 5,
     "etf_schema_version": 5,
     "finance_schema_version": 2,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
@@ -828,6 +828,60 @@
     "market_behavior": 0.18,
     "news_sentiment": 0.04
   },
+  "news_intelligence": {
+    "_comment": "News remains a 4% tilt. Articles are filtered by entity confidence, deduplicated by title similarity, and weighted by exponential recency, source quality, and whether the item is a source-of-record filing or commentary.",
+    "window_days": 7,
+    "recency_half_life_days": 3,
+    "full_coverage_article_count": 8,
+    "title_similarity_threshold": 0.82,
+    "entity_confidence_minimum": 0.25,
+    "entity_confidence_default": 1.0,
+    "entity_confidence_fraction_max": 1.0,
+    "entity_confidence_percent_divisor": 100.0,
+    "marketaux_primary_match_score_minimum": 25.0,
+    "alpha_vantage_primary_relevance_minimum": 0.8,
+    "neutral_score": 50.0,
+    "sentiment_score_scale": 100.0,
+    "score_minimum": 0.0,
+    "score_maximum": 100.0,
+    "seconds_per_day": 86400.0,
+    "undated_recency_weight": 0.5,
+    "content_type_weights": {
+      "filing": 1.35,
+      "commentary": 1.0
+    },
+    "filing_markers": [
+      "sec.gov/archives",
+      "sec edgar",
+      "form 8-k",
+      "form 10-q",
+      "form 10-k"
+    ],
+    "source_quality_tier_order": [
+      "regulatory_primary",
+      "established_press",
+      "aggregator_syndicated"
+    ],
+    "source_quality_default_tier": "neutral",
+    "source_quality": {
+      "regulatory_primary": {
+        "weight": 1.5,
+        "matches": ["sec.gov", "sec edgar", "investor relations", "business wire", "globe newswire"]
+      },
+      "established_press": {
+        "weight": 1.2,
+        "matches": ["reuters", "bloomberg", "financial times", "wall street journal", "associated press", "cnbc"]
+      },
+      "aggregator_syndicated": {
+        "weight": 0.65,
+        "matches": ["yahoo finance", "msn", "newsbreak", "finanzen.net", "marketscreener"]
+      },
+      "neutral": {
+        "weight": 1.0,
+        "matches": []
+      }
+    }
+  },
   "market_behavior": {
     "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant.",
     "weights": {
@@ -837,7 +891,6 @@
       "drawdown_resilience": 0.14,
       "volume_confirmation": 0.08,
       "low_beta": 0.06
-    },
-    "sentiment_window_days": 7
+    }
   }
 }

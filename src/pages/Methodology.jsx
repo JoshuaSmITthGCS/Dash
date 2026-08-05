@@ -70,9 +70,9 @@ export default function Methodology() {
           short-term reversal that runs against it), Sortino and Sharpe ratios on the stock’s
           own returns, relative strength versus SPY, one-year maximum drawdown, and whether
           advances carry heavier volume than declines. Low beta is rewarded rather than
-          volatility punished. News sentiment is a small tilt, not a component: headline
-          sentiment largely mean-reverts within days, so it is aggregated over a week and
-          capped well below the other inputs.
+          volatility punished. News sentiment is a small tilt, not a component. Articles
+          decay with age, low-confidence entity matches are discarded, syndicated copies
+          count once, and source-of-record filings are labelled separately from commentary.
         </p>
       </section>
       <section className="card card-pad">

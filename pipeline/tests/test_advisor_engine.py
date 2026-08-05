@@ -272,6 +272,58 @@ class SentimentWindowTests(unittest.TestCase):
         self.assertEqual(score, 50.0)
         self.assertEqual(detail["coverage"], 0.0)
 
+    def test_nine_syndicated_copies_count_as_one_article(self):
+        now = datetime(2026, 8, 2, tzinfo=timezone.utc)
+        copies = [
+            {
+                "title": "Test Corp beats quarterly expectations",
+                "url": f"https://publisher-{index}.example/story",
+                "source": f"Publisher {index}",
+                "published_at": "2026-08-02T10:00:00Z",
+                "ticker": "TEST",
+                "ticker_sentiment": [{
+                    "ticker": "TEST",
+                    "ticker_sentiment_score": 0.4,
+                    "relevance_score": 82,
+                }],
+            }
+            for index in range(9)
+        ]
+
+        score, detail = sentiment_score(copies, "TEST", now=now)
+
+        self.assertGreater(score, 50)
+        self.assertEqual(detail["raw_article_count"], 9)
+        self.assertEqual(detail["article_count"], 1)
+        self.assertEqual(detail["syndicated_copies_removed"], 8)
+        self.assertEqual(detail["coverage"], 1 / detail["full_coverage_article_count"])
+
+    def test_low_confidence_entity_match_is_discarded(self):
+        article = self._article("TEST", -0.9, "20260801T120000")
+        article["ticker_sentiment"][0]["relevance_score"] = 10
+
+        score, detail = sentiment_score([article], "TEST",
+                                        now=datetime(2026, 8, 2, tzinfo=timezone.utc))
+
+        self.assertEqual(score, 50.0)
+        self.assertEqual(detail["discarded_low_confidence"], 1)
+
+    def test_filing_and_commentary_are_labelled_in_weight_detail(self):
+        now = datetime(2026, 8, 2, tzinfo=timezone.utc)
+        filing = self._article("TEST", 0.3, "20260802T100000")
+        filing.update({"title": "Test Corp files Form 8-K", "source": "SEC EDGAR",
+                       "url": "https://www.sec.gov/Archives/example"})
+        commentary = self._article("TEST", 0.2, "20260802T100000")
+        commentary.update({"title": "Analysts discuss Test Corp", "source": "Example Finance",
+                           "url": "https://example.com/analysis"})
+
+        _, detail = sentiment_score([filing, commentary], "TEST", now=now)
+
+        self.assertEqual(detail["filing_count"], 1)
+        self.assertEqual(detail["commentary_count"], 1)
+        self.assertEqual({row["content_type"] for row in detail["articles"]},
+                         {"filing", "commentary"})
+
 
 class InsiderModifierTests(unittest.TestCase):
     def test_opportunistic_cluster_buying_lifts_the_score(self):

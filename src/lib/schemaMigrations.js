@@ -99,6 +99,34 @@ function advisorV3ToV4(payload) {
   }
 }
 
+// v4 -> v5: news scoring now records its filtering and weighting inputs. Historical
+// snapshots retain their old flat score and are labelled as legacy so the interface never
+// implies recency, source, entity-confidence, or novelty processing that did not occur.
+function advisorV4ToV5(payload) {
+  const migrateRow = (row) => ({
+    ...row,
+    sentiment_detail: {
+      weighting_method: 'legacy_flat_average',
+      full_coverage_article_count: modelSettings.news_intelligence.full_coverage_article_count,
+      syndicated_copies_removed: 0,
+      discarded_low_confidence: 0,
+      articles: [],
+      ...(row.sentiment_detail || {}),
+    },
+  })
+  return {
+    ...payload,
+    schema_version: 5,
+    research: (payload.research || []).map(migrateRow),
+    portfolio_coverage: (payload.portfolio_coverage || []).map(migrateRow),
+    news: (payload.news || []).map((item) => ({
+      content_type: 'commentary',
+      source_quality_tier: 'legacy_unclassified',
+      ...item,
+    })),
+  }
+}
+
 // v2 -> v3: peer-group ranking. Older ETF snapshots ranked every fund against one mixed
 // batch, so their ranks are cross-asset-class whether they said so or not. Labelling them
 // is more honest than leaving the field blank and letting the UI imply a like-for-like rank.
@@ -144,7 +172,7 @@ function etfV4ToV5(payload) {
 }
 
 const MIGRATIONS = {
-  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3, 3: advisorV3ToV4 },
+  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3, 3: advisorV3ToV4, 4: advisorV4ToV5 },
   etfs: { 2: etfV2ToV3, 3: etfV3ToV4, 4: etfV4ToV5 },
 }
 

@@ -13,11 +13,13 @@ from datetime import datetime, timezone
 import requests
 
 from alpha_vantage import load_local_env
-from common import HERE
+from common import HERE, load_json
+from news_intelligence import annotate_article
 
 BASE_URL = "https://api.marketaux.com/v1/news/all"
 CACHE_DIR = os.path.join(HERE, "cache", "marketaux")
-MIN_PRIMARY_MATCH_SCORE = 25.0
+NEWS_CONFIG = (load_json("settings.json", from_config=True) or {})["news_intelligence"]
+MIN_PRIMARY_MATCH_SCORE = NEWS_CONFIG["marketaux_primary_match_score_minimum"]
 
 
 class MarketauxError(RuntimeError):
@@ -94,7 +96,7 @@ def advisor_articles_for_symbols(payload, symbols):
         if not matching:
             continue
         average = sum(scores) / len(scores) if scores else None
-        result.append({
+        result.append(annotate_article({
             "title": article.get("title"),
             "url": article.get("url"),
             "source": article.get("source"),
@@ -110,7 +112,7 @@ def advisor_articles_for_symbols(payload, symbols):
                 }
                 for entity in matching
             ],
-        })
+        }, NEWS_CONFIG))
     return result
 
 

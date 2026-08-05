@@ -26,6 +26,7 @@ from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
+from news_intelligence import annotate_article, deduplicate_articles
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
 from normalization_report import write_normalization_report
@@ -44,7 +45,8 @@ from validation.ic_harness import (append_refresh as append_ic_refresh,
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
-MIN_ALPHA_PRIMARY_RELEVANCE = 0.8
+NEWS_CONFIG = SETTINGS["news_intelligence"]
+MIN_ALPHA_PRIMARY_RELEVANCE = NEWS_CONFIG["alpha_vantage_primary_relevance_minimum"]
 # How many shortlisted companies get the multi-request financial-statement treatment.
 EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
 PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
@@ -489,31 +491,19 @@ def compact_news(payload, symbol):
         if relevance < MIN_ALPHA_PRIMARY_RELEVANCE:
             continue
         primary_entity = {**primary_entity, "ticker": primary_ticker}
-        items.append({
+        items.append(annotate_article({
             "title": row.get("title"), "url": row.get("url"), "source": row.get("source"),
             "published_at": row.get("time_published"), "summary": row.get("summary"),
             "overall_sentiment_score": number(row.get("overall_sentiment_score"), 3),
             "ticker_sentiment": [primary_entity],
             "ticker": primary_ticker,
-        })
+        }, NEWS_CONFIG))
     return items
 
 
 def latest_unique_news(items, limit=30):
-    """Newest article per URL, preserving the primary ticker assigned by its adapter."""
-    result = []
-    seen = set()
-    ordered = sorted(items, key=lambda item: item.get("published_at") or "", reverse=True)
-    for item in ordered:
-        url = item.get("url")
-        identity = url or (item.get("title"), item.get("ticker"))
-        if identity in seen:
-            continue
-        seen.add(identity)
-        result.append(item)
-        if len(result) == limit:
-            break
-    return result
+    """Newest novel stories, preserving the primary ticker assigned by its adapter."""
+    return deduplicate_articles(items, NEWS_CONFIG["title_similarity_threshold"])[:limit]
 
 
 def fetch_discovery_news(client, symbols, limit=NEWS_DISCOVERY_LIMIT):
@@ -1203,6 +1193,7 @@ def run():
             "modifiers": SETTINGS.get("modifiers", {}),
             "position_risk": SETTINGS.get("position_risk", {}),
             "portfolio_analytics": SETTINGS.get("portfolio_analytics", {}),
+            "news_intelligence": SETTINGS.get("news_intelligence", {}),
             "principle": "Fundamentals lead. Price behavior and news modify confidence; they do not replace business quality.",
             "evidence": {
                 "valuation": "EV/EBITDA and EV/EBIT carry the valuation bucket (Loughran & Wellman's "
@@ -1216,8 +1207,8 @@ def run():
                 "market_behavior": "12-1 momentum (Jegadeesh & Titman 1993) plus Sharpe/Sortino and a "
                                    "low-beta reward (Frazzini & Pedersen 2014), using the same functions "
                                    "as the ETF model.",
-                "news_sentiment": "Weighted as a 4% tilt over a 7-day window; daily headline sentiment "
-                                  "largely mean-reverts (Tetlock 2007).",
+                "news_sentiment": "Weighted as a 4% tilt using recency decay, source quality, source-of-record "
+                                  "filing labels, entity confidence, and title-level novelty.",
                 "insider_activity": "Form 4 trades split routine vs opportunistic per Cohen, Malloy & "
                                     "Pomorski (JF 2012); only opportunistic cluster activity scores.",
                 "caveat": "Published factor premia are historical in-sample estimates. They indicate which "

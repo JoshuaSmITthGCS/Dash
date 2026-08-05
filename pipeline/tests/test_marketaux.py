@@ -42,6 +42,21 @@ class MarketauxTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["ticker"], "AMD")
         self.assertEqual(rows[0]["overall_sentiment_score"], 0.4)
+        self.assertEqual(rows[0]["content_type"], "commentary")
+        self.assertIn("source_quality_tier", rows[0])
+
+    def test_sec_item_is_labelled_as_a_source_filing(self):
+        payload = {"data": [{
+            "title": "Issuer files Form 8-K",
+            "url": "https://www.sec.gov/Archives/edgar/data/example",
+            "source": "SEC EDGAR",
+            "entities": [{"symbol": "TEST", "sentiment_score": 0.1, "match_score": 90}],
+        }]}
+
+        rows = advisor_articles(payload, "TEST")
+
+        self.assertEqual(rows[0]["content_type"], "filing")
+        self.assertEqual(rows[0]["source_quality_tier"], "regulatory_primary")
 
     def test_advisor_articles_rejects_secondary_entity(self):
         payload = {"data": [{
