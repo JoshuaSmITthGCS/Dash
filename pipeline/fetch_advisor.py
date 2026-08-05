@@ -7,7 +7,7 @@ import statistics
 import time
 from datetime import datetime, timezone
 
-from advisor_engine import RANKING_WEIGHTS, build_research
+from advisor_engine import RANKING_WEIGHTS, build_research, cross_sectional_challenger
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
@@ -25,7 +25,8 @@ from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
-from scorer import SETTINGS, valuation_score
+from scorer import CrossSectionalNormalizer, SETTINGS, valuation_score
+from normalization_report import write_normalization_report
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals
 from themes import build_theme_screen, empty_screen, load_themes
@@ -71,6 +72,15 @@ def report_row(row):
     structural = (row.get("analysis_v2") or {}).get("structural")
     if structural:
         projected["analysis_v2"] = {"structural": structural}
+    variants = row.get("score_variants") or {}
+    if variants:
+        projected["score_variants"] = {
+            key: {field: variant.get(field) for field in (
+                "variant", "normalization_mode", "score", "base_score", "confidence",
+                "fundamental_categories", "largest_metric_changes",
+            ) if variant.get(field) is not None}
+            for key, variant in variants.items()
+        }
     if history.get("dates") and history.get("closes"):
         projected["history"] = {"dates": history["dates"], "closes": history["closes"]}
     return projected
@@ -102,9 +112,17 @@ def _screen_row(row):
     already be in this lightweight shape (if it was never published to begin with).
     """
     detail = row.get("technical_detail") or {}
+    variants = {
+        key: {field: variant.get(field) for field in (
+            "variant", "normalization_mode", "score", "base_score", "confidence",
+            "fundamental_categories", "largest_metric_changes",
+        ) if variant.get(field) is not None}
+        for key, variant in (row.get("score_variants") or {}).items()
+    }
     return {
         "ticker": row["ticker"], "name": row.get("name"), "sector": row.get("sector"),
         "price": row.get("price"), "score": row["score"], "stance": row.get("stance"),
+        "score_variants": variants or None,
         "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
                              if detail.get(key) is not None},
@@ -955,6 +973,25 @@ def run():
     )
     enriched_count = enrich(contexts, extended_limit, delay, statement_priority)
 
+    challenger_cfg = (SETTINGS.get("challengers") or {}).get(
+        "cross_sectional_normalization", {}
+    )
+    cross_normalizer = None
+    normalization_fit_source = None
+    if challenger_cfg.get("enabled"):
+        if universe_mode == "full":
+            cross_normalizer = CrossSectionalNormalizer(
+                ({**context["snapshot"], "ticker": context["symbol"]} for context in contexts),
+                challenger_cfg,
+            )
+            normalization_fit_source = "current_full_refresh"
+        else:
+            cross_normalizer = CrossSectionalNormalizer.from_published(
+                previous_payload.get("normalization_distributions")
+            )
+            if cross_normalizer:
+                normalization_fit_source = "prior_full_refresh"
+
     # Valuation is scored once up front so 'cheap for its sector' can be measured against peers
     # before the final score is assembled.
     peer_diagnostics = canonical_percentiles([
@@ -988,6 +1025,20 @@ def run():
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["alpha_enriched"] = context["alpha_enriched"]
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
+        champion_variant = {
+            "variant": "bands_champion",
+            "normalization_mode": SETTINGS.get("normalization_mode", "bands"),
+            "score": row["score"],
+            "base_score": row["base_score"],
+            "confidence": row["confidence"],
+            "components": row["components"],
+            "fundamental_categories": row["fundamental_categories"],
+        }
+        row["score_variants"] = {"champion": champion_variant}
+        if cross_normalizer:
+            row["score_variants"]["challenger"] = cross_sectional_challenger(
+                row, context["snapshot"], cross_normalizer,
+            )
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
@@ -1064,6 +1115,14 @@ def run():
     macro = macro_context(client) if client else {}
     generated_at = datetime.now(timezone.utc).isoformat()
     fundamentals_cfg = SETTINGS["fundamentals"]
+    normalization_comparison = None
+    if cross_normalizer:
+        normalization_comparison = write_normalization_report(
+            research,
+            challenger_cfg["largest_movers_count"],
+            challenger_cfg["sector_minimum_count"],
+            generated_at,
+        )
     for row in research:
         row.setdefault("data_fetched_at", generated_at)
     payload = {
@@ -1082,6 +1141,11 @@ def run():
             "challengers": list(challengers),
             "priority_count": len(incumbents) + len(challengers),
         },
+        "normalization_distributions": {
+            **(cross_normalizer.published_distributions() if cross_normalizer else {}),
+            "fit_source": normalization_fit_source,
+        },
+        "normalization_comparison": normalization_comparison,
         "methodology": {
             "weights": RANKING_WEIGHTS,
             "fundamental_weights": fundamentals_cfg["category_weights"],

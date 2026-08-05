@@ -128,6 +128,24 @@ def latest_values(ticker, rows=None):
     return values
 
 
+def latest_snapshots(symbols=None, rows=None):
+    """Latest actually observed raw snapshot for each requested ticker.
+
+    This is intended for offline challenger comparisons. It never invents or backfills a
+    value, and each returned row retains the latest field value that had reached the store.
+    """
+    allowed = {str(symbol).upper() for symbol in symbols} if symbols is not None else None
+    snapshots = {}
+    for row in rows if rows is not None else _read(OBSERVATIONS):
+        ticker = str(row.get("ticker") or "").upper()
+        if not ticker or (allowed is not None and ticker not in allowed):
+            continue
+        snapshot = snapshots.setdefault(ticker, {"ticker": ticker})
+        snapshot.update(row.get("values") or {})
+        snapshot["observed_at"] = row.get("observed_at")
+    return list(snapshots.values())
+
+
 def diff_revisions(ticker, previous, current, observed_at):
     """Rows for every field whose previously-observed value changed.
 

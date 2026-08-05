@@ -5,6 +5,18 @@
     "advisor_schema_version": 3,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
   },
+  "normalization_mode": "bands",
+  "challengers": {
+    "cross_sectional_normalization": {
+      "enabled": true,
+      "normalization_mode": "cross_sectional",
+      "winsor_lower_percentile": 0.01,
+      "winsor_upper_percentile": 0.99,
+      "sector_minimum_count": 8,
+      "largest_movers_count": 20,
+      "_comment": "The live champion remains on bands. The challenger fits metric distributions on the complete refreshed universe and publishes beside it."
+    }
+  },
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

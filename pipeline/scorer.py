@@ -14,6 +14,7 @@ Output labels are research tiers, never 'BUY':
 """
 
 from collections import defaultdict
+from bisect import bisect_left, bisect_right
 from datetime import datetime, timezone
 
 from common import (LOG, data_mode, load_json, save_json, days_between, today_iso,
@@ -174,6 +175,18 @@ FINANCIAL_EXEMPT = ("price_to_book", "debt_to_equity", "current_ratio", "net_deb
 TANGIBLE_BOOK_SECTORS = ("Financial Services", "Financials", "Financial", "Real Estate",
                          "Utilities", "Energy", "Basic Materials", "Materials", "Industrials")
 
+LOWER_IS_BETTER_METRICS = {
+    "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "debt_to_equity",
+    "net_debt_to_ebitda", "stock_comp_to_revenue", "accruals_ratio",
+    "days_sales_outstanding_trend", "inventory_days_trend",
+}
+VALUATION_MULTIPLES = {
+    "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf",
+}
+RANGE_METRICS = {"capex_to_depreciation", "asset_growth"}
+
 
 def altman_score(value, variant, cfg):
     """Score an Altman Z against the bands for the variant it was computed under.
@@ -208,6 +221,195 @@ def sales_multiple_score(snap, cfg):
     return multiple_score(snap.get("price_to_sales"), bands), "price_to_sales"
 
 
+def raw_fundamental_metrics(snap):
+    """Return comparable raw inputs after applying the existing sector applicability rules.
+
+    This is the single raw-input contract shared by normalization fitting and scoring. A
+    financial company never enters an industrial-company distribution, and tangible book
+    only enters sectors where the accounting measure has economic meaning.
+    """
+    snap = snap or {}
+    sector = snap.get("sector") or "default"
+    is_financial = sector in ("Financial Services", "Financials")
+    sales_value = snap.get("ev_to_sales")
+    sales_basis = "ev_to_sales"
+    if sales_value is None:
+        sales_value = snap.get("price_to_sales")
+        sales_basis = "price_to_sales"
+    values = {
+        "peg": snap.get("peg"),
+        "forward_pe": snap.get("forward_pe"),
+        "sales_multiple": None if is_financial else sales_value,
+        "price_to_book": None if is_financial else snap.get("price_to_book"),
+        "price_to_tangible_book": (snap.get("price_to_tangible_book")
+                                   if sector in TANGIBLE_BOOK_SECTORS else None),
+        "ev_to_ebitda": None if is_financial else snap.get("ev_to_ebitda"),
+        "ev_to_ebit": None if is_financial else snap.get("ev_to_ebit"),
+        "ev_to_fcf": None if is_financial else snap.get("ev_to_fcf"),
+        "return_on_equity": snap.get("return_on_equity"),
+        "return_on_invested_capital": snap.get("return_on_invested_capital"),
+        "gross_profits_to_assets": None if is_financial else snap.get("gross_profits_to_assets"),
+        "cash_conversion": snap.get("cash_conversion"),
+        "free_cash_flow_yield": snap.get("free_cash_flow_yield"),
+        "profit_margin": snap.get("profit_margin"),
+        "debt_to_equity": None if is_financial else snap.get("debt_to_equity"),
+        "current_ratio": None if is_financial else snap.get("current_ratio"),
+        "interest_coverage": snap.get("interest_coverage"),
+        "net_debt_to_ebitda": None if is_financial else snap.get("net_debt_to_ebitda"),
+        "altman_z": None if is_financial else snap.get("altman_z"),
+        "revenue_growth": snap.get("revenue_growth"),
+        "earnings_growth": snap.get("earnings_growth"),
+        "fcf_growth_3y": snap.get("fcf_growth_3y"),
+        "operating_margin_trend": snap.get("operating_margin_trend"),
+        "earnings_surprise": snap.get("earnings_surprise"),
+        "net_buyback_yield": snap.get("net_buyback_yield"),
+        "stock_comp_to_revenue": snap.get("stock_comp_to_revenue"),
+        "capex_to_depreciation": snap.get("capex_to_depreciation"),
+        "asset_growth": snap.get("asset_growth"),
+        "accruals_ratio": snap.get("accruals_ratio"),
+        "piotroski_f": snap.get("piotroski_f"),
+        "days_sales_outstanding_trend": snap.get("days_sales_outstanding_trend"),
+        "inventory_days_trend": snap.get("inventory_days_trend"),
+    }
+    return values, {"sales_multiple_basis": sales_basis, "sector": sector}
+
+
+def _quantile(ordered, probability):
+    """Linearly interpolated quantile used for deterministic winsorization."""
+    if not ordered:
+        return None
+    position = (len(ordered) - 1) * probability
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    fraction = position - lower
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction
+
+
+def _range_distance(metric, value, fundamentals):
+    """Distance from a range metric's ideal band, where zero is ideal."""
+    bands = fundamentals[metric]
+    if bands["ideal_min"] <= value <= bands["ideal_max"]:
+        return 0.0
+    return min(abs(value - bands["ideal_min"]), abs(value - bands["ideal_max"]))
+
+
+class CrossSectionalNormalizer:
+    """Fit and reproduce winsorized cross-sectional fundamental metric percentiles.
+
+    Every metric is winsorized against the full refreshed universe. Scoring then uses the
+    sector distribution when it has enough observations, otherwise the universe
+    distribution. Percentile ranks average ties and are flipped for lower-is-better inputs.
+    Range inputs first become distance from their configured ideal band.
+    """
+
+    def __init__(self, snapshots, config=None):
+        config = config or {}
+        self.lower = float(config.get("winsor_lower_percentile", 0.01))
+        self.upper = float(config.get("winsor_upper_percentile", 0.99))
+        self.sector_minimum = int(config.get("sector_minimum_count", 8))
+        self.fundamentals = SETTINGS["fundamentals"]
+        self.distributions = {}
+        self._fit(list(snapshots or []))
+
+    @classmethod
+    def from_published(cls, payload):
+        """Restore an exact prior full-refresh fit for an intraday partial refresh."""
+        if not payload or payload.get("mode") != "cross_sectional" or not payload.get("metrics"):
+            return None
+        normalizer = cls.__new__(cls)
+        first = next(iter(payload["metrics"].values()))
+        normalizer.lower = first.get("winsor_lower_percentile", 0.01)
+        normalizer.upper = first.get("winsor_upper_percentile", 0.99)
+        normalizer.sector_minimum = payload.get("sector_minimum_count", 8)
+        normalizer.fundamentals = SETTINGS["fundamentals"]
+        normalizer.distributions = payload["metrics"]
+        return normalizer
+
+    @staticmethod
+    def _eligible(metric, value):
+        if not isinstance(value, (int, float)):
+            return False
+        return not (metric in VALUATION_MULTIPLES and value <= 0)
+
+    def _transform(self, metric, value):
+        return _range_distance(metric, value, self.fundamentals) if metric in RANGE_METRICS else value
+
+    def _fit(self, snapshots):
+        collected = defaultdict(list)
+        sectors = defaultdict(lambda: defaultdict(list))
+        for snap in snapshots:
+            values, metadata = raw_fundamental_metrics(snap)
+            sector = metadata["sector"]
+            for metric, raw in values.items():
+                if not self._eligible(metric, raw):
+                    continue
+                transformed = float(self._transform(metric, raw))
+                collected[metric].append(transformed)
+                sectors[metric][sector].append(transformed)
+        for metric, raw_values in collected.items():
+            ordered = sorted(raw_values)
+            lower_bound = _quantile(ordered, self.lower)
+            upper_bound = _quantile(ordered, self.upper)
+
+            def winsor(values):
+                return sorted(max(lower_bound, min(upper_bound, value)) for value in values)
+
+            universe = winsor(raw_values)
+            sector_values = {sector: winsor(values) for sector, values in sectors[metric].items()}
+            self.distributions[metric] = {
+                "direction": "distance_from_ideal" if metric in RANGE_METRICS else
+                             ("lower_is_better" if metric in LOWER_IS_BETTER_METRICS else "higher_is_better"),
+                "winsor_lower_percentile": self.lower,
+                "winsor_upper_percentile": self.upper,
+                "winsor_lower_value": lower_bound,
+                "winsor_upper_value": upper_bound,
+                "universe_values": universe,
+                "sector_values": sector_values,
+            }
+
+    def score(self, metric, value, sector):
+        """Map one raw input to 0 through 100 and return its reproducibility metadata."""
+        if value is None:
+            return None, {"normalization_scope": "universe", "status": "missing"}
+        if metric in VALUATION_MULTIPLES and value <= 0:
+            return None, {"normalization_scope": "universe", "status": "not_applicable_nonpositive"}
+        distribution = self.distributions.get(metric)
+        if not distribution:
+            return None, {"normalization_scope": "universe", "status": "insufficient_universe"}
+        sector_values = distribution["sector_values"].get(sector, [])
+        if len(sector_values) >= self.sector_minimum:
+            values, scope = sector_values, "sector"
+        else:
+            values, scope = distribution["universe_values"], "universe"
+        transformed = float(self._transform(metric, value))
+        transformed = max(distribution["winsor_lower_value"],
+                          min(distribution["winsor_upper_value"], transformed))
+        if len(values) == 1:
+            percentile = 50.0
+        else:
+            left = bisect_left(values, transformed)
+            right = bisect_right(values, transformed)
+            average_rank = (left + right - 1) / 2
+            percentile = 100 * average_rank / (len(values) - 1)
+        if metric in LOWER_IS_BETTER_METRICS or metric in RANGE_METRICS:
+            percentile = 100 - percentile
+        return round(percentile, 1), {
+            "normalization_scope": scope,
+            "status": "scored",
+            "raw_value": value,
+            "winsorized_value": transformed,
+            "peer_count": len(values),
+        }
+
+    def published_distributions(self):
+        """Exact sorted distributions and fit parameters needed to reproduce this refresh."""
+        return {
+            "mode": "cross_sectional",
+            "sector_minimum_count": self.sector_minimum,
+            "metrics": self.distributions,
+        }
+
+
 def weighted_coverage(metrics, cfg, exempt=()):
     """Fraction of the total metric weight that was actually answered.
 
@@ -227,7 +429,7 @@ def weighted_coverage(metrics, cfg, exempt=()):
     return answered / total if total else 0.0
 
 
-def valuation_score(snap):
+def _band_valuation_score(snap):
     """Score valuation, profitability, solvency, growth, capital allocation, and accounting quality.
 
     ETFs remain unscored because corporate accounting ratios are not comparable to fund holdings.
@@ -312,6 +514,71 @@ def valuation_score(snap):
                    "raw_score": round(raw, 1), "sector": sector,
                    "sales_multiple_basis": sales_basis if sales_score is not None else None,
                    "altman_z_variant": altman_variant}
+
+
+def _cross_sectional_valuation_score(snap, normalizer):
+    """Score the unchanged category structure from cross-sectional metric percentiles."""
+    if not snap or snap.get("is_etf"):
+        return None, {}
+    if normalizer is None:
+        raise ValueError("cross_sectional mode requires a fitted CrossSectionalNormalizer")
+    cfg = SETTINGS["fundamentals"]
+    raw_metrics, raw_metadata = raw_fundamental_metrics(snap)
+    sector = raw_metadata["sector"]
+    metrics, normalization = {}, {}
+    for metric, raw in raw_metrics.items():
+        score, detail = normalizer.score(metric, raw, sector)
+        metrics[metric] = score
+        normalization[metric] = detail
+    categories = {}
+    for category, weights in cfg["metric_weights"].items():
+        value = weighted_available(metrics, weights)
+        categories[category] = round(value, 1) if value is not None else None
+    raw = weighted_available(categories, cfg["category_weights"])
+    is_financial = sector in ("Financial Services", "Financials")
+    exempt = list(FINANCIAL_EXEMPT) if is_financial else []
+    if sector not in TANGIBLE_BOOK_SECTORS:
+        exempt.append("price_to_tangible_book")
+    exempt.extend(metric for metric in VALUATION_MULTIPLES
+                  if isinstance(raw_metrics.get(metric), (int, float))
+                  and raw_metrics[metric] <= 0)
+    coverage = weighted_coverage(metrics, cfg, tuple(exempt))
+    if raw is None:
+        return None, {**metrics, "categories": categories, "coverage": 0.0,
+                      "normalization": normalization, "normalization_mode": "cross_sectional"}
+    confidence_multiplier = 0.65 + (0.35 * coverage)
+    total = round(raw * confidence_multiplier, 1)
+    scopes = {detail["normalization_scope"] for metric, detail in normalization.items()
+              if metrics.get(metric) is not None}
+    return total, {
+        **metrics,
+        "categories": categories,
+        "coverage": round(coverage, 2),
+        "raw_score": round(raw, 1),
+        "sector": sector,
+        "sales_multiple_basis": raw_metadata["sales_multiple_basis"],
+        "altman_z_variant": snap.get("altman_z_variant"),
+        "normalization_mode": "cross_sectional",
+        "normalization_scope": "sector" if scopes == {"sector"} else "universe",
+        "normalization": normalization,
+    }
+
+
+def valuation_score(snap, *, mode=None, normalizer=None):
+    """Score fundamentals using the configured champion or an explicit challenger mode.
+
+    ``bands`` preserves the production champion. ``cross_sectional`` requires a normalizer
+    fitted once on the complete refresh universe so every row uses the same distributions.
+    """
+    selected = mode or SETTINGS.get("normalization_mode", "bands")
+    if selected == "bands":
+        score, detail = _band_valuation_score(snap)
+        if detail:
+            detail.setdefault("normalization_mode", "bands")
+        return score, detail
+    if selected == "cross_sectional":
+        return _cross_sectional_valuation_score(snap, normalizer)
+    raise ValueError(f"unsupported normalization mode: {selected}")
 
 
 # ---------------- assembly ----------------

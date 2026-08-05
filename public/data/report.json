@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "generated_at": "2026-08-04T23:48:29.535571+00:00",
   "data_mode": "live",
   "universe_count": 918,
@@ -492,6 +492,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 84.6,
+          "base_score": 81.3,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 83.2,
+            "profitability": 96.8,
+            "financial_health": 100.0,
+            "growth": 82.3,
+            "capital_allocation": 75.4,
+            "accounting_quality": 96.6
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 72.1,
+          "base_score": 68.8,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.7,
+            "profitability": 68.4,
+            "financial_health": 96.0,
+            "growth": 43.4,
+            "capital_allocation": 59.8,
+            "accounting_quality": 83.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 43.3,
+              "delta": -56.7
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 51.0,
+              "delta": -49.0
+            },
+            {
+              "metric": "revenue_growth",
+              "champion": 55.0,
+              "challenger": 17.3,
+              "delta": -37.7
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 62.7,
+              "delta": -37.3
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 66.0,
+              "delta": -34.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -845,6 +909,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 81.7,
+          "base_score": 78.3,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 93.1,
+            "profitability": 94.8,
+            "financial_health": 100.0,
+            "growth": 56.1,
+            "capital_allocation": 100.0,
+            "accounting_quality": 79.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 71.3,
+          "base_score": 67.9,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 75.6,
+            "profitability": 83.4,
+            "financial_health": 97.3,
+            "growth": 54.5,
+            "capital_allocation": 61.4,
+            "accounting_quality": 66.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 38.9,
+              "delta": -61.1
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 100.0,
+              "challenger": 40.0,
+              "delta": -60.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 46.7,
+              "delta": -53.3
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 37.2,
+              "delta": -42.8
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 63.9,
+              "delta": -36.1
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -1190,6 +1318,70 @@
             "capital_allocation": 88.8,
             "accounting_quality": 78.0
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 81.0,
+          "base_score": 78.6,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.0,
+            "profitability": 74.6,
+            "financial_health": 100.0,
+            "growth": 100.0,
+            "capital_allocation": 88.8,
+            "accounting_quality": 78.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 66.3,
+          "base_score": 63.9,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 54.8,
+            "profitability": 45.8,
+            "financial_health": 90.8,
+            "growth": 91.3,
+            "capital_allocation": 69.9,
+            "accounting_quality": 66.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 36.8,
+              "delta": -63.2
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 54.2,
+              "delta": -45.8
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 100.0,
+              "challenger": 55.0,
+              "delta": -45.0
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 61.9,
+              "delta": -38.1
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 44.0,
+              "delta": -36.0
+            }
+          ]
         }
       },
       "history": {
@@ -1563,6 +1755,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 78.0,
+          "base_score": 77.0,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 92.2,
+            "profitability": 90.8,
+            "financial_health": 100.0,
+            "growth": 37.4,
+            "capital_allocation": 88.0,
+            "accounting_quality": 85.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 65.3,
+          "base_score": 64.3,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 77.0,
+            "profitability": 70.3,
+            "financial_health": 82.4,
+            "growth": 31.5,
+            "capital_allocation": 64.0,
+            "accounting_quality": 69.9
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "profit_margin",
+              "champion": 100.0,
+              "challenger": 48.1,
+              "delta": -51.9
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 64.3,
+              "delta": -35.7
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 73.8,
+              "delta": -26.2
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 77.9,
+              "delta": -22.1
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -1909,6 +2165,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 92.8
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 77.9,
+          "base_score": 75.0,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 92.9,
+            "profitability": 74.7,
+            "financial_health": 54.1,
+            "growth": 86.5,
+            "capital_allocation": 100.0,
+            "accounting_quality": 92.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 61.0,
+          "base_score": 58.1,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 63.3,
+            "profitability": 54.8,
+            "financial_health": 33.3,
+            "growth": 80.4,
+            "capital_allocation": 66.8,
+            "accounting_quality": 71.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "ev_to_fcf",
+              "champion": 100.0,
+              "challenger": 41.2,
+              "delta": -58.8
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 44.4,
+              "delta": -55.6
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 50.0,
+              "delta": -50.0
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 51.5,
+              "delta": -48.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 60.2,
+              "delta": -39.8
+            }
+          ]
         }
       },
       "history": {
@@ -2265,6 +2585,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 77.9,
+          "base_score": 72.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 89.2,
+            "profitability": 91.6,
+            "financial_health": 90.7,
+            "growth": 89.0,
+            "capital_allocation": 45.4,
+            "accounting_quality": 96.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.7,
+          "base_score": 53.2,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 72.8,
+            "profitability": 62.9,
+            "financial_health": 57.4,
+            "growth": 42.7,
+            "capital_allocation": 27.1,
+            "accounting_quality": 81.1
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 28.9,
+              "delta": -51.1
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 48.9,
+              "delta": -51.1
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 54.1,
+              "delta": -45.9
+            },
+            {
+              "metric": "revenue_growth",
+              "champion": 80.0,
+              "challenger": 34.6,
+              "delta": -45.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 54.8,
+              "delta": -45.2
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -2610,6 +2994,70 @@
             "capital_allocation": 88.0,
             "accounting_quality": 84.4
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 77.8,
+          "base_score": 76.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 89.2,
+            "profitability": 59.9,
+            "financial_health": 79.7,
+            "growth": 76.4,
+            "capital_allocation": 88.0,
+            "accounting_quality": 84.4
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.2,
+          "base_score": 56.5,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 57.7,
+            "profitability": 40.2,
+            "financial_health": 49.2,
+            "growth": 69.2,
+            "capital_allocation": 59.0,
+            "accounting_quality": 48.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 0.0,
+              "delta": -100.0
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 40.9,
+              "delta": -59.1
+            },
+            {
+              "metric": "ev_to_ebitda",
+              "champion": 100.0,
+              "challenger": 45.5,
+              "delta": -54.5
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 80.0,
+              "challenger": 27.3,
+              "delta": -52.7
+            },
+            {
+              "metric": "price_to_tangible_book",
+              "champion": 75.0,
+              "challenger": 27.3,
+              "delta": -47.7
+            }
+          ]
         }
       },
       "history": {
@@ -2969,6 +3417,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.9,
+          "base_score": 73.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 87.8,
+            "profitability": 91.6,
+            "financial_health": 90.7,
+            "growth": 46.9,
+            "capital_allocation": 74.1,
+            "accounting_quality": 72.1
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 62.9,
+          "base_score": 59.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.7,
+            "profitability": 70.2,
+            "financial_health": 59.9,
+            "growth": 29.8,
+            "capital_allocation": 57.0,
+            "accounting_quality": 50.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 56.9,
+              "delta": -43.1
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 57.4,
+              "delta": -42.6
+            },
+            {
+              "metric": "current_ratio",
+              "champion": 100.0,
+              "challenger": 63.5,
+              "delta": -36.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 64.4,
+              "delta": -35.6
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 66.3,
+              "delta": -33.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -3323,6 +3835,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.6,
+          "base_score": 73.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 90.4,
+            "profitability": 100.0,
+            "financial_health": 88.5,
+            "growth": 74.0,
+            "capital_allocation": 60.7,
+            "accounting_quality": 85.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 63.2,
+          "base_score": 60.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 83.2,
+            "profitability": 83.2,
+            "financial_health": 60.6,
+            "growth": 35.1,
+            "capital_allocation": 53.4,
+            "accounting_quality": 63.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 80.0,
+              "challenger": 34.0,
+              "delta": -46.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 54.9,
+              "delta": -45.1
+            },
+            {
+              "metric": "operating_margin_trend",
+              "champion": 80.0,
+              "challenger": 39.2,
+              "delta": -40.8
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 59.6,
+              "delta": -40.4
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -3669,6 +4245,70 @@
             "capital_allocation": 83.3,
             "accounting_quality": 80.2
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.1,
+          "base_score": 69.4,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 98.7,
+            "profitability": 69.4,
+            "financial_health": 63.6,
+            "growth": 61.0,
+            "capital_allocation": 83.3,
+            "accounting_quality": 80.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.9,
+          "base_score": 54.2,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 92.1,
+            "profitability": 45.6,
+            "financial_health": 26.3,
+            "growth": 44.5,
+            "capital_allocation": 65.3,
+            "accounting_quality": 47.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 28.6,
+              "delta": -71.4
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 55.0,
+              "challenger": 0.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 28.6,
+              "delta": -51.4
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 40.2,
+              "delta": -39.8
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 55.0,
+              "challenger": 19.0,
+              "delta": -36.0
+            }
+          ]
         }
       },
       "history": {
@@ -4023,6 +4663,70 @@
             "capital_allocation": 55.9,
             "accounting_quality": 100.0
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.1,
+          "base_score": 76.3,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 80.4,
+            "profitability": 96.8,
+            "financial_health": 98.0,
+            "growth": 50.7,
+            "capital_allocation": 55.9,
+            "accounting_quality": 100.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.0,
+          "base_score": 60.2,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 60.4,
+            "profitability": 72.1,
+            "financial_health": 66.7,
+            "growth": 33.0,
+            "capital_allocation": 43.7,
+            "accounting_quality": 84.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 21.2,
+              "delta": -58.8
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 43.1,
+              "delta": -56.9
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 45.1,
+              "delta": -54.9
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 27.9,
+              "delta": -52.1
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 61.7,
+              "delta": -38.3
+            }
+          ]
         }
       },
       "history": {
@@ -4390,6 +5094,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 75.3,
+          "base_score": 72.8,
+          "confidence": 0.78,
+          "fundamental_categories": {
+            "valuation": 87.9,
+            "profitability": 86.2,
+            "financial_health": 80.0,
+            "growth": 63.9,
+            "capital_allocation": 100.0,
+            "accounting_quality": 74.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 52.0,
+          "base_score": 49.5,
+          "confidence": 0.78,
+          "fundamental_categories": {
+            "valuation": 53.9,
+            "profitability": 49.4,
+            "financial_health": 29.4,
+            "growth": 48.6,
+            "capital_allocation": 69.6,
+            "accounting_quality": 54.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "price_to_tangible_book",
+              "champion": 75.0,
+              "challenger": 22.5,
+              "delta": -52.5
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 47.9,
+              "delta": -52.1
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 29.4,
+              "delta": -50.6
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 52.4,
+              "delta": -47.6
+            },
+            {
+              "metric": "profit_margin",
+              "champion": 80.0,
+              "challenger": 35.4,
+              "delta": -44.6
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -4736,6 +5504,70 @@
             "capital_allocation": 94.4,
             "accounting_quality": 71.9
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 75.3,
+          "base_score": 73.4,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 96.8,
+            "profitability": 83.8,
+            "financial_health": 100.0,
+            "growth": 58.8,
+            "capital_allocation": 94.4,
+            "accounting_quality": 71.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.5,
+          "base_score": 58.6,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 83.2,
+            "profitability": 56.6,
+            "financial_health": 88.7,
+            "growth": 43.5,
+            "capital_allocation": 50.1,
+            "accounting_quality": 55.9
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 80.0,
+              "challenger": 13.3,
+              "delta": -66.7
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 80.0,
+              "challenger": 27.8,
+              "delta": -52.2
+            },
+            {
+              "metric": "inventory_days_trend",
+              "champion": 55.0,
+              "challenger": 5.9,
+              "delta": -49.1
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 80.0,
+              "challenger": 36.4,
+              "delta": -43.6
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 61.1,
+              "delta": -38.9
+            }
+          ]
         }
       },
       "history": {
@@ -5104,6 +5936,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 75.2,
+          "base_score": 74.2,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 67.8,
+            "profitability": 93.3,
+            "financial_health": 100.0,
+            "growth": 86.1,
+            "capital_allocation": 73.9,
+            "accounting_quality": 66.6
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 59.6,
+          "base_score": 58.6,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 49.1,
+            "profitability": 71.4,
+            "financial_health": 76.5,
+            "growth": 72.6,
+            "capital_allocation": 49.9,
+            "accounting_quality": 38.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 28.6,
+              "delta": -51.4
+            },
+            {
+              "metric": "profit_margin",
+              "champion": 80.0,
+              "challenger": 31.6,
+              "delta": -48.4
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 33.3,
+              "delta": -46.7
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 80.0,
+              "challenger": 35.7,
+              "delta": -44.3
+            },
+            {
+              "metric": "capex_to_depreciation",
+              "champion": 25.0,
+              "challenger": 66.7,
+              "delta": 41.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -5458,6 +6354,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 75.1,
+          "base_score": 71.6,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 95.0,
+            "profitability": 95.5,
+            "financial_health": 95.5,
+            "growth": 55.0,
+            "capital_allocation": 52.4,
+            "accounting_quality": 71.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.0,
+          "base_score": 54.5,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 86.0,
+            "profitability": 66.7,
+            "financial_health": 68.6,
+            "growth": 23.9,
+            "capital_allocation": 41.1,
+            "accounting_quality": 30.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 52.9,
+              "delta": -47.1
+            },
+            {
+              "metric": "piotroski_f",
+              "champion": 55.0,
+              "challenger": 11.0,
+              "delta": -44.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 56.9,
+              "delta": -43.1
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 38.0,
+              "delta": -42.0
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 59.2,
+              "delta": -40.8
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -5810,6 +6770,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 74.7,
+          "base_score": 70.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 70.5,
+            "profitability": 74.2,
+            "financial_health": 84.7,
+            "growth": 43.6,
+            "capital_allocation": 94.4,
+            "accounting_quality": 79.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 62.7,
+          "base_score": 58.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 69.4,
+            "profitability": 56.1,
+            "financial_health": 50.6,
+            "growth": 31.7,
+            "capital_allocation": 57.5,
+            "accounting_quality": 73.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 100.0,
+              "challenger": 22.2,
+              "delta": -77.8
+            },
+            {
+              "metric": "price_to_tangible_book",
+              "champion": 25.0,
+              "challenger": 88.9,
+              "delta": 63.9
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 30.0,
+              "delta": -50.0
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 80.0,
+              "challenger": 39.1,
+              "delta": -40.9
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -6159,6 +7183,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 74.7,
+          "base_score": 75.5,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 55.9,
+            "profitability": 82.4,
+            "financial_health": 95.5,
+            "growth": 86.1,
+            "capital_allocation": 100.0,
+            "accounting_quality": 96.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 62.1,
+          "base_score": 62.9,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 24.1,
+            "profitability": 82.5,
+            "financial_health": 74.4,
+            "growth": 75.5,
+            "capital_allocation": 82.0,
+            "accounting_quality": 76.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 20.8,
+              "delta": -59.2
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 54.5,
+              "delta": -45.5
+            },
+            {
+              "metric": "ev_to_ebitda",
+              "champion": 45.0,
+              "challenger": 0.0,
+              "delta": -45.0
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 39.1,
+              "delta": -40.9
+            },
+            {
+              "metric": "inventory_days_trend",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -6503,6 +7591,70 @@
             "capital_allocation": 79.9,
             "accounting_quality": 72.0
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 74.0,
+          "base_score": 71.5,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 55.6,
+            "profitability": 85.1,
+            "financial_health": 95.5,
+            "growth": 85.2,
+            "capital_allocation": 79.9,
+            "accounting_quality": 72.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 61.1,
+          "base_score": 58.6,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 35.1,
+            "profitability": 69.5,
+            "financial_health": 89.1,
+            "growth": 82.3,
+            "capital_allocation": 50.7,
+            "accounting_quality": 42.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 10.0,
+              "delta": -70.0
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 10.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 38.7,
+              "delta": -41.3
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
         }
       },
       "history": {
@@ -6850,6 +8002,70 @@
             "capital_allocation": 50.9,
             "accounting_quality": 85.2
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.8,
+          "base_score": 73.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 81.2,
+            "profitability": 89.6,
+            "financial_health": 56.6,
+            "growth": 74.3,
+            "capital_allocation": 50.9,
+            "accounting_quality": 85.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 59.4,
+          "base_score": 58.7,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 69.7,
+            "profitability": 70.2,
+            "financial_health": 24.8,
+            "growth": 58.2,
+            "capital_allocation": 29.3,
+            "accounting_quality": 64.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 100.0,
+              "challenger": 50.0,
+              "delta": -50.0
+            },
+            {
+              "metric": "altman_z",
+              "champion": 80.0,
+              "challenger": 38.1,
+              "delta": -41.9
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 23.8,
+              "delta": -41.2
+            },
+            {
+              "metric": "current_ratio",
+              "champion": 80.0,
+              "challenger": 38.9,
+              "delta": -41.1
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 55.0,
+              "challenger": 20.0,
+              "delta": -35.0
+            }
+          ]
         }
       },
       "history": {
@@ -7212,6 +8428,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.8,
+          "base_score": 80.6,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 75.5,
+            "profitability": 92.8,
+            "financial_health": 100.0,
+            "growth": 93.8,
+            "capital_allocation": 79.7,
+            "accounting_quality": 87.6
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 59.4,
+          "base_score": 66.2,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 51.8,
+            "profitability": 78.0,
+            "financial_health": 84.9,
+            "growth": 77.4,
+            "capital_allocation": 54.3,
+            "accounting_quality": 68.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 42.1,
+              "delta": -57.9
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 47.6,
+              "delta": -52.4
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 19.0,
+              "delta": -46.0
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 55.0,
+              "challenger": 15.0,
+              "delta": -40.0
+            },
+            {
+              "metric": "ev_to_ebitda",
+              "champion": 80.0,
+              "challenger": 42.1,
+              "delta": -37.9
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -7568,6 +8848,70 @@
             "capital_allocation": 94.4,
             "accounting_quality": 71.8
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.7,
+          "base_score": 74.7,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 71.6,
+            "profitability": 96.8,
+            "financial_health": 100.0,
+            "growth": 80.5,
+            "capital_allocation": 94.4,
+            "accounting_quality": 71.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 56.1,
+          "base_score": 57.1,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 46.6,
+            "profitability": 86.9,
+            "financial_health": 47.1,
+            "growth": 56.8,
+            "capital_allocation": 70.9,
+            "accounting_quality": 55.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 47.1,
+              "delta": -52.9
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 34.7,
+              "delta": -45.3
+            },
+            {
+              "metric": "profit_margin",
+              "champion": 80.0,
+              "challenger": 36.7,
+              "delta": -43.3
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 66.7,
+              "delta": -33.3
+            }
+          ]
         }
       },
       "history": {
@@ -7936,6 +9280,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.7,
+          "base_score": 75.7,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 100.0,
+            "profitability": 73.5,
+            "financial_health": 100.0,
+            "growth": 57.0,
+            "capital_allocation": 78.8,
+            "accounting_quality": 90.7
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 50.9,
+          "base_score": 52.9,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 72.1,
+            "profitability": 46.5,
+            "financial_health": 35.3,
+            "growth": 43.8,
+            "capital_allocation": 44.4,
+            "accounting_quality": 75.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 35.3,
+              "delta": -64.7
+            },
+            {
+              "metric": "profit_margin",
+              "champion": 55.0,
+              "challenger": 10.1,
+              "delta": -44.9
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 55.0,
+              "challenger": 11.9,
+              "delta": -43.1
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 61.0,
+              "delta": -39.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -8301,6 +9709,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.6,
+          "base_score": 72.6,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 72.4,
+            "profitability": 73.5,
+            "financial_health": 80.0,
+            "growth": 88.6,
+            "capital_allocation": 79.1,
+            "accounting_quality": 100.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 51.8,
+          "base_score": 50.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 46.7,
+            "profitability": 55.3,
+            "financial_health": 0.0,
+            "growth": 77.1,
+            "capital_allocation": 57.3,
+            "accounting_quality": 83.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 0.0,
+              "delta": -80.0
+            },
+            {
+              "metric": "price_to_tangible_book",
+              "champion": 75.0,
+              "challenger": 27.5,
+              "delta": -47.5
+            },
+            {
+              "metric": "profit_margin",
+              "champion": 55.0,
+              "challenger": 12.7,
+              "delta": -42.3
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 64.3,
+              "delta": -35.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -8662,6 +10134,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.5,
+          "base_score": 69.8,
+          "confidence": 0.7,
+          "fundamental_categories": {
+            "valuation": 87.9,
+            "profitability": 85.6,
+            "financial_health": null,
+            "growth": 53.7,
+            "capital_allocation": 88.0,
+            "accounting_quality": 94.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.1,
+          "base_score": 54.4,
+          "confidence": 0.7,
+          "fundamental_categories": {
+            "valuation": 65.4,
+            "profitability": 51.4,
+            "financial_health": null,
+            "growth": 48.4,
+            "capital_allocation": 65.4,
+            "accounting_quality": 75.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 31.0,
+              "delta": -49.0
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 34.5,
+              "delta": -45.5
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 10.0,
+              "challenger": 41.2,
+              "delta": 31.2
+            },
+            {
+              "metric": "price_to_tangible_book",
+              "champion": 75.0,
+              "challenger": 46.2,
+              "delta": -28.8
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -9013,6 +10549,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 52.9
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.3,
+          "base_score": 72.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 98.7,
+            "profitability": 86.8,
+            "financial_health": 100.0,
+            "growth": 47.5,
+            "capital_allocation": 100.0,
+            "accounting_quality": 52.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.0,
+          "base_score": 56.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.3,
+            "profitability": 70.1,
+            "financial_health": 84.8,
+            "growth": 37.8,
+            "capital_allocation": 57.5,
+            "accounting_quality": 15.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 5.6,
+              "delta": -74.4
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 33.3,
+              "delta": -66.7
+            },
+            {
+              "metric": "ev_to_fcf",
+              "champion": 100.0,
+              "challenger": 47.1,
+              "delta": -52.9
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 57.6,
+              "delta": -42.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 59.6,
+              "delta": -40.4
+            }
+          ]
         }
       },
       "history": {
@@ -9369,6 +10969,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.2,
+          "base_score": 69.5,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 84.8,
+            "profitability": 66.2,
+            "financial_health": 78.7,
+            "growth": 58.9,
+            "capital_allocation": 89.3,
+            "accounting_quality": 61.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 53.1,
+          "base_score": 49.4,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 53.2,
+            "profitability": 53.9,
+            "financial_health": 37.9,
+            "growth": 47.1,
+            "capital_allocation": 51.3,
+            "accounting_quality": 25.9
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 27.3,
+              "delta": -72.7
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 36.4,
+              "delta": -63.6
+            },
+            {
+              "metric": "ev_to_ebitda",
+              "champion": 80.0,
+              "challenger": 27.3,
+              "delta": -52.7
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 27.3,
+              "delta": -52.7
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 27.3,
+              "delta": -52.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -9718,6 +11382,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.1,
+          "base_score": 69.7,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 86.1,
+            "profitability": 49.9,
+            "financial_health": 84.7,
+            "growth": 69.8,
+            "capital_allocation": 94.4,
+            "accounting_quality": 72.1
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.9,
+          "base_score": 55.5,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 64.3,
+            "profitability": 33.1,
+            "financial_health": 67.1,
+            "growth": 52.0,
+            "capital_allocation": 63.7,
+            "accounting_quality": 61.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "capex_to_depreciation",
+              "champion": 65.0,
+              "challenger": 16.7,
+              "delta": -48.3
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 54.5,
+              "delta": -45.5
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 55.0,
+              "challenger": 11.1,
+              "delta": -43.9
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 63.9,
+              "delta": -36.1
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 65.4,
+              "delta": -34.6
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -10063,6 +11791,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 60.9
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 72.7,
+          "base_score": 73.0,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 84.3,
+            "profitability": 74.0,
+            "financial_health": 98.0,
+            "growth": 53.1,
+            "capital_allocation": 100.0,
+            "accounting_quality": 60.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.1,
+          "base_score": 60.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 55.0,
+            "profitability": 68.1,
+            "financial_health": 88.3,
+            "growth": 62.6,
+            "capital_allocation": 60.2,
+            "accounting_quality": 36.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 10.0,
+              "challenger": 72.7,
+              "delta": 62.7
+            },
+            {
+              "metric": "ev_to_fcf",
+              "champion": 80.0,
+              "challenger": 18.2,
+              "delta": -61.8
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 40.9,
+              "delta": -59.1
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 55.0,
+              "challenger": 0.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 55.0,
+              "challenger": 9.1,
+              "delta": -45.9
+            }
+          ]
         }
       },
       "history": {
@@ -10412,6 +12204,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 72.6,
+          "base_score": 66.6,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 94.5,
+            "profitability": 52.7,
+            "financial_health": 61.6,
+            "growth": 70.2,
+            "capital_allocation": 67.1,
+            "accounting_quality": 100.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 59.8,
+          "base_score": 53.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 75.9,
+            "profitability": 43.3,
+            "financial_health": 33.8,
+            "growth": 66.2,
+            "capital_allocation": 39.2,
+            "accounting_quality": 79.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 55.0,
+              "challenger": 0.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 45.5,
+              "delta": -54.5
+            },
+            {
+              "metric": "ev_to_ebitda",
+              "champion": 100.0,
+              "challenger": 54.5,
+              "delta": -45.5
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 34.8,
+              "delta": -45.2
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 55.0,
+              "challenger": 18.2,
+              "delta": -36.8
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -10757,6 +12613,70 @@
             "capital_allocation": 68.5,
             "accounting_quality": 92.8
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 72.5,
+          "base_score": 72.6,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 55.5,
+            "profitability": 76.6,
+            "financial_health": 84.7,
+            "growth": 96.2,
+            "capital_allocation": 68.5,
+            "accounting_quality": 92.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 54.6,
+          "base_score": 54.7,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 27.4,
+            "profitability": 48.5,
+            "financial_health": 69.1,
+            "growth": 94.7,
+            "capital_allocation": 32.1,
+            "accounting_quality": 69.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 19.3,
+              "delta": -60.7
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 100.0,
+              "challenger": 44.4,
+              "delta": -55.6
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 44.4,
+              "delta": -55.6
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 45.5,
+              "delta": -54.5
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 100.0,
+              "challenger": 46.7,
+              "delta": -53.3
+            }
+          ]
         }
       },
       "history": {
@@ -11121,6 +13041,70 @@
             "capital_allocation": 73.9,
             "accounting_quality": 76.5
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 72.0,
+          "base_score": 75.6,
+          "confidence": 0.83,
+          "fundamental_categories": {
+            "valuation": 93.6,
+            "profitability": 94.6,
+            "financial_health": 100.0,
+            "growth": 41.4,
+            "capital_allocation": 73.9,
+            "accounting_quality": 76.5
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 55.9,
+          "base_score": 59.5,
+          "confidence": 0.83,
+          "fundamental_categories": {
+            "valuation": 60.2,
+            "profitability": 76.4,
+            "financial_health": 87.1,
+            "growth": 37.6,
+            "capital_allocation": 33.3,
+            "accounting_quality": 58.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 33.3,
+              "delta": -66.7
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 80.0,
+              "challenger": 27.8,
+              "delta": -52.2
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 53.3,
+              "delta": -46.7
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 33.7,
+              "delta": -46.3
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 57.1,
+              "delta": -42.9
+            }
+          ]
         }
       },
       "history": {
@@ -11489,6 +13473,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 71.7,
+          "base_score": 69.2,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 100.0,
+            "profitability": 70.3,
+            "financial_health": 80.0,
+            "growth": 71.4,
+            "capital_allocation": 73.5,
+            "accounting_quality": 57.7
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 52.5,
+          "base_score": 50.0,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 87.8,
+            "profitability": 45.9,
+            "financial_health": 5.9,
+            "growth": 66.3,
+            "capital_allocation": 42.8,
+            "accounting_quality": 45.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 5.9,
+              "delta": -74.1
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 9.5,
+              "delta": -55.5
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 80.0,
+              "challenger": 28.6,
+              "delta": -51.4
+            },
+            {
+              "metric": "return_on_invested_capital",
+              "champion": 55.0,
+              "challenger": 17.6,
+              "delta": -37.4
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 55.0,
+              "challenger": 25.0,
+              "delta": -30.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -11849,6 +13897,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 71.6,
+          "base_score": 71.7,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 96.3,
+            "profitability": 88.5,
+            "financial_health": 78.2,
+            "growth": 59.0,
+            "capital_allocation": 79.1,
+            "accounting_quality": 64.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 55.6,
+          "base_score": 55.7,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 84.6,
+            "profitability": 54.2,
+            "financial_health": 58.7,
+            "growth": 51.9,
+            "capital_allocation": 36.9,
+            "accounting_quality": 46.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 27.8,
+              "delta": -72.2
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 40.0,
+              "delta": -60.0
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 80.0,
+              "challenger": 20.0,
+              "delta": -60.0
+            },
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 50.0,
+              "delta": -50.0
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 53.0,
+              "delta": -47.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -12195,6 +14307,70 @@
             "capital_allocation": 79.1,
             "accounting_quality": 100.0
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 71.4,
+          "base_score": 69.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 75.6,
+            "profitability": 75.9,
+            "financial_health": 70.6,
+            "growth": 82.3,
+            "capital_allocation": 79.1,
+            "accounting_quality": 100.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.4,
+          "base_score": 55.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 60.2,
+            "profitability": 59.9,
+            "financial_health": 35.6,
+            "growth": 65.0,
+            "capital_allocation": 58.9,
+            "accounting_quality": 90.1
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "debt_to_equity",
+              "champion": 75.0,
+              "challenger": 29.0,
+              "delta": -46.0
+            },
+            {
+              "metric": "capex_to_depreciation",
+              "champion": 65.0,
+              "challenger": 25.0,
+              "delta": -40.0
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 60.7,
+              "delta": -39.3
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 55.0,
+              "challenger": 15.8,
+              "delta": -39.2
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 42.9,
+              "delta": -37.1
+            }
+          ]
         }
       },
       "history": {
@@ -12555,6 +14731,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 71.2,
+          "base_score": 73.6,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 86.7,
+            "profitability": 77.7,
+            "financial_health": 100.0,
+            "growth": 39.0,
+            "capital_allocation": 76.2,
+            "accounting_quality": 91.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.3,
+          "base_score": 59.7,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 78.0,
+            "profitability": 46.3,
+            "financial_health": 82.1,
+            "growth": 18.1,
+            "capital_allocation": 67.2,
+            "accounting_quality": 70.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 44.0,
+              "delta": -56.0
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 45.6,
+              "delta": -54.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 55.8,
+              "delta": -44.2
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 55.0,
+              "challenger": 11.8,
+              "delta": -43.2
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 55.0,
+              "challenger": 16.0,
+              "delta": -39.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -12907,6 +15147,70 @@
             "capital_allocation": 59.1,
             "accounting_quality": 70.7
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 71.1,
+          "base_score": 68.0,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 82.2,
+            "profitability": 78.4,
+            "financial_health": 41.1,
+            "growth": 86.7,
+            "capital_allocation": 59.1,
+            "accounting_quality": 70.7
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 52.5,
+          "base_score": 49.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 62.5,
+            "profitability": 45.6,
+            "financial_health": 12.9,
+            "growth": 58.3,
+            "capital_allocation": 54.8,
+            "accounting_quality": 40.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 18.0,
+              "delta": -62.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 49.0,
+              "delta": -51.0
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 35.6,
+              "delta": -44.4
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 55.0,
+              "challenger": 12.0,
+              "delta": -43.0
+            },
+            {
+              "metric": "peg",
+              "champion": 100.0,
+              "challenger": 58.6,
+              "delta": -41.4
+            }
+          ]
         }
       },
       "history": {
@@ -13266,6 +15570,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 70.9,
+          "base_score": 71.7,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 96.8,
+            "profitability": 79.6,
+            "financial_health": 61.5,
+            "growth": 31.4,
+            "capital_allocation": 89.3,
+            "accounting_quality": 91.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 63.3,
+          "base_score": 64.1,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 93.9,
+            "profitability": 73.0,
+            "financial_health": 40.2,
+            "growth": 43.7,
+            "capital_allocation": 32.8,
+            "accounting_quality": 87.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 27.3,
+              "delta": -72.7
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 27.3,
+              "delta": -72.7
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 10.0,
+              "challenger": 81.8,
+              "delta": 71.8
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 9.1,
+              "delta": -55.9
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 57.1,
+              "delta": -42.9
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -13618,6 +15986,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 91.0
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 70.7,
+          "base_score": 66.8,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 89.8,
+            "profitability": 56.0,
+            "financial_health": 84.7,
+            "growth": 10.0,
+            "capital_allocation": 100.0,
+            "accounting_quality": 91.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.4,
+          "base_score": 53.5,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 63.2,
+            "profitability": 46.3,
+            "financial_health": 60.4,
+            "growth": 17.3,
+            "capital_allocation": 68.1,
+            "accounting_quality": 73.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 36.4,
+              "delta": -63.6
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 18.2,
+              "delta": -61.8
+            },
+            {
+              "metric": "ev_to_fcf",
+              "champion": 80.0,
+              "challenger": 27.3,
+              "delta": -52.7
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 54.2,
+              "delta": -45.8
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 43.5,
+              "delta": -36.5
+            }
+          ]
         }
       },
       "history": {
@@ -13978,6 +16410,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 70.6,
+          "base_score": 71.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 92.4,
+            "profitability": 81.4,
+            "financial_health": 100.0,
+            "growth": 68.0,
+            "capital_allocation": 75.4,
+            "accounting_quality": 71.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.2,
+          "base_score": 59.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 94.0,
+            "profitability": 52.7,
+            "financial_health": 87.2,
+            "growth": 30.7,
+            "capital_allocation": 65.3,
+            "accounting_quality": 47.1
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 44.7,
+              "delta": -55.3
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 54.0,
+              "delta": -46.0
+            },
+            {
+              "metric": "return_on_invested_capital",
+              "champion": 80.0,
+              "challenger": 39.2,
+              "delta": -40.8
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 41.7,
+              "delta": -38.3
+            },
+            {
+              "metric": "revenue_growth",
+              "champion": 55.0,
+              "challenger": 23.1,
+              "delta": -31.9
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -14334,6 +16830,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 73.2
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 70.4,
+          "base_score": 72.5,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 89.1,
+            "profitability": 79.3,
+            "financial_health": 100.0,
+            "growth": 30.0,
+            "capital_allocation": 100.0,
+            "accounting_quality": 73.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 56.1,
+          "base_score": 58.2,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 62.8,
+            "profitability": 65.5,
+            "financial_health": 83.9,
+            "growth": 29.7,
+            "capital_allocation": 60.4,
+            "accounting_quality": 53.1
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 22.2,
+              "delta": -77.8
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 52.8,
+              "delta": -47.2
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 57.8,
+              "delta": -42.2
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 100.0,
+              "challenger": 60.0,
+              "delta": -40.0
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 63.9,
+              "delta": -36.1
+            }
+          ]
         }
       },
       "history": {
@@ -14699,6 +17259,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 66.3,
+          "base_score": 66.8,
+          "confidence": 0.7,
+          "fundamental_categories": {
+            "valuation": 69.0,
+            "profitability": 91.1,
+            "financial_health": null,
+            "growth": 100.0,
+            "capital_allocation": 82.4,
+            "accounting_quality": 90.7
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 49.0,
+          "base_score": 49.5,
+          "confidence": 0.7,
+          "fundamental_categories": {
+            "valuation": 40.0,
+            "profitability": 60.5,
+            "financial_health": null,
+            "growth": 85.2,
+            "capital_allocation": 58.9,
+            "accounting_quality": 66.1
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 52.4,
+              "delta": -47.6
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 32.5,
+              "delta": -47.5
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 35.7,
+              "delta": -44.3
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 41.2,
+              "delta": -38.8
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -15056,6 +17680,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.9,
+          "base_score": 73.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 87.8,
+            "profitability": 91.6,
+            "financial_health": 90.7,
+            "growth": 46.9,
+            "capital_allocation": 74.1,
+            "accounting_quality": 72.1
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 62.9,
+          "base_score": 59.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.7,
+            "profitability": 70.2,
+            "financial_health": 59.9,
+            "growth": 29.8,
+            "capital_allocation": 57.0,
+            "accounting_quality": 50.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 56.9,
+              "delta": -43.1
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 57.4,
+              "delta": -42.6
+            },
+            {
+              "metric": "current_ratio",
+              "champion": 100.0,
+              "challenger": 63.5,
+              "delta": -36.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 64.4,
+              "delta": -35.6
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 66.3,
+              "delta": -33.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -15406,6 +18094,70 @@
             "capital_allocation": 49.7,
             "accounting_quality": 65.3
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 56.4,
+          "base_score": 57.4,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 80.1,
+            "profitability": 54.2,
+            "financial_health": 58.6,
+            "growth": 31.4,
+            "capital_allocation": 49.7,
+            "accounting_quality": 65.3
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 42.0,
+          "base_score": 43.0,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 60.1,
+            "profitability": 41.7,
+            "financial_health": 21.2,
+            "growth": 28.8,
+            "capital_allocation": 33.2,
+            "accounting_quality": 37.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 55.0,
+              "challenger": 0.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 45.8,
+              "delta": -54.2
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 55.0,
+              "challenger": 9.1,
+              "delta": -45.9
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 100.0,
+              "challenger": 54.5,
+              "delta": -45.5
+            },
+            {
+              "metric": "debt_to_equity",
+              "champion": 100.0,
+              "challenger": 62.5,
+              "delta": -37.5
+            }
+          ]
         }
       },
       "history": {
@@ -15763,6 +18515,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 62.3,
+          "base_score": 60.8,
+          "confidence": 0.83,
+          "fundamental_categories": {
+            "valuation": 36.9,
+            "profitability": 64.9,
+            "financial_health": 100.0,
+            "growth": 76.4,
+            "capital_allocation": 57.3,
+            "accounting_quality": 91.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 53.0,
+          "base_score": 51.5,
+          "confidence": 0.83,
+          "fundamental_categories": {
+            "valuation": 39.0,
+            "profitability": 42.5,
+            "financial_health": 72.4,
+            "growth": 73.3,
+            "capital_allocation": 40.1,
+            "accounting_quality": 77.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "sales_multiple",
+              "champion": 45.0,
+              "challenger": 5.8,
+              "delta": -39.2
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 60.8,
+              "delta": -39.2
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 100.0,
+              "challenger": 63.5,
+              "delta": -36.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 60.0,
+              "challenger": 96.2,
+              "delta": 36.2
+            },
+            {
+              "metric": "return_on_invested_capital",
+              "champion": 80.0,
+              "challenger": 44.1,
+              "delta": -35.9
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -16116,6 +18932,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 63.3,
+          "base_score": 61.9,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 50.7,
+            "profitability": 73.2,
+            "financial_health": 95.5,
+            "growth": 78.2,
+            "capital_allocation": 52.4,
+            "accounting_quality": 62.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 47.2,
+          "base_score": 45.8,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 42.9,
+            "profitability": 48.6,
+            "financial_health": 66.5,
+            "growth": 43.9,
+            "capital_allocation": 26.5,
+            "accounting_quality": 42.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 40.4,
+              "delta": -59.6
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 21.2,
+              "delta": -58.8
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 53.3,
+              "delta": -46.7
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 19.6,
+              "delta": -45.4
+            },
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 60.8,
+              "delta": -39.2
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -16467,6 +19347,70 @@
             "capital_allocation": 36.6,
             "accounting_quality": 71.8
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 67.0,
+          "base_score": 63.3,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 69.1,
+            "profitability": 81.6,
+            "financial_health": 100.0,
+            "growth": 65.2,
+            "capital_allocation": 36.6,
+            "accounting_quality": 71.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 51.0,
+          "base_score": 47.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 45.2,
+            "profitability": 60.2,
+            "financial_health": 74.0,
+            "growth": 63.2,
+            "capital_allocation": 11.7,
+            "accounting_quality": 50.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 42.9,
+              "delta": -37.1
+            },
+            {
+              "metric": "piotroski_f",
+              "champion": 55.0,
+              "challenger": 18.5,
+              "delta": -36.5
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 55.0,
+              "challenger": 19.2,
+              "delta": -35.8
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 100.0,
+              "challenger": 67.3,
+              "delta": -32.7
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 55.0,
+              "challenger": 22.3,
+              "delta": -32.7
+            }
+          ]
         }
       },
       "history": {
@@ -16823,6 +19767,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 77.9,
+          "base_score": 72.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 89.2,
+            "profitability": 91.6,
+            "financial_health": 90.7,
+            "growth": 89.0,
+            "capital_allocation": 45.4,
+            "accounting_quality": 96.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.7,
+          "base_score": 53.2,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 72.8,
+            "profitability": 62.9,
+            "financial_health": 57.4,
+            "growth": 42.7,
+            "capital_allocation": 27.1,
+            "accounting_quality": 81.1
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 28.9,
+              "delta": -51.1
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 48.9,
+              "delta": -51.1
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 54.1,
+              "delta": -45.9
+            },
+            {
+              "metric": "revenue_growth",
+              "champion": 80.0,
+              "challenger": 34.6,
+              "delta": -45.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 54.8,
+              "delta": -45.2
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -17168,6 +20176,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 60.9
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 72.7,
+          "base_score": 73.0,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 84.3,
+            "profitability": 74.0,
+            "financial_health": 98.0,
+            "growth": 53.1,
+            "capital_allocation": 100.0,
+            "accounting_quality": 60.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.1,
+          "base_score": 60.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 55.0,
+            "profitability": 68.1,
+            "financial_health": 88.3,
+            "growth": 62.6,
+            "capital_allocation": 60.2,
+            "accounting_quality": 36.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 10.0,
+              "challenger": 72.7,
+              "delta": 62.7
+            },
+            {
+              "metric": "ev_to_fcf",
+              "champion": 80.0,
+              "challenger": 18.2,
+              "delta": -61.8
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 40.9,
+              "delta": -59.1
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 55.0,
+              "challenger": 0.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 55.0,
+              "challenger": 9.1,
+              "delta": -45.9
+            }
+          ]
         }
       },
       "history": {
@@ -17524,6 +20596,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 70.7,
+          "base_score": 66.8,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 89.8,
+            "profitability": 56.0,
+            "financial_health": 84.7,
+            "growth": 10.0,
+            "capital_allocation": 100.0,
+            "accounting_quality": 91.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.4,
+          "base_score": 53.5,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 63.2,
+            "profitability": 46.3,
+            "financial_health": 60.4,
+            "growth": 17.3,
+            "capital_allocation": 68.1,
+            "accounting_quality": 73.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 36.4,
+              "delta": -63.6
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 18.2,
+              "delta": -61.8
+            },
+            {
+              "metric": "ev_to_fcf",
+              "champion": 80.0,
+              "challenger": 27.3,
+              "delta": -52.7
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 54.2,
+              "delta": -45.8
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 43.5,
+              "delta": -36.5
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -17870,6 +21006,70 @@
             "capital_allocation": 83.3,
             "accounting_quality": 80.2
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.1,
+          "base_score": 69.4,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 98.7,
+            "profitability": 69.4,
+            "financial_health": 63.6,
+            "growth": 61.0,
+            "capital_allocation": 83.3,
+            "accounting_quality": 80.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.9,
+          "base_score": 54.2,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 92.1,
+            "profitability": 45.6,
+            "financial_health": 26.3,
+            "growth": 44.5,
+            "capital_allocation": 65.3,
+            "accounting_quality": 47.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 28.6,
+              "delta": -71.4
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 55.0,
+              "challenger": 0.0,
+              "delta": -55.0
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 28.6,
+              "delta": -51.4
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 40.2,
+              "delta": -39.8
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 55.0,
+              "challenger": 19.0,
+              "delta": -36.0
+            }
+          ]
         }
       },
       "history": {
@@ -18235,6 +21435,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 64.1,
+          "base_score": 61.6,
+          "confidence": 0.67,
+          "fundamental_categories": {
+            "valuation": 87.9,
+            "profitability": 56.4,
+            "financial_health": null,
+            "growth": 88.7,
+            "capital_allocation": 85.0,
+            "accounting_quality": 56.5
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 45.4,
+          "base_score": 42.9,
+          "confidence": 0.67,
+          "fundamental_categories": {
+            "valuation": 51.3,
+            "profitability": 33.5,
+            "financial_health": null,
+            "growth": 71.4,
+            "capital_allocation": 46.5,
+            "accounting_quality": 28.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 21.4,
+              "delta": -58.6
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 46.8,
+              "delta": -53.2
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 55.0,
+              "challenger": 9.1,
+              "delta": -45.9
+            },
+            {
+              "metric": "price_to_tangible_book",
+              "champion": 75.0,
+              "challenger": 30.0,
+              "delta": -45.0
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -18586,6 +21850,70 @@
             "capital_allocation": 82.4,
             "accounting_quality": 72.5
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 68.0,
+          "base_score": 68.5,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 36.8,
+            "profitability": 85.6,
+            "financial_health": 100.0,
+            "growth": 78.2,
+            "capital_allocation": 82.4,
+            "accounting_quality": 72.5
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 48.5,
+          "base_score": 49.0,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 19.0,
+            "profitability": 55.9,
+            "financial_health": 76.5,
+            "growth": 40.4,
+            "capital_allocation": 63.0,
+            "accounting_quality": 38.9
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 24.0,
+              "delta": -76.0
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 14.4,
+              "delta": -65.6
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 17.6,
+              "delta": -62.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 20.2,
+              "delta": -59.8
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 55.0,
+              "delta": -45.0
+            }
+          ]
         }
       },
       "history": {
@@ -18962,6 +22290,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 63.4,
+          "base_score": 62.4,
+          "confidence": 0.76,
+          "fundamental_categories": {
+            "valuation": 100.0,
+            "profitability": 51.8,
+            "financial_health": 80.0,
+            "growth": 33.2,
+            "capital_allocation": 100.0,
+            "accounting_quality": 84.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 42.6,
+          "base_score": 41.6,
+          "confidence": 0.76,
+          "fundamental_categories": {
+            "valuation": 69.7,
+            "profitability": 31.4,
+            "financial_health": 11.8,
+            "growth": 19.9,
+            "capital_allocation": 81.2,
+            "accounting_quality": 55.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 80.0,
+              "challenger": 11.8,
+              "delta": -68.2
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 11.9,
+              "delta": -68.1
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 53.2,
+              "delta": -46.8
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 59.5,
+              "delta": -40.5
+            },
+            {
+              "metric": "operating_margin_trend",
+              "champion": 100.0,
+              "challenger": 64.7,
+              "delta": -35.3
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -19316,6 +22708,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.6,
+          "base_score": 73.8,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 90.4,
+            "profitability": 100.0,
+            "financial_health": 88.5,
+            "growth": 74.0,
+            "capital_allocation": 60.7,
+            "accounting_quality": 85.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 63.2,
+          "base_score": 60.4,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 83.2,
+            "profitability": 83.2,
+            "financial_health": 60.6,
+            "growth": 35.1,
+            "capital_allocation": 53.4,
+            "accounting_quality": 63.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 80.0,
+              "challenger": 34.0,
+              "delta": -46.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 54.9,
+              "delta": -45.1
+            },
+            {
+              "metric": "operating_margin_trend",
+              "champion": 80.0,
+              "challenger": 39.2,
+              "delta": -40.8
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 59.6,
+              "delta": -40.4
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -19668,6 +23124,70 @@
             "capital_allocation": 52.4,
             "accounting_quality": 71.8
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 75.1,
+          "base_score": 71.6,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 95.0,
+            "profitability": 95.5,
+            "financial_health": 95.5,
+            "growth": 55.0,
+            "capital_allocation": 52.4,
+            "accounting_quality": 71.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.0,
+          "base_score": 54.5,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 86.0,
+            "profitability": 66.7,
+            "financial_health": 68.6,
+            "growth": 23.9,
+            "capital_allocation": 41.1,
+            "accounting_quality": 30.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 52.9,
+              "delta": -47.1
+            },
+            {
+              "metric": "piotroski_f",
+              "champion": 55.0,
+              "challenger": 11.0,
+              "delta": -44.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 56.9,
+              "delta": -43.1
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 80.0,
+              "challenger": 38.0,
+              "delta": -42.0
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 59.2,
+              "delta": -40.8
+            }
+          ]
         }
       },
       "history": {
@@ -20025,6 +23545,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 52.1,
+          "base_score": 57.4,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 49.4,
+            "profitability": 87.0,
+            "financial_health": 64.6,
+            "growth": 89.0,
+            "capital_allocation": 34.5,
+            "accounting_quality": 57.7
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 38.6,
+          "base_score": 43.9,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 26.3,
+            "profitability": 80.5,
+            "financial_health": 35.2,
+            "growth": 61.6,
+            "capital_allocation": 19.4,
+            "accounting_quality": 44.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 19.2,
+              "delta": -60.8
+            },
+            {
+              "metric": "revenue_growth",
+              "champion": 80.0,
+              "challenger": 33.7,
+              "delta": -46.3
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 80.0,
+              "challenger": 35.6,
+              "delta": -44.4
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 55.0,
+              "challenger": 15.4,
+              "delta": -39.6
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 42.3,
+              "delta": -37.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -20379,6 +23963,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 66.1,
+          "base_score": 62.4,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 70.4,
+            "profitability": 81.5,
+            "financial_health": 81.3,
+            "growth": 77.5,
+            "capital_allocation": 65.0,
+            "accounting_quality": 87.6
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 45.7,
+          "base_score": 42.0,
+          "confidence": 0.84,
+          "fundamental_categories": {
+            "valuation": 45.3,
+            "profitability": 39.8,
+            "financial_health": 51.6,
+            "growth": 61.2,
+            "capital_allocation": 48.1,
+            "accounting_quality": 64.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 100.0,
+              "challenger": 40.0,
+              "delta": -60.0
+            },
+            {
+              "metric": "altman_z",
+              "champion": 100.0,
+              "challenger": 47.6,
+              "delta": -52.4
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 52.4,
+              "delta": -47.6
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 52.6,
+              "delta": -47.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -20697,6 +24345,25 @@
             "capital_allocation": null,
             "accounting_quality": null
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 57.7,
+          "base_score": 57.0,
+          "confidence": 0.25,
+          "fundamental_categories": {}
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.7,
+          "base_score": 57.0,
+          "confidence": 0.25,
+          "fundamental_categories": {},
+          "largest_metric_changes": []
         }
       },
       "history": {
@@ -21051,6 +24718,70 @@
             "capital_allocation": 88.8,
             "accounting_quality": 71.1
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 69.1,
+          "base_score": 75.2,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 80.7,
+            "profitability": 95.5,
+            "financial_health": 55.3,
+            "growth": 76.4,
+            "capital_allocation": 88.8,
+            "accounting_quality": 71.1
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 54.0,
+          "base_score": 60.1,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 50.5,
+            "profitability": 85.2,
+            "financial_health": 40.3,
+            "growth": 59.5,
+            "capital_allocation": 38.2,
+            "accounting_quality": 70.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 80.0,
+              "challenger": 0.0,
+              "delta": -80.0
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 32.1,
+              "delta": -47.9
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 52.8,
+              "delta": -47.2
+            },
+            {
+              "metric": "ev_to_ebitda",
+              "champion": 80.0,
+              "challenger": 33.3,
+              "delta": -46.7
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 55.0,
+              "challenger": 9.1,
+              "delta": -45.9
+            }
+          ]
         }
       },
       "history": {
@@ -21408,6 +25139,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 84.6,
+          "base_score": 81.3,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 83.2,
+            "profitability": 96.8,
+            "financial_health": 100.0,
+            "growth": 82.3,
+            "capital_allocation": 75.4,
+            "accounting_quality": 96.6
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 72.1,
+          "base_score": 68.8,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.7,
+            "profitability": 68.4,
+            "financial_health": 96.0,
+            "growth": 43.4,
+            "capital_allocation": 59.8,
+            "accounting_quality": 83.4
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 43.3,
+              "delta": -56.7
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 51.0,
+              "delta": -49.0
+            },
+            {
+              "metric": "revenue_growth",
+              "champion": 55.0,
+              "challenger": 17.3,
+              "delta": -37.7
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 62.7,
+              "delta": -37.3
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 66.0,
+              "delta": -34.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -21726,6 +25521,25 @@
             "capital_allocation": null,
             "accounting_quality": null
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 58.4,
+          "base_score": 57.7,
+          "confidence": 0.25,
+          "fundamental_categories": {}
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 58.4,
+          "base_score": 57.7,
+          "confidence": 0.25,
+          "fundamental_categories": {},
+          "largest_metric_changes": []
         }
       },
       "history": {
@@ -22079,6 +25893,70 @@
             "capital_allocation": 86.7,
             "accounting_quality": 72.1
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 60.3,
+          "base_score": 59.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 49.2,
+            "profitability": 85.1,
+            "financial_health": 63.1,
+            "growth": 51.3,
+            "capital_allocation": 86.7,
+            "accounting_quality": 72.1
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 40.4,
+          "base_score": 39.5,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 17.0,
+            "profitability": 53.7,
+            "financial_health": 50.1,
+            "growth": 48.3,
+            "capital_allocation": 30.9,
+            "accounting_quality": 59.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 100.0,
+              "challenger": 26.7,
+              "delta": -73.3
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 100.0,
+              "challenger": 33.3,
+              "delta": -66.7
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 36.4,
+              "delta": -63.6
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 16.9,
+              "delta": -63.1
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 38.9,
+              "delta": -61.1
+            }
+          ]
         }
       },
       "history": {
@@ -22436,6 +26314,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 68.3,
+          "base_score": 66.7,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 85.0,
+            "profitability": 76.4,
+            "financial_health": 61.6,
+            "growth": 32.5,
+            "capital_allocation": 84.7,
+            "accounting_quality": 72.1
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 51.8,
+          "base_score": 50.2,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 68.9,
+            "profitability": 47.2,
+            "financial_health": 24.6,
+            "growth": 24.2,
+            "capital_allocation": 69.5,
+            "accounting_quality": 49.0
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 20.0,
+              "delta": -60.0
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 50.0,
+              "delta": -50.0
+            },
+            {
+              "metric": "altman_z",
+              "champion": 55.0,
+              "challenger": 10.0,
+              "delta": -45.0
+            },
+            {
+              "metric": "days_sales_outstanding_trend",
+              "champion": 55.0,
+              "challenger": 10.0,
+              "delta": -45.0
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 80.0,
+              "challenger": 40.0,
+              "delta": -40.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -22790,6 +26732,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 57.4,
+          "base_score": 56.7,
+          "confidence": 0.76,
+          "fundamental_categories": {
+            "valuation": 96.8,
+            "profitability": 66.2,
+            "financial_health": 52.9,
+            "growth": 58.9,
+            "capital_allocation": 82.4,
+            "accounting_quality": 66.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 40.7,
+          "base_score": 40.0,
+          "confidence": 0.76,
+          "fundamental_categories": {
+            "valuation": 86.4,
+            "profitability": 33.7,
+            "financial_health": 18.4,
+            "growth": 37.9,
+            "capital_allocation": 64.6,
+            "accounting_quality": 28.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 45.1,
+              "delta": -54.9
+            },
+            {
+              "metric": "altman_z",
+              "champion": 80.0,
+              "challenger": 29.8,
+              "delta": -50.2
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 55.0,
+              "challenger": 13.4,
+              "delta": -41.6
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 59.9,
+              "delta": -40.1
+            },
+            {
+              "metric": "piotroski_f",
+              "champion": 55.0,
+              "challenger": 18.5,
+              "delta": -36.5
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -23142,6 +27148,70 @@
             "capital_allocation": 66.9,
             "accounting_quality": 64.9
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 48.1,
+          "base_score": 47.4,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 36.2,
+            "profitability": 68.7,
+            "financial_health": 50.6,
+            "growth": 20.7,
+            "capital_allocation": 66.9,
+            "accounting_quality": 64.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 32.4,
+          "base_score": 31.7,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 18.3,
+            "profitability": 43.1,
+            "financial_health": 26.2,
+            "growth": 17.8,
+            "capital_allocation": 48.6,
+            "accounting_quality": 29.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 50.9,
+              "delta": -49.1
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 54.3,
+              "delta": -45.7
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 60.0,
+              "delta": -40.0
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 80.0,
+              "challenger": 41.9,
+              "delta": -38.1
+            },
+            {
+              "metric": "piotroski_f",
+              "champion": 55.0,
+              "challenger": 18.5,
+              "delta": -36.5
+            }
+          ]
         }
       },
       "history": {
@@ -23571,6 +27641,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 41.7,
+          "base_score": 42.5,
+          "confidence": 0.72,
+          "fundamental_categories": {
+            "valuation": 22.2,
+            "profitability": 37.4,
+            "financial_health": 35.2,
+            "growth": 73.3,
+            "capital_allocation": 38.6,
+            "accounting_quality": 76.5
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 32.4,
+          "base_score": 33.2,
+          "confidence": 0.72,
+          "fundamental_categories": {
+            "valuation": 4.7,
+            "profitability": 28.3,
+            "financial_health": 27.7,
+            "growth": 59.9,
+            "capital_allocation": 24.3,
+            "accounting_quality": 50.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "sales_multiple",
+              "champion": 45.0,
+              "challenger": 6.7,
+              "delta": -38.3
+            },
+            {
+              "metric": "piotroski_f",
+              "champion": 55.0,
+              "challenger": 19.0,
+              "delta": -36.0
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 66.7,
+              "delta": -33.3
+            },
+            {
+              "metric": "inventory_days_trend",
+              "champion": 80.0,
+              "challenger": 55.6,
+              "delta": -24.4
+            },
+            {
+              "metric": "free_cash_flow_yield",
+              "champion": 30.0,
+              "challenger": 8.3,
+              "delta": -21.7
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -23943,6 +28077,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 66.1,
+          "base_score": 69.9,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 98.5,
+            "profitability": 85.6,
+            "financial_health": 83.8,
+            "growth": 62.6,
+            "capital_allocation": 28.9,
+            "accounting_quality": 45.5
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 59.7,
+          "base_score": 63.5,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 95.7,
+            "profitability": 82.5,
+            "financial_health": 58.7,
+            "growth": 58.9,
+            "capital_allocation": 10.3,
+            "accounting_quality": 35.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 61.9,
+              "delta": -38.1
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 100.0,
+              "challenger": 70.0,
+              "delta": -30.0
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 55.0,
+              "challenger": 25.0,
+              "delta": -30.0
+            },
+            {
+              "metric": "current_ratio",
+              "champion": 100.0,
+              "challenger": 70.8,
+              "delta": -29.2
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 25.0,
+              "challenger": 0.0,
+              "delta": -25.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -24302,6 +28500,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 70.1,
+          "base_score": 70.1,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 91.1,
+            "profitability": 88.3,
+            "financial_health": 80.2,
+            "growth": 91.6,
+            "capital_allocation": 37.1,
+            "accounting_quality": 85.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.4,
+          "base_score": 60.4,
+          "confidence": 0.86,
+          "fundamental_categories": {
+            "valuation": 96.9,
+            "profitability": 64.0,
+            "financial_health": 54.3,
+            "growth": 74.0,
+            "capital_allocation": 24.2,
+            "accounting_quality": 72.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 100.0,
+              "challenger": 58.0,
+              "delta": -42.0
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 55.0,
+              "challenger": 13.5,
+              "delta": -41.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 60.0,
+              "challenger": 97.6,
+              "delta": 37.6
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 31.4,
+              "delta": -33.6
+            },
+            {
+              "metric": "debt_to_equity",
+              "champion": 50.0,
+              "challenger": 16.5,
+              "delta": -33.5
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -24654,6 +28916,70 @@
             "capital_allocation": 55.9,
             "accounting_quality": 100.0
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 76.1,
+          "base_score": 76.3,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 80.4,
+            "profitability": 96.8,
+            "financial_health": 98.0,
+            "growth": 50.7,
+            "capital_allocation": 55.9,
+            "accounting_quality": 100.0
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 60.0,
+          "base_score": 60.2,
+          "confidence": 0.88,
+          "fundamental_categories": {
+            "valuation": 60.4,
+            "profitability": 72.1,
+            "financial_health": 66.7,
+            "growth": 33.0,
+            "capital_allocation": 43.7,
+            "accounting_quality": 84.6
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 21.2,
+              "delta": -58.8
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 43.1,
+              "delta": -56.9
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 100.0,
+              "challenger": 45.1,
+              "delta": -54.9
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 27.9,
+              "delta": -52.1
+            },
+            {
+              "metric": "fcf_growth_3y",
+              "champion": 100.0,
+              "challenger": 61.7,
+              "delta": -38.3
+            }
+          ]
         }
       },
       "history": {
@@ -25009,6 +29335,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 69.4,
+          "base_score": 67.2,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 31.3,
+            "profitability": 92.8,
+            "financial_health": 93.5,
+            "growth": 93.8,
+            "capital_allocation": 72.9,
+            "accounting_quality": 80.2
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 53.9,
+          "base_score": 51.7,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 13.0,
+            "profitability": 70.9,
+            "financial_health": 66.8,
+            "growth": 75.8,
+            "capital_allocation": 52.6,
+            "accounting_quality": 64.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "asset_growth",
+              "champion": 65.0,
+              "challenger": 28.6,
+              "delta": -36.4
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 45.0,
+              "challenger": 9.7,
+              "delta": -35.3
+            },
+            {
+              "metric": "net_debt_to_ebitda",
+              "champion": 100.0,
+              "challenger": 65.0,
+              "delta": -35.0
+            },
+            {
+              "metric": "current_ratio",
+              "champion": 80.0,
+              "challenger": 48.6,
+              "delta": -31.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 45.0,
+              "challenger": 16.0,
+              "delta": -29.0
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -25360,6 +29750,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 52.9
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 73.3,
+          "base_score": 72.4,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 98.7,
+            "profitability": 86.8,
+            "financial_health": 100.0,
+            "growth": 47.5,
+            "capital_allocation": 100.0,
+            "accounting_quality": 52.9
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 57.0,
+          "base_score": 56.1,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 78.3,
+            "profitability": 70.1,
+            "financial_health": 84.8,
+            "growth": 37.8,
+            "capital_allocation": 57.5,
+            "accounting_quality": 15.3
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 5.6,
+              "delta": -74.4
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 33.3,
+              "delta": -66.7
+            },
+            {
+              "metric": "ev_to_fcf",
+              "champion": 100.0,
+              "challenger": 47.1,
+              "delta": -52.9
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 57.6,
+              "delta": -42.4
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 100.0,
+              "challenger": 59.6,
+              "delta": -40.4
+            }
+          ]
         }
       },
       "history": {
@@ -25715,6 +30169,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 81.7,
+          "base_score": 78.3,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 93.1,
+            "profitability": 94.8,
+            "financial_health": 100.0,
+            "growth": 56.1,
+            "capital_allocation": 100.0,
+            "accounting_quality": 79.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 71.3,
+          "base_score": 67.9,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 75.6,
+            "profitability": 83.4,
+            "financial_health": 97.3,
+            "growth": 54.5,
+            "capital_allocation": 61.4,
+            "accounting_quality": 66.2
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 38.9,
+              "delta": -61.1
+            },
+            {
+              "metric": "stock_comp_to_revenue",
+              "champion": 100.0,
+              "challenger": 40.0,
+              "delta": -60.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 46.7,
+              "delta": -53.3
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 37.2,
+              "delta": -42.8
+            },
+            {
+              "metric": "asset_growth",
+              "champion": 100.0,
+              "challenger": 63.9,
+              "delta": -36.1
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -26060,6 +30578,70 @@
             "capital_allocation": 80.6,
             "accounting_quality": 83.7
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 65.2,
+          "base_score": 67.7,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 32.1,
+            "profitability": 89.6,
+            "financial_health": 87.4,
+            "growth": 66.9,
+            "capital_allocation": 80.6,
+            "accounting_quality": 83.7
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 51.2,
+          "base_score": 53.7,
+          "confidence": 0.89,
+          "fundamental_categories": {
+            "valuation": 26.6,
+            "profitability": 71.7,
+            "financial_health": 55.8,
+            "growth": 36.1,
+            "capital_allocation": 66.5,
+            "accounting_quality": 57.8
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "accruals_ratio",
+              "champion": 80.0,
+              "challenger": 10.0,
+              "delta": -70.0
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 80.0,
+              "challenger": 13.5,
+              "delta": -66.5
+            },
+            {
+              "metric": "sales_multiple",
+              "champion": 80.0,
+              "challenger": 22.1,
+              "delta": -57.9
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 80.0,
+              "challenger": 23.5,
+              "delta": -56.5
+            },
+            {
+              "metric": "earnings_growth",
+              "champion": 100.0,
+              "challenger": 51.1,
+              "delta": -48.9
+            }
+          ]
         }
       },
       "history": {
@@ -26420,6 +31002,70 @@
           }
         }
       },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 64.1,
+          "base_score": 63.2,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 50.2,
+            "profitability": 77.7,
+            "financial_health": 42.1,
+            "growth": 91.4,
+            "capital_allocation": 77.9,
+            "accounting_quality": 61.3
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 52.4,
+          "base_score": 51.5,
+          "confidence": 0.85,
+          "fundamental_categories": {
+            "valuation": 47.9,
+            "profitability": 47.5,
+            "financial_health": 15.6,
+            "growth": 81.7,
+            "capital_allocation": 74.2,
+            "accounting_quality": 42.5
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 39.4,
+              "delta": -60.6
+            },
+            {
+              "metric": "gross_profits_to_assets",
+              "champion": 80.0,
+              "challenger": 28.0,
+              "delta": -52.0
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 58.0,
+              "delta": -42.0
+            },
+            {
+              "metric": "cash_conversion",
+              "champion": 100.0,
+              "challenger": 58.8,
+              "delta": -41.2
+            },
+            {
+              "metric": "interest_coverage",
+              "champion": 55.0,
+              "challenger": 15.7,
+              "delta": -39.3
+            }
+          ]
+        }
+      },
       "history": {
         "dates": [
           "2024-12-12",
@@ -26766,6 +31412,70 @@
             "capital_allocation": 100.0,
             "accounting_quality": 92.8
           }
+        }
+      },
+      "score_variants": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 77.9,
+          "base_score": 75.0,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 92.9,
+            "profitability": 74.7,
+            "financial_health": 54.1,
+            "growth": 86.5,
+            "capital_allocation": 100.0,
+            "accounting_quality": 92.8
+          }
+        },
+        "challenger": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 61.0,
+          "base_score": 58.1,
+          "confidence": 0.87,
+          "fundamental_categories": {
+            "valuation": 63.3,
+            "profitability": 54.8,
+            "financial_health": 33.3,
+            "growth": 80.4,
+            "capital_allocation": 66.8,
+            "accounting_quality": 71.7
+          },
+          "largest_metric_changes": [
+            {
+              "metric": "ev_to_fcf",
+              "champion": 100.0,
+              "challenger": 41.2,
+              "delta": -58.8
+            },
+            {
+              "metric": "net_buyback_yield",
+              "champion": 100.0,
+              "challenger": 44.4,
+              "delta": -55.6
+            },
+            {
+              "metric": "accruals_ratio",
+              "champion": 100.0,
+              "challenger": 50.0,
+              "delta": -50.0
+            },
+            {
+              "metric": "return_on_equity",
+              "champion": 100.0,
+              "challenger": 51.5,
+              "delta": -48.5
+            },
+            {
+              "metric": "forward_pe",
+              "champion": 100.0,
+              "challenger": 60.2,
+              "delta": -39.8
+            }
+          ]
         }
       },
       "history": {
@@ -34728,8 +39438,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.0.0",
-    "git_commit_sha": "5bc627bd4f02ff4f94242f45e3c210eba1aa590e",
-    "config_hash": "b50e99713677195cacea03334bab0039194e116f804c1f516cb1fe354c027228",
+    "git_commit_sha": "9d0ac1d73c7ca0ea5cc22dfb6ae1ade0d61a2e99",
+    "config_hash": "ba486d325b0e78c49fc1a25ce205c5beb401dd6ea84518e9009f086838ac817f",
     "generated_at": "2026-08-04T23:48:29.535571+00:00"
   }
 }

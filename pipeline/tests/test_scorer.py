@@ -207,5 +207,71 @@ class NewMetricScoringTests(unittest.TestCase):
         self.assertGreater(bank["coverage"], software["coverage"])
 
 
+class CrossSectionalNormalizationTests(unittest.TestCase):
+    def setUp(self):
+        self.config = {
+            "winsor_lower_percentile": 0.01,
+            "winsor_upper_percentile": 0.99,
+            "sector_minimum_count": 8,
+        }
+
+    def test_uses_sector_scope_at_eight_observations_and_universe_below_it(self):
+        snapshots = [
+            {"ticker": f"T{index}", "sector": "Technology", "forward_pe": 10 + index}
+            for index in range(8)
+        ] + [
+            {"ticker": f"H{index}", "sector": "Healthcare", "forward_pe": 30 + index}
+            for index in range(7)
+        ]
+        normalizer = scorer.CrossSectionalNormalizer(snapshots, self.config)
+        _, technology = normalizer.score("forward_pe", 14, "Technology")
+        _, healthcare = normalizer.score("forward_pe", 33, "Healthcare")
+        self.assertEqual(technology["normalization_scope"], "sector")
+        self.assertEqual(healthcare["normalization_scope"], "universe")
+
+    def test_lower_is_better_direction_is_flipped(self):
+        snapshots = [
+            {"ticker": str(index), "sector": "Technology", "forward_pe": value}
+            for index, value in enumerate(range(10, 20))
+        ]
+        normalizer = scorer.CrossSectionalNormalizer(snapshots, self.config)
+        cheap, _ = normalizer.score("forward_pe", 11, "Technology")
+        expensive, _ = normalizer.score("forward_pe", 18, "Technology")
+        self.assertGreater(cheap, expensive)
+
+    def test_range_metrics_rank_distance_from_ideal(self):
+        snapshots = [
+            {"ticker": str(index), "sector": "Industrials", "asset_growth": value}
+            for index, value in enumerate((-0.4, -0.2, -0.1, 0.0, 0.04, 0.08, 0.2, 0.4))
+        ]
+        normalizer = scorer.CrossSectionalNormalizer(snapshots, self.config)
+        ideal, _ = normalizer.score("asset_growth", 0.04, "Industrials")
+        extreme, _ = normalizer.score("asset_growth", 0.4, "Industrials")
+        self.assertGreater(ideal, extreme)
+
+    def test_nonpositive_valuation_is_not_applicable(self):
+        snapshots = [
+            {"ticker": str(index), "sector": "Technology", "forward_pe": value}
+            for index, value in enumerate((-12, 10, 12, 14, 16, 18, 20, 22, 24))
+        ]
+        normalizer = scorer.CrossSectionalNormalizer(snapshots, self.config)
+        score, detail = normalizer.score("forward_pe", -12, "Technology")
+        distribution = normalizer.published_distributions()["metrics"]["forward_pe"]
+        self.assertIsNone(score)
+        self.assertEqual(detail["status"], "not_applicable_nonpositive")
+        self.assertNotIn(-12, distribution["universe_values"])
+
+    def test_winsorized_distribution_is_published_exactly(self):
+        snapshots = [
+            {"ticker": str(index), "sector": "Technology", "return_on_equity": value}
+            for index, value in enumerate((0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 20.0))
+        ]
+        normalizer = scorer.CrossSectionalNormalizer(snapshots, self.config)
+        published = normalizer.published_distributions()
+        values = published["metrics"]["return_on_equity"]["universe_values"]
+        self.assertEqual(len(values), len(snapshots))
+        self.assertLess(values[-1], 20.0)
+
+
 if __name__ == "__main__":
     unittest.main()

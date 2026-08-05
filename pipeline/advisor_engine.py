@@ -465,6 +465,78 @@ def stance_for(score, confidence):
     return "CAUTION"
 
 
+def blend_research_components(components, coverage, modifier_points=0.0, weights=None):
+    """Return the legacy evidence blend, confidence pull, and bounded final score.
+
+    Formula for the current champion is ``raw = sum(score_i * weight_i) / sum(weight_i)``
+    over available components, then ``base = raw * (0.8 + 0.2 * confidence)`` and
+    ``final = clamp(base + modifier_points)``. Keeping this in one function lets a
+    challenger replace one component without changing any other part of the comparison.
+    """
+    weights = weights or RANKING_WEIGHTS
+    available = [(components[key], weights[key]) for key in weights
+                 if components.get(key) is not None]
+    raw = sum(value * weight for value, weight in available) / sum(
+        weight for _, weight in available
+    ) if available else 0.0
+    confidence = round(
+        0.65 * coverage.get("fundamentals", 0.0)
+        + 0.25 * coverage.get("market_behavior", 0.0)
+        + 0.10 * coverage.get("news_sentiment", 0.0),
+        2,
+    )
+    base = round(raw * (0.8 + confidence * 0.2), 1)
+    return {
+        "raw_score": round(raw, 1),
+        "base_score": base,
+        "score": round(clamp(base + modifier_points), 1),
+        "confidence": confidence,
+    }
+
+
+def cross_sectional_challenger(row, snapshot, normalizer):
+    """Replace only the fundamental component and publish an attributable challenger."""
+    fundamental, detail = valuation_score(
+        snapshot, mode="cross_sectional", normalizer=normalizer,
+    )
+    components = {**row.get("components", {}), "fundamentals": fundamental}
+    blended = blend_research_components(
+        components,
+        {
+            "fundamentals": detail.get("coverage", 0.0),
+            "market_behavior": (row.get("technical_detail") or {}).get("coverage", 0.0),
+            "news_sentiment": (row.get("sentiment_detail") or {}).get("coverage", 0.0),
+        },
+        (row.get("modifiers") or {}).get("total", 0.0),
+    )
+    champion_metrics = row.get("fundamental_detail") or {}
+    deltas = sorted(
+        (
+            {
+                "metric": metric,
+                "champion": champion_metrics.get(metric),
+                "challenger": value,
+                "delta": round(value - champion_metrics[metric], 1),
+            }
+            for metric, value in detail.items()
+            if isinstance(value, (int, float))
+            and isinstance(champion_metrics.get(metric), (int, float))
+            and metric not in {"coverage", "raw_score"}
+        ),
+        key=lambda item: abs(item["delta"]),
+        reverse=True,
+    )
+    return {
+        "variant": "cross_sectional_normalization",
+        "normalization_mode": "cross_sectional",
+        **blended,
+        "components": components,
+        "fundamental_categories": detail.get("categories", {}),
+        "fundamental_detail": detail,
+        "largest_metric_changes": deltas[:5],
+    }
+
+
 def build_evidence(categories, technical_parts, extended):
     """Plain-language strengths and risks drawn from whichever metrics actually resolved."""
     strengths, risks = [], []
@@ -527,15 +599,13 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
     sentiment, sentiment_parts = sentiment_score(news_items, symbol)
     components = {"fundamentals": fundamental, "market_behavior": technical, "news_sentiment": sentiment}
-    # Fundamentals deliberately dominate the ranking. Price and headlines confirm; they cannot
-    # rescue a company with weak valuation/quality evidence.
-    weights = RANKING_WEIGHTS
-    available = [(components[k], weights[k]) for k in weights if components[k] is not None]
-    raw = sum(v * w for v, w in available) / sum(w for _, w in available) if available else 0
     fundamental_coverage = fundamental_parts.get("coverage", 0.0)
-    confidence = round(0.65 * fundamental_coverage + 0.25 * technical_parts.get("coverage", 0) +
-                       0.10 * sentiment_parts.get("coverage", 0), 2)
-    base = round(raw * (0.8 + confidence * 0.2), 1)
+    blended = blend_research_components(components, {
+        "fundamentals": fundamental_coverage,
+        "market_behavior": technical_parts.get("coverage", 0),
+        "news_sentiment": sentiment_parts.get("coverage", 0),
+    })
+    confidence, base = blended["confidence"], blended["base_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
                                        insider_activity)
     categories = fundamental_parts.get("categories", {})
