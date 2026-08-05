@@ -157,11 +157,36 @@ export function intradayPortfolioHigh(points = []) {
 
 export function netInvestedCapital(transactions) {
   if (!Array.isArray(transactions) || !transactions.length) return { available: false, value: null, reason: 'Complete contribution and withdrawal history is unavailable.' }
-  const external = transactions.filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount))
+  const external = transactions.filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))
   if (!external.length || external.some((row) => !(row.effectiveDate || row.date))) return { available: false, value: null, reason: 'Complete dated external cash flows are unavailable.' }
   const deposits = external.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount), 0)
   const withdrawals = external.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount), 0)
   return { available: true, value: deposits - withdrawals, deposits, withdrawals, count: external.length, reason: 'External deposits minus external withdrawals.' }
+}
+
+export function trailingCashFlowPace(transactions, endDate, historyComplete = false) {
+  if (!historyComplete) return { available: false, netContributions: null, reason: 'Confirm the complete deposit and withdrawal history first.' }
+  const end = Date.parse(endDate)
+  if (!Number.isFinite(end)) return { available: false, netContributions: null, reason: 'A valid report date is required.' }
+  const start = end - 365 * 86400000
+  const rows = (transactions || []).filter((row) => {
+    if (!['deposit', 'withdrawal'].includes(row.type) || !finite(row.amount) || ['pending', 'processing'].includes(row.status)) return false
+    const date = Date.parse(row.effectiveDate || row.date)
+    return Number.isFinite(date) && date >= start && date <= end
+  })
+  if (!rows.length) return { available: false, netContributions: null, reason: 'No settled external cash flows fall within the trailing year.' }
+  const deposits = rows.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount), 0)
+  const withdrawals = rows.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount), 0)
+  return {
+    available: true,
+    deposits,
+    withdrawals,
+    netContributions: deposits - withdrawals,
+    count: rows.length,
+    startDate: new Date(start).toISOString().slice(0, 10),
+    endDate,
+    reason: 'Settled external deposits minus withdrawals over the trailing 365 days. Pending transfers are excluded.',
+  }
 }
 
 export function contributionAdjustedPerformance(currentValue, transactions, historyComplete = false) {
@@ -217,13 +242,23 @@ export function portfolioAnnualizedReturn(positions = [], endDate = new Date().t
   return { available: true, rate: ((low + high) / 2) * 100, spanDays, coveragePct, startDate: flows[0].date, endDate, methodology: 'Money-weighted annualized return for currently held positions using entered purchase dates, cost basis, and latest stored values.' }
 }
 
-export function planningReturnRates(positions = [], historicalValues = [], endDate) {
-  const annualized = portfolioAnnualizedReturn(positions, endDate)
+export function planningReturnRates(positions = [], historicalValues = [], endDate, options = {}) {
+  const observedTrailingYear = finite(options.trailingYearReturn) ? Number(options.trailingYearReturn) : null
+  const annualized = observedTrailingYear == null
+    ? portfolioAnnualizedReturn(positions, endDate)
+    : {
+        available: true,
+        rate: observedTrailingYear,
+        spanDays: 365,
+        startDate: options.trailingYearStartDate,
+        endDate,
+        methodology: options.trailingYearMethodology || 'Trailing one-year time-weighted brokerage return, which minimizes the effect of deposit and withdrawal timing.',
+      }
   if (!annualized.available) return { available: false, ...annualized }
   const volatility = annualizedVolatility(historicalValues)
   const band = finite(volatility) ? clamp(Number(volatility) * .35, 2, 12) : 5
   const base = clamp(annualized.rate, -40, 40)
-  return { available: true, base, conservative: clamp(base - band, -50, 40), optimistic: clamp(base + band, -40, 50), volatility, band, annualized, methodology: `${annualized.methodology} Conservative and optimistic rates subtract or add 35% of observed annualized volatility, bounded to a 2–12 percentage-point range.` }
+  return { available: true, base, conservative: clamp(base - band, -50, 40), optimistic: clamp(base + band, -40, 50), volatility, band, annualized, source: observedTrailingYear == null ? 'current-holdings-irr' : 'trailing-year-brokerage-return', methodology: `${annualized.methodology} Conservative and optimistic rates subtract or add 35% of observed annualized volatility, bounded to a 2–12 percentage-point range.` }
 }
 
 export function trackedAllTimeEarnings(portfolio, activities = [], trackingState = null) {

@@ -46,7 +46,7 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
   const dates = benchmarkHistory?.dates || []
   const closes = benchmarkHistory?.closes || []
   const flows = cashFlows
-    .filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount) && row.effectiveDate)
+    .filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount) && row.effectiveDate && !['pending', 'processing'].includes(row.status))
     .map((row) => ({ type: row.type, amount: Number(row.amount), effectiveDate: row.effectiveDate }))
     .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate))
   if (!flows.length || dates.length < 2) return { available: false, reason: 'Not enough cash-flow or benchmark history to build a comparison.' }
@@ -78,7 +78,7 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
     netContributions,
     finalValue: outValues.at(-1),
     symbol: benchmarkHistory.symbol || benchmarkHistory.label,
-    methodology: 'Each deposit buys, and each withdrawal sells, benchmark units at that date’s close — the same dollars, invested in the benchmark instead.',
+    methodology: 'Each settled deposit buys, and each withdrawal sells, benchmark units at that date’s close — the same dollars, invested in the benchmark instead. Pending transfers are excluded.',
   }
 }
 

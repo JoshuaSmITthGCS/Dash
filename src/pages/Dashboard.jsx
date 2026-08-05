@@ -9,7 +9,7 @@ import { signedPct } from '../lib/formatters.js'
 import {
   BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, contributionAdjustedPerformance, currentHoldingsSeries, diversificationScore,
   enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceRating, planningReturnRates, portfolioScore,
-  resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
+  resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from '../lib/portfolioAnalytics.js'
 import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
 import { Loading, Empty, Move, Tier } from '../components/Bits.jsx'
@@ -21,6 +21,7 @@ import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
 import { rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
+import { FIDELITY_REFERENCE_SNAPSHOT } from '../lib/referenceCashFlows.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -138,17 +139,31 @@ export default function Dashboard() {
   const money = (value) => preferences.privacyMode ? '••••••' : formatPreferenceMoney(value, preferences.numberFormat)
   const tone = (value) => value == null ? '' : value >= 0 ? 'positive' : 'negative'
   const forecast = preferences.forecast
-  const planningRates = planningReturnRates(portfolio.positions, holdingsSeries?.values || [], today?.date)
-  const scenarioHorizons = [1, 5, 10].map((years) => ({ years, values: planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, rate: planningRates[label], value: scenarioProjection(portfolio.totalValue, planningRates[label], years, forecast.recurringAnnual) })) : [] }))
-  const yearsToRetirement = Math.max(0, forecast.retirementAge - forecast.currentAge)
-  const retirementValues = planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, value: scenarioProjection(portfolio.totalValue, planningRates[label], yearsToRetirement, forecast.recurringAnnual) })) : []
   const latestTrackingDate = tracking.snapshots.at(-1)?.marketDate
   const intraday = intradayPortfolioHigh(tracking.snapshots.filter((snapshot) => snapshot.marketDate === latestTrackingDate))
   const allTimeEarnings = trackedAllTimeEarnings(portfolio, tracking.activities, tracking.trackingState)
   const actionable = portfolio.positions.map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null })).filter((row) => row.recommendation && row.recommendation.action !== 'HOLD')
 
   const uninvestedCash = tracking.trackingState?.cashTrackingEnabled ? Number(tracking.trackingState.cashBalance || 0) : 0
-  const contributionPerformance = contributionAdjustedPerformance(portfolio.totalValue + uninvestedCash, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
+  const trackedAccountValue = portfolio.totalValue + uninvestedCash
+  const cashHistoryComplete = tracking.trackingState?.cashFlowHistoryComplete
+  const contributionPerformance = contributionAdjustedPerformance(trackedAccountValue, tracking.activities, cashHistoryComplete)
+  const useFidelityTrailingYear = Boolean(tracking.trackingState?.fidelityHistoryImported)
+  const planningReportDate = today?.date || (useFidelityTrailingYear ? FIDELITY_REFERENCE_SNAPSHOT.asOf.slice(0, 10) : null)
+  const contributionPace = trailingCashFlowPace(tracking.activities, planningReportDate, cashHistoryComplete)
+  const planningRates = planningReturnRates(portfolio.positions, holdingsSeries?.values || [], planningReportDate, useFidelityTrailingYear ? {
+    trailingYearReturn: FIDELITY_REFERENCE_SNAPSHOT.periodReturns['1Y'],
+    trailingYearStartDate: '2025-08-04',
+    trailingYearMethodology: 'Fidelity’s trailing one-year time-weighted return, used as the base case because it isolates investment performance from the size and timing of deposits and withdrawals.',
+  } : {})
+  const projectedAnnualContribution = contributionPace.available ? contributionPace.netContributions : forecast.recurringAnnual
+  const scenarioHorizons = [1, 5, 10].map((years) => ({
+    years,
+    contributionOnly: scenarioProjection(trackedAccountValue, 0, years, projectedAnnualContribution),
+    values: planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, rate: planningRates[label], value: scenarioProjection(trackedAccountValue, planningRates[label], years, projectedAnnualContribution) })) : [],
+  }))
+  const yearsToRetirement = Math.max(0, forecast.retirementAge - forecast.currentAge)
+  const retirementValues = planningRates.available ? ['conservative', 'base', 'optimistic'].map((label) => ({ label, value: scenarioProjection(trackedAccountValue, planningRates[label], yearsToRetirement, projectedAnnualContribution) })) : []
   const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
     ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
     : null
@@ -229,7 +244,7 @@ export default function Dashboard() {
       <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest; ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown; ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /><ScoreCard label="Performance" result={performance} note={performance.reason} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>Weights: diversification 25%, resilience 25%, risk-adjusted performance 20%, benchmark efficiency 15%, concentration/liquidity 10%, and data completeness 5%. A provisional score reweights only available real-data components; missing components are never treated as zero.</p></details>}</section>
 
       <section className="report-two-column">
-        <article className="planning-card"><span className="eyebrow">If all goes to plan</span><h2>1, 5, and 10-year outlook</h2>{planningRates.available ? <><div className="scenario-horizon-grid">{scenarioHorizons.map((horizon) => <section key={horizon.years}><h3>{horizon.years} year{horizon.years === 1 ? '' : 's'}</h3>{horizon.values.map((item) => <div key={item.label}><span>{item.label}<small>{item.rate.toFixed(1)}% annualized</small></span><strong>{money(item.value)}</strong></div>)}</section>)}</div><div className="retirement-outlook"><span>At retirement · age {forecast.retirementAge}</span><strong>{yearsToRetirement ? money(retirementValues.find((item) => item.label === 'base')?.value) : money(portfolio.totalValue)}</strong><small>{yearsToRetirement} years away · base annualized path</small></div><p>{planningRates.methodology} Includes {money(forecast.recurringAnnual)} at each year end. These are scenarios, not predictions.</p></> : <div className="unavailable-panel compact-unavailable"><strong>Annualized scenario unavailable</strong><p>{planningRates.reason}</p></div>}<Link to="/settings">Edit contribution and retirement age</Link></article>
+        <article className="planning-card"><span className="eyebrow">If your last year repeated</span><h2>1, 5, and 10-year illustration</h2>{planningRates.available ? <><div className="scenario-basis-grid"><div><span>Trailing 1Y return</span><strong>{signedPct(planningRates.base, 1)}</strong><small>{planningRates.source === 'trailing-year-brokerage-return' ? 'Fidelity time-weighted' : 'Current-holdings money-weighted'}</small></div><div><span>Observed annual funding</span><strong>{money(projectedAnnualContribution)}</strong><small>{contributionPace.available ? 'Settled trailing-year net deposits' : 'Manual setting'}</small></div><div><span>Actually made</span><strong className={tone(contributionPerformance.value)}>{contributionPerformance.available ? money(contributionPerformance.value) : 'Tracking'}</strong><small>{contributionPerformance.available ? `${signedPct(contributionPerformance.returnPct, 2)} on settled lifetime contributions` : contributionPerformance.reason}</small></div></div><div className="scenario-horizon-grid">{scenarioHorizons.map((horizon) => <section key={horizon.years}><h3>{horizon.years} year{horizon.years === 1 ? '' : 's'}<small>No-return baseline {money(horizon.contributionOnly)}</small></h3>{horizon.values.map((item) => <div key={item.label}><span>{item.label}<small>{item.rate.toFixed(1)}% annualized</small></span><strong>{money(item.value)}</strong></div>)}</section>)}</div><div className="retirement-outlook"><span>Same-return illustration · age {forecast.retirementAge}</span><strong>{yearsToRetirement ? money(retirementValues.find((item) => item.label === 'base')?.value) : money(trackedAccountValue)}</strong><small>{yearsToRetirement} years away · repeats the trailing-year base case</small></div><p>{planningRates.methodology} Adds {money(projectedAnnualContribution)} at each year end based on {contributionPace.available ? `${contributionPace.startDate}–${contributionPace.endDate} settled cash flows` : 'your manual setting'}.{useFidelityTrailingYear ? ` The processing ${money(100)} Aug. 4 transfer is excluded until posted.` : ''} This is a historical what-if, not a prediction.</p></> : <div className="unavailable-panel compact-unavailable"><strong>Annualized scenario unavailable</strong><p>{planningRates.reason}</p></div>}<div className="planning-links"><Link to="/portfolio/insights">Open cash-flow performance chart</Link><Link to="/settings">Edit contribution and retirement age</Link></div></article>
         <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}

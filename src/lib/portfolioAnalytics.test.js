@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, netInvestedCapital, opportunityCost, performanceRating,
-  planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
+  planningReturnRates, portfolioAnnualizedReturn, portfolioScore, resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -44,6 +44,20 @@ describe('portfolio report analytics', () => {
     expect(result.netContributions).toBe(2680)
     expect(result.value).toBeCloseTo(147.96, 2)
     expect(result.returnPct).toBeCloseTo(5.52, 2)
+  })
+
+  it('excludes processing transfers from actual gains and the observed contribution pace', () => {
+    const rows = [
+      { type: 'deposit', amount: 60, effectiveDate: '2025-08-04' },
+      { type: 'deposit', amount: 200, effectiveDate: '2026-02-13' },
+      { type: 'withdrawal', amount: 200, effectiveDate: '2026-03-30' },
+      { type: 'deposit', amount: 2500, effectiveDate: '2026-08-03' },
+      { type: 'deposit', amount: 100, effectiveDate: '2026-08-04', status: 'processing' },
+    ]
+    const performance = contributionAdjustedPerformance(2818.41, rows, true)
+    expect(performance.netContributions).toBe(2560)
+    expect(performance.value).toBeCloseTo(258.41, 2)
+    expect(trailingCashFlowPace(rows, '2026-08-04', true)).toMatchObject({ deposits: 2760, withdrawals: 200, netContributions: 2560, count: 4 })
   })
 
   it('aligns exact dates before benchmark and opportunity-cost comparisons', () => {
@@ -99,6 +113,15 @@ describe('portfolio report analytics', () => {
     const rates = planningReturnRates(positions, [100, 101, 102, 103], '2026-01-01')
     expect(rates.conservative).toBeLessThan(rates.base)
     expect(rates.optimistic).toBeGreaterThan(rates.base)
+  })
+
+  it('uses an authoritative trailing-year brokerage return when one is supplied', () => {
+    const rates = planningReturnRates([], [100, 101, 102, 103], '2026-08-04', {
+      trailingYearReturn: 32.2,
+      trailingYearStartDate: '2025-08-04',
+    })
+    expect(rates).toMatchObject({ available: true, base: 32.2, source: 'trailing-year-brokerage-return' })
+    expect(rates.annualized.startDate).toBe('2025-08-04')
   })
 
   it('stores observed intraday highs and only calculates all-time earnings after ledger confirmation', () => {

@@ -12,15 +12,19 @@ export const FIDELITY_CASH_FLOWS = [
 ]
 
 export const FIDELITY_REFERENCE_SNAPSHOT = {
-  asOf: '2026-08-04T15:42:50-04:00',
-  totalAccountValue: 2827.96,
-  investments: 2827.54,
+  asOf: '2026-08-04T14:01:23-04:00',
+  totalAccountValue: 2818.41,
+  investments: 2817.99,
   cash: 0.42,
+  dayChange: 132.32,
   periodReturns: { '1D': 2.67, '1M': 3.01, YTD: 13.02, '1Y': 32.20 },
 }
 
 export function summarizeCashFlows(rows = FIDELITY_CASH_FLOWS) {
-  const deposits = rows.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount || 0), 0)
-  const withdrawals = rows.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount || 0), 0)
-  return { deposits, withdrawals, netContributions: deposits - withdrawals }
+  const settled = rows.filter((row) => !['pending', 'processing'].includes(row.status))
+  const pending = rows.filter((row) => ['pending', 'processing'].includes(row.status))
+  const deposits = settled.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount || 0), 0)
+  const withdrawals = settled.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount || 0), 0)
+  const pendingDeposits = pending.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount || 0), 0)
+  return { deposits, withdrawals, netContributions: deposits - withdrawals, pendingDeposits }
 }

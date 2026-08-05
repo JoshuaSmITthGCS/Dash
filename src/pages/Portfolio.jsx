@@ -545,7 +545,7 @@ export default function Portfolio() {
       <section className="card fidelity-performance" aria-labelledby="fidelity-performance-title">
         <div className="fidelity-performance-head">
           <div>
-            <span className="eyebrow">Brokerage check · Aug 4, 2026</span>
+            <span className="eyebrow">Brokerage check · Aug 4, 2026 at 2:01 p.m. ET</span>
             <h2 id="fidelity-performance-title">Fidelity performance reference</h2>
             <p>Your screenshots reconcile deposits separately from market performance.</p>
           </div>
@@ -557,11 +557,11 @@ export default function Portfolio() {
         </div>
         <div className="fidelity-performance-grid">
           <div><span>Account value</span><strong>{money(FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue, 2)}</strong><small>{money(FIDELITY_REFERENCE_SNAPSHOT.investments, 2)} invested · {money(FIDELITY_REFERENCE_SNAPSHOT.cash, 2)} cash</small></div>
-          <div><span>Net contributed</span><strong>{money(fidelityCashSummary.netContributions)}</strong><small>{money(fidelityCashSummary.deposits)} deposited · {money(fidelityCashSummary.withdrawals)} withdrawn</small></div>
+          <div><span>Net contributed</span><strong>{money(fidelityCashSummary.netContributions)}</strong><small>{money(fidelityCashSummary.deposits)} settled deposits · {money(fidelityCashSummary.withdrawals)} withdrawn{fidelityCashSummary.pendingDeposits ? ` · ${money(fidelityCashSummary.pendingDeposits)} processing` : ''}</small></div>
           <div><span>Actually made</span><strong style={{ color: moveColor(fidelityReferencePerformance.value) }}>{fidelityReferencePerformance.value >= 0 ? '+' : '−'}{money(Math.abs(fidelityReferencePerformance.value), 2)}</strong><small>{signedPct(fidelityReferencePerformance.returnPct, 2)} simple cash-flow-adjusted return</small></div>
           <div><span>Fidelity {fidelityPeriod} return</span><strong style={{ color: moveColor(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod]) }}>{signedPct(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod], 2)}</strong><small>Time-weighted pre-tax return from Fidelity</small></div>
         </div>
-        <p className="fidelity-method-note">“Actually made” is account value minus net deposits. Fidelity’s period return is time-weighted, so it measures investment performance without a large late deposit diluting the percentage.</p>
+        <p className="fidelity-method-note">“Actually made” is account value minus settled net deposits. The Aug. 4 $100 transfer remains excluded while Fidelity labels it Processing. Fidelity’s period return is time-weighted, so it measures investment performance without a large late deposit diluting the percentage.</p>
       </section>
 
       <details className="card portfolio-actions-menu">

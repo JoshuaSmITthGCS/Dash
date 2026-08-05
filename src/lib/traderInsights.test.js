@@ -30,6 +30,7 @@ describe('benchmarkShadowPortfolio', () => {
     const flows = [
       { type: 'deposit', amount: 1000, effectiveDate: '2026-01-01' },
       { type: 'withdrawal', amount: 220, effectiveDate: '2026-01-03' },
+      { type: 'deposit', amount: 100, effectiveDate: '2026-01-04', status: 'processing' },
     ]
     const result = benchmarkShadowPortfolio(flows, history)
     expect(result.available).toBe(true)
@@ -38,6 +39,7 @@ describe('benchmarkShadowPortfolio', () => {
     // 10 units bought at $100; the $220 withdrawal sells 220/120 units at that day's $120 close.
     expect(result.values[2]).toBeCloseTo(980, 5)
     expect(result.netContributions).toBe(780)
+    expect(result.values[3]).toBeCloseTo(735, 5)
   })
 
   it('is unavailable without overlapping cash flows or history', () => {
