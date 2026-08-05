@@ -12,7 +12,7 @@ import {
   resilienceIndex, scenarioProjection, selectPeriod, trackedAllTimeEarnings,
 } from '../lib/portfolioAnalytics.js'
 import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
-import { Loading, Empty, Tier } from '../components/Bits.jsx'
+import { Loading, Empty, Move, Tier } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
@@ -20,6 +20,7 @@ import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
+import { rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -37,6 +38,46 @@ function ScoreCard({ label, result, note }) {
   return <article className="report-score-card"><div className="score-orbit" style={{ '--score': result?.score || 0 }}><strong>{result?.available ? result.score : '—'}</strong><span>/100</span></div><div><h3>{label}</h3><p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p>{result?.provisional && <span className="provisional-badge">Provisional</span>}</div></article>
 }
 
+function DirectionPill({ value, children }) {
+  const direction = value == null ? 'neutral' : value >= 0 ? 'positive' : 'negative'
+  return <span className={`value-pill ${direction}`}>
+    {value != null && <span className="value-pill-arrow" aria-hidden="true">{value >= 0 ? '▲' : '▼'}</span>}
+    <span>{children}</span>
+  </span>
+}
+
+function FocusedScreenCard({ title, kicker, note, rows, metric, loading, to }) {
+  return <article className="report-screen-card">
+    <header><div><span>{kicker}</span><h3>{title}</h3></div><small>{note}</small></header>
+    <div className="report-screen-list">
+      {loading ? <div className="report-inline-loading" role="status">Loading this screen on the Report…</div>
+        : rows.length ? rows.map((row, index) => {
+          const detail = metric(row)
+          return <div key={row.ticker}><span className="screen-rank">#{index + 1}</span><span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span><span className="report-screen-metric"><small>{detail.label}</small><Move pct={detail.value} /></span></div>
+        })
+          : <div className="report-inline-loading">No name clears this screen in the latest report.</div>}
+    </div>
+    <Link className="report-screen-link" to={to}>Open full screen <Icon name="arrow" size={16} /></Link>
+  </article>
+}
+
+function MarketPulsePreview({ data, loading }) {
+  const macro = data?.market?.macro || {}
+  const regime = macro.regime
+  const items = [
+    ['10Y Treasury', macro.treasury_10y, '%'],
+    ['Fed funds', macro.federal_funds_rate, '%'],
+    ['Inflation', macro.inflation, '%'],
+  ]
+  return <section className="report-section report-market-pulse" aria-labelledby="report-market-pulse-title">
+    <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/market">News and context →</Link></header>
+    {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse here on the Report…</div> : <div className="report-market-grid">
+      <article><span>FRED regime</span><strong>{regime?.score ?? '—'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
+      {items.map(([label, point, suffix]) => <article key={label}><span>{label}</span><strong>{point?.value ?? '—'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Period unavailable'}</p></article>)}
+    </div>}
+  </section>
+}
+
 function Customizer({ widgets, onChange, onDone }) {
   const move = (index, direction) => {
     const target = index + direction
@@ -49,6 +90,10 @@ function Customizer({ widgets, onChange, onDone }) {
 
 export default function Dashboard() {
   const { data, loading } = useData('report.json')
+  // Start the larger Market Pulse payload on the landing report so /market is warm when it
+  // is opened, while keeping it out of the report's blocking loading condition below.
+  const { data: advisorData, loading: advisorLoading } = useData('advisor.json')
+  const { data: etfData, loading: etfLoading } = useData('etfs.json')
   const { currentUser } = useAuth()
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const tracking = usePortfolioTracking()
@@ -110,6 +155,13 @@ export default function Dashboard() {
   const beatStreak = primaryBenchmarkHistory ? beatMarketStreak(tracking.snapshots, primaryBenchmarkHistory) : { available: false }
   const greenStreak = valueStreak(tracking.snapshots)
   const mood = portfolioMood({ returnPct: contributionPerformance.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
+  const screenRows = [...new Map([...rows, ...(data.screen_universe || [])].map((row) => [row.ticker, row])).values()]
+  const focusedScreens = [
+    { title: 'Value near 52-week lows', kicker: 'Value turnarounds', note: 'Quality plus a positive latest week', rows: rankValueTurnarounds(screenRows, 3), metric: (row) => ({ label: 'Above low', value: row.screen.aboveLow }), to: '/screens/quality-value' },
+    { title: 'Recent momentum', kicker: 'Momentum', note: 'Positive week and month', rows: rankMomentum(screenRows, 3), metric: (row) => ({ label: '20 days', value: row.screen.monthReturn }), to: '/screens/momentum' },
+    { title: 'Short-term reversals', kicker: 'Reversal', note: '20-day pullback turning up', rows: rankReversal(screenRows, 3), metric: (row) => ({ label: 'This week', value: row.screen.weekReturn }), to: '/screens/matrix' },
+    { title: 'Top ETFs', kicker: 'Fund screens', note: 'Performance, risk, cost and liquidity', rows: rankGrowingEtfs(etfData?.etfs || [], 3), metric: (row) => ({ label: '1 year', value: row.returns?.['1y'] }), loading: etfLoading, to: '/research' },
+  ]
 
   const toggleBenchmark = (symbol) => {
     const next = selectedBenchmarkSymbols.includes(symbol)
@@ -131,18 +183,18 @@ export default function Dashboard() {
           <span>Current portfolio value</span>
           <strong>{money(portfolio.totalValue)}</strong>
           <div className="report-hero-pills">
-            <span className={`value-pill ${today?.dollarReturn == null ? 'neutral' : today.dollarReturn >= 0 ? 'positive' : 'negative'}`}>
-              {today ? `${today.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today — unavailable'}
-            </span>
-            <span className={`value-pill ${!afterHours.available ? 'neutral' : afterHours.dollarReturn >= 0 ? 'positive' : 'negative'}`}
-              title={afterHours.available
-                ? `${afterHours.coverage} of ${positions.length} holdings had a post-market quote from Yahoo`
-                : 'Refreshes automatically at 9pm local time from Yahoo, once the after-hours session has quotes for a held position.'}>
-              {afterHours.available
-                ? `${afterHours.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(afterHours.dollarReturn))}${afterHours.returnPct != null ? ` · ${signedPct(afterHours.returnPct, 2)}` : ''} after-hours`
-                : 'After-hours — refreshes at 9pm'}
-            </span>
+            <DirectionPill value={today?.dollarReturn}>{today ? `${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today — unavailable'}</DirectionPill>
+            <DirectionPill value={afterHours.available ? afterHours.dollarReturn : null}>{afterHours.available
+              ? `${money(Math.abs(afterHours.dollarReturn))}${afterHours.returnPct != null ? ` · ${signedPct(afterHours.returnPct, 2)}` : ''} after-hours`
+              : 'After-hours — refreshes at 9pm'}</DirectionPill>
           </div>
+          <button type="button" className="secondary-button compact after-hours-refresh" onClick={portfolioQuotes.requestRefresh} disabled={portfolioQuotes.refreshing}
+            aria-label="Refresh after-hours quotes from Yahoo for portfolio holdings"
+            title="Ask Yahoo only for the symbols currently held in this portfolio">
+            <Icon name="sync" size={16} className={portfolioQuotes.refreshing ? 'refresh-spin' : ''} />
+            {portfolioQuotes.refreshing ? 'Checking Yahoo…' : 'Refresh after-hours'}
+          </button>
+          {(portfolioQuotes.message || portfolioQuotes.error) && <span className={`after-hours-message ${portfolioQuotes.error ? 'negative' : 'positive'}`} role="status" aria-live="polite">{portfolioQuotes.error || portfolioQuotes.message}</span>}
           <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>
         </article>
         <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '—'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
@@ -181,6 +233,14 @@ export default function Dashboard() {
         <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}
+
+    <MarketPulsePreview data={advisorData} loading={advisorLoading} />
+
+    <section className="report-focused-screens" aria-labelledby="focused-screens-title">
+      <header className="section-heading"><div><span className="eyebrow">Focused breakdown</span><h2 id="focused-screens-title">Value, momentum, reversals, and ETFs</h2></div><Link to="/research">All research →</Link></header>
+      <div className="report-screen-grid">{focusedScreens.map((screen) => <FocusedScreenCard key={screen.kicker} {...screen} />)}</div>
+      <p className="screen-disclaimer">Research screens, not trade instructions. Confirm current prices, liquidity, news, and your own risk limits before acting.</p>
+    </section>
 
     <section className="report-support-grid">
       <article className="signal-preview"><header><div><span className="eyebrow">Top signal</span><h2>Research leader</h2></div><Tier label={leader.stance} /></header><div className="signal-company"><CompanyLogo company={leader} size={48} /><div><strong>{leader.ticker}</strong><span>{leader.name}</span></div><b>{leader.score}/100</b></div><p>{leader.strengths?.[0] || 'Highest-scoring published company in the latest evidence run.'}</p><Link to="/research">Open research →</Link></article>
