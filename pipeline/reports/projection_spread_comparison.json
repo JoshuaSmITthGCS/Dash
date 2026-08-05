@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-08-05T23:17:59.023Z",
+  "comparison": "30-year terminal balance p90 minus p10",
+  "scenario": {
+    "currentBalance": 100000,
+    "accumulationMonths": 360,
+    "seed": 42
+  },
+  "path_count": 5000,
+  "old_repeating_pattern": {
+    "source_months": 36,
+    "terminal_percentiles": {
+      "p10": 3601933.243805142,
+      "p25": 3601933.243805142,
+      "p50": 3601933.243805142,
+      "p75": 3601933.243805142,
+      "p90": 3601933.243805142
+    },
+    "spread": 0
+  },
+  "benchmark_centered": {
+    "source_months": 119,
+    "terminal_percentiles": {
+      "p10": 1232502.2863192048,
+      "p25": 1811951.0932138143,
+      "p50": 2744129.454548676,
+      "p75": 4149064.003962304,
+      "p90": 6138128.981709092
+    },
+    "spread": 4905626.695389887
+  },
+  "spread_ratio": null,
+  "spread_ratio_note": "The repeating-pattern method collapsed the p10 to p90 spread to zero in this sparse-history case.",
+  "materially_wider": true
+}

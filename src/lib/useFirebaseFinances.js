@@ -2,17 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, increment } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
-import modelSettings from '../../pipeline/config/settings.json'
-
-const DEFAULT_SETTINGS = {
-  currentAge: 30,
-  retireAge: 65,
-  inflationPct: 2.5,
-  monthlyContribution: 0,
-  currentSavings: 0,
-  retirementEndAge: modelSettings.projection.default_retirement_end_age,
-  monthlyWithdrawal: modelSettings.projection.default_monthly_withdrawal,
-}
+import { DEFAULT_SETTINGS, migrateFinanceGoal, migrateFinanceSettings } from './financeMigrations.js'
 
 export function useFirebaseFinances() {
   const { currentUser } = useAuth()
@@ -20,6 +10,7 @@ export function useFirebaseFinances() {
   const [budgetItems, setBudgetItems] = useState([])
   const [pools, setPools] = useState([])
   const [accounts, setAccounts] = useState([])
+  const [goals, setGoals] = useState([])
   const [loading, setLoading] = useState(true)
   const contributionTimers = useRef({})
 
@@ -34,22 +25,25 @@ export function useFirebaseFinances() {
         setBudgetItems([])
         setPools([])
         setAccounts([])
+        setGoals([])
         setLoading(false)
         return
       }
 
       setLoading(true)
       try {
-        const [settingsSnap, budgetSnap, poolsSnap, accountsSnap] = await Promise.all([
+        const [settingsSnap, budgetSnap, poolsSnap, accountsSnap, goalsSnap] = await Promise.all([
           getDoc(doc(db, 'finances', currentUser.uid)),
           getDocs(collection(db, 'finances', currentUser.uid, 'budgetItems')),
           getDocs(collection(db, 'finances', currentUser.uid, 'pools')),
           getDocs(collection(db, 'finances', currentUser.uid, 'accounts')),
+          getDocs(collection(db, 'finances', currentUser.uid, 'goals')),
         ])
-        setSettings(settingsSnap.exists() ? { ...DEFAULT_SETTINGS, ...settingsSnap.data() } : DEFAULT_SETTINGS)
+        setSettings(migrateFinanceSettings(settingsSnap.exists() ? settingsSnap.data() : {}))
         setBudgetItems(budgetSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
         setPools(poolsSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
         setAccounts(accountsSnap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setGoals(goalsSnap.docs.map((d) => migrateFinanceGoal({ id: d.id, ...d.data() })))
       } catch (error) {
         console.error('Failed to load finances:', error)
       } finally {
@@ -155,6 +149,28 @@ export function useFirebaseFinances() {
     }
   }
 
+  const addGoal = async ({ name, targetAmount, targetDate, poolId }) => {
+    if (!currentUser) return
+    const id = `goal-${Date.now()}`
+    const record = migrateFinanceGoal({ id, name, targetAmount, targetDate, poolId })
+    try {
+      await setDoc(doc(db, 'finances', currentUser.uid, 'goals', id), record)
+      setGoals((previous) => [...previous, record])
+    } catch (error) {
+      console.error('Failed to add goal:', error)
+    }
+  }
+
+  const removeGoal = async (id) => {
+    if (!currentUser) return
+    try {
+      await deleteDoc(doc(db, 'finances', currentUser.uid, 'goals', id))
+      setGoals((previous) => previous.filter((goal) => goal.id !== id))
+    } catch (error) {
+      console.error('Failed to remove goal:', error)
+    }
+  }
+
   // Debounced so typing a multi-digit contribution doesn't fire one Firestore write per
   // keystroke — concurrent writes for the same doc can resolve out of order and let an
   // earlier keystroke's value silently overwrite a later one.
@@ -176,6 +192,7 @@ export function useFirebaseFinances() {
     budgetItems,
     pools,
     accounts,
+    goals,
     loading,
     updateSettings,
     addBudgetItem,
@@ -186,5 +203,7 @@ export function useFirebaseFinances() {
     addAccount,
     removeAccount,
     updateAccountContribution,
+    addGoal,
+    removeGoal,
   }
 }

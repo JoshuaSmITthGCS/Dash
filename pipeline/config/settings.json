@@ -4,6 +4,7 @@
     "semantic_version": "3.1.0",
     "advisor_schema_version": 4,
     "etf_schema_version": 5,
+    "finance_schema_version": 2,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
   },
   "normalization_mode": "bands",
@@ -269,7 +270,37 @@
     "default_inflation_pct": 2.5,
     "minimum_horizon_years": 1,
     "maximum_horizon_years": 70,
-    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of observed monthly returns for the standard model. Shorter portfolio histories spanning at least 30 days are extended to 36 months by annualizing the longest first-to-last return and repeating the centered observed monthly pattern. This synthetic extension is disclosed in the interface. The selected benchmark is used only when even that minimum portfolio span is unavailable."
+    "interaction_budget_ms": 400,
+    "success_bands": [
+      { "minimum": 0.8, "label": "On track" },
+      { "minimum": 0.6, "label": "Needs attention" },
+      { "minimum": 0.0, "label": "Off track" }
+    ],
+    "lever_ranges": {
+      "monthly_contribution": { "minimum": 0, "maximum": 5000, "step": 50 },
+      "retirement_age": { "minimum": 50, "maximum": 80, "step": 1 },
+      "annual_withdrawal": { "minimum": 0, "maximum": 240000, "step": 1000 }
+    },
+    "contribution_lever_step": 150,
+    "allocation_default": "growth",
+    "allocation_assumptions": {
+      "conservative": { "label": "Conservative", "annual_return_pct": 4.5, "annual_volatility_pct": 7.0 },
+      "balanced": { "label": "Balanced", "annual_return_pct": 6.0, "annual_volatility_pct": 10.0 },
+      "growth": { "label": "Growth", "annual_return_pct": 7.5, "annual_volatility_pct": 15.0 },
+      "aggressive": { "label": "Aggressive", "annual_return_pct": 9.0, "annual_volatility_pct": 21.0 }
+    },
+    "sequence_risk_example": {
+      "starting_balance": 1000000,
+      "annual_withdrawal": 60000,
+      "annual_returns": [-0.22, -0.1, 0.04, 0.09, 0.17, 0.24]
+    },
+    "goal_default_years": 5,
+    "goal_default_amount": 50000,
+    "sequence_chart_width": 320,
+    "sequence_chart_height": 120,
+    "days_per_year": 365.25,
+    "milliseconds_per_day": 86400000,
+    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of observed monthly returns for the standard model. With shorter portfolio history spanning at least 30 days, the model uses the selected benchmark's full monthly history and shifts its geometric mean to the annualized return actually observed for the portfolio. Observed months are never repeated or synthesized. Allocation scenarios rescale that historical return structure to the configured annual return and volatility pair."
   },
   "signal_weights": {
     "track_record": 25,

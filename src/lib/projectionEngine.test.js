@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extendSparsePortfolioHistory, monthlyReturnsFromSeries, selectProjectionReturnSource, simulateProjection } from './projectionEngine.js'
+import { benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, projectionConfig, selectProjectionReturnSource, simulateProjection } from './projectionEngine.js'
 
 function monthlySeries(months, monthlyReturn = 0.01) {
   const dates = []
@@ -24,14 +24,27 @@ describe('historical block bootstrap projections', () => {
     expect(result.returns[1]).toBeCloseTo(0.1)
   })
 
-  it('annualizes and extends a shorter portfolio history to the three-year model window', () => {
+  it('centers long benchmark history on the observed short portfolio return', () => {
     const fallback = selectProjectionReturnSource(monthlySeries(20), monthlySeries(40), 'VTI')
-    expect(fallback).toMatchObject({ available: true, type: 'portfolio-annualized-extension', months: 36, synthetic: true })
+    expect(fallback).toMatchObject({ available: true, type: 'benchmark-centered-sparse-history', months: 39, benchmarkBased: true })
     expect(fallback.fallbackReason).toContain('below the 36-month gate')
-    expect(fallback.fallbackReason).toContain('repeated to 36 months')
+    expect(fallback.fallbackReason).toContain('not repeated or synthesized')
 
     const portfolio = selectProjectionReturnSource(monthlySeries(37), monthlySeries(40), 'VTI')
     expect(portfolio).toMatchObject({ available: true, type: 'portfolio', months: 36 })
+  })
+
+  it('keeps benchmark volatility instead of repeating observed sparse months', () => {
+    const portfolio = monthlySeries(20, 0.01)
+    const benchmark = monthlySeries(120)
+    benchmark.values = benchmark.values.map((_, index) => 100 * (1.006 ** index) * (1 + Math.sin(index * 0.8) * 0.08))
+    const legacy = extendSparsePortfolioHistory(portfolio)
+    const corrected = benchmarkCenteredSparseHistory(portfolio, benchmark)
+    const oldResult = simulateProjection({ monthlyReturns: legacy.returns, currentBalance: 100000, accumulationMonths: 360, seed: 42 })
+    const newResult = simulateProjection({ monthlyReturns: corrected.returns, currentBalance: 100000, accumulationMonths: 360, seed: 42 })
+    const oldSpread = oldResult.terminalPercentiles.p90 - oldResult.terminalPercentiles.p10
+    const newSpread = newResult.terminalPercentiles.p90 - newResult.terminalPercentiles.p10
+    expect(newSpread).toBeGreaterThan(oldSpread)
   })
 
   it('annualizes the longest first-to-last return instead of hiding a sparse projection', () => {
@@ -86,11 +99,23 @@ describe('historical block bootstrap projections', () => {
     expect(survived.successProbability).toBe(1)
   })
 
+  it('measures probability of reaching a named goal with the same paths', () => {
+    const result = simulateProjection({
+      monthlyReturns: Array(36).fill(0),
+      currentBalance: 1000,
+      monthlyContribution: 100,
+      accumulationMonths: 12,
+      targetAmount: 2200,
+      seed: 1,
+    })
+    expect(result.goalProbability).toBe(1)
+  })
+
   it('completes 5,000 thirty-year paths within the worker budget', () => {
     const monthlyReturns = Array.from({ length: 120 }, (_, index) => 0.006 + Math.sin(index) * 0.025)
     const startedAt = globalThis.performance.now()
     const result = simulateProjection({ monthlyReturns, currentBalance: 100000, monthlyContribution: 500, accumulationMonths: 360, seed: 7 })
     expect(result.available).toBe(true)
-    expect(globalThis.performance.now() - startedAt).toBeLessThan(400)
+    expect(globalThis.performance.now() - startedAt).toBeLessThan(projectionConfig.interaction_budget_ms)
   })
 })

@@ -80,9 +80,59 @@ export function extendSparsePortfolioHistory(series) {
 }
 
 /**
- * Uses observed portfolio returns after the 36-month gate. A shorter record is
- * annualized and extended so the outcome distribution remains visible, while the
- * selected benchmark remains the fallback for records shorter than 30 days.
+ * Uses the benchmark's full observed monthly sequence for a short portfolio record, then
+ * shifts only its geometric mean to the annualized return observed for that portfolio.
+ * Volatility and return ordering stay benchmark-derived, and no observed month is repeated.
+ */
+export function benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory) {
+  const dates = portfolioSeries?.dates || []
+  const values = portfolioSeries?.values || portfolioSeries?.closes || []
+  const observations = dates.map((date, index) => ({
+    date: String(date).slice(0, 10),
+    timestamp: new Date(`${String(date).slice(0, 10)}T00:00:00Z`).getTime(),
+    value: Number(values[index]),
+  })).filter((row) => Number.isFinite(row.timestamp) && finite(row.value) && row.value > 0)
+    .sort((left, right) => left.timestamp - right.timestamp)
+  if (observations.length < 2) return null
+  const first = observations[0]
+  const last = observations.at(-1)
+  const elapsedDays = (last.timestamp - first.timestamp) / 86400000
+  if (elapsedDays < projectionConfig.sparse_history_minimum_days) return null
+  const annualizedReturn = (last.value / first.value) ** (365.25 / elapsedDays) - 1
+  if (!finite(annualizedReturn) || annualizedReturn <= -1) return null
+  const benchmark = monthlyReturnsFromSeries(benchmarkHistory)
+  if (benchmark.months < projectionConfig.block_months) return null
+  const logs = benchmark.returns.map((value) => Math.log1p(value))
+  const benchmarkMean = logs.reduce((sum, value) => sum + value, 0) / logs.length
+  const targetMonthlyLog = Math.log1p(annualizedReturn) / projectionConfig.months_per_year
+  return {
+    returns: logs.map((value) => Math.expm1(value - benchmarkMean + targetMonthlyLog)),
+    months: benchmark.months,
+    observedMonths: monthlyReturnsFromSeries(portfolioSeries).months,
+    elapsedDays: Math.round(elapsedDays),
+    annualizedReturn,
+    startDate: benchmark.startDate,
+    endDate: benchmark.endDate,
+  }
+}
+
+export function applyAllocationAssumption(returns, allocationKey) {
+  const assumption = projectionConfig.allocation_assumptions[allocationKey]
+  const values = (returns || []).map(Number).filter((value) => finite(value) && value > -1)
+  if (!assumption || values.length < 2) return values
+  const logs = values.map((value) => Math.log1p(value))
+  const average = logs.reduce((sum, value) => sum + value, 0) / logs.length
+  const variance = logs.reduce((sum, value) => sum + (value - average) ** 2, 0) / (logs.length - 1)
+  const observedVolatility = Math.sqrt(variance * projectionConfig.months_per_year)
+  const targetVolatility = assumption.annual_volatility_pct / 100
+  const scale = observedVolatility > 0 ? targetVolatility / observedVolatility : 0
+  const targetMonthlyLog = Math.log1p(assumption.annual_return_pct / 100) / projectionConfig.months_per_year
+  return logs.map((value) => Math.expm1((value - average) * scale + targetMonthlyLog))
+}
+
+/**
+ * Uses observed portfolio returns after the 36-month gate. A shorter record uses the
+ * selected benchmark's long return history centered on the portfolio return observed so far.
  */
 export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, benchmarkSymbol = 'SPY') {
   const portfolio = monthlyReturnsFromSeries(portfolioSeries)
@@ -97,16 +147,15 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
       ...portfolio,
     }
   }
-  const extended = extendSparsePortfolioHistory(portfolioSeries)
-  if (extended) {
-    const observedLabel = `${extended.observedMonths} observed monthly return${extended.observedMonths === 1 ? '' : 's'}`
+  const centeredBenchmark = benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory)
+  if (centeredBenchmark) {
     return {
       available: true,
-      type: 'portfolio-annualized-extension',
-      label: 'annualized portfolio history extension',
-      synthetic: true,
-      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. The longest ${extended.elapsedDays}-day portfolio return was annualized, then its ${observedLabel} pattern was centered and repeated to ${extended.months} months. Percentile ranges may cluster when little month-to-month variation has been observed.`,
-      ...extended,
+      type: 'benchmark-centered-sparse-history',
+      label: `${benchmarkSymbol} history centered on observed portfolio return`,
+      benchmarkBased: true,
+      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. Simulated from ${benchmarkSymbol} benchmark history, centered on the return you have actually recorded. Observed portfolio months are not repeated or synthesized.`,
+      ...centeredBenchmark,
     }
   }
   if (benchmark.months >= blockMonths) {
@@ -193,6 +242,8 @@ export function simulateProjection(input) {
   const retirementSamples = new Float64Array(pathCount)
   const latestBlockStart = monthlyReturns.length - blockMonths
   let survived = 0
+  let reachedGoal = 0
+  const targetAmount = Math.max(0, Number(input.targetAmount) || 0)
 
   for (let path = 0; path < pathCount; path += 1) {
     let balance = currentBalance
@@ -218,6 +269,7 @@ export function simulateProjection(input) {
       }
     }
     if (!withdrawalMonths || balance > 0) survived += 1
+    if (targetAmount > 0 && balance >= targetAmount) reachedGoal += 1
   }
 
   const fan = samples.map((values, index) => {
@@ -241,5 +293,22 @@ export function simulateProjection(input) {
     terminalPercentiles,
     terminalPercentilesReal: realValues(terminalPercentiles, totalMonths, annualInflationRate),
     successProbability: withdrawalMonths ? survived / pathCount : null,
+    goalProbability: targetAmount > 0 ? reachedGoal / pathCount : null,
+  }
+}
+
+export function sequenceRiskPaths() {
+  const example = projectionConfig.sequence_risk_example
+  const run = (annualReturns) => {
+    let balance = example.starting_balance
+    return [balance, ...annualReturns.map((annualReturn) => {
+      balance = Math.max(0, balance * (1 + annualReturn) - example.annual_withdrawal)
+      return balance
+    })]
+  }
+  return {
+    returns: example.annual_returns,
+    favorable: run([...example.annual_returns].sort((left, right) => right - left)),
+    unfavorable: run([...example.annual_returns].sort((left, right) => left - right)),
   }
 }

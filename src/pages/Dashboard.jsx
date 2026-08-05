@@ -110,7 +110,7 @@ function Customizer({ widgets, onChange, onDone }) {
 
 function ReportProjection({ input, source, money, currentAge, retirementAge, contribution }) {
   const state = useProjectionSimulation(input)
-  return <ProjectionPanel
+  return <div><ProjectionPanel
     state={state}
     source={source}
     money={money}
@@ -118,7 +118,7 @@ function ReportProjection({ input, source, money, currentAge, retirementAge, con
     retirementAge={retirementAge}
     title="Long-range outcome distribution"
     assumptionNote={`${money(contribution)} of annual funding is added in monthly installments.`}
-  />
+  /><Link className="primary-button planning-home-link" to="/planning">Open Planning</Link></div>
 }
 
 export default function Dashboard() {
