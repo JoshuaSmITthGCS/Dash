@@ -120,7 +120,19 @@ export default function Dashboard() {
 
     {!currentUser || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{currentUser ? 'Add holdings to unlock your report' : 'Sign in to see your financial report'}</h2><p>Research remains available now. Portfolio analytics appear only after holdings and per-share cost basis are available.</p><Link className="primary-button" to={currentUser ? '/portfolio' : '/research'}>{currentUser ? 'Add holdings' : 'Explore research'}</Link></section> : <>
       <section className="report-hero-grid">
-        <article className="report-hero"><span>Current portfolio value</span><strong>{money(portfolio.totalValue)}</strong><small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small></article>
+        <article className="report-hero">
+          <span>Current portfolio value</span>
+          <strong>{money(portfolio.totalValue)}</strong>
+          <div className="report-hero-pills">
+            <span className={`value-pill ${today?.dollarReturn == null ? 'neutral' : today.dollarReturn >= 0 ? 'positive' : 'negative'}`}>
+              {today ? `${today.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today — unavailable'}
+            </span>
+            <span className="value-pill neutral" title="The data pipeline does not collect timestamped extended-hours quotes, so after-hours movement isn't tracked yet.">
+              After-hours — not tracked
+            </span>
+          </div>
+          <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>
+        </article>
         <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '—'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
         <Metric label="Total unrealized return" value={portfolio.gain == null ? '—' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} />
         <Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost; not net contributed capital" />

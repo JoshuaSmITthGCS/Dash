@@ -8,6 +8,8 @@ import { getRecommendation } from '../lib/recommendation'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { rankMomentum, rankReversal } from '../lib/researchScreens.js'
+import { allocateFunds } from '../lib/fundsAllocation.js'
 
 const SORTS = {
   score: ['Research score', (a, b) => (b.score ?? -1) - (a.score ?? -1)],
@@ -51,6 +53,13 @@ function normalizeEtf(row) {
   }
 }
 
+function ScreenChips({ row }) {
+  if (!row.screenTags?.length) return null
+  return row.screenTags.map((tag) => (
+    <span key={tag} className={`chip screen-chip screen-chip-${tag.toLowerCase()}`}>{tag}</span>
+  ))
+}
+
 function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
   const [expanded, setExpanded] = useState(false)
   return (
@@ -64,6 +73,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
       <div className="research-card-badges">
         <Tier label={row.stance} />
         {row.is_etf ? <span className="chip asset-chip">ETF</span> : <ActionPill recommendation={getRecommendation(row)} />}
+        <ScreenChips row={row} />
         <span className={`holding-chip ${held ? 'held' : ''}`}>{held ? 'Bought' : 'Not bought'}</span>
       </div>
       <dl className="research-card-metrics">
@@ -110,12 +120,28 @@ export default function Picks() {
   const [buyingTicker, setBuyingTicker] = useState('')
   const [buyStatuses, setBuyStatuses] = useState({})
   const [tradeNotice, setTradeNotice] = useState(null)
+  const [availableFunds, setAvailableFunds] = useState('')
 
   const stockResearch = data?.research || []
-  const research = useMemo(() => [
-    ...stockResearch.map((row) => ({ ...row, researchType: 'Stock' })),
-    ...(etfData?.etfs || []).map(normalizeEtf),
-  ], [stockResearch, etfData])
+  // Momentum and reversal are separate screens (see /screens/momentum, /screens/matrix), each
+  // with their own qualifying bar — but a stock that clears one of those bars is worth flagging
+  // right here in the single ranked list rather than only inside its own separate page. Ranking
+  // itself is untouched: these are stickers on top of the existing sort, not a second ordering.
+  const research = useMemo(() => {
+    const momentumTickers = new Set(rankMomentum(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const reversalTickers = new Set(rankReversal(stockResearch, stockResearch.length).map((row) => row.ticker))
+    return [
+      ...stockResearch.map((row) => ({
+        ...row,
+        researchType: 'Stock',
+        screenTags: [
+          momentumTickers.has(row.ticker) ? 'Momentum' : null,
+          reversalTickers.has(row.ticker) ? 'Reversal' : null,
+        ].filter(Boolean),
+      })),
+      ...(etfData?.etfs || []).map(normalizeEtf),
+    ]
+  }, [stockResearch, etfData])
   const heldTickers = useMemo(() => new Set(positions.map((position) => String(position.ticker || '').toUpperCase())), [positions])
   const sectors = useMemo(() => [...new Set(research.map((row) => row.sector).filter(Boolean))].sort(), [research])
 
@@ -129,6 +155,10 @@ export default function Picks() {
     .filter((row) => ownership === 'all' || (ownership === 'bought') === heldTickers.has(row.ticker))
     .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || String(row.name || '').toLowerCase().includes(normalized))
     .slice().sort(SORTS[sort][1])
+
+  // Buckets follow whatever's currently filtered and sorted above — change the sort to
+  // "Fundamentals" and the buckets re-weight around that ranking instead of the default score.
+  const allocation = allocateFunds(rows, Number(availableFunds), { limit: 8 })
 
   const handleQuickBuy = async (row) => {
     const price = Number(row.price)
@@ -174,6 +204,40 @@ export default function Picks() {
       </div>
       {tradeNotice && <div className={`research-trade-notice ${tradeNotice.error ? 'error' : ''}`} role="status" aria-live="polite">{tradeNotice.message}</div>}
 
+      <section className="card allocation-planner" aria-labelledby="allocation-planner-title">
+        <header className="allocation-planner-head">
+          <div><span className="eyebrow">Bucket planner</span><h2 id="allocation-planner-title">Split available funds by rank</h2></div>
+          <label className="allocation-funds-field">
+            <span className="sr-only">Available funds</span>
+            <span aria-hidden="true">$</span>
+            <input type="number" min="0" step="1" inputMode="decimal" placeholder="Available funds"
+              value={availableFunds} onChange={(event) => setAvailableFunds(event.target.value)} />
+          </label>
+        </header>
+        <p className="allocation-planner-note">
+          Weighted by score against the top {Math.min(rows.length, 8)} companies in the current sort and filters — not an
+          even split. A higher-scored company gets a disproportionately larger bucket, the way a real allocation would.
+        </p>
+        {allocation.available ? (
+          <div className="allocation-bucket-list">
+            {allocation.buckets.map((bucket) => (
+              <div className="allocation-bucket-row" key={bucket.ticker}>
+                <div className="allocation-bucket-id">
+                  <b>{bucket.ticker}</b><span>{bucket.isEtf ? 'ETF' : 'Stock'} · score {Math.round(bucket.score)}</span>
+                </div>
+                <div className="allocation-bucket-bar" aria-hidden="true"><span style={{ width: `${bucket.weightPct}%` }} /></div>
+                <div className="allocation-bucket-amount">
+                  <strong>${bucket.amount.toFixed(2)}</strong>
+                  <span>{bucket.weightPct.toFixed(1)}%{bucket.shares != null ? ` · ${bucket.shares.toFixed(4)} sh` : ''}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="allocation-planner-empty">{availableFunds ? allocation.reason : 'Enter available funds to see a suggested bucket split.'}</p>
+        )}
+      </section>
+
       <div className="research-mobile-list">
         {rows.map((row) => <ResearchCard key={row.ticker} row={row}
           rank={rows.findIndex((item) => item.ticker === row.ticker) + 1} onOpen={setSelectedStock}
@@ -192,7 +256,7 @@ export default function Picks() {
             <tr key={row.ticker}>
               <td className="rank">#{rows.findIndex((item) => item.ticker === row.ticker) + 1}</td>
               <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
-              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span></td>
+              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
               <td><Tier label={row.stance} /></td><td>{row.is_etf ? '—' : <ActionPill recommendation={getRecommendation(row)} />}</td>
               <td className="mono num score-cell">{row.score}</td>
               <td className="mono num">{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</td>

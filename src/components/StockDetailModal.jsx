@@ -12,6 +12,7 @@ import RecommendationShadowPanel from './RecommendationShadowPanel'
 import DipWatchBadge from './DipWatchBadge'
 import useBodyScrollLock from '../lib/useBodyScrollLock'
 import ResearchRadarChart from './ResearchRadarChart'
+import Icon from './Icons'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -34,8 +35,39 @@ const signed = (value, digits = 1, suffix = '%') =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
+// SEC Form 4 buys vs sells (pipeline/insider_signal.py). The pipeline already scores this
+// into the modifier, but never surfaced the raw grouping — show it only once real filings
+// were reviewed, so a quiet run (no SEC_USER_AGENT, no filings this window) renders nothing
+// rather than a false "0 buys · 0 sells".
+function InsiderActivityView({ insider }) {
+  const buys = insider?.recent_acquisitions || 0
+  const sells = insider?.recent_disposals || 0
+  if (!insider?.records_reviewed || (!buys && !sells)) return null
+  const buyPct = (buys / (buys + sells)) * 100
+  return (
+    <div>
+      <div className="sec-label">Insider activity — buys vs. sells</div>
+      <div className="insider-activity-view" aria-label="Insider buying versus selling">
+        <div className="insider-activity-bar" aria-hidden="true">
+          <span className="insider-buys" style={{ width: `${buyPct}%` }} />
+          <span className="insider-sells" style={{ width: `${100 - buyPct}%` }} />
+        </div>
+        <div className="insider-activity-counts">
+          <span className="positive">{buys} buy{buys === 1 ? '' : 's'}</span>
+          <span className="negative">{sells} sell{sells === 1 ? '' : 's'}</span>
+        </div>
+      </div>
+      <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
+        {insider.records_reviewed} Form 4 filing{insider.records_reviewed === 1 ? '' : 's'} reviewed. Routine,
+        scheduled trades are weighted down in the score; this grouping is raw counts, not the scored signal.
+      </p>
+    </div>
+  )
+}
+
 export default function StockDetailModal({ stock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
+  const [showMore, setShowMore] = useState(false)
 
   useBodyScrollLock(!!stock)
 
@@ -121,15 +153,15 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
         </div>
 
-        <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
-
-        <AnalysisLayers analysis={analysis} />
-
         <div className="grid grid-4" style={{ marginBottom: 20 }}>
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />
           <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'} />
           <Kpi label="20-day move" value={signed(technical.return_20d)} color={moveColor(technical.return_20d)} />
           <Kpi label="1-year move" value={signed(technical.return_252d)} color={moveColor(technical.return_252d)} />
+          {typeof stock.earnings_surprise === 'number' && (
+            <Kpi label="Earnings vs. estimate" value={signed(stock.earnings_surprise)} color={moveColor(stock.earnings_surprise)}
+              note="Recent quarters vs. expectations, newest weighted heaviest" />
+          )}
         </div>
 
         <DipWatchBadge stock={stock} />
@@ -162,6 +194,18 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           </section>
         )}
 
+        <button className="expand-button show-more-toggle" aria-expanded={showMore} onClick={() => setShowMore((value) => !value)}>
+          {showMore ? 'Hide full research detail' : 'Show full research detail'}
+          <Icon name="chevron" size={17} className={showMore ? 'rotated' : ''} />
+        </button>
+
+        {showMore && (
+          <div style={{ display: 'grid', gap: 20, marginTop: 16 }}>
+            <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
+            <AnalysisLayers analysis={analysis} />
+          </div>
+        )}
+
         <div className="tabs">
           {TABS.map(([key, label]) => (
             <button key={key} className={`tab ${tab === key ? 'active' : ''}`} onClick={() => setTab(key)}>
@@ -172,25 +216,18 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
 
         {tab === 'evidence' && (
           <div style={{ display: 'grid', gap: 20 }}>
-            <ResearchRadarChart stock={stock} />
-            <div>
-              <div className="sec-label">Score components</div>
-              <div className="component-scores">
-                {Object.entries(stock.components || {}).map(([key, value]) => (
-                  <div key={key}>
-                    <span>{key.replace(/_/g, ' ')}</span>
-                    <b>{value == null ? '—' : Math.round(value)}</b>
-                    <i><em style={{ width: `${value || 0}%` }} /></i>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {Object.keys(categories).length > 0 && (
+            {!showMore && (
+              <p style={{ color: 'var(--text-faint)', fontSize: 12.5 }}>
+                Score breakdowns, fundamental categories, the evidence list, modifiers, and insider activity are
+                collapsed. Use “Show full research detail” above to expand them.
+              </p>
+            )}
+            {showMore && <>
+              <ResearchRadarChart stock={stock} />
               <div>
-                <div className="sec-label">Fundamental categories</div>
-                <div className="component-scores" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-                  {Object.entries(categories).map(([key, value]) => (
+                <div className="sec-label">Score components</div>
+                <div className="component-scores">
+                  {Object.entries(stock.components || {}).map(([key, value]) => (
                     <div key={key}>
                       <span>{key.replace(/_/g, ' ')}</span>
                       <b>{value == null ? '—' : Math.round(value)}</b>
@@ -199,31 +236,48 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                   ))}
                 </div>
               </div>
-            )}
 
-            <div className="evidence-grid">
-              <div>
-                <b>Evidence for</b>
-                <ul>{(stock.strengths || []).map((item) => <li key={item}>{item}</li>)}</ul>
-              </div>
-              <div>
-                <b>Risks / gaps</b>
-                <ul>{(stock.risks || []).map((item) => <li key={item}>{item}</li>)}</ul>
-              </div>
-            </div>
+              {Object.keys(categories).length > 0 && (
+                <div>
+                  <div className="sec-label">Fundamental categories</div>
+                  <div className="component-scores" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+                    {Object.entries(categories).map(([key, value]) => (
+                      <div key={key}>
+                        <span>{key.replace(/_/g, ' ')}</span>
+                        <b>{value == null ? '—' : Math.round(value)}</b>
+                        <i><em style={{ width: `${value || 0}%` }} /></i>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {stock.modifiers?.notes?.length > 0 && (
-              <div>
-                <div className="sec-label">Score modifiers ({signed(stock.modifiers.total, 1, ' pts')})</div>
-                <ul className="method-list">
-                  {stock.modifiers.notes.map((note) => <li key={note}>{note}</li>)}
-                </ul>
-                <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
-                  Applied on top of the {stock.base_score ?? '—'} evidence score. Modifiers refine
-                  a ranking; they never outweigh the fundamentals behind it.
-                </p>
+              <div className="evidence-grid">
+                <div>
+                  <b>Evidence for</b>
+                  <ul>{(stock.strengths || []).map((item) => <li key={item}>{item}</li>)}</ul>
+                </div>
+                <div>
+                  <b>Risks / gaps</b>
+                  <ul>{(stock.risks || []).map((item) => <li key={item}>{item}</li>)}</ul>
+                </div>
               </div>
-            )}
+
+              <InsiderActivityView insider={stock.insider_activity} />
+
+              {stock.modifiers?.notes?.length > 0 && (
+                <div>
+                  <div className="sec-label">Score modifiers ({signed(stock.modifiers.total, 1, ' pts')})</div>
+                  <ul className="method-list">
+                    {stock.modifiers.notes.map((note) => <li key={note}>{note}</li>)}
+                  </ul>
+                  <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
+                    Applied on top of the {stock.base_score ?? '—'} evidence score. Modifiers refine
+                    a ranking; they never outweigh the fundamentals behind it.
+                  </p>
+                </div>
+              )}
+            </>}
           </div>
         )}
 
@@ -251,6 +305,10 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                 ? 'Same dollars, invested the day you actually bought this position, in the stock and in the S&P 500. The gap is what picking this name earned or cost against simply buying the index from that same day.'
                 : 'Same dollars, same start date, same window. The gap is what picking this name earned or cost against simply buying the index.'}
               zoomable
+              earningsMarker={typeof stock.earnings_surprise === 'number' ? {
+                value: stock.earnings_surprise,
+                label: `Latest earnings vs. estimate: ${signed(stock.earnings_surprise)} (recent quarters, newest weighted heaviest — not a single dated report)`,
+              } : null}
             />
             {hypothetical && (
               <div className="grid grid-4">

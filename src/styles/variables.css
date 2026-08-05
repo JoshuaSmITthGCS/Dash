@@ -63,6 +63,10 @@
   --series-benchmark-2: #75579b;
   --series-benchmark-3: #9a641f;
   --series-cash: #806b62;
+  --pill-positive-bg: var(--positive);
+  --pill-positive-ink: #ffffff;
+  --pill-negative-bg: var(--negative);
+  --pill-negative-ink: #ffffff;
   --font-display: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
   --font-body: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
@@ -104,6 +108,9 @@
   --series-benchmark-3: #f0bd70;
   --series-cash: #c6aca4;
   --scrim: rgba(0, 6, 3, .8);
+  /* Light, saturated fills in dark mode read badly with white text — invert the ink instead. */
+  --pill-positive-ink: #07160f;
+  --pill-negative-ink: #2a0705;
 }
 
 :root[data-corners="compact"] { --card-radius: 14px; --control-radius: 10px; }
