@@ -13,8 +13,9 @@ from normalization_report import write_normalization_report
 from normalization_audit import write_normalization_audit
 from bias_report import write_bias_report
 from signal_report import write_signal_report
-from validation.ic_harness import write_report as write_ic_report
+from validation.ic_harness import read_snapshots, write_report as write_ic_report
 from observability import diagnostics_payload
+from explainability import attach_explainability, attribution_errors, build_score_history
 import pit_store
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
@@ -22,6 +23,8 @@ from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
 
 def main():
     payload = load_json("advisor.json") or {}
+    payload["schema_version"] = SETTINGS["model"]["advisor_schema_version"]
+    payload["model_version"] = SETTINGS["model"]["semantic_version"]
     config = (SETTINGS.get("challengers") or {}).get("cross_sectional_normalization", {})
     if not config.get("enabled"):
         raise SystemExit("cross-sectional normalization challenger is disabled")
@@ -151,6 +154,21 @@ def main():
         "champion_1m_status": validation_report["variants"]["champion"]["1M"]["status_message"],
         "challenger_1m_status": validation_report["variants"]["challenger"]["1M"]["status_message"],
     }
+    score_history = build_score_history(read_snapshots())
+    theme_by_ticker = (payload.get("theme_screen") or {}).get("by_ticker") or {}
+    for collection in (payload.get("research", []), payload.get("portfolio_coverage", [])):
+        for row in collection:
+            row["theme_exposure"] = theme_by_ticker.get(row.get("ticker"), [])
+            attach_explainability(row, score_history.get(row.get("ticker")))
+    reconciliation_failures = attribution_errors(payload.get("research") or [])
+    if reconciliation_failures:
+        raise ValueError(f"Score attribution failed to reconcile: {reconciliation_failures[:5]}")
+    save_json("score-history.json", {
+        "schema_version": 1,
+        "generated_at": payload.get("generated_at"),
+        "minimum_months": SETTINGS["explainability"]["score_history_minimum_months"],
+        "by_ticker": score_history,
+    })
     save_json("advisor.json", payload)
     save_json("report.json", report_snapshot(payload))
     save_json("diagnostics.json", diagnostics_payload(payload))

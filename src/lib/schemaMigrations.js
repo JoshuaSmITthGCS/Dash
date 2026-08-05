@@ -12,7 +12,7 @@ import modelSettings from '../../pipeline/config/settings.json'
 // So: deploy readers before writers, and migrate N -> N+1 here at load time. Each migration
 // only has to know how to get from one version to the next; the runner chains them.
 
-export const ADVISOR_SCHEMA_VERSION = 3
+export const ADVISOR_SCHEMA_VERSION = modelSettings.model.advisor_schema_version
 export const ETF_SCHEMA_VERSION = modelSettings.model.etf_schema_version
 
 // v1 -> v2: market-behavior detail keys changed when the ad hoc trend/risk formulas were
@@ -71,6 +71,34 @@ function advisorV2ToV3(payload) {
   }
 }
 
+// v3 -> v4: explainability is additive. Old snapshots cannot recreate historical points
+// or exact attribution, so the reader exposes a truthful accumulating contract.
+function advisorV3ToV4(payload) {
+  const migrateRow = (row) => ({
+    ...row,
+    explainability: row.explainability || {
+      active_variant: 'champion',
+      attribution: {},
+      factor_bars: {},
+      metrics: { champion: [], challenger: [] },
+      score_history: {
+        status: 'accumulating',
+        stored_months: 0,
+        required_months: modelSettings.explainability.score_history_minimum_months,
+        points: [],
+      },
+      anomalies: [],
+    },
+    theme_exposure: row.theme_exposure || [],
+  })
+  return {
+    ...payload,
+    schema_version: 4,
+    research: (payload.research || []).map(migrateRow),
+    portfolio_coverage: (payload.portfolio_coverage || []).map(migrateRow),
+  }
+}
+
 // v2 -> v3: peer-group ranking. Older ETF snapshots ranked every fund against one mixed
 // batch, so their ranks are cross-asset-class whether they said so or not. Labelling them
 // is more honest than leaving the field blank and letting the UI imply a like-for-like rank.
@@ -116,7 +144,7 @@ function etfV4ToV5(payload) {
 }
 
 const MIGRATIONS = {
-  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3 },
+  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3, 3: advisorV3ToV4 },
   etfs: { 2: etfV2ToV3, 3: etfV3ToV4, 4: etfV4ToV5 },
 }
 

@@ -426,6 +426,7 @@ class CrossSectionalNormalizer:
             right = bisect_right(values, transformed)
             average_rank = (left + right - 1) / 2
             percentile = 100 * average_rank / (len(values) - 1)
+        raw_percentile = percentile
         if metric in LOWER_IS_BETTER_METRICS or metric in RANGE_METRICS:
             percentile = 100 - percentile
         return round(percentile, 1), {
@@ -433,6 +434,9 @@ class CrossSectionalNormalizer:
             "status": "scored",
             "raw_value": value,
             "winsorized_value": transformed,
+            "raw_percentile": round(raw_percentile, 1),
+            "desirability_percentile": round(percentile, 1),
+            "direction": distribution["direction"],
             "peer_count": len(values),
             **self._own_history_detail(ticker, metric, value),
         }

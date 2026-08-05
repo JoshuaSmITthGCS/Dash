@@ -23,7 +23,7 @@
     "schema_version": {
       "_comment": "Integer, additive-only. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js); writers never rename or remove a field.",
       "type": "integer",
-      "const": 3
+      "const": 4
     },
     "model_version": {
       "type": "string",

@@ -32,10 +32,12 @@ from normalization_report import write_normalization_report
 from normalization_audit import write_normalization_audit
 from bias_report import write_bias_report
 from signal_report import write_signal_report
+from explainability import attach_explainability, attribution_errors, build_score_history
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals
 from themes import build_theme_screen, empty_screen, load_themes
 from validation.ic_harness import (append_refresh as append_ic_refresh,
+                                   read_snapshots,
                                    rows_from_advisor as ic_rows_from_advisor,
                                    write_report as write_ic_report)
 
@@ -70,6 +72,7 @@ REPORT_ROW_FIELDS = (
     "score", "stance", "strengths", "recommendation", "components",
     "fundamental_detail", "technical_detail", "sentiment_detail", "debt_to_equity",
     "current_ratio", "return_on_equity", "revenue_growth", "data_fetched_at",
+    "theme_exposure",
 )
 RETIRED_REPORT_SYMBOLS = {"DECJ"}
 
@@ -1125,6 +1128,9 @@ def run():
         row for row in research
         if row["ticker"] in set(portfolio_symbols) and row["ticker"] not in ranked_tickers)]
     theme_screen = build_theme_layer(sec, theme_candidates)
+    theme_by_ticker = theme_screen.get("by_ticker") or {}
+    for row in research:
+        row["theme_exposure"] = theme_by_ticker.get(row["ticker"], [])
 
     # Rows carry the raw metric values merged from their snapshot, which is what a later
     # backtest needs - the derived 0-100 scores can always be recomputed from them.
@@ -1300,6 +1306,21 @@ def run():
         published=ranked_tickers,
         model_version=SETTINGS["model"]["semantic_version"],
     )
+    score_history = build_score_history(read_snapshots())
+    for row in research:
+        attach_explainability(row, score_history.get(row["ticker"]))
+    for row in portfolio_coverage:
+        if not row.get("explainability"):
+            attach_explainability(row, score_history.get(row.get("ticker")))
+    reconciliation_failures = attribution_errors(research)
+    if reconciliation_failures:
+        raise ValueError(f"Score attribution failed to reconcile: {reconciliation_failures[:5]}")
+    save_json("score-history.json", {
+        "schema_version": 1,
+        "generated_at": generated_at,
+        "minimum_months": SETTINGS["explainability"]["score_history_minimum_months"],
+        "by_ticker": score_history,
+    })
     if cross_normalizer:
         normalization_audit = write_normalization_audit(cross_normalizer, payload, generated_at)
         payload["normalization_audit"] = {

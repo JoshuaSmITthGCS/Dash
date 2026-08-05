@@ -36,8 +36,16 @@ describe('advisor migrations', () => {
   })
 
   it('leaves a current-version payload untouched', () => {
-    const current = { schema_version: 3, research: [], theme_screen: { themes: [] } }
+    const current = { schema_version: ADVISOR_SCHEMA_VERSION, research: [], theme_screen: { themes: [] } }
     expect(migrate('advisor', current)).toBe(current)
+  })
+
+  it('marks score history as accumulating when a v3 snapshot has no explainability', () => {
+    const migrated = migrate('advisor', { schema_version: 3, research: [{ ticker: 'AAA' }] })
+    expect(migrated.research[0].explainability.score_history).toMatchObject({
+      status: 'accumulating',
+      required_months: 6,
+    })
   })
 
   it('promotes legacy run metadata into the reproducible model envelope', () => {

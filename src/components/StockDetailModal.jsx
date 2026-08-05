@@ -16,6 +16,8 @@ import Icon from './Icons'
 import SetupQualityBreakdown from './SetupQualityBreakdown'
 import { watchlistGuidance } from '../lib/watchlistGuidance'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
+import ScoreExplainability, { FactorBars } from './ScoreExplainability.jsx'
+import { useData } from '../lib/useData.js'
 
 const TABS = [
   ['evidence', 'Evidence'],
@@ -72,6 +74,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const [tab, setTab] = useState('evidence')
   const [showMore, setShowMore] = useState(false)
   const { preferences } = usePreferences()
+  const { data: fullResearch } = useData(stock && !stock.explainability ? 'advisor.json' : null)
 
   useBodyScrollLock(!!stock)
 
@@ -82,6 +85,9 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   }, [onClose])
 
   if (!stock) return null
+  const explainability = stock.explainability
+    || fullResearch?.research?.find((row) => row.ticker === stock.ticker)?.explainability
+  const explainableStock = explainability ? { ...stock, explainability } : stock
 
   // A caller that already merged in position-specific guidance (e.g. a portfolio
   // stop-loss check) passes it here — recomputing from the raw research row would
@@ -160,6 +166,8 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
 
         <SetupQualityBreakdown guidance={setupGuidance} />
 
+        <FactorBars bars={explainability?.factor_bars} />
+
         <div className="grid grid-4" style={{ marginBottom: 20 }}>
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />
           <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'} />
@@ -230,6 +238,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
               </p>
             )}
             {showMore && <>
+              <ScoreExplainability stock={explainableStock} />
               <ResearchRadarChart stock={stock} />
               <div>
                 <div className="sec-label">Score components</div>

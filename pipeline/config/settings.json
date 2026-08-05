@@ -1,8 +1,8 @@
 {
   "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
   "model": {
-    "semantic_version": "3.0.0",
-    "advisor_schema_version": 3,
+    "semantic_version": "3.1.0",
+    "advisor_schema_version": 4,
     "etf_schema_version": 5,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
   },
@@ -169,6 +169,81 @@
     "request_timeout_seconds": 30,
     "schema_version": 1,
     "_comment": "Official monthly US research factors from the Ken French Data Library. The cache refreshes at most monthly and publishes percentage returns as decimal values."
+  },
+  "explainability": {
+    "attribution_base": 50.0,
+    "reconciliation_tolerance": 0.01,
+    "score_history_minimum_months": 6,
+    "largest_attribution_callouts": 3,
+    "minimum_stance_confidence": 0.45,
+    "score_scale_maximum": 100.0,
+    "history_chart_width": 300,
+    "history_chart_height": 80,
+    "stance_bands": [
+      { "minimum": 75.0, "label": "ATTRACTIVE" },
+      { "minimum": 60.0, "label": "PROMISING" },
+      { "minimum": 45.0, "label": "MIXED" },
+      { "minimum": 0.0, "label": "CAUTION" }
+    ],
+    "factor_groups": {
+      "value": ["valuation"],
+      "quality": ["profitability", "financial_health", "accounting_quality"],
+      "growth": ["growth"],
+      "momentum": ["momentum_12_1", "relative_strength"],
+      "sentiment": ["news_sentiment"],
+      "risk": ["financial_health", "risk_adjusted", "drawdown_resilience", "low_beta"]
+    },
+    "percent_metrics": [
+      "return_on_equity", "return_on_invested_capital", "gross_profits_to_assets",
+      "free_cash_flow_yield", "profit_margin", "revenue_growth", "earnings_growth",
+      "fcf_growth_3y", "operating_margin_trend", "earnings_surprise", "net_buyback_yield",
+      "stock_comp_to_revenue", "asset_growth", "accruals_ratio",
+      "days_sales_outstanding_trend", "inventory_days_trend"
+    ],
+    "multiple_metrics": [
+      "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
+      "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "debt_to_equity", "current_ratio",
+      "interest_coverage", "net_debt_to_ebitda", "capex_to_depreciation"
+    ],
+    "anomaly_rules": [
+      {
+        "id": "margin_growth_divergence",
+        "severity": "watch",
+        "conditions": [
+          { "metric": "operating_margin_trend", "operator": "lte", "value": -0.01 },
+          { "metric": "revenue_growth", "operator": "gte", "value": 0.1 }
+        ],
+        "message": "Operating margin is declining while revenue is still growing quickly. This divergence often signals that incremental growth is becoming less profitable."
+      },
+      {
+        "id": "cash_earnings_divergence",
+        "severity": "warning",
+        "conditions": [
+          { "metric": "accruals_ratio", "operator": "gte", "value": 0.05 },
+          { "metric": "fcf_growth_3y", "operator": "lt_metric", "compared_to": "earnings_growth" }
+        ],
+        "message": "Accruals are elevated while free cash flow growth trails earnings growth. This pattern can indicate weaker cash conversion of reported earnings."
+      },
+      {
+        "id": "receivables_growth_divergence",
+        "severity": "watch",
+        "conditions": [
+          { "metric": "days_sales_outstanding_trend", "operator": "gte", "value": 0.05 },
+          { "metric": "revenue_growth", "operator": "lte", "value": 0.0 }
+        ],
+        "message": "Days sales outstanding is extending while revenue growth is nonpositive. This pattern can indicate slower customer collections."
+      },
+      {
+        "id": "leveraged_buyback",
+        "severity": "watch",
+        "conditions": [
+          { "metric": "net_buyback_yield", "operator": "gt", "value": 0.0 },
+          { "metric": "net_debt_to_ebitda", "operator": "gte", "value": 2.5 }
+        ],
+        "message": "Buyback yield is positive while net debt to EBITDA is elevated. This combination means repurchases are occurring alongside meaningful leverage."
+      }
+    ],
+    "_comment": "Attribution starts from a neutral 50 and reconciles exactly through evidence, confidence, and every modifier. Anomaly messages describe observed rule-based divergences and never predict outcomes."
   },
   "alerts": {
     "maximum_rules_per_user": 25,
