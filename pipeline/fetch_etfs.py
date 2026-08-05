@@ -36,7 +36,9 @@ from risk_metrics import (beta_vs_benchmark, daily_returns, max_drawdown, period
                           sharpe_ratio, sortino_ratio, tracking_difference, tracking_error)
 
 UNIVERSE = load_json("universe.json", from_config=True) or {}
+SETTINGS = load_json("settings.json", from_config=True) or {}
 ETFS = UNIVERSE.get("etfs", {})
+ETF_LOOKTHROUGH = SETTINGS.get("etf_lookthrough", {})
 SP500_TICKER = "SPY"
 DOW_TICKER = "DIA"
 
@@ -161,6 +163,38 @@ def warm_price_cache(symbols, yf, period="3y", cache=None):
     return warmed
 
 
+def normalize_top_holdings(raw):
+    """Return the largest published ETF constituents in a stable additive schema."""
+    if raw is None:
+        return None
+    rows = []
+    if hasattr(raw, "iterrows"):
+        for symbol, values in raw.iterrows():
+            get = values.get if hasattr(values, "get") else lambda _key: None
+            weight = get("Holding Percent")
+            if weight is None:
+                weight = get("holdingPercent")
+            if weight is None:
+                weight = get("weight")
+            if weight is not None:
+                rows.append({"ticker": str(symbol).upper(), "weight": float(weight),
+                             "name": get("Name") or get("name")})
+    elif isinstance(raw, (list, tuple)):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            symbol = item.get("ticker") or item.get("symbol")
+            weight = item.get("weight", item.get("holdingPercent"))
+            if symbol and weight is not None:
+                rows.append({"ticker": str(symbol).upper(), "weight": float(weight),
+                             "name": item.get("name")})
+    minimum = float(ETF_LOOKTHROUGH["minimum_holding_weight"])
+    limit = int(ETF_LOOKTHROUGH["top_holdings_limit"])
+    usable = [row for row in rows if row["weight"] >= minimum]
+    usable.sort(key=lambda row: row["weight"], reverse=True)
+    return usable[:limit] or None
+
+
 def etf_snapshot(ticker, yf, ticker_obj=None, cache=None):
     """Quote-level fields plus free Yahoo fund-sector weights for portfolio look-through."""
     cache = cache or CACHE
@@ -169,9 +203,15 @@ def etf_snapshot(ticker, yf, ticker_obj=None, cache=None):
         tk = ticker_obj or yf.Ticker(ticker)
         info = tk.info or {}
         try:
-            raw_sector_weights = tk.funds_data.sector_weightings or {}
+            fund_data = tk.funds_data
+            raw_sector_weights = fund_data.sector_weightings or {}
         except Exception:  # noqa: BLE001
             raw_sector_weights = {}
+            fund_data = None
+        try:
+            top_holdings = normalize_top_holdings(fund_data.top_holdings) if fund_data else None
+        except Exception:  # noqa: BLE001
+            top_holdings = None
         sector_weights = {
             str(name): round(float(weight), 6)
             for name, weight in raw_sector_weights.items()
@@ -185,6 +225,7 @@ def etf_snapshot(ticker, yf, ticker_obj=None, cache=None):
             "ask": info.get("ask"),
             "inception": info.get("fundInceptionDate"),
             "sector_weights": sector_weights or None,
+            "top_holdings": top_holdings,
         }
 
     try:
@@ -309,6 +350,8 @@ def build_etf_row(ticker, meta, snapshot, closes, volumes, benchmark_daily_retur
         "beta": beta_vs_benchmark(rets, benchmark_daily_returns),
         "sector_weights": snapshot.get("sector_weights"),
         "sector_lookthrough_available": bool(snapshot.get("sector_weights")),
+        "top_holdings": snapshot.get("top_holdings"),
+        "position_lookthrough_available": bool(snapshot.get("top_holdings")),
     }
     row["quality_score"] = structural_quality(row, meta)
     return row
@@ -527,7 +570,7 @@ def build_etfs():
     scored = score_etf_universe(raw_rows)
     disclosed = sum(1 for row in scored if row.get("bid_ask_spread_source") == "rule_6c11_median_30d")
     payload = {
-        "schema_version": 4,
+        "schema_version": int((SETTINGS.get("model") or {})["etf_schema_version"]),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "data_mode": "live",
         "benchmarks": {"sp500": SP500_TICKER, "dow": DOW_TICKER},

@@ -92,6 +92,8 @@ describe('etf migrations', () => {
     expect(migrate('etfs', { schema_version: 3, etfs: [{ ticker: 'SPY' }] }).etfs[0]).toMatchObject({
       sector_weights: null,
       sector_lookthrough_available: false,
+      top_holdings: null,
+      position_lookthrough_available: false,
     })
   })
 })

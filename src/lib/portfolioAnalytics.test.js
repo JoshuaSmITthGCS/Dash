@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
+  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -145,12 +145,50 @@ describe('portfolio report analytics', () => {
     expect(result.unavailableEtfs).toEqual([])
   })
 
+  it('combines an ETF constituent with the same direct position', () => {
+    const result = sectorLookThrough([
+      { ticker: 'VOO', currentValue: 50, priceInfo: { sector: 'ETF' } },
+      { ticker: 'NVDA', currentValue: 50, priceInfo: { sector: 'Technology' } },
+    ], [{
+      ticker: 'VOO',
+      sector_weights: { technology: 1 },
+      top_holdings: [{ ticker: 'NVDA', weight: 0.1 }, { ticker: 'MSFT', weight: 0.2 }],
+    }])
+    expect(result.positionExposures.find((row) => row.ticker === 'NVDA').pct).toBeCloseTo(55, 10)
+    expect(result.positionExposures.find((row) => row.ticker === 'MSFT').pct).toBeCloseTo(10, 10)
+    expect(result.positionExposures.find((row) => row.ticker === 'Other VOO holdings').pct).toBeCloseTo(35, 10)
+  })
+
   it('flags an ETF when sector look-through is unavailable', () => {
     const result = sectorLookThrough([
       { ticker: 'VOO', currentValue: 100, priceInfo: { sector: 'ETF' } },
     ], [{ ticker: 'VOO', sector_weights: null }])
     expect(result.unavailableEtfs).toEqual(['VOO'])
     expect(result.exposures[0].label).toBe('ETF look-through unavailable')
+    expect(result.unresolvedDollars).toBe(100)
+  })
+
+  it('reconciles percent contribution to total risk to 100%', () => {
+    const dates = Array.from({ length: 90 }, (_, index) => `d-${index}`)
+    const makeCloses = (phase) => dates.map((_, index) => 100 * (1 + index * 0.001 + Math.sin(index + phase) * 0.01))
+    const positions = [
+      { ticker: 'AAA', currentValue: 60, priceInfo: { history: { dates, closes: makeCloses(0) } } },
+      { ticker: 'BBB', currentValue: 40, priceInfo: { history: { dates, closes: makeCloses(1) } } },
+    ]
+    const result = portfolioRiskDecomposition(positions)
+    expect(result.available).toBe(true)
+    expect(result.contributions.reduce((sum, row) => sum + row.percentContributionToRisk, 0)).toBeCloseTo(100, 8)
+    expect(result.expectedShortfall95Pct).toBeLessThan(0)
+  })
+
+  it('publishes active share only when benchmark constituent weights are available', () => {
+    const dates = Array.from({ length: 90 }, (_, index) => `d-${index}`)
+    const positions = [
+      { ticker: 'AAA', currentValue: 60, priceInfo: { history: { dates, closes: dates.map((_, index) => 100 + index + Math.sin(index)) } } },
+      { ticker: 'BBB', currentValue: 40, priceInfo: { history: { dates, closes: dates.map((_, index) => 100 + index + Math.cos(index)) } } },
+    ]
+    expect(portfolioRiskDecomposition(positions).activeSharePct).toBeNull()
+    expect(portfolioRiskDecomposition(positions, { benchmarkWeights: { AAA: 0.5, BBB: 0.5 } }).activeSharePct).toBeCloseTo(10, 10)
   })
 
   it('issues a clearly provisional score without turning missing components into zero', () => {

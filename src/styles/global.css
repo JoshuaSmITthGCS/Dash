@@ -1269,3 +1269,10 @@ body { background: var(--app-background); background-image: none; }
   .congress-kpi-grid > :last-child { grid-column: 1 / -1; }
 }
 .position-risk-explanation { margin: 0; padding: 10px 12px; border-left: 2px solid var(--brand-primary); background: var(--surface-secondary); color: var(--text-secondary); font-size: 11px; line-height: 1.55; }
+.factor-loading-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.factor-loading-grid > div { min-width: 0; padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--control-radius); background: var(--surface-secondary); }
+.factor-loading-grid span, .factor-loading-grid strong, .factor-loading-grid small { display: block; }
+.factor-loading-grid span { overflow: hidden; color: var(--text-tertiary); font-size: 9px; letter-spacing: .06em; text-overflow: ellipsis; text-transform: capitalize; white-space: nowrap; }
+.factor-loading-grid strong { margin-top: 7px; font: 720 19px var(--font-mono); font-variant-numeric: tabular-nums; }
+.factor-loading-grid small { margin-top: 3px; color: var(--text-faint); font-size: 9px; }
+@media (max-width: 540px) { .factor-loading-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

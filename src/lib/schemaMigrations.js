@@ -1,3 +1,5 @@
+import modelSettings from '../../pipeline/config/settings.json'
+
 // Read-time schema migration for the pipeline's JSON snapshots.
 //
 // The frontend reads committed JSON files directly, so a schema change breaks it silently
@@ -11,7 +13,7 @@
 // only has to know how to get from one version to the next; the runner chains them.
 
 export const ADVISOR_SCHEMA_VERSION = 3
-export const ETF_SCHEMA_VERSION = 4
+export const ETF_SCHEMA_VERSION = modelSettings.model.etf_schema_version
 
 // v1 -> v2: market-behavior detail keys changed when the ad hoc trend/risk formulas were
 // replaced with 12-1 momentum and real Sharpe/Sortino ratios, and the theme screen and
@@ -99,9 +101,23 @@ function etfV3ToV4(payload) {
   }
 }
 
+// v4 -> v5: rows may also carry the fund's published largest constituents. Historical
+// snapshots cannot reconstruct them, so position look-through remains explicitly absent.
+function etfV4ToV5(payload) {
+  return {
+    ...payload,
+    schema_version: 5,
+    etfs: (payload.etfs || []).map((row) => ({
+      ...row,
+      top_holdings: row.top_holdings || null,
+      position_lookthrough_available: Boolean(row.top_holdings),
+    })),
+  }
+}
+
 const MIGRATIONS = {
   advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3 },
-  etfs: { 2: etfV2ToV3, 3: etfV3ToV4 },
+  etfs: { 2: etfV2ToV3, 3: etfV3ToV4, 4: etfV4ToV5 },
 }
 
 const TARGETS = { advisor: ADVISOR_SCHEMA_VERSION, etfs: ETF_SCHEMA_VERSION }

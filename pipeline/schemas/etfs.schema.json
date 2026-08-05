@@ -13,7 +13,7 @@
     "schema_version": {
       "type": "integer",
       "minimum": 2,
-      "maximum": 4
+      "maximum": 5
     },
     "generated_at": {
       "type": "string",
@@ -84,6 +84,24 @@
             }
           },
           "sector_lookthrough_available": {
+            "type": "boolean"
+          },
+          "top_holdings": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "required": ["ticker", "weight"],
+              "properties": {
+                "ticker": { "type": "string" },
+                "name": { "type": ["string", "null"] },
+                "weight": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "position_lookthrough_available": {
             "type": "boolean"
           },
           "issuer": {

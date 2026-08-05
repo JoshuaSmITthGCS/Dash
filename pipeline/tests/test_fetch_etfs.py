@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import etf_disclosure
 from fetch_etfs import (beta_vs_benchmark, build_etf_row, daily_returns, group_indices,
-                        peer_group_for, percentile_scores, period_return, score_etf_universe,
+                        normalize_top_holdings, peer_group_for, percentile_scores, period_return, score_etf_universe,
                         sharpe_ratio, sortino_ratio, structural_quality)
 
 
@@ -98,6 +98,20 @@ class BuildEtfRowTests(unittest.TestCase):
         )
         self.assertTrue(row["sector_lookthrough_available"])
         self.assertEqual(row["sector_weights"]["technology"], 0.3)
+
+    def test_publishes_top_holdings_for_position_lookthrough(self):
+        closes = rising_closes(260)
+        holdings = normalize_top_holdings([
+            {"symbol": "NVDA", "holdingPercent": 0.08, "name": "Nvidia"},
+            {"symbol": "MSFT", "holdingPercent": 0.07, "name": "Microsoft"},
+        ])
+        row = build_etf_row(
+            "VOO", {"name": "VOO", "category": "broad_market", "issuer": "Vanguard"},
+            {"price": closes[-1], "sector_weights": {"technology": 1}, "top_holdings": holdings},
+            closes, [1_000_000.0] * len(closes), daily_returns(closes),
+        )
+        self.assertTrue(row["position_lookthrough_available"])
+        self.assertEqual(row["top_holdings"][0]["ticker"], "NVDA")
 
 
 class ScoreEtfUniverseTests(unittest.TestCase):

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-05T14:15:39.442439+00:00",
+  "generated_at": "2026-08-05T22:46:22.688760+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -193,6 +193,21 @@
         "failed": {},
         "output": "public/data/etf/<ticker>.json"
       }
+    },
+    "factors": {
+      "status": "healthy",
+      "checked_at": "2026-08-05T22:46:22.688739+00:00",
+      "source": "Kenneth R. French Data Library",
+      "details": {
+        "observations": 756
+      }
     }
+  },
+  "model_version": "3.0.0",
+  "model_metadata": {
+    "semantic_version": "3.0.0",
+    "git_commit_sha": "ea0766b19607a4ab3133d6a701ede1153735925b",
+    "config_hash": "2b813b8d521b7f110aa6eb689142dffe295089b235f68a3d925ff29e4ed940b0",
+    "generated_at": "2026-08-05T22:46:22.688760+00:00"
   }
 }
