@@ -272,6 +272,15 @@ class CrossSectionalNormalizationTests(unittest.TestCase):
         self.assertEqual(len(values), len(snapshots))
         self.assertLess(values[-1], 20.0)
 
+    def test_sector_percentile_ranks_identify_low_short_interest(self):
+        snapshots = [
+            {"ticker": f"T{index}", "sector": "Technology", "short_percent_of_float": value}
+            for index, value in enumerate((0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08))
+        ]
+        ranks = scorer.sector_percentile_ranks(snapshots, "short_percent_of_float", 8)
+        self.assertEqual(ranks["T0"]["percentile"], 0.0)
+        self.assertEqual(ranks["T0"]["normalization_scope"], "sector")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,8 +15,31 @@
       "sector_minimum_count": 8,
       "largest_movers_count": 20,
       "_comment": "The live champion remains on bands. The challenger fits metric distributions on the complete refreshed universe and publishes beside it."
+    },
+    "signal_corrections": {
+      "enabled": true,
+      "short_horizon_treatment": "neutral",
+      "reversal_weight": 0.08,
+      "shrinkage_target": 50.0,
+      "shrinkage_max_pull": 1.0,
+      "modifier_cap": 20.0,
+      "low_short_interest_percentile": 0.1,
+      "short_interest_sector_minimum_count": 8,
+      "days_to_cover_penalty_fraction": 0.25,
+      "modifier_fractions": {
+        "sector_valuation": 0.15,
+        "short_interest_penalty": 0.3,
+        "short_interest_reward": 0.1,
+        "liquidity": 0.15,
+        "expectations": 0.15,
+        "macro_regime": 0.15,
+        "insider_positive": 0.25,
+        "insider_negative": 0.15
+      },
+      "_comment": "The cumulative challenger neutralizes short-horizon relative strength, applies confidence shrinkage once, and expresses every modifier allocation as a fraction of the combined cap."
     }
   },
+  "short_horizon_treatment": "legacy_momentum",
   "signal_weights": {
     "track_record": 25,
     "committee_relevance": 20,

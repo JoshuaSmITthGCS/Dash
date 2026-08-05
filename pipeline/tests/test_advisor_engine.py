@@ -5,8 +5,11 @@ from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, build_research, insider_modifier,
-                            macro_regime_modifier, sentiment_score, technical_factors)
+from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
+                            build_research, insider_modifier, macro_regime_modifier,
+                            sentiment_score, shrink_research_components, technical_factors,
+                            technical_score_from_parts)
+from scorer import SETTINGS
 
 
 class AdvisorEngineTests(unittest.TestCase):
@@ -187,6 +190,68 @@ class RebuiltTechnicalTests(unittest.TestCase):
         _, defensive = technical_factors(closes, closes, [1e6] * 300, extended={"beta": 0.8})
         _, aggressive = technical_factors(closes, closes, [1e6] * 300, extended={"beta": 2.4})
         self.assertGreater(defensive["low_beta"], aggressive["low_beta"])
+
+    def test_neutral_treatment_drops_relative_strength_and_redistributes_weight(self):
+        parts = {name: 50.0 for name in (
+            "momentum_12_1", "risk_adjusted", "drawdown_resilience",
+            "volume_confirmation", "low_beta",
+        )}
+        parts["relative_strength"] = 100.0
+        legacy, _ = technical_score_from_parts(parts, "legacy_momentum")
+        neutral, detail = technical_score_from_parts(parts, "neutral")
+        self.assertGreater(legacy, neutral)
+        self.assertNotIn("relative_strength", detail["weights"])
+        self.assertEqual(neutral, 50.0)
+
+    def test_reversal_inverts_relative_strength_at_reduced_weight(self):
+        parts = {name: 50.0 for name in (
+            "momentum_12_1", "risk_adjusted", "drawdown_resilience",
+            "volume_confirmation", "low_beta",
+        )}
+        parts["relative_strength"] = 90.0
+        reversal, detail = technical_score_from_parts(parts, "reversal", reversal_weight=0.08)
+        self.assertLess(reversal, 50.0)
+        self.assertEqual(detail["parts"]["relative_strength"], 10.0)
+
+
+class SignalCorrectionTests(unittest.TestCase):
+    def setUp(self):
+        self.config = SETTINGS["challengers"]["signal_corrections"]
+
+    def test_single_shrinkage_moves_sparse_extremes_toward_neutral(self):
+        result = shrink_research_components(
+            {"fundamentals": 100.0, "market_behavior": 100.0, "news_sentiment": 100.0},
+            {"fundamentals": 0.1, "market_behavior": 0.1, "news_sentiment": 0.0},
+            self.config,
+        )
+        self.assertGreater(result["base_score"], self.config["shrinkage_target"])
+        self.assertLess(result["base_score"], result["raw_score"])
+
+    def test_low_short_interest_receives_positive_fraction_of_cap(self):
+        score, detail = apply_challenger_modifiers(
+            50.0,
+            {"sector": "Technology"},
+            {"short_percent_of_float": 0.01},
+            self.config,
+            short_interest_rank={"percentile": 0.05, "normalization_scope": "sector"},
+        )
+        expected = (self.config["modifier_cap"]
+                    * self.config["modifier_fractions"]["short_interest_reward"])
+        self.assertEqual(detail["applied"]["short_interest"], expected)
+        self.assertEqual(score, 50.0 + expected)
+
+    def test_combined_challenger_modifier_is_capped_at_twenty(self):
+        snapshot = {
+            "sector": "Technology", "short_percent_of_float": 0.3,
+            "days_to_cover": 20.0, "average_dollar_volume": 100_000,
+            "analyst_target_upside": -50.0, "analyst_rating": 5.0, "analyst_count": 10,
+        }
+        _, detail = apply_challenger_modifiers(
+            50.0, snapshot, snapshot, self.config, sector_percentile=0,
+            short_interest_rank={"percentile": 1.0},
+        )
+        self.assertGreaterEqual(detail["total"], -self.config["modifier_cap"])
+        self.assertEqual(detail["cap"], 20.0)
 
 
 class SentimentWindowTests(unittest.TestCase):

@@ -410,6 +410,38 @@ class CrossSectionalNormalizer:
         }
 
 
+def sector_percentile_ranks(snapshots, metric, minimum_count):
+    """Ascending percentile rank by sector with a full-universe fallback.
+
+    The returned scale is 0 through 1. Low values therefore identify the least-shorted
+    names when ``metric`` is short interest. Ties share their average rank.
+    """
+    valid = [row for row in snapshots
+             if row.get("ticker") and isinstance(row.get(metric), (int, float))]
+    universe = sorted(float(row[metric]) for row in valid)
+    sectors = defaultdict(list)
+    for row in valid:
+        sectors[row.get("sector") or "Unclassified"].append(float(row[metric]))
+    sectors = {sector: sorted(values) for sector, values in sectors.items()}
+
+    def percentile(values, value):
+        if len(values) == 1:
+            return 0.5
+        left, right = bisect_left(values, value), bisect_right(values, value)
+        return ((left + right - 1) / 2) / (len(values) - 1)
+
+    result = {}
+    for row in valid:
+        sector_values = sectors.get(row.get("sector") or "Unclassified", [])
+        values = sector_values if len(sector_values) >= minimum_count else universe
+        result[row["ticker"]] = {
+            "percentile": round(percentile(values, float(row[metric])), 6),
+            "normalization_scope": "sector" if values is sector_values else "universe",
+            "peer_count": len(values),
+        }
+    return result
+
+
 def weighted_coverage(metrics, cfg, exempt=()):
     """Fraction of the total metric weight that was actually answered.
 

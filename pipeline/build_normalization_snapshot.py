@@ -5,13 +5,15 @@ it fits on the broadest universe that was actually observed, then adds the chall
 full published research rows without changing the production champion.
 """
 
-from advisor_engine import cross_sectional_challenger
+from advisor_engine import cross_sectional_challenger, signal_correction_variants
 from common import load_json, save_json
 from fetch_advisor import report_snapshot
 from normalization_report import write_normalization_report
+from signal_report import write_signal_report
 from observability import diagnostics_payload
 import pit_store
-from scorer import CrossSectionalNormalizer, SETTINGS, valuation_score
+from scorer import (CrossSectionalNormalizer, SETTINGS, sector_percentile_ranks,
+                    valuation_score)
 
 
 def main():
@@ -23,13 +25,19 @@ def main():
     if not snapshots:
         raise SystemExit("no point-in-time observations are available")
     normalizer = CrossSectionalNormalizer(snapshots, config)
+    signal_config = (SETTINGS.get("challengers") or {}).get("signal_corrections", {})
+    short_interest_ranks = sector_percentile_ranks(
+        snapshots,
+        "short_percent_of_float",
+        signal_config["short_interest_sector_minimum_count"],
+    ) if signal_config.get("enabled") else {}
     by_ticker = {row["ticker"]: row for row in snapshots}
     for collection in (payload.get("research", []), payload.get("portfolio_coverage", [])):
         for row in collection:
             snapshot = {**by_ticker.get(row.get("ticker"), {}), **row}
             if not snapshot.get("ticker") or not row.get("components"):
                 continue
-            row["score_variants"] = {
+            variants = {
                 "champion": {
                     "variant": "bands_champion",
                     "normalization_mode": SETTINGS.get("normalization_mode", "bands"),
@@ -39,8 +47,20 @@ def main():
                     "components": row.get("components"),
                     "fundamental_categories": row.get("fundamental_categories"),
                 },
-                "challenger": cross_sectional_challenger(row, snapshot, normalizer),
             }
+            if signal_config.get("enabled"):
+                variants.update(signal_correction_variants(
+                    row,
+                    snapshot,
+                    normalizer,
+                    signal_config,
+                    short_interest_ranks.get(snapshot["ticker"]),
+                    ((payload.get("market") or {}).get("macro") or {}).get("regime"),
+                    row.get("insider_activity"),
+                ))
+            else:
+                variants["challenger"] = cross_sectional_challenger(row, snapshot, normalizer)
+            row["score_variants"] = variants
     comparison_rows = []
     for snapshot in snapshots:
         champion_score, champion_detail = valuation_score(snapshot, mode="bands")
@@ -82,10 +102,17 @@ def main():
         "observed_universe_count": len(snapshots),
     }
     payload["normalization_comparison"] = comparison
+    payload["signal_comparison"] = (
+        write_signal_report(payload.get("research", []), payload.get("generated_at"))
+        if signal_config.get("enabled") else None
+    )
     payload.setdefault("methodology", {})["normalization"] = {
         "champion": SETTINGS.get("normalization_mode", "bands"),
         "challenger": config.get("normalization_mode"),
         "challenger_enabled": True,
+    }
+    payload["methodology"]["signal_corrections"] = {
+        key: value for key, value in signal_config.items() if not key.startswith("_")
     }
     save_json("advisor.json", payload)
     save_json("report.json", report_snapshot(payload))

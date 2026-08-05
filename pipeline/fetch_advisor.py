@@ -7,7 +7,7 @@ import statistics
 import time
 from datetime import datetime, timezone
 
-from advisor_engine import RANKING_WEIGHTS, build_research, cross_sectional_challenger
+from advisor_engine import RANKING_WEIGHTS, build_research, cross_sectional_challenger, signal_correction_variants
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
@@ -25,8 +25,10 @@ from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
-from scorer import CrossSectionalNormalizer, SETTINGS, valuation_score
+from scorer import (CrossSectionalNormalizer, SETTINGS, sector_percentile_ranks,
+                    valuation_score)
 from normalization_report import write_normalization_report
+from signal_report import write_signal_report
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals
 from themes import build_theme_screen, empty_screen, load_themes
@@ -991,6 +993,12 @@ def run():
             )
             if cross_normalizer:
                 normalization_fit_source = "prior_full_refresh"
+    signal_cfg = (SETTINGS.get("challengers") or {}).get("signal_corrections", {})
+    short_interest_ranks = sector_percentile_ranks(
+        ({**context["snapshot"], "ticker": context["symbol"]} for context in contexts),
+        "short_percent_of_float",
+        signal_cfg["short_interest_sector_minimum_count"],
+    ) if signal_cfg.get("enabled") else {}
 
     # Valuation is scored once up front so 'cheap for its sector' can be measured against peers
     # before the final score is assembled.
@@ -1035,7 +1043,17 @@ def run():
             "fundamental_categories": row["fundamental_categories"],
         }
         row["score_variants"] = {"champion": champion_variant}
-        if cross_normalizer:
+        if cross_normalizer and signal_cfg.get("enabled"):
+            row["score_variants"].update(signal_correction_variants(
+                row,
+                context["snapshot"],
+                cross_normalizer,
+                signal_cfg,
+                short_interest_ranks.get(symbol),
+                fred_regime,
+                insider_signals.get(symbol),
+            ))
+        elif cross_normalizer:
             row["score_variants"]["challenger"] = cross_sectional_challenger(
                 row, context["snapshot"], cross_normalizer,
             )
@@ -1123,6 +1141,7 @@ def run():
             challenger_cfg["sector_minimum_count"],
             generated_at,
         )
+    signal_comparison = write_signal_report(research, generated_at) if signal_cfg.get("enabled") else None
     for row in research:
         row.setdefault("data_fetched_at", generated_at)
     payload = {
@@ -1146,6 +1165,7 @@ def run():
             "fit_source": normalization_fit_source,
         },
         "normalization_comparison": normalization_comparison,
+        "signal_comparison": signal_comparison,
         "methodology": {
             "weights": RANKING_WEIGHTS,
             "fundamental_weights": fundamentals_cfg["category_weights"],

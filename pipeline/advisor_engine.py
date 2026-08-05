@@ -63,7 +63,8 @@ def volume_confirmation(closes, volumes):
     return round(min(up / down, 3.0), 2)
 
 
-def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None):
+def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None,
+                      short_horizon_treatment=None, reversal_weight=None):
     """Score market behavior on the same risk math the ETF model uses.
 
     The previous version scored two invented linear formulas - a trend of
@@ -147,15 +148,12 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
             ("volume_confirmation", volume_score), ("low_beta", beta_score),
         )
     }
-    answered = [(value, TECHNICAL_WEIGHTS[name]) for name, value in parts.items()
-                if value is not None and name in TECHNICAL_WEIGHTS]
-    if not answered:
+    treatment = short_horizon_treatment or SETTINGS.get(
+        "short_horizon_treatment", "legacy_momentum"
+    )
+    score, variant = technical_score_from_parts(parts, treatment, reversal_weight)
+    if score is None:
         return None, {"coverage": 0.0}
-    score = round(sum(value * weight for value, weight in answered)
-                  / sum(weight for _, weight in answered), 1)
-    # Coverage is the share of the weight table that actually resolved, so a stock with six
-    # months of prices is visibly less certain than one with three years.
-    coverage = round(sum(weight for _, weight in answered) / sum(TECHNICAL_WEIGHTS.values()), 2)
 
     return score, {
         "return_5d": round(ret_5, 2) if ret_5 is not None else None,
@@ -169,8 +167,39 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
         "pct_above_52w_low": above_low, "beta": beta,
         **{name: value for name, value in parts.items() if value is not None},
-        "coverage": coverage,
+        "coverage": variant["coverage"],
+        "short_horizon_treatment": treatment,
     }
+
+
+def technical_score_from_parts(parts, treatment, reversal_weight=None):
+    """Recombine already-calculated market signals under a short-horizon treatment.
+
+    ``legacy_momentum`` retains the current relative-strength term. ``neutral`` removes
+    it and renormalizes the remaining weights to sum to one. ``reversal`` maps the same
+    signal to ``100 - legacy_score`` and uses the configured reduced weight.
+    """
+    if treatment not in {"legacy_momentum", "neutral", "reversal"}:
+        raise ValueError(f"unsupported short-horizon treatment: {treatment}")
+    weights = dict(TECHNICAL_WEIGHTS)
+    values = {name: parts.get(name) for name in weights}
+    if treatment == "neutral":
+        weights.pop("relative_strength", None)
+        values.pop("relative_strength", None)
+    elif treatment == "reversal":
+        if reversal_weight is None:
+            raise ValueError("reversal treatment requires a configured reversal weight")
+        weights["relative_strength"] = reversal_weight
+        if values.get("relative_strength") is not None:
+            values["relative_strength"] = round(100 - values["relative_strength"], 1)
+    answered = [(value, weights[name]) for name, value in values.items()
+                if value is not None]
+    if not answered:
+        return None, {"coverage": 0.0, "weights": weights}
+    score = round(sum(value * weight for value, weight in answered)
+                  / sum(weight for _, weight in answered), 1)
+    coverage = round(sum(weight for _, weight in answered) / sum(weights.values()), 2)
+    return score, {"coverage": coverage, "weights": weights, "parts": values}
 
 
 def _published_within(item, days, now=None):
@@ -385,6 +414,97 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
     }
 
 
+def apply_challenger_modifiers(base, snapshot, extended, config, sector_percentile=None,
+                               short_interest_rank=None, macro_regime=None,
+                               insider_activity=None):
+    """Apply fractionally allocated modifiers under the configured combined cap.
+
+    Each individual maximum is ``combined_cap * configured_fraction``. The final sum is
+    clamped once to plus or minus ``combined_cap`` so changing one allocation never changes
+    another modifier's implicit scale.
+    """
+    cap = float(config["modifier_cap"])
+    fractions = config["modifier_fractions"]
+    applied, notes = {}, []
+
+    if sector_percentile is not None:
+        allocation = cap * fractions["sector_valuation"]
+        points = round((sector_percentile - 50) / 50 * allocation, 2)
+        if points:
+            applied["sector_valuation"] = points
+
+    short_cfg = MODIFIERS.get("short_interest", {})
+    float_short = extended.get("short_percent_of_float")
+    days = extended.get("days_to_cover")
+    short_points = 0.0
+    rank_value = (short_interest_rank or {}).get("percentile")
+    if rank_value is not None and rank_value <= config["low_short_interest_percentile"]:
+        short_points += cap * fractions["short_interest_reward"]
+        notes.append("Short interest is in the lowest sector decile")
+    penalty_allocation = cap * fractions["short_interest_penalty"]
+    if float_short is not None and float_short >= short_cfg.get("float_severe"):
+        short_points -= penalty_allocation
+    elif float_short is not None and float_short >= short_cfg.get("float_warning"):
+        short_points -= penalty_allocation / 2
+    if days is not None and days >= short_cfg.get("days_to_cover_warning"):
+        short_points -= penalty_allocation * config["days_to_cover_penalty_fraction"]
+    short_points = max(-penalty_allocation, short_points)
+    if short_points:
+        applied["short_interest"] = round(short_points, 2)
+
+    liquidity_points, liquidity_note = liquidity_modifier(extended)
+    if liquidity_points:
+        old_cap = MODIFIERS.get("liquidity", {}).get("max_penalty")
+        applied["liquidity"] = round(
+            liquidity_points / old_cap * cap * fractions["liquidity"], 2
+        )
+    if liquidity_note:
+        notes.append(liquidity_note)
+
+    expectations_points, expectations_note = expectations_modifier(extended)
+    if expectations_points:
+        old_cap = MODIFIERS.get("expectations", {}).get("max_points")
+        applied["expectations"] = round(
+            expectations_points / old_cap * cap * fractions["expectations"], 2
+        )
+    if expectations_note:
+        notes.append(expectations_note.replace(";", ","))
+
+    macro_points, macro_note = macro_regime_modifier(snapshot, macro_regime)
+    if macro_points:
+        old_cap = MODIFIERS.get("macro_regime", {}).get("max_points")
+        applied["macro_regime"] = round(
+            macro_points / old_cap * cap * fractions["macro_regime"], 2
+        )
+    if macro_note:
+        notes.append(macro_note)
+
+    insider_points, insider_note = insider_modifier(insider_activity)
+    if insider_points:
+        fraction_key = "insider_positive" if insider_points > 0 else "insider_negative"
+        old_key = "max_points" if insider_points > 0 else "max_penalty"
+        old_cap = MODIFIERS.get("insider_activity", {}).get(old_key)
+        applied["insider_activity"] = round(
+            insider_points / old_cap * cap * fractions[fraction_key], 2
+        )
+    if insider_note:
+        notes.append(insider_note.replace(";", ","))
+
+    uncapped_total = round(sum(applied.values()), 2)
+    total = round(max(-cap, min(cap, uncapped_total)), 2)
+    if total != uncapped_total:
+        notes.append(f"Combined modifiers capped at {total:+.0f} points")
+    return round(clamp(base + total), 1), {
+        "applied": applied,
+        "total": total,
+        "uncapped_total": uncapped_total,
+        "cap": cap,
+        "fractions": fractions,
+        "short_interest_rank": short_interest_rank,
+        "notes": notes,
+    }
+
+
 # ---------------- action guidance ----------------
 
 def action_for(score, stance, fundamental_parts, technical_parts, extended, sentiment_parts):
@@ -494,6 +614,39 @@ def blend_research_components(components, coverage, modifier_points=0.0, weights
     }
 
 
+def shrink_research_components(components, coverage, config, modifier_points=0.0,
+                               weights=None):
+    """Apply one confidence shrinkage toward a configurable neutral prior.
+
+    Formula: ``effective = target + strength * (raw - target)``, where
+    ``strength = 1 - max_pull * (1 - confidence)``. At the default maximum pull of one,
+    strength equals confidence exactly and missing evidence moves a score toward neutral.
+    """
+    weights = weights or RANKING_WEIGHTS
+    available = [(components[key], weights[key]) for key in weights
+                 if components.get(key) is not None]
+    raw = sum(value * weight for value, weight in available) / sum(
+        weight for _, weight in available
+    ) if available else config["shrinkage_target"]
+    confidence = round(
+        0.65 * coverage.get("fundamentals", 0.0)
+        + 0.25 * coverage.get("market_behavior", 0.0)
+        + 0.10 * coverage.get("news_sentiment", 0.0),
+        2,
+    )
+    strength = clamp(1 - config["shrinkage_max_pull"] * (1 - confidence), 0.0, 1.0)
+    target = config["shrinkage_target"]
+    base = round(target + strength * (raw - target), 1)
+    return {
+        "raw_score": round(raw, 1),
+        "base_score": base,
+        "score": round(clamp(base + modifier_points), 1),
+        "confidence": confidence,
+        "shrinkage_strength": round(strength, 3),
+        "shrinkage_target": target,
+    }
+
+
 def cross_sectional_challenger(row, snapshot, normalizer):
     """Replace only the fundamental component and publish an attributable challenger."""
     fundamental, detail = valuation_score(
@@ -534,6 +687,93 @@ def cross_sectional_challenger(row, snapshot, normalizer):
         "fundamental_categories": detail.get("categories", {}),
         "fundamental_detail": detail,
         "largest_metric_changes": deltas[:5],
+    }
+
+
+def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
+                               macro_regime=None, insider_activity=None):
+    """Build isolated signal edits plus the cumulative challenger beside the champion."""
+    normalization = cross_sectional_challenger(row, snapshot, normalizer)
+    champion_components = row.get("components") or {}
+    technical, technical_detail = technical_score_from_parts(
+        row.get("technical_detail") or {},
+        config["short_horizon_treatment"],
+        config["reversal_weight"],
+    )
+    neutral_components = {**champion_components, "market_behavior": technical}
+    coverage = {
+        "fundamentals": (row.get("fundamental_detail") or {}).get("coverage", 0.0),
+        "market_behavior": technical_detail.get("coverage", 0.0),
+        "news_sentiment": (row.get("sentiment_detail") or {}).get("coverage", 0.0),
+    }
+    legacy_modifier_total = (row.get("modifiers") or {}).get("total", 0.0)
+    short_horizon = {
+        "variant": "neutral_short_horizon",
+        "short_horizon_treatment": config["short_horizon_treatment"],
+        **blend_research_components(
+            neutral_components, coverage, legacy_modifier_total,
+        ),
+        "components": neutral_components,
+    }
+
+    champion_raw_fundamental = (row.get("fundamental_detail") or {}).get(
+        "raw_score", champion_components.get("fundamentals")
+    )
+    raw_components = {**champion_components, "fundamentals": champion_raw_fundamental}
+    shrinkage = {
+        "variant": "single_confidence_shrinkage",
+        **shrink_research_components(
+            raw_components,
+            {**coverage, "market_behavior": (row.get("technical_detail") or {}).get("coverage", 0.0)},
+            config,
+            legacy_modifier_total,
+        ),
+        "components": raw_components,
+    }
+
+    modifier_score, modifier_detail = apply_challenger_modifiers(
+        row.get("base_score", 0.0), snapshot, snapshot, config,
+        row.get("sector_valuation_percentile"), short_interest_rank,
+        macro_regime, insider_activity,
+    )
+    modifier_recalibration = {
+        "variant": "fractional_modifier_cap",
+        "score": modifier_score,
+        "base_score": row.get("base_score"),
+        "confidence": row.get("confidence"),
+        "modifiers": modifier_detail,
+    }
+
+    cross_raw = (normalization.get("fundamental_detail") or {}).get(
+        "raw_score", normalization["components"].get("fundamentals")
+    )
+    final_components = {
+        **neutral_components,
+        "fundamentals": cross_raw,
+    }
+    final_base = shrink_research_components(final_components, coverage, config)
+    final_score, final_modifiers = apply_challenger_modifiers(
+        final_base["base_score"], snapshot, snapshot, config,
+        row.get("sector_valuation_percentile"), short_interest_rank,
+        macro_regime, insider_activity,
+    )
+    challenger = {
+        "variant": "signal_corrections_cumulative",
+        "normalization_mode": "cross_sectional",
+        "short_horizon_treatment": config["short_horizon_treatment"],
+        **final_base,
+        "score": final_score,
+        "components": final_components,
+        "fundamental_categories": normalization.get("fundamental_categories"),
+        "largest_metric_changes": normalization.get("largest_metric_changes"),
+        "modifiers": final_modifiers,
+    }
+    return {
+        "normalization": normalization,
+        "short_horizon": short_horizon,
+        "confidence_shrinkage": shrinkage,
+        "modifier_recalibration": modifier_recalibration,
+        "challenger": challenger,
     }
 
 
