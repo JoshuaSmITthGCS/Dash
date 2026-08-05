@@ -18,6 +18,8 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
+import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
 
 const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
@@ -50,6 +52,10 @@ export default function Dashboard() {
   const { currentUser } = useAuth()
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const tracking = usePortfolioTracking()
+  // Quietly refreshes at 9pm local time (see src/lib/nightlyRefresh.js) so after-hours has
+  // real Yahoo data by the time anyone looks at the report, not just when someone happens to
+  // hit refresh on the Portfolio page.
+  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
   const { preferences, setWidgets, updatePreferences } = usePreferences()
   const { data: benchmarkReport, loading: benchmarkLoading } = useData(positions.length ? 'benchmark-report.json' : null)
   const [period, setPeriod] = useState(preferences.defaultChartPeriod)
@@ -74,6 +80,7 @@ export default function Dashboard() {
   const comparison = compareBenchmarkSeries(selected, selectedBenchmarkSeries)
   const chartedPortfolio = comparison?.portfolio || selected
   const today = latestMarketDayReturn(holdingsSeries)
+  const afterHours = afterHoursPortfolioReturn(positions, portfolioQuotes.quotes)
   const diversification = diversificationScore(portfolio.positions)
   const scorePortfolioPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
   const scoreComparison = compareBenchmarkSeries(scorePortfolioPeriod, selectedBenchmarkSeries.slice(0, 1))
@@ -127,8 +134,13 @@ export default function Dashboard() {
             <span className={`value-pill ${today?.dollarReturn == null ? 'neutral' : today.dollarReturn >= 0 ? 'positive' : 'negative'}`}>
               {today ? `${today.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today — unavailable'}
             </span>
-            <span className="value-pill neutral" title="The data pipeline does not collect timestamped extended-hours quotes, so after-hours movement isn't tracked yet.">
-              After-hours — not tracked
+            <span className={`value-pill ${!afterHours.available ? 'neutral' : afterHours.dollarReturn >= 0 ? 'positive' : 'negative'}`}
+              title={afterHours.available
+                ? `${afterHours.coverage} of ${positions.length} holdings had a post-market quote from Yahoo`
+                : 'Refreshes automatically at 9pm local time from Yahoo, once the after-hours session has quotes for a held position.'}>
+              {afterHours.available
+                ? `${afterHours.dollarReturn >= 0 ? '▲' : '▼'} ${money(Math.abs(afterHours.dollarReturn))}${afterHours.returnPct != null ? ` · ${signedPct(afterHours.returnPct, 2)}` : ''} after-hours`
+                : 'After-hours — refreshes at 9pm'}
             </span>
           </div>
           <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>

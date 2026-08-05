@@ -38,8 +38,10 @@ function yahooSymbol(symbol) {
 export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
   const results = await Promise.all(symbols.map(async (symbol) => {
     try {
+      // includePrePost=true is what puts postMarketPrice/postMarketChange in `meta` at all —
+      // without it Yahoo only ever returns the regular-session price, before or after the bell.
       const response = await fetchImpl(
-        `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol(symbol))}?interval=1m&range=1d`,
+        `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol(symbol))}?interval=1m&range=1d&includePrePost=true`,
         {
           headers: {
             Accept: 'application/json',
@@ -53,6 +55,12 @@ export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
       const price = Number(meta?.regularMarketPrice)
       if (!Number.isFinite(price)) throw new Error('quote provider returned no price')
       const previousClose = Number(meta?.chartPreviousClose ?? meta?.previousClose)
+      // Only present once the session has actually moved past the closing bell with a real
+      // post-market trade — Yahoo omits these fields entirely during regular hours, and that
+      // absence is the honest signal, not a 0 to paper over.
+      const postMarketPrice = Number(meta?.postMarketPrice)
+      const postMarketChange = Number(meta?.postMarketChange)
+      const postMarketChangePercent = Number(meta?.postMarketChangePercent)
       return {
         ok: true,
         symbol,
@@ -66,6 +74,9 @@ export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
             : null,
           marketState: meta.marketState || null,
           currency: meta.currency || null,
+          postMarketPrice: Number.isFinite(postMarketPrice) ? postMarketPrice : null,
+          postMarketChange: Number.isFinite(postMarketChange) ? postMarketChange : null,
+          postMarketChangePercent: Number.isFinite(postMarketChangePercent) ? postMarketChangePercent : null,
         },
       }
     } catch (error) {

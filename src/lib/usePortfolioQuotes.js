@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from './FirebaseAuthContext'
+import { isRefreshDue, msUntilNextBoundary } from './nightlyRefresh'
 
 const storageKey = (userId) => `valuesignal.portfolioQuotes.${userId}`
 
@@ -85,6 +86,30 @@ export function usePortfolioQuotes(symbols) {
       }))
     }
   }
+
+  // Refresh once a day at 9pm local time — after Nasdaq/NYSE after-hours trading has wound
+  // down — without the user having to press the button. See src/lib/nightlyRefresh.js for
+  // why 9pm and how the catch-up-if-opened-late behavior works. Both the refresh function
+  // and the latest fetchedAt are read through refs so the recursive setTimeout chain always
+  // sees current state, not whatever it closed over the one time the effect ran.
+  const requestRefreshRef = useRef(requestRefresh)
+  useEffect(() => { requestRefreshRef.current = requestRefresh })
+  const fetchedAtRef = useRef(state.fetchedAt)
+  useEffect(() => { fetchedAtRef.current = state.fetchedAt })
+
+  const tickerKey = [...new Set(symbols.map((symbol) => String(symbol || '').trim().toUpperCase()).filter(Boolean))]
+    .sort().join(',')
+
+  useEffect(() => {
+    if (!currentUser || !tickerKey) return undefined
+    let timer
+    const scheduleNext = () => {
+      if (isRefreshDue(fetchedAtRef.current)) requestRefreshRef.current()
+      timer = setTimeout(scheduleNext, msUntilNextBoundary())
+    }
+    scheduleNext()
+    return () => clearTimeout(timer)
+  }, [currentUser, tickerKey])
 
   return { ...state, requestRefresh }
 }
