@@ -318,6 +318,7 @@ export default function Dashboard() {
     </div>}
 
     {!hasPortfolioAccess || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{hasPortfolioAccess ? 'Add holdings to unlock your report' : 'Sign in to see your financial report'}</h2><p>Research remains available now. Portfolio analytics appear only after holdings and per-share cost basis are available.</p><Link className="primary-button" to={hasPortfolioAccess ? '/portfolio' : '/research'}>{hasPortfolioAccess ? 'Add holdings' : 'Explore research'}</Link></section> : <>
+      <div className="dashboard-customize-bar"><a className="secondary-button compact" href="/?customize=1"><Icon name="grip" size={15} /> Reorder widgets</a></div>
       <div className="dashboard-widget-stack">
       <DashboardWidget id="portfolio-summary" widgets={preferences.widgets}>
       <section className="report-hero-grid">
