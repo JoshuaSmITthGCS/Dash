@@ -59,6 +59,21 @@ MARKET_BEHAVIOR_FACTORS = {
     "drawdown_resilience": "Inverse of maximum drawdown severity/duration.",
     "volume_confirmation": "Whether price moves are confirmed by volume (up/down volume ratio).",
     "low_beta": "Betting-against-beta: rewards low-beta names rather than penalizing volatility directly (Frazzini-Pedersen 2014).",
+    "technical_extended": "Combined score across four technical sub-indicators (see technical_indicators.py); registered as one family entry, its sub-indicators registered separately below.",
+}
+
+# The four sub-indicators bundled inside technical_extended (technical_indicators.py). Kept
+# deliberately small -- see that module's docstring for why the broader indicator zoo (TEMA,
+# MACD, PPO, Ichimoku, ...) was declined: it is mostly correlated transformations of the same
+# OHLCV path with no multiple-testing-corrected evidence behind it. correlation_dedup_policy
+# on each entry records that a live cross-sectional correlation check (brief section 2.5) has
+# not been run -- these four were chosen for economic-family diversity, not measured
+# independence.
+TECHNICAL_EXTENDED_SUBINDICATORS = {
+    "moving_average_slope": ("trend", "Rate of change of the moving average itself, distinct from 12-1 momentum's raw return."),
+    "relative_strength_index": ("momentum", "Wilder RSI -- overbought/oversold oscillator, a mean-reversion-adjacent story distinct from trend-following momentum."),
+    "bollinger_percent_b": ("risk", "Price's position within its own rolling volatility band."),
+    "on_balance_volume_slope": ("momentum", "Cumulative direction-weighted volume slope."),
 }
 
 
@@ -185,6 +200,27 @@ def build_feature_registry():
             "target_horizons": [21, 63, 126],
             "availability_lag": "same-session (price/volume-derived)",
             "missingness_policy": "reweighted_among_available -- see advisor_engine.technical_factors",
+            "economic_rationale": description,
+            "references": [],
+            "version": "1.0.0",
+        }
+    for factor_id, (family, description) in TECHNICAL_EXTENDED_SUBINDICATORS.items():
+        entries[factor_id] = {
+            "feature_id": factor_id,
+            "family": family,
+            "usage": ["ranking", "explanation"],
+            "not_used_for": ["hard_filter"],
+            "correlation_dedup_policy": (
+                "Chosen for economic-family diversity (trend/momentum/volatility), not "
+                "measured cross-sectional independence -- a live pairwise-correlation check "
+                "against the rest of the universe (brief section 2.5) has not been run. If "
+                "run and found highly correlated (|rho| > 0.9) with an existing primary "
+                "signal, this entry's usage should be demoted to explanation-only."
+            ),
+            "direction": "higher_is_better",
+            "target_horizons": [21, 63],
+            "availability_lag": "same-session (price/volume-derived)",
+            "missingness_policy": "reweighted_among_available -- see technical_indicators.technical_extended_score",
             "economic_rationale": description,
             "references": [],
             "version": "1.0.0",

@@ -921,14 +921,15 @@
     }
   },
   "market_behavior": {
-    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant.",
+    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant. technical_extended (pipeline/technical_indicators.py: moving-average slope, RSI, Bollinger %B, OBV slope) is deliberately small -- 0.06 against 0.94 elsewhere in this blend, and market_behavior itself is only 18% of the total composite (ranking_weights.market_behavior), so this indicator family contributes roughly 1% of the total score. See technical_indicators.py's module docstring for why it stays this narrow.",
     "weights": {
       "momentum_12_1": 0.3,
       "risk_adjusted": 0.26,
       "relative_strength": 0.16,
       "drawdown_resilience": 0.14,
       "volume_confirmation": 0.08,
-      "low_beta": 0.06
+      "low_beta": 0.06,
+      "technical_extended": 0.06
     }
   }
 }

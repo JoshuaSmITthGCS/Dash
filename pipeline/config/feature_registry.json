@@ -7,6 +7,7 @@
     "momentum",
     "quality",
     "risk",
+    "trend",
     "value"
   ],
   "features": {
@@ -79,6 +80,28 @@
       "availability_lag": "as declared by metric_registry.json (formula_version, period_type) where declared; statement-derived, typically 1-3 months after fiscal period end",
       "missingness_policy": "unavailable_when_denominator_is_zero_or_economically_invalid (see metric_registry.json declaration_defaults)",
       "economic_rationale": "Not yet declared in metric_registry.json metric_inventory.",
+      "references": [],
+      "version": "1.0.0"
+    },
+    "bollinger_percent_b": {
+      "feature_id": "bollinger_percent_b",
+      "family": "risk",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "correlation_dedup_policy": "Chosen for economic-family diversity (trend/momentum/volatility), not measured cross-sectional independence -- a live pairwise-correlation check against the rest of the universe (brief section 2.5) has not been run. If run and found highly correlated (|rho| > 0.9) with an existing primary signal, this entry's usage should be demoted to explanation-only.",
+      "direction": "higher_is_better",
+      "target_horizons": [
+        21,
+        63
+      ],
+      "availability_lag": "same-session (price/volume-derived)",
+      "missingness_policy": "reweighted_among_available -- see technical_indicators.technical_extended_score",
+      "economic_rationale": "Price's position within its own rolling volatility band.",
       "references": [],
       "version": "1.0.0"
     },
@@ -712,6 +735,28 @@
       "references": [],
       "version": "1.0.0"
     },
+    "moving_average_slope": {
+      "feature_id": "moving_average_slope",
+      "family": "trend",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "correlation_dedup_policy": "Chosen for economic-family diversity (trend/momentum/volatility), not measured cross-sectional independence -- a live pairwise-correlation check against the rest of the universe (brief section 2.5) has not been run. If run and found highly correlated (|rho| > 0.9) with an existing primary signal, this entry's usage should be demoted to explanation-only.",
+      "direction": "higher_is_better",
+      "target_horizons": [
+        21,
+        63
+      ],
+      "availability_lag": "same-session (price/volume-derived)",
+      "missingness_policy": "reweighted_among_available -- see technical_indicators.technical_extended_score",
+      "economic_rationale": "Rate of change of the moving average itself, distinct from 12-1 momentum's raw return.",
+      "references": [],
+      "version": "1.0.0"
+    },
     "net_buyback_yield": {
       "feature_id": "net_buyback_yield",
       "family": "quality",
@@ -757,6 +802,28 @@
       "availability_lag": "as declared by metric_registry.json (formula_version, period_type) where declared; statement-derived, typically 1-3 months after fiscal period end",
       "missingness_policy": "unavailable_when_denominator_is_zero_or_economically_invalid (see metric_registry.json declaration_defaults)",
       "economic_rationale": "Debt less cash divided by positive TTM EBITDA.",
+      "references": [],
+      "version": "1.0.0"
+    },
+    "on_balance_volume_slope": {
+      "feature_id": "on_balance_volume_slope",
+      "family": "momentum",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "correlation_dedup_policy": "Chosen for economic-family diversity (trend/momentum/volatility), not measured cross-sectional independence -- a live pairwise-correlation check against the rest of the universe (brief section 2.5) has not been run. If run and found highly correlated (|rho| > 0.9) with an existing primary signal, this entry's usage should be demoted to explanation-only.",
+      "direction": "higher_is_better",
+      "target_horizons": [
+        21,
+        63
+      ],
+      "availability_lag": "same-session (price/volume-derived)",
+      "missingness_policy": "reweighted_among_available -- see technical_indicators.technical_extended_score",
+      "economic_rationale": "Cumulative direction-weighted volume slope.",
       "references": [],
       "version": "1.0.0"
     },
@@ -946,6 +1013,28 @@
       "availability_lag": "same-session (price/volume-derived)",
       "missingness_policy": "reweighted_among_available -- see advisor_engine.technical_factors",
       "economic_rationale": "Return relative to the benchmark.",
+      "references": [],
+      "version": "1.0.0"
+    },
+    "relative_strength_index": {
+      "feature_id": "relative_strength_index",
+      "family": "momentum",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "correlation_dedup_policy": "Chosen for economic-family diversity (trend/momentum/volatility), not measured cross-sectional independence -- a live pairwise-correlation check against the rest of the universe (brief section 2.5) has not been run. If run and found highly correlated (|rho| > 0.9) with an existing primary signal, this entry's usage should be demoted to explanation-only.",
+      "direction": "higher_is_better",
+      "target_horizons": [
+        21,
+        63
+      ],
+      "availability_lag": "same-session (price/volume-derived)",
+      "missingness_policy": "reweighted_among_available -- see technical_indicators.technical_extended_score",
+      "economic_rationale": "Wilder RSI -- overbought/oversold oscillator, a mean-reversion-adjacent story distinct from trend-following momentum.",
       "references": [],
       "version": "1.0.0"
     },
@@ -1222,6 +1311,29 @@
       "availability_lag": "same-session (technical/price-derived) or next-session (estimate-derived)",
       "missingness_policy": "reweighted_among_available -- see blend_research_components/momentum_scores",
       "economic_rationale": "Whether recent quarters' surprises have been directionally consistent.",
+      "references": [],
+      "version": "1.0.0"
+    },
+    "technical_extended": {
+      "feature_id": "technical_extended",
+      "family": "momentum",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "classification_gap": null,
+      "direction": "higher_is_better",
+      "target_horizons": [
+        21,
+        63,
+        126
+      ],
+      "availability_lag": "same-session (price/volume-derived)",
+      "missingness_policy": "reweighted_among_available -- see advisor_engine.technical_factors",
+      "economic_rationale": "Combined score across four technical sub-indicators (see technical_indicators.py); registered as one family entry, its sub-indicators registered separately below.",
       "references": [],
       "version": "1.0.0"
     },

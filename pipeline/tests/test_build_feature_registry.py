@@ -47,6 +47,16 @@ class FeatureRegistryTests(unittest.TestCase):
             if entry.get("fundamentals_category"):
                 self.assertIn("hard_filter", entry["not_used_for"], feature_id)
 
+    def test_technical_extended_subindicators_are_registered_with_a_dedup_policy(self):
+        # The bounded technical-indicator family (pipeline/technical_indicators.py) is
+        # deliberately unmeasured for cross-sectional correlation -- each entry must say so
+        # explicitly rather than implying independence was verified.
+        for feature_id in ("moving_average_slope", "relative_strength_index",
+                          "bollinger_percent_b", "on_balance_volume_slope"):
+            entry = self.registry["features"][feature_id]
+            self.assertIn("correlation_dedup_policy", entry)
+            self.assertIn("not been run", entry["correlation_dedup_policy"])
+
 
 if __name__ == "__main__":
     unittest.main()

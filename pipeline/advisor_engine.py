@@ -10,6 +10,7 @@ from scorer import SETTINGS, valuation_score
 from news_intelligence import weighted_sentiment
 from recommendation_policy_v2 import build_recommendation_v2
 from scoring_v2 import build_v2_analysis
+from technical_indicators import technical_extended_score
 
 # Fundamentals deliberately dominate. News sentiment was cut from 10% because its alpha
 # decays in days: Tetlock (2007) finds media pessimism predicts downward price pressure
@@ -29,10 +30,18 @@ def _weights(configured, defaults):
 RANKING_WEIGHTS = _weights(SETTINGS.get("ranking_weights"), DEFAULT_RANKING_WEIGHTS)
 MODIFIERS = SETTINGS.get("modifiers", {})
 
-# Market-behavior sub-weights, overridable from config.
+# Market-behavior sub-weights, overridable from config. technical_extended (moving-average
+# slope, RSI, Bollinger %B, OBV slope -- see technical_indicators.py) is deliberately a small
+# slice: 0.06 against the other six summing to 0.94 means its effective share of
+# market_behavior is under 6%, and market_behavior itself is 18% of the total composite score
+# (ranking_weights.market_behavior), so technical_extended contributes roughly 1% of the
+# total score -- present, but nowhere near fundamentals' 78%. The literature behind adding
+# many technical indicators mostly shows data-snooping (see technical_indicators.py's module
+# docstring); this is four indicators from four distinct economic families, not the zoo.
 DEFAULT_TECHNICAL_WEIGHTS = {
     "momentum_12_1": 0.30, "risk_adjusted": 0.26, "relative_strength": 0.16,
     "drawdown_resilience": 0.14, "volume_confirmation": 0.08, "low_beta": 0.06,
+    "technical_extended": 0.06,
 }
 TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weights"),
                              DEFAULT_TECHNICAL_WEIGHTS)
@@ -147,6 +156,7 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
     resilience = drawdown_score(drawdown_252 if drawdown_252 is not None else drawdown)
     volume_score = None if confirmation is None else clamp(35 + (confirmation - 1) * 55)
     beta_score = low_beta_score(beta)
+    technical_extended, technical_extended_detail = technical_extended_score(closes, volumes)
 
     parts = {
         name: None if value is None else round(value, 1)
@@ -154,6 +164,7 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
             ("momentum_12_1", momentum_score), ("risk_adjusted", risk_adjusted),
             ("relative_strength", relative_score), ("drawdown_resilience", resilience),
             ("volume_confirmation", volume_score), ("low_beta", beta_score),
+            ("technical_extended", technical_extended),
         )
     }
     treatment = short_horizon_treatment or SETTINGS.get(
@@ -174,6 +185,7 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         "relative_strength_20d": round(relative, 2) if relative is not None else None,
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
         "pct_above_52w_low": above_low, "beta": beta,
+        "technical_extended_detail": technical_extended_detail,
         **{name: value for name, value in parts.items() if value is not None},
         "coverage": variant["coverage"],
         "short_horizon_treatment": treatment,
