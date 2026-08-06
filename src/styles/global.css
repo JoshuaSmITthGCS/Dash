@@ -428,6 +428,8 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .watchlist-verdict { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border: 1px solid currentColor; border-radius: 13px; }.watchlist-verdict.buy { color: var(--pos); }.watchlist-verdict.wait { color: var(--neg); }.watchlist-verdict strong { font: 750 10px var(--font-mono); }.watchlist-verdict span { font-size: 9px; }
 .watchlist-plan { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 8px 0 12px; }.watchlist-plan > div { min-width: 0; padding: 10px; border-radius: 13px; background: var(--bg-elev); }.watchlist-plan span, .watchlist-plan b, .watchlist-plan small { display: block; }.watchlist-plan span, .watchlist-plan small { color: var(--text-faint); font-size: 8px; }.watchlist-plan b { margin: 4px 0 2px; font: 700 14px var(--font-mono); }
 .watchlist-toggle.watched { color: var(--accent); }.watchlist-toggle.watched svg { fill: currentColor; }
+.watchlist-toggle-wrap { position: relative; display: inline-flex; }
+.watchlist-toggle-error { position: absolute; top: 100%; right: 0; z-index: 5; margin-top: 4px; padding: 6px 10px; border-radius: 10px; background: var(--neg); color: var(--accent-ink, #fff); font-size: 10px; line-height: 1.4; white-space: nowrap; box-shadow: var(--surface-shadow); }
 .watchlist-targets { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
 .watchlist-target-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .watchlist-target-fields label > span { display: block; margin-bottom: 5px; color: var(--text-faint); font-size: 9px; }

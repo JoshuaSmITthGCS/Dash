@@ -346,10 +346,6 @@ export default function Dashboard() {
 
       <div className="report-secondary-facts"><Metric label="Total unrealized return" value={portfolio.gain == null ? '–' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} /><Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost" /></div>
 
-      <HomeResearchShelves rows={rows} themes={portfolioThemes} />
-
-      <PortfolioReturnSummary summary={returnSummary} />
-
       <section className="card insights-recap dashboard-pulse" aria-labelledby="dashboard-pulse-title">
         <div className="insights-mood">
           <span className="insights-mood-emoji" aria-hidden="true">{mood.emoji}</span>
@@ -365,6 +361,10 @@ export default function Dashboard() {
           {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${preferences.defaultBenchmark}` : `Trailing ${preferences.defaultBenchmark}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
         </div>
       </section>
+
+      <HomeResearchShelves rows={rows} themes={portfolioThemes} />
+
+      <PortfolioReturnSummary summary={returnSummary} />
       </DashboardWidget>
 
       <DashboardWidget id="performance-chart" widgets={preferences.widgets}>

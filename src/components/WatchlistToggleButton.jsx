@@ -11,30 +11,40 @@ import { useWatchlist } from '../lib/useWatchlist.js'
 export default function WatchlistToggleButton({ stock, size = 20, className = '' }) {
   const { isWatched, addTicker, removeTicker } = useWatchlist()
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   if (!stock?.ticker || stock.is_etf) return null
   const watched = isWatched(stock.ticker)
 
   const toggle = async (event) => {
     event.stopPropagation()
     setBusy(true)
+    setError('')
+    let result
     if (watched) {
-      await removeTicker(stock.ticker)
+      result = await removeTicker(stock.ticker)
     } else {
       const suggested = suggestPriceTargets(stock)
-      await addTicker(stock.ticker, {
+      result = await addTicker(stock.ticker, {
         dipPrice: suggested.dipBuy?.price ?? null,
         goodBuyPrice: suggested.goodBuy?.price ?? null,
         source: 'research_list',
       })
     }
     setBusy(false)
+    if (!result?.success) {
+      setError(result?.error || 'Could not update your watchlist.')
+      setTimeout(() => setError(''), 5000)
+    }
   }
 
   return (
-    <button className={`icon-button watchlist-toggle ${watched ? 'watched' : ''} ${className}`} onClick={toggle} disabled={busy}
-      aria-label={watched ? `Remove ${stock.ticker} from watchlist` : `Add ${stock.ticker} to watchlist`}
-      title={watched ? 'On your watchlist' : 'Add to watchlist'}>
-      <Icon name="watchlist" size={size} />
-    </button>
+    <span className="watchlist-toggle-wrap">
+      <button className={`icon-button watchlist-toggle ${watched ? 'watched' : ''} ${className}`} onClick={toggle} disabled={busy}
+        aria-label={watched ? `Remove ${stock.ticker} from watchlist` : `Add ${stock.ticker} to watchlist`}
+        title={watched ? 'On your watchlist' : 'Add to watchlist'}>
+        <Icon name="watchlist" size={size} />
+      </button>
+      {error && <span className="watchlist-toggle-error" role="alert">{error}</span>}
+    </span>
   )
 }
