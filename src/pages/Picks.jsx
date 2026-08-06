@@ -4,6 +4,7 @@ import { Tier, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
 import { ActionPill } from '../components/ActionGuidance.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
+import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import { getRecommendation } from '../lib/recommendation'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
@@ -69,6 +70,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
         <span className="rank-badge">#{rank}</span>
         <CompanyLogo company={row} size={42} />
         <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+        <WatchlistToggleButton stock={row} size={18} />
         <span className="mobile-score">{row.score}<small>score</small></span>
       </div>
       <div className="research-card-badges">
@@ -124,7 +126,8 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
           <thead><tr>
             <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Research rating</th><th scope="col">Signal</th>
             <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
-            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Portfolio</th><th scope="col"><span className="sr-only">Open</span></th>
+            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Portfolio</th>
+            <th scope="col"><span className="sr-only">Watchlist</span></th><th scope="col"><span className="sr-only">Open</span></th>
           </tr></thead>
           <tbody>{rows.map((row, index) => (
             <tr key={row.ticker}>
@@ -139,6 +142,7 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
               <td>{heldTickers.has(row.ticker)
                 ? <span className="holding-chip held">Bought</span>
                 : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => onBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>}</td>
+              <td><WatchlistToggleButton stock={row} size={17} /></td>
               <td><button className="icon-button" onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
             </tr>
           ))}</tbody>

@@ -3,9 +3,11 @@ import { MemoryRouter } from 'react-router-dom'
 import Picks from './Picks'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
+import { useWatchlist } from '../lib/useWatchlist'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio', () => ({ useFirebasePortfolio: vi.fn() }))
+vi.mock('../lib/useWatchlist', () => ({ useWatchlist: vi.fn() }))
 
 const stock = (overrides = {}) => ({
   ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology', is_etf: false,
@@ -26,6 +28,9 @@ describe('Picks research page', () => {
   beforeEach(() => {
     useFirebasePortfolio.mockReturnValue({
       positions: [], loading: false, addPosition: vi.fn(),
+    })
+    useWatchlist.mockReturnValue({
+      items: [], loading: false, isWatched: () => false, addTicker: vi.fn(), removeTicker: vi.fn(),
     })
   })
 

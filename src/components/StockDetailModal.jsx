@@ -14,6 +14,7 @@ import ResearchRadarChart from './ResearchRadarChart'
 import Icon from './Icons'
 import SetupQualityBreakdown from './SetupQualityBreakdown'
 import { watchlistGuidance } from '../lib/watchlistGuidance'
+import WatchlistToggleButton from './WatchlistToggleButton.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import ScoreExplainability, { FactorBars } from './ScoreExplainability.jsx'
 import { useData } from '../lib/useData.js'
@@ -172,6 +173,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
       <div className="modal stock-modal" onClick={(e) => e.stopPropagation()}>
         <header className="stock-detail-head">
           <div><span className="eyebrow">Company research</span><h2>{stock.ticker}</h2><p>{stock.name} · {stock.industry || stock.sector || 'Unclassified'}</p>{dataAsOf && <small>As of {String(dataAsOf).slice(0, 10)}</small>}</div>
+          <WatchlistToggleButton stock={stock} />
           <button className="icon-button" onClick={onClose} aria-label="Close stock research"><Icon name="close" /></button>
         </header>
 

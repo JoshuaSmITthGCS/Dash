@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { useWatchlist } from '../lib/useWatchlist.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
@@ -41,7 +42,6 @@ import { aggregateThemeExposure } from '../lib/factorAnalytics.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
 
-const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', 'YTD', '1Y', 'All']
 const BENCHMARK_STYLES = [
   { color: 'var(--series-benchmark)', dashPattern: '7 5' },
@@ -178,7 +178,8 @@ export default function Dashboard() {
   const [draftWidgets, setDraftWidgets] = useState(preferences.widgets)
   const [pullRefreshing, setPullRefreshing] = useState(false)
   const customize = new window.URLSearchParams(window.location.search).get('customize') === '1'
-  const watchlist = useMemo(() => { try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || [] } catch { return [] } }, [])
+  const { items: watchlistItems } = useWatchlist()
+  const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 
   const reloadHomeData = useCallback(async () => {
     const [latestReport] = await Promise.all([reloadReport(), reloadAdvisor(), reloadEtfs(), reloadBenchmarks()])

@@ -120,6 +120,19 @@
     "minimum_annualized_volatility_pct": 5.0,
     "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, confidence, and published-guidance subscores. Only confidence below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap."
   },
+  "watchlist_price_targets": {
+    "_comment": "Suggested entry levels for a watchlist name the user does not yet own -- both are explicit heuristics, not predictions, and every result states its own derivation so the number is never presented as more certain than it is. dip_buy is a volatility-scaled distance below the current price (the same ATR/sigma-scaling philosophy as position_risk's stop-loss levels, but anchored to current price since a watchlist name has no purchase high-water-mark). good_buy is a valuation-percentile-based discount: only applies a discount when the name is priced richer than its own configured fair percentile against sector/industry peers (peer_groups.py desirability_percentile, where higher = cheaper) -- a name already cheap relative to peers gets good_buy == current price rather than an invented discount.",
+    "dip_buy": {
+      "volatility_multiple": 0.35,
+      "min_distance_pct": 5.0,
+      "max_distance_pct": 20.0
+    },
+    "good_buy": {
+      "fair_valuation_percentile": 50.0,
+      "discount_pct_per_percentile_point": 0.6,
+      "max_discount_pct": 25.0
+    }
+  },
   "portfolio_analytics": {
     "trading_days_per_year": 252,
     "performance_minimum_observations": 20,
