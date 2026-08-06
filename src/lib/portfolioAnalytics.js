@@ -555,6 +555,28 @@ function symmetricEigenvalues(input) {
  * sqrt(W) * Corr * sqrt(W). Its reciprocal HHI is the effective number of independent bets.
  * Diversification ratio is weighted standalone volatility divided by portfolio volatility.
  */
+/**
+ * Ledoit-Wolf-style shrinkage of a sample covariance matrix toward a diagonal target
+ * (variances kept, off-diagonal covariances pulled toward zero).
+ *
+ * correlationDiversification's covarianceMatrix is the raw sample estimate, which is noisy
+ * and often near-singular for a portfolio with more holdings than return observations --
+ * exactly the regime a portfolio-construction optimizer (research contract section 12) needs
+ * a stable matrix for. `intensity` of 0 returns the sample matrix unchanged; 1 returns a pure
+ * diagonal matrix (all cross-asset covariance zeroed). This is a fixed-intensity shrinkage,
+ * not the data-driven optimal intensity Ledoit-Wolf's original estimator solves for -- that
+ * would need enough return history to estimate reliably, which this portfolio-sized problem
+ * (tens of holdings, hundreds of daily returns) usually does not have. 0.2 is a commonly used
+ * moderate default in the shrinkage literature, not a fitted value for this dataset.
+ */
+export function shrinkCovarianceMatrix(covarianceMatrix, intensity = 0.2) {
+  if (!Array.isArray(covarianceMatrix) || !covarianceMatrix.length) return covarianceMatrix
+  const clampedIntensity = Math.max(0, Math.min(1, intensity))
+  return covarianceMatrix.map((row, rowIndex) => row.map((value, columnIndex) => (
+    rowIndex === columnIndex ? value : value * (1 - clampedIntensity)
+  )))
+}
+
 export function correlationDiversification(positions = []) {
   const requestedTickers = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0).map((row) => row.ticker)
   let eligible = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0)
