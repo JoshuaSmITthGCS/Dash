@@ -24,6 +24,7 @@ export function fidelityProjectionBaseline(positions = []) {
   const hasReferencePortfolio = positions.some((position) => position.snapshotSource === 'User-provided brokerage snapshot')
   if (!hasReferencePortfolio) return null
   const annualizedReturnPct = FIDELITY_REFERENCE_SNAPSHOT.periodReturns['1Y']
+  const yearToDateReturnPct = FIDELITY_REFERENCE_SNAPSHOT.periodReturns.YTD
   return {
     available: true,
     annualizedReturn: annualizedReturnPct / 100,
@@ -31,6 +32,12 @@ export function fidelityProjectionBaseline(positions = []) {
     endDate: FIDELITY_REFERENCE_SNAPSHOT.asOf.slice(0, 10),
     source: 'brokerage-reported',
     label: 'Fidelity trailing 1-year time-weighted return',
+    returnTargetEvidence: {
+      lowerPct: yearToDateReturnPct,
+      lowerLabel: 'Fidelity year-to-date return',
+      upperPct: annualizedReturnPct,
+      upperLabel: 'Fidelity trailing 1-year return',
+    },
   }
 }
 

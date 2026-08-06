@@ -5,6 +5,39 @@ export const projectionConfig = modelSettings.projection
 const finite = (value) => Number.isFinite(Number(value))
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value))
 
+export function annualReturnTargetRange(source = null) {
+  const config = projectionConfig.annual_return_target
+  const evidence = source?.baseline?.returnTargetEvidence
+  const step = config.step_pct
+  const decimals = config.display_decimals
+  const snapDown = (value) => Number((Math.floor(value / step) * step).toFixed(decimals))
+  const snapUp = (value) => Number((Math.ceil(value / step) * step).toFixed(decimals))
+  const evidenceValues = [evidence?.lowerPct, evidence?.upperPct].filter(finite).map(Number)
+  const evidenceMinimum = evidenceValues.length ? Math.min(...evidenceValues) : config.minimum_pct
+  const evidenceMaximum = evidenceValues.length ? Math.max(...evidenceValues) : config.maximum_pct
+  const minimumPct = clamp(snapDown(evidenceMinimum), config.minimum_pct, config.maximum_pct)
+  const maximumPct = clamp(snapUp(evidenceMaximum), minimumPct, config.maximum_pct)
+  return {
+    minimumPct,
+    maximumPct,
+    stepPct: step,
+    defaultPct: clamp(config.default_pct, minimumPct, maximumPct),
+    evidence: evidence || null,
+  }
+}
+
+export function normalizeAnnualReturnTarget(value, source = null) {
+  const range = annualReturnTargetRange(source)
+  const target = value != null && finite(value) ? Number(value) : range.defaultPct
+  return clamp(target, range.minimumPct, range.maximumPct)
+}
+
+export function formatAnnualReturnTarget(value) {
+  const decimals = projectionConfig.annual_return_target.display_decimals
+  const formatted = Math.abs(Number(value)).toFixed(decimals).replace(/\.0+$/, '')
+  return `${Number(value) >= 0 ? '+' : '−'}${formatted}%`
+}
+
 function monthKey(date) {
   const parsed = new Date(`${String(date).slice(0, 10)}T00:00:00Z`)
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 7)
@@ -156,7 +189,7 @@ export function benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory
   }
 }
 
-export function applyAllocationAssumption(returns, allocationKey, personalAnnualizedReturn = null) {
+export function applyAllocationAssumption(returns, allocationKey, annualReturnTarget = null) {
   const assumption = projectionConfig.allocation_assumptions[allocationKey]
   const values = (returns || []).map(Number).filter((value) => finite(value) && value > -1)
   if (!assumption || values.length < 2) return values
@@ -168,8 +201,8 @@ export function applyAllocationAssumption(returns, allocationKey, personalAnnual
   const scale = observedVolatility >= projectionConfig.minimum_volatility_for_rescaling_pct / 100
     ? targetVolatility / observedVolatility
     : 0
-  const targetAnnualReturn = personalAnnualizedReturn != null && finite(personalAnnualizedReturn) && Number(personalAnnualizedReturn) > -1
-    ? Number(personalAnnualizedReturn)
+  const targetAnnualReturn = annualReturnTarget != null && finite(annualReturnTarget) && Number(annualReturnTarget) > -1
+    ? Number(annualReturnTarget)
     : assumption.annual_return_pct / 100
   const targetMonthlyLog = Math.log1p(targetAnnualReturn) / projectionConfig.months_per_year
   return logs.map((value) => Math.expm1((value - average) * scale + targetMonthlyLog))
@@ -200,10 +233,10 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
     return {
       available: true,
       type: 'benchmark-centered-sparse-history',
-      label: `${benchmarkSymbol} history around ${baseline?.label || 'observed portfolio return'}`,
+      label: `${benchmarkSymbol} benchmark history`,
       benchmarkBased: true,
       baseline,
-      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. Simulated from ${benchmarkSymbol} benchmark history, centered on ${baseline?.label || 'the return you have actually recorded'}. Observed portfolio months are not repeated or synthesized.`,
+      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. Simulated from ${benchmarkSymbol} benchmark history to preserve volatility and return ordering. The selected annual return target supplies the center. Observed portfolio months are not repeated or synthesized.`,
       ...centeredBenchmark,
     }
   }
@@ -211,10 +244,10 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
     return {
       available: true,
       type: 'benchmark-fallback',
-      label: `${benchmarkSymbol} monthly returns${baseline ? ` around ${baseline.label}` : ''}`,
+      label: `${benchmarkSymbol} monthly returns`,
       benchmarkBased: true,
       baseline,
-      fallbackReason: `Portfolio history has ${portfolio.months} monthly return${portfolio.months === 1 ? '' : 's'}, below the ${minimumPortfolioMonths}-month gate. ${baseline ? `The benchmark supplies the historical range around ${baseline.label}.` : 'The selected allocation supplies the temporary return center.'}`,
+      fallbackReason: `Portfolio history has ${portfolio.months} monthly return${portfolio.months === 1 ? '' : 's'}, below the ${minimumPortfolioMonths}-month gate. The benchmark supplies historical volatility and return ordering. The selected annual return target supplies the center.`,
       ...benchmark,
     }
   }

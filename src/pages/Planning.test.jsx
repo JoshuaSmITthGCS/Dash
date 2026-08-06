@@ -40,6 +40,7 @@ describe('Planning hub', () => {
         monthlyWithdrawal: 3000,
         currentSavings: 100000,
         allocationAggressiveness: 'growth',
+        planningAnnualReturnTargetPct: 15,
       },
       pools: [{ id: 'pool-1', name: 'Home fund', percent: 25, balance: 20000 }],
       goals: [{ id: 'goal-1', name: 'Home', targetAmount: 50000, targetDate: '2031-08-05', poolId: 'pool-1' }],
@@ -76,9 +77,11 @@ describe('Planning hub', () => {
     expect(await screen.findByLabelText('Success probability 68 percent')).toBeInTheDocument()
     expect(screen.getByText('Needs attention')).toBeInTheDocument()
     expect(screen.getByText(/Raising monthly contributions by \$150 moves this from 68% to 81%/)).toBeInTheDocument()
-    expect(screen.getAllByText('+32.32%').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('+15%').length).toBeGreaterThan(0)
     expect(screen.getByText('Now')).toBeInTheDocument()
     expect(screen.getByRole('slider', { name: /Target retirement age/ })).toHaveAttribute('min', '36')
+    expect(screen.getByRole('slider', { name: /Annual return target/ })).toHaveAttribute('min', '14.6')
+    expect(screen.getByRole('slider', { name: /Annual return target/ })).toHaveAttribute('max', '32.4')
   })
 
   it('resimulates a lever on release and exposes goal probability', async () => {
@@ -89,6 +92,16 @@ describe('Planning hub', () => {
     await waitFor(() => expect(updateSettings).toHaveBeenCalledWith({ monthlyContribution: 350 }))
     expect(screen.getByText('74%')).toBeInTheDocument()
     expect(screen.getByText(/Probability of reaching Home/)).toBeInTheDocument()
+  })
+
+  it('saves the return target and uses it for the shared projection center', async () => {
+    render(<MemoryRouter><Planning /></MemoryRouter>)
+    const target = await screen.findByRole('slider', { name: /Annual return target/ })
+    expect(target).toHaveValue('15')
+    fireEvent.change(target, { target: { value: '18' } })
+    fireEvent.pointerUp(target)
+    await waitFor(() => expect(updateSettings).toHaveBeenCalledWith({ planningAnnualReturnTargetPct: 18 }))
+    expect(screen.getAllByText('+18%').length).toBeGreaterThan(0)
   })
 
   it('creates a goal tied to the selected Finances pool', async () => {

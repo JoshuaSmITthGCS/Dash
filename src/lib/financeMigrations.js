@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
   retirementEndAge: modelSettings.projection.default_retirement_end_age,
   monthlyWithdrawal: modelSettings.projection.default_monthly_withdrawal,
   allocationAggressiveness: modelSettings.projection.allocation_default,
+  planningAnnualReturnTargetPct: modelSettings.projection.annual_return_target.default_pct,
 }
 
 /** Additive read migration for the singleton Finances settings document. */

@@ -1,4 +1,5 @@
 import ProjectionFanChart from './ProjectionFanChart.jsx'
+import { formatAnnualReturnTarget } from '../lib/projectionEngine.js'
 
 const percentileRows = [
   ['p10', '10th'],
@@ -8,7 +9,7 @@ const percentileRows = [
   ['p90', '90th'],
 ]
 
-export default function ProjectionPanel({ state, source, money, startAge = null, retirementAge = null, endAge = null, title = 'Range of simulated outcomes', assumptionNote = '', showSuccess = true }) {
+export default function ProjectionPanel({ state, source, money, annualReturnTargetPct, startAge = null, retirementAge = null, endAge = null, title = 'Range of simulated outcomes', assumptionNote = '', showSuccess = true }) {
   if (!source?.available) return <section className="projection-panel unavailable-panel">
     <strong>Projection unavailable</strong>
     <p>{source?.reason || 'Historical monthly returns are not available for this model.'}</p>
@@ -30,6 +31,7 @@ export default function ProjectionPanel({ state, source, money, startAge = null,
   const displayedPercentiles = result.terminalPercentiles
   const terminalLabel = endAge != null ? `Ending balance at age ${endAge}` : retirementAge != null ? `Balance at age ${retirementAge}` : 'Terminal balance'
   const successPct = result.successProbability == null ? null : result.successProbability * 100
+  const targetEvidence = source.baseline?.returnTargetEvidence
 
   return <section className="projection-panel" aria-labelledby="projection-panel-title">
     <header>
@@ -37,7 +39,7 @@ export default function ProjectionPanel({ state, source, money, startAge = null,
       <span className="projection-path-count">{result.pathCount.toLocaleString()} paths</span>
     </header>
     {assumptionNote && <p className="projection-assumption">{assumptionNote}</p>}
-    {source.baseline && <div className="projection-baseline-readout"><span>Annualized return baseline</span><strong>{source.baseline.annualizedReturnPct >= 0 ? '+' : '−'}{Math.abs(source.baseline.annualizedReturnPct).toFixed(2)}%</strong><small>{source.baseline.label}{source.baseline.endDate ? ` through ${source.baseline.endDate}` : ''}</small></div>}
+    {annualReturnTargetPct != null && <div className="projection-baseline-readout"><span>Annual return target</span><strong>{formatAnnualReturnTarget(annualReturnTargetPct)}</strong><small>{targetEvidence ? `${targetEvidence.lowerLabel} ${targetEvidence.lowerPct.toFixed(2)}% to ${targetEvidence.upperLabel} ${targetEvidence.upperPct.toFixed(2)}%` : 'Adjustable center for the dotted median path'}</small></div>}
     {source.benchmarkBased && <aside className="projection-source-warning" role="note"><strong>Short portfolio history</strong><span>{source.fallbackReason}</span></aside>}
     {showSuccess && hasWithdrawalPhase && <div className="projection-success" aria-label={`Retirement success probability ${successPct.toFixed(0)} percent`}>
       <span>Probability savings last to age {endAge}</span>
@@ -56,7 +58,7 @@ export default function ProjectionPanel({ state, source, money, startAge = null,
     </aside>}
     <details className="projection-disclosure">
       <summary>Model and data disclosure</summary>
-      <p>{result.model} using {source.label} from {source.startDate} to {source.endDate}. The model ran {result.pathCount.toLocaleString()} paths and samples returns in consecutive {result.blockMonths}-month blocks. {source.baseline ? `Monthly outcomes are centered on ${source.baseline.label} at ${source.baseline.annualizedReturnPct.toFixed(2)}% annualized.` : 'No personal trailing return is available, so the allocation fallback supplies the return center.'} {source.fallbackReason || 'Portfolio history cleared the configured three-year gate.'} Simulated outcomes are not predictions.</p>
+      <p>{result.model} using {source.label} from {source.startDate} to {source.endDate}. The model ran {result.pathCount.toLocaleString()} paths and samples returns in consecutive {result.blockMonths}-month blocks. Monthly outcomes are centered on your adjustable {formatAnnualReturnTarget(annualReturnTargetPct)} annual return target. {source.fallbackReason || 'Portfolio history cleared the configured three-year gate.'} Simulated outcomes are not predictions.</p>
     </details>
   </section>
 }

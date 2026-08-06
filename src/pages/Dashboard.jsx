@@ -31,7 +31,7 @@ import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
-import { applyAllocationAssumption, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
+import { applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import { usePullToRefresh } from '../lib/usePullToRefresh.js'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
@@ -138,16 +138,17 @@ function Customizer({ widgets, onChange, onDone }) {
   return <aside className="customizer-panel"><div className="customizer-head"><div><span className="eyebrow">Settings</span><h2>Customize report</h2></div><button className="icon-button" onClick={onDone} aria-label="Close customization"><Icon name="close" /></button></div><p>Choose supporting modules and their reading order. Core financial-report metrics always remain visible.</p><div className="customizer-list">{widgets.map((widget, index) => <div className="customizer-row" key={widget.id}><Icon name="grip" /><div><strong>{widget.label}</strong><small>{widget.locked ? 'Required' : `Position ${index + 1}`}</small></div><label className="switch compact-switch"><span className="sr-only">Show {widget.label}</span><input type="checkbox" checked={widget.visible} disabled={widget.locked} onChange={(event) => onChange(widgets.map((item) => item.id === widget.id ? { ...item, visible: event.target.checked } : item))} /><span /></label><div className="reorder-buttons"><button onClick={() => move(index, -1)} disabled={!index}><Icon name="up" /></button><button onClick={() => move(index, 1)} disabled={index === widgets.length - 1}><Icon name="down" /></button></div></div>)}</div><button className="primary-button" onClick={onDone}>Save report</button></aside>
 }
 
-function ReportProjection({ input, source, money, currentAge, retirementAge, contribution }) {
+function ReportProjection({ input, source, money, annualReturnTargetPct, currentAge, retirementAge, contribution }) {
   const state = useProjectionSimulation(input)
   return <div><ProjectionPanel
     state={state}
     source={source}
     money={money}
+    annualReturnTargetPct={annualReturnTargetPct}
     startAge={currentAge}
     retirementAge={retirementAge}
     title="Long-range outcome distribution"
-    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. ${source.baseline ? `The range is centered on your ${source.baseline.annualizedReturnPct.toFixed(2)}% annualized trailing return.` : 'The range uses the selected allocation fallback until a personal trailing return is available.'}`}
+    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. The dotted median targets ${formatAnnualReturnTarget(annualReturnTargetPct)} annually.`}
   /><Link className="primary-button planning-home-link" to="/planning">Open Planning</Link></div>
 }
 
@@ -255,11 +256,12 @@ export default function Dashboard() {
     preferences.defaultBenchmark,
     fidelityProjectionBaseline(positions),
   )
+  const annualReturnTargetPct = normalizeAnnualReturnTarget(finances.settings.planningAnnualReturnTargetPct, projectionSource)
   const planningReturns = projectionSource.available
     ? applyAllocationAssumption(
       projectionSource.returns,
       finances.settings.allocationAggressiveness || projectionConfig.allocation_default,
-      projectionSource.baseline?.annualizedReturn,
+      annualReturnTargetPct / 100,
     )
     : []
   const projectionInput = projectionSource.available ? {
@@ -396,7 +398,7 @@ export default function Dashboard() {
       </div>
 
       <section className="report-two-column">
-        <ReportProjection input={projectionInput} source={projectionSource} money={money} currentAge={finances.settings.currentAge} retirementAge={finances.settings.retireAge} contribution={finances.settings.monthlyContribution * projectionConfig.months_per_year} />
+        <ReportProjection input={projectionInput} source={projectionSource} money={money} annualReturnTargetPct={annualReturnTargetPct} currentAge={finances.settings.currentAge} retirementAge={finances.settings.retireAge} contribution={finances.settings.monthlyContribution * projectionConfig.months_per_year} />
         <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}

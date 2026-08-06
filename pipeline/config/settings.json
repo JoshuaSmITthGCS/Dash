@@ -4,7 +4,7 @@
     "semantic_version": "3.2.0",
     "advisor_schema_version": 5,
     "etf_schema_version": 5,
-    "finance_schema_version": 2,
+    "finance_schema_version": 3,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
   },
   "normalization_mode": "bands",
@@ -281,6 +281,13 @@
     "minimum_horizon_years": 1,
     "maximum_horizon_years": 120,
     "interaction_budget_ms": 400,
+    "annual_return_target": {
+      "default_pct": 15.0,
+      "minimum_pct": 0.0,
+      "maximum_pct": 40.0,
+      "step_pct": 0.1,
+      "display_decimals": 1
+    },
     "success_bands": [
       { "minimum": 0.8, "label": "On track" },
       { "minimum": 0.6, "label": "Needs attention" },
@@ -310,7 +317,7 @@
     "sequence_chart_height": 120,
     "days_per_year": 365.25,
     "milliseconds_per_day": 86400000,
-    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. The center is the user's trailing 365-day time-weighted return, annualized over the available span when at least 30 days are present. A supplied brokerage one-year return takes precedence because it already adjusts for cash-flow timing. With shorter portfolio history, the model uses the selected benchmark's full monthly history around that personal baseline. Observed months are never repeated or synthesized. Allocation scenarios change dispersion around the personal baseline. Their configured annual return is used only when no personal baseline exists."
+    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. The dotted median is centered on the user's adjustable annual return target, which defaults to 15 percent. Supplied brokerage returns define an evidence range when available but do not silently replace the target. With shorter portfolio history, the model uses the selected benchmark's full monthly history, then recenters it on the target. Observed months are never repeated or synthesized. Allocation scenarios change dispersion around the target."
   },
   "interface": {
     "home_signal_limit": 4,

@@ -104,13 +104,13 @@ An alpha t-statistic under 2 in absolute value is labelled statistically meaning
 
 ## Planning and projection engine
 
-Planning leads with the probability that a balance survives to the target age under the withdrawal assumption. The gauge verdict bands come directly from config. Monthly contribution, retirement age, real annual withdrawal, and allocation aggressiveness resimulate in a Web Worker when released. The interaction budget is 400 ms.
+Planning leads with the probability that a balance survives to the target age under the withdrawal assumption. The gauge verdict bands come directly from config. Annual return target, monthly contribution, retirement age, real annual withdrawal, and allocation aggressiveness resimulate in a Web Worker when released. The interaction budget is 400 ms.
 
 The engine runs 5,000 block-bootstrap paths with 12-month blocks. It publishes the 10th, 25th, 50th, 75th, 90th percentile paths. The fan chart supports touch and pointer scrubbing and distinguishes projected lines with a dotted treatment.
 
-The projection center is the trailing 365-day portfolio return, geometrically annualized over any usable span of at least 30 days. A supplied brokerage one-year time-weighted return takes precedence over a backtested holdings series. Allocation aggressiveness changes volatility around that personal center. Its configured return is only a fallback when no personal baseline exists.
+The dotted median is centered on an adjustable annual return target, defaulting to 15%. Supplied brokerage returns set an evidence-based slider range when available. For the supplied Fidelity snapshot, the range is anchored by the year-to-date and trailing one-year returns, while the saved target controls the actual projection center. Allocation aggressiveness changes volatility around the selected target.
 
-When portfolio history has fewer than 36 months, the engine samples the selected benchmark's long history, preserving return ordering before scaling dispersion around the personal baseline. It does not repeat or synthesize observed months. The chart begins at Now and continues through the configured plan-end age. Retirement can begin from one configured year after the current age rather than being artificially limited to age 50.
+When portfolio history has fewer than 36 months, the engine samples the selected benchmark's long history, preserving volatility and return ordering before recentering on the selected target. It does not repeat or synthesize observed months. The chart begins at Now and continues through the configured plan-end age. Retirement can begin from one configured year after the current age rather than being artificially limited to age 50.
 
 Goals reuse the Finances pool structure. Each goal has a name, target amount, and target date, and uses the same probability engine. Retirement remains the default planning goal rather than a separate calculation system.
 

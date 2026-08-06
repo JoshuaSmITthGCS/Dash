@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances'
@@ -8,7 +8,7 @@ import { ACCOUNT_TYPES, getAnnualLimit, accountTypeLabel } from '../lib/retireme
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
-import { applyAllocationAssumption, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
+import { annualReturnTargetRange, applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import Icon from '../components/Icons.jsx'
@@ -49,6 +49,8 @@ export default function Finances() {
   const [depositAmount, setDepositAmount] = useState('')
   const [accountForm, setAccountForm] = useState({ name: '', type: ACCOUNT_TYPES[0].key })
   const [selectedAccountId, setSelectedAccountId] = useState(null)
+  const [returnTargetDraft, setReturnTargetDraft] = useState(null)
+  const [returnTargetCommitted, setReturnTargetCommitted] = useState(null)
   const minimumRetirementAge = Math.max(
     projectionConfig.lever_ranges.retirement_age.minimum,
     finances.settings.currentAge + projectionConfig.minimum_years_until_retirement,
@@ -74,11 +76,21 @@ export default function Finances() {
       fidelityProjectionBaseline(positions),
     )
   }, [benchmarkReport, data, positions, preferences.defaultBenchmark])
+  const returnTargetRange = useMemo(() => annualReturnTargetRange(projectionSource), [projectionSource])
+  const savedAnnualReturnTargetPct = normalizeAnnualReturnTarget(finances.settings.planningAnnualReturnTargetPct, projectionSource)
+  const annualReturnTargetPct = returnTargetCommitted ?? savedAnnualReturnTargetPct
+  const displayedAnnualReturnTargetPct = returnTargetDraft ?? annualReturnTargetPct
+
+  useEffect(() => {
+    setReturnTargetDraft(savedAnnualReturnTargetPct)
+    setReturnTargetCommitted(savedAnnualReturnTargetPct)
+  }, [savedAnnualReturnTargetPct])
+
   const projectionInput = useMemo(() => projectionSource.available ? {
     monthlyReturns: applyAllocationAssumption(
       projectionSource.returns,
       finances.settings.allocationAggressiveness || projectionConfig.allocation_default,
-      projectionSource.baseline?.annualizedReturn,
+      annualReturnTargetPct / 100,
     ),
     currentBalance: finances.settings.currentSavings,
     monthlyContribution: finances.settings.monthlyContribution,
@@ -86,7 +98,7 @@ export default function Finances() {
     inflationPct: finances.settings.inflationPct,
     accumulationMonths: Math.max(projectionConfig.months_per_year, (retirementAge - finances.settings.currentAge) * projectionConfig.months_per_year),
     withdrawalMonths: Math.max(0, (finances.settings.retirementEndAge - retirementAge) * projectionConfig.months_per_year),
-  } : null, [finances.settings, projectionSource, retirementAge])
+  } : null, [annualReturnTargetPct, finances.settings, projectionSource, retirementAge])
   const projection = useProjectionSimulation(projectionInput)
   const depositPreview = splitAmount(parseFloat(depositAmount) || 0, finances.pools)
   const projectedMedian = projection.result?.retirementPercentiles?.p50
@@ -121,6 +133,13 @@ export default function Finances() {
     if (!accountForm.name || !accountForm.type) return
     finances.addAccount(accountForm)
     setAccountForm({ name: '', type: accountForm.type })
+  }
+
+  const commitReturnTarget = () => {
+    const next = normalizeAnnualReturnTarget(displayedAnnualReturnTargetPct, projectionSource)
+    if (next === annualReturnTargetPct) return
+    setReturnTargetCommitted(next)
+    finances.updateSettings({ planningAnnualReturnTargetPct: next })
   }
 
   return (
@@ -321,6 +340,12 @@ export default function Finances() {
                 <input type="number" min="0" step="100" value={finances.settings.monthlyWithdrawal}
                   onChange={(e) => finances.updateSettings({ monthlyWithdrawal: parseFloat(e.target.value) || 0 })} />
               </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="retirement-return-target" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 4, fontSize: 13 }}><span>Annual return target</span><strong>{formatAnnualReturnTarget(displayedAnnualReturnTargetPct)}</strong></label>
+                <input id="retirement-return-target" type="range" min={returnTargetRange.minimumPct} max={returnTargetRange.maximumPct} step={returnTargetRange.stepPct} value={displayedAnnualReturnTargetPct}
+                  onChange={(event) => setReturnTargetDraft(Number(event.target.value))} onPointerUp={commitReturnTarget} onKeyUp={commitReturnTarget} />
+                <small className="body-copy">Sets the dotted median for retirement. {returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year.` : 'Historical returns set the uncertainty around your target.'}</small>
+              </div>
             </div>
             <button className="text-button" style={{ padding: 0, minHeight: 'auto', marginTop: 12 }}
               onClick={() => finances.updateSettings({ currentSavings: Math.round(portfolioValue) })}>
@@ -418,11 +443,12 @@ export default function Finances() {
             state={projection}
             source={projectionSource}
             money={money}
+            annualReturnTargetPct={annualReturnTargetPct}
             startAge={finances.settings.currentAge}
             retirementAge={retirementAge}
             endAge={finances.settings.retirementEndAge}
             title="Retirement outcome range"
-            assumptionNote={projectionSource.baseline ? `Centered on your ${projectionSource.baseline.annualizedReturnPct.toFixed(2)}% annualized trailing return.` : 'Using the selected allocation fallback until a personal trailing return is available.'}
+            assumptionNote={`The dotted median targets ${formatAnnualReturnTarget(annualReturnTargetPct)} annually. Historical monthly returns determine the range around it.`}
           />
         </>
       )}

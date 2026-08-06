@@ -30,6 +30,7 @@ describe('Finances page', () => {
       settings: {
         currentAge: 30, retireAge: 65, retirementEndAge: 95, inflationPct: 2.5,
         monthlyContribution: 200, monthlyWithdrawal: 3000, currentSavings: 1000,
+        planningAnnualReturnTargetPct: 15,
       },
       budgetItems: [
         { id: 'income-1', name: 'Paycheck', amount: 4000, type: 'income' },
@@ -77,6 +78,11 @@ describe('Finances page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retirement' }))
     expect(screen.getAllByText('Median at Retirement').length).toBeGreaterThan(0)
     expect(screen.getByText(/Sync current savings from portfolio/)).toBeInTheDocument()
+    const target = screen.getByRole('slider', { name: /Annual return target/ })
+    expect(target).toHaveValue('15')
+    fireEvent.change(target, { target: { value: '18' } })
+    fireEvent.pointerUp(target)
+    expect(updateSettings).toHaveBeenCalledWith({ planningAnnualReturnTargetPct: 18 })
   })
 
   it('tracks a retirement account against its 2026 IRS limit and lets you add another', () => {

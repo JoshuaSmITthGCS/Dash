@@ -9,6 +9,14 @@ describe('Finances schema migrations', () => {
       currentAge: 44,
       monthlyContribution: 725,
       allocationAggressiveness: 'growth',
+      planningAnnualReturnTargetPct: 15,
+    })
+  })
+
+  it('preserves a saved return target while adding schema v3 fields', () => {
+    expect(migrateFinanceSettings({ schemaVersion: 2, planningAnnualReturnTargetPct: 18.5 })).toMatchObject({
+      schemaVersion: FINANCE_SCHEMA_VERSION,
+      planningAnnualReturnTargetPct: 18.5,
     })
   })
 

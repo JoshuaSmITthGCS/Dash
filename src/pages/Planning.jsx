@@ -6,7 +6,7 @@ import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
 import { formatPreferenceMoney, usePreferences } from '../lib/PreferencesContext.jsx'
-import { applyAllocationAssumption, projectionConfig, selectProjectionReturnSource, sequenceRiskPaths } from '../lib/projectionEngine.js'
+import { annualReturnTargetRange, applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource, sequenceRiskPaths } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
@@ -73,18 +73,6 @@ export default function Planning() {
     minimumRetirementAge,
   )
 
-  useEffect(() => {
-    if (finances.loading) return
-    const next = {
-      monthlyContribution: finances.settings.monthlyContribution,
-      retirementAge: Math.min(maximumRetirementAge, Math.max(minimumRetirementAge, finances.settings.retireAge)),
-      annualWithdrawal: finances.settings.monthlyWithdrawal * projectionConfig.months_per_year,
-      allocation: finances.settings.allocationAggressiveness || projectionConfig.allocation_default,
-    }
-    setDraft(next)
-    setCommitted(next)
-  }, [finances.loading, maximumRetirementAge, minimumRetirementAge])
-
   const source = useMemo(() => {
     const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
     const series = currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
@@ -96,9 +84,23 @@ export default function Planning() {
       fidelityProjectionBaseline(positions),
     )
   }, [benchmarkReport, data, positions, preferences.defaultBenchmark])
+  const returnTargetRange = useMemo(() => annualReturnTargetRange(source), [source])
+
+  useEffect(() => {
+    if (finances.loading) return
+    const next = {
+      annualReturnTargetPct: normalizeAnnualReturnTarget(finances.settings.planningAnnualReturnTargetPct, source),
+      monthlyContribution: finances.settings.monthlyContribution,
+      retirementAge: Math.min(maximumRetirementAge, Math.max(minimumRetirementAge, finances.settings.retireAge)),
+      annualWithdrawal: finances.settings.monthlyWithdrawal * projectionConfig.months_per_year,
+      allocation: finances.settings.allocationAggressiveness || projectionConfig.allocation_default,
+    }
+    setDraft(next)
+    setCommitted(next)
+  }, [finances.loading, maximumRetirementAge, minimumRetirementAge, returnTargetRange.minimumPct, returnTargetRange.maximumPct])
 
   const adjustedReturns = useMemo(() => source.available && committed
-    ? applyAllocationAssumption(source.returns, committed.allocation, source.baseline?.annualizedReturn)
+    ? applyAllocationAssumption(source.returns, committed.allocation, committed.annualReturnTargetPct / 100)
     : [], [committed, source])
   const input = useMemo(() => source.available && committed ? {
     monthlyReturns: adjustedReturns,
@@ -133,7 +135,8 @@ export default function Planning() {
     const settingsUpdate = key === 'monthlyContribution' ? { monthlyContribution: draft[key] }
       : key === 'retirementAge' ? { retireAge: draft[key] }
         : key === 'annualWithdrawal' ? { monthlyWithdrawal: draft[key] / projectionConfig.months_per_year }
-          : { allocationAggressiveness: draft[key] }
+          : key === 'annualReturnTargetPct' ? { planningAnnualReturnTargetPct: draft[key] }
+            : { allocationAggressiveness: draft[key] }
     finances.updateSettings(settingsUpdate)
   }
   const delta = (key) => leverDeltas[key] == null ? 'Move this lever to compare outcomes' : `${leverDeltas[key] >= 0 ? '+' : '−'}${Math.abs(leverDeltas[key] * 100).toFixed(0)} percentage points from its prior setting`
@@ -159,8 +162,6 @@ export default function Planning() {
   const success = probability == null ? null : probability * 100
   const verdict = successBand(probability || 0)
   const alternativeSuccess = contributionAlternative.result?.successProbability
-  const baseline = source.baseline
-
   const addGoal = (event) => {
     event.preventDefault()
     finances.addGoal(goalForm)
@@ -168,7 +169,7 @@ export default function Planning() {
   }
 
   return <div className="planning-page">
-    <header className="page-head"><div><span className="eyebrow">Planning</span><h1 className="page-title">Can your plan last?</h1><p className="page-sub">Your trailing annualized performance sets the baseline. Historical paths estimate the range around it from now through the end of your plan.</p></div><Link className="secondary-button compact" to="/finances">Accounts and pools</Link></header>
+    <header className="page-head"><div><span className="eyebrow">Planning</span><h1 className="page-title">Can your plan last?</h1><p className="page-sub">Set the annual return you want the dotted median to target. Historical paths estimate the range around it from now through the end of your plan.</p></div><Link className="secondary-button compact" to="/finances">Accounts and pools</Link></header>
 
     <section className="planning-verdict">
       <div className="success-gauge" style={{ '--success': `${success || 0}%` }} aria-label={success == null ? 'Success probability unavailable' : `Success probability ${success.toFixed(0)} percent`}><div><strong>{projection.loading && success == null ? '…' : success == null ? 'N/A' : `${success.toFixed(0)}%`}</strong><span>probability of success</span></div></div>
@@ -176,19 +177,20 @@ export default function Planning() {
     </section>
 
     <section className="planning-baseline" aria-labelledby="planning-baseline-title">
-      <div><span className="eyebrow">Your projection baseline</span><h2 id="planning-baseline-title">{baseline ? `${baseline.annualizedReturnPct >= 0 ? '+' : '−'}${Math.abs(baseline.annualizedReturnPct).toFixed(2)}% annualized` : 'Allocation fallback'}</h2></div>
-      <p>{baseline ? `${baseline.label}${baseline.endDate ? ` through ${baseline.endDate}` : ''}. The median path is centered on this return, while the shaded estimates vary around it using historical monthly volatility and return ordering.` : `A trailing portfolio return is not available yet. The selected allocation assumption supplies the temporary baseline until at least ${projectionConfig.baseline_minimum_days} days of portfolio history exist.`}</p>
+      <div><span className="eyebrow">Dotted median target</span><h2 id="planning-baseline-title">{formatAnnualReturnTarget(committed.annualReturnTargetPct)} annual</h2></div>
+      <p>{returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
     </section>
 
     <section className="planning-levers"><header><span className="eyebrow">Live levers</span><h2>Change the plan, then release to resimulate</h2></header>
+      <label><span>Annual return target <strong>{formatAnnualReturnTarget(draft.annualReturnTargetPct)}</strong></span><input type="range" min={returnTargetRange.minimumPct} max={returnTargetRange.maximumPct} step={returnTargetRange.stepPct} value={draft.annualReturnTargetPct} onChange={(event) => setDraft({ ...draft, annualReturnTargetPct: Number(event.target.value) })} onPointerUp={() => commitLever('annualReturnTargetPct')} onKeyUp={() => commitLever('annualReturnTargetPct')} /><small>Dotted median target. {returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year. ` : ''}{delta('annualReturnTargetPct')}</small></label>
       <label><span>Monthly contribution <strong>{money(draft.monthlyContribution)}</strong></span><input type="range" min={projectionConfig.lever_ranges.monthly_contribution.minimum} max={projectionConfig.lever_ranges.monthly_contribution.maximum} step={projectionConfig.lever_ranges.monthly_contribution.step} value={draft.monthlyContribution} onChange={(event) => setDraft({ ...draft, monthlyContribution: Number(event.target.value) })} onPointerUp={() => commitLever('monthlyContribution')} onKeyUp={() => commitLever('monthlyContribution')} /><small>{delta('monthlyContribution')}</small></label>
       <label><span>Target retirement age <strong>{draft.retirementAge}</strong></span><input type="range" min={minimumRetirementAge} max={maximumRetirementAge} step={projectionConfig.lever_ranges.retirement_age.step} value={draft.retirementAge} onChange={(event) => setDraft({ ...draft, retirementAge: Number(event.target.value) })} onPointerUp={() => commitLever('retirementAge')} onKeyUp={() => commitLever('retirementAge')} /><small>Available from age {minimumRetirementAge}. {delta('retirementAge')}</small></label>
       <label><span>Annual retirement withdrawal <strong>{money(draft.annualWithdrawal)}</strong></span><input type="range" min={projectionConfig.lever_ranges.annual_withdrawal.minimum} max={projectionConfig.lever_ranges.annual_withdrawal.maximum} step={projectionConfig.lever_ranges.annual_withdrawal.step} value={draft.annualWithdrawal} onChange={(event) => setDraft({ ...draft, annualWithdrawal: Number(event.target.value) })} onPointerUp={() => commitLever('annualWithdrawal')} onKeyUp={() => commitLever('annualWithdrawal')} /><small>In today's dollars. {delta('annualWithdrawal')}</small></label>
-      <label><span>Allocation aggressiveness <strong>{projectionConfig.allocation_assumptions[draft.allocation].label}</strong></span><select value={draft.allocation} onChange={(event) => { const allocation = event.target.value; setDraft({ ...draft, allocation }); setCommitted({ ...committed, allocation }); priorProbability.current = probability; setChangedLever('allocation'); finances.updateSettings({ allocationAggressiveness: allocation }) }}>{Object.entries(projectionConfig.allocation_assumptions).map(([key, assumption]) => <option value={key} key={key}>{assumption.label}: {assumption.annual_volatility_pct}% volatility around your baseline</option>)}</select><small>{delta('allocation')}</small></label>
+      <label><span>Allocation aggressiveness <strong>{projectionConfig.allocation_assumptions[draft.allocation].label}</strong></span><select value={draft.allocation} onChange={(event) => { const allocation = event.target.value; setDraft({ ...draft, allocation }); setCommitted({ ...committed, allocation }); priorProbability.current = probability; setChangedLever('allocation'); finances.updateSettings({ allocationAggressiveness: allocation }) }}>{Object.entries(projectionConfig.allocation_assumptions).map(([key, assumption]) => <option value={key} key={key}>{assumption.label}: {assumption.annual_volatility_pct}% volatility around your target</option>)}</select><small>{delta('allocation')}</small></label>
       {projection.result?.runtimeMs != null && <p className="planning-runtime">Updated in {projection.result.runtimeMs.toFixed(0)} ms</p>}
     </section>
 
-    <ProjectionPanel state={projection} source={source} money={money} startAge={finances.settings.currentAge} retirementAge={committed.retirementAge} endAge={finances.settings.retirementEndAge} title="Long-range outcome distribution" showSuccess={false} assumptionNote={`The chart runs from now through age ${finances.settings.retirementEndAge}. The dotted median is centered on ${baseline ? `${baseline.annualizedReturnPct.toFixed(2)}% annualized` : 'the selected allocation fallback'} and the shaded bands are estimates around it.`} />
+    <ProjectionPanel state={projection} source={source} money={money} annualReturnTargetPct={committed.annualReturnTargetPct} startAge={finances.settings.currentAge} retirementAge={committed.retirementAge} endAge={finances.settings.retirementEndAge} title="Long-range outcome distribution" showSuccess={false} assumptionNote={`The chart runs from now through age ${finances.settings.retirementEndAge}. The dotted median targets ${formatAnnualReturnTarget(committed.annualReturnTargetPct)} annually and the shaded bands are estimates around it.`} />
     <SequenceRiskPanel money={money} />
 
     <section className="planning-goals"><header><div><span className="eyebrow">Goals</span><h2>Retirement is one goal among several</h2></div></header><form onSubmit={addGoal}><label><span>Goal name</span><input required placeholder="Home down payment" value={goalForm.name} onChange={(event) => setGoalForm({ ...goalForm, name: event.target.value })} /></label><label><span>Target amount</span><input required type="number" min="1" value={goalForm.targetAmount} onChange={(event) => setGoalForm({ ...goalForm, targetAmount: event.target.value })} /></label><label><span>Target date</span><input required type="date" value={goalForm.targetDate} onChange={(event) => setGoalForm({ ...goalForm, targetDate: event.target.value })} /></label><label><span>Funding pool</span><select value={goalForm.poolId} onChange={(event) => setGoalForm({ ...goalForm, poolId: event.target.value })}><option value="">No linked pool</option>{finances.pools.map((pool) => <option value={pool.id} key={pool.id}>{pool.name}</option>)}</select></label><button className="primary-button">Add goal</button></form>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyAllocationAssumption, benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, projectionConfig, selectProjectionReturnSource, simulateProjection, trailingAnnualizedReturn } from './projectionEngine.js'
+import { annualReturnTargetRange, applyAllocationAssumption, benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource, simulateProjection, trailingAnnualizedReturn } from './projectionEngine.js'
 
 function monthlySeries(months, monthlyReturn = 0.01) {
   const dates = []
@@ -41,20 +41,36 @@ describe('historical block bootstrap projections', () => {
     expect(baseline.label).toContain('Trailing 1-year')
   })
 
-  it('keeps the personal annualized return at the center when allocation changes volatility', () => {
+  it('keeps the selected annual return target at the center when allocation changes volatility', () => {
     const returns = Array.from({ length: 48 }, (_, index) => 0.01 + Math.sin(index) * 0.03)
-    const adjusted = applyAllocationAssumption(returns, 'aggressive', 0.3232)
+    const adjusted = applyAllocationAssumption(returns, 'aggressive', 0.15)
     const annualizedCenter = Math.expm1(adjusted.reduce((sum, value) => sum + Math.log1p(value), 0) / adjusted.length * projectionConfig.months_per_year)
-    expect(annualizedCenter).toBeCloseTo(0.3232)
+    expect(annualizedCenter).toBeCloseTo(0.15)
   })
 
-  it('honors a brokerage-reported one-year baseline over the backtested holdings return', () => {
+  it('defaults the target to 15 percent inside the supplied brokerage evidence range', () => {
+    const source = {
+      baseline: {
+        returnTargetEvidence: { lowerPct: 14.6, upperPct: 32.32 },
+      },
+    }
+    expect(annualReturnTargetRange(source)).toMatchObject({
+      minimumPct: 14.6,
+      maximumPct: 32.4,
+      stepPct: 0.1,
+      defaultPct: 15,
+    })
+    expect(normalizeAnnualReturnTarget(null, source)).toBe(15)
+    expect(normalizeAnnualReturnTarget(50, source)).toBe(32.4)
+  })
+
+  it('retains brokerage evidence while allowing the target to replace its return center', () => {
     const supplied = { available: true, annualizedReturn: 0.3232, annualizedReturnPct: 32.32, label: 'Brokerage trailing 1-year return' }
     const source = selectProjectionReturnSource(monthlySeries(20, -0.01), monthlySeries(60, 0.005), 'VTI', supplied)
     expect(source.baseline).toBe(supplied)
-    const centered = applyAllocationAssumption(source.returns, 'growth', source.baseline.annualizedReturn)
+    const centered = applyAllocationAssumption(source.returns, 'growth', 0.15)
     const annualizedCenter = Math.expm1(centered.reduce((sum, value) => sum + Math.log1p(value), 0) / centered.length * projectionConfig.months_per_year)
-    expect(annualizedCenter).toBeCloseTo(0.3232)
+    expect(annualizedCenter).toBeCloseTo(0.15)
   })
 
   it('keeps benchmark volatility instead of repeating observed sparse months', () => {
