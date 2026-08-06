@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "strategy": "SPY",
+  "as_of": "2026-08-02",
+  "recorded_at": "2026-08-06T00:49:13.506056+00:00",
+  "content_sha256": "718a888789b5d4b988bed2ab03d1c8e7a72dcda8da9822412c5049d9169e33ad",
+  "methodology": {
+    "comparison_mode": "signal_only",
+    "weighting_method": "equal_weight",
+    "execution_lag_sessions": 1,
+    "spread_bps": 10,
+    "slippage_bps": 10,
+    "source": {
+      "kind": "git_archived_published_snapshot",
+      "commit": "ad0a3958e1b6b601ea64fa42c013982295479376",
+      "commit_date": "2026-08-02"
+    }
+  },
+  "rows": [
+    {
+      "ticker": "SPY",
+      "rank": 1,
+      "signal": null,
+      "price": 747.03,
+      "weight": 1.0
+    }
+  ]
+}

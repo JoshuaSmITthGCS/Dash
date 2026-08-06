@@ -87,4 +87,8 @@ describe('interface preferences', () => {
     expect(value.defaultBenchmarks).toEqual(['QQQ', 'DIA', 'VTI'])
     expect(value.defaultBenchmark).toBe('QQQ')
   })
+
+  it('keeps year-to-date as a supported home chart range', () => {
+    expect(validatePreferences({ defaultChartPeriod: 'YTD' }).defaultChartPeriod).toBe('YTD')
+  })
 })

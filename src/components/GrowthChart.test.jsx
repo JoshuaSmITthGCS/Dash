@@ -54,4 +54,11 @@ describe('GrowthChart zoom', () => {
     fireEvent.keyDown(chart, { key: 'ArrowLeft' })
     expect(screen.getAllByText('2025-01-02').length).toBeGreaterThan(1)
   })
+
+  it('supports the minimal home treatment without axis clutter', () => {
+    const { container } = render(<GrowthChart minimal className="home-growth-chart" dates={['2025-01-01', '2025-01-02']} series={[{ label: 'Holdings', values: [100, 110], color: 'green', emphasis: true }]} />)
+    expect(container.querySelector('.home-growth-chart')).toBeInTheDocument()
+    expect(container.querySelectorAll('.chart-grid-line')).toHaveLength(0)
+    expect(screen.getByRole('img')).toHaveAccessibleName(/Holdings: \$110/)
+  })
 })

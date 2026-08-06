@@ -161,6 +161,9 @@ jobs:
       - name: Rescore the last published data (no network calls)
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore == 'true'
         run: python pipeline/rescore.py
+      - name: Append and publish prospective shadow portfolios
+        if: steps.refresh_window.outputs.should_run == 'true'
+        run: python pipeline/shadow_portfolios.py
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py
@@ -192,6 +195,7 @@ jobs:
           # output unstaged makes the pull --rebase below reject the otherwise valid
           # refresh commit with "You have unstaged changes."
           git add --all pipeline/pit_store 2>/dev/null || true
+          git add --all pipeline/shadow_store 2>/dev/null || true
           git add --all pipeline/reports 2>/dev/null || true
           git diff --cached --quiet && exit 0
           if [[ "${{ steps.refresh_window.outputs.is_rescore }}" == "true" ]]; then

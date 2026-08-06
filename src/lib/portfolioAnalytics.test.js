@@ -20,6 +20,7 @@ describe('portfolio report analytics', () => {
     expect(series.methodology).toContain('Current quantities')
     expect(selectPeriod(series, '1W').dates).toEqual(['2026-06-25', '2026-06-30'])
     expect(selectPeriod(series, 'All').values).toHaveLength(3)
+    expect(selectPeriod({ dates: ['2025-12-31', '2026-01-02', '2026-06-30'], values: [18, 19, 30] }, 'YTD').dates).toEqual(['2026-01-02', '2026-06-30'])
   })
 
   it('uses the last two closes for latest market-day return', () => {

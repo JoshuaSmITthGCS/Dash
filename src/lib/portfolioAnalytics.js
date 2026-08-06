@@ -1,6 +1,6 @@
 import modelSettings from '../../pipeline/config/settings.json'
 
-const PERIOD_DAYS = { '1D': 2, '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 366, All: null }
+const PERIOD_DAYS = { '1D': 2, '1W': 7, '1M': 31, '3M': 93, '6M': 186, YTD: 'year-to-date', '1Y': 366, All: null }
 const analyticsConfig = modelSettings.portfolio_analytics
 
 const finite = (value) => value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
@@ -72,7 +72,10 @@ export function selectPeriod(series, period = '1M') {
   if (!series?.dates?.length || !series?.values?.length) return null
   const days = PERIOD_DAYS[period] ?? null
   const endMs = Date.parse(series.dates.at(-1))
-  const foundIndex = days == null ? 0 : series.dates.findIndex((date) => Date.parse(date) >= endMs - days * 86400000)
+  const yearStart = `${String(series.dates.at(-1)).slice(0, 4)}-01-01`
+  const foundIndex = days === 'year-to-date'
+    ? series.dates.findIndex((date) => date >= yearStart)
+    : days == null ? 0 : series.dates.findIndex((date) => Date.parse(date) >= endMs - days * 86400000)
   const startIndex = days == null ? 0 : foundIndex < 0 ? Math.max(0, series.dates.length - 2) : foundIndex
   const dates = series.dates.slice(startIndex)
   const values = series.values.slice(startIndex)

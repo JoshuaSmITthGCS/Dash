@@ -8,17 +8,18 @@ import { useState } from 'react'
  * implementation.
  */
 
-const PAD = { top: 16, right: 14, bottom: 26, left: 52 }
+const DEFAULT_PAD = { top: 16, right: 14, bottom: 26, left: 52 }
+const MINIMAL_PAD = { top: 18, right: 8, bottom: 30, left: 8 }
 
-function scalePoints(series, dates, width, height, bounds) {
+function scalePoints(series, dates, width, height, bounds, pad = DEFAULT_PAD) {
   const { min, max } = bounds
   const span = max - min || 1
-  const innerWidth = width - PAD.left - PAD.right
-  const innerHeight = height - PAD.top - PAD.bottom
+  const innerWidth = width - pad.left - pad.right
+  const innerHeight = height - pad.top - pad.bottom
   const step = dates.length > 1 ? innerWidth / (dates.length - 1) : 0
   return series.map((value, index) => (value == null ? null : {
-    x: PAD.left + index * step,
-    y: PAD.top + innerHeight - ((value - min) / span) * innerHeight,
+    x: pad.left + index * step,
+    y: pad.top + innerHeight - ((value - min) / span) * innerHeight,
     value,
     date: dates[index],
   }))
@@ -72,6 +73,8 @@ export default function GrowthChart({
   title,
   caption,
   zoomable = false,
+  minimal = false,
+  className = '',
   valueFormatter = money,
   earningsMarker = null, // { value, label } – most recent earnings-surprise reading, if the pipeline has one
 }) {
@@ -104,7 +107,8 @@ export default function GrowthChart({
   const max = Math.max(...allValues)
   const bounds = { min: min - (max - min) * 0.08 || 0, max: max + (max - min) * 0.08 }
   const ticks = [bounds.max, (bounds.max + bounds.min) / 2, bounds.min]
-  const innerHeight = height - PAD.top - PAD.bottom
+  const pad = minimal ? MINIMAL_PAD : DEFAULT_PAD
+  const innerHeight = height - pad.top - pad.bottom
   const chartStyle = document.documentElement.dataset.chartStyle || 'line'
 
   const labelIndexes = [...new Set([0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1])]
@@ -114,12 +118,12 @@ export default function GrowthChart({
   }).join('. ')} at the end of the period.`
   const selectPoint = (clientX, target) => {
     const bounds = target.getBoundingClientRect()
-    const plotLeft = bounds.left + PAD.left / width * bounds.width
-    const plotWidth = (width - PAD.left - PAD.right) / width * bounds.width
+    const plotLeft = bounds.left + pad.left / width * bounds.width
+    const plotWidth = (width - pad.left - pad.right) / width * bounds.width
     const relative = Math.max(0, Math.min(1, (clientX - plotLeft) / plotWidth))
     setActiveIndex(Math.round(relative * (usableDates.length - 1)))
   }
-  const activeX = activeIndex == null ? null : PAD.left + (activeIndex / (usableDates.length - 1)) * (width - PAD.left - PAD.right)
+  const activeX = activeIndex == null ? null : pad.left + (activeIndex / (usableDates.length - 1)) * (width - pad.left - pad.right)
   const displayedIndex = activeIndex ?? usableDates.length - 1
   const changeZoom = (key) => {
     setZoom(key)
@@ -131,12 +135,12 @@ export default function GrowthChart({
   // number, not a dated per-quarter actual-vs-estimate history – so this marks the latest point on
   // the primary line rather than pretending to know which past date the report landed on.
   const earningsPoint = earningsMarker?.value != null
-    ? [...scalePoints(lines[0]?.values || [], usableDates, width, height, bounds)].reverse().find(Boolean)
+    ? [...scalePoints(lines[0]?.values || [], usableDates, width, height, bounds, pad)].reverse().find(Boolean)
     : null
 
   return (
-    <figure style={{ margin: 0 }}>
-      <div className="chart-heading">
+    <figure className={className} style={{ margin: 0 }}>
+      {(title || (zoomable && availableRanges.length > 1)) && <div className="chart-heading">
         {title && <figcaption>{title}</figcaption>}
         {zoomable && availableRanges.length > 1 && (
           <div className="chart-zoom" aria-label="Chart time range">
@@ -152,7 +156,7 @@ export default function GrowthChart({
             ))}
           </div>
         )}
-      </div>
+      </div>}
       <div className="chart-scrub-summary" role="status" aria-live="polite">
         <span>{String(usableDates[displayedIndex]).slice(0, 10)}</span>
         <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '–' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
@@ -182,13 +186,13 @@ export default function GrowthChart({
           }}
           style={{ display: 'block', minWidth: 320, touchAction: 'pan-y' }}
         >
-          {ticks.map((tick, index) => {
-            const y = PAD.top + (index / (ticks.length - 1)) * innerHeight
+          {!minimal && ticks.map((tick, index) => {
+            const y = pad.top + (index / (ticks.length - 1)) * innerHeight
             return (
               <g key={`${index}-${tick}`}>
-                <line className="chart-grid-line" x1={PAD.left} x2={width - PAD.right} y1={y} y2={y}
+                <line className="chart-grid-line" x1={pad.left} x2={width - pad.right} y1={y} y2={y}
                   stroke="var(--border)" strokeWidth="1" />
-                <text x={PAD.left - 8} y={y + 4} textAnchor="end"
+                <text className="chart-axis-label" x={pad.left - 8} y={y + 4} textAnchor="end"
                   fill="var(--text-faint)" fontSize="10" fontFamily="var(--font-mono)">
                   {valueFormatter(tick)}
                 </text>
@@ -197,12 +201,12 @@ export default function GrowthChart({
           })}
 
           {lines.map((line) => {
-            const points = scalePoints(line.values, usableDates, width, height, bounds)
+            const points = scalePoints(line.values, usableDates, width, height, bounds, pad)
             const last = [...points].reverse().find(Boolean)
             const connected = points.filter(Boolean)
-            const areaPath = connected.length > 1 ? `${pathFor(points, chartStyle === 'step')} L${connected.at(-1).x.toFixed(1)} ${(height - PAD.bottom).toFixed(1)} L${connected[0].x.toFixed(1)} ${(height - PAD.bottom).toFixed(1)} Z` : ''
+            const areaPath = connected.length > 1 ? `${pathFor(points, chartStyle === 'step')} L${connected.at(-1).x.toFixed(1)} ${(height - pad.bottom).toFixed(1)} L${connected[0].x.toFixed(1)} ${(height - pad.bottom).toFixed(1)} Z` : ''
             return (
-              <g key={line.label}>
+              <g key={line.label} className={line.emphasis ? 'chart-series-primary' : 'chart-series-secondary'}>
                 {chartStyle === 'area' && line.emphasis && <path className="chart-data-area" d={areaPath} fill={line.color} opacity=".1" />}
                 <path className="chart-data-line" d={pathFor(points, chartStyle === 'step')} fill="none" stroke={line.color}
                   strokeWidth={line.emphasis ? 2.4 : 1.8}
@@ -222,8 +226,8 @@ export default function GrowthChart({
           )}
 
           {labelIndexes.map((index) => {
-            const step = (width - PAD.left - PAD.right) / (usableDates.length - 1)
-            const x = PAD.left + index * step
+            const step = (width - pad.left - pad.right) / (usableDates.length - 1)
+            const x = pad.left + index * step
             return (
               <text key={index} x={x} y={height - 8}
                 textAnchor={index === 0 ? 'start' : index === usableDates.length - 1 ? 'end' : 'middle'}
@@ -233,15 +237,15 @@ export default function GrowthChart({
             )
           })}
           {activeIndex != null && <g className="chart-tooltip">
-            <line x1={activeX} x2={activeX} y1={PAD.top} y2={height - PAD.bottom} stroke="var(--text-faint)" strokeDasharray="3 3" />
-            <rect x={Math.max(PAD.left, Math.min(width - 174, activeX - 76))} y={8} width="160" height={22 + lines.length * 17} rx="8" fill="var(--surface-primary)" stroke="var(--border-strong)" />
-            <text x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y="24" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)">{String(usableDates[activeIndex]).slice(0, 10)}</text>
-            {lines.map((line, index) => <text key={line.label} x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="10" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '–' : valueFormatter(line.values[activeIndex])}</text>)}
+            <line x1={activeX} x2={activeX} y1={pad.top} y2={height - pad.bottom} stroke="var(--text-faint)" strokeDasharray="3 3" />
+            <rect x={Math.max(pad.left, Math.min(width - 174, activeX - 76))} y={8} width="160" height={22 + lines.length * 17} rx="8" fill="var(--surface-primary)" stroke="var(--border-strong)" />
+            <text x={Math.max(pad.left + 8, Math.min(width - 166, activeX - 68))} y="24" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)">{String(usableDates[activeIndex]).slice(0, 10)}</text>
+            {lines.map((line, index) => <text key={line.label} x={Math.max(pad.left + 8, Math.min(width - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="10" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '–' : valueFormatter(line.values[activeIndex])}</text>)}
           </g>}
         </svg>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10 }}>
+      <div className="chart-legend" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10 }}>
         {lines.map((line) => {
           const values = line.values.filter((value) => value != null)
           const latest = values[values.length - 1]
@@ -263,7 +267,7 @@ export default function GrowthChart({
         </p>
       )}
       {caption && (
-        <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-faint)' }}>{caption}</p>
+        <p className="chart-figure-caption" style={{ marginTop: 8, fontSize: 12, color: 'var(--text-faint)' }}>{caption}</p>
       )}
     </figure>
   )
