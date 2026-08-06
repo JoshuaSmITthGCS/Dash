@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const WIDTH = 720
 const HEIGHT = 300
 const PAD = { top: 18, right: 18, bottom: 42, left: 62 }
@@ -60,11 +62,10 @@ export default function ProjectionFanChart({ fan = [], startAge = null, retireme
         <text x={retirementX + 6} y={PAD.top + 13}>Retire</text>
       </g>}
       {ticks.map((point) => <text key={point.month} className="projection-axis-label" x={x(point)} y={HEIGHT - 14} textAnchor={point.month === 0 ? 'start' : point.month === lastMonth ? 'end' : 'middle'}>
-        {startAge == null ? `Year ${Math.round(point.year)}` : `Age ${Math.round(startAge + point.year)}`}
+        {point.month === 0 ? 'Now' : startAge == null ? `Year ${Math.round(point.year)}` : `Age ${Math.round(startAge + point.year)}`}
       </text>)}
     </svg>
-    {selected && <div className="projection-scrub-readout" role="status"><strong>{startAge == null ? `Year ${Math.round(selected.year)}` : `Age ${Math.round(startAge + selected.year)}`}</strong><span>10th {money(selected.p10)}</span><span>Median {money(selected.p50)}</span><span>90th {money(selected.p90)}</span></div>}
+    {selected && <div className="projection-scrub-readout" role="status"><strong>{selected.month === 0 ? 'Now' : startAge == null ? `Year ${Math.round(selected.year)}` : `Age ${Math.round(startAge + selected.year)}`}</strong><span>10th {money(selected.p10)}</span><span>Median {money(selected.p50)}</span><span>90th {money(selected.p90)}</span></div>}
     <figcaption><span><i className="fan-swatch outer" />10th to 90th</span><span><i className="fan-swatch inner" />25th to 75th</span><span><i className="fan-swatch median" />Median</span></figcaption>
   </figure>
 }
-import { useState } from 'react'

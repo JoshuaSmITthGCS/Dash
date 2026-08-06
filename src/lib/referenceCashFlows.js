@@ -17,7 +17,21 @@ export const FIDELITY_REFERENCE_SNAPSHOT = {
   investments: 2817.99,
   cash: 0.42,
   dayChange: 132.32,
-  periodReturns: { '1D': 2.67, '1M': 3.01, YTD: 13.02, '1Y': 32.20 },
+  periodReturns: { '1D': 1.40, '1M': 4.45, YTD: 14.60, '1Y': 32.32 },
+}
+
+export function fidelityProjectionBaseline(positions = []) {
+  const hasReferencePortfolio = positions.some((position) => position.snapshotSource === 'User-provided brokerage snapshot')
+  if (!hasReferencePortfolio) return null
+  const annualizedReturnPct = FIDELITY_REFERENCE_SNAPSHOT.periodReturns['1Y']
+  return {
+    available: true,
+    annualizedReturn: annualizedReturnPct / 100,
+    annualizedReturnPct,
+    endDate: FIDELITY_REFERENCE_SNAPSHOT.asOf.slice(0, 10),
+    source: 'brokerage-reported',
+    label: 'Fidelity trailing 1-year time-weighted return',
+  }
 }
 
 export function summarizeCashFlows(rows = FIDELITY_CASH_FLOWS) {

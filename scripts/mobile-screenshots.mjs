@@ -21,7 +21,7 @@ const pages = [
   },
   {
     name: 'planning',
-    path: '/planning?preview=1',
+    path: '/planning?preview=1&portfolioPreview=1',
     ready: '.planning-verdict',
     async settle(page) {
       await page.waitForFunction(() => document.querySelector('.success-gauge strong')?.textContent?.trim() !== '…')

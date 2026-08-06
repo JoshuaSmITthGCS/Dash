@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from './referenceCashFlows.js'
+import { fidelityProjectionBaseline, FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from './referenceCashFlows.js'
 
 describe('Fidelity reference cash history', () => {
   it('matches the complete user-provided deposit and withdrawal screenshots', () => {
@@ -10,6 +10,15 @@ describe('Fidelity reference cash history', () => {
 
   it('reconciles the supplied account snapshot without confusing it with time-weighted return', () => {
     expect(FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue - summarizeCashFlows().netContributions).toBeCloseTo(238.41, 2)
-    expect(FIDELITY_REFERENCE_SNAPSHOT.periodReturns['1Y']).toBe(32.2)
+    expect(FIDELITY_REFERENCE_SNAPSHOT.periodReturns).toEqual({ '1D': 1.4, '1M': 4.45, YTD: 14.6, '1Y': 32.32 })
+  })
+
+  it('uses the supplied trailing one-year brokerage return as the retirement baseline', () => {
+    expect(fidelityProjectionBaseline([{ snapshotSource: 'User-provided brokerage snapshot' }])).toMatchObject({
+      annualizedReturn: 0.3232,
+      annualizedReturnPct: 32.32,
+      source: 'brokerage-reported',
+    })
+    expect(fidelityProjectionBaseline([])).toBeNull()
   })
 })

@@ -8,10 +8,11 @@ import { ACCOUNT_TYPES, getAnnualLimit, accountTypeLabel } from '../lib/retireme
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
-import { projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
+import { applyAllocationAssumption, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import Icon from '../components/Icons.jsx'
+import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 
 const money = (value, digits = 0) =>
   value == null ? '–' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -48,6 +49,12 @@ export default function Finances() {
   const [depositAmount, setDepositAmount] = useState('')
   const [accountForm, setAccountForm] = useState({ name: '', type: ACCOUNT_TYPES[0].key })
   const [selectedAccountId, setSelectedAccountId] = useState(null)
+  const minimumRetirementAge = Math.max(
+    projectionConfig.lever_ranges.retirement_age.minimum,
+    finances.settings.currentAge + projectionConfig.minimum_years_until_retirement,
+  )
+  const maximumRetirementAge = Math.max(projectionConfig.lever_ranges.retirement_age.maximum, minimumRetirementAge)
+  const retirementAge = Math.min(maximumRetirementAge, Math.max(minimumRetirementAge, finances.settings.retireAge))
 
   const portfolioValue = useMemo(() => currentPortfolioValue(positions, data), [positions, data])
   const budgetSummary = useMemo(() => summarizeBudget(finances.budgetItems), [finances.budgetItems])
@@ -60,17 +67,26 @@ export default function Finances() {
     const portfolioSeries = currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
     const benchmarkSymbol = preferences.defaultBenchmark
     const benchmark = benchmarkReport?.histories?.[benchmarkSymbol]
-    return selectProjectionReturnSource(portfolioSeries, benchmark, benchmarkSymbol)
+    return selectProjectionReturnSource(
+      portfolioSeries,
+      benchmark,
+      benchmarkSymbol,
+      fidelityProjectionBaseline(positions),
+    )
   }, [benchmarkReport, data, positions, preferences.defaultBenchmark])
   const projectionInput = useMemo(() => projectionSource.available ? {
-    monthlyReturns: projectionSource.returns,
+    monthlyReturns: applyAllocationAssumption(
+      projectionSource.returns,
+      finances.settings.allocationAggressiveness || projectionConfig.allocation_default,
+      projectionSource.baseline?.annualizedReturn,
+    ),
     currentBalance: finances.settings.currentSavings,
     monthlyContribution: finances.settings.monthlyContribution,
     monthlyWithdrawal: finances.settings.monthlyWithdrawal,
     inflationPct: finances.settings.inflationPct,
-    accumulationMonths: Math.max(1, (finances.settings.retireAge - finances.settings.currentAge) * projectionConfig.months_per_year),
-    withdrawalMonths: Math.max(0, (finances.settings.retirementEndAge - finances.settings.retireAge) * projectionConfig.months_per_year),
-  } : null, [finances.settings, projectionSource])
+    accumulationMonths: Math.max(projectionConfig.months_per_year, (retirementAge - finances.settings.currentAge) * projectionConfig.months_per_year),
+    withdrawalMonths: Math.max(0, (finances.settings.retirementEndAge - retirementAge) * projectionConfig.months_per_year),
+  } : null, [finances.settings, projectionSource, retirementAge])
   const projection = useProjectionSimulation(projectionInput)
   const depositPreview = splitAmount(parseFloat(depositAmount) || 0, finances.pools)
   const projectedMedian = projection.result?.retirementPercentiles?.p50
@@ -277,7 +293,7 @@ export default function Finances() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Retirement age</label>
-                <input type="number" value={finances.settings.retireAge}
+                <input type="number" min={minimumRetirementAge} max={maximumRetirementAge} value={retirementAge}
                   onChange={(e) => finances.updateSettings({ retireAge: parseInt(e.target.value, 10) || 0 })} />
               </div>
               <div>
@@ -403,9 +419,10 @@ export default function Finances() {
             source={projectionSource}
             money={money}
             startAge={finances.settings.currentAge}
-            retirementAge={finances.settings.retireAge}
+            retirementAge={retirementAge}
             endAge={finances.settings.retirementEndAge}
             title="Retirement outcome range"
+            assumptionNote={projectionSource.baseline ? `Centered on your ${projectionSource.baseline.annualizedReturnPct.toFixed(2)}% annualized trailing return.` : 'Using the selected allocation fallback until a personal trailing return is available.'}
           />
         </>
       )}

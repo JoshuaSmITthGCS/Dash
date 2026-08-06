@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, projectionConfig, selectProjectionReturnSource, simulateProjection } from './projectionEngine.js'
+import { applyAllocationAssumption, benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, projectionConfig, selectProjectionReturnSource, simulateProjection, trailingAnnualizedReturn } from './projectionEngine.js'
 
 function monthlySeries(months, monthlyReturn = 0.01) {
   const dates = []
@@ -32,6 +32,29 @@ describe('historical block bootstrap projections', () => {
 
     const portfolio = selectProjectionReturnSource(monthlySeries(37), monthlySeries(40), 'VTI')
     expect(portfolio).toMatchObject({ available: true, type: 'portfolio', months: 36 })
+  })
+
+  it('uses the trailing year as an annualized personal baseline', () => {
+    const baseline = trailingAnnualizedReturn(monthlySeries(13, 0.02))
+    expect(baseline.available).toBe(true)
+    expect(baseline.annualizedReturn).toBeCloseTo(1.02 ** 12 - 1)
+    expect(baseline.label).toContain('Trailing 1-year')
+  })
+
+  it('keeps the personal annualized return at the center when allocation changes volatility', () => {
+    const returns = Array.from({ length: 48 }, (_, index) => 0.01 + Math.sin(index) * 0.03)
+    const adjusted = applyAllocationAssumption(returns, 'aggressive', 0.3232)
+    const annualizedCenter = Math.expm1(adjusted.reduce((sum, value) => sum + Math.log1p(value), 0) / adjusted.length * projectionConfig.months_per_year)
+    expect(annualizedCenter).toBeCloseTo(0.3232)
+  })
+
+  it('honors a brokerage-reported one-year baseline over the backtested holdings return', () => {
+    const supplied = { available: true, annualizedReturn: 0.3232, annualizedReturnPct: 32.32, label: 'Brokerage trailing 1-year return' }
+    const source = selectProjectionReturnSource(monthlySeries(20, -0.01), monthlySeries(60, 0.005), 'VTI', supplied)
+    expect(source.baseline).toBe(supplied)
+    const centered = applyAllocationAssumption(source.returns, 'growth', source.baseline.annualizedReturn)
+    const annualizedCenter = Math.expm1(centered.reduce((sum, value) => sum + Math.log1p(value), 0) / centered.length * projectionConfig.months_per_year)
+    expect(annualizedCenter).toBeCloseTo(0.3232)
   })
 
   it('keeps benchmark volatility instead of repeating observed sparse months', () => {
@@ -109,6 +132,17 @@ describe('historical block bootstrap projections', () => {
       seed: 1,
     })
     expect(result.goalProbability).toBe(1)
+  })
+
+  it('keeps the complete now-to-plan-end horizon beyond the old seventy-year ceiling', () => {
+    const result = simulateProjection({
+      monthlyReturns: Array(36).fill(0),
+      currentBalance: 1000,
+      accumulationMonths: 50 * projectionConfig.months_per_year,
+      withdrawalMonths: 25 * projectionConfig.months_per_year,
+      seed: 1,
+    })
+    expect(result.fan.at(-1).year).toBe(75)
   })
 
   it('completes 5,000 thirty-year paths within the worker budget', () => {

@@ -39,6 +39,43 @@ export function monthlyReturnsFromSeries(series) {
 }
 
 /**
+ * Uses the latest configured year of portfolio values as the projection center.
+ * A shorter usable span is geometrically annualized, which keeps the baseline tied
+ * to the user's recorded pace without treating a cumulative partial-year return as annual.
+ */
+export function trailingAnnualizedReturn(series) {
+  const dates = series?.dates || []
+  const values = series?.values || series?.closes || []
+  const observations = dates.map((date, index) => ({
+    date: String(date).slice(0, 10),
+    timestamp: new Date(`${String(date).slice(0, 10)}T00:00:00Z`).getTime(),
+    value: Number(values[index]),
+  })).filter((row) => Number.isFinite(row.timestamp) && finite(row.value) && row.value > 0)
+    .sort((left, right) => left.timestamp - right.timestamp)
+  if (observations.length < 2) return null
+  const last = observations.at(-1)
+  const cutoff = last.timestamp - projectionConfig.baseline_lookback_days * projectionConfig.milliseconds_per_day
+  const beforeCutoff = observations.filter((row) => row.timestamp <= cutoff)
+  const first = beforeCutoff.at(-1) || observations[0]
+  const elapsedDays = (last.timestamp - first.timestamp) / projectionConfig.milliseconds_per_day
+  if (elapsedDays < projectionConfig.baseline_minimum_days) return null
+  const annualizedReturn = (last.value / first.value) ** (projectionConfig.days_per_year / elapsedDays) - 1
+  if (!finite(annualizedReturn) || annualizedReturn <= -1) return null
+  return {
+    available: true,
+    annualizedReturn,
+    annualizedReturnPct: annualizedReturn * 100,
+    startDate: first.date,
+    endDate: last.date,
+    elapsedDays: Math.round(elapsedDays),
+    source: 'portfolio-trailing-history',
+    label: elapsedDays >= projectionConfig.baseline_lookback_days
+      ? 'Trailing 1-year annualized portfolio return'
+      : `Available ${Math.round(elapsedDays)}-day portfolio return, annualized`,
+  }
+}
+
+/**
  * Extends a short portfolio record to the configured 36-month modeling window.
  * The first-to-last total return is annualized as
  * (ending / starting)^(365.25 / elapsedDays) - 1, then converted to a monthly
@@ -84,7 +121,7 @@ export function extendSparsePortfolioHistory(series) {
  * shifts only its geometric mean to the annualized return observed for that portfolio.
  * Volatility and return ordering stay benchmark-derived, and no observed month is repeated.
  */
-export function benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory) {
+export function benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory, targetAnnualizedReturn = null) {
   const dates = portfolioSeries?.dates || []
   const values = portfolioSeries?.values || portfolioSeries?.closes || []
   const observations = dates.map((date, index) => ({
@@ -98,7 +135,10 @@ export function benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory
   const last = observations.at(-1)
   const elapsedDays = (last.timestamp - first.timestamp) / 86400000
   if (elapsedDays < projectionConfig.sparse_history_minimum_days) return null
-  const annualizedReturn = (last.value / first.value) ** (365.25 / elapsedDays) - 1
+  const observedBaseline = trailingAnnualizedReturn(portfolioSeries)
+  const annualizedReturn = targetAnnualizedReturn != null && finite(targetAnnualizedReturn) && Number(targetAnnualizedReturn) > -1
+    ? Number(targetAnnualizedReturn)
+    : observedBaseline?.annualizedReturn
   if (!finite(annualizedReturn) || annualizedReturn <= -1) return null
   const benchmark = monthlyReturnsFromSeries(benchmarkHistory)
   if (benchmark.months < projectionConfig.block_months) return null
@@ -116,7 +156,7 @@ export function benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory
   }
 }
 
-export function applyAllocationAssumption(returns, allocationKey) {
+export function applyAllocationAssumption(returns, allocationKey, personalAnnualizedReturn = null) {
   const assumption = projectionConfig.allocation_assumptions[allocationKey]
   const values = (returns || []).map(Number).filter((value) => finite(value) && value > -1)
   if (!assumption || values.length < 2) return values
@@ -125,8 +165,13 @@ export function applyAllocationAssumption(returns, allocationKey) {
   const variance = logs.reduce((sum, value) => sum + (value - average) ** 2, 0) / (logs.length - 1)
   const observedVolatility = Math.sqrt(variance * projectionConfig.months_per_year)
   const targetVolatility = assumption.annual_volatility_pct / 100
-  const scale = observedVolatility > 0 ? targetVolatility / observedVolatility : 0
-  const targetMonthlyLog = Math.log1p(assumption.annual_return_pct / 100) / projectionConfig.months_per_year
+  const scale = observedVolatility >= projectionConfig.minimum_volatility_for_rescaling_pct / 100
+    ? targetVolatility / observedVolatility
+    : 0
+  const targetAnnualReturn = personalAnnualizedReturn != null && finite(personalAnnualizedReturn) && Number(personalAnnualizedReturn) > -1
+    ? Number(personalAnnualizedReturn)
+    : assumption.annual_return_pct / 100
+  const targetMonthlyLog = Math.log1p(targetAnnualReturn) / projectionConfig.months_per_year
   return logs.map((value) => Math.expm1((value - average) * scale + targetMonthlyLog))
 }
 
@@ -134,9 +179,11 @@ export function applyAllocationAssumption(returns, allocationKey) {
  * Uses observed portfolio returns after the 36-month gate. A shorter record uses the
  * selected benchmark's long return history centered on the portfolio return observed so far.
  */
-export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, benchmarkSymbol = 'SPY') {
+export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, benchmarkSymbol = 'SPY', baselineOverride = null) {
   const portfolio = monthlyReturnsFromSeries(portfolioSeries)
   const benchmark = monthlyReturnsFromSeries(benchmarkHistory)
+  const calculatedBaseline = trailingAnnualizedReturn(portfolioSeries)
+  const baseline = baselineOverride?.available ? baselineOverride : calculatedBaseline
   const minimumPortfolioMonths = projectionConfig.portfolio_minimum_history_months
   const blockMonths = projectionConfig.block_months
   if (portfolio.months >= minimumPortfolioMonths) {
@@ -144,17 +191,19 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
       available: true,
       type: 'portfolio',
       label: 'portfolio monthly returns',
+      baseline,
       ...portfolio,
     }
   }
-  const centeredBenchmark = benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory)
+  const centeredBenchmark = benchmarkCenteredSparseHistory(portfolioSeries, benchmarkHistory, baseline?.annualizedReturn)
   if (centeredBenchmark) {
     return {
       available: true,
       type: 'benchmark-centered-sparse-history',
-      label: `${benchmarkSymbol} history centered on observed portfolio return`,
+      label: `${benchmarkSymbol} history around ${baseline?.label || 'observed portfolio return'}`,
       benchmarkBased: true,
-      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. Simulated from ${benchmarkSymbol} benchmark history, centered on the return you have actually recorded. Observed portfolio months are not repeated or synthesized.`,
+      baseline,
+      fallbackReason: `Portfolio history has ${portfolio.months} monthly returns, below the ${minimumPortfolioMonths}-month gate. Simulated from ${benchmarkSymbol} benchmark history, centered on ${baseline?.label || 'the return you have actually recorded'}. Observed portfolio months are not repeated or synthesized.`,
       ...centeredBenchmark,
     }
   }
@@ -162,8 +211,10 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
     return {
       available: true,
       type: 'benchmark-fallback',
-      label: `${benchmarkSymbol} monthly returns`,
-      fallbackReason: `Portfolio history has ${portfolio.months} monthly return${portfolio.months === 1 ? '' : 's'}, below the ${minimumPortfolioMonths}-month gate.`,
+      label: `${benchmarkSymbol} monthly returns${baseline ? ` around ${baseline.label}` : ''}`,
+      benchmarkBased: true,
+      baseline,
+      fallbackReason: `Portfolio history has ${portfolio.months} monthly return${portfolio.months === 1 ? '' : 's'}, below the ${minimumPortfolioMonths}-month gate. ${baseline ? `The benchmark supplies the historical range around ${baseline.label}.` : 'The selected allocation supplies the temporary return center.'}`,
       ...benchmark,
     }
   }

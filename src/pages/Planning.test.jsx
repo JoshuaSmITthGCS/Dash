@@ -28,7 +28,7 @@ describe('Planning hub', () => {
     useData.mockImplementation((file) => file === 'benchmark-report.json'
       ? { data: { histories: { SPY: { dates, closes: dates.map((_, index) => 100 + index + Math.sin(index) * 4) } } }, loading: false }
       : { data: { screen_universe: [], portfolio_coverage: [], research: [], benchmark_history: { dates } }, loading: false })
-    useFirebasePortfolio.mockReturnValue({ positions: [], loading: false })
+    useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'MSFT', shares: 1, snapshotSource: 'User-provided brokerage snapshot' }], loading: false })
     usePreferences.mockReturnValue({ preferences: { defaultBenchmark: 'SPY', privacyMode: false, numberFormat: 'en-US' } })
     useFirebaseFinances.mockReturnValue({
       settings: {
@@ -76,6 +76,9 @@ describe('Planning hub', () => {
     expect(await screen.findByLabelText('Success probability 68 percent')).toBeInTheDocument()
     expect(screen.getByText('Needs attention')).toBeInTheDocument()
     expect(screen.getByText(/Raising monthly contributions by \$150 moves this from 68% to 81%/)).toBeInTheDocument()
+    expect(screen.getAllByText('+32.32%').length).toBeGreaterThan(0)
+    expect(screen.getByText('Now')).toBeInTheDocument()
+    expect(screen.getByRole('slider', { name: /Target retirement age/ })).toHaveAttribute('min', '36')
   })
 
   it('resimulates a lever on release and exposes goal probability', async () => {

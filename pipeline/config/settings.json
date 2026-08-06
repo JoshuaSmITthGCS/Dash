@@ -270,12 +270,16 @@
     "portfolio_minimum_history_months": 36,
     "sparse_history_minimum_days": 30,
     "sparse_history_extension_months": 36,
+    "baseline_lookback_days": 365,
+    "baseline_minimum_days": 30,
+    "minimum_volatility_for_rescaling_pct": 0.1,
+    "minimum_years_until_retirement": 1,
     "percentiles": [0.1, 0.25, 0.5, 0.75, 0.9],
     "default_retirement_end_age": 95,
     "default_monthly_withdrawal": 3000.0,
     "default_inflation_pct": 2.5,
     "minimum_horizon_years": 1,
-    "maximum_horizon_years": 70,
+    "maximum_horizon_years": 120,
     "interaction_budget_ms": 400,
     "success_bands": [
       { "minimum": 0.8, "label": "On track" },
@@ -284,7 +288,7 @@
     ],
     "lever_ranges": {
       "monthly_contribution": { "minimum": 0, "maximum": 5000, "step": 50 },
-      "retirement_age": { "minimum": 50, "maximum": 80, "step": 1 },
+      "retirement_age": { "minimum": 18, "maximum": 80, "step": 1 },
       "annual_withdrawal": { "minimum": 0, "maximum": 240000, "step": 1000 }
     },
     "contribution_lever_step": 150,
@@ -306,13 +310,13 @@
     "sequence_chart_height": 120,
     "days_per_year": 365.25,
     "milliseconds_per_day": 86400000,
-    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. A portfolio needs three years of observed monthly returns for the standard model. With shorter portfolio history spanning at least 30 days, the model uses the selected benchmark's full monthly history and shifts its geometric mean to the annualized return actually observed for the portfolio. Observed months are never repeated or synthesized. Allocation scenarios rescale that historical return structure to the configured annual return and volatility pair."
+    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. The center is the user's trailing 365-day time-weighted return, annualized over the available span when at least 30 days are present. A supplied brokerage one-year return takes precedence because it already adjusts for cash-flow timing. With shorter portfolio history, the model uses the selected benchmark's full monthly history around that personal baseline. Observed months are never repeated or synthesized. Allocation scenarios change dispersion around the personal baseline. Their configured annual return is used only when no personal baseline exists."
   },
   "interface": {
     "home_signal_limit": 4,
     "home_theme_limit": 6,
     "mobile_preview_positions": [
-      {"id": "preview-msft", "ticker": "MSFT", "shares": 12, "costBasis": 430, "purchaseDate": "2025-01-02"},
+      {"id": "preview-msft", "ticker": "MSFT", "shares": 12, "costBasis": 430, "purchaseDate": "2025-01-02", "snapshotSource": "User-provided brokerage snapshot"},
       {"id": "preview-aapl", "ticker": "AAPL", "shares": 20, "costBasis": 260, "purchaseDate": "2025-01-02"},
       {"id": "preview-qcom", "ticker": "QCOM", "shares": 30, "costBasis": 140, "purchaseDate": "2025-01-02"},
       {"id": "preview-voo", "ticker": "VOO", "shares": 10, "costBasis": 650, "purchaseDate": "2025-01-02"}

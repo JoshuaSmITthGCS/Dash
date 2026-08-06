@@ -37,6 +37,7 @@ export default function ProjectionPanel({ state, source, money, startAge = null,
       <span className="projection-path-count">{result.pathCount.toLocaleString()} paths</span>
     </header>
     {assumptionNote && <p className="projection-assumption">{assumptionNote}</p>}
+    {source.baseline && <div className="projection-baseline-readout"><span>Annualized return baseline</span><strong>{source.baseline.annualizedReturnPct >= 0 ? '+' : '−'}{Math.abs(source.baseline.annualizedReturnPct).toFixed(2)}%</strong><small>{source.baseline.label}{source.baseline.endDate ? ` through ${source.baseline.endDate}` : ''}</small></div>}
     {source.benchmarkBased && <aside className="projection-source-warning" role="note"><strong>Short portfolio history</strong><span>{source.fallbackReason}</span></aside>}
     {showSuccess && hasWithdrawalPhase && <div className="projection-success" aria-label={`Retirement success probability ${successPct.toFixed(0)} percent`}>
       <span>Probability savings last to age {endAge}</span>
@@ -55,7 +56,7 @@ export default function ProjectionPanel({ state, source, money, startAge = null,
     </aside>}
     <details className="projection-disclosure">
       <summary>Model and data disclosure</summary>
-      <p>{result.model} using {source.label} from {source.startDate} to {source.endDate}. The model ran {result.pathCount.toLocaleString()} paths and samples returns in consecutive {result.blockMonths}-month blocks. {source.fallbackReason || 'Portfolio history cleared the configured three-year gate.'} Simulated outcomes are not predictions.</p>
+      <p>{result.model} using {source.label} from {source.startDate} to {source.endDate}. The model ran {result.pathCount.toLocaleString()} paths and samples returns in consecutive {result.blockMonths}-month blocks. {source.baseline ? `Monthly outcomes are centered on ${source.baseline.label} at ${source.baseline.annualizedReturnPct.toFixed(2)}% annualized.` : 'No personal trailing return is available, so the allocation fallback supplies the return center.'} {source.fallbackReason || 'Portfolio history cleared the configured three-year gate.'} Simulated outcomes are not predictions.</p>
     </details>
   </section>
 }

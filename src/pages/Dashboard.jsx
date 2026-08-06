@@ -37,10 +37,11 @@ import { usePullToRefresh } from '../lib/usePullToRefresh.js'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh.js'
 import { aggregateThemeExposure } from '../lib/factorAnalytics.js'
+import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
 
 const WATCH_KEY = 'valuesignal.watchlist'
-const PERIODS = ['1D', '1W', '1M', '3M', '6M', '1Y', 'All']
+const PERIODS = ['1D', '1W', '1M', '3M', 'YTD', '1Y', 'All']
 const BENCHMARK_STYLES = [
   { color: 'var(--series-benchmark)', dashPattern: '7 5' },
   { color: 'var(--series-benchmark-2)', dashPattern: '3 4' },
@@ -146,7 +147,7 @@ function ReportProjection({ input, source, money, currentAge, retirementAge, con
     startAge={currentAge}
     retirementAge={retirementAge}
     title="Long-range outcome distribution"
-    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments.`}
+    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. ${source.baseline ? `The range is centered on your ${source.baseline.annualizedReturnPct.toFixed(2)}% annualized trailing return.` : 'The range uses the selected allocation fallback until a personal trailing return is available.'}`}
   /><Link className="primary-button planning-home-link" to="/planning">Open Planning</Link></div>
 }
 
@@ -248,9 +249,18 @@ export default function Dashboard() {
   const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
     ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
     : null
-  const projectionSource = selectProjectionReturnSource(holdingsSeries, primaryBenchmarkHistory, preferences.defaultBenchmark)
+  const projectionSource = selectProjectionReturnSource(
+    holdingsSeries,
+    primaryBenchmarkHistory,
+    preferences.defaultBenchmark,
+    fidelityProjectionBaseline(positions),
+  )
   const planningReturns = projectionSource.available
-    ? applyAllocationAssumption(projectionSource.returns, finances.settings.allocationAggressiveness || projectionConfig.allocation_default)
+    ? applyAllocationAssumption(
+      projectionSource.returns,
+      finances.settings.allocationAggressiveness || projectionConfig.allocation_default,
+      projectionSource.baseline?.annualizedReturn,
+    )
     : []
   const projectionInput = projectionSource.available ? {
     monthlyReturns: planningReturns,
