@@ -12,6 +12,7 @@ from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_cha
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
+from confidence import confidence_components, run_source_reliability
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
@@ -1066,6 +1067,21 @@ def run():
     )) if sec.available else ()
     insider_signals, sec_failures = collect_insider_signals(sec, insider_candidates)
 
+    # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
+    # Form 4) are shared across every published company, so there is no per-ticker source
+    # reliability signal to attach -- only a run-wide one.
+    source_reliability_this_run = run_source_reliability({
+        "yahoo_statement_enrichment": (
+            "unavailable" if enrichment_diagnostics["attempted"] == 0 else
+            "failed" if enriched_count == 0 else
+            "degraded" if enriched_count < enrichment_diagnostics["attempted"] else
+            "healthy"
+        ),
+        "sec_form4": ("unavailable" if not sec.available else
+                     "degraded" if sec_failures else "healthy"),
+        "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
+    })
+
     research = []
     for context in contexts:
         symbol = context["symbol"]
@@ -1086,6 +1102,7 @@ def run():
             "normalization_mode": SETTINGS.get("normalization_mode", "bands"),
             "score": row["score"],
             "base_score": row["base_score"],
+            "raw_score": row["raw_score"],
             "confidence": row["confidence"],
             "components": row["components"],
             "fundamental_categories": row["fundamental_categories"],
@@ -1106,6 +1123,9 @@ def run():
             row["score_variants"]["challenger"] = cross_sectional_challenger(
                 row, context["snapshot"], cross_normalizer,
             )
+        row["confidence_detail"] = confidence_components(
+            row, source_reliability=source_reliability_this_run,
+        )
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)

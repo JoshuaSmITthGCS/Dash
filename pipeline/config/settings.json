@@ -45,6 +45,13 @@
     }
   },
   "short_horizon_treatment": "legacy_momentum",
+  "confidence": {
+    "_comment": "Decomposes the single confidence scalar (weighted fundamental/technical/news coverage, see scorer.weighted_coverage) into the components docs/RESEARCH-CONTRACT.md's confidence redesign calls for. This is additive: it does not change the score, the champion formula, or the existing 'confidence' field -- it publishes a confidence_detail breakdown alongside it so a low score can be explained ('why') rather than just observed.",
+    "freshness_stale_after_hours": 36,
+    "peer_sample_full_strength_count": 20,
+    "model_agreement_scale_points": 15.0,
+    "historical_calibration_minimum_periods": 24
+  },
   "validation": {
     "horizons_days": {
       "1M": 30,

@@ -1,0 +1,141 @@
+"""Confidence-component decomposition (docs/RESEARCH-CONTRACT.md).
+
+The champion's single ``confidence`` scalar (``advisor_engine.blend_research_components``)
+mixes several distinct kinds of uncertainty into one number: how much data resolved, how
+stale it is, how many peers a company was ranked against, and how much the challenger
+variants agree with the champion. Collapsing all of that into one number means a low
+confidence score cannot be explained, only observed -- exactly the complaint that motivated
+this module (see docs/BASELINE-2026-08-06.md).
+
+This is additive. It does not change ``row["confidence"]``, the champion formula, or how
+confidence feeds the score. It publishes a ``confidence_detail`` breakdown alongside the
+existing scalar so *why* confidence is low becomes visible.
+"""
+
+import statistics
+from datetime import datetime, timezone
+
+from scorer import SETTINGS
+
+CFG = SETTINGS.get("confidence", {})
+
+# Providers that are intentionally not attempted this run (opt-in features, quota-gated
+# intraday refreshes) must not drag reliability down -- an unconfigured feature is not the
+# same thing as a broken one.
+_NOT_CONFIGURED_STATUSES = {"unavailable", "opt_in", "disabled_for_intraday_refresh",
+                            "configuration_required"}
+
+
+def _clamp01(value):
+    return max(0.0, min(1.0, value))
+
+
+def completeness_component(row):
+    """Identical to the blend the champion's confidence scalar already computes (see
+    advisor_engine.blend_research_components/shrink_research_components) -- reused, not
+    rewritten, so this component and the scalar can never silently disagree.
+    """
+    fundamentals = (row.get("fundamental_detail") or {}).get("coverage") or 0.0
+    technical = (row.get("technical_detail") or {}).get("coverage") or 0.0
+    sentiment = (row.get("sentiment_detail") or {}).get("coverage") or 0.0
+    return round(0.65 * fundamentals + 0.25 * technical + 0.10 * sentiment, 2)
+
+
+def freshness_component(row, *, now=None):
+    """1.0 at zero age, decaying linearly to 0.0 at twice the stale-after threshold used
+    elsewhere in the pipeline (pit_store.freshness_report, data_freshness reporting).
+    """
+    stale_after = CFG.get("freshness_stale_after_hours", 36)
+    stamp = row.get("data_fetched_at")
+    if not stamp:
+        return None
+    try:
+        observed = datetime.fromisoformat(stamp)
+    except (TypeError, ValueError):
+        return None
+    if observed.tzinfo is None:
+        observed = observed.replace(tzinfo=timezone.utc)
+    age_hours = ((now or datetime.now(timezone.utc)) - observed).total_seconds() / 3600
+    if age_hours <= 0:
+        return 1.0
+    if not stale_after:
+        return None
+    return round(_clamp01(1 - age_hours / (2 * stale_after)), 2)
+
+
+def peer_sample_component(row):
+    """How close the company's peer group is to the industry full-strength count the
+    hierarchical-normalization design in docs/RESEARCH-CONTRACT.md targets (currently 20;
+    see pipeline/config/settings.json confidence.peer_sample_full_strength_count).
+    """
+    percentile = row.get("valuation_percentile") or {}
+    peer_count = percentile.get("peer_count_with_valid_data")
+    full_strength = CFG.get("peer_sample_full_strength_count", 20)
+    if peer_count is None or not full_strength:
+        return None
+    return round(_clamp01(peer_count / full_strength), 2)
+
+
+def model_agreement_component(row):
+    """1.0 when every scored variant (champion + challengers) agrees; decays as their final
+    scores spread apart. The scale is configurable rather than a bare magic number: a spread
+    of one full scale unit (confidence.model_agreement_scale_points) floors agreement at 0.
+    """
+    variants = row.get("score_variants") or {}
+    scores = [variant.get("score") for variant in variants.values() if isinstance(variant, dict)]
+    scores = [value for value in scores if isinstance(value, (int, float))]
+    scale = CFG.get("model_agreement_scale_points", 15.0)
+    if len(scores) < 2 or not scale:
+        return None
+    spread = statistics.pstdev(scores)
+    return round(_clamp01(1 - spread / scale), 2)
+
+
+def run_source_reliability(source_health):
+    """Fraction of *configured* providers that resolved healthy this refresh.
+
+    This is a run-wide signal (identical for every row published in the same refresh), not a
+    per-ticker one -- there is no per-symbol reliability signal for e.g. the FRED macro
+    regime, which is shared across every row. ``source_health`` is a plain
+    ``{name: "healthy" | "degraded" | "failed" | <not-configured status>}`` map built once
+    per run; unconfigured/opt-in providers are excluded rather than penalized.
+    """
+    if not source_health:
+        return None
+    weight = healthy = 0
+    for status in source_health.values():
+        if status in _NOT_CONFIGURED_STATUSES:
+            continue
+        weight += 1
+        if status == "healthy":
+            healthy += 1
+        elif status == "degraded":
+            healthy += 0.5
+    return round(healthy / weight, 2) if weight else None
+
+
+def confidence_components(row, *, source_reliability=None, now=None):
+    """Full confidence breakdown for one published row:
+      {"confidence": <existing scalar>, "components": {...}, "limitations": [...]}
+
+    ``confidence`` is exactly ``row["confidence"]`` -- unchanged. ``historical_calibration``
+    stays null until the IC harness has enough prospective periods; as of
+    docs/BASELINE-2026-08-06.md that harness has observed 0 of the 24 periods it requires, so
+    reporting anything else here would be inventing evidence.
+    """
+    calibration_minimum = CFG.get("historical_calibration_minimum_periods", 24)
+    components = {
+        "completeness": completeness_component(row),
+        "freshness": freshness_component(row, now=now),
+        "source_reliability": source_reliability,
+        "peer_sample": peer_sample_component(row),
+        "model_agreement": model_agreement_component(row),
+        "historical_calibration": None,
+    }
+    limitations = [
+        f"insufficient prospective calibration history (requires {calibration_minimum} eligible IC periods)"
+    ]
+    for name, value in components.items():
+        if value is None and name != "historical_calibration":
+            limitations.append(f"{name} unavailable for this row")
+    return {"confidence": row.get("confidence"), "components": components, "limitations": limitations}

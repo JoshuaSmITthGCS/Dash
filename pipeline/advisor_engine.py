@@ -817,7 +817,7 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
         "market_behavior": technical_parts.get("coverage", 0),
         "news_sentiment": sentiment_parts.get("coverage", 0),
     })
-    confidence, base = blended["confidence"], blended["base_score"]
+    confidence, base, raw_score = blended["confidence"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
                                        insider_activity)
     categories = fundamental_parts.get("categories", {})
@@ -832,7 +832,8 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
         extended=extended,
     )
     return {
-        **snapshot, "score": score, "base_score": base, "stance": stance, "confidence": confidence,
+        **snapshot, "score": score, "base_score": base, "raw_score": raw_score, "stance": stance,
+        "confidence": confidence,
         "components": components, "fundamental_categories": categories,
         "fundamental_detail": fundamental_parts, "technical_detail": technical_parts,
         "sentiment_detail": sentiment_parts, "modifiers": modifiers,
