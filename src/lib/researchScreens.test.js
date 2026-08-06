@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
 import {
-  activeThemes, rankFastGrowth, rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
+  activeThemes, rankBreakoutInProgress, rankEmergingGrowth, rankGrowingEtfs, rankMomentum,
+  rankReversal, rankThemeExposure, rankValueTurnarounds,
 } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
@@ -124,23 +125,78 @@ describe('fast growth / breakout screen', () => {
     const grinding = breakoutRow('GRIND', { technical_detail: { return_20d: 28, return_5d: 3, volume_ratio_60d: 1.1 } })
     const flat = breakoutRow('FLAT', { technical_detail: { return_20d: 1, return_5d: 1, volume_ratio_60d: 1 } })
 
-    expect(rankFastGrowth([grinding, flat, breakout]).map((item) => item.ticker)).toEqual(['BREAK'])
+    expect(rankBreakoutInProgress([grinding, flat, breakout]).map((item) => item.ticker)).toEqual(['BREAK'])
   })
 
   it('excludes a weekly pop that is still net negative for the month', () => {
     const stillDown = breakoutRow('DOWN', { technical_detail: { return_20d: -5, return_5d: 3, volume_ratio_60d: 1 } })
-    expect(rankFastGrowth([stillDown])).toEqual([])
+    expect(rankBreakoutInProgress([stillDown])).toEqual([])
   })
 
   it('ranks the sharpest, most volume-confirmed acceleration first', () => {
     const sharper = breakoutRow('SHARP', { technical_detail: { return_20d: 12, return_5d: 12, volume_ratio_60d: 1.6 } })
     const milder = breakoutRow('MILD', { technical_detail: { return_20d: 8, return_5d: 6, volume_ratio_60d: 1.1 } })
-    expect(rankFastGrowth([milder, sharper]).map((item) => item.ticker)).toEqual(['SHARP', 'MILD'])
+    expect(rankBreakoutInProgress([milder, sharper]).map((item) => item.ticker)).toEqual(['SHARP', 'MILD'])
   })
 
   it('tolerates missing volume data by treating it as neutral', () => {
     const noVolume = breakoutRow('NOVOL', { technical_detail: { return_20d: 9, return_5d: 8, volume_ratio_60d: undefined } })
-    expect(rankFastGrowth([noVolume]).map((item) => item.ticker)).toEqual(['NOVOL'])
+    expect(rankBreakoutInProgress([noVolume]).map((item) => item.ticker)).toEqual(['NOVOL'])
+  })
+})
+
+describe('emerging growth screen (prospective, unvalidated)', () => {
+  const emergingRow = (ticker, overrides = {}) => row(ticker, {
+    technical_detail: { return_5d: 1, relative_strength_20d: 3 },
+    fundamental_detail: { revenue_growth: 0.15, operating_margin_trend: 0.02 },
+    history: { closes: Array.from({ length: 80 }, (_, index) => 100 + index * 0.1) },
+    ...overrides,
+  })
+
+  it('qualifies a name with real growth and early strength that has not yet popped', () => {
+    const candidate = emergingRow('EARLY')
+    expect(rankEmergingGrowth([candidate]).map((item) => item.ticker)).toEqual(['EARLY'])
+  })
+
+  it('every result is explicitly labeled prospective_unvalidated', () => {
+    const candidate = emergingRow('EARLY')
+    const [result] = rankEmergingGrowth([candidate])
+    expect(result.research_status).toBe('prospective_unvalidated')
+  })
+
+  it('excludes anything the breakout screen would already catch, so the two screens do not overlap', () => {
+    const alreadyBroken = emergingRow('BROKE', { technical_detail: { return_5d: 8, relative_strength_20d: 6 } })
+    expect(rankEmergingGrowth([alreadyBroken])).toEqual([])
+  })
+
+  it('excludes names without a real, meaningful revenue growth rate', () => {
+    const noGrowth = emergingRow('FLAT', { fundamental_detail: { revenue_growth: 0.01 } })
+    const negativeGrowth = emergingRow('SHRINK', { fundamental_detail: { revenue_growth: -0.05 } })
+    expect(rankEmergingGrowth([noGrowth, negativeGrowth])).toEqual([])
+  })
+
+  it('excludes names without positive early relative strength', () => {
+    const weak = emergingRow('WEAK', { technical_detail: { return_5d: 1, relative_strength_20d: -2 } })
+    expect(rankEmergingGrowth([weak])).toEqual([])
+  })
+
+  it('does not require estimate revision data to qualify or rank', () => {
+    const withoutRevisions = emergingRow('NOREV')
+    const [result] = rankEmergingGrowth([withoutRevisions])
+    expect(result).toBeTruthy()
+    expect(result.screen.revisionBreadth).toBeNull()
+  })
+
+  it('ranks stronger growth and strength higher', () => {
+    const stronger = emergingRow('STRONG', {
+      fundamental_detail: { revenue_growth: 0.30, operating_margin_trend: 0.05 },
+      technical_detail: { return_5d: 1, relative_strength_20d: 8 },
+    })
+    const milder = emergingRow('MILD', {
+      fundamental_detail: { revenue_growth: 0.08, operating_margin_trend: 0.0 },
+      technical_detail: { return_5d: 1, relative_strength_20d: 1 },
+    })
+    expect(rankEmergingGrowth([milder, stronger]).map((item) => item.ticker)).toEqual(['STRONG', 'MILD'])
   })
 })
 
@@ -219,5 +275,55 @@ describe('bull/bear thesis score', () => {
 
   it('returns no score when evidence is unavailable', () => {
     expect(bullBearScore({})).toBeNull()
+  })
+})
+
+describe('invariant: no stock screen ever includes an ETF', () => {
+  // A fund holds no per-security fundamentals or technical_detail shaped for one company,
+  // so it can never legitimately clear a stock screen. Every screen below must exclude
+  // is_etf rows even if a caller passes a mixed array.
+  const strongEtfShapedAsAStock = row('SPY_LIKE', {
+    is_etf: true,
+    components: { fundamentals: 99, market_behavior: 99, news_sentiment: 99 },
+    fundamental_categories: { valuation: 99 },
+    technical_detail: {
+      return_5d: 10, return_20d: 20, relative_strength_20d: 10, trend: 99,
+      relative_strength: 99, volume_confirmation: 99, risk: 99, drawdown_60d: -1,
+      volume_ratio_60d: 2,
+    },
+    history: { closes: [...Array(51).fill(100), 105, 120] },
+  })
+  const genuineStock = row('AAPL', {
+    technical_detail: { return_5d: 3, return_20d: 3, relative_strength_20d: 1 },
+  })
+
+  it.each([
+    ['rankValueTurnarounds', rankValueTurnarounds],
+    ['rankMomentum', rankMomentum],
+    ['rankReversal', rankReversal],
+    ['rankBreakoutInProgress', rankBreakoutInProgress],
+  ])('%s excludes ETF rows even when the ETF would otherwise dominate the ranking', (_, screenFn) => {
+    const results = screenFn([strongEtfShapedAsAStock, genuineStock], 5)
+
+    expect(results.some((item) => item.is_etf)).toBe(false)
+  })
+
+  it('rankEmergingGrowth excludes an ETF that would otherwise clear every gate', () => {
+    const etfThatWouldQualify = row('FUND_LIKE', {
+      is_etf: true,
+      technical_detail: { return_5d: 1, relative_strength_20d: 5 },
+      fundamental_detail: { revenue_growth: 0.2, operating_margin_trend: 0.03 },
+      history: { closes: Array.from({ length: 80 }, (_, index) => 100 + index * 0.1) },
+    })
+    const genuineCandidate = row('REALCO', {
+      technical_detail: { return_5d: 1, relative_strength_20d: 3 },
+      fundamental_detail: { revenue_growth: 0.15, operating_margin_trend: 0.02 },
+      history: { closes: Array.from({ length: 80 }, (_, index) => 100 + index * 0.1) },
+    })
+
+    const results = rankEmergingGrowth([etfThatWouldQualify, genuineCandidate], 5)
+
+    expect(results.some((item) => item.is_etf)).toBe(false)
+    expect(results.map((item) => item.ticker)).toEqual(['REALCO'])
   })
 })

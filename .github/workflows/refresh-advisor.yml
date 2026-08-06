@@ -167,6 +167,9 @@ jobs:
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py
+      - name: Rank-turnover and score-stability diagnostics
+        if: steps.refresh_window.outputs.should_run == 'true'
+        run: python pipeline/stability_report.py || echo "::warning::Stability report failed; keeping previous stability.json"
       - name: Evaluate user alert rules
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/evaluate_alerts.py

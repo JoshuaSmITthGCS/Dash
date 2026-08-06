@@ -4,11 +4,12 @@ import { Tier, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
 import { ActionPill } from '../components/ActionGuidance.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
+import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import { getRecommendation } from '../lib/recommendation'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
-import { rankFastGrowth, rankMomentum, rankReversal } from '../lib/researchScreens.js'
+import { rankBreakoutInProgress, rankMomentum, rankReversal } from '../lib/researchScreens.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 
@@ -69,6 +70,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
         <span className="rank-badge">#{rank}</span>
         <CompanyLogo company={row} size={42} />
         <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+        <WatchlistToggleButton stock={row} size={18} />
         <span className="mobile-score">{row.score}<small>score</small></span>
       </div>
       <div className="research-card-badges">
@@ -109,6 +111,47 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
   )
 }
 
+function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatuses, onBuy }) {
+  if (!rows.length) return null
+  return (
+    <section className="research-pool" aria-label={label}>
+      {label && <h2 className="research-pool-title">{label} <span className="research-pool-count">{rows.length}</span></h2>}
+      <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={390}
+        renderItem={(row, index) => <ResearchCard row={row}
+          rank={index + 1} onOpen={onOpen}
+          held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
+          buyStatus={buyStatuses[row.ticker]} onBuy={onBuy} />} />
+      <div className="research-table card">
+        <table>
+          <thead><tr>
+            <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Research rating</th><th scope="col">Signal</th>
+            <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
+            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Portfolio</th>
+            <th scope="col"><span className="sr-only">Watchlist</span></th><th scope="col"><span className="sr-only">Open</span></th>
+          </tr></thead>
+          <tbody>{rows.map((row, index) => (
+            <tr key={row.ticker}>
+              <td className="rank">#{index + 1}</td>
+              <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
+              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
+              <td><Tier label={row.stance} /></td><td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
+              <td className="mono num score-cell">{row.score}</td>
+              <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
+              <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
+              <td className="mono num">{Math.round((row.confidence || 0) * 100)}%</td>
+              <td>{heldTickers.has(row.ticker)
+                ? <span className="holding-chip held">Bought</span>
+                : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => onBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>}</td>
+              <td><WatchlistToggleButton stock={row} size={17} /></td>
+              <td><button className="icon-button" onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
 export default function Picks() {
   const { data, loading } = useData('advisor.json')
   const { data: etfData, loading: etfLoading } = useData('etfs.json')
@@ -132,7 +175,7 @@ export default function Picks() {
   const research = useMemo(() => {
     const momentumTickers = new Set(rankMomentum(stockResearch, stockResearch.length).map((row) => row.ticker))
     const reversalTickers = new Set(rankReversal(stockResearch, stockResearch.length).map((row) => row.ticker))
-    const breakoutTickers = new Set(rankFastGrowth(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const breakoutTickers = new Set(rankBreakoutInProgress(stockResearch, stockResearch.length).map((row) => row.ticker))
     return [
       ...stockResearch.map((row) => ({
         ...row,
@@ -153,16 +196,27 @@ export default function Picks() {
   if (!data?.research) return <Empty />
 
   const normalized = query.trim().toLowerCase()
-  const rows = research
+  // Stocks and ETFs are scored by two different models (fundamentals-first vs a blended
+  // performance/risk/cost/liquidity/quality fund score) with different scales and
+  // distributions – sorting or bucket-weighting them together as one "score" ranking made
+  // whichever model happened to produce higher numbers crowd out the other. Filtering keeps
+  // both pools available; ranking never mixes them again after this split.
+  const filtered = research
     .filter((row) => sector === 'all' || row.sector === sector)
-    .filter((row) => assetType === 'all' || (assetType === 'etf') === Boolean(row.is_etf))
     .filter((row) => ownership === 'all' || (ownership === 'bought') === heldTickers.has(row.ticker))
     .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || String(row.name || '').toLowerCase().includes(normalized))
-    .slice().sort(SORTS[sort][1])
+  const stockRows = filtered.filter((row) => !row.is_etf).slice().sort(SORTS[sort][1])
+  const etfRows = filtered.filter((row) => row.is_etf).slice().sort(SORTS[sort][1])
+  const showStocks = assetType !== 'etf'
+  const showEtfs = assetType !== 'stock'
+  const rows = [...(showStocks ? stockRows : []), ...(showEtfs ? etfRows : [])]
 
-  // Buckets follow whatever's currently filtered and sorted above – change the sort to
-  // "Fundamentals" and the buckets re-weight around that ranking instead of the default score.
-  const allocation = allocateFunds(rows, Number(availableFunds), { limit: 8 })
+  // Ranked separately for the same reason: exponentiating an ETF's fund score and a stock's
+  // fundamentals score into one weighted split would let the model with the larger raw
+  // numbers dominate the bucket sizes regardless of actual conviction. Default view
+  // allocates across stocks; switch the asset-type filter to ETFs to allocate across those.
+  const allocationPool = assetType === 'etf' ? etfRows : stockRows
+  const allocation = allocateFunds(allocationPool, Number(availableFunds), { limit: 8 })
 
   const handleQuickBuy = async (row) => {
     const price = Number(row.price)
@@ -219,8 +273,11 @@ export default function Picks() {
           </label>
         </header>
         <p className="allocation-planner-note">
-          Weighted by score against the top {Math.min(rows.length, 8)} companies in the current sort and filters. This is not an
-          even split. A higher-scored company gets a disproportionately larger bucket, the way a real allocation would.
+          Weighted by score against the top {Math.min(allocationPool.length, 8)} {assetType === 'etf' ? 'ETFs' : 'stocks'} in
+          the current sort and filters. This is not an even split. A higher-scored {assetType === 'etf' ? 'fund' : 'company'} gets
+          a disproportionately larger bucket, the way a real allocation would. Stocks and ETFs are never weighted against each
+          other here – they come from two different scoring models with different scales, so mixing them would let whichever
+          model happens to produce larger numbers dominate the split.
         </p>
         {allocation.available ? (
           <div className="allocation-bucket-list">
@@ -242,37 +299,12 @@ export default function Picks() {
         )}
       </section>
 
-      <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={390}
-        renderItem={(row, index) => <ResearchCard row={row}
-          rank={index + 1} onOpen={setSelectedStock}
-          held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
-          buyStatus={buyStatuses[row.ticker]} onBuy={handleQuickBuy} />} />
-
-      <div className="research-table card">
-        <table>
-          <thead><tr>
-            <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Research rating</th><th scope="col">Signal</th>
-            <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
-            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Portfolio</th><th scope="col"><span className="sr-only">Open</span></th>
-          </tr></thead>
-          <tbody>{rows.map((row) => (
-            <tr key={row.ticker}>
-              <td className="rank">#{rows.findIndex((item) => item.ticker === row.ticker) + 1}</td>
-              <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
-              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
-              <td><Tier label={row.stance} /></td><td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
-              <td className="mono num score-cell">{row.score}</td>
-              <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
-              <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
-              <td className="mono num">{Math.round((row.confidence || 0) * 100)}%</td>
-              <td>{heldTickers.has(row.ticker)
-                ? <span className="holding-chip held">Bought</span>
-                : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => handleQuickBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>}</td>
-              <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
-            </tr>
-          ))}</tbody>
-        </table>
-      </div>
+      {showStocks && <ResearchPool label={showStocks && showEtfs ? 'Stocks' : null} rows={stockRows}
+        onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
+        buyStatuses={buyStatuses} onBuy={handleQuickBuy} />}
+      {showEtfs && <ResearchPool label={showStocks && showEtfs ? 'ETFs' : null} rows={etfRows}
+        onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
+        buyStatuses={buyStatuses} onBuy={handleQuickBuy} />}
 
       {!rows.length && <Empty note="No companies match those filters." />}
       <div className="disclaimer">Research includes {stockResearch.length} ranked companies and {etfData?.etfs?.length || 0} ETFs. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>

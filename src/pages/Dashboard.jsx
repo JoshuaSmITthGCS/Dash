@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { useWatchlist } from '../lib/useWatchlist.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
@@ -22,7 +23,7 @@ import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
-import { rankFastGrowth, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
+import { rankBreakoutInProgress, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
 import {
   actualRecordedValueSeries,
   PORTFOLIO_HISTORY_LABELS,
@@ -41,7 +42,6 @@ import { aggregateThemeExposure } from '../lib/factorAnalytics.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
 
-const WATCH_KEY = 'valuesignal.watchlist'
 const PERIODS = ['1D', '1W', '1M', '3M', 'YTD', '1Y', 'All']
 const BENCHMARK_STYLES = [
   { color: 'var(--series-benchmark)', dashPattern: '7 5' },
@@ -178,7 +178,8 @@ export default function Dashboard() {
   const [draftWidgets, setDraftWidgets] = useState(preferences.widgets)
   const [pullRefreshing, setPullRefreshing] = useState(false)
   const customize = new window.URLSearchParams(window.location.search).get('customize') === '1'
-  const watchlist = useMemo(() => { try { return JSON.parse(localStorage.getItem(WATCH_KEY)) || [] } catch { return [] } }, [])
+  const { items: watchlistItems } = useWatchlist()
+  const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 
   const reloadHomeData = useCallback(async () => {
     const [latestReport] = await Promise.all([reloadReport(), reloadAdvisor(), reloadEtfs(), reloadBenchmarks()])
@@ -279,7 +280,7 @@ export default function Dashboard() {
   const mood = portfolioMood({ returnPct: returnSummary.strategy.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
   const screenRows = [...new Map([...rows, ...(data.screen_universe || [])].map((row) => [row.ticker, row])).values()]
   const focusedScreens = [
-    { title: 'Fast growth breakouts', kicker: 'Fast growth', note: 'Sharp acceleration this week', rows: rankFastGrowth(screenRows, 3), metric: (row) => ({ label: '5 days', value: row.screen.weekReturn }), to: '/screens/fast-growth' },
+    { title: 'Fast growth breakouts', kicker: 'Fast growth', note: 'Sharp acceleration this week', rows: rankBreakoutInProgress(screenRows, 3), metric: (row) => ({ label: '5 days', value: row.screen.weekReturn }), to: '/screens/fast-growth' },
     { title: 'Value near 52-week lows', kicker: 'Value turnarounds', note: 'Quality plus a positive latest week', rows: rankValueTurnarounds(screenRows, 3), metric: (row) => ({ label: 'Above low', value: row.screen.aboveLow }), to: '/screens/quality-value' },
     { title: 'Recent momentum', kicker: 'Momentum', note: 'Positive week and month', rows: rankMomentum(screenRows, 3), metric: (row) => ({ label: '20 days', value: row.screen.monthReturn }), to: '/screens/momentum' },
     { title: 'Short-term reversals', kicker: 'Reversal', note: '20-day pullback turning up', rows: rankReversal(screenRows, 3), metric: (row) => ({ label: 'This week', value: row.screen.weekReturn }), to: '/screens/matrix' },

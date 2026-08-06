@@ -2,12 +2,14 @@ import os
 import sys
 import unittest
 
+import pandas as pd
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (_screen_row, build_portfolio_coverage, carry_forward_rows,
-                           compact_news, curate_candidate_news, latest_unique_news,
+                           compact_news, curate_candidate_news, enrich, latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols,
-                           resolve_refresh_symbols, select_enrichment_priority)
+                           resolve_refresh_symbols, select_enrichment_priority, yahoo_extended)
 
 
 class RefreshSymbolTests(unittest.TestCase):
@@ -246,6 +248,97 @@ class ScreenRowProjectionTests(unittest.TestCase):
 
         self.assertEqual(projected["ticker"], "IBM")
         self.assertTrue(projected["stale_carryforward"])
+
+
+def _statement_frame(rows):
+    """Two-period yfinance-shaped statement DataFrame (columns=periods, index=line items)."""
+    return pd.DataFrame(rows, index=["2025-12-31", "2024-12-31"]).T
+
+
+class _FakeTickerObj:
+    """A ticker whose statement frames resolve fine but whose ``.info`` call fails -- the
+    2026-08-06 production failure mode this test guards against."""
+
+    def __init__(self, info_error=None):
+        self._info_error = info_error
+        self.income_stmt = _statement_frame({
+            "Total Revenue": [1000.0, 900.0], "EBIT": [200.0, 170.0],
+            "Net Income": [150.0, 120.0], "Pretax Income": [190.0, 160.0],
+            "Tax Provision": [40.0, 40.0], "Gross Profit": [600.0, 540.0],
+        })
+        self.balance_sheet = _statement_frame({
+            "Total Assets": [2000.0, 1800.0], "Total Debt": [300.0, 300.0],
+            "Stockholders Equity": [1200.0, 1100.0],
+            "Cash And Cash Equivalents": [400.0, 350.0],
+        })
+        self.cashflow = _statement_frame({
+            "Free Cash Flow": [180.0, 150.0], "Operating Cash Flow": [220.0, 190.0],
+            "Capital Expenditure": [-40.0, -40.0],
+        })
+        self.quarterly_income_stmt = pd.DataFrame()
+        self.quarterly_balance_sheet = pd.DataFrame()
+        self.quarterly_cashflow = pd.DataFrame()
+        self.options = ()
+
+    @property
+    def info(self):
+        if self._info_error is not None:
+            raise self._info_error
+        return {"marketCap": 5_000_000_000}
+
+
+class YahooExtendedFailureIsolationTests(unittest.TestCase):
+    """Regression coverage for the 2026-08-06 statement_enriched_count=0 incident: a broken
+    ``.info`` call used to discard successfully-fetched statement frames wholesale."""
+
+    def test_info_failure_does_not_discard_successfully_fetched_statement_frames(self):
+        ticker_obj = _FakeTickerObj(info_error=RuntimeError("crumb negotiation failed"))
+        snapshot = {"market_cap": 5_000_000_000, "price": 50.0, "sector": "Technology"}
+        history = {"closes": [50.0] * 25, "volumes": [1_000_000] * 25}
+        diagnostics = {"attempted": 0, "info_fetch_failed": 0, "statement_fetch_failed": 0,
+                       "derivation_failed": 0, "no_statement_data": 0}
+
+        extended = yahoo_extended("FAKE", ticker_obj, snapshot, history, diagnostics)
+
+        self.assertIsNotNone(extended.get("return_on_invested_capital"))
+        self.assertIsNotNone(extended.get("gross_profits_to_assets"))
+        self.assertGreater(extended.get("extended_coverage", 0), 0)
+        self.assertEqual(diagnostics["info_fetch_failed"], 1)
+
+    def test_healthy_ticker_enriches_with_no_diagnostic_failures(self):
+        ticker_obj = _FakeTickerObj()
+        snapshot = {"market_cap": 5_000_000_000, "price": 50.0, "sector": "Technology"}
+        history = {"closes": [50.0] * 25, "volumes": [1_000_000] * 25}
+        diagnostics = {"attempted": 0, "info_fetch_failed": 0, "statement_fetch_failed": 0,
+                       "derivation_failed": 0, "no_statement_data": 0}
+
+        extended = yahoo_extended("FAKE", ticker_obj, snapshot, history, diagnostics)
+
+        self.assertGreater(extended.get("extended_coverage", 0), 0)
+        self.assertEqual(sum(diagnostics.values()), 0)
+
+    def test_enrich_counts_only_companies_with_positive_extended_coverage(self):
+        # A company whose ticker_obj is None (e.g. yfinance unavailable) must not count as
+        # enriched just because yahoo_extended returns a dict-shaped {} without raising.
+        healthy_context = {
+            "symbol": "GOOD", "ticker_obj": _FakeTickerObj(),
+            "snapshot": {"market_cap": 5_000_000_000, "price": 50.0, "sector": "Technology"},
+            "history": {"closes": [50.0] * 25, "volumes": [1_000_000] * 25},
+        }
+        starved_context = {
+            "symbol": "BAD", "ticker_obj": None,
+            "snapshot": {"market_cap": 1_000_000_000, "price": 10.0, "sector": "Technology"},
+            "history": {"closes": [10.0] * 25, "volumes": [1_000_000] * 25},
+        }
+
+        enriched_count, diagnostics = enrich(
+            [healthy_context, starved_context], limit=2, delay=0,
+        )
+
+        self.assertEqual(enriched_count, 1)
+        self.assertEqual(diagnostics["attempted"], 2)
+        self.assertIn("extended", healthy_context)
+        self.assertNotIn("extended", starved_context)
 
 
 if __name__ == "__main__":

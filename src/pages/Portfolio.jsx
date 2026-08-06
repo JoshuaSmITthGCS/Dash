@@ -25,6 +25,8 @@ import {
   sortPortfolioPositions,
 } from '../lib/portfolioSort'
 import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
+import { explainPortfolioMove } from '../lib/portfolioAttribution.js'
+import PortfolioMoveExplanation from '../components/PortfolioMoveExplanation.jsx'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
@@ -268,6 +270,7 @@ export default function Portfolio() {
     : 0
 
   const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
+  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory)
   const scoreHoldingsSeries = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
@@ -533,6 +536,8 @@ export default function Portfolio() {
       </div>
 
       <PortfolioReturnSummary summary={returnSummary} />
+
+      <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
 
       <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
 

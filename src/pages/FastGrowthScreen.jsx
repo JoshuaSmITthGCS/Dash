@@ -2,22 +2,69 @@ import { useState } from 'react'
 import { useData } from '../lib/useData'
 import { Empty, Loading, Move, Tier } from '../components/Bits.jsx'
 import { ScreenNavigation } from './ResearchScreen.jsx'
-import { rankFastGrowth } from '../lib/researchScreens.js'
+import { rankBreakoutInProgress, rankEmergingGrowth } from '../lib/researchScreens.js'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 
+function BreakoutCard({ row, index, onOpen }) {
+  return <article className="research-mobile-card" key={row.ticker}>
+    <div className="research-card-head">
+      <span className="rank-badge">#{index + 1}</span>
+      <CompanyLogo company={row} size={42} />
+      <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+      <span className="mobile-score">{row.score}<small>score</small></span>
+    </div>
+    <div className="research-card-badges">
+      <Tier label={row.stance} />
+      <span className="chip screen-chip screen-chip-breakout">Breakout</span>
+    </div>
+    <dl className="research-card-metrics">
+      <div><dt>5-day return</dt><dd><Move pct={row.screen.weekReturn} capsule /></dd></div>
+      <div><dt>20-day return</dt><dd><Move pct={row.screen.monthReturn} capsule /></dd></div>
+      <div><dt>Acceleration</dt><dd><Move pct={row.screen.acceleration} capsule /></dd></div>
+    </dl>
+    <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
+    <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
+  </article>
+}
+
+function EmergingGrowthCard({ row, index, onOpen }) {
+  return <article className="research-mobile-card" key={row.ticker}>
+    <div className="research-card-head">
+      <span className="rank-badge">#{index + 1}</span>
+      <CompanyLogo company={row} size={42} />
+      <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+      <span className="mobile-score">{row.score}<small>score</small></span>
+    </div>
+    <div className="research-card-badges">
+      <Tier label={row.stance} />
+      <span className="chip screen-chip screen-chip-prospective">Unvalidated</span>
+    </div>
+    <dl className="research-card-metrics">
+      <div><dt>Revenue growth</dt><dd><Move pct={row.screen.revenueGrowth != null ? row.screen.revenueGrowth * 100 : null} capsule /></dd></div>
+      <div><dt>Relative strength</dt><dd><Move pct={row.screen.relativeStrength} capsule /></dd></div>
+      <div><dt>Vol. contracting</dt><dd>{row.screen.volatilityContracting == null ? '–' : row.screen.volatilityContracting ? 'Yes' : 'No'}</dd></div>
+    </dl>
+    <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
+    <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
+  </article>
+}
+
 export default function FastGrowthScreen() {
   const { data, loading, error } = useData('report.json')
   const [sector, setSector] = useState('all')
+  const [view, setView] = useState('breakout')
   const [selectedStock, setSelectedStock] = useState(null)
 
   const universe = [...new Map(
     [...(data?.research || []), ...(data?.screen_universe || [])].map((row) => [row.ticker, row]),
   ).values()]
-  const rows = rankFastGrowth(universe, universe.length)
+  const breakoutRows = rankBreakoutInProgress(universe, universe.length)
+  const emergingRows = rankEmergingGrowth(universe, universe.length)
+  const rows = view === 'breakout' ? breakoutRows : emergingRows
   const sectors = [...new Set(rows.map((row) => row.sector).filter(Boolean))].sort()
   const filtered = sector === 'all' ? rows : rows.filter((row) => row.sector === sector)
 
@@ -25,70 +72,95 @@ export default function FastGrowthScreen() {
     <ScreenNavigation />
     <div className="page-head">
       <div>
-        <span className="eyebrow">Sharp recent acceleration</span>
-        <h1 className="page-title">Fast growth <span className="accent">breakouts</span></h1>
+        <span className="eyebrow">{view === 'breakout' ? 'Sharp recent acceleration' : 'Prospective, unvalidated research'}</span>
+        <h1 className="page-title">Fast growth <span className="accent">{view === 'breakout' ? 'breakouts' : 'candidates'}</span></h1>
         <p className="page-sub">
-          Names whose most recent week moved faster than the pace set over the prior three weeks - the setup behind a
-          Microsoft, SanDisk, or AMD run right before it takes off, not a name that has simply drifted higher all month.
+          {view === 'breakout'
+            ? 'Names whose most recent week moved faster than the pace set over the prior three weeks - a Microsoft, SanDisk, or AMD run already in progress, not a name that has simply drifted higher all month. This screen finds a move already underway, not one that hasn’t happened yet.'
+            : 'An attempt at the harder question: names that have not yet made a big visible move but show real, currently-measurable signs (revenue growth, a margin inflection, early relative strength, contracting volatility) that sometimes precede one. Nothing in this codebase has tested whether this combination actually predicts a subsequent move - treat every result here as a research lead, not a track record.'}
         </p>
       </div>
       <div className="result-count"><strong>{filtered.length}</strong><span>results</span></div>
     </div>
 
-    {loading ? <Loading /> : error ? <div className="card etf-state" role="alert"><strong>Screen snapshot unavailable</strong><span>{error.message}</span></div> : <>
-      {sectors.length > 0 && <div className="research-toolbar">
-        <label><span className="sr-only">Filter by sector</span><select value={sector} onChange={(event) => setSector(event.target.value)}>
-          <option value="all">All sectors</option>{sectors.map((item) => <option key={item}>{item}</option>)}
-        </select></label>
-      </div>}
+    <div className="research-toolbar">
+      <label><span className="sr-only">Screen</span><select value={view} onChange={(event) => setView(event.target.value)}>
+        <option value="breakout">Breakout in progress</option>
+        <option value="emerging">Emerging growth (unvalidated)</option>
+      </select></label>
+      {sectors.length > 0 && <label><span className="sr-only">Filter by sector</span><select value={sector} onChange={(event) => setSector(event.target.value)}>
+        <option value="all">All sectors</option>{sectors.map((item) => <option key={item}>{item}</option>)}
+      </select></label>}
+    </div>
 
-      {!filtered.length ? <Empty note="No name is accelerating sharply enough to clear this screen in the latest report." /> : <>
+    {view === 'emerging' && (
+      <div className="card prospective-notice" role="note">
+        <strong>Prospective and unvalidated.</strong> No backtest, no rank-IC, no track record backs this screen - the
+        validation harness (see /screens/validation) has not accumulated enough prospective history to test it. It exists
+        so that history can start accumulating, not because it is known to work.
+      </div>
+    )}
+
+    {loading ? <Loading /> : error ? <div className="card etf-state" role="alert"><strong>Screen snapshot unavailable</strong><span>{error.message}</span></div> : <>
+      {!filtered.length ? (
+        <Empty note={view === 'breakout'
+          ? 'No name is accelerating sharply enough to clear this screen in the latest report.'
+          : 'No name clears the emerging-growth measurables in the latest report.'} />
+      ) : <>
         <MobileVirtualList className="research-mobile-list" items={filtered} getKey={(row) => row.ticker} estimateSize={250}
-          renderItem={(row, index) => <article className="research-mobile-card" key={row.ticker}>
-            <div className="research-card-head">
-              <span className="rank-badge">#{index + 1}</span>
-              <CompanyLogo company={row} size={42} />
-              <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
-              <span className="mobile-score">{row.score}<small>score</small></span>
-            </div>
-            <div className="research-card-badges">
-              <Tier label={row.stance} />
-              <span className="chip screen-chip screen-chip-breakout">Breakout</span>
-            </div>
-            <dl className="research-card-metrics">
-              <div><dt>5-day return</dt><dd><Move pct={row.screen.weekReturn} capsule /></dd></div>
-              <div><dt>20-day return</dt><dd><Move pct={row.screen.monthReturn} capsule /></dd></div>
-              <div><dt>Acceleration</dt><dd><Move pct={row.screen.acceleration} capsule /></dd></div>
-            </dl>
-            <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
-            <button className="primary-button compact" onClick={() => setSelectedStock(row)}>Full research <Icon name="arrow" size={17} /></button>
-          </article>} />
+          renderItem={(row, index) => view === 'breakout'
+            ? <BreakoutCard row={row} index={index} onOpen={setSelectedStock} />
+            : <EmergingGrowthCard row={row} index={index} onOpen={setSelectedStock} />} />
 
         <div className="research-table card">
           <table>
-            <thead><tr>
-              <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Research rating</th>
-              <th scope="col" className="num">5-day return</th><th scope="col" className="num">20-day return</th>
-              <th scope="col" className="num">Acceleration</th><th scope="col" className="num">Score</th><th scope="col"><span className="sr-only">Open</span></th>
-            </tr></thead>
-            <tbody>{filtered.map((row, index) => <tr key={row.ticker}>
-              <td className="rank">#{index + 1}</td>
-              <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span></div></div></td>
-              <td>{row.sector || '–'}</td>
-              <td><Tier label={row.stance} /></td>
-              <td className="num"><Move pct={row.screen.weekReturn} /></td>
-              <td className="num"><Move pct={row.screen.monthReturn} /></td>
-              <td className="num"><Move pct={row.screen.acceleration} /></td>
-              <td className="mono num score-cell">{row.score}</td>
-              <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
-            </tr>)}</tbody>
+            {view === 'breakout' ? (
+              <>
+                <thead><tr>
+                  <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Research rating</th>
+                  <th scope="col" className="num">5-day return</th><th scope="col" className="num">20-day return</th>
+                  <th scope="col" className="num">Acceleration</th><th scope="col" className="num">Score</th><th scope="col"><span className="sr-only">Open</span></th>
+                </tr></thead>
+                <tbody>{filtered.map((row, index) => <tr key={row.ticker}>
+                  <td className="rank">#{index + 1}</td>
+                  <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span></div></div></td>
+                  <td>{row.sector || '–'}</td>
+                  <td><Tier label={row.stance} /></td>
+                  <td className="num"><Move pct={row.screen.weekReturn} /></td>
+                  <td className="num"><Move pct={row.screen.monthReturn} /></td>
+                  <td className="num"><Move pct={row.screen.acceleration} /></td>
+                  <td className="mono num score-cell">{row.score}</td>
+                  <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
+                </tr>)}</tbody>
+              </>
+            ) : (
+              <>
+                <thead><tr>
+                  <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Research rating</th>
+                  <th scope="col" className="num">Revenue growth</th><th scope="col" className="num">Relative strength</th>
+                  <th scope="col">Vol. contracting</th><th scope="col" className="num">Score</th><th scope="col"><span className="sr-only">Open</span></th>
+                </tr></thead>
+                <tbody>{filtered.map((row, index) => <tr key={row.ticker}>
+                  <td className="rank">#{index + 1}</td>
+                  <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span></div></div></td>
+                  <td>{row.sector || '–'}</td>
+                  <td><Tier label={row.stance} /></td>
+                  <td className="num"><Move pct={row.screen.revenueGrowth != null ? row.screen.revenueGrowth * 100 : null} /></td>
+                  <td className="num"><Move pct={row.screen.relativeStrength} /></td>
+                  <td>{row.screen.volatilityContracting == null ? '–' : row.screen.volatilityContracting ? 'Yes' : 'No'}</td>
+                  <td className="mono num score-cell">{row.score}</td>
+                  <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
+                </tr>)}</tbody>
+              </>
+            )}
           </table>
         </div>
       </>}
       <p className="disclaimer">
-        A breakout screen flags a change in pace, not a guaranteed continuation - a sharp run can just as easily fade or
-        reverse the following week. This is a research screen, not a trade instruction; confirm current price, liquidity,
-        news, and your own risk limits before acting.
+        {view === 'breakout'
+          ? 'A breakout screen flags a change in pace, not a guaranteed continuation - a sharp run can just as easily fade or reverse the following week.'
+          : 'An emerging-growth screen flags currently-measurable conditions with no proven predictive track record in this system.'}
+        {' '}This is a research screen, not a trade instruction; confirm current price, liquidity, news, and your own risk limits before acting.
       </p>
     </>}
     {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data?.benchmark_history} onClose={() => setSelectedStock(null)} />}

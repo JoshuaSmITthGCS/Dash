@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { useWatchlist } from '../lib/useWatchlist.js'
 import { Loading, Move, Tier } from '../components/Bits.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import Icon from '../components/Icons.jsx'
 
 const RECENT_KEY = 'valuesignal.recent-searches'
-const WATCH_KEY = 'valuesignal.watchlist'
 
 function readList(key) { try { const value = JSON.parse(localStorage.getItem(key)); return Array.isArray(value) ? value : [] } catch { return [] } }
 function latestMove(row) {
@@ -19,11 +19,12 @@ function latestMove(row) {
 export default function Search() {
   const { data, loading } = useData('advisor.json')
   const { positions } = useFirebasePortfolio()
+  const { items: watchlistItems } = useWatchlist()
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [selected, setSelected] = useState(null)
   const [recent, setRecent] = useState(() => readList(RECENT_KEY))
-  const watchlist = useMemo(() => readList(WATCH_KEY).map((item) => typeof item === 'string' ? item : item.ticker), [])
+  const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 
   useEffect(() => { const timer = window.setTimeout(() => setDebounced(query.trim()), 180); return () => window.clearTimeout(timer) }, [query])
   const catalog = useMemo(() => {

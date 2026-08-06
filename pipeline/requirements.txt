@@ -1,5 +1,13 @@
 requests>=2.31
-yfinance>=0.2.40
+# Pinned rather than a floor: an unbounded range let CI silently resolve to whatever yfinance
+# shipped that week, and yfinance's Yahoo-facing endpoints (particularly .info and the
+# statement frames) break across releases without warning. This is the version this test
+# suite and pipeline/fetch_advisor.py were last verified against -- bump deliberately, not
+# by drift. (No causal evidence ties a specific past version to the 2026-08-06 enrichment
+# collapse; that incident is fixed at the code level in yahoo_extended(), see
+# docs/BASELINE-2026-08-06.md. This pin exists to stop the failure mode from recurring
+# silently, not because a version bump was proven to have triggered it.)
+yfinance==1.5.2
 feedparser>=6.0
 jsonschema>=4.22
 # Theme definitions in pipeline/themes/ are YAML so adding a structural trend is a config

@@ -106,6 +106,18 @@ def _settings_version():
     )
 
 
+def config_hash():
+    """Public accessor for the settings.json hash _settings_version computes internally.
+
+    Every published research row is required to carry a model version and a config hash
+    (docs/RESEARCH-CONTRACT.md, invariant tests) so a scoring result can always be traced
+    back to the exact configuration that produced it. Callers outside this module (the
+    sleeve interface, experiment records) should use this rather than reaching into the
+    private _settings_version helper.
+    """
+    return _settings_version()[1]
+
+
 def versioned_artifact(obj):
     """Add an additive model-version envelope to a public JSON object.
 

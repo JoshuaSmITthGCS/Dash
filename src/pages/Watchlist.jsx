@@ -6,23 +6,95 @@ import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
 import { inverseVolatilityAllocations, watchlistGuidance } from '../lib/watchlistGuidance'
+import { suggestPriceTargets } from '../lib/watchlistPriceTargets.js'
+import { useWatchlist } from '../lib/useWatchlist.js'
+import { useAlerts } from '../lib/useAlerts.js'
+import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import SetupQualityBreakdown from '../components/SetupQualityBreakdown.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 
-const KEY = 'valuesignal.watchlist'
 const SETTINGS_KEY = 'valuesignal.watchlistSizing'
+
+function PriceTargetEditor({ item, suggested, onSave, onCreateAlert, alertBusy }) {
+  const [dip, setDip] = useState(item.dipPrice ?? '')
+  const [goodBuy, setGoodBuy] = useState(item.goodBuyPrice ?? '')
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    setDip(item.dipPrice ?? '')
+    setGoodBuy(item.goodBuyPrice ?? '')
+  }, [item.dipPrice, item.goodBuyPrice])
+
+  const save = async () => {
+    await onSave({
+      dipPrice: dip === '' ? null : Number(dip),
+      goodBuyPrice: goodBuy === '' ? null : Number(goodBuy),
+    })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1800)
+  }
+
+  const useSuggested = () => {
+    setDip(suggested.dipBuy?.price ?? '')
+    setGoodBuy(suggested.goodBuy?.price ?? '')
+  }
+
+  return (
+    <div className="watchlist-targets">
+      <div className="watchlist-target-fields">
+        <label>
+          <span>Dip buy price</span>
+          <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="e.g. 142.50"
+            value={dip} onChange={(event) => setDip(event.target.value)} />
+        </label>
+        <label>
+          <span>Good buy price</span>
+          <input type="number" min="0" step="0.01" inputMode="decimal" placeholder="e.g. 150.00"
+            value={goodBuy} onChange={(event) => setGoodBuy(event.target.value)} />
+        </label>
+      </div>
+      {(suggested.dipBuy?.price != null || suggested.goodBuy?.price != null) && (
+        <div className="watchlist-target-suggestion">
+          <button type="button" className="secondary-button compact" onClick={useSuggested}>
+            Use suggested: {suggested.dipBuy?.price != null ? `dip $${suggested.dipBuy.price.toFixed(2)}` : ''}
+            {suggested.dipBuy?.price != null && suggested.goodBuy?.price != null ? ' · ' : ''}
+            {suggested.goodBuy?.price != null ? `good buy $${suggested.goodBuy.price.toFixed(2)}` : ''}
+          </button>
+          <details className="watchlist-target-derivation">
+            <summary>How were these suggested?</summary>
+            {suggested.dipBuy?.derivation && <p>{suggested.dipBuy.derivation}</p>}
+            {suggested.goodBuy?.derivation && <p>{suggested.goodBuy.derivation}</p>}
+          </details>
+        </div>
+      )}
+      <div className="watchlist-target-actions">
+        <button type="button" className="primary-button compact" onClick={save}>{saved ? 'Saved' : 'Save targets'}</button>
+        {dip !== '' && (
+          <button type="button" className="secondary-button compact" disabled={alertBusy}
+            onClick={() => onCreateAlert(Number(dip))}>
+            {alertBusy ? 'Creating…' : 'Alert me at dip price'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function Watchlist() {
   const { data, loading, reload } = useData('advisor.json')
   const { preferences } = usePreferences()
-  const [list, setList] = useState([])
+  const { currentUser } = useAuth()
+  const watchlist = useWatchlist()
+  const { createRule } = useAlerts()
   const [input, setInput] = useState('')
   const [sizing, setSizing] = useState({ budget: '', maxPositionPct: '5' })
-  const refresh = useAdvisorRefresh(data?.generated_at, reload, list)
+  const [alertBusyTicker, setAlertBusyTicker] = useState('')
+  const [alertNotice, setAlertNotice] = useState(null)
+  const tickers = watchlist.items.map((item) => item.ticker)
+  const refresh = useAdvisorRefresh(data?.generated_at, reload, tickers)
+
   useEffect(() => {
-    try { setList(JSON.parse(localStorage.getItem(KEY)) || ['AAPL', 'MSFT']) }
-    catch { setList(['AAPL', 'MSFT']) }
     try {
       const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY))
       if (saved) setSizing(saved)
@@ -30,36 +102,54 @@ export default function Watchlist() {
       // Invalid local sizing settings fall back to a blank budget and 5% cap.
     }
   }, [])
-  const save = (next) => { setList(next); localStorage.setItem(KEY, JSON.stringify(next)) }
   const saveSizing = (next) => {
     setSizing(next)
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(next))
   }
-  const add = () => {
+  const add = async () => {
     const value = input.trim().toUpperCase()
-    if (value && !list.includes(value)) save([...list, value])
+    if (value && !watchlist.isWatched(value)) await watchlist.addTicker(value)
     setInput('')
   }
-  if (loading) return <Loading />
+
+  if (loading || watchlist.loading) return <Loading />
+  if (!currentUser) {
+    return (
+      <div className="page-head"><div><span className="eyebrow">Saved research</span>
+        <h1 className="page-title">My <span className="accent">watchlist</span></h1>
+        <p className="page-sub">Sign in to save a watchlist that syncs across your devices.</p></div></div>
+    )
+  }
+
   const byTicker = Object.fromEntries([
     ...(data?.research || []),
     ...(data?.portfolio_coverage || []),
   ].map((row) => [row.ticker, row]))
   const budget = Number(sizing.budget)
   const maxPositionPct = Number(sizing.maxPositionPct)
-  const watchRows = list.map((ticker) => byTicker[ticker]).filter(Boolean)
+  const watchRows = tickers.map((ticker) => byTicker[ticker]).filter(Boolean)
   const volatilityAllocations = inverseVolatilityAllocations(watchRows, budget, maxPositionPct)
   const sizingModeLabel = preferences.watchlistSizingMode === 'inverse-volatility'
     ? 'Equal risk by volatility'
     : 'Capped maximum'
 
+  const handleCreateDipAlert = async (item, dipPrice) => {
+    setAlertBusyTicker(item.ticker)
+    const result = await createRule({ type: 'price_cross', ticker: item.ticker, direction: 'below', threshold: dipPrice })
+    setAlertBusyTicker('')
+    setAlertNotice(result.success
+      ? { error: false, message: `Alert created: ${item.ticker} price below $${dipPrice.toFixed(2)}.` }
+      : { error: true, message: result.error || 'Could not create the alert.' })
+    setTimeout(() => setAlertNotice(null), 4000)
+  }
+
   return (
     <>
       <div className="page-head"><div><span className="eyebrow">Saved research</span>
         <h1 className="page-title">My <span className="accent">watchlist</span></h1>
-        <p className="page-sub">Track Yahoo-covered companies you want to revisit. Saved privately in this browser.</p></div>
+        <p className="page-sub">Track companies you want to revisit, with a dip price and a good-buy price for each. Synced to your account.</p></div>
         <div className="page-actions">
-          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing || !list.length}>
+          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing || !tickers.length}>
             <Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />
             {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing…' : 'Refresh watchlist'}
           </button>
@@ -68,7 +158,7 @@ export default function Watchlist() {
             <Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
             {refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}
           </button>
-          <div className="result-count"><strong>{list.length}</strong><span>saved</span></div>
+          <div className="result-count"><strong>{tickers.length}</strong><span>saved</span></div>
         </div>
       </div>
       <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
@@ -78,6 +168,7 @@ export default function Watchlist() {
           {refresh.message}
         </div>
       )}
+      {alertNotice && <div className={`research-trade-notice ${alertNotice.error ? 'error' : ''}`} role="status" aria-live="polite">{alertNotice.message}</div>}
       <div className="watchlist-add">
         <label><span>Ticker symbol</span><input autoCapitalize="characters" placeholder="AAPL" value={input}
           onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && add()} /></label>
@@ -101,18 +192,20 @@ export default function Watchlist() {
         </label>
       </div>
       <div className="watchlist-grid">
-        {list.map((ticker) => {
+        {watchlist.items.map((item) => {
+          const ticker = item.ticker
           const row = byTicker[ticker]
           const guidance = watchlistGuidance(row, budget, maxPositionPct, {
             sizingMode: preferences.watchlistSizingMode,
             volatilityAllocation: volatilityAllocations[ticker],
           })
+          const suggested = row ? suggestPriceTargets(row) : { dipBuy: null, goodBuy: null }
           return (
             <article className="watchlist-card" key={ticker}>
               <div className="watchlist-card-head">
                 <CompanyLogo company={row || { ticker }} size={42} /><div><strong>{ticker}</strong><span>{row?.name || 'Not in published research'}</span></div>
                 {row && <Move pct={row.technical_detail?.return_20d} capsule />}
-                <button className="icon-button danger" onClick={() => save(list.filter((item) => item !== ticker))}
+                <button className="icon-button danger" onClick={() => watchlist.removeTicker(ticker)}
                   aria-label={`Remove ${ticker} from watchlist`}><Icon name="close" /></button>
               </div>
               {row ? (
@@ -143,13 +236,17 @@ export default function Watchlist() {
                         : guidance.hardBlocked ? 'Sizing blocked by published evidence' : 'Enter a budget above'}</small>
                     </div>
                   </div>
+                  <PriceTargetEditor item={item} suggested={suggested}
+                    onSave={(updates) => watchlist.updateTargets(ticker, updates)}
+                    onCreateAlert={(dipPrice) => handleCreateDipAlert(item, dipPrice)}
+                    alertBusy={alertBusyTicker === ticker} />
                 </>
               ) : <div className="inline-empty">This ticker is saved, but no current quote or research record was published. It will populate after a successful pipeline refresh that covers it.</div>}
             </article>
           )
         })}
       </div>
-      {!list.length && <div className="empty-state"><Icon name="watchlist" size={30} /><h2>Your watchlist is empty</h2><p>Add a ticker above to start a focused research list.</p></div>}
+      {!tickers.length && <div className="empty-state"><Icon name="watchlist" size={30} /><h2>Your watchlist is empty</h2><p>Add a ticker above to start a focused research list.</p></div>}
     </>
   )
 }

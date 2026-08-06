@@ -45,6 +45,13 @@
     }
   },
   "short_horizon_treatment": "legacy_momentum",
+  "confidence": {
+    "_comment": "Decomposes the single confidence scalar (weighted fundamental/technical/news coverage, see scorer.weighted_coverage) into the components docs/RESEARCH-CONTRACT.md's confidence redesign calls for. This is additive: it does not change the score, the champion formula, or the existing 'confidence' field -- it publishes a confidence_detail breakdown alongside it so a low score can be explained ('why') rather than just observed.",
+    "freshness_stale_after_hours": 36,
+    "peer_sample_full_strength_count": 20,
+    "model_agreement_scale_points": 15.0,
+    "historical_calibration_minimum_periods": 24
+  },
   "validation": {
     "horizons_days": {
       "1M": 30,
@@ -112,6 +119,19 @@
     "default_sizing_mode": "capped",
     "minimum_annualized_volatility_pct": 5.0,
     "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, confidence, and published-guidance subscores. Only confidence below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap."
+  },
+  "watchlist_price_targets": {
+    "_comment": "Suggested entry levels for a watchlist name the user does not yet own -- both are explicit heuristics, not predictions, and every result states its own derivation so the number is never presented as more certain than it is. dip_buy is a volatility-scaled distance below the current price (the same ATR/sigma-scaling philosophy as position_risk's stop-loss levels, but anchored to current price since a watchlist name has no purchase high-water-mark). good_buy is a valuation-percentile-based discount: only applies a discount when the name is priced richer than its own configured fair percentile against sector/industry peers (peer_groups.py desirability_percentile, where higher = cheaper) -- a name already cheap relative to peers gets good_buy == current price rather than an invented discount.",
+    "dip_buy": {
+      "volatility_multiple": 0.35,
+      "min_distance_pct": 5.0,
+      "max_distance_pct": 20.0
+    },
+    "good_buy": {
+      "fair_valuation_percentile": 50.0,
+      "discount_pct_per_percentile_point": 0.6,
+      "max_discount_pct": 25.0
+    }
   },
   "portfolio_analytics": {
     "trading_days_per_year": 252,
@@ -914,14 +934,15 @@
     }
   },
   "market_behavior": {
-    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant.",
+    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant. technical_extended (pipeline/technical_indicators.py: moving-average slope, RSI, Bollinger %B, OBV slope) is deliberately small -- 0.06 against 0.94 elsewhere in this blend, and market_behavior itself is only 18% of the total composite (ranking_weights.market_behavior), so this indicator family contributes roughly 1% of the total score. See technical_indicators.py's module docstring for why it stays this narrow.",
     "weights": {
       "momentum_12_1": 0.3,
       "risk_adjusted": 0.26,
       "relative_strength": 0.16,
       "drawdown_resilience": 0.14,
       "volume_confirmation": 0.08,
-      "low_beta": 0.06
+      "low_beta": 0.06,
+      "technical_extended": 0.06
     }
   }
 }

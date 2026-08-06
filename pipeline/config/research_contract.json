@@ -1,0 +1,85 @@
+{
+  "_comment": "The authoritative, machine-readable research specification (see docs/RESEARCH-CONTRACT.md for the human-readable companion). This file documents thresholds that already exist and are enforced elsewhere in the pipeline -- it is a consolidation layer, not a new parallel set of numbers. Where a value differs from what's actually enforced today, 'enforced_in' says exactly where, and 'implementation_status' says whether the contract and the code agree yet.",
+  "contract_version": "1.0.0",
+
+  "universe": {
+    "_comment": "Configured symbol list lives in advisor_universe.json (910 symbols, 21 portfolio holdings, publish_limit 40). ETF/stock classification lives in universe.json.",
+    "supported_exchanges": "whatever Yahoo/Alpha Vantage resolve for the configured symbol list; no explicit exchange allowlist exists yet",
+    "security_types": {
+      "common_stock": "eligible for all stock sleeves",
+      "etf": "scored by a separate model (fetch_etfs.py); ineligible for stock sleeves, reason code unsupported_security_type -- see src/lib/researchScreens.js stocksOnly()",
+      "adr": "not distinguished from common stock today; no separate handling implemented",
+      "reit": "distinguished via business_profiles.json peer-group classification (peer_groups.py), not via a universe-eligibility rule"
+    },
+    "minimum_price": { "value": 5, "unit": "usd", "enforced_in": "research_screens_v2.py momentum_scores() MINIMUM_PRICE" },
+    "minimum_market_cap": { "value": 300000000, "unit": "usd", "enforced_in": "research_screens_v2.py momentum_scores() MINIMUM_MARKET_CAP" },
+    "minimum_median_dollar_volume_60d": { "value": 2000000, "unit": "usd", "enforced_in": "research_screens_v2.py momentum_scores() MINIMUM_LIQUIDITY", "note": "Distinct from the two liquidity modifier thresholds below -- this one gates screen eligibility, those adjust score." },
+    "minimum_history_sessions": { "value": 253, "unit": "trading_days", "enforced_in": "research_screens_v2.py momentum_scores() INSUFFICIENT_HISTORY" },
+    "liquidity_score_modifier": {
+      "illiquid_dollar_volume": { "value": 5000000, "unit": "usd", "enforced_in": "settings.json modifiers.liquidity.illiquid_dollar_volume" },
+      "thin_dollar_volume": { "value": 25000000, "unit": "usd", "enforced_in": "settings.json modifiers.liquidity.thin_dollar_volume" },
+      "note": "This is a score modifier (points penalty), not a hard eligibility gate -- kept distinct from minimum_median_dollar_volume_60d above, which excludes a name from the momentum screen outright."
+    },
+    "pairwise_correlation_minimum_observations": { "value": 60, "unit": "trading_days", "enforced_in": "portfolioAnalytics.js correlationDiversification (frontend, not yet mirrored in pipeline)" },
+    "portfolio_minimum_history_months": { "value": 36, "unit": "months", "enforced_in": "settings.json portfolio_minimum_history_months" },
+    "ipo_seasoning": "no explicit newly-listed exclusion window implemented; a recent IPO is only implicitly filtered by minimum_history_sessions",
+    "delisted_securities": "not retained in historical analysis today; the raw PIT store (pipeline/pit_store.py) preserves a universe membership log (universe.jsonl: added/removed per observation) but scoring does not yet replay a delisted name's history",
+    "corporate_actions": "handled at the price/fundamentals-provider layer (Yahoo-adjusted series); no independent corporate-action event log exists yet",
+    "missing_fundamentals": "a company with zero enrichment still competes on core (non-statement) metrics; see pipeline/confidence.py completeness_component for how that shows up in confidence"
+  },
+
+  "forecast_targets": {
+    "_comment": "The brief's recommended primary target is a 63-trading-day forward sector-residual total return. That specific residualized form is NOT implemented yet -- documented here as the target this contract commits to, with current implementation status stated honestly rather than assumed.",
+    "primary": {
+      "definition": "forward_residual_return(i, t, h) = stock_total_return(i, t -> t+h) - sector_or_risk_adjusted_return(i, t -> t+h)",
+      "horizon_trading_days": 63,
+      "implementation_status": "not_implemented",
+      "note": "pipeline/validation/ic_harness.py currently scores raw forward_return = end_price/start_price - 1 (line ~214), not a sector-residual variant. The residualization step is the gap between the current challenger-validation harness and this contract's primary target."
+    },
+    "horizons": {
+      "5d":   { "trading_days": 5,   "implementation_status": "not_implemented" },
+      "21d":  { "trading_days": 21,  "implementation_status": "not_implemented" },
+      "63d":  { "trading_days": 63,  "implementation_status": "not_implemented", "note": "primary" },
+      "126d": { "trading_days": 126, "implementation_status": "not_implemented" },
+      "252d": { "trading_days": 252, "implementation_status": "not_implemented" }
+    },
+    "currently_implemented_horizons": {
+      "_comment": "pipeline/validation/ic_harness.py and settings.json validation.horizons_days use CALENDAR days, not trading days -- a real gap against this contract, not a rounding difference.",
+      "1M": { "calendar_days": 30, "enforced_in": "settings.json validation.horizons_days" },
+      "3M": { "calendar_days": 91, "enforced_in": "settings.json validation.horizons_days" },
+      "6M": { "calendar_days": 182, "enforced_in": "settings.json validation.horizons_days" },
+      "12M": { "calendar_days": 365, "enforced_in": "settings.json validation.horizons_days" }
+    },
+    "total_return_basis": "Yahoo-adjusted close series (splits/dividends folded into price); no separate distribution-reinvestment tracking",
+    "forward_label_timing": "ic_harness.py's append_refresh only appends realized labels once the full horizon has elapsed relative to data_as_of -- see minimum_icir_periods gating in settings.json validation"
+  },
+
+  "execution_assumptions": {
+    "signal_timestamp": "advisor.json generated_at (the refresh's own generation time)",
+    "earliest_tradable_timestamp": "not modeled -- no same-close-execution guard exists yet; a signal generated intraday could theoretically be tested against that same session's close",
+    "rebalance_frequency": "no fixed cadence; refresh-advisor.yml runs a full sweep once and 2 fast refreshes on trading days (07:00, 12:00, 15:00 ET)",
+    "execution_price": "not modeled in the live pipeline; shadow_portfolios.py and backtest_monthly.py use their own next-session-open or close assumptions -- see those modules directly, not centralized here yet",
+    "earnings_event_handling": "surfaced as a flag (technical_detail/insider_signal event proximity) but not excluded from execution by rule",
+    "corporate_action_handling": "relies on provider-adjusted prices; no independent handling",
+    "transaction_cost_scenario": {
+      "current": { "value_bps": 10, "enforced_in": "settings.json validation.long_short_cost_bps", "note": "flat cost, not the half_spread + fees + volatility_scaled_impact model this contract calls for" },
+      "status": "not_implemented"
+    },
+    "holding_period": "not fixed; determined by whatever horizon a given challenger/backtest module tests",
+    "portfolio_weighting": "not centralized; src/lib/portfolioAnalytics.js and pipeline/optimize_weights.py each make their own assumptions",
+    "benchmark": "SPY, per advisor.json benchmark field"
+  },
+
+  "champion_challenger_governance": {
+    "champion": {
+      "id": "bands_champion",
+      "description": "Sector/industry-band fundamental scoring blended with technical and news components. See advisor_engine.blend_research_components.",
+      "status": "production"
+    },
+    "challengers": [
+      { "id": "cross_sectional_normalization", "status": "shadow", "enforced_in": "settings.json challengers.cross_sectional_normalization" },
+      { "id": "signal_corrections (normalization, short_horizon, confidence_shrinkage, modifier_recalibration, cumulative)", "status": "shadow", "enforced_in": "settings.json challengers.signal_corrections" }
+    ],
+    "promotion_gates": "docs/RESEARCH-CONTRACT.md section 12 (mirrors the upgrade plan's promotion-gate list); none have been evaluated because the IC harness has not yet reached minimum_icir_periods -- see pipeline/validation/ic_harness.py"
+  }
+}

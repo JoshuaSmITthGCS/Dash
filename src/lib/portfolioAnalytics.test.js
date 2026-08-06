@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, trackedAllTimeEarnings, trailingCashFlowPace,
+  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, trackedAllTimeEarnings, trailingCashFlowPace,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -214,5 +214,43 @@ describe('portfolio report analytics', () => {
     expect(incomplete.available).toBe(false)
     const complete = trackedAllTimeEarnings({ gain: 20 }, [{ type: 'realized_gain', amount: -4 }, { type: 'dividend', amount: 5 }, { type: 'fee', amount: 1 }], { trackingStartedAt: '2026-01-01', ledgerComplete: true })
     expect(complete.value).toBe(20)
+  })
+})
+
+describe('covariance shrinkage', () => {
+  const sample = [[0.04, 0.02, 0.01], [0.02, 0.09, 0.015], [0.01, 0.015, 0.0625]]
+
+  it('leaves variances (the diagonal) untouched', () => {
+    const shrunk = shrinkCovarianceMatrix(sample, 0.5)
+    expect(shrunk[0][0]).toBe(0.04)
+    expect(shrunk[1][1]).toBe(0.09)
+    expect(shrunk[2][2]).toBe(0.0625)
+  })
+
+  it('pulls off-diagonal covariances toward zero proportionally to intensity', () => {
+    const shrunk = shrinkCovarianceMatrix(sample, 0.5)
+    expect(shrunk[0][1]).toBeCloseTo(0.01, 6)
+    expect(shrunk[1][0]).toBeCloseTo(0.01, 6)
+  })
+
+  it('zero intensity returns the sample matrix unchanged', () => {
+    expect(shrinkCovarianceMatrix(sample, 0)).toEqual(sample)
+  })
+
+  it('full intensity zeroes every off-diagonal entry', () => {
+    const shrunk = shrinkCovarianceMatrix(sample, 1)
+    expect(shrunk[0][1]).toBe(0)
+    expect(shrunk[1][2]).toBe(0)
+    expect(shrunk[0][0]).toBe(0.04)
+  })
+
+  it('clamps an out-of-range intensity instead of producing a negative covariance', () => {
+    const shrunk = shrinkCovarianceMatrix(sample, 5)
+    expect(shrunk[0][1]).toBe(0)
+  })
+
+  it('handles an empty or missing matrix without throwing', () => {
+    expect(shrinkCovarianceMatrix([])).toEqual([])
+    expect(shrinkCovarianceMatrix(null)).toBeNull()
   })
 })

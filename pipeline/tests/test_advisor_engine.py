@@ -191,6 +191,23 @@ class RebuiltTechnicalTests(unittest.TestCase):
         _, aggressive = technical_factors(closes, closes, [1e6] * 300, extended={"beta": 2.4})
         self.assertGreater(defensive["low_beta"], aggressive["low_beta"])
 
+    def test_technical_extended_is_computed_and_weighted_far_below_fundamentals(self):
+        closes = [100 * (1.001 ** index) for index in range(300)]
+        volumes = [1e6 + index * 1000 for index in range(300)]
+
+        score, detail = technical_factors(closes, closes, volumes)
+
+        self.assertIn("technical_extended", detail)
+        self.assertIn("technical_extended_detail", detail)
+        self.assertIsNotNone(score)
+        # technical_extended's weight (0.06) against the rest of market_behavior (0.94), and
+        # market_behavior itself is 18% of the total composite -- roughly 1% of the total
+        # score, nowhere near fundamentals' 78%. Confirm it stays a minority weight within
+        # its own component rather than dominating market_behavior.
+        from advisor_engine import TECHNICAL_WEIGHTS
+        self.assertLess(TECHNICAL_WEIGHTS["technical_extended"], TECHNICAL_WEIGHTS["momentum_12_1"])
+        self.assertLess(TECHNICAL_WEIGHTS["technical_extended"] / sum(TECHNICAL_WEIGHTS.values()), 0.10)
+
     def test_neutral_treatment_drops_relative_strength_and_redistributes_weight(self):
         parts = {name: 50.0 for name in (
             "momentum_12_1", "risk_adjusted", "drawdown_resilience",

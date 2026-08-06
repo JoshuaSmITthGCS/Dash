@@ -1,0 +1,191 @@
+{
+  "_comment": "The 16 screen presets from the research contract (brief section 13). implementation_status is 'wired' when a real ranking function exists and is reachable from the UI/pipeline today, and 'specification_only' when this entry documents the intended ranking/filter/risk-control rules but nothing computes them yet. Never claim 'wired' without a real, tested implementation cited in 'implemented_in'.",
+  "registry_version": "1.0.0",
+  "presets": {
+    "deep_value": {
+      "name": "Deep Value",
+      "horizon_trading_days": 63,
+      "ranking": ["free_cash_flow_yield", "ev_to_ebit", "peg", "price_to_book"],
+      "hard_filters": ["adequate_liquidity", "valid_denominators", "no_severe_distress", "acceptable_interest_coverage"],
+      "risk_controls": [],
+      "sort": "value sleeve raw_score, descending",
+      "rebalance": "matches the refresh cadence (see research_contract.json execution_assumptions)",
+      "implementation_status": "wired",
+      "implemented_in": "pipeline/sleeves/value.py (score_value_sleeve) -- ranking signals present; hard filters (distress, interest coverage floor) not yet gated at the sleeve level, only scored as evidence"
+    },
+    "quality_value": {
+      "name": "Quality Value",
+      "horizon_trading_days": 126,
+      "ranking": ["value_composite", "gross_profits_to_assets", "return_on_invested_capital", "accruals_ratio", "piotroski_f"],
+      "hard_filters": ["adequate_liquidity", "valid_denominators"],
+      "risk_controls": [],
+      "sort": "combined value + quality sleeve score, descending",
+      "rebalance": "matches the refresh cadence",
+      "implementation_status": "wired",
+      "implemented_in": "src/pages/ResearchScreen.jsx (screens/quality-value.json) + pipeline/sleeves/value.py + pipeline/sleeves/quality.py"
+    },
+    "momentum_leaders": {
+      "name": "Momentum Leaders",
+      "horizon_trading_days": 63,
+      "ranking": ["momentum_12_1", "momentum_6_1", "industry_relative_momentum", "high_52w_proximity"],
+      "hard_filters": ["minimum_price", "minimum_market_cap", "minimum_median_dollar_volume_60d", "minimum_history_sessions"],
+      "risk_controls": ["momentum_correlation_family_cap"],
+      "sort": "momentum_scores() score, descending",
+      "rebalance": "weekly (matches pipeline/build_momentum_screen.py)",
+      "implementation_status": "wired",
+      "implemented_in": "pipeline/research_screens_v2.py momentum_scores() + pipeline/build_momentum_screen.py -> public/data/screens/momentum.json"
+    },
+    "emerging_momentum": {
+      "name": "Emerging Momentum",
+      "horizon_trading_days": 21,
+      "ranking": ["improving_3_1_momentum", "moving_average_slope_inflection", "revision_improvement", "relative_volume_increase"],
+      "hard_filters": ["not_already_parabolic"],
+      "risk_controls": [],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "Close in spirit to rankEmergingGrowth (src/lib/researchScreens.js) but not the same screen -- that one gates on revenue growth + relative strength, not momentum inflection specifically. No dedicated implementation exists yet."
+    },
+    "oversold_reversal": {
+      "name": "Oversold Reversal",
+      "horizon_trading_days": 21,
+      "ranking": ["residual_5d_decline", "residual_21d_decline", "rsi_percentile", "abnormal_volume"],
+      "hard_filters": ["adequate_liquidity", "no_stale_data", "no_severe_fundamental_deterioration"],
+      "risk_controls": ["explicit_earnings_event_context"],
+      "sort": "rankReversal() rankScore, descending",
+      "rebalance": "matches the refresh cadence",
+      "implementation_status": "wired",
+      "implemented_in": "src/lib/researchScreens.js rankReversal() -- earnings-event context and fundamental-deterioration distinction are not yet separately flagged, only a fundamentals floor gate"
+    },
+    "high_quality_recovery": {
+      "name": "High-Quality Recovery",
+      "horizon_trading_days": 252,
+      "ranking": ["36_60_month_underperformance", "valuation_compression", "improving_profitability", "improving_revisions"],
+      "hard_filters": ["acceptable_solvency", "no_active_going_concern_warning"],
+      "risk_controls": [],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "No long-term (36-60mo) reversal screen exists in this codebase. rankValueTurnarounds (researchScreens.js) is short-horizon (52-week proximity), not this."
+    },
+    "mean_reversion_setup": {
+      "name": "Mean-Reversion Setup",
+      "horizon_trading_days": 10,
+      "ranking": ["residual_z_score", "bollinger_z_score", "vwap_deviation", "short_term_oscillator_percentile", "volume_exhaustion"],
+      "hard_filters": ["no_strong_persistent_downtrend"],
+      "risk_controls": [],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "pipeline/technical_indicators.py's bollinger_percent_b and relative_strength_index (Phase 6) are real, tested primitives this preset could be built from, but no ranking function combines them into this specific screen yet."
+    },
+    "durable_growth": {
+      "name": "Durable Growth",
+      "horizon_trading_days": 252,
+      "ranking": ["revenue_growth", "fcf_growth_3y", "operating_margin_trend", "earnings_surprise"],
+      "hard_filters": ["adequate_liquidity"],
+      "risk_controls": ["dilution", "cash_burn"],
+      "sort": "growth sleeve raw_score, descending",
+      "rebalance": "matches the refresh cadence",
+      "implementation_status": "wired",
+      "implemented_in": "pipeline/sleeves/growth.py -- dilution/cash-burn risk controls not yet gated, only scored as evidence via capital_allocation metrics in the quality sleeve"
+    },
+    "garp": {
+      "name": "GARP",
+      "horizon_trading_days": 126,
+      "ranking": ["growth_durability_35pct", "quality_30pct", "valuation_25pct", "revisions_catalyst_10pct"],
+      "hard_filters": ["positive_or_improving_growth", "acceptable_balance_sheet_quality", "valuation_not_in_extreme_tail"],
+      "risk_controls": [],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "The three component sleeves (value, quality, growth) all exist and are independently testable (pipeline/sleeves/); no combining function at the brief's stated 35/30/25/10 weights has been written yet."
+    },
+    "shareholder_yield": {
+      "name": "Shareholder Yield",
+      "horizon_trading_days": 252,
+      "ranking": ["dividend_yield", "net_buyback_yield", "debt_reduction", "fcf_coverage"],
+      "hard_filters": [],
+      "risk_controls": ["unsustainable_payout", "fcf_deficit"],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "net_buyback_yield is a real, scored quality-sleeve metric; dividend_yield exists on published rows (advisor.json) but no combined shareholder-yield ranking function exists."
+    },
+    "defensive_compounders": {
+      "name": "Defensive Compounders",
+      "horizon_trading_days": 252,
+      "ranking": ["profitability", "earnings_stability", "cash_flow_stability", "low_downside_volatility"],
+      "hard_filters": [],
+      "risk_controls": ["low_beta_as_risk_input_not_alpha"],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "quality sleeve covers profitability; low_beta exists in market_behavior.weights but currently blends into ranking (see feature_registry.json classification_gap on low_beta) rather than serving purely as risk input here."
+    },
+    "trend_following": {
+      "name": "Trend Following",
+      "horizon_trading_days": 63,
+      "ranking": ["time_series_momentum", "moving_average_ordering", "trend_r_squared", "breakout_persistence"],
+      "hard_filters": [],
+      "risk_controls": ["drawdown_control"],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "pipeline/technical_indicators.py's moving_average_slope (Phase 6) is a real primitive; moving-average ordering and trend R-squared are not computed anywhere."
+    },
+    "earnings_revision_leaders": {
+      "name": "Earnings Revision Leaders",
+      "horizon_trading_days": 63,
+      "ranking": ["revision_breadth", "revision_magnitude", "surprise", "guidance", "post_earnings_drift"],
+      "hard_filters": [],
+      "risk_controls": [],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "The catalyst family (TACTICAL_WEIGHTS, research_screens_v2.py) defines these exact factors and is registered in feature_registry.json, but estimate data only covers a small ticker subset via collect_estimates.py -- a dedicated ranking function has not been written."
+    },
+    "insider_cluster_buying": {
+      "name": "Insider Cluster Buying",
+      "horizon_trading_days": 63,
+      "ranking": ["cluster_purchases", "executive_involvement", "purchase_size", "repeat_buying"],
+      "hard_filters": ["disclosure_delay_penalty"],
+      "risk_controls": [],
+      "sort": "insider_signal.py score_insider_activity(), descending",
+      "rebalance": "matches the refresh cadence",
+      "implementation_status": "wired",
+      "implemented_in": "pipeline/insider_signal.py -- routine vs opportunistic split, SEC Form 4 source-of-record; feeds a bounded score modifier (settings.json modifiers), not yet a standalone ranked screen page"
+    },
+    "congressional_disclosure_activity": {
+      "name": "Congressional Disclosure Activity",
+      "horizon_trading_days": 63,
+      "ranking": ["recency_since_disclosure", "transaction_magnitude_range", "repeat_activity", "committee_relevance"],
+      "hard_filters": [],
+      "risk_controls": ["disclosure_delay_penalty"],
+      "sort": "build_congress_screen.py ranking",
+      "rebalance": "weekly",
+      "implementation_status": "wired",
+      "implemented_in": "pipeline/build_congress_screen.py -> public/data/screens/congress-trades.json, rendered at src/pages/CongressTrades.jsx"
+    },
+    "balanced_multi_factor": {
+      "name": "Balanced Multi-Factor",
+      "horizon_trading_days": 126,
+      "ranking": ["value", "quality", "momentum", "catalyst"],
+      "hard_filters": [],
+      "risk_controls": [],
+      "sort": "not defined",
+      "rebalance": "not defined",
+      "implementation_status": "specification_only",
+      "implemented_in": null,
+      "note": "value.py and quality.py sleeves exist; momentum sleeve and catalyst sleeve (as standalone modules matching the sleeve interface) have not been built, only their underlying factor tables (research_screens_v2.py). No combining function exists."
+    }
+  }
+}
