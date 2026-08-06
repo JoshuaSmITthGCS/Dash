@@ -2,7 +2,7 @@
 
 Generated from live config and source on 2026-08-06
 
-Source commit: `f5fed00`
+Source commit: `09ab4f2`
 
 Application model: `3.2.0`
 
@@ -49,11 +49,11 @@ Mobile navigation has five one-tap destinations in this order: Research, Search,
 ## Published data footprint
 
 - Published research names: 40
-- Configured screen universe: 918
+- Configured screen universe: 920
 - Published ETFs: 125
 - Monthly factor observations: 756
-- Point-in-time files: 1
-- Point-in-time rows: 730
+- Point-in-time files: 2
+- Point-in-time rows: 1530
 - Mobile acceptance captures: 16
 
 Static research lives under `public/data`. Full-universe prospective snapshots live under `pipeline/pit_store/YYYY-MM-DD.jsonl`. Every scheduled refresh appends and never backfills.

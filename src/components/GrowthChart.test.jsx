@@ -61,4 +61,26 @@ describe('GrowthChart zoom', () => {
     expect(container.querySelectorAll('.chart-grid-line')).toHaveLength(0)
     expect(screen.getByRole('img')).toHaveAccessibleName(/Holdings: \$110/)
   })
+
+  it('reserves mobile chart space for an overlaid account summary', () => {
+    const originalMatchMedia = window.matchMedia
+    window.matchMedia = () => ({
+      matches: true,
+      addEventListener() {},
+      removeEventListener() {},
+    })
+
+    const { container, unmount } = render(<GrowthChart
+      minimal
+      mobileHeight={360}
+      mobileWidth={390}
+      mobileTopInset={156}
+      dates={['2025-01-01', '2025-01-02']}
+      series={[{ label: 'Holdings', values: [100, 110], color: 'green', emphasis: true }]}
+    />)
+    expect(container.querySelector('svg')).toHaveAttribute('height', '360')
+    expect(container.querySelector('svg')).toHaveAttribute('viewBox', '0 0 390 360')
+    unmount()
+    window.matchMedia = originalMatchMedia
+  })
 })
