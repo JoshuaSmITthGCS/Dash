@@ -1,3 +1,7 @@
+> **Superseded.** See `docs/DEPLOYMENT.md` and `docs/SECURITY.md` for the current, authoritative deployment and security runbooks. This file predates the current Netlify/GitHub Actions architecture and is retained for history only.
+
+---
+
 # ValueSignal V2 - Deployment Checklist
 
 ## Pre-Deployment Verification

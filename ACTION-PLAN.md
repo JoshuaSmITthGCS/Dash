@@ -1,3 +1,7 @@
+> **Historical SEO audit, not current status.** References localhost and pre-deployment state. Retained for history only.
+
+---
+
 # ValueSignal SEO Action Plan
 
 **Priority-Based Implementation Roadmap**

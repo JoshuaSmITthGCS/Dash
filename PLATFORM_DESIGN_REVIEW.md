@@ -1,3 +1,7 @@
+> **Historical snapshot, not current status.** Written mid-project; specific counts (test totals, universe size) and some completeness claims are now stale. For the authoritative account of this upgrade see `docs/CHANGELOG-QUANT-UPGRADE.md`; for current repo state see `README.md` and `APP-COMPLETE-BREAKDOWN.md`.
+
+---
+
 # Investment Platform Design Review
 
 **Review standard:** pre-launch institutional quantitative, portfolio-management, market-data, risk, and software architecture audit  

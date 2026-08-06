@@ -1,3 +1,7 @@
+> **Historical SEO audit, not current status.** References localhost and pre-deployment state. Retained for history only.
+
+---
+
 # ValueSignal SEO Audit Report
 
 **Site:** ValueSignal — Fundamentals-first investment research

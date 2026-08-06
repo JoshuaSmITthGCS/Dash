@@ -53,6 +53,7 @@ export const MOBILE_NAV = [
   { to: '/search', label: 'Search', icon: 'search' },
   { to: '/', label: 'Report', icon: 'overview', end: true, primary: true },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
+  { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/planning', label: 'Planning', icon: 'finances' },
 ]
 

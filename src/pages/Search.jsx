@@ -5,6 +5,7 @@ import { useWatchlist } from '../lib/useWatchlist.js'
 import { Loading, Move, Tier } from '../components/Bits.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
+import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import Icon from '../components/Icons.jsx'
 
 const RECENT_KEY = 'valuesignal.recent-searches'
@@ -23,6 +24,7 @@ export default function Search() {
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [selected, setSelected] = useState(null)
+  const [noResearchNotice, setNoResearchNotice] = useState('')
   const [recent, setRecent] = useState(() => readList(RECENT_KEY))
   const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 
@@ -43,7 +45,15 @@ export default function Search() {
   const saveRecent = (row) => {
     const next = [row.ticker, ...recent.filter((ticker) => ticker !== row.ticker)].slice(0, 8)
     setRecent(next); try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)) } catch { /* optional */ }
-    if (row.published || row.history) setSelected(row)
+    if (row.published || row.history) {
+      setNoResearchNotice('')
+      setSelected(row)
+    } else {
+      // Covered-universe-only tickers (tracked but no published research or price history
+      // yet) have nothing for the detail modal to show. Previously this click did nothing
+      // visible at all - say why instead of failing silently.
+      setNoResearchNotice(`${row.ticker} is tracked but has no published research or price history yet. It will open here once a pipeline refresh covers it.`)
+    }
   }
   const groups = [
     ['In your portfolio', results.filter((row) => row.inPortfolio)],
@@ -57,7 +67,8 @@ export default function Search() {
     <label className="global-search-input"><Icon name="search" size={22} /><span className="sr-only">Search companies</span><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ticker or company name" autoComplete="off" />{query && <button className="icon-button" onClick={() => setQuery('')} aria-label="Clear search"><Icon name="close" /></button>}</label>
     {!debounced && <section className="recent-searches"><h2>Recent searches</h2>{recent.length ? <div>{recent.map((ticker) => <button key={ticker} onClick={() => setQuery(ticker)}>{ticker}</button>)}<button className="muted-button" onClick={() => { setRecent([]); localStorage.removeItem(RECENT_KEY) }}>Clear</button></div> : <p>Your recent company searches will appear here.</p>}</section>}
     {debounced && <div className="search-result-summary"><strong>{results.length}</strong> {results.length === 1 ? 'match' : 'matches'} for “{debounced}”</div>}
-    {groups.map(([label, items]) => <section className="search-result-group" key={label}><h2>{label}</h2><div>{items.map((row) => <button className="company-search-result" key={row.ticker} onClick={() => saveRecent(row)}><CompanyLogo company={row} size={42} /><span className="search-company-copy"><strong>{row.ticker}</strong><span>{row.name}</span><small>{row.sector || (row.published ? 'Published research' : 'Coverage universe')}</small></span><span className="search-market-data"><b>{row.price == null ? '–' : `$${Number(row.price).toFixed(2)}`}</b><Move pct={latestMove(row)} /></span>{row.score != null && <span className="search-score"><b>{Math.round(row.score)}</b><small>score</small></span>}{row.stance && <Tier label={row.stance} />}<Icon name="chevron" /></button>)}</div></section>)}
+    {noResearchNotice && <div className="sync-message refresh-message" role="status" aria-live="polite">{noResearchNotice}</div>}
+    {groups.map(([label, items]) => <section className="search-result-group" key={label}><h2>{label}</h2><div>{items.map((row) => <div className="company-search-result" key={row.ticker} role="button" tabIndex={0} onClick={() => saveRecent(row)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); saveRecent(row) } }}><CompanyLogo company={row} size={42} /><span className="search-company-copy"><strong>{row.ticker}</strong><span>{row.name}</span><small>{row.sector || (row.published ? 'Published research' : 'Coverage universe')}</small></span><span className="search-market-data"><b>{row.price == null ? '–' : `$${Number(row.price).toFixed(2)}`}</b><Move pct={latestMove(row)} /></span>{row.score != null && <span className="search-score"><b>{Math.round(row.score)}</b><small>score</small></span>}{row.stance && <Tier label={row.stance} />}<span className="search-watchlist-slot">{!row.is_etf && <WatchlistToggleButton stock={row} size={18} />}</span><Icon name="chevron" /></div>)}</div></section>)}
     {debounced && !results.length && <div className="report-empty-state"><h2>No matching company</h2><p>Try a ticker or a broader company name. Search covers the currently loaded ValueSignal universe.</p></div>}
     {selected && <StockDetailModal stock={selected} benchmarkHistory={data.benchmark_history} onClose={() => setSelected(null)} />}
   </div>
