@@ -1,0 +1,519 @@
+{
+  "status": "ok",
+  "variant": "champion",
+  "refreshes_observed": 4,
+  "transitions": [
+    {
+      "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
+      "current_refresh": "advisor-2026-08-06T00:42:44.869979+00:00",
+      "shared_tickers": 400,
+      "rank_turnover": {
+        "top_40": 0.125,
+        "top_100": 0.125
+      },
+      "tickers_with_availability_driven_change": 3,
+      "tickers_with_availability_driven_change_pct": 0.007,
+      "mean_abs_score_delta": 0.32,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CRUS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 15.7,
+          "confidence_delta": 0.29
+        },
+        {
+          "ticker": "AAOI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "current_ratio",
+            "days_sales_outstanding_trend",
+            "debt_to_equity",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "piotroski_f",
+            "price_to_book",
+            "profit_margin",
+            "return_on_equity",
+            "return_on_invested_capital",
+            "revenue_growth",
+            "sales_multiple",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": null,
+          "confidence_delta": null
+        },
+        {
+          "ticker": "ASTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "current_ratio",
+            "days_sales_outstanding_trend",
+            "debt_to_equity",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_book",
+            "profit_margin",
+            "return_on_equity",
+            "return_on_invested_capital",
+            "revenue_growth",
+            "sales_multiple",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": null,
+          "confidence_delta": null
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-06T00:42:44.869979+00:00",
+      "current_refresh": "advisor-2026-08-06T02:04:34.587268+00:00",
+      "shared_tickers": 400,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 15,
+      "tickers_with_availability_driven_change_pct": 0.037,
+      "mean_abs_score_delta": 0.13,
+      "mean_abs_confidence_delta": 0.002,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "AIG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 4.6,
+          "confidence_delta": 0.06
+        },
+        {
+          "ticker": "AGO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": 0.07
+        },
+        {
+          "ticker": "AFL",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.0,
+          "confidence_delta": 0.06
+        },
+        {
+          "ticker": "APA",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.4,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "DDS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "peg"
+          ],
+          "score_delta": -2.1,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "CRM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.0,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "G",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.7,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "GAP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "ACM",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.2,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "BR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.2,
+          "confidence_delta": 0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-06T02:04:34.587268+00:00",
+      "current_refresh": "advisor-2026-08-06T15:46:49.017773+00:00",
+      "shared_tickers": 401,
+      "rank_turnover": {
+        "top_40": 0.525,
+        "top_100": 0.525
+      },
+      "tickers_with_availability_driven_change": 175,
+      "tickers_with_availability_driven_change_pct": 0.436,
+      "mean_abs_score_delta": 6.01,
+      "mean_abs_confidence_delta": 0.156,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "GILD",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "debt_to_equity",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "earnings_growth",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -35.9,
+          "confidence_delta": -0.46
+        },
+        {
+          "ticker": "DECK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -28.2,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "ALGN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -27.6,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "CMG",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -26.9,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "CRUS",
+          "metrics_with_value_change": [
+            "free_cash_flow_yield",
+            "price_to_book"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -24.9,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "GEN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -24.9,
+          "confidence_delta": -0.43
+        },
+        {
+          "ticker": "APP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -24.4,
+          "confidence_delta": -0.43
+        },
+        {
+          "ticker": "ACM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "sales_multiple",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -23.9,
+          "confidence_delta": -0.47
+        },
+        {
+          "ticker": "ACN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -23.8,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "EXEL",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -23.8,
+          "confidence_delta": -0.46
+        }
+      ]
+    }
+  ],
+  "peer_group_recomposition": {
+    "status": "not_computed",
+    "reason": "Peer-group membership per refresh is not captured at write time."
+  },
+  "normalization_regime_flip": {
+    "status": "not_computed",
+    "reason": "Whether a sector crossed sector_minimum_count between refreshes is not recoverable from this log as currently shaped."
+  }
+}
