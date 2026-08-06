@@ -154,13 +154,19 @@ export function rankReversal(rows, limit = 5) {
     .slice(0, limit)
 }
 
-// Fast growth / breakout: catches a stock in the act of a sharp recent acceleration - the
+// Breakout in progress: catches a stock in the act of a sharp recent acceleration - the
 // "NVDA V-shaped recovery", "SanDisk +33% in five days", "MSFT breaking out after a slog"
 // pattern - rather than the steady, months-long drift rankMomentum already covers. The gate
 // compares the pace of the most recent week against the pace set by the three weeks before it
 // within the same month, so a name that has been quietly climbing all month at a constant rate
 // doesn't crowd out one that just broke out this week.
-export function rankFastGrowth(rows, limit = 5) {
+//
+// Named for what it actually detects: the move has ALREADY happened (weekReturn > 2, i.e.
+// already up more than 2% this week) by the time a stock clears this screen. It was
+// previously named rankFastGrowth, which read as "about to grow fast" - the opposite of what
+// the gate requires. See rankEmergingGrowth below for the honestly-labeled attempt at
+// pre-move detection.
+export function rankBreakoutInProgress(rows, limit = 5) {
   return stocksOnly(rows)
     .map((row) => {
       const technical = row.technical_detail || {}
@@ -182,6 +188,87 @@ export function rankFastGrowth(rows, limit = 5) {
         screen: {
           weekReturn, monthReturn, acceleration, volumeRatio,
           rankScore: burst * 0.4 + accelScore * 0.3 + trend * 0.2 + volume * 0.1,
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
+// Emerging growth: an attempt at the thing rankBreakoutInProgress explicitly is NOT - names
+// that have not yet made a big visible move but show measurables that sometimes precede one.
+// research_status is "prospective_unvalidated" on every result: nothing in this codebase has
+// tested whether this combination actually predicts a subsequent move (see
+// docs/BASELINE-2026-08-06.md - the IC harness has 0 of 24 eligible periods). This is honest
+// research scaffolding, not a claim that it works.
+//
+// Every input is something this row can genuinely answer, not an invented proxy:
+//   - operating_margin_trend: current operating margin less the comparable prior period
+//     (metric_registry.json) - a real margin-inflection signal, already computed.
+//   - revenue_growth: TTM revenue growth, already computed - no "acceleration" (second
+//     derivative) is available anywhere in this codebase (no time series of growth rates),
+//     so this screen does not claim to detect acceleration, only a real current growth rate.
+//   - volatility contraction: computed here from the row's own price history (stdev of
+//     daily returns, last 10 sessions vs the trailing 60) - realized, not implied.
+//   - early relative strength: a small POSITIVE relative_strength_20d that has NOT yet
+//     cleared rankBreakoutInProgress's weekReturn > 2 gate - deliberately excludes anything
+//     that screen already caught, so the two screens do not overlap.
+//   - estimate_revision_breadth: optional bonus only when present (collect_estimates.py
+//     covers a small ticker subset today) - never required, never penalized when absent.
+export function rankEmergingGrowth(rows, limit = 5) {
+  return stocksOnly(rows)
+    .map((row) => {
+      const technical = row.technical_detail || {}
+      const fundamental = row.fundamental_detail || {}
+      const closes = weeklyCloses(row)
+      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
+      const revenueGrowth = fundamental.revenue_growth
+      const marginTrend = fundamental.operating_margin_trend
+      const relativeStrength = technical.relative_strength_20d
+
+      // Excludes anything already caught by the breakout screen - this is meant to be a
+      // distinct, earlier-stage population, not a relabeled duplicate of that list.
+      if (!finite(weekReturn) || weekReturn > 2) return null
+      if (!finite(revenueGrowth) || revenueGrowth <= 0.05) return null
+      if (!finite(relativeStrength) || relativeStrength <= 0) return null
+
+      let recentVol = null
+      let longerVol = null
+      if (closes.length >= 61) {
+        const dailyReturn = (series) => series.slice(1).map((value, index) => value / series[index] - 1)
+        const stdev = (values) => {
+          if (values.length < 2) return null
+          const avg = values.reduce((sum, value) => sum + value, 0) / values.length
+          return Math.sqrt(values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / values.length)
+        }
+        recentVol = stdev(dailyReturn(closes.slice(-11)))
+        longerVol = stdev(dailyReturn(closes.slice(-61)))
+      }
+      const volatilityContracting = finite(recentVol) && finite(longerVol) && longerVol > 0
+        ? recentVol < longerVol * 0.85
+        : null
+
+      const growthScore = clamp(50 + revenueGrowth * 150)
+      const marginScore = finite(marginTrend) ? clamp(50 + marginTrend * 300) : 50
+      const strengthScore = clamp(50 + relativeStrength * 4)
+      const contractionScore = volatilityContracting === null ? 50 : (volatilityContracting ? 70 : 40)
+      const revisionBreadth = row.estimate_revision_breadth
+      const revisionScore = finite(revisionBreadth) ? clamp(50 + revisionBreadth * 50) : null
+
+      const weighted = [
+        [growthScore, 0.35], [marginScore, 0.2], [strengthScore, 0.2], [contractionScore, 0.15],
+        ...(revisionScore !== null ? [[revisionScore, 0.1]] : []),
+      ]
+      const totalWeight = weighted.reduce((sum, [, weight]) => sum + weight, 0)
+      const rankScore = weighted.reduce((sum, [value, weight]) => sum + value * weight, 0) / totalWeight
+
+      return {
+        ...row,
+        research_status: 'prospective_unvalidated',
+        screen: {
+          weekReturn, revenueGrowth, marginTrend, relativeStrength, volatilityContracting,
+          revisionBreadth: revisionBreadth ?? null, rankScore,
         },
       }
     })

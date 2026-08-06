@@ -22,7 +22,7 @@ import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
-import { rankFastGrowth, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
+import { rankBreakoutInProgress, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
 import {
   actualRecordedValueSeries,
   PORTFOLIO_HISTORY_LABELS,
@@ -279,7 +279,7 @@ export default function Dashboard() {
   const mood = portfolioMood({ returnPct: returnSummary.strategy.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
   const screenRows = [...new Map([...rows, ...(data.screen_universe || [])].map((row) => [row.ticker, row])).values()]
   const focusedScreens = [
-    { title: 'Fast growth breakouts', kicker: 'Fast growth', note: 'Sharp acceleration this week', rows: rankFastGrowth(screenRows, 3), metric: (row) => ({ label: '5 days', value: row.screen.weekReturn }), to: '/screens/fast-growth' },
+    { title: 'Fast growth breakouts', kicker: 'Fast growth', note: 'Sharp acceleration this week', rows: rankBreakoutInProgress(screenRows, 3), metric: (row) => ({ label: '5 days', value: row.screen.weekReturn }), to: '/screens/fast-growth' },
     { title: 'Value near 52-week lows', kicker: 'Value turnarounds', note: 'Quality plus a positive latest week', rows: rankValueTurnarounds(screenRows, 3), metric: (row) => ({ label: 'Above low', value: row.screen.aboveLow }), to: '/screens/quality-value' },
     { title: 'Recent momentum', kicker: 'Momentum', note: 'Positive week and month', rows: rankMomentum(screenRows, 3), metric: (row) => ({ label: '20 days', value: row.screen.monthReturn }), to: '/screens/momentum' },
     { title: 'Short-term reversals', kicker: 'Reversal', note: '20-day pullback turning up', rows: rankReversal(screenRows, 3), metric: (row) => ({ label: 'This week', value: row.screen.weekReturn }), to: '/screens/matrix' },
