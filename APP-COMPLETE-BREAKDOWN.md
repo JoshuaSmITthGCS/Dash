@@ -2,7 +2,7 @@
 
 Generated from live config and source on 2026-08-06
 
-Source commit: `f7b077b`
+Source commit: `f5fed00`
 
 Application model: `3.2.0`
 
@@ -108,7 +108,9 @@ Planning leads with the probability that a balance survives to the target age un
 
 The engine runs 5,000 block-bootstrap paths with 12-month blocks. It publishes the 10th, 25th, 50th, 75th, 90th percentile paths. The fan chart supports touch and pointer scrubbing and distinguishes projected lines with a dotted treatment.
 
-When portfolio history has fewer than 36 months, the engine samples the selected benchmark's long history, preserving its volatility and serial structure, then shifts its mean to the annualized portfolio return actually observed. It does not repeat or synthesize observed months.
+The projection center is the trailing 365-day portfolio return, geometrically annualized over any usable span of at least 30 days. A supplied brokerage one-year time-weighted return takes precedence over a backtested holdings series. Allocation aggressiveness changes volatility around that personal center. Its configured return is only a fallback when no personal baseline exists.
+
+When portfolio history has fewer than 36 months, the engine samples the selected benchmark's long history, preserving return ordering before scaling dispersion around the personal baseline. It does not repeat or synthesize observed months. The chart begins at Now and continues through the configured plan-end age. Retirement can begin from one configured year after the current age rather than being artificially limited to age 50.
 
 Goals reuse the Finances pool structure. Each goal has a name, target amount, and target date, and uses the same probability engine. Retirement remains the default planning goal rather than a separate calculation system.
 
