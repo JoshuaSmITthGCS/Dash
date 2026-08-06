@@ -94,6 +94,17 @@ Wired an optional one-click price-cross alert through the existing alert infrast
 report docs as superseded rather than deleting them. Moved a misplaced Claude Code skill file
 out of the repo root into `.claude/skills/`.
 
+## Phase 11 — Final verification, and a second bug-fix round
+
+Full verification run recorded in `docs/FINAL-VERIFICATION-REPORT.md` (625 Python tests,
+337/337 JS tests, clean lint, clean build, `validate_data.py` and the IC harness both run
+against real published data). Also found: PR #41 merged this branch one commit before the
+actual watchlist/search silent-failure fixes landed, so those fixes never reached `main`.
+Rebased them forward and added a second round: a watchlist star on every search result (not
+just rows with published research), Watchlist added to the mobile bottom nav (it had no
+mobile entry point at all), and a mobile-reachable link to the existing widget-reorder panel
+(it existed already but its only entry point sits in a header region CSS hides below 620px).
+
 ## What did not change
 
 The champion scoring model, its weights, and every published number's formula are unchanged
