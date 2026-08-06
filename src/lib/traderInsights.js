@@ -78,7 +78,7 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
     netContributions,
     finalValue: outValues.at(-1),
     symbol: benchmarkHistory.symbol || benchmarkHistory.label,
-    methodology: 'Each settled deposit buys, and each withdrawal sells, benchmark units at that date’s close — the same dollars, invested in the benchmark instead. Pending transfers are excluded.',
+    methodology: 'Each settled deposit buys, and each withdrawal sells, benchmark units at that date’s close – the same dollars, invested in the benchmark instead. Pending transfers are excluded.',
   }
 }
 
@@ -123,7 +123,7 @@ export function purchaseTimingSignal(position, history, windowDays = 30) {
 }
 
 // Ranks holdings by how much they have beaten (or lagged) the benchmark since each one's
-// own purchase date — not a single shared start date, since positions were bought at
+// own purchase date – not a single shared start date, since positions were bought at
 // different times.
 export function holdingsVsBenchmark(positions = [], benchmarkHistory) {
   if (!benchmarkHistory?.dates?.length) return []
@@ -203,7 +203,7 @@ const MOODS = [
   { min: 20, emoji: '🔥', label: 'On fire', blurb: 'Big gains since you started tracking contributions.' },
   { min: 5, emoji: '📈', label: 'Cruising', blurb: 'Steady progress ahead of what you have put in.' },
   { min: -5, emoji: '😐', label: 'Holding steady', blurb: 'Close to breakeven against total contributions.' },
-  { min: -15, emoji: '🌧️', label: 'Rough patch', blurb: 'Down against contributions right now — normal on a long timeline.' },
+  { min: -15, emoji: '🌧️', label: 'Rough patch', blurb: 'Down against contributions right now – normal on a long timeline.' },
   { min: -Infinity, emoji: '⛈️', label: 'Stormy', blurb: 'A meaningfully rough stretch against what you have put in.' },
 ]
 

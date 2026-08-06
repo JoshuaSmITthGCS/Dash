@@ -30,7 +30,7 @@ export default function PolicyRadar() {
   const publishedNews = news.filter((item) => publishedTickers.has(item.ticker))
   const discoveryNews = news.filter((item) => !publishedTickers.has(item.ticker))
   return <>
-    <div className="page-head"><div><h1 className="page-title">Market <span className="accent">pulse</span></h1><p className="page-sub">Company news and sentiment are supporting evidence—not a substitute for earnings, cash flow, or balance-sheet quality.</p></div></div>
+    <div className="page-head"><div><h1 className="page-title">Market <span className="accent">pulse</span></h1><p className="page-sub">Company news and sentiment are supporting evidence–not a substitute for earnings, cash flow, or balance-sheet quality.</p></div></div>
     {usMarket && <div className="callout"><strong>U.S. equities: {usMarket.current_status}</strong> · {usMarket.primary_exchanges} · regular session {usMarket.local_open}–{usMarket.local_close} local exchange time</div>}
     <div className="sec-label">News for published research</div>
     <div className="grid">{publishedNews.map((item, index) => <NewsCard item={item} index={index} key={`${item.url}-${index}`} />)}</div>

@@ -217,7 +217,7 @@ export function useFirebasePortfolio() {
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-removed-${Date.now()}`), {
         type: 'position_removed', ticker: removed?.ticker || null, shares: removed?.shares || null,
         recordedAt: new Date().toISOString(), source: 'manual_holding_removal',
-        note: 'Removal is not treated as a sale; realized proceeds must be recorded separately.',
+        note: 'Removal is not treated as a sale. Realized proceeds must be recorded separately.',
       })
       batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), { ledgerComplete: false }, { merge: true })
       await batch.commit()

@@ -53,7 +53,7 @@ function Metric({ label, value, note, tone = '' }) {
 }
 
 function ScoreCard({ label, result, note }) {
-  return <article className="report-score-card"><div className="score-orbit" style={{ '--score': result?.score || 0 }}><strong>{result?.available ? result.score : '—'}</strong><span>/100</span></div><div><h3>{label}</h3><p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p>{result?.provisional && <span className="provisional-badge">Provisional</span>}</div></article>
+  return <article className="report-score-card"><div className="score-orbit" style={{ '--score': result?.score || 0 }}><strong>{result?.available ? result.score : '–'}</strong><span>/100</span></div><div><h3>{label}</h3><p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p>{result?.provisional && <span className="provisional-badge">Provisional</span>}</div></article>
 }
 
 function DirectionPill({ value, children }) {
@@ -121,8 +121,8 @@ function MarketPulsePreview({ data, loading }) {
   return <section className="report-section report-market-pulse" aria-labelledby="report-market-pulse-title">
     <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/market">News and context →</Link></header>
     {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse here on the Report…</div> : <div className="report-market-grid">
-      <article><span>FRED regime</span><strong>{regime?.score ?? '—'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
-      {items.map(([label, point, suffix]) => <article key={label}><span>{label}</span><strong>{point?.value ?? '—'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Period unavailable'}</p></article>)}
+      <article><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
+      {items.map(([label, point, suffix]) => <article key={label}><span>{label}</span><strong>{point?.value ?? '–'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Period unavailable'}</p></article>)}
     </div>}
   </section>
 }
@@ -157,7 +157,11 @@ export default function Dashboard() {
   const { data: advisorData, loading: advisorLoading, reload: reloadAdvisor } = useData('advisor.json')
   const { data: etfData, loading: etfLoading, reload: reloadEtfs } = useData('etfs.json')
   const { currentUser } = useAuth()
-  const { positions, loading: portfolioLoading } = useFirebasePortfolio()
+  const { positions: storedPositions, loading: portfolioLoading } = useFirebasePortfolio()
+  const previewPortfolio = import.meta.env.DEV
+    && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
+  const positions = previewPortfolio ? interfaceConfig.mobile_preview_positions : storedPositions
+  const hasPortfolioAccess = currentUser || previewPortfolio
   const finances = useFirebaseFinances()
   const tracking = usePortfolioTracking()
   // Quietly refreshes at 9pm local time (see src/lib/nightlyRefresh.js) so after-hours has
@@ -192,7 +196,7 @@ export default function Dashboard() {
   }, [portfolioQuotes, reloadHomeData])
   const pullToRefresh = usePullToRefresh({ onRefresh: refreshReport, refreshing: pullRefreshing })
 
-  if (loading || (currentUser && (portfolioLoading || finances.loading || (positions.length > 0 && benchmarkLoading)))) return <Loading />
+  if (loading || (hasPortfolioAccess && !previewPortfolio && (portfolioLoading || finances.loading || (positions.length > 0 && benchmarkLoading)))) return <Loading />
   if (!data?.research?.length) return <Empty note="No advisor dataset is available yet." />
 
   const rows = data.research
@@ -298,7 +302,7 @@ export default function Dashboard() {
       {universeRefresh.message && <div className={`sync-message refresh-message ${universeRefresh.status}`} role="status" aria-live="polite">{universeRefresh.message}</div>}
     </div>}
 
-    {!currentUser || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{currentUser ? 'Add holdings to unlock your report' : 'Sign in to see your financial report'}</h2><p>Research remains available now. Portfolio analytics appear only after holdings and per-share cost basis are available.</p><Link className="primary-button" to={currentUser ? '/portfolio' : '/research'}>{currentUser ? 'Add holdings' : 'Explore research'}</Link></section> : <>
+    {!hasPortfolioAccess || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{hasPortfolioAccess ? 'Add holdings to unlock your report' : 'Sign in to see your financial report'}</h2><p>Research remains available now. Portfolio analytics appear only after holdings and per-share cost basis are available.</p><Link className="primary-button" to={hasPortfolioAccess ? '/portfolio' : '/research'}>{hasPortfolioAccess ? 'Add holdings' : 'Explore research'}</Link></section> : <>
       <div className="dashboard-widget-stack">
       <DashboardWidget id="portfolio-summary" widgets={preferences.widgets}>
       <section className="report-hero-grid">
@@ -320,12 +324,12 @@ export default function Dashboard() {
           {(portfolioQuotes.message || portfolioQuotes.error) && <span className={`after-hours-message ${portfolioQuotes.error ? 'negative' : 'positive'}`} role="status" aria-live="polite">{portfolioQuotes.error || portfolioQuotes.message}</span>}
           <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>
         </article>
-        <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '—'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
+        <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '–'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
         <PlanningMetric input={projectionInput} endAge={finances.settings.retirementEndAge} />
         <Metric label="Action needed" value={String(actionable.length)} note={actionable.length ? `${actionable.slice(0, 3).map((row) => row.ticker).join(', ')} need review` : 'No holding has guidance beyond Hold'} />
       </section>
 
-      <div className="report-secondary-facts"><Metric label="Total unrealized return" value={portfolio.gain == null ? '—' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} /><Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost" /></div>
+      <div className="report-secondary-facts"><Metric label="Total unrealized return" value={portfolio.gain == null ? '–' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} /><Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost" /></div>
 
       <HomeResearchShelves rows={rows} themes={portfolioThemes} />
 
@@ -341,7 +345,7 @@ export default function Dashboard() {
           <Link className="secondary-button compact" to="/portfolio/insights">Trader insights →</Link>
         </div>
         <div className="insights-recap-stats">
-          <div><span>Today</span><b className={tone(today?.dollarReturn)}>{today ? `${signedPct(today.returnPct, 2)} · ${money(Math.abs(today.dollarReturn))}` : '—'}</b></div>
+          <div><span>Today</span><b className={tone(today?.dollarReturn)}>{today ? `${signedPct(today.returnPct, 2)} · ${money(Math.abs(today.dollarReturn))}` : '–'}</b></div>
           <div><span>Strategy return</span><b className={tone(returnSummary.strategy.returnPct)}>{returnSummary.strategy.available ? signedPct(returnSummary.strategy.returnPct, 1) : 'Unavailable'}</b></div>
           {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${preferences.defaultBenchmark}` : `Trailing ${preferences.defaultBenchmark}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
         </div>

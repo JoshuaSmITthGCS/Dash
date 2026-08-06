@@ -9,8 +9,8 @@ function ResultCard({ row, index, title, subtitle, fields, footer, variant }) {
     </header>
     <dl>{fields.map((field) => {
       const value = field.value(row, index)
-      if (field.hideEmpty && (value == null || value === '—')) return null
-      return <div key={field.label} className={field.className?.(row, index) || ''}><dt>{field.label}</dt><dd>{value ?? '—'}</dd></div>
+      if (field.hideEmpty && (value == null || value === '–')) return null
+      return <div key={field.label} className={field.className?.(row, index) || ''}><dt>{field.label}</dt><dd>{value ?? '–'}</dd></div>
     })}</dl>
     {(footer || asOf) && <footer>{footer && footer(row, index)}{asOf && <small className="as-of-line">As of {String(asOf).slice(0, 10)}</small>}</footer>}
   </article>

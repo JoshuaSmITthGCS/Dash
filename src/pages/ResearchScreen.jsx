@@ -15,7 +15,7 @@ export const SCREEN_NAV = [
 ]
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'
-const number = (value) => value == null ? '—' : Number(value).toFixed(1)
+const number = (value) => value == null ? '–' : Number(value).toFixed(1)
 
 export function ScreenNavigation() {
   return <nav className="screen-nav" aria-label="Research screens">{SCREEN_NAV.map(([to, label]) =>
@@ -53,7 +53,7 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
       </div></ResponsiveControlPanel>
       {!rows.length ? <Empty note={data?.status === 'unavailable' ? `Unavailable: ${data.reason_code}` : 'No results match these filters.'} /> : <>
       <ResultCards rows={rows} getKey={(row) => row.ticker} variant={preferences.mobileResearchView}
-        title={(row) => `#${row.rank ?? '—'} · ${row.ticker}`}
+        title={(row) => `#${row.rank ?? '–'} · ${row.ticker}`}
         subtitle={(row) => row.peer_group || row.sector || 'Unclassified'}
         fields={preferences.mobileResearchView === 'detailed' ? [
           { label: 'Classification', value: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
@@ -69,9 +69,9 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
         ]} />
       <div className="research-table card"><table>
         <thead><tr><th>Rank</th><th>Ticker</th><th>Classification</th><th>Peer group</th><th className="num">Percentile</th><th className="num">Structural</th><th className="num">Tactical</th><th className="num">Confidence</th><th>Warnings</th></tr></thead>
-        <tbody>{rows.map((row) => <tr key={row.ticker}><td>#{row.rank ?? '—'}</td><td><b>{row.ticker}</b></td><td>{row.classification || (row.eligibility ? 'Eligible' : 'Ineligible')}</td><td>{row.peer_group || '—'}</td><td className="mono num">{number(row.percentile)}</td><td className="mono num">{number(row.structural_score)}</td><td className="mono num">{number(row.tactical_score)}</td><td className="mono num">{number((row.confidence || 0) * 100)}%</td><td>{(row.reason_codes || []).join(', ') || '—'}</td></tr>)}</tbody>
+        <tbody>{rows.map((row) => <tr key={row.ticker}><td>#{row.rank ?? '–'}</td><td><b>{row.ticker}</b></td><td>{row.classification || (row.eligibility ? 'Eligible' : 'Ineligible')}</td><td>{row.peer_group || '–'}</td><td className="mono num">{number(row.percentile)}</td><td className="mono num">{number(row.structural_score)}</td><td className="mono num">{number(row.tactical_score)}</td><td className="mono num">{number((row.confidence || 0) * 100)}%</td><td>{(row.reason_codes || []).join(', ') || '–'}</td></tr>)}</tbody>
       </table></div></>}
-      <p className="disclaimer">Schema {data?.schema_version || '—'} · model {data?.model_version || '—'} · config {data?.config_version || '—'}. Rankings are hypotheses for prospective validation, not claims of outperformance.</p>
+      <p className="disclaimer">Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}. Rankings are hypotheses for prospective validation, not claims of outperformance.</p>
     </>}
   </>
 }

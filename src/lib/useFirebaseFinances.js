@@ -172,7 +172,7 @@ export function useFirebaseFinances() {
   }
 
   // Debounced so typing a multi-digit contribution doesn't fire one Firestore write per
-  // keystroke — concurrent writes for the same doc can resolve out of order and let an
+  // keystroke – concurrent writes for the same doc can resolve out of order and let an
   // earlier keystroke's value silently overwrite a later one.
   const updateAccountContribution = (id, annualContribution) => {
     if (!currentUser) return

@@ -3,7 +3,7 @@ import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import ResultCards from '../components/ResultCards.jsx'
 
-const metric = (value, suffix = '') => value == null ? '—' : `${Number(value).toFixed(2)}${suffix}`
+const metric = (value, suffix = '') => value == null ? '–' : `${Number(value).toFixed(2)}${suffix}`
 export default function ShadowPortfolios() {
   const { data, loading, error } = useData('screens/shadow-portfolios.json')
   if (loading) return <><ScreenNavigation /><Loading /></>

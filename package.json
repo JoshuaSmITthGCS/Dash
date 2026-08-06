@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "docs:breakdown": "node scripts/generate-app-breakdown.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint .",
-    "screenshots:mobile": "node scripts/mobile-screenshots.mjs"
+    "screenshots:mobile": "node scripts/mobile-screenshots.mjs",
+    "evidence:factors": "node scripts/factor-regression-evidence.mjs",
+    "evidence:hygiene": "node scripts/hygiene-evidence.mjs",
+    "evidence:projection": "node scripts/projection-spread-evidence.mjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9",

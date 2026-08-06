@@ -79,7 +79,7 @@ export default function Insights() {
 
   const shareRecap = async () => {
     const lines = [
-      `${mood.emoji} ${mood.label} — my portfolio today`,
+      `${mood.emoji} ${mood.label} – my portfolio today`,
       todayMove ? `Today: ${signedPct(todayMove.returnPct, 2)} (${money(Math.abs(todayMove.dollarReturn))})` : null,
       returnSummary.strategy.available ? `Strategy return: ${signedPct(returnSummary.strategy.returnPct, 1)}` : null,
       topMover ? `Biggest mover: ${topMover.ticker} ${signedPct(topMover.dailyMovePct, 1)}` : null,
@@ -92,7 +92,7 @@ export default function Insights() {
       setShareStatus('Copied to clipboard.')
       setTimeout(() => setShareStatus(''), 3000)
     } catch {
-      // Share was cancelled or clipboard access was denied — nothing to recover from here.
+      // Share was cancelled or clipboard access was denied – nothing to recover from here.
     }
   }
 
@@ -116,7 +116,7 @@ export default function Insights() {
         <button type="button" className="secondary-button compact" onClick={shareRecap}>Share today</button>
       </div>
       <div className="insights-recap-stats">
-        <div><span>Today</span><b style={{ color: moveColor(todayMove?.dollarReturn) }}>{todayMove ? `${signedPct(todayMove.returnPct, 2)} · ${money(Math.abs(todayMove.dollarReturn))}` : '—'}</b></div>
+        <div><span>Today</span><b style={{ color: moveColor(todayMove?.dollarReturn) }}>{todayMove ? `${signedPct(todayMove.returnPct, 2)} · ${money(Math.abs(todayMove.dollarReturn))}` : '–'}</b></div>
         <div><span>Strategy return (time-weighted)</span><b style={{ color: moveColor(returnSummary.strategy.returnPct) }}>{returnSummary.strategy.available ? signedPct(returnSummary.strategy.returnPct, 1) : 'Unavailable'}</b></div>
         <div><span>Your return (money-weighted, includes timing of deposits)</span><b style={{ color: moveColor(returnSummary.moneyWeighted.rate) }}>{returnSummary.moneyWeighted.available ? signedPct(returnSummary.moneyWeighted.rate, 1) : 'Unavailable'}</b></div>
         {topMover && <div><span>Today's biggest mover</span><b style={{ color: moveColor(topMover.dailyMovePct) }}>{topMover.ticker} {signedPct(topMover.dailyMovePct, 1)}</b></div>}
@@ -135,7 +135,7 @@ export default function Insights() {
               { label: 'Your account', values: chartAligned.primaryValues, color: 'var(--accent)', emphasis: true },
               { label: `${benchmarkLabel}, same deposits`, values: chartAligned.secondaryValues, color: 'var(--text-faint)', dashed: true },
             ]}
-            caption={`If every deposit and withdrawal had gone into ${benchmarkLabel} instead, that account would be worth ${money(shadow.finalValue)} today — you're at ${money(trackedAccountValue)}.`}
+            caption={`If every deposit and withdrawal had gone into ${benchmarkLabel} instead, that account would be worth ${money(shadow.finalValue)} today – you're at ${money(trackedAccountValue)}.`}
             zoomable
           />
         : <div className="report-empty-state"><h2>Not enough history yet</h2><p>This chart needs dated deposits/withdrawals and a refreshed portfolio value on more than one day. Keep tracking cash flows and refreshing prices to build it out.</p></div>}
@@ -160,8 +160,8 @@ export default function Insights() {
         <h2 id="trade-stats-title">As a trader</h2>
         {trades.available ? <>
           <div className="insights-stat-row"><span>Win rate</span><b>{trades.winRate.toFixed(0)}%</b><small>{trades.winCount}W / {trades.lossCount}L of {trades.count} closed</small></div>
-          <div className="insights-stat-row"><span>Average win</span><b style={{ color: 'var(--up)' }}>{trades.avgWin != null ? money(trades.avgWin) : '—'}</b></div>
-          <div className="insights-stat-row"><span>Average loss</span><b style={{ color: 'var(--down)' }}>{trades.avgLoss != null ? money(Math.abs(trades.avgLoss)) : '—'}</b></div>
+          <div className="insights-stat-row"><span>Average win</span><b style={{ color: 'var(--up)' }}>{trades.avgWin != null ? money(trades.avgWin) : '–'}</b></div>
+          <div className="insights-stat-row"><span>Average loss</span><b style={{ color: 'var(--down)' }}>{trades.avgLoss != null ? money(Math.abs(trades.avgLoss)) : '–'}</b></div>
           <div className="insights-stat-row"><span>Best trade</span><b style={{ color: 'var(--up)' }}>{money(trades.best.amount)}</b><small>{trades.best.note || 'No note'}</small></div>
           <div className="insights-stat-row"><span>Worst trade</span><b style={{ color: 'var(--down)' }}>{money(trades.worst.amount)}</b><small>{trades.worst.note || 'No note'}</small></div>
         </> : <p>Log realized gains and losses on the Portfolio page's cash-flow ledger to see win rate and trade stats here.</p>}
@@ -186,7 +186,7 @@ export default function Insights() {
           <span aria-hidden="true">🏁</span>
           <div><strong>{milestone.label}</strong>{milestone.achievedDate && <small>{milestone.achievedDate}</small>}</div>
         </div>)}
-      </div> : <p className="insights-timing">No milestones reached yet — the first is $500 in tracked account value.</p>}
+      </div> : <p className="insights-timing">No milestones reached yet – the first is $500 in tracked account value.</p>}
       {greenStreak.available && greenStreak.days >= 2 && <p className="insights-streak-note">Account value has moved {greenStreak.direction} for {greenStreak.days} days running.</p>}
     </section>
   </div>

@@ -64,7 +64,7 @@ export default function Watchlist() {
             {refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing…' : 'Refresh watchlist'}
           </button>
           <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}
-            title="Re-score the last published data without fetching anything new — takes a couple of minutes">
+            title="Re-score the last published data without fetching anything new – takes a couple of minutes">
             <Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
             {refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}
           </button>
@@ -131,7 +131,7 @@ export default function Watchlist() {
                       <b>{guidance.target ? `$${guidance.target.toFixed(2)}` : 'Unavailable'}</b>
                       <small>{guidance.targetUpside == null
                         ? 'Yahoo did not publish a usable target'
-                        : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '—'} analysts`}</small>
+                        : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '–'} analysts`}</small>
                     </div>
                     <div>
                       <span>{guidance.sizingMode === 'inverse-volatility' ? 'Equal-risk maximum' : 'Capped maximum'}</span>

@@ -3,7 +3,7 @@
  *
  * An equal split treats a 95-score company the same as a 55-score one, which contradicts
  * the whole point of ranking them. Weighting by score alone (linear) still under-rewards
- * the leaders, so each row's weight is its score raised to `power` (default 2) — a modest
+ * the leaders, so each row's weight is its score raised to `power` (default 2) – a modest
  * convexity that gives the better-ranked names a meaningfully larger bucket while still
  * leaving every eligible row something, rather than winner-take-all.
  */

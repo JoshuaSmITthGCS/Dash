@@ -10,7 +10,7 @@ import { getSellWatchRecommendation } from './sellWatchLogic'
 
 export const ACTION_STYLES = {
   HOLD: { label: 'Hold', color: 'var(--pos)', icon: '●', blurb: 'Keep the position as it stands' },
-  WATCH: { label: 'Watch', color: 'var(--warn)', icon: '◐', blurb: 'One factor slipped — monitor, do not act yet' },
+  WATCH: { label: 'Watch', color: 'var(--warn)', icon: '◐', blurb: 'One factor slipped – monitor, do not act yet' },
   TRIM: { label: 'Trim', color: 'var(--warn)', icon: '◑', blurb: 'Reduce exposure while the thesis is tested' },
   SELL: { label: 'Sell', color: 'var(--neg)', icon: '●', blurb: 'Exit and redeploy the capital' },
 }
@@ -65,7 +65,7 @@ export function getRecommendation(stock) {
 
 /** Action plus the share of the position it applies to, e.g. "TRIM 33%". */
 export function actionHeadline(recommendation) {
-  if (!recommendation) return '—'
+  if (!recommendation) return '–'
   const { action, suggestedTrimPct } = recommendation
   return suggestedTrimPct > 0 ? `${action} ${suggestedTrimPct}%` : action
 }

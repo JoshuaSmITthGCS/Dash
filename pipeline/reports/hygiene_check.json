@@ -1,0 +1,212 @@
+{
+  "generated_at": "2026-08-06T00:00:52.947Z",
+  "dependencies": {
+    "before": {
+      "high": 2,
+      "total": 13
+    },
+    "after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 10,
+      "high": 0,
+      "critical": 0,
+      "total": 10
+    },
+    "all_high_severity_resolved": true,
+    "resolved_transitives": {
+      "brace_expansion": "5.0.9",
+      "undici": "7.29.0"
+    },
+    "remaining": [
+      {
+        "name": "@google-cloud/firestore",
+        "severity": "moderate"
+      },
+      {
+        "name": "@google-cloud/storage",
+        "severity": "moderate"
+      },
+      {
+        "name": "firebase-admin",
+        "severity": "moderate"
+      },
+      {
+        "name": "gaxios",
+        "severity": "moderate"
+      },
+      {
+        "name": "google-gax",
+        "severity": "moderate"
+      },
+      {
+        "name": "react-router",
+        "severity": "moderate"
+      },
+      {
+        "name": "react-router-dom",
+        "severity": "moderate"
+      },
+      {
+        "name": "retry-request",
+        "severity": "moderate"
+      },
+      {
+        "name": "teeny-request",
+        "severity": "moderate"
+      },
+      {
+        "name": "uuid",
+        "severity": "moderate"
+      }
+    ]
+  },
+  "bundle": {
+    "advisory_max_bytes": 500000,
+    "baseline_main_chunk_bytes": 976040,
+    "current_main_chunk": {
+      "name": "index-D2QdFEcr.js",
+      "bytes": 180969
+    },
+    "main_reduction_pct": 81.46,
+    "every_javascript_chunk_below_advisory": true,
+    "chunks": [
+      {
+        "name": "firebase-firestore-CVxG9c9u.js",
+        "bytes": 307507
+      },
+      {
+        "name": "vendor-Cy8YAGLF.js",
+        "bytes": 186187
+      },
+      {
+        "name": "index-D2QdFEcr.js",
+        "bytes": 180969
+      },
+      {
+        "name": "firebase-firestore-BWrPwHod.js",
+        "bytes": 157084
+      },
+      {
+        "name": "firebase-auth-DiebEMg9.js",
+        "bytes": 86879
+      },
+      {
+        "name": "firebase-firestore-BqxwHe2T.js",
+        "bytes": 61368
+      },
+      {
+        "name": "Portfolio-jQS29tu1.js",
+        "bytes": 52714
+      },
+      {
+        "name": "StockDetailModal-BwIhYEUy.js",
+        "bytes": 49838
+      },
+      {
+        "name": "projectionWorker-B2WR65vQ.js",
+        "bytes": 25173
+      },
+      {
+        "name": "settings-CJ4ViRxc.js",
+        "bytes": 23222
+      },
+      {
+        "name": "Finances-Dt4FbDGy.js",
+        "bytes": 17872
+      },
+      {
+        "name": "Glossary-DR_TCa6P.js",
+        "bytes": 17682
+      },
+      {
+        "name": "Picks-CoTJGTXM.js",
+        "bytes": 15713
+      },
+      {
+        "name": "Settings-_8MONzps.js",
+        "bytes": 15235
+      },
+      {
+        "name": "Methodology-mlEzpioT.js",
+        "bytes": 14106
+      },
+      {
+        "name": "Diversification-Qmt7KrW6.js",
+        "bytes": 11770
+      },
+      {
+        "name": "Planning-DLLQl14W.js",
+        "bytes": 11079
+      },
+      {
+        "name": "Alerts-DpXEq73r.js",
+        "bytes": 10172
+      },
+      {
+        "name": "Insights-CxLYJpii.js",
+        "bytes": 10146
+      },
+      {
+        "name": "firebase-firestore-TiBokCsx.js",
+        "bytes": 9980
+      },
+      {
+        "name": "firebase-firestore-Bs1fP15J.js",
+        "bytes": 9336
+      },
+      {
+        "name": "LiveValidation-PLKSvJb2.js",
+        "bytes": 8363
+      },
+      {
+        "name": "ResearchScreen-BcB-3qRC.js",
+        "bytes": 7979
+      },
+      {
+        "name": "CongressTrades-C3UBoAsX.js",
+        "bytes": 7837
+      },
+      {
+        "name": "Watchlist-Ceg2CA8m.js",
+        "bytes": 6919
+      },
+      {
+        "name": "Search-kzH_EDXh.js",
+        "bytes": 4777
+      },
+      {
+        "name": "watchlistGuidance-ecTxozkj.js",
+        "bytes": 4337
+      },
+      {
+        "name": "firebase-firestore-C6Juv5vZ.js",
+        "bytes": 4258
+      },
+      {
+        "name": "EarlySessionResearch-BzMe9z04.js",
+        "bytes": 4233
+      },
+      {
+        "name": "firebase-firestore-BWv2FXkR.js",
+        "bytes": 3002
+      },
+      {
+        "name": "ShadowPortfolios-Cb5l6nAc.js",
+        "bytes": 2830
+      },
+      {
+        "name": "PolicyRadar-BoQD1P2w.js",
+        "bytes": 2706
+      },
+      {
+        "name": "Sparkline-p_Z6uEXJ.js",
+        "bytes": 1341
+      },
+      {
+        "name": "firebase-5RE7U923.js",
+        "bytes": 160
+      }
+    ]
+  }
+}

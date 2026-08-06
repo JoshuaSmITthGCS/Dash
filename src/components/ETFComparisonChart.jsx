@@ -4,8 +4,8 @@ import { comparisonLines } from '../lib/etfComparison'
 
 const RANGE_ORDER = ['1M', '3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'MAX']
 const VIEWS = [['growth', 'Fund vs benchmark'], ['relative', 'Relative strength'], ['drawdown', 'Drawdowns']]
-const pct = (value) => value == null ? '—' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`
-const decimal = (value) => value == null ? '—' : Number(value).toFixed(2)
+const pct = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`
+const decimal = (value) => value == null ? '–' : Number(value).toFixed(2)
 
 export function ETFComparisonChart({ data, initialRange = '1Y' }) {
   const available = RANGE_ORDER.filter((key) => data.chart_ranges?.[key])
@@ -45,7 +45,7 @@ export function ETFComparisonChart({ data, initialRange = '1Y' }) {
         className={key === view ? 'active' : ''} aria-pressed={key === view} onClick={() => setView(key)}>{label}</button>)}</div>
     </div>
     <GrowthChart dates={range.series.map((row) => row.date)} series={lines}
-      title={view === 'growth' ? `Normalized growth of 100 — ${data.ticker} vs ${benchmarkLabel}` : view === 'relative' ? `${data.ticker} relative to ${benchmarkLabel}` : 'Drawdown comparison'}
+      title={view === 'growth' ? `Normalized growth of 100 – ${data.ticker} vs ${benchmarkLabel}` : view === 'relative' ? `${data.ticker} relative to ${benchmarkLabel}` : 'Drawdown comparison'}
       valueFormatter={view === 'drawdown' ? pct : (value) => Number(value).toFixed(1)} />
     <div className="etf-metric-grid">{cards.map(([label, value]) => <div className="card kpi" key={label}>
       <div className="kpi-label">{label}</div><div className="kpi-value">{value}</div></div>)}</div>

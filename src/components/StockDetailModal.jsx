@@ -36,7 +36,7 @@ function Kpi({ label, value, note, color }) {
 }
 
 const signed = (value, digits = 1, suffix = '%') =>
-  value == null ? '—' : `${value > 0 ? '+' : ''}${value.toFixed(digits)}${suffix}`
+  value == null ? '–' : `${value > 0 ? '+' : ''}${value.toFixed(digits)}${suffix}`
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
@@ -65,7 +65,7 @@ function primaryTheme(stock) {
 }
 
 // SEC Form 4 buys vs sells (pipeline/insider_signal.py). The pipeline already scores this
-// into the modifier, but never surfaced the raw grouping — show it only once real filings
+// into the modifier, but never surfaced the raw grouping – show it only once real filings
 // were reviewed, so a quiet run (no SEC_USER_AGENT, no filings this window) renders nothing
 // rather than a false "0 buys · 0 sells".
 function InsiderActivityView({ insider }) {
@@ -114,7 +114,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const explainableStock = explainability ? { ...stock, explainability } : stock
 
   // A caller that already merged in position-specific guidance (e.g. a portfolio
-  // stop-loss check) passes it here — recomputing from the raw research row would
+  // stop-loss check) passes it here – recomputing from the raw research row would
   // silently drop that, since the row itself knows nothing about your cost basis.
   const recommendation = recommendationOverride || getRecommendation(stock)
   const isEtf = stock.is_etf || String(stock.asset_type || '').toLowerCase() === 'etf' || stock.sector === 'ETF'
@@ -132,7 +132,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const themeScore = theme?.exposure_score ?? theme?.score
   const dataAsOf = stock.generated_at || stock.recommendation_v2?.generated_at || fullResearch?.generated_at
 
-  // A held position with a purchase date gets its own since-you-bought-it comparison — the
+  // A held position with a purchase date gets its own since-you-bought-it comparison – the
   // full charted window (often a year) is the wrong question once you actually own the stock.
   const basis = stock.hypothetical?.basis || 500
   const scopedSeries = position?.purchaseDate
@@ -194,8 +194,8 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
           <SetupQualityBreakdown guidance={setupGuidance} />
           <FactorBars bars={explainability?.factor_bars} />
           <div className="grid grid-4">
-          <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '—'} />
-          <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '—'} />
+          <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '–'} />
+          <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '–'} />
           <Kpi label="20-day move" value={signed(technical.return_20d)} color={moveColor(technical.return_20d)} />
           <Kpi label="1-year move" value={signed(technical.return_252d)} color={moveColor(technical.return_252d)} />
           {typeof stock.earnings_surprise === 'number' && (
@@ -266,7 +266,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                   {Object.entries(stock.components || {}).map(([key, value]) => (
                     <div key={key}>
                       <span>{key.replace(/_/g, ' ')}</span>
-                      <b>{value == null ? '—' : Math.round(value)}</b>
+                      <b>{value == null ? '–' : Math.round(value)}</b>
                       <i><em style={{ width: `${value || 0}%` }} /></i>
                     </div>
                   ))}
@@ -280,7 +280,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                     {Object.entries(categories).map(([key, value]) => (
                       <div key={key}>
                         <span>{key.replace(/_/g, ' ')}</span>
-                        <b>{value == null ? '—' : Math.round(value)}</b>
+                        <b>{value == null ? '–' : Math.round(value)}</b>
                         <i><em style={{ width: `${value || 0}%` }} /></i>
                       </div>
                     ))}
@@ -308,7 +308,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                     {stock.modifiers.notes.map((note) => <li key={note}>{note}</li>)}
                   </ul>
                   <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
-                    Applied on top of the {stock.base_score ?? '—'} evidence score. Modifiers refine
+                    Applied on top of the {stock.base_score ?? '–'} evidence score. Modifiers refine
                     a ranking; they never outweigh the fundamentals behind it.
                   </p>
                 </div>
@@ -376,9 +376,9 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             )}
             <div className="grid grid-4">
               <Kpi label="Max drawdown (1y)" value={signed(technical.max_drawdown_252d)} color={moveColor(technical.max_drawdown_252d)} />
-              <Kpi label="Volatility" value={technical.annualized_volatility ? `${technical.annualized_volatility.toFixed(0)}%` : '—'} />
+              <Kpi label="Volatility" value={technical.annualized_volatility ? `${technical.annualized_volatility.toFixed(0)}%` : '–'} />
               <Kpi label="Vs SPY (20d)" value={signed(technical.relative_strength_20d)} color={moveColor(technical.relative_strength_20d)} />
-              <Kpi label="Beta" value={technical.beta != null ? technical.beta.toFixed(2) : '—'} />
+              <Kpi label="Beta" value={technical.beta != null ? technical.beta.toFixed(2) : '–'} />
             </div>
             </>}
           </div>

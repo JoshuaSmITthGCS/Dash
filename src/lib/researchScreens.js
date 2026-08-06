@@ -57,7 +57,7 @@ export function rankValueTurnarounds(rows, limit = 5) {
 // doesn't carry the fundamentals ratios those screens gate on, and there's no meaningful
 // "clears the bar" threshold for a fund the way there is for a single stock. The backend
 // (pipeline/fetch_etfs.py) already ranks the full watchlist against itself on a blended
-// performance/risk/cost/liquidity/quality score — this just re-sorts defensively and slices.
+// performance/risk/cost/liquidity/quality score – this just re-sorts defensively and slices.
 export function rankGrowingEtfs(rows, limit = 5) {
   return rows
     .filter((row) => finite(row.scores?.overall))
@@ -112,7 +112,7 @@ export function rankMomentum(rows, limit = 5) {
 
 // Short-term reversal (Jegadeesh 1990; Lehmann 1990): a stock that pulled back over the
 // medium term but has just turned up over the most recent week is a reversal candidate,
-// not a falling knife. This is a daily-close screen built from already-published fields —
+// not a falling knife. This is a daily-close screen built from already-published fields –
 // unrelated to the Early-Session premarket/intraday screens, which stay killed until real
 // reversal-detection logic (support zones, confirmation, trigger/invalidation) exists; see
 // pipeline/early_session_research.py. A fundamentals floor keeps a genuinely deteriorating
@@ -146,13 +146,13 @@ export function rankReversal(rows, limit = 5) {
 
 // Structural-trend exposure is deliberately its own screen rather than a component of the
 // research score. Blending a forward-looking thematic bet into the fundamentals score would
-// make that score unreadable — you could no longer tell whether a stock ranked well because
+// make that score unreadable – you could no longer tell whether a stock ranked well because
 // it was cheap and profitable or because it carried a fashionable tag.
 //
 // Two rules this ranking enforces, both aimed at the documented failure mode of thematic
 // products (buying whatever already ran):
 //   1. Names the backend excluded on valuation grounds sort below eligible ones. They stay
-//      visible — high exposure at a euphoric price is worth knowing — but never lead.
+//      visible – high exposure at a euphoric price is worth knowing – but never lead.
 //   2. Ordering uses opportunity_score (exposure × quality × valuation discipline), never
 //      exposure alone, so the purest-play expensive name does not automatically win.
 export function rankThemeExposure(theme, limit = 5) {

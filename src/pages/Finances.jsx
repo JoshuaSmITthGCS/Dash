@@ -14,7 +14,7 @@ import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import Icon from '../components/Icons.jsx'
 
 const money = (value, digits = 0) =>
-  value == null ? '—' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
+  value == null ? '–' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
 
 const TABS = [
   { key: 'budget', label: 'Budget' },
@@ -393,7 +393,7 @@ export default function Finances() {
             </div>
             <div className="card kpi">
               <div className="kpi-label">Savings Last Through Age {finances.settings.retirementEndAge}</div>
-              <div className="kpi-value" style={{ color: 'var(--pos)' }}>{successProbability == null ? '—' : `${(successProbability * 100).toFixed(0)}%`}</div>
+              <div className="kpi-value" style={{ color: 'var(--pos)' }}>{successProbability == null ? '–' : `${(successProbability * 100).toFixed(0)}%`}</div>
               <div className="kpi-note">Given {money(finances.settings.monthlyWithdrawal)} monthly spending</div>
             </div>
           </div>

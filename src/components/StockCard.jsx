@@ -59,7 +59,7 @@ export default function StockCard({ stock, rank, totalStocks = 20, defaultExpand
               </span>
             </div>
             <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>
-              {stock.company_name || stock.name || '—'}
+              {stock.company_name || stock.name || '–'}
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {stock.stance && (
@@ -97,7 +97,7 @@ export default function StockCard({ stock, rank, totalStocks = 20, defaultExpand
               color: band.color,
               marginBottom: 4
             }}>
-              {stock.score?.toFixed(1) || '—'}
+              {stock.score?.toFixed(1) || '–'}
             </div>
             {stock.price && (
               <div style={{ fontSize: 14, fontFamily: 'var(--font-mono)', opacity: 0.8 }}>

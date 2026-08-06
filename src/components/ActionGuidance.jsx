@@ -1,10 +1,10 @@
 import { actionHeadline, actionStyle, positionImpact } from '../lib/recommendation'
 
-const money = (value) => (value == null ? '—' : `$${value.toFixed(2)}`)
+const money = (value) => (value == null ? '–' : `$${value.toFixed(2)}`)
 
 /** Compact action chip for tables and card headers. */
 export function ActionPill({ recommendation }) {
-  if (!recommendation) return <span className="mono" style={{ color: 'var(--text-faint)' }}>—</span>
+  if (!recommendation) return <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>
   const style = actionStyle(recommendation.action)
   return (
     <span
@@ -76,7 +76,7 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
       <small style={{ color: 'var(--text-faint)', fontSize: 11 }}>
         {fromStopLoss
           ? 'This guidance comes from a high-water-mark position rule, not the business thesis. The company\'s own fundamentals, market behaviour, and sentiment may still read Hold.'
-          : 'Guidance never moves off Hold on price action alone, or on a single headline. Two of three independent factors — business fundamentals, market behaviour, and positioning/sentiment — have to agree first.'}
+          : 'Guidance never moves off Hold on price action alone, or on a single headline. Two of three independent factors – business fundamentals, market behaviour, and positioning/sentiment – have to agree first.'}
       </small>
       {fromStopLoss && recommendation.companyRecommendation && (
         <div className="company-thesis-row">

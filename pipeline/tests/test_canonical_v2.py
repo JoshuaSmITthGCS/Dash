@@ -12,6 +12,7 @@ from fundamentals_extended import extended_observations
 from migrate_advisor_v2 import migrate
 from peer_groups import canonical_percentiles
 from scoring_v2 import build_v2_analysis
+from scorer import SETTINGS
 
 
 with open(os.path.join(os.path.dirname(__file__), "fixtures", "regression_cases.json")) as handle:
@@ -217,7 +218,7 @@ class MigrationTests(unittest.TestCase):
             "source_status": {}, "methodology": {}
         }
         migrated = migrate(payload)
-        self.assertEqual(migrated["schema_version"], 3)
+        self.assertEqual(migrated["schema_version"], SETTINGS["model"]["advisor_schema_version"])
         self.assertEqual(migrated["research"][0]["score"], 77)
         self.assertIn("analysis_v2", migrated["research"][0])
         self.assertIn("run_manifest", migrated)

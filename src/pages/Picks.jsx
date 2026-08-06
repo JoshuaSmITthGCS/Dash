@@ -78,7 +78,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
         <span className={`holding-chip ${held ? 'held' : ''}`}>{held ? 'Bought' : 'Not bought'}</span>
       </div>
       <dl className="research-card-metrics">
-        <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</dd></div>
+        <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</dd></div>
         <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} capsule /></dd></div>
         <div><dt>Data confidence</dt><dd>{Math.round((row.confidence || 0) * 100)}%</dd></div>
       </dl>
@@ -126,7 +126,7 @@ export default function Picks() {
 
   const stockResearch = data?.research || []
   // Momentum and reversal are separate screens (see /screens/momentum, /screens/matrix), each
-  // with their own qualifying bar — but a stock that clears one of those bars is worth flagging
+  // with their own qualifying bar – but a stock that clears one of those bars is worth flagging
   // right here in the single ranked list rather than only inside its own separate page. Ranking
   // itself is untouched: these are stickers on top of the existing sort, not a second ordering.
   const research = useMemo(() => {
@@ -158,7 +158,7 @@ export default function Picks() {
     .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || String(row.name || '').toLowerCase().includes(normalized))
     .slice().sort(SORTS[sort][1])
 
-  // Buckets follow whatever's currently filtered and sorted above — change the sort to
+  // Buckets follow whatever's currently filtered and sorted above – change the sort to
   // "Fundamentals" and the buckets re-weight around that ranking instead of the default score.
   const allocation = allocateFunds(rows, Number(availableFunds), { limit: 8 })
 
@@ -258,9 +258,9 @@ export default function Picks() {
               <td className="rank">#{rows.findIndex((item) => item.ticker === row.ticker) + 1}</td>
               <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
               <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
-              <td><Tier label={row.stance} /></td><td>{row.is_etf ? '—' : <ActionPill recommendation={getRecommendation(row)} />}</td>
+              <td><Tier label={row.stance} /></td><td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
               <td className="mono num score-cell">{row.score}</td>
-              <td className="mono num">{row.components?.fundamentals == null ? '—' : Math.round(row.components.fundamentals)}</td>
+              <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
               <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
               <td className="mono num">{Math.round((row.confidence || 0) * 100)}%</td>
               <td>{heldTickers.has(row.ticker)

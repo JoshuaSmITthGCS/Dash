@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-05T23:17:59.023Z",
+  "generated_at": "2026-08-06T00:01:01.234Z",
   "comparison": "30-year terminal balance p90 minus p10",
   "scenario": {
     "currentBalance": 100000,
@@ -7,6 +7,11 @@
     "seed": 42
   },
   "path_count": 5000,
+  "performance": {
+    "runtime_ms": 20.906,
+    "interaction_budget_ms": 400,
+    "passed": true
+  },
   "old_repeating_pattern": {
     "source_months": 36,
     "terminal_percentiles": {

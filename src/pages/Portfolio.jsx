@@ -50,10 +50,10 @@ import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 const money = (value, digits = 0) =>
-  value == null ? '—' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
+  value == null ? '–' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
 
 const signedPct = (value, digits = 1) =>
-  value == null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`
+  value == null ? '–' : `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
@@ -77,7 +77,7 @@ function recentReturn(values, points = 5) {
   return (clean.at(-1) / clean[0] - 1) * 100
 }
 
-/** Where the binding stop sits and how far away it is — visible before it's hit, not just after. */
+/** Where the binding stop sits and how far away it is – visible before it's hit, not just after. */
 function StopLossNote({ stopLoss }) {
   if (!stopLoss || stopLoss.bindingPrice == null) return null
   const close = stopLoss.distancePct != null && stopLoss.distancePct <= 5
@@ -492,7 +492,7 @@ export default function Portfolio() {
         </div>
         <div className="card kpi portfolio-score-kpi">
           <div className="kpi-label">Portfolio Score</div>
-          <div className="kpi-value">{overallScore.available ? overallScore.score : '—'}<small>/100</small></div>
+          <div className="kpi-value">{overallScore.available ? overallScore.score : '–'}<small>/100</small></div>
           <div className="kpi-note">{overallScore.available ? `${overallScore.provisional ? 'Provisional · ' : ''}${overallScore.reason}` : overallScore.reason}</div>
           <a href="/portfolio/diversification">See score details →</a>
         </div>
@@ -501,7 +501,7 @@ export default function Portfolio() {
           <div className="kpi-value" style={{ color: moveColor(versusIndex?.excessReturnPct) }}>
             {versusIndex
               ? signedPct(versusIndex.excessReturnPct)
-              : '—'}
+              : '–'}
           </div>
           <div className="kpi-note">
             {versusIndex
@@ -513,7 +513,7 @@ export default function Portfolio() {
         <div className="card kpi">
           <div className="kpi-label">Uninvested cash</div>
           <div className="kpi-value">
-            {uninvestedCash == null ? '—' : money(uninvestedCash, 2)}
+            {uninvestedCash == null ? '–' : money(uninvestedCash, 2)}
           </div>
           <div className="kpi-note">
             {uninvestedCash == null ? 'Sync Fidelity or set a cash balance below' : 'Available for your next purchase'}
@@ -663,7 +663,7 @@ export default function Portfolio() {
           </div>
           <p style={{ color: 'var(--text-faint)', fontSize: 11, marginTop: 10 }}>
             Illustrative guidelines only ({exposure.maxPositionPct}% per position, {exposure.maxSectorPct}% per
-            sector) — not a rule to force a sale, but a prompt to size new buys and rebalancing with the
+            sector) – not a rule to force a sale, but a prompt to size new buys and rebalancing with the
             concentration you already carry in mind.
           </p>
         </div>
@@ -674,7 +674,7 @@ export default function Portfolio() {
           <summary>
             <div>
               <span className="eyebrow">Opportunity cost</span>
-              <strong>What if I chose the S&amp;P 500—or did not invest?</strong>
+              <strong>What if I chose the S&amp;P 500–or did not invest?</strong>
               <small>Same contributions, added on your recorded purchase dates</small>
             </div>
             <div className="comparison-summary-side">
@@ -695,7 +695,7 @@ export default function Portfolio() {
                 { label: 'Deposits held as cash', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
               ]}
               title="One-to-one performance from your investment dates"
-              caption={`Each holding starts with its exact cost-basis dollars on its recorded purchase date, then follows that stock’s price return. The S&P receives the identical dollars on the identical date; cash holds the same deposits. Jumps show new money entering, not investment gains. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `; ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
+              caption={`Each holding starts with its exact cost-basis dollars on its recorded purchase date, then follows that stock’s price return. The S&P receives the identical dollars on the identical date. Cash holds the same deposits. Jumps show new money entering, not investment gains. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `. ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
               zoomable
             />
           </div>
@@ -848,9 +848,9 @@ export default function Portfolio() {
               {sortedPositions.map((pos) => (
                 <tr key={pos.id || pos.ticker}>
                   <td className="mono">{pos.ticker}</td>
-                  <td>{pos.priceInfo?.name || '—'}</td>
+                  <td>{pos.priceInfo?.name || '–'}</td>
                   <td><ActionPill recommendation={pos.recommendation} /></td>
-                  <td>{pos.stopLoss ? <StopLossNote stopLoss={pos.stopLoss} /> : <span className="mono">—</span>}</td>
+                  <td>{pos.stopLoss ? <StopLossNote stopLoss={pos.stopLoss} /> : <span className="mono">–</span>}</td>
                   <td className="mono num">
                     {editingId === pos.id
                       ? <input className="inline-edit-input table-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
@@ -872,21 +872,21 @@ export default function Portfolio() {
                       )
                       : `$${pos.costBasis.toFixed(2)}`}
                   </td>
-                  <td className="mono num">{pos.currentPrice == null ? '—' : `$${pos.currentPrice.toFixed(2)}`}</td>
-                  <td className="mono num">{pos.currentValue == null ? '—' : money(pos.currentValue)}</td>
-                  <td className="mono num">{pos.allocationPct == null ? '—' : `${pos.allocationPct.toFixed(1)}%`}</td>
+                  <td className="mono num">{pos.currentPrice == null ? '–' : `$${pos.currentPrice.toFixed(2)}`}</td>
+                  <td className="mono num">{pos.currentValue == null ? '–' : money(pos.currentValue)}</td>
+                  <td className="mono num">{pos.allocationPct == null ? '–' : `${pos.allocationPct.toFixed(1)}%`}</td>
                   <td className="mono num" style={{ color: moveColor(pos.gain) }}>
-                    {pos.gain == null ? '—' : `${pos.gain >= 0 ? '+' : '−'}${money(Math.abs(pos.gain))}`}
+                    {pos.gain == null ? '–' : `${pos.gain >= 0 ? '+' : '−'}${money(Math.abs(pos.gain))}`}
                   </td>
                   <td className="num"><Move value={pos.gainPct} /></td>
-                  <td className="mono num score-cell">{pos.priceInfo?.score ?? '—'}</td>
+                  <td className="mono num score-cell">{pos.priceInfo?.score ?? '–'}</td>
                   <td className="num portfolio-trend-cell">
                     {pos.trendValues.length > 1 ? (
                       <>
                         <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={34} />
                         <Move value={pos.trendPct} />
                       </>
-                    ) : <span className="mono">—</span>}
+                    ) : <span className="mono">–</span>}
                   </td>
                   <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {editingId === pos.id ? (
@@ -961,21 +961,21 @@ export default function Portfolio() {
                   <td className="mono num">{money(pos.totalCost)}</td>
                   <td className="mono num">{money(pos.currentValue)}</td>
                   <td className="num"><Move value={pos.gainPct} /></td>
-                  <td className="mono num">{pos.versusBenchmark ? money(pos.versusBenchmark.value) : '—'}</td>
+                  <td className="mono num">{pos.versusBenchmark ? money(pos.versusBenchmark.value) : '–'}</td>
                   <td className="num">
-                    {pos.versusBenchmark ? <Move value={pos.versusBenchmark.gainPct} /> : <span className="mono">—</span>}
+                    {pos.versusBenchmark ? <Move value={pos.versusBenchmark.gainPct} /> : <span className="mono">–</span>}
                   </td>
                   <td className="mono num" style={{ color: moveColor(pos.versusBenchmark ? pos.currentValue - pos.versusBenchmark.value : null) }}>
                     {pos.versusBenchmark
                       ? `${pos.currentValue - pos.versusBenchmark.value >= 0 ? '+' : '−'}${money(Math.abs(pos.currentValue - pos.versusBenchmark.value))}`
-                      : '—'}
+                      : '–'}
                   </td>
                 </tr>
               ))}
               {versusIndex && (
                 <tr style={{ fontWeight: 600 }}>
                   <td className="mono">TOTAL</td>
-                  <td className="num">—</td>
+                  <td className="num">–</td>
                   <td className="mono num">{money(versusIndex.invested)}</td>
                   <td className="mono num">{money(versusIndex.holdingsValue)}</td>
                   <td className="num"><Move value={versusIndex.holdingsReturnPct} /></td>
@@ -990,7 +990,7 @@ export default function Portfolio() {
           </table>
           <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 12 }}>
             Add or correct a purchase date above to calculate the same-day comparison. Positions
-            bought before the published benchmark window show “—” rather than being compared
+            bought before the published benchmark window show “–” rather than being compared
             against the wrong entry price.
           </p>
         </div>
@@ -1009,7 +1009,7 @@ export default function Portfolio() {
           <div className="callout" style={{ margin: '0 0 16px' }}>
             <strong>${basis} calculator:</strong> what ${basis} would be worth today if it went into
             each position on the day you actually bought it, against the same ${basis} in the
-            S&amp;P 500 from that same day. Not what you actually invested — same fair, same-day
+            S&amp;P 500 from that same day. Not what you actually invested – same fair, same-day
             comparison as "Vs S&amp;P 500", just a flat ${basis} everywhere.
           </div>
           <table>
@@ -1037,18 +1037,18 @@ export default function Portfolio() {
                       />
                     </td>
                     <td className="mono num">{money(basis)}</td>
-                    <td className="mono num">{calc ? money(calc.stockValue) : '—'}</td>
+                    <td className="mono num">{calc ? money(calc.stockValue) : '–'}</td>
                     <td className="num">
-                      {calc ? <Move value={calc.stockReturnPct} /> : <span className="mono">—</span>}
+                      {calc ? <Move value={calc.stockReturnPct} /> : <span className="mono">–</span>}
                     </td>
-                    <td className="mono num">{calc ? money(calc.benchmarkValue) : '—'}</td>
+                    <td className="mono num">{calc ? money(calc.benchmarkValue) : '–'}</td>
                     <td className="num">
-                      {calc ? <Move value={calc.benchmarkReturnPct} /> : <span className="mono">—</span>}
+                      {calc ? <Move value={calc.benchmarkReturnPct} /> : <span className="mono">–</span>}
                     </td>
                     <td className="mono num" style={{ color: moveColor(calc?.dollarsAhead) }}>
                       {calc
                         ? `${calc.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(calc.dollarsAhead))}`
-                        : '—'}
+                        : '–'}
                     </td>
                   </tr>
                 )
@@ -1056,7 +1056,7 @@ export default function Portfolio() {
               {fixedBasisTotal && (
                 <tr style={{ fontWeight: 600 }}>
                   <td className="mono">TOTAL</td>
-                  <td className="num">—</td>
+                  <td className="num">–</td>
                   <td className="mono num">{money(fixedBasisTotal.invested)}</td>
                   <td className="mono num">{money(fixedBasisTotal.stockValue)}</td>
                   <td className="num"><Move value={fixedBasisTotal.stockReturnPct} /></td>
@@ -1078,7 +1078,7 @@ export default function Portfolio() {
           </table>
           <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 12 }}>
             Add or correct a purchase date above to calculate the same-day comparison. Positions
-            bought before the published benchmark window show “—” rather than being compared
+            bought before the published benchmark window show “–” rather than being compared
             against the wrong entry price.
           </p>
         </div>

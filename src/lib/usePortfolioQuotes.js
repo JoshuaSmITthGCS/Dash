@@ -87,8 +87,8 @@ export function usePortfolioQuotes(symbols) {
     }
   }
 
-  // Refresh once a day at 9pm local time — after Nasdaq/NYSE after-hours trading has wound
-  // down — without the user having to press the button. See src/lib/nightlyRefresh.js for
+  // Refresh once a day at 9pm local time – after Nasdaq/NYSE after-hours trading has wound
+  // down – without the user having to press the button. See src/lib/nightlyRefresh.js for
   // why 9pm and how the catch-up-if-opened-late behavior works. Both the refresh function
   // and the latest fetchedAt are read through refs so the recursive setTimeout chain always
   // sees current state, not whatever it closed over the one time the effect ran.

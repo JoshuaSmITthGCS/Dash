@@ -23,7 +23,7 @@ export default function Sparkline({ values = [], label = 'Price trend', height =
   return (
     <svg className={`sparkline ${className}`} viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none" height={height} role="img"
-      aria-label={`${label}; ${positive ? 'up' : 'down'} over the displayed period`}>
+      aria-label={`${label}. ${positive ? 'Up' : 'Down'} over the displayed period`}>
       <defs>
         <linearGradient id={`spark-${positive ? 'up' : 'down'}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={positive ? 'var(--up)' : 'var(--down)'} stopOpacity=".28" />

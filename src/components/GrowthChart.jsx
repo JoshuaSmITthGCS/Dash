@@ -73,7 +73,7 @@ export default function GrowthChart({
   caption,
   zoomable = false,
   valueFormatter = money,
-  earningsMarker = null, // { value, label } — most recent earnings-surprise reading, if the pipeline has one
+  earningsMarker = null, // { value, label } – most recent earnings-surprise reading, if the pipeline has one
 }) {
   const [zoom, setZoom] = useState('all')
   const [activeIndex, setActiveIndex] = useState(null)
@@ -85,7 +85,7 @@ export default function GrowthChart({
   if (!availableLines.length || fullDates.length < 2) {
     return (
       <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-        No comparable price history yet — it appears after the next data refresh.
+        No comparable price history yet – it appears after the next data refresh.
       </div>
     )
   }
@@ -111,7 +111,7 @@ export default function GrowthChart({
   const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {
     const values = line.values.filter((value) => value != null)
     return `${line.label}: ${valueFormatter(values[values.length - 1])}`
-  }).join('; ')} at the end of the period.`
+  }).join('. ')} at the end of the period.`
   const selectPoint = (clientX, target) => {
     const bounds = target.getBoundingClientRect()
     const plotLeft = bounds.left + PAD.left / width * bounds.width
@@ -128,7 +128,7 @@ export default function GrowthChart({
   }
 
   // The pipeline only has an aggregate "recent quarters, newest weighted heaviest" earnings-surprise
-  // number, not a dated per-quarter actual-vs-estimate history — so this marks the latest point on
+  // number, not a dated per-quarter actual-vs-estimate history – so this marks the latest point on
   // the primary line rather than pretending to know which past date the report landed on.
   const earningsPoint = earningsMarker?.value != null
     ? [...scalePoints(lines[0]?.values || [], usableDates, width, height, bounds)].reverse().find(Boolean)
@@ -155,7 +155,7 @@ export default function GrowthChart({
       </div>
       <div className="chart-scrub-summary" role="status" aria-live="polite">
         <span>{String(usableDates[displayedIndex]).slice(0, 10)}</span>
-        <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '—' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
+        <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '–' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
       </div>
       <div className="chart-scroll-region" style={{ overflowX: 'auto' }}>
         <svg
@@ -236,7 +236,7 @@ export default function GrowthChart({
             <line x1={activeX} x2={activeX} y1={PAD.top} y2={height - PAD.bottom} stroke="var(--text-faint)" strokeDasharray="3 3" />
             <rect x={Math.max(PAD.left, Math.min(width - 174, activeX - 76))} y={8} width="160" height={22 + lines.length * 17} rx="8" fill="var(--surface-primary)" stroke="var(--border-strong)" />
             <text x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y="24" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)">{String(usableDates[activeIndex]).slice(0, 10)}</text>
-            {lines.map((line, index) => <text key={line.label} x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="10" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '—' : valueFormatter(line.values[activeIndex])}</text>)}
+            {lines.map((line, index) => <text key={line.label} x={Math.max(PAD.left + 8, Math.min(width - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="10" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '–' : valueFormatter(line.values[activeIndex])}</text>)}
           </g>}
         </svg>
       </div>

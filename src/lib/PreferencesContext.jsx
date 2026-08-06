@@ -190,7 +190,7 @@ export function usePreferences() {
 }
 
 export function formatPreferenceMoney(value, mode = 'automatic') {
-  if (!Number.isFinite(Number(value))) return '—'
+  if (!Number.isFinite(Number(value))) return '–'
   const number = Number(value)
   const compact = mode === 'compact' || (mode === 'automatic' && Math.abs(number) >= 100_000)
   return new Intl.NumberFormat('en-US', {

@@ -65,7 +65,7 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
     return covered === tracked.length ? { date, value, coveragePct: positions.length ? covered / positions.length * 100 : 0 } : null
   }).filter(Boolean)
   if (rows.length < 2) return null
-  return { dates: rows.map((row) => row.date), values: rows.map((row) => row.value), coverage: rows.map((row) => row.coveragePct), methodology: 'Current quantities applied to historical daily closes; not actual historical account value.' }
+  return { dates: rows.map((row) => row.date), values: rows.map((row) => row.value), coverage: rows.map((row) => row.coveragePct), methodology: 'Current quantities applied to historical daily closes. This is not actual historical account value.' }
 }
 
 export function selectPeriod(series, period = '1M') {
@@ -855,5 +855,5 @@ export function portfolioScore({ diversification, resilience, performance, bench
   if (available.length < 3 || availableWeight <= 0) return { available: false, score: null, provisional: true, reason: 'At least three real portfolio components are required.' }
   const score = Math.round(available.reduce((sum, [key, value]) => sum + Number(value) * weights[key], 0) / availableWeight)
   const ranked = available.slice().sort((a, b) => b[1] - a[1])
-  return { available: true, score, provisional: available.length < Object.keys(values).length || Boolean(diversification.provisional || resilience?.provisional || concentrationLiquidity?.provisional || dataCompleteness < 100), components: values, strongest: ranked[0][0], weakest: ranked.at(-1)[0], reason: available.length < Object.keys(values).length ? `Provisional score reweighted across ${available.length} available real-data components; missing components are not treated as zero.` : 'All six components available.' }
+  return { available: true, score, provisional: available.length < Object.keys(values).length || Boolean(diversification.provisional || resilience?.provisional || concentrationLiquidity?.provisional || dataCompleteness < 100), components: values, strongest: ranked[0][0], weakest: ranked.at(-1)[0], reason: available.length < Object.keys(values).length ? `Provisional score reweighted across ${available.length} available real-data components. Missing components are not treated as zero.` : 'All six components available.' }
 }

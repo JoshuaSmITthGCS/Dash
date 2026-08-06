@@ -1,6 +1,6 @@
 /**
  * Portfolio performance measured against the only benchmark that matters to the question
- * "should I have just bought the index?" — the same dollars, invested the same day, in the S&P 500.
+ * "should I have just bought the index?" – the same dollars, invested the same day, in the S&P 500.
  */
 
 /** Last benchmark close at or before a date. Null when the date predates the charted window. */
@@ -149,7 +149,7 @@ export function portfolioVsBenchmark(positions, history) {
 }
 
 /**
- * What a fixed dollar amount — not what was actually invested — would be worth today if it had
+ * What a fixed dollar amount – not what was actually invested – would be worth today if it had
  * gone into this position's stock, and separately into the S&P 500, both on its purchase date.
  * Answers "if I'd put the same $X into every pick on the day I actually bought it, how did
  * picking this stock do against just buying the index?" rather than reporting real dollars.

@@ -1497,3 +1497,4 @@ body { background: var(--app-background); background-image: none; }
 .finance-pool-row.selected-account { margin-inline: -10px; padding-inline: 10px; border: 1px solid var(--surface-card-border); border-radius: var(--control-radius); background: var(--surface-shelf-bg); }
 .allocation-funds-field input { min-height: 44px; }
 .planning-goals input, .planning-goals select { min-height: 44px; }
+.period-selector button, .period-control button { flex: 0 0 45px; min-width: 45px; min-height: 44px; }

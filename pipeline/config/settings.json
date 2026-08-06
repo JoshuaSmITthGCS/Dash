@@ -169,6 +169,12 @@
     "cache_max_age_days": 35,
     "request_timeout_seconds": 30,
     "schema_version": 1,
+    "sample_portfolio_start_month": "2018-01",
+    "sample_portfolio_weights": {
+      "SPY": 0.6,
+      "QQQ": 0.25,
+      "IWM": 0.15
+    },
     "_comment": "Official monthly US research factors from the Ken French Data Library. The cache refreshes at most monthly and publishes percentage returns as decimal values."
   },
   "explainability": {
@@ -305,6 +311,12 @@
   "interface": {
     "home_signal_limit": 4,
     "home_theme_limit": 6,
+    "mobile_preview_positions": [
+      {"id": "preview-msft", "ticker": "MSFT", "shares": 12, "costBasis": 430, "purchaseDate": "2025-01-02"},
+      {"id": "preview-aapl", "ticker": "AAPL", "shares": 20, "costBasis": 260, "purchaseDate": "2025-01-02"},
+      {"id": "preview-qcom", "ticker": "QCOM", "shares": 30, "costBasis": 140, "purchaseDate": "2025-01-02"},
+      {"id": "preview-voo", "ticker": "VOO", "shares": 10, "costBasis": 650, "purchaseDate": "2025-01-02"}
+    ],
     "score_dial": {
       "size": 220,
       "viewbox_size": 220,
@@ -321,7 +333,7 @@
     "minimum_touch_target_px": 44,
     "colorblind_minimum_rgb_distance": 0.12,
     "minimum_text_contrast_ratio": 4.5,
-    "_comment": "Presentation constants shared by the responsive report and confidence-encoded research score dial. Confidence controls arc opacity and dash density while the research score controls arc length."
+    "_comment": "Presentation constants shared by the responsive report and confidence-encoded research score dial. Confidence controls arc opacity and dash density while the research score controls arc length. Preview positions are available only behind the development-only portfolioPreview screenshot query."
   },
   "signal_weights": {
     "track_record": 25,
@@ -810,6 +822,14 @@
     "short_term": 8,
     "long_term": 8,
     "retirement": 6
+  },
+  "build": {
+    "_comment": "The Firestore client is split below the 500 kB advisory ceiling with headroom for dependency growth.",
+    "baseline_main_chunk_bytes": 976040,
+    "dependency_audit_baseline_high": 2,
+    "dependency_audit_baseline_total": 13,
+    "firebase_chunk_max_bytes": 450000,
+    "chunk_advisory_max_bytes": 500000
   },
   "labels": {
     "_comment": "Composite score -> label. Never 'BUY'. Research candidates only.",

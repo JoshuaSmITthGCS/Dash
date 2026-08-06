@@ -35,7 +35,7 @@ export default function AnalysisLayers({ analysis }) {
       <ScoreLayer
         title="Earnings timeliness"
         layer={analysis.timeliness}
-        description="Forward estimates, revisions, surprises, and guidance—separate from trailing growth."
+        description="Forward estimates, revisions, surprises, and guidance–separate from trailing growth."
       />
     </div>
   )

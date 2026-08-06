@@ -17,17 +17,17 @@ const FLAG_LABELS = {
 }
 
 const money = (value, digits = 0) =>
-  value == null ? '—' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
+  value == null ? '–' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
 
 const compactMoney = (value) => {
-  if (value == null) return '—'
+  if (value == null) return '–'
   if (value >= 1e9) return `$${(value / 1e9).toFixed(3)}B`
   if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`
   return money(value)
 }
 
 function FlagChips({ flags }) {
-  if (!flags?.length) return <span className="mono" style={{ color: 'var(--text-faint)' }}>—</span>
+  if (!flags?.length) return <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>
   return <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
     {flags.map((flag) => <span key={flag} className="chip">{FLAG_LABELS[flag] || flag}</span>)}
   </div>
@@ -63,9 +63,9 @@ export default function CongressTrades() {
         <h1 className="page-title">Politics <span className="accent">trade alert</span></h1>
         <p className="page-sub">
           Senate and House trade disclosures from Financial Modeling Prep, collected weekly. Flags are computed
-          directly from the disclosure data — a late filing, an options trade, an unusually large or clustered
-          position, a repeat pattern — not a claim that any trade was improper. Where a plain stock purchase has
-          enough price history, "since purchase" shows how the stock has actually performed — a price fact, not a
+          directly from the disclosure data – a late filing, an options trade, an unusually large or clustered
+          position, a repeat pattern – not a claim that any trade was improper. Where a plain stock purchase has
+          enough price history, "since purchase" shows how the stock has actually performed – a price fact, not a
           claim about why it moved or a recommendation to trade.
         </p>
       </div>
@@ -125,19 +125,19 @@ export default function CongressTrades() {
       </div></ResponsiveControlPanel>
 
       {!filtered.length ? (
-        <Empty note={rows.length ? 'No disclosures match these filters.' : 'No disclosures collected yet — this screen updates weekly.'} />
+        <Empty note={rows.length ? 'No disclosures match these filters.' : 'No disclosures collected yet – this screen updates weekly.'} />
       ) : (
         <>
         <ResultCards rows={filtered} getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}
           title={(row) => row.representative || 'Unknown representative'}
           subtitle={(row) => `${row.chamber || 'Chamber unavailable'}${row.district ? ` · ${row.district}` : ''}`}
           fields={[
-            { label: 'Issuer', value: (row) => row.asset_description || row.symbol || '—' },
-            { label: 'Type', value: (row) => row.transaction_type || '—' },
-            { label: 'Size', value: (row) => row.amount || '—' },
-            { label: 'Traded', value: (row) => row.transaction_date || '—' },
-            { label: 'Filed after', value: (row) => row.filing_delay_days != null ? `${row.filing_delay_days}d` : '—' },
-            { label: 'Since purchase', value: (row) => row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : '—' },
+            { label: 'Issuer', value: (row) => row.asset_description || row.symbol || '–' },
+            { label: 'Type', value: (row) => row.transaction_type || '–' },
+            { label: 'Size', value: (row) => row.amount || '–' },
+            { label: 'Traded', value: (row) => row.transaction_date || '–' },
+            { label: 'Filed after', value: (row) => row.filing_delay_days != null ? `${row.filing_delay_days}d` : '–' },
+            { label: 'Since purchase', value: (row) => row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : '–' },
             { label: 'Flags', value: (row) => <FlagChips flags={row.flags} /> },
           ]} />
         <div className="research-table card">
@@ -153,21 +153,21 @@ export default function CongressTrades() {
               {filtered.map((row, index) => (
                 <tr key={`${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}>
                   <td>
-                    <b>{row.representative || '—'}</b>
+                    <b>{row.representative || '–'}</b>
                     <small style={{ display: 'block', textTransform: 'capitalize', color: 'var(--text-faint)' }}>
                       {row.chamber}{row.district ? ` · ${row.district}` : ''}
                     </small>
                   </td>
                   <td>
-                    <span>{row.asset_description || row.symbol || '—'}</span>
+                    <span>{row.asset_description || row.symbol || '–'}</span>
                     {row.symbol && <small className="mono" style={{ display: 'block', color: 'var(--text-faint)' }}>{row.symbol}</small>}
                   </td>
-                  <td>{row.transaction_type || '—'}</td>
-                  <td className="mono num">{row.amount || '—'}</td>
-                  <td className="mono">{row.transaction_date || '—'}</td>
-                  <td className="mono">{row.filing_delay_days != null ? `${row.filing_delay_days}d` : '—'}</td>
+                  <td>{row.transaction_type || '–'}</td>
+                  <td className="mono num">{row.amount || '–'}</td>
+                  <td className="mono">{row.transaction_date || '–'}</td>
+                  <td className="mono">{row.filing_delay_days != null ? `${row.filing_delay_days}d` : '–'}</td>
                   <td className="num">
-                    {row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : <span className="mono" style={{ color: 'var(--text-faint)' }}>—</span>}
+                    {row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>}
                   </td>
                   <td><FlagChips flags={row.flags} /></td>
                 </tr>

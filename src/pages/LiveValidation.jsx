@@ -3,8 +3,8 @@ import { Loading } from '../components/Bits'
 import { ScreenNavigation } from './ResearchScreen'
 
 const title = (value = '') => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
-const pct = (value) => value == null ? '—' : `${Math.round(Number(value) * 100)}%`
-const score = (value) => value == null ? '—' : Math.round(Number(value))
+const pct = (value) => value == null ? '–' : `${Math.round(Number(value) * 100)}%`
+const score = (value) => value == null ? '–' : Math.round(Number(value))
 
 function Status({ value }) {
   return <span className={`chip validation-${value}`}>{title(value || 'unavailable')}</span>
@@ -105,7 +105,7 @@ export default function LiveValidation() {
       <p className="page-sub">Provider lineage, applicability, confidence gates, and independent decision layers. This view never replaces production output.</p></div></div>
     <ICValidation data={icData} error={icError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
-      : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '—'}</span></div>
+      : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>
         <div className="validation-grid">{(data?.results || []).map((row) => <TickerValidation key={row.ticker} row={row} />)}</div></>}
   </>
 }

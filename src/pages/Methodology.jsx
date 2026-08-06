@@ -66,7 +66,7 @@ export default function Methodology() {
         </div> : <p className="body-copy">The scoring blend will appear after the first published research refresh.</p>}
         <p className="body-copy">
           Fundamentals dominate. Market behaviour is measured with the same arithmetic the ETF
-          screen uses — 12-month momentum skipping the most recent month (to avoid the
+          screen uses – 12-month momentum skipping the most recent month (to avoid the
           short-term reversal that runs against it), Sortino and Sharpe ratios on the stock’s
           own returns, relative strength versus SPY, one-year maximum drawdown, and whether
           advances carry heavier volume than declines. Low beta is rewarded rather than
@@ -94,7 +94,7 @@ export default function Methodology() {
         <p className="body-copy">
           Structural-trend exposure answers a different question from everything above: how
           exposed is this company to a multi-year demand driver? It is published as its own
-          leaderboard and never folded into the research score — blending a forward-looking
+          leaderboard and never folded into the research score – blending a forward-looking
           thematic bet into the fundamentals score would make that score impossible to read,
           because you could no longer tell whether a name ranked well for being cheap and
           profitable or for carrying a fashionable tag.

@@ -316,7 +316,7 @@ export function formatSellWatchAnalysis(recommendation) {
       factor: f.name.charAt(0).toUpperCase() + f.name.slice(1),
       status: f.status,
       severity: f.severity,
-      concerns: f.reasons.join('; ')
+      concerns: f.reasons.join('. ')
     }))
   }
 }

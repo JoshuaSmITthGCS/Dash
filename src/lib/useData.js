@@ -129,10 +129,10 @@ export function useData(file) {
 }
 
 export const fmtPct = (v) =>
-  v == null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`
+  v == null ? '–' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`
 
 export const fmtCap = (v) => {
-  if (!v) return '—'
+  if (!v) return '–'
   if (v >= 1e12) return `$${(v / 1e12).toFixed(1)}T`
   if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`
   if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`
@@ -143,7 +143,7 @@ export const tierClass = (label = '') =>
   label.toLowerCase().replace(/\s+/g, '')
 
 export const fmtDate = (iso) =>
-  iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'
+  iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '–'
 
 export function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000))

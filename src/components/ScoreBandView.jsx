@@ -182,7 +182,7 @@ export default function ScoreBandView({ stocks, onStockClick }) {
                               )}
                             </div>
                             <div style={{ fontSize: 12, opacity: 0.7 }}>
-                              {stock.company_name || stock.name || '—'}
+                              {stock.company_name || stock.name || '–'}
                             </div>
                           </div>
 
@@ -195,7 +195,7 @@ export default function ScoreBandView({ stocks, onStockClick }) {
                                 fontFamily: 'var(--font-mono)',
                                 color: band.color
                               }}>
-                                {stock.score?.toFixed(1) || '—'}
+                                {stock.score?.toFixed(1) || '–'}
                               </div>
                             </div>
 

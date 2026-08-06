@@ -243,7 +243,7 @@ export function validateStock(stock, options = {}) {
   if (results.excluded) {
     const criticalIssues = results.issues.filter(i => i.severity === 'critical')
     results.exclusionReason = criticalIssues.length > 0
-      ? criticalIssues.map(i => i.message).join('; ')
+      ? criticalIssues.map(i => i.message).join('. ')
       : 'Too many data quality warnings'
   }
 

@@ -5,7 +5,7 @@ import modelSettings from '../../pipeline/config/settings.json'
 // The frontend reads committed JSON files directly, so a schema change breaks it silently
 // unless something reconciles the versions. The rule the pipeline follows is additive-only:
 // new fields may appear, existing fields are never renamed or removed. That keeps old
-// readers working against new data. The remaining case is the reverse — a new reader
+// readers working against new data. The remaining case is the reverse – a new reader
 // against an older committed snapshot, which happens on every deploy where the site ships
 // before the next data refresh runs.
 //

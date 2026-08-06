@@ -11,7 +11,7 @@ import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
-// Every other page loads on demand — keeps first paint off the weight of pages the visit may
+// Every other page loads on demand – keeps first paint off the weight of pages the visit may
 // never touch (Finances, ETF comparisons, shadow portfolios, congress trades, etc).
 const Picks = lazy(() => import('./pages/Picks.jsx'))
 const PolicyRadar = lazy(() => import('./pages/PolicyRadar.jsx'))
@@ -143,7 +143,7 @@ function AppContent() {
           <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />
-          <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability—kept separate from structural quality." />} />
+          <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability–kept separate from structural quality." />} />
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
           <Route path="/screens/politics" element={<CongressTrades />} />

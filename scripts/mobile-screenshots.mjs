@@ -11,7 +11,14 @@ const cases = settings.interface.mobile_acceptance_widths.flatMap((width) => [
   { width, height: heights[width], theme: 'dark' },
 ])
 const pages = [
-  { name: 'home', path: '/?preview=1', ready: '.report-empty-state, .report-hero-grid' },
+  {
+    name: 'home',
+    path: '/?preview=1&portfolioPreview=1',
+    ready: '.report-hero-grid',
+    async settle(page) {
+      await page.waitForFunction(() => !document.querySelector('.home-fact-link strong')?.textContent?.includes('Calculating'))
+    },
+  },
   {
     name: 'planning',
     path: '/planning?preview=1',

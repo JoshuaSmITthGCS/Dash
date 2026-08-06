@@ -1,4 +1,4 @@
-import modelSettings from '../../pipeline/config/settings.json'
+import modelSettings from '../../pipeline/config/settings.json' with { type: 'json' }
 
 export const projectionConfig = modelSettings.projection
 

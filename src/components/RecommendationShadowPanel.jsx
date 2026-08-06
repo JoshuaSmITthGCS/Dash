@@ -2,16 +2,16 @@ const title = (value = '') => String(value)
   .replace(/_/g, ' ')
   .replace(/\b\w/g, (letter) => letter.toUpperCase())
 
-const pct = (value) => (value == null ? '—' : `${Math.round(value * 100)}%`)
-const score = (value) => (Number.isFinite(value) ? Math.round(value) : '—')
+const pct = (value) => (value == null ? '–' : `${Math.round(value * 100)}%`)
+const score = (value) => (Number.isFinite(value) ? Math.round(value) : '–')
 
 function companyCopy(label) {
   return {
     buy: 'Entry requirements currently pass, subject to portfolio capacity.',
-    accumulate: 'Business quality is strong; timing supports gradual additions.',
+    accumulate: 'Business quality is strong. Timing supports gradual additions.',
     hold_existing_position: 'Current evidence supports maintaining an existing position. This is not an entry signal.',
     quality_watch: 'Business quality is strong, but timing is weak.',
-    watch: 'Evidence is incomplete or mixed; no position change is implied.',
+    watch: 'Evidence is incomplete or mixed. No position change is implied.',
     tactical_candidate: 'Timing is favorable, but structural quality does not qualify as a long-term buy.',
     avoid: 'Do not initiate new exposure under the current company evidence.',
     sell_thesis: 'Verified company evidence has invalidated the investment thesis.',

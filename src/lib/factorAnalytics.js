@@ -1,4 +1,4 @@
-import modelSettings from '../../pipeline/config/settings.json'
+import modelSettings from '../../pipeline/config/settings.json' with { type: 'json' }
 
 const config = modelSettings.portfolio_analytics
 const FACTOR_KEYS = ['market_excess', 'size', 'value', 'profitability', 'investment', 'momentum']

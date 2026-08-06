@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-08-06T00:00:53.213Z",
+  "sample_portfolio": {
+    "weights": {
+      "SPY": 0.6,
+      "QQQ": 0.25,
+      "IWM": 0.15
+    },
+    "construction": "Static starting weights applied to adjusted-close total-return histories. Weights drift with performance.",
+    "source": "Committed ETF histories and the Kenneth R. French Data Library factor cache"
+  },
+  "regression": {
+    "available": true,
+    "observations": 101,
+    "startMonth": "2018-02",
+    "endMonth": "2026-06",
+    "loadings": {
+      "market_excess": 1.0272763452166904,
+      "size": -0.02343965453051597,
+      "value": -0.05922138466069063,
+      "profitability": -0.027417076473910867,
+      "investment": -0.01731493911038104,
+      "momentum": -0.0002938949008867153
+    },
+    "standardErrors": {
+      "market_excess": 0.010978408721378686,
+      "size": 0.020308836617841438,
+      "value": 0.017808232606236592,
+      "profitability": 0.021581372241008055,
+      "investment": 0.02574385619568216,
+      "momentum": 0.01403484228923036
+    },
+    "alphaAnnualPct": 0.997891132069809,
+    "alphaTStatistic": 1.662275944787207,
+    "rSquared": 0.9915669716668993,
+    "summary": "Your portfolio behaves like a broad market allocation.",
+    "alpha_interpretation": "The alpha t-statistic is under 2 in absolute value and means nothing statistically."
+  }
+}

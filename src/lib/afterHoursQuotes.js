@@ -3,7 +3,7 @@
  * into a single portfolio-level after-hours dollar and percent move.
  *
  * Yahoo only reports `postMarketChange` once the regular session has actually closed and a
- * post-market trade has printed — during market hours, or for a symbol with no after-hours
+ * post-market trade has printed – during market hours, or for a symbol with no after-hours
  * activity, the field is absent. A position missing it is simply left out of the total
  * rather than treated as a $0 move, so a partially-covered portfolio still gets an honest
  * (if partial) number instead of a diluted one.
