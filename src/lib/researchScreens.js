@@ -22,8 +22,18 @@ export function distanceAbove52WeekLow(row) {
   return low > 0 ? (closes.at(-1) / low - 1) * 100 : null
 }
 
+// Every screen below reads fundamentals or technical fields shaped for individual
+// companies (fundamental_categories, technical_detail.return_5d, ...). A fund holds no
+// such per-security fundamentals, so an ETF can never legitimately clear one of these
+// screens - reason code unsupported_security_type. Callers already keep their own stock
+// and ETF pools separate (see src/pages/Picks.jsx), but this filter makes that invariant
+// hold even if a caller ever passes a mixed array by mistake.
+function stocksOnly(rows) {
+  return rows.filter((row) => !row?.is_etf)
+}
+
 export function rankValueTurnarounds(rows, limit = 5) {
-  return rows
+  return stocksOnly(rows)
     .map((row) => {
       const fundamentals = row.components?.fundamentals
       const valuation = row.fundamental_categories?.valuation
@@ -67,7 +77,7 @@ export function rankGrowingEtfs(rows, limit = 5) {
 }
 
 export function rankMomentum(rows, limit = 5) {
-  return rows
+  return stocksOnly(rows)
     .map((row) => {
       const technical = row.technical_detail || {}
       const weekReturn = finite(technical.return_5d)
@@ -118,7 +128,7 @@ export function rankMomentum(rows, limit = 5) {
 // pipeline/early_session_research.py. A fundamentals floor keeps a genuinely deteriorating
 // business from qualifying just because its price bounced.
 export function rankReversal(rows, limit = 5) {
-  return rows
+  return stocksOnly(rows)
     .map((row) => {
       const technical = row.technical_detail || {}
       const fundamentals = row.components?.fundamentals
@@ -151,7 +161,7 @@ export function rankReversal(rows, limit = 5) {
 // within the same month, so a name that has been quietly climbing all month at a constant rate
 // doesn't crowd out one that just broke out this week.
 export function rankFastGrowth(rows, limit = 5) {
-  return rows
+  return stocksOnly(rows)
     .map((row) => {
       const technical = row.technical_detail || {}
       const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)

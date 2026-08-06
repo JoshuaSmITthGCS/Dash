@@ -221,3 +221,34 @@ describe('bull/bear thesis score', () => {
     expect(bullBearScore({})).toBeNull()
   })
 })
+
+describe('invariant: no stock screen ever includes an ETF', () => {
+  // A fund holds no per-security fundamentals or technical_detail shaped for one company,
+  // so it can never legitimately clear a stock screen. Every screen below must exclude
+  // is_etf rows even if a caller passes a mixed array.
+  const strongEtfShapedAsAStock = row('SPY_LIKE', {
+    is_etf: true,
+    components: { fundamentals: 99, market_behavior: 99, news_sentiment: 99 },
+    fundamental_categories: { valuation: 99 },
+    technical_detail: {
+      return_5d: 10, return_20d: 20, relative_strength_20d: 10, trend: 99,
+      relative_strength: 99, volume_confirmation: 99, risk: 99, drawdown_60d: -1,
+      volume_ratio_60d: 2,
+    },
+    history: { closes: [...Array(51).fill(100), 105, 120] },
+  })
+  const genuineStock = row('AAPL', {
+    technical_detail: { return_5d: 3, return_20d: 3, relative_strength_20d: 1 },
+  })
+
+  it.each([
+    ['rankValueTurnarounds', rankValueTurnarounds],
+    ['rankMomentum', rankMomentum],
+    ['rankReversal', rankReversal],
+    ['rankFastGrowth', rankFastGrowth],
+  ])('%s excludes ETF rows even when the ETF would otherwise dominate the ranking', (_, screenFn) => {
+    const results = screenFn([strongEtfShapedAsAStock, genuineStock], 5)
+
+    expect(results.some((item) => item.is_etf)).toBe(false)
+  })
+})

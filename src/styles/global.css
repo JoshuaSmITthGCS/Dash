@@ -264,6 +264,9 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .rank { color: var(--text-faint); font: 10px var(--font-mono); }.table-company b, .table-company span, .table-company small { display: block; }.table-company b { font-size: 15px; }.table-company span { color: var(--text-dim); }.table-company small { color: var(--text-faint); font-size: 9px; }
 .research-mobile-list { display: none; }
 .research-mobile-card { padding: 19px; border: 1px solid var(--border); border-radius: 22px; background: var(--bg-card); }
+.research-pool + .research-pool { margin-top: 28px; }
+.research-pool-title { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; font: 700 15px var(--font-display); }
+.research-pool-count { padding: 2px 8px; border-radius: 999px; background: var(--bg-elev); color: var(--text-faint); font: 700 11px var(--font-mono); }
 
 /* Early-session research: unavailable is a deliberate gate, not an error state. */
 .early-session-head { align-items: stretch; }
