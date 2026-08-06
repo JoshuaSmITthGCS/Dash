@@ -51,6 +51,32 @@ def theme_screen_errors(screen):
     return errors
 
 
+def enrichment_coverage_errors(advisor):
+    """A full sweep that attempts statement enrichment and enriches zero companies means
+    Yahoo's statement endpoints are broken universe-wide (this happened on 2026-08-06: .info
+    raised for every symbol and discarded already-fetched statement frames along with it,
+    collapsing fundamental coverage to ~0.3 and confidence to ~0.4 across the board). That
+    must block publication rather than ship a silently degraded dataset -- see
+    docs/BASELINE-2026-08-06.md.
+    """
+    if not advisor:
+        return []
+    diagnostics = advisor.get("enrichment_diagnostics") or {}
+    attempted = diagnostics.get("attempted", 0)
+    enriched = advisor.get("statement_enriched_count", 0)
+    if advisor.get("universe_mode") != "full" or not attempted or enriched:
+        return []
+    return [
+        "advisor.json: statement_enriched_count is 0 on a full sweep despite "
+        f"{attempted} enrichment attempts (info_fetch_failed="
+        f"{diagnostics.get('info_fetch_failed', 'unknown')}, "
+        f"statement_fetch_failed={diagnostics.get('statement_fetch_failed', 'unknown')}, "
+        f"derivation_failed={diagnostics.get('derivation_failed', 'unknown')}, "
+        f"no_statement_data={diagnostics.get('no_statement_data', 'unknown')}) -- "
+        "Yahoo statement enrichment appears broken universe-wide; investigate before publishing"
+    ]
+
+
 def etf_peer_group_errors(payload):
     """A fund's rank is only meaningful inside its peer group; make that explicit."""
     rows = payload.get("etfs") or []
@@ -153,6 +179,8 @@ def validate(production=False):
         structural = analysis.get("structural", {})
         if structural.get("confidence", 1) < 0.4 and analysis.get("company_classification") != "insufficient_evidence":
             errors.append(f"advisor.json:research.{index}: low confidence must classify as insufficient evidence")
+    errors.extend(enrichment_coverage_errors(advisor))
+
     benchmark_history = advisor.get("benchmark_history", {})
     benchmark_dates = benchmark_history.get("dates", [])
     for key in ("closes", "growth"):

@@ -343,22 +343,46 @@ def fetch_earnings_surprises(symbol, ticker_obj, cache=None):
     return rows or []
 
 
-def yahoo_extended(symbol, ticker_obj, snapshot, history):
-    """Statement-derived quality, capital-allocation, and accounting metrics for one company."""
+def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
+    """Statement-derived quality, capital-allocation, and accounting metrics for one company.
+
+    ``.info`` and the annual/quarterly statement frames are two independent Yahoo requests
+    with independent failure modes (``.info`` is the fragile quoteSummary/crumb-backed call;
+    the statement frames have their own per-call fallback in ``extended_inputs``). They used
+    to share one try/except, so a broken ``.info`` call silently discarded statement data that
+    had already been fetched successfully -- the entire company enriched to nothing even when
+    ROIC, Piotroski, Altman-Z, and the other statement-only metrics were available. Fetching
+    them separately lets a company enrich on whatever half of the data actually came back.
+    """
     if ticker_obj is None:
         return {}
     try:
         inputs = extended_inputs(ticker_obj)
+    except Exception as exc:  # noqa: BLE001 - extended_inputs already guards each statement call
+        LOG.warn(f"{symbol}: statement frames unavailable ({type(exc).__name__}: {exc})")
+        if diagnostics is not None:
+            diagnostics["statement_fetch_failed"] += 1
+        return {}
+    try:
         info = ticker_obj.info or {}
     except Exception as exc:  # noqa: BLE001
-        LOG.warn(f"{symbol}: extended fundamentals unavailable ({type(exc).__name__})")
+        LOG.warn(f"{symbol}: Yahoo quote-summary (.info) unavailable ({type(exc).__name__}: {exc}); "
+                 "continuing with statement-only metrics")
+        if diagnostics is not None:
+            diagnostics["info_fetch_failed"] += 1
+        info = {}
+    try:
+        result = derive_extended(
+            annual=inputs["annual"], quarterly=inputs["quarterly"], info=info,
+            market_cap=snapshot.get("market_cap"), price=snapshot.get("price"),
+            sector=snapshot.get("sector"), closes=history["closes"], volumes=history["volumes"],
+            earnings_surprises=fetch_earnings_surprises(symbol, ticker_obj),
+        )
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"{symbol}: extended fundamentals derivation failed ({type(exc).__name__}: {exc})")
+        if diagnostics is not None:
+            diagnostics["derivation_failed"] += 1
         return {}
-    result = derive_extended(
-        annual=inputs["annual"], quarterly=inputs["quarterly"], info=info,
-        market_cap=snapshot.get("market_cap"), price=snapshot.get("price"),
-        sector=snapshot.get("sector"), closes=history["closes"], volumes=history["volumes"],
-        earnings_surprises=fetch_earnings_surprises(symbol, ticker_obj),
-    )
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
     return result
@@ -676,17 +700,28 @@ def enrich(contexts, limit, delay, priority=()):
 
     Shortlisting is done on core fundamentals alone, which every candidate has in equal
     measure, so nothing is ranked down merely for being outside the statement budget.
+
+    Returns ``(enriched_count, diagnostics)``. ``enriched_count`` requires
+    ``extended_coverage > 0`` (at least one statement metric actually resolved), not merely
+    that ``yahoo_extended`` returned a non-empty dict -- ``derive_extended`` always returns
+    every key, so an all-None dict from total data starvation used to count as "enriched".
+    ``diagnostics`` breaks failures down by which Yahoo call failed, so a repeat of a
+    universe-wide enrichment collapse is diagnosable from the published artifact instead of
+    a single opaque zero.
     """
     ranked_by_score = sorted(contexts, key=lambda context: valuation_score(context["snapshot"])[0] or 0,
                              reverse=True)
     by_symbol = {context["symbol"]: context for context in contexts}
     ranked = [by_symbol[symbol] for symbol in priority if symbol in by_symbol]
     ranked.extend(context for context in ranked_by_score if context["symbol"] not in set(priority))
+    diagnostics = {"attempted": 0, "info_fetch_failed": 0, "statement_fetch_failed": 0,
+                   "derivation_failed": 0, "no_statement_data": 0}
     enriched = 0
     for context in ranked[:limit]:
+        diagnostics["attempted"] += 1
         extended = yahoo_extended(context["symbol"], context["ticker_obj"],
-                                  context["snapshot"], context["history"])
-        if extended:
+                                  context["snapshot"], context["history"], diagnostics)
+        if extended and extended.get("extended_coverage"):
             context["extended"] = extended
             # The derived values above carry no lineage on their own; without this, the v2
             # scoring layer treats them as legacy scalars with no canonical observation and
@@ -696,9 +731,12 @@ def enrich(contexts, limit, delay, priority=()):
                 observations.setdefault(metric_id, []).extend(rows)
             context["snapshot"] = {**context["snapshot"], **extended, "observations": observations}
             enriched += 1
+        elif extended:
+            diagnostics["no_statement_data"] += 1
         time.sleep(delay)
-    LOG.info(f"Extended statement metrics derived for {enriched}/{min(limit, len(contexts))} shortlisted companies")
-    return enriched
+    LOG.info(f"Extended statement metrics derived for {enriched}/{min(limit, len(contexts))} shortlisted companies "
+             f"(diagnostics: {diagnostics})")
+    return enriched, diagnostics
 
 
 def build_theme_layer(sec, rows):
@@ -973,7 +1011,7 @@ def run():
     incumbents, challengers, statement_priority = select_enrichment_priority(
         previous_top, preliminary_symbols, available, portfolio_symbols
     )
-    enriched_count = enrich(contexts, extended_limit, delay, statement_priority)
+    enriched_count, enrichment_diagnostics = enrich(contexts, extended_limit, delay, statement_priority)
 
     challenger_cfg = (SETTINGS.get("challengers") or {}).get(
         "cross_sectional_normalization", {}
@@ -1175,6 +1213,7 @@ def run():
             "challengers": list(challengers),
             "priority_count": len(incumbents) + len(challengers),
         },
+        "enrichment_diagnostics": enrichment_diagnostics,
         "normalization_distributions": {
             **(cross_normalizer.published_distributions() if cross_normalizer else {}),
             "fit_source": normalization_fit_source,
@@ -1277,6 +1316,24 @@ def run():
             },
             "yahoo_fundamentals": {"status": "degraded" if research_failures else ("healthy" if yf else "unavailable"),
                                    "failed_symbols": research_failures},
+            "yahoo_statement_enrichment": {
+                "status": (
+                    "unavailable" if not yf else
+                    "failed" if enrichment_diagnostics["attempted"] and not enriched_count else
+                    "degraded" if enriched_count < enrichment_diagnostics["attempted"] else
+                    "healthy"
+                ),
+                "attempted": enrichment_diagnostics["attempted"],
+                "enriched": enriched_count,
+                "info_fetch_failed": enrichment_diagnostics["info_fetch_failed"],
+                "statement_fetch_failed": enrichment_diagnostics["statement_fetch_failed"],
+                "derivation_failed": enrichment_diagnostics["derivation_failed"],
+                "no_statement_data": enrichment_diagnostics["no_statement_data"],
+                "note": "Distinct request from the cheap-pass price/snapshot fetch above. "
+                        "income_stmt/balance_sheet/cashflow and .info are Yahoo's "
+                        "quoteSummary-backed endpoints and fail independently of price data; "
+                        "a company still enriches on statement frames alone if only .info fails.",
+            },
             "sec_form4": {
                 "status": "unavailable" if not sec.available else ("degraded" if sec_failures else "healthy"),
                 "failed_symbols": sec_failures,
