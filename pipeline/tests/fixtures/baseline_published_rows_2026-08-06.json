@@ -1,0 +1,509 @@
+{
+  "purpose": "Pre-quant-upgrade scoring snapshot for regression diffing (Phase 0 baseline). Not a business-profile classification fixture -- see regression_cases.json for that.",
+  "source_generated_at": "2026-08-06T15:46:49.017773+00:00",
+  "source_code_commit": "3ca08a38422c3f1485da0f549f7c61fe9934dff8",
+  "source_config_hash": "f86ab725773c932d2d53c2569d2377c6232413f0bc195e9558faea427595092b",
+  "source_model_version": "3.2.0",
+  "rows": [
+    {
+      "ticker": "HIG",
+      "sector": "Financial Services",
+      "industry": "Insurance - Diversified",
+      "score": 65.9,
+      "confidence": 0.48,
+      "base_score": 61.9,
+      "is_etf": false,
+      "stance": "PROMISING",
+      "components": {
+        "fundamentals": 72.1,
+        "market_behavior": 60.4,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 100.0,
+        "profitability": 94.4,
+        "financial_health": null,
+        "growth": 74.6,
+        "capital_allocation": null,
+        "accounting_quality": null
+      },
+      "fundamental_detail_coverage": 0.35,
+      "score_variants_slim": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 65.9,
+          "base_score": 61.9,
+          "raw_score": null,
+          "confidence": 0.48,
+          "components": {
+            "fundamentals": 72.1,
+            "market_behavior": 60.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "normalization": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 52.7,
+          "base_score": 48.7,
+          "raw_score": 54.4,
+          "confidence": 0.48,
+          "components": {
+            "fundamentals": 53.2,
+            "market_behavior": 60.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "short_horizon": {
+          "variant": "neutral_short_horizon",
+          "normalization_mode": null,
+          "score": 66.2,
+          "base_score": 62.2,
+          "raw_score": 69.4,
+          "confidence": 0.48,
+          "components": {
+            "fundamentals": 72.1,
+            "market_behavior": 61.9,
+            "news_sentiment": 50.0
+          }
+        },
+        "confidence_shrinkage": {
+          "variant": "single_confidence_shrinkage",
+          "normalization_mode": null,
+          "score": 71.2,
+          "base_score": 67.2,
+          "raw_score": 85.8,
+          "confidence": 0.48,
+          "components": {
+            "fundamentals": 93.5,
+            "market_behavior": 60.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "modifier_recalibration": {
+          "variant": "fractional_modifier_cap",
+          "normalization_mode": null,
+          "score": 65.9,
+          "base_score": 61.9,
+          "raw_score": null,
+          "confidence": 0.48,
+          "components": null
+        },
+        "challenger": {
+          "variant": "signal_corrections_cumulative",
+          "normalization_mode": "cross_sectional",
+          "score": 62.1,
+          "base_score": 58.1,
+          "raw_score": 66.9,
+          "confidence": 0.48,
+          "components": {
+            "fundamentals": 68.9,
+            "market_behavior": 61.9,
+            "news_sentiment": 50.0
+          }
+        }
+      }
+    },
+    {
+      "ticker": "BPOP",
+      "sector": "Financial Services",
+      "industry": "Banks - Regional",
+      "score": 62.5,
+      "confidence": 0.43,
+      "base_score": 59.8,
+      "is_etf": false,
+      "stance": "INSUFFICIENT DATA",
+      "components": {
+        "fundamentals": 65.6,
+        "market_behavior": 79.3,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 90.6,
+        "profitability": 90.0,
+        "financial_health": null,
+        "growth": 74.6,
+        "capital_allocation": null,
+        "accounting_quality": null
+      },
+      "fundamental_detail_coverage": 0.28,
+      "score_variants_slim": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 62.5,
+          "base_score": 59.8,
+          "raw_score": null,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 65.6,
+            "market_behavior": 79.3,
+            "news_sentiment": 50.0
+          }
+        },
+        "normalization": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 51.4,
+          "base_score": 48.7,
+          "raw_score": 55.0,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 49.6,
+            "market_behavior": 79.3,
+            "news_sentiment": 50.0
+          }
+        },
+        "short_horizon": {
+          "variant": "neutral_short_horizon",
+          "normalization_mode": null,
+          "score": 63.2,
+          "base_score": 60.5,
+          "raw_score": 68.3,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 65.6,
+            "market_behavior": 84.0,
+            "news_sentiment": 50.0
+          }
+        },
+        "confidence_shrinkage": {
+          "variant": "single_confidence_shrinkage",
+          "normalization_mode": null,
+          "score": 67.6,
+          "base_score": 64.9,
+          "raw_score": 84.7,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 87.7,
+            "market_behavior": 79.3,
+            "news_sentiment": 50.0
+          }
+        },
+        "modifier_recalibration": {
+          "variant": "fractional_modifier_cap",
+          "normalization_mode": null,
+          "score": 62.5,
+          "base_score": 59.8,
+          "raw_score": null,
+          "confidence": 0.43,
+          "components": null
+        },
+        "challenger": {
+          "variant": "signal_corrections_cumulative",
+          "normalization_mode": "cross_sectional",
+          "score": 60.8,
+          "base_score": 58.1,
+          "raw_score": 68.9,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 66.4,
+            "market_behavior": 84.0,
+            "news_sentiment": 50.0
+          }
+        }
+      }
+    },
+    {
+      "ticker": "DINO",
+      "sector": "Energy",
+      "industry": "Oil & Gas Refining & Marketing",
+      "score": 62.3,
+      "confidence": 0.44,
+      "base_score": 61.0,
+      "is_etf": false,
+      "stance": "INSUFFICIENT DATA",
+      "components": {
+        "fundamentals": 67.4,
+        "market_behavior": 78.4,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 90.8,
+        "profitability": 81.9,
+        "financial_health": 92.9,
+        "growth": 100.0,
+        "capital_allocation": null,
+        "accounting_quality": null
+      },
+      "fundamental_detail_coverage": 0.29,
+      "score_variants_slim": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 62.3,
+          "base_score": 61.0,
+          "raw_score": null,
+          "confidence": 0.44,
+          "components": {
+            "fundamentals": 67.4,
+            "market_behavior": 78.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "normalization": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 53.9,
+          "base_score": 52.6,
+          "raw_score": 59.2,
+          "confidence": 0.44,
+          "components": {
+            "fundamentals": 55.3,
+            "market_behavior": 78.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "short_horizon": {
+          "variant": "neutral_short_horizon",
+          "normalization_mode": null,
+          "score": 62.7,
+          "base_score": 61.4,
+          "raw_score": 69.2,
+          "confidence": 0.44,
+          "components": {
+            "fundamentals": 67.4,
+            "market_behavior": 81.0,
+            "news_sentiment": 50.0
+          }
+        },
+        "confidence_shrinkage": {
+          "variant": "single_confidence_shrinkage",
+          "normalization_mode": null,
+          "score": 67.1,
+          "base_score": 65.8,
+          "raw_score": 86.0,
+          "confidence": 0.44,
+          "components": {
+            "fundamentals": 89.6,
+            "market_behavior": 78.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "modifier_recalibration": {
+          "variant": "fractional_modifier_cap",
+          "normalization_mode": null,
+          "score": 62.3,
+          "base_score": 61.0,
+          "raw_score": null,
+          "confidence": 0.44,
+          "components": null
+        },
+        "challenger": {
+          "variant": "signal_corrections_cumulative",
+          "normalization_mode": "cross_sectional",
+          "score": 61.8,
+          "base_score": 60.5,
+          "raw_score": 73.9,
+          "confidence": 0.44,
+          "components": {
+            "fundamentals": 73.5,
+            "market_behavior": 81.0,
+            "news_sentiment": 50.0
+          }
+        }
+      }
+    },
+    {
+      "ticker": "FSLR",
+      "sector": "Technology",
+      "industry": "Solar",
+      "score": 61.3,
+      "confidence": 0.45,
+      "base_score": 57.9,
+      "is_etf": false,
+      "stance": "PROMISING",
+      "components": {
+        "fundamentals": 65.7,
+        "market_behavior": 65.7,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 96.7,
+        "profitability": 85.6,
+        "financial_health": 100.0,
+        "growth": 49.1,
+        "capital_allocation": null,
+        "accounting_quality": null
+      },
+      "fundamental_detail_coverage": 0.3,
+      "score_variants_slim": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 61.3,
+          "base_score": 57.9,
+          "raw_score": null,
+          "confidence": 0.45,
+          "components": {
+            "fundamentals": 65.7,
+            "market_behavior": 65.7,
+            "news_sentiment": 50.0
+          }
+        },
+        "normalization": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 50.7,
+          "base_score": 47.3,
+          "raw_score": 53.1,
+          "confidence": 0.45,
+          "components": {
+            "fundamentals": 50.4,
+            "market_behavior": 65.7,
+            "news_sentiment": 50.0
+          }
+        },
+        "short_horizon": {
+          "variant": "neutral_short_horizon",
+          "normalization_mode": null,
+          "score": 61.2,
+          "base_score": 57.8,
+          "raw_score": 65.0,
+          "confidence": 0.45,
+          "components": {
+            "fundamentals": 65.7,
+            "market_behavior": 65.2,
+            "news_sentiment": 50.0
+          }
+        },
+        "confidence_shrinkage": {
+          "variant": "single_confidence_shrinkage",
+          "normalization_mode": null,
+          "score": 67.7,
+          "base_score": 64.3,
+          "raw_score": 81.8,
+          "confidence": 0.45,
+          "components": {
+            "fundamentals": 87.2,
+            "market_behavior": 65.7,
+            "news_sentiment": 50.0
+          }
+        },
+        "modifier_recalibration": {
+          "variant": "fractional_modifier_cap",
+          "normalization_mode": null,
+          "score": 61.3,
+          "base_score": 57.9,
+          "raw_score": null,
+          "confidence": 0.45,
+          "components": null
+        },
+        "challenger": {
+          "variant": "signal_corrections_cumulative",
+          "normalization_mode": "cross_sectional",
+          "score": 60.6,
+          "base_score": 57.2,
+          "raw_score": 65.9,
+          "confidence": 0.45,
+          "components": {
+            "fundamentals": 66.9,
+            "market_behavior": 65.2,
+            "news_sentiment": 50.0
+          }
+        }
+      }
+    },
+    {
+      "ticker": "CACC",
+      "sector": "Financial Services",
+      "industry": "Credit Services",
+      "score": 60.4,
+      "confidence": 0.43,
+      "base_score": 58.1,
+      "is_etf": false,
+      "stance": "INSUFFICIENT DATA",
+      "components": {
+        "fundamentals": 65.5,
+        "market_behavior": 69.1,
+        "news_sentiment": 50.0
+      },
+      "fundamental_categories": {
+        "valuation": 81.2,
+        "profitability": 100.0,
+        "financial_health": null,
+        "growth": 74.6,
+        "capital_allocation": null,
+        "accounting_quality": null
+      },
+      "fundamental_detail_coverage": 0.28,
+      "score_variants_slim": {
+        "champion": {
+          "variant": "bands_champion",
+          "normalization_mode": "bands",
+          "score": 60.4,
+          "base_score": 58.1,
+          "raw_score": null,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 65.5,
+            "market_behavior": 69.1,
+            "news_sentiment": 50.0
+          }
+        },
+        "normalization": {
+          "variant": "cross_sectional_normalization",
+          "normalization_mode": "cross_sectional",
+          "score": 51.7,
+          "base_score": 49.4,
+          "raw_score": 55.7,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 52.9,
+            "market_behavior": 69.1,
+            "news_sentiment": 50.0
+          }
+        },
+        "short_horizon": {
+          "variant": "neutral_short_horizon",
+          "normalization_mode": null,
+          "score": 61.7,
+          "base_score": 59.4,
+          "raw_score": 67.0,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 65.5,
+            "market_behavior": 77.4,
+            "news_sentiment": 50.0
+          }
+        },
+        "confidence_shrinkage": {
+          "variant": "single_confidence_shrinkage",
+          "normalization_mode": null,
+          "score": 66.4,
+          "base_score": 64.1,
+          "raw_score": 82.8,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 87.6,
+            "market_behavior": 69.1,
+            "news_sentiment": 50.0
+          }
+        },
+        "modifier_recalibration": {
+          "variant": "fractional_modifier_cap",
+          "normalization_mode": null,
+          "score": 60.4,
+          "base_score": 58.1,
+          "raw_score": null,
+          "confidence": 0.43,
+          "components": null
+        },
+        "challenger": {
+          "variant": "signal_corrections_cumulative",
+          "normalization_mode": "cross_sectional",
+          "score": 61.4,
+          "base_score": 59.1,
+          "raw_score": 71.2,
+          "confidence": 0.43,
+          "components": {
+            "fundamentals": 70.8,
+            "market_behavior": 77.4,
+            "news_sentiment": 50.0
+          }
+        }
+      }
+    }
+  ]
+}
