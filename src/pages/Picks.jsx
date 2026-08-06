@@ -8,7 +8,7 @@ import { getRecommendation } from '../lib/recommendation'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
-import { rankMomentum, rankReversal } from '../lib/researchScreens.js'
+import { rankFastGrowth, rankMomentum, rankReversal } from '../lib/researchScreens.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 
@@ -132,11 +132,13 @@ export default function Picks() {
   const research = useMemo(() => {
     const momentumTickers = new Set(rankMomentum(stockResearch, stockResearch.length).map((row) => row.ticker))
     const reversalTickers = new Set(rankReversal(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const breakoutTickers = new Set(rankFastGrowth(stockResearch, stockResearch.length).map((row) => row.ticker))
     return [
       ...stockResearch.map((row) => ({
         ...row,
         researchType: 'Stock',
         screenTags: [
+          breakoutTickers.has(row.ticker) ? 'Breakout' : null,
           momentumTickers.has(row.ticker) ? 'Momentum' : null,
           reversalTickers.has(row.ticker) ? 'Reversal' : null,
         ].filter(Boolean),

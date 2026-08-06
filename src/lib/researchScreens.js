@@ -144,6 +144,42 @@ export function rankReversal(rows, limit = 5) {
     .slice(0, limit)
 }
 
+// Fast growth / breakout: catches a stock in the act of a sharp recent acceleration - the
+// "NVDA V-shaped recovery", "SanDisk +33% in five days", "MSFT breaking out after a slog"
+// pattern - rather than the steady, months-long drift rankMomentum already covers. The gate
+// compares the pace of the most recent week against the pace set by the three weeks before it
+// within the same month, so a name that has been quietly climbing all month at a constant rate
+// doesn't crowd out one that just broke out this week.
+export function rankFastGrowth(rows, limit = 5) {
+  return rows
+    .map((row) => {
+      const technical = row.technical_detail || {}
+      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
+      const monthReturn = technical.return_20d
+      const volumeRatio = technical.volume_ratio_60d
+      if (![weekReturn, monthReturn].every(finite) || weekReturn <= 2 || monthReturn <= 0) return null
+
+      const priorPace5d = (monthReturn - weekReturn) / 15 * 5
+      const acceleration = weekReturn - priorPace5d
+      if (acceleration <= 0) return null
+
+      const burst = clamp(50 + weekReturn * 3)
+      const accelScore = clamp(50 + acceleration * 2)
+      const trend = clamp(50 + monthReturn * 1.2)
+      const volume = finite(volumeRatio) ? clamp(50 + (volumeRatio - 1) * 40) : 50
+      return {
+        ...row,
+        screen: {
+          weekReturn, monthReturn, acceleration, volumeRatio,
+          rankScore: burst * 0.4 + accelScore * 0.3 + trend * 0.2 + volume * 0.1,
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
 // Structural-trend exposure is deliberately its own screen rather than a component of the
 // research score. Blending a forward-looking thematic bet into the fundamentals score would
 // make that score unreadable – you could no longer tell whether a stock ranked well because

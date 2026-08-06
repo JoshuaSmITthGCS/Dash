@@ -313,6 +313,7 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .research-table-buy { min-width: 92px; white-space: nowrap; }
 .screen-chip-momentum { border-color: color-mix(in srgb, var(--up) 45%, var(--border)); color: var(--up); }
 .screen-chip-reversal { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--warn); }
+.screen-chip-breakout { border-color: color-mix(in srgb, var(--accent, var(--up)) 45%, var(--border)); color: var(--accent, var(--up)); }
 
 .allocation-planner { padding: 20px; margin-bottom: 18px; }
 .allocation-planner-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

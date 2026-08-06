@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
 import {
-  activeThemes, rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
+  activeThemes, rankFastGrowth, rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
 } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
@@ -108,6 +108,39 @@ describe('short-term reversal screen', () => {
     const mildBounce = reversalRow('MILD', { technical_detail: { return_20d: -4, return_5d: 1, drawdown_60d: -6 } })
     expect(rankReversal([mildBounce, sharperBounce]).map((item) => item.ticker))
       .toEqual(['SHARP', 'MILD'])
+  })
+})
+
+describe('fast growth / breakout screen', () => {
+  const breakoutRow = (ticker, overrides = {}) => row(ticker, {
+    technical_detail: { return_20d: 10, return_5d: 8, volume_ratio_60d: 1.3 },
+    ...overrides,
+  })
+
+  it('requires a meaningful weekly pop that outpaces the pace set earlier in the month', () => {
+    // SNDK-style: nearly flat for three weeks, then +8% in the most recent week.
+    const breakout = breakoutRow('BREAK', { technical_detail: { return_20d: 9, return_5d: 8, volume_ratio_60d: 1.3 } })
+    // EPAM-style: up a lot for the month, but decelerating - the pop already happened earlier.
+    const grinding = breakoutRow('GRIND', { technical_detail: { return_20d: 28, return_5d: 3, volume_ratio_60d: 1.1 } })
+    const flat = breakoutRow('FLAT', { technical_detail: { return_20d: 1, return_5d: 1, volume_ratio_60d: 1 } })
+
+    expect(rankFastGrowth([grinding, flat, breakout]).map((item) => item.ticker)).toEqual(['BREAK'])
+  })
+
+  it('excludes a weekly pop that is still net negative for the month', () => {
+    const stillDown = breakoutRow('DOWN', { technical_detail: { return_20d: -5, return_5d: 3, volume_ratio_60d: 1 } })
+    expect(rankFastGrowth([stillDown])).toEqual([])
+  })
+
+  it('ranks the sharpest, most volume-confirmed acceleration first', () => {
+    const sharper = breakoutRow('SHARP', { technical_detail: { return_20d: 12, return_5d: 12, volume_ratio_60d: 1.6 } })
+    const milder = breakoutRow('MILD', { technical_detail: { return_20d: 8, return_5d: 6, volume_ratio_60d: 1.1 } })
+    expect(rankFastGrowth([milder, sharper]).map((item) => item.ticker)).toEqual(['SHARP', 'MILD'])
+  })
+
+  it('tolerates missing volume data by treating it as neutral', () => {
+    const noVolume = breakoutRow('NOVOL', { technical_detail: { return_20d: 9, return_5d: 8, volume_ratio_60d: undefined } })
+    expect(rankFastGrowth([noVolume]).map((item) => item.ticker)).toEqual(['NOVOL'])
   })
 })
 
