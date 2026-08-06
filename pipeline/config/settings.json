@@ -931,6 +931,24 @@
         "weight": 1.0,
         "matches": []
       }
+    },
+    "event_type_markers": {
+      "_comment": "Keyword classification (brief section 15) -- deterministic and title/source-based, same approach as content_type/source_quality above. A headline can match multiple types; classify_event_type returns every match, ordered by this dict's key order, so the caller decides how to prioritize rather than this function silently picking one.",
+      "earnings": ["earnings", "quarterly results", "eps of", "q1 results", "q2 results", "q3 results", "q4 results", "fiscal year results"],
+      "guidance": ["guidance", "outlook raised", "outlook lowered", "forecast raised", "forecast cut", "raises forecast", "cuts forecast"],
+      "product": ["launches", "unveils", "new product", "product recall", "ships"],
+      "regulatory": ["fda", "ftc", "doj", "antitrust", "regulatory approval", "regulator", "sec investigation", "compliance"],
+      "litigation": ["lawsuit", "sues", "sued", "class action", "settlement", "court ruling"],
+      "financing": ["secondary offering", "debt offering", "credit facility", "raises capital", "private placement", "bond issuance"],
+      "m_and_a": ["acquire", "acquisition", "merger", "to be acquired", "buyout", "divest"],
+      "management": ["ceo", "cfo", "appoints", "resigns", "steps down", "names new"],
+      "auditor": ["auditor", "going concern", "material weakness"],
+      "restatement": ["restate", "restatement", "accounting error"],
+      "government_contract": ["government contract", "awarded contract", "department of defense", "federal contract"],
+      "insider_transaction": ["insider buying", "insider selling", "form 4", "director purchase", "executive sells"],
+      "political_disclosure": ["congressional", "senator", "representative", "stock act", "periodic transaction report"],
+      "analyst_revision": ["upgrades", "downgrades", "price target raised", "price target lowered", "initiates coverage"],
+      "macro_exposure": ["tariff", "interest rate", "inflation report", "fed decision", "recession"]
     }
   },
   "market_behavior": {

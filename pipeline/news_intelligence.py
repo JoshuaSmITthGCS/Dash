@@ -77,6 +77,24 @@ def source_quality(item, config):
     return config["source_quality_default_tier"], float(default["weight"])
 
 
+def classify_event_type(item, config):
+    """Deterministic keyword classification into the event taxonomy the brief specifies
+    (earnings, guidance, product, regulatory, litigation, financing, m_and_a, management,
+    auditor, restatement, government_contract, insider_transaction, political_disclosure,
+    analyst_revision, macro_exposure). A headline can genuinely belong to more than one
+    category (e.g. "CFO resigns amid SEC investigation" is both management and regulatory),
+    so this returns every match rather than forcing one -- the caller decides how to
+    prioritize. Returns [] rather than a fabricated default when nothing matches; that is a
+    real, honest outcome for routine commentary that isn't event-driven at all.
+    """
+    haystack = " ".join(str(item.get(key) or "") for key in ("title", "summary")).lower()
+    markers = config.get("event_type_markers", {})
+    return [
+        event_type for event_type, keywords in markers.items()
+        if event_type != "_comment" and any(keyword in haystack for keyword in keywords)
+    ]
+
+
 def annotate_article(item, config):
     tier, quality_weight = source_quality(item, config)
     kind = content_type(item, config)
@@ -85,6 +103,7 @@ def annotate_article(item, config):
         "content_type": kind,
         "source_quality_tier": tier,
         "source_quality_weight": quality_weight,
+        "event_types": classify_event_type(item, config),
     }
 
 

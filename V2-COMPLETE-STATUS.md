@@ -1,3 +1,7 @@
+> **Superseded / historical.** This document is retained for history but is known to contain stale or contradicted information. For current, verified status see `README.md`, `APP-COMPLETE-BREAKDOWN.md` (regenerate with `npm run docs:breakdown`), and `docs/CHANGELOG-QUANT-UPGRADE.md`.
+
+---
+
 # ValueSignal V2 - Complete Build Status
 
 **Date:** 2026-07-30
