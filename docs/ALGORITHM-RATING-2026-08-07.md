@@ -1,5 +1,10 @@
 # Trading Algorithm Rating — 2026-08-07
 
+> **Superseded in part.** This rating has been reconciled with an independent design-level review in
+> `docs/CONSOLIDATED-ASSESSMENT.md`, which revises the overall figure to 5.5/10 — the validation
+> machinery (deflated Sharpe, PBO, walk-forward, untouched holdout, block bootstrap) is more
+> complete than this document credits. The evidence findings below stand unchanged.
+
 Re-rate of the ValueSignal research score as it stands on `claude/trading-algorithm-rerate-79t01v`,
 at commit `c485cc5`. The previous assessment of record is `PLATFORM_DESIGN_REVIEW.md` (3 August),
 which rated architecture and process and returned a blocked launch verdict. This pass rates the

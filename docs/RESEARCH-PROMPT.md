@@ -1,8 +1,10 @@
 # Research Prompt — How to make this algorithm actually work
 
 A self-contained brief for a research agent, model, or collaborator. Everything needed to start is
-below; the two supporting documents are `docs/SYSTEM-SETUP.md` (what the system is) and
-`docs/ALGORITHM-RATING-2026-08-07.md` (what's been measured about it).
+below; the supporting documents are `docs/SYSTEM-SETUP.md` (what the system is),
+`docs/ALGORITHM-RATING-2026-08-07.md` (what's been measured about it), and
+`docs/CONSOLIDATED-ASSESSMENT.md` (this brief reconciled with an independent design-level review,
+including a sequenced P0/P1/P2 plan and an audit of which recommendations are already built).
 
 Copy everything from **§ THE PROMPT** onward if you're handing this to a model.
 

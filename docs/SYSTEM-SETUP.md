@@ -8,8 +8,10 @@ Where this document states a number, it was measured from the committed artifact
 not copied from another document. Where the implementation and the documentation disagree, this
 file follows the implementation and says so.
 
-Companion documents: `docs/ALGORITHM-RATING-2026-08-07.md` (what's working and what isn't),
-`docs/RESEARCH-PROMPT.md` (the open research questions), `docs/LIMITATIONS.md` (the repo's own
+Companion documents: `docs/CONSOLIDATED-ASSESSMENT.md` (the reconciled rating and the sequenced
+plan — start here), `docs/ALGORITHM-RATING-2026-08-07.md` (what's working and what isn't),
+`docs/RESEARCH-PROMPT.md` (the open research questions), `docs/FEEDBACK-SOURCE-CONSOLIDATED.md`
+(the design-level review that fed the reconciliation), `docs/LIMITATIONS.md` (the repo's own
 honest gap list).
 
 ---
