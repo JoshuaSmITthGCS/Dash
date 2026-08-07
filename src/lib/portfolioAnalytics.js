@@ -356,12 +356,19 @@ export function moneyWeightedAccountReturn(snapshots = [], transactions = [], hi
   }
 }
 
-/** Converts a realized return over an arbitrary span into an annual rate: (1+r)^(365/days) - 1. */
-export function annualizeReturnPct(returnPct, startDate, endDate) {
+/**
+ * Converts a realized return over an arbitrary span into an annual rate: (1+r)^(365/days) - 1.
+ * `minimumDays` rejects spans too short to extrapolate responsibly -- the same 30-day floor
+ * used elsewhere in this file (see moneyWeightedAccountReturn/solveXirr) before a short
+ * account history is stretched into an annual figure. A handful of days of noise compounded
+ * to a full year produces a wildly overstated (or understated) rate.
+ */
+export function annualizeReturnPct(returnPct, startDate, endDate, minimumDays = 0) {
   const start = Date.parse(startDate)
   const end = Date.parse(endDate)
   if (!finite(returnPct) || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
   const elapsedDays = (end - start) / 86400000
+  if (elapsedDays < minimumDays) return null
   const growth = 1 + Number(returnPct) / 100
   if (growth <= 0) return null
   const annualized = growth ** (365 / elapsedDays) - 1

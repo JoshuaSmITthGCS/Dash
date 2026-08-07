@@ -94,9 +94,14 @@ export default function Planning() {
   // alternative to the manually-set slider target below. Recomputes on every render from
   // tracking state, so it moves automatically as the portfolio does.
   const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
+  // Same 30-day floor as "Your return (money-weighted)" elsewhere (moneyWeightedAccountReturn)
+  // -- a couple of weeks of live tracking stretched into an annual rate would overstate it wildly.
   const liveStrategyAnnualReturnPct = returnSummary.strategy.available
-    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)
+    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate, projectionConfig.sparse_history_minimum_days)
     : null
+  const liveTrackingElapsedDays = returnSummary.strategy.available
+    ? Math.floor((Date.parse(returnSummary.strategy.endDate) - Date.parse(returnSummary.strategy.startDate)) / 86400000)
+    : 0
   const liveTargetActive = useLiveStrategyReturn && liveStrategyAnnualReturnPct != null
   const effectiveAnnualReturnTargetPct = liveTargetActive
     ? normalizeAnnualReturnTarget(liveStrategyAnnualReturnPct, source)
@@ -199,7 +204,11 @@ export default function Planning() {
         : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12, color: 'var(--text-dim)' }}>
         <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
-        Track my live Strategy return (time-weighted){liveStrategyAnnualReturnPct == null ? ' -- unavailable until there are at least two dated recorded account values' : ''}
+        Track my live Strategy return (time-weighted){liveStrategyAnnualReturnPct == null
+          ? (returnSummary.strategy.available
+            ? ` -- unavailable for ${projectionConfig.sparse_history_minimum_days - liveTrackingElapsedDays} more day${projectionConfig.sparse_history_minimum_days - liveTrackingElapsedDays === 1 ? '' : 's'} (needs ${projectionConfig.sparse_history_minimum_days}+ days of live tracking before it's reliable to annualize)`
+            : ' -- unavailable until there are at least two dated recorded account values')
+          : ''}
       </label>
     </section>
 
