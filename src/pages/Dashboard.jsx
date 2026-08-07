@@ -9,9 +9,9 @@ import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioP
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
-  BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
+  annualizeReturnPct, BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
   enrichPortfolio, intradayPortfolioHigh, latestMarketDayReturn, performanceMetrics, portfolioReturnSummary, portfolioScore,
-  resilienceIndex, riskFreeAnnualRate, selectPeriod, trackedAllTimeEarnings,
+  resilienceIndex, riskFreeAnnualRate, selectPeriod, sliceSeriesFrom, trackedAllTimeEarnings,
 } from '../lib/portfolioAnalytics.js'
 import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsights.js'
 import { Loading, Empty, Move, RefreshProgress, Tier } from '../components/Bits.jsx'
@@ -44,6 +44,9 @@ import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
 
 const PERIODS = ['1D', '1W', '1M', '3M', 'YTD', '1Y', 'All']
+// See the matching constant in Portfolio.jsx: when it's held, evaluate risk/performance
+// stats only since live tracking actually started, not the full backtested-basket history.
+const LIVE_TRACKING_START = '2026-07-20'
 const BENCHMARK_STYLES = [
   { color: 'var(--series-benchmark)', dashPattern: '7 5' },
   { color: 'var(--series-benchmark-2)', dashPattern: '3 4' },
@@ -140,7 +143,7 @@ function Customizer({ widgets, onChange, onDone }) {
   return <aside className="customizer-panel"><div className="customizer-head"><div><span className="eyebrow">Settings</span><h2>Customize report</h2></div><button className="icon-button" onClick={onDone} aria-label="Close customization"><Icon name="close" /></button></div><p>Choose supporting modules and their reading order. Core financial-report metrics always remain visible.</p><div className="customizer-list">{widgets.map((widget, index) => <div className="customizer-row" key={widget.id}><Icon name="grip" /><div><strong>{widget.label}</strong><small>{widget.locked ? 'Required' : `Position ${index + 1}`}</small></div><label className="switch compact-switch"><span className="sr-only">Show {widget.label}</span><input type="checkbox" checked={widget.visible} disabled={widget.locked} onChange={(event) => onChange(widgets.map((item) => item.id === widget.id ? { ...item, visible: event.target.checked } : item))} /><span /></label><div className="reorder-buttons"><button onClick={() => move(index, -1)} disabled={!index}><Icon name="up" /></button><button onClick={() => move(index, 1)} disabled={index === widgets.length - 1}><Icon name="down" /></button></div></div>)}</div><button className="primary-button" onClick={onDone}>Save report</button></aside>
 }
 
-function ReportProjection({ input, source, money, annualReturnTargetPct, currentAge, retirementAge, contribution }) {
+function ReportProjection({ input, source, money, annualReturnTargetPct, currentAge, retirementAge, contribution, liveStrategyReturn }) {
   const state = useProjectionSimulation(input)
   return <div><ProjectionPanel
     state={state}
@@ -150,7 +153,7 @@ function ReportProjection({ input, source, money, annualReturnTargetPct, current
     startAge={currentAge}
     retirementAge={retirementAge}
     title="Long-range outcome distribution"
-    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. The dotted median targets ${formatAnnualReturnTarget(annualReturnTargetPct)} annually.`}
+    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. The dotted median targets ${formatAnnualReturnTarget(annualReturnTargetPct)} annually${liveStrategyReturn ? ' -- your live Strategy return (time-weighted), annualized, and it updates automatically as your portfolio does' : ''}.`}
   /><Link className="primary-button planning-home-link" to="/planning">Open Planning</Link></div>
 }
 
@@ -178,6 +181,7 @@ export default function Dashboard() {
   const [chartMode, setChartMode] = useState(null)
   const [draftWidgets, setDraftWidgets] = useState(preferences.widgets)
   const [pullRefreshing, setPullRefreshing] = useState(false)
+  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(false)
   const customize = new window.URLSearchParams(window.location.search).get('customize') === '1'
   const { items: watchlistItems } = useWatchlist()
   const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
@@ -235,7 +239,10 @@ export default function Dashboard() {
     : today ? { dollarReturn: today.dollarReturn, returnPct: today.returnPct } : null
   const afterHours = afterHoursPortfolioReturn(positions, portfolioQuotes.quotes)
   const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
-  const scorePortfolioPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
+  // Standard-measures/score inputs only -- kept separate from holdingsSeries (used above for
+  // the performance chart) so this toggle affects risk/ratio stats without changing the chart.
+  const scoreHoldingsSeries = sinceLiveTrackingOnly ? sliceSeriesFrom(holdingsSeries, LIVE_TRACKING_START) : holdingsSeries
+  const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreComparison = compareBenchmarkSeries(scorePortfolioPeriod, selectedBenchmarkSeries.slice(0, 1))
   const resilience = resilienceIndex(scoreComparison?.portfolio.values || scorePortfolioPeriod?.values || [], diversification)
   const riskFree = riskFreeAnnualRate(advisorData)
@@ -271,7 +278,17 @@ export default function Dashboard() {
     preferences.defaultBenchmark,
     fidelityProjectionBaseline(positions),
   )
-  const annualReturnTargetPct = normalizeAnnualReturnTarget(finances.settings.planningAnnualReturnTargetPct, projectionSource)
+  // Prefer the live, contribution-adjusted Strategy return (Modified Dietz, annualized) as
+  // the outcome-distribution's center so it moves with the portfolio automatically, instead
+  // of the static manual assumption from Finances -- that's still the fallback whenever there
+  // isn't yet enough dated snapshot history for a Modified Dietz result.
+  const liveStrategyAnnualReturnPct = returnSummary.strategy.available
+    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)
+    : null
+  const annualReturnTargetPct = normalizeAnnualReturnTarget(
+    liveStrategyAnnualReturnPct ?? finances.settings.planningAnnualReturnTargetPct,
+    projectionSource,
+  )
   const planningReturns = projectionSource.available
     ? applyAllocationAssumption(
       projectionSource.returns,
@@ -408,6 +425,10 @@ export default function Dashboard() {
       <DashboardWidget id="metric-grid" widgets={preferences.widgets}>
       <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest. ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown and ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>The portfolio score remains provisional whenever a component is missing. Standard performance statistics are reported separately and are not converted into a grade.</p></details>}</section>
 
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 10px', fontSize: 12, color: 'var(--text-tertiary)' }}>
+        <input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} />
+        Evaluate only since {LIVE_TRACKING_START} (when live tracking started), not the full backtested history
+      </label>
       <PerformanceMetrics metrics={performance} benchmarkLabel={preferences.defaultBenchmark} riskFree={riskFree} />
       </DashboardWidget>
 
@@ -429,7 +450,7 @@ export default function Dashboard() {
       </div>
 
       <section className="report-two-column">
-        <ReportProjection input={projectionInput} source={projectionSource} money={money} annualReturnTargetPct={annualReturnTargetPct} currentAge={finances.settings.currentAge} retirementAge={finances.settings.retireAge} contribution={finances.settings.monthlyContribution * projectionConfig.months_per_year} />
+        <ReportProjection input={projectionInput} source={projectionSource} money={money} annualReturnTargetPct={annualReturnTargetPct} currentAge={finances.settings.currentAge} retirementAge={finances.settings.retireAge} contribution={finances.settings.monthlyContribution * projectionConfig.months_per_year} liveStrategyReturn={liveStrategyAnnualReturnPct != null} />
         <article className="opportunity-card"><span className="eyebrow">Opportunity cost</span><h2>Potential earnings by benchmark</h2>{comparison ? <><div className="opportunity-baseline"><span>Shared starting value</span><strong>{money(comparison.startingValue)}</strong><small>{comparison.startDate} to {comparison.endDate}</small></div><div className="opportunity-list"><div className="portfolio-opportunity-row"><span>Current holdings<small>Charted potential earnings</small></span><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong></div>{comparison.benchmarks.map((item) => <div key={item.symbol}><span>{item.symbol} proxy<small>{item.label} potential earnings</small></span><strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong><em className={tone(item.differenceVsPortfolio)}>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em></div>)}</div><small>{comparison.methodology}</small></> : <p>Comparable history is unavailable for this selection.</p>}</article>
       </section>
     </>}

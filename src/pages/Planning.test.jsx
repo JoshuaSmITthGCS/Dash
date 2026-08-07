@@ -4,12 +4,14 @@ import Planning from './Planning.jsx'
 import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 
 vi.mock('../lib/useData.js', () => ({ useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../lib/useFirebaseFinances.js', () => ({ useFirebaseFinances: vi.fn() }))
+vi.mock('../lib/usePortfolioTracking.js', () => ({ usePortfolioTracking: vi.fn() }))
 vi.mock('../lib/PreferencesContext.jsx', () => ({ usePreferences: vi.fn(), formatPreferenceMoney: (value) => `$${Number(value).toLocaleString()}` }))
 vi.mock('../lib/useProjectionSimulation.js', () => ({ useProjectionSimulation: vi.fn() }))
 
@@ -29,6 +31,7 @@ describe('Planning hub', () => {
       ? { data: { histories: { SPY: { dates, closes: dates.map((_, index) => 100 + index + Math.sin(index) * 4) } } }, loading: false }
       : { data: { screen_universe: [], portfolio_coverage: [], research: [], benchmark_history: { dates } }, loading: false })
     useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'MSFT', shares: 1, snapshotSource: 'User-provided brokerage snapshot' }], loading: false })
+    usePortfolioTracking.mockReturnValue({ snapshots: [], activities: [], trackingState: null })
     usePreferences.mockReturnValue({ preferences: { defaultBenchmark: 'SPY', privacyMode: false, numberFormat: 'en-US' } })
     useFirebaseFinances.mockReturnValue({
       settings: {
@@ -102,6 +105,27 @@ describe('Planning hub', () => {
     fireEvent.pointerUp(target)
     await waitFor(() => expect(updateSettings).toHaveBeenCalledWith({ planningAnnualReturnTargetPct: 18 }))
     expect(screen.getAllByText('+18%').length).toBeGreaterThan(0)
+  })
+
+  it('tracks the live Strategy return as the projection center when available, and can be turned off', async () => {
+    usePortfolioTracking.mockReturnValue({
+      snapshots: [
+        { value: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T00:00:00Z' },
+        { value: 1200, marketDate: '2026-07-01', recordedAt: '2026-07-01T00:00:00Z' },
+      ],
+      activities: [],
+      trackingState: { cashFlowHistoryComplete: true },
+    })
+    render(<MemoryRouter><Planning /></MemoryRouter>)
+    const toggle = await screen.findByRole('checkbox', { name: /Track my live Strategy return/ })
+    expect(toggle).toBeChecked()
+    const target = screen.getByRole('slider', { name: /Annual return target/ })
+    expect(target).toBeDisabled()
+    expect(target.value).not.toBe('15')
+
+    fireEvent.click(toggle)
+    expect(toggle).not.toBeChecked()
+    expect(screen.getByRole('slider', { name: /Annual return target/ })).not.toBeDisabled()
   })
 
   it('creates a goal tied to the selected Finances pool', async () => {

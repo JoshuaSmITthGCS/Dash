@@ -17,6 +17,26 @@ export const ACTION_STYLES = {
 
 const DEFAULT_TRIM = { HOLD: 0, WATCH: 0, TRIM: 33, SELL: 100 }
 
+// SELL means "exit, this is not coming back" -- reserve it for when the consensus price
+// target itself sits at or below today's price (the only signal on hand that speaks to where
+// the stock is expected to go, not just how it got here). Deteriorating fundamentals, broken
+// technicals, or bad sentiment alone only justify trimming exposure while that's tested;
+// without evidence the price has a lower expected ceiling than where it already trades,
+// a published or client-derived SELL is downgraded to TRIM instead.
+function downgradeUnjustifiedSell(recommendation, stock) {
+  if (recommendation?.action !== 'SELL') return recommendation
+  const upside = Number(stock?.analyst_target_upside)
+  if (Number.isFinite(upside) && upside <= 0) return recommendation
+  return {
+    ...recommendation,
+    action: 'TRIM',
+    suggestedTrimPct: DEFAULT_TRIM.TRIM,
+    summary: `${recommendation.summary} Downgraded from Sell: ${Number.isFinite(upside)
+      ? `the consensus price target still implies ${upside >= 0 ? '+' : ''}${upside.toFixed(0)}% upside`
+      : 'no analyst price target is on file'}, so there is no evidence the price won’t recover.`,
+  }
+}
+
 export function getRecommendation(stock) {
   if (!stock) return null
   const published = stock.recommendation
@@ -41,17 +61,17 @@ export function getRecommendation(stock) {
     }
   }
   if (published?.action) {
-    return {
+    return downgradeUnjustifiedSell({
       ...published,
       suggestedTrimPct: published.suggested_trim_pct ?? DEFAULT_TRIM[published.action] ?? 0,
       agreementCount: published.agreement_count ?? 0,
       reasons: published.reasons || [],
       source: 'pipeline',
-    }
+    }, stock)
   }
 
   const derived = getSellWatchRecommendation(stock)
-  return {
+  return downgradeUnjustifiedSell({
     action: derived.action,
     confidence: derived.confidence,
     summary: derived.reason,
@@ -60,7 +80,7 @@ export function getRecommendation(stock) {
     suggestedTrimPct: DEFAULT_TRIM[derived.action] ?? 0,
     factors: derived.factors,
     source: 'client',
-  }
+  }, stock)
 }
 
 /** Action plus the share of the position it applies to, e.g. "TRIM 33%". */

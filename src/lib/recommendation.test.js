@@ -52,6 +52,28 @@ describe('getRecommendation', () => {
   it('returns nothing for a missing stock', () => {
     expect(getRecommendation(null)).toBeNull()
   })
+
+  it('downgrades a published Sell to Trim when there is no evidence the price won’t recover', () => {
+    const stock = {
+      ticker: 'DDD',
+      recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2 },
+      analyst_target_upside: 18,
+    }
+    const result = getRecommendation(stock)
+    expect(result.action).toBe('TRIM')
+    expect(result.summary).toMatch(/downgraded from sell/i)
+  })
+
+  it('keeps a published Sell when the consensus target is at or below today’s price', () => {
+    const stock = {
+      ticker: 'EEE',
+      recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2, summary: 'Broken thesis.' },
+      analyst_target_upside: -6,
+    }
+    const result = getRecommendation(stock)
+    expect(result.action).toBe('SELL')
+    expect(result.summary).toBe('Broken thesis.')
+  })
 })
 
 describe('actionHeadline', () => {

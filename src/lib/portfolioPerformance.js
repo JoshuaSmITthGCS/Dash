@@ -37,7 +37,7 @@ export function actualRecordedValueSeries(snapshots = [], transactions = []) {
   const endDate = rows.at(-1)[0]
   const settledFlows = transactions.filter((row) => {
     const date = row.effectiveDate || row.date
-    return ['deposit', 'withdrawal'].includes(row.type)
+    return ['deposit', 'external_contribution', 'withdrawal'].includes(row.type)
       && date >= startDate
       && date <= endDate
       && !['pending', 'processing'].includes(row.status)
