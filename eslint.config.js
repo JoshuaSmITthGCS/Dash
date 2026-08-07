@@ -10,7 +10,11 @@ const globals = Object.fromEntries([
 ].map((name) => [name, 'readonly']))
 
 export default [
-  { ignores: ['.venv/**', 'dist/**', 'coverage/**', 'node_modules/**'] },
+  // `.venv*` rather than `.venv`: a Python virtualenv ships vendored JavaScript (urllib3's
+  // emscripten fetch worker, for one) written for a worker global scope, so ESLint flags it
+  // as `'self' is not defined` and fails CI on code nobody here wrote. The exact-name ignore
+  // missed a `.venv.py39.bak` backup directory and took the whole `site` job down with it.
+  { ignores: ['.venv*/**', 'dist/**', 'coverage/**', 'node_modules/**'] },
   {
     files: ['**/*.{js,jsx}'],
     ...js.configs.recommended,
