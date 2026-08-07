@@ -13,7 +13,7 @@
 // buy-worthy, and only while the stock is actually declining - it is not a general-purpose
 // price target.
 
-const ELIGIBLE_STANCES = new Set(['ATTRACTIVE', 'PROMISING'])
+export const ELIGIBLE_STANCES = new Set(['ATTRACTIVE', 'PROMISING'])
 const DOWN_FROM_HIGH_THRESHOLD = -8 // % off the 52-week high before this is "currently going down"
 const RECOVERY_GAIN_OFF_FLOOR = 0.20 // the conventional "+20% off the low" threshold for a new uptrend
 const NEAR_FLOOR_BAND = 0.05 // within 5% of the floor counts as "at the bottom"

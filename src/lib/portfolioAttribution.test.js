@@ -90,4 +90,54 @@ describe('portfolio move attribution', () => {
     const result = explainPortfolioMove([zeroWeight], benchmarkHistory)
     expect(result.holdings).toEqual([])
   })
+
+  it('prefers a live quote over the stale pipeline snapshot for a holdings daily return', () => {
+    // history.closes says +2% (the pipeline's last refresh); the live quote says +5% today.
+    const live = position('AAPL', {
+      priceInfo: {
+        sector: 'Technology', history: { closes: [100, 102] }, technical_detail: { beta: 1.2 },
+        portfolioQuote: true, price: 105, previousClose: 100,
+      },
+    })
+    const result = explainPortfolioMove([live], benchmarkHistory)
+    expect(result.holdings[0].dailyReturnPct).toBeCloseTo(5, 6)
+  })
+
+  it('falls back to history.closes when no live quote has been fetched for that symbol', () => {
+    const result = explainPortfolioMove([position('AAPL')], benchmarkHistory)
+    expect(result.holdings[0].dailyReturnPct).toBeCloseTo(2, 6)
+  })
+
+  it('ignores a stale previousClose left over on a row that is not actually a live quote', () => {
+    // portfolioQuote is unset -- previousClose here must never be treated as live.
+    const notLive = position('AAPL', {
+      priceInfo: {
+        sector: 'Technology', history: { closes: [100, 102] }, technical_detail: { beta: 1.2 },
+        price: 105, previousClose: 100,
+      },
+    })
+    const result = explainPortfolioMove([notLive], benchmarkHistory)
+    expect(result.holdings[0].dailyReturnPct).toBeCloseTo(2, 6)
+  })
+
+  it('prefers a live benchmark quote over the stale benchmark history', () => {
+    const result = explainPortfolioMove([position('AAPL')], benchmarkHistory, {
+      benchmarkQuote: { portfolioQuote: true, price: 510, previousClose: 500 },
+    })
+    // benchmarkHistory alone would give +1%; the live SPY quote says +2%.
+    expect(result.benchmarkReturnPct).toBeCloseTo(2, 6)
+  })
+
+  it('still reconciles exactly when both holdings and the benchmark use live quotes', () => {
+    const live = position('AAPL', {
+      priceInfo: {
+        sector: 'Technology', history: { closes: [100, 102] }, technical_detail: { beta: 1.2 },
+        portfolioQuote: true, price: 108, previousClose: 100,
+      },
+    })
+    const result = explainPortfolioMove([live], benchmarkHistory, {
+      benchmarkQuote: { portfolioQuote: true, price: 515, previousClose: 500 },
+    })
+    expect(result.reconciles).toBe(true)
+  })
 })
