@@ -1,25 +1,79 @@
 {
-  "generated_at": "2026-08-07T09:50:06.527637+00:00",
+  "generated_at": "2026-08-07T12:05:57.965197+00:00",
   "comparison": "bands_champion_vs_cross_sectional_challenger",
-  "universe_count": 235,
-  "spearman_rank_correlation": 0.816224,
+  "universe_count": 383,
+  "spearman_rank_correlation": 0.644927,
   "largest_rank_movers": [
     {
-      "ticker": "SWX",
-      "sector": "Utilities",
-      "champion_score": 52.0,
-      "challenger_score": 61.4,
-      "score_delta": 9.4,
-      "champion_rank": 179,
-      "challenger_rank": 24,
-      "rank_delta": 155,
+      "ticker": "FDS",
+      "sector": "Financial Services",
+      "champion_score": 62.7,
+      "challenger_score": 40.1,
+      "score_delta": -22.6,
+      "champion_rank": 113,
+      "challenger_rank": 374,
+      "rank_delta": -261,
       "reasons": [
         {
-          "metric": "stock_comp_to_revenue",
+          "metric": "cash_conversion",
           "champion": 100.0,
-          "challenger": 0.0,
-          "delta": -100.0
+          "challenger": 35.5,
+          "delta": -64.5
         },
+        {
+          "metric": "stock_comp_to_revenue",
+          "champion": 80.0,
+          "challenger": 22.7,
+          "delta": -57.3
+        },
+        {
+          "metric": "profit_margin",
+          "champion": 100.0,
+          "challenger": 46.9,
+          "delta": -53.1
+        }
+      ]
+    },
+    {
+      "ticker": "BLK",
+      "sector": "Financial Services",
+      "champion_score": 62.1,
+      "challenger_score": 40.9,
+      "score_delta": -21.2,
+      "champion_rank": 116,
+      "challenger_rank": 371,
+      "rank_delta": -255,
+      "reasons": [
+        {
+          "metric": "accruals_ratio",
+          "champion": 80.0,
+          "challenger": 9.4,
+          "delta": -70.6
+        },
+        {
+          "metric": "forward_pe",
+          "champion": 80.0,
+          "challenger": 12.8,
+          "delta": -67.2
+        },
+        {
+          "metric": "interest_coverage",
+          "champion": 100.0,
+          "challenger": 43.8,
+          "delta": -56.2
+        }
+      ]
+    },
+    {
+      "ticker": "BIRK",
+      "sector": "Consumer Cyclical",
+      "champion_score": 63.0,
+      "challenger_score": 43.1,
+      "score_delta": -19.9,
+      "champion_rank": 110,
+      "challenger_rank": 355,
+      "rank_delta": -245,
+      "reasons": [
         {
           "metric": "accruals_ratio",
           "champion": 80.0,
@@ -27,217 +81,343 @@
           "delta": -80.0
         },
         {
-          "metric": "forward_pe",
-          "champion": 80.0,
-          "challenger": 8.3,
-          "delta": -71.7
-        }
-      ]
-    },
-    {
-      "ticker": "AEP",
-      "sector": "Utilities",
-      "champion_score": 47.9,
-      "challenger_score": 57.6,
-      "score_delta": 9.7,
-      "champion_rank": 197,
-      "challenger_rank": 62,
-      "rank_delta": 135,
-      "reasons": [
-        {
           "metric": "cash_conversion",
-          "champion": 10.0,
-          "challenger": 83.3,
-          "delta": 73.3
-        },
-        {
-          "metric": "accruals_ratio",
-          "champion": 100.0,
-          "challenger": 41.7,
-          "delta": -58.3
-        },
-        {
-          "metric": "forward_pe",
           "champion": 80.0,
-          "challenger": 25.0,
-          "delta": -55.0
+          "challenger": 6.7,
+          "delta": -73.3
+        },
+        {
+          "metric": "gross_profits_to_assets",
+          "champion": 80.0,
+          "challenger": 17.6,
+          "delta": -62.4
         }
       ]
     },
     {
-      "ticker": "VST",
-      "sector": "Utilities",
-      "champion_score": 49.9,
-      "challenger_score": 57.9,
-      "score_delta": 8.0,
-      "champion_rank": 193,
-      "challenger_rank": 59,
-      "rank_delta": 134,
+      "ticker": "CMG",
+      "sector": "Consumer Cyclical",
+      "champion_score": 61.5,
+      "challenger_score": 43.0,
+      "score_delta": -18.5,
+      "champion_rank": 118,
+      "challenger_rank": 359,
+      "rank_delta": -241,
       "reasons": [
         {
-          "metric": "free_cash_flow_yield",
-          "champion": 10.0,
-          "challenger": 100.0,
-          "delta": 90.0
+          "metric": "gross_profits_to_assets",
+          "champion": 100.0,
+          "challenger": 35.3,
+          "delta": -64.7
         },
         {
           "metric": "stock_comp_to_revenue",
           "champion": 100.0,
-          "challenger": 12.5,
-          "delta": -87.5
+          "challenger": 35.7,
+          "delta": -64.3
         },
         {
-          "metric": "altman_z",
-          "champion": 30.0,
-          "challenger": 100.0,
-          "delta": 70.0
+          "metric": "forward_pe",
+          "champion": 80.0,
+          "challenger": 18.9,
+          "delta": -61.1
         }
       ]
     },
     {
-      "ticker": "SPG",
+      "ticker": "EIX",
+      "sector": "Utilities",
+      "champion_score": 41.1,
+      "challenger_score": 58.9,
+      "score_delta": 17.8,
+      "champion_rank": 275,
+      "challenger_rank": 40,
+      "rank_delta": 235,
+      "reasons": [
+        {
+          "metric": "free_cash_flow_yield",
+          "champion": 30.0,
+          "challenger": 85.7,
+          "delta": 55.7
+        },
+        {
+          "metric": "price_to_book",
+          "champion": 75.0,
+          "challenger": 100.0,
+          "delta": 25.0
+        },
+        {
+          "metric": "return_on_equity",
+          "champion": 80.0,
+          "challenger": 100.0,
+          "delta": 20.0
+        }
+      ]
+    },
+    {
+      "ticker": "DOC",
       "sector": "Real Estate",
-      "champion_score": 56.2,
-      "challenger_score": 61.0,
-      "score_delta": 4.8,
-      "champion_rank": 159,
-      "challenger_rank": 27,
-      "rank_delta": 132,
+      "champion_score": 38.6,
+      "challenger_score": 55.3,
+      "score_delta": 16.7,
+      "champion_rank": 310,
+      "challenger_rank": 75,
+      "rank_delta": 235,
+      "reasons": [
+        {
+          "metric": "profit_margin",
+          "champion": 55.0,
+          "challenger": 13.0,
+          "delta": -42.0
+        },
+        {
+          "metric": "peg",
+          "champion": 10.0,
+          "challenger": 47.1,
+          "delta": 37.1
+        },
+        {
+          "metric": "sales_multiple",
+          "champion": 45.0,
+          "challenger": 80.0,
+          "delta": 35.0
+        }
+      ]
+    },
+    {
+      "ticker": "CPB",
+      "sector": "Consumer Defensive",
+      "champion_score": 56.6,
+      "challenger_score": 41.5,
+      "score_delta": -15.1,
+      "champion_rank": 134,
+      "challenger_rank": 368,
+      "rank_delta": -234,
+      "reasons": [
+        {
+          "metric": "sales_multiple",
+          "champion": 100.0,
+          "challenger": 44.4,
+          "delta": -55.6
+        },
+        {
+          "metric": "cash_conversion",
+          "champion": 100.0,
+          "challenger": 45.1,
+          "delta": -54.9
+        },
+        {
+          "metric": "accruals_ratio",
+          "champion": 100.0,
+          "challenger": 45.3,
+          "delta": -54.7
+        }
+      ]
+    },
+    {
+      "ticker": "ESTC",
+      "sector": "Technology",
+      "champion_score": 58.4,
+      "challenger_score": 42.9,
+      "score_delta": -15.5,
+      "champion_rank": 132,
+      "challenger_rank": 360,
+      "rank_delta": -228,
       "reasons": [
         {
           "metric": "accruals_ratio",
           "champion": 80.0,
-          "challenger": 11.1,
-          "delta": -68.9
+          "challenger": 2.8,
+          "delta": -77.2
         },
         {
-          "metric": "net_debt_to_ebitda",
-          "champion": 30.0,
-          "challenger": 87.5,
-          "delta": 57.5
+          "metric": "cash_conversion",
+          "champion": 80.0,
+          "challenger": 19.4,
+          "delta": -60.6
         },
         {
-          "metric": "piotroski_f",
-          "champion": 55.0,
-          "challenger": 5.6,
-          "delta": -49.4
+          "metric": "forward_pe",
+          "champion": 100.0,
+          "challenger": 50.8,
+          "delta": -49.2
         }
       ]
     },
     {
-      "ticker": "WRB",
-      "sector": "Financial Services",
-      "champion_score": 66.2,
-      "challenger_score": 44.2,
-      "score_delta": -22.0,
-      "champion_rank": 67,
-      "challenger_rank": 195,
-      "rank_delta": -128,
+      "ticker": "A",
+      "sector": "Healthcare",
+      "champion_score": 65.7,
+      "challenger_score": 45.5,
+      "score_delta": -20.2,
+      "champion_rank": 89,
+      "challenger_rank": 316,
+      "rank_delta": -227,
       "reasons": [
+        {
+          "metric": "accruals_ratio",
+          "champion": 100.0,
+          "challenger": 20.0,
+          "delta": -80.0
+        },
+        {
+          "metric": "cash_conversion",
+          "champion": 80.0,
+          "challenger": 20.0,
+          "delta": -60.0
+        },
         {
           "metric": "forward_pe",
           "champion": 80.0,
-          "challenger": 15.8,
-          "delta": -64.2
-        },
-        {
-          "metric": "profit_margin",
-          "champion": 80.0,
-          "challenger": 23.7,
-          "delta": -56.3
-        },
-        {
-          "metric": "interest_coverage",
-          "champion": 100.0,
-          "challenger": 44.4,
+          "challenger": 24.4,
           "delta": -55.6
         }
       ]
     },
     {
-      "ticker": "WTW",
-      "sector": "Financial Services",
-      "champion_score": 65.0,
-      "challenger_score": 41.6,
-      "score_delta": -23.4,
-      "champion_rank": 82,
-      "challenger_rank": 208,
-      "rank_delta": -126,
+      "ticker": "HAS",
+      "sector": "Consumer Cyclical",
+      "champion_score": 55.4,
+      "challenger_score": 41.8,
+      "score_delta": -13.6,
+      "champion_rank": 141,
+      "challenger_rank": 366,
+      "rank_delta": -225,
       "reasons": [
         {
-          "metric": "forward_pe",
+          "metric": "stock_comp_to_revenue",
           "champion": 80.0,
-          "challenger": 18.4,
-          "delta": -61.6
+          "challenger": 14.3,
+          "delta": -65.7
+        },
+        {
+          "metric": "sales_multiple",
+          "champion": 80.0,
+          "challenger": 22.4,
+          "delta": -57.6
+        },
+        {
+          "metric": "gross_profits_to_assets",
+          "champion": 100.0,
+          "challenger": 47.1,
+          "delta": -52.9
+        }
+      ]
+    },
+    {
+      "ticker": "BILL",
+      "sector": "Technology",
+      "champion_score": 53.1,
+      "challenger_score": 41.1,
+      "score_delta": -12.0,
+      "champion_rank": 144,
+      "challenger_rank": 369,
+      "rank_delta": -225,
+      "reasons": [
+        {
+          "metric": "accruals_ratio",
+          "champion": 100.0,
+          "challenger": 30.6,
+          "delta": -69.4
         },
         {
           "metric": "interest_coverage",
-          "champion": 80.0,
-          "challenger": 27.8,
+          "champion": 55.0,
+          "challenger": 2.8,
           "delta": -52.2
         },
         {
-          "metric": "profit_margin",
-          "champion": 80.0,
-          "challenger": 28.9,
-          "delta": -51.1
+          "metric": "debt_to_equity",
+          "champion": 100.0,
+          "challenger": 58.2,
+          "delta": -41.8
         }
       ]
     },
     {
-      "ticker": "AEE",
-      "sector": "Utilities",
-      "champion_score": 50.2,
-      "challenger_score": 57.3,
-      "score_delta": 7.1,
-      "champion_rank": 190,
-      "challenger_rank": 65,
-      "rank_delta": 125,
+      "ticker": "AVY",
+      "sector": "Consumer Cyclical",
+      "champion_score": 72.8,
+      "challenger_score": 48.9,
+      "score_delta": -23.9,
+      "champion_rank": 39,
+      "challenger_rank": 256,
+      "rank_delta": -217,
       "reasons": [
         {
-          "metric": "cash_conversion",
+          "metric": "accruals_ratio",
+          "champion": 100.0,
+          "challenger": 17.6,
+          "delta": -82.4
+        },
+        {
+          "metric": "net_buyback_yield",
+          "champion": 100.0,
+          "challenger": 41.2,
+          "delta": -58.8
+        },
+        {
+          "metric": "gross_profits_to_assets",
+          "champion": 80.0,
+          "challenger": 23.5,
+          "delta": -56.5
+        }
+      ]
+    },
+    {
+      "ticker": "FE",
+      "sector": "Utilities",
+      "champion_score": 37.0,
+      "challenger_score": 54.1,
+      "score_delta": 17.1,
+      "champion_rank": 319,
+      "challenger_rank": 102,
+      "rank_delta": 217,
+      "reasons": [
+        {
+          "metric": "profit_margin",
+          "champion": 55.0,
+          "challenger": 6.7,
+          "delta": -48.3
+        },
+        {
+          "metric": "free_cash_flow_yield",
           "champion": 10.0,
-          "challenger": 75.0,
-          "delta": 65.0
+          "challenger": 57.1,
+          "delta": 47.1
+        },
+        {
+          "metric": "peg",
+          "champion": 50.0,
+          "challenger": 93.3,
+          "delta": 43.3
+        }
+      ]
+    },
+    {
+      "ticker": "FANG",
+      "sector": "Energy",
+      "champion_score": 61.1,
+      "challenger_score": 44.6,
+      "score_delta": -16.5,
+      "champion_rank": 121,
+      "challenger_rank": 336,
+      "rank_delta": -215,
+      "reasons": [
+        {
+          "metric": "ev_to_ebitda",
+          "champion": 100.0,
+          "challenger": 30.0,
+          "delta": -70.0
+        },
+        {
+          "metric": "net_buyback_yield",
+          "champion": 80.0,
+          "challenger": 20.0,
+          "delta": -60.0
         },
         {
           "metric": "net_debt_to_ebitda",
-          "champion": 10.0,
-          "challenger": 75.0,
-          "delta": 65.0
-        },
-        {
-          "metric": "forward_pe",
-          "champion": 80.0,
-          "challenger": 16.7,
-          "delta": -63.3
-        }
-      ]
-    },
-    {
-      "ticker": "UGI",
-      "sector": "Utilities",
-      "champion_score": 61.6,
-      "challenger_score": 72.0,
-      "score_delta": 10.4,
-      "champion_rank": 114,
-      "challenger_rank": 3,
-      "rank_delta": 111,
-      "reasons": [
-        {
-          "metric": "cash_conversion",
-          "champion": 30.0,
-          "challenger": 91.7,
-          "delta": 61.7
-        },
-        {
-          "metric": "altman_z",
-          "champion": 10.0,
-          "challenger": 66.7,
-          "delta": 56.7
-        },
-        {
-          "metric": "profit_margin",
           "champion": 55.0,
           "challenger": 0.0,
           "delta": -55.0
@@ -245,179 +425,29 @@
       ]
     },
     {
-      "ticker": "TRU",
-      "sector": "Financial Services",
-      "champion_score": 67.5,
-      "challenger_score": 48.5,
-      "score_delta": -19.0,
-      "champion_rank": 57,
-      "challenger_rank": 164,
-      "rank_delta": -107,
+      "ticker": "CXT",
+      "sector": "Industrials",
+      "champion_score": 59.5,
+      "challenger_score": 44.0,
+      "score_delta": -15.5,
+      "champion_rank": 128,
+      "challenger_rank": 343,
+      "rank_delta": -215,
       "reasons": [
         {
-          "metric": "forward_pe",
-          "champion": 80.0,
-          "challenger": 21.1,
-          "delta": -58.9
-        },
-        {
-          "metric": "profit_margin",
-          "champion": 80.0,
-          "challenger": 26.3,
-          "delta": -53.7
-        },
-        {
-          "metric": "interest_coverage",
+          "metric": "net_debt_to_ebitda",
           "champion": 55.0,
-          "challenger": 5.6,
-          "delta": -49.4
-        }
-      ]
-    },
-    {
-      "ticker": "ADP",
-      "sector": "Technology",
-      "champion_score": 67.7,
-      "challenger_score": 50.2,
-      "score_delta": -17.5,
-      "champion_rank": 54,
-      "challenger_rank": 152,
-      "rank_delta": -98,
-      "reasons": [
-        {
-          "metric": "forward_pe",
-          "champion": 100.0,
-          "challenger": 35.6,
-          "delta": -64.4
-        },
-        {
-          "metric": "accruals_ratio",
-          "champion": 80.0,
-          "challenger": 17.8,
-          "delta": -62.2
-        },
-        {
-          "metric": "cash_conversion",
-          "champion": 100.0,
-          "challenger": 38.9,
-          "delta": -61.1
-        }
-      ]
-    },
-    {
-      "ticker": "VNO",
-      "sector": "Real Estate",
-      "champion_score": 59.8,
-      "challenger_score": 59.6,
-      "score_delta": -0.2,
-      "champion_rank": 134,
-      "challenger_rank": 37,
-      "rank_delta": 97,
-      "reasons": [
-        {
-          "metric": "sales_multiple",
-          "champion": 15.0,
-          "challenger": 100.0,
-          "delta": 85.0
-        },
-        {
-          "metric": "cash_conversion",
-          "champion": 100.0,
-          "challenger": 22.2,
-          "delta": -77.8
+          "challenger": 0.0,
+          "delta": -55.0
         },
         {
           "metric": "accruals_ratio",
           "champion": 100.0,
-          "challenger": 33.3,
-          "delta": -66.7
-        }
-      ]
-    },
-    {
-      "ticker": "AFL",
-      "sector": "Financial Services",
-      "champion_score": 64.9,
-      "challenger_score": 47.5,
-      "score_delta": -17.4,
-      "champion_rank": 83,
-      "challenger_rank": 176,
-      "rank_delta": -93,
-      "reasons": [
-        {
-          "metric": "forward_pe",
-          "champion": 80.0,
-          "challenger": 13.2,
-          "delta": -66.8
+          "challenger": 46.7,
+          "delta": -53.3
         },
         {
-          "metric": "accruals_ratio",
-          "champion": 80.0,
-          "challenger": 18.4,
-          "delta": -61.6
-        },
-        {
-          "metric": "profit_margin",
-          "champion": 100.0,
-          "challenger": 47.4,
-          "delta": -52.6
-        }
-      ]
-    },
-    {
-      "ticker": "ALLY",
-      "sector": "Financial Services",
-      "champion_score": 61.2,
-      "challenger_score": 61.2,
-      "score_delta": 0.0,
-      "champion_rank": 117,
-      "challenger_rank": 26,
-      "rank_delta": 91,
-      "reasons": [
-        {
-          "metric": "days_sales_outstanding_trend",
-          "champion": 80.0,
-          "challenger": 30.3,
-          "delta": -49.7
-        },
-        {
-          "metric": "profit_margin",
-          "champion": 80.0,
-          "challenger": 36.8,
-          "delta": -43.2
-        },
-        {
-          "metric": "earnings_growth",
-          "champion": 80.0,
-          "challenger": 37.5,
-          "delta": -42.5
-        }
-      ]
-    },
-    {
-      "ticker": "TRV",
-      "sector": "Financial Services",
-      "champion_score": 75.1,
-      "challenger_score": 54.2,
-      "score_delta": -20.9,
-      "champion_rank": 17,
-      "challenger_rank": 107,
-      "rank_delta": -90,
-      "reasons": [
-        {
-          "metric": "forward_pe",
-          "champion": 80.0,
-          "challenger": 26.3,
-          "delta": -53.7
-        },
-        {
-          "metric": "price_to_tangible_book",
-          "champion": 75.0,
-          "challenger": 24.1,
-          "delta": -50.9
-        },
-        {
-          "metric": "interest_coverage",
+          "metric": "stock_comp_to_revenue",
           "champion": 100.0,
           "challenger": 50.0,
           "delta": -50.0
@@ -425,315 +455,319 @@
       ]
     },
     {
-      "ticker": "TROW",
-      "sector": "Financial Services",
-      "champion_score": 64.4,
-      "challenger_score": 47.8,
-      "score_delta": -16.6,
-      "champion_rank": 89,
-      "challenger_rank": 173,
-      "rank_delta": -84,
-      "reasons": [
-        {
-          "metric": "accruals_ratio",
-          "champion": 80.0,
-          "challenger": 10.5,
-          "delta": -69.5
-        },
-        {
-          "metric": "stock_comp_to_revenue",
-          "champion": 80.0,
-          "challenger": 24.0,
-          "delta": -56.0
-        },
-        {
-          "metric": "days_sales_outstanding_trend",
-          "champion": 80.0,
-          "challenger": 27.3,
-          "delta": -52.7
-        }
-      ]
-    },
-    {
-      "ticker": "SR",
-      "sector": "Utilities",
-      "champion_score": 49.9,
-      "challenger_score": 53.8,
-      "score_delta": 3.9,
-      "champion_rank": 192,
-      "challenger_rank": 109,
-      "rank_delta": 83,
-      "reasons": [
-        {
-          "metric": "accruals_ratio",
-          "champion": 100.0,
-          "challenger": 29.2,
-          "delta": -70.8
-        },
-        {
-          "metric": "ev_to_ebitda",
-          "champion": 80.0,
-          "challenger": 25.0,
-          "delta": -55.0
-        },
-        {
-          "metric": "asset_growth",
-          "champion": 100.0,
-          "challenger": 62.5,
-          "delta": -37.5
-        }
-      ]
-    },
-    {
-      "ticker": "STAG",
-      "sector": "Real Estate",
-      "champion_score": 54.6,
-      "challenger_score": 54.9,
-      "score_delta": 0.3,
-      "champion_rank": 169,
-      "challenger_rank": 89,
-      "rank_delta": 80,
-      "reasons": [
-        {
-          "metric": "cash_conversion",
-          "champion": 100.0,
-          "challenger": 33.3,
-          "delta": -66.7
-        },
-        {
-          "metric": "profit_margin",
-          "champion": 100.0,
-          "challenger": 44.4,
-          "delta": -55.6
-        },
-        {
-          "metric": "accruals_ratio",
-          "champion": 100.0,
-          "challenger": 44.4,
-          "delta": -55.6
-        }
-      ]
-    },
-    {
-      "ticker": "AER",
-      "sector": "Industrials",
-      "champion_score": 62.3,
-      "challenger_score": 60.6,
-      "score_delta": -1.7,
-      "champion_rank": 106,
-      "challenger_rank": 28,
-      "rank_delta": 78,
+      "ticker": "CROX",
+      "sector": "Consumer Cyclical",
+      "champion_score": 55.1,
+      "challenger_score": 43.1,
+      "score_delta": -12.0,
+      "champion_rank": 142,
+      "challenger_rank": 357,
+      "rank_delta": -215,
       "reasons": [
         {
           "metric": "stock_comp_to_revenue",
-          "champion": 80.0,
-          "challenger": 3.2,
-          "delta": -76.8
-        },
-        {
-          "metric": "accruals_ratio",
           "champion": 100.0,
-          "challenger": 26.5,
-          "delta": -73.5
+          "challenger": 42.9,
+          "delta": -57.1
         },
         {
           "metric": "capex_to_depreciation",
           "champion": 65.0,
-          "challenger": 14.7,
-          "delta": -50.3
+          "challenger": 17.6,
+          "delta": -47.4
+        },
+        {
+          "metric": "sales_multiple",
+          "champion": 80.0,
+          "challenger": 36.7,
+          "delta": -43.3
         }
       ]
     },
     {
-      "ticker": "VGT",
-      "sector": "ETF",
-      "champion_score": 55.6,
-      "challenger_score": 55.1,
-      "score_delta": -0.5,
-      "champion_rank": 164,
-      "challenger_rank": 87,
-      "rank_delta": 77,
-      "reasons": []
-    },
-    {
-      "ticker": "VNT",
-      "sector": "Technology",
-      "champion_score": 73.2,
-      "challenger_score": 54.6,
-      "score_delta": -18.6,
-      "champion_rank": 21,
-      "challenger_rank": 97,
-      "rank_delta": -76,
+      "ticker": "HAE",
+      "sector": "Healthcare",
+      "champion_score": 63.0,
+      "challenger_score": 45.1,
+      "score_delta": -17.9,
+      "champion_rank": 111,
+      "challenger_rank": 325,
+      "rank_delta": -214,
       "reasons": [
         {
-          "metric": "accruals_ratio",
+          "metric": "forward_pe",
           "champion": 100.0,
-          "challenger": 24.4,
-          "delta": -75.6
+          "challenger": 51.1,
+          "delta": -48.9
         },
+        {
+          "metric": "days_sales_outstanding_trend",
+          "champion": 55.0,
+          "challenger": 6.7,
+          "delta": -48.3
+        },
+        {
+          "metric": "altman_z",
+          "champion": 100.0,
+          "challenger": 53.3,
+          "delta": -46.7
+        }
+      ]
+    },
+    {
+      "ticker": "GTLB",
+      "sector": "Technology",
+      "champion_score": 50.8,
+      "challenger_score": 42.9,
+      "score_delta": -7.9,
+      "champion_rank": 149,
+      "challenger_rank": 361,
+      "rank_delta": -212,
+      "reasons": [
+        {
+          "metric": "forward_pe",
+          "champion": 80.0,
+          "challenger": 16.4,
+          "delta": -63.6
+        },
+        {
+          "metric": "altman_z",
+          "champion": 100.0,
+          "challenger": 47.2,
+          "delta": -52.8
+        },
+        {
+          "metric": "sales_multiple",
+          "champion": 100.0,
+          "challenger": 49.2,
+          "delta": -50.8
+        }
+      ]
+    },
+    {
+      "ticker": "HALO",
+      "sector": "Healthcare",
+      "champion_score": 63.1,
+      "challenger_score": 45.3,
+      "score_delta": -17.8,
+      "champion_rank": 109,
+      "challenger_rank": 320,
+      "rank_delta": -211,
+      "reasons": [
         {
           "metric": "cash_conversion",
           "champion": 100.0,
-          "challenger": 41.7,
+          "challenger": 40.0,
+          "delta": -60.0
+        },
+        {
+          "metric": "asset_growth",
+          "champion": 65.0,
+          "challenger": 6.7,
           "delta": -58.3
+        },
+        {
+          "metric": "free_cash_flow_yield",
+          "champion": 55.0,
+          "challenger": 9.3,
+          "delta": -45.7
+        }
+      ]
+    },
+    {
+      "ticker": "DUK",
+      "sector": "Utilities",
+      "champion_score": 35.7,
+      "challenger_score": 53.4,
+      "score_delta": 17.7,
+      "champion_rank": 333,
+      "challenger_rank": 122,
+      "rank_delta": 211,
+      "reasons": [
+        {
+          "metric": "free_cash_flow_yield",
+          "champion": 10.0,
+          "challenger": 78.6,
+          "delta": 68.6
         },
         {
           "metric": "earnings_growth",
           "champion": 80.0,
-          "challenger": 23.5,
-          "delta": -56.5
+          "challenger": 42.9,
+          "delta": -37.1
+        },
+        {
+          "metric": "return_on_equity",
+          "champion": 30.0,
+          "challenger": 60.0,
+          "delta": 30.0
         }
       ]
     }
   ],
   "mean_absolute_score_change_by_sector": {
-    "Consumer Cyclical": 8.47,
-    "Consumer Defensive": 9.244,
-    "Energy": 12.025,
-    "Financial Services": 10.895,
-    "Healthcare": 8.291,
-    "Industrials": 8.131,
-    "Real Estate": 2.18,
-    "Technology": 9.579,
-    "Utilities": 5.2
+    "Basic Materials": 8.456,
+    "Consumer Cyclical": 11.191,
+    "Consumer Defensive": 11.084,
+    "Energy": 13.136,
+    "Financial Services": 9.18,
+    "Healthcare": 9.8,
+    "Industrials": 9.245,
+    "Real Estate": 12.742,
+    "Technology": 10.708,
+    "Utilities": 13.769
   },
   "sector_mean_scores": {
     "champion": {
-      "Consumer Cyclical": 57.848,
-      "Consumer Defensive": 62.389,
-      "Energy": 65.975,
-      "Financial Services": 62.749,
-      "Healthcare": 60.587,
-      "Industrials": 61.134,
-      "Real Estate": 51.88,
-      "Technology": 59.031,
-      "Utilities": 47.869
+      "Basic Materials": 44.031,
+      "Consumer Cyclical": 50.028,
+      "Consumer Defensive": 41.964,
+      "Energy": 65.571,
+      "Financial Services": 58.02,
+      "Healthcare": 51.809,
+      "Industrials": 48.734,
+      "Real Estate": 39.304,
+      "Technology": 56.605,
+      "Utilities": 37.55
     },
     "challenger": {
-      "Consumer Cyclical": 49.378,
-      "Consumer Defensive": 53.144,
-      "Energy": 53.95,
-      "Financial Services": 52.464,
-      "Healthcare": 52.965,
-      "Industrials": 53.049,
-      "Real Estate": 52.7,
-      "Technology": 50.256,
-      "Utilities": 52.269
+      "Basic Materials": 49.775,
+      "Consumer Cyclical": 50.407,
+      "Consumer Defensive": 49.504,
+      "Energy": 54.507,
+      "Financial Services": 52.032,
+      "Healthcare": 51.272,
+      "Industrials": 51.161,
+      "Real Estate": 49.488,
+      "Technology": 49.958,
+      "Utilities": 51.319
     }
   },
   "sector_score_statistics": {
-    "Consumer Cyclical": {
+    "Basic Materials": {
       "champion": {
-        "count": 27,
-        "mean": 57.848,
-        "standard_deviation": 10.851
+        "count": 16,
+        "mean": 44.031,
+        "standard_deviation": 7.751
       },
       "challenger": {
-        "count": 27,
-        "mean": 49.378,
-        "standard_deviation": 8.918
+        "count": 16,
+        "mean": 49.775,
+        "standard_deviation": 3.567
+      }
+    },
+    "Consumer Cyclical": {
+      "champion": {
+        "count": 54,
+        "mean": 50.028,
+        "standard_deviation": 14.885
+      },
+      "challenger": {
+        "count": 54,
+        "mean": 50.407,
+        "standard_deviation": 5.419
       }
     },
     "Consumer Defensive": {
       "champion": {
-        "count": 9,
-        "mean": 62.389,
-        "standard_deviation": 6.806
+        "count": 25,
+        "mean": 41.964,
+        "standard_deviation": 12.048
       },
       "challenger": {
-        "count": 9,
-        "mean": 53.144,
-        "standard_deviation": 6.479
+        "count": 25,
+        "mean": 49.504,
+        "standard_deviation": 5.666
       }
     },
     "Energy": {
       "champion": {
-        "count": 8,
-        "mean": 65.975,
-        "standard_deviation": 8.649
+        "count": 14,
+        "mean": 65.571,
+        "standard_deviation": 16.223
       },
       "challenger": {
-        "count": 8,
-        "mean": 53.95,
-        "standard_deviation": 8.301
+        "count": 14,
+        "mean": 54.507,
+        "standard_deviation": 8.817
       }
     },
     "Financial Services": {
       "champion": {
-        "count": 39,
-        "mean": 62.749,
-        "standard_deviation": 11.11
+        "count": 50,
+        "mean": 58.02,
+        "standard_deviation": 13.266
       },
       "challenger": {
-        "count": 39,
-        "mean": 52.464,
-        "standard_deviation": 7.645
+        "count": 50,
+        "mean": 52.032,
+        "standard_deviation": 7.071
       }
     },
     "Healthcare": {
       "champion": {
-        "count": 23,
-        "mean": 60.587,
-        "standard_deviation": 11.646
+        "count": 47,
+        "mean": 51.809,
+        "standard_deviation": 13.5
       },
       "challenger": {
-        "count": 23,
-        "mean": 52.965,
-        "standard_deviation": 8.665
+        "count": 47,
+        "mean": 51.272,
+        "standard_deviation": 5.042
       }
     },
     "Industrials": {
       "champion": {
-        "count": 35,
-        "mean": 61.134,
-        "standard_deviation": 8.113
+        "count": 64,
+        "mean": 48.734,
+        "standard_deviation": 12.289
       },
       "challenger": {
-        "count": 35,
-        "mean": 53.049,
-        "standard_deviation": 7.024
+        "count": 64,
+        "mean": 51.161,
+        "standard_deviation": 4.84
       }
     },
     "Real Estate": {
       "champion": {
-        "count": 10,
-        "mean": 51.88,
-        "standard_deviation": 5.429
+        "count": 24,
+        "mean": 39.304,
+        "standard_deviation": 8.825
       },
       "challenger": {
-        "count": 10,
-        "mean": 52.7,
-        "standard_deviation": 5.942
+        "count": 24,
+        "mean": 49.488,
+        "standard_deviation": 4.901
       }
     },
     "Technology": {
       "champion": {
-        "count": 48,
-        "mean": 59.031,
-        "standard_deviation": 12.396
+        "count": 62,
+        "mean": 56.605,
+        "standard_deviation": 12.381
       },
       "challenger": {
-        "count": 48,
-        "mean": 50.256,
-        "standard_deviation": 8.593
+        "count": 62,
+        "mean": 49.958,
+        "standard_deviation": 4.305
       }
     },
     "Utilities": {
       "champion": {
-        "count": 13,
-        "mean": 47.869,
-        "standard_deviation": 5.063
+        "count": 16,
+        "mean": 37.55,
+        "standard_deviation": 4.146
       },
       "challenger": {
-        "count": 13,
-        "mean": 52.269,
-        "standard_deviation": 8.634
+        "count": 16,
+        "mean": 51.319,
+        "standard_deviation": 3.541
       }
     }
   },
   "sector_mean_dispersion": {
-    "champion": 5.342932,
-    "challenger": 1.386896,
+    "champion": 8.490089,
+    "challenger": 1.448953,
     "challenger_is_lower": true
   }
 }

@@ -167,6 +167,28 @@ class WalkForwardTests(unittest.TestCase):
         result = ev.walk_forward(periods)
         self.assertIsNone(result["periods"][0]["rank_ic"])
 
+    def test_purge_periods_default_to_zero_reproducing_the_exact_prior_behavior(self):
+        periods = synthetic_periods(6, 1.0)
+        default = ev.walk_forward(periods)
+        explicit_zero = ev.walk_forward(periods, purge_periods=0, embargo_periods=0)
+        self.assertEqual(default, explicit_zero)
+
+    def test_embargo_drops_the_most_recent_periods_whose_label_window_is_unresolved(self):
+        periods = synthetic_periods(6, 1.0)
+        result = ev.walk_forward(periods, embargo_periods=2)
+        self.assertEqual(len(result["periods"]), 4)
+        dates = [row["date"] for row in result["periods"]]
+        self.assertEqual(dates, [period["date"] for period in periods[:4]])
+
+    def test_purge_keeps_only_non_overlapping_periods_for_a_three_period_label(self):
+        periods = synthetic_periods(9, 1.0)
+        result = ev.walk_forward(periods, purge_periods=2)
+        # A label spanning purge_periods+1=3 periods means adjacent periods' forward windows
+        # overlap; only every third period is an independent (non-overlapping) observation.
+        self.assertEqual(len(result["periods"]), 3)
+        dates = [row["date"] for row in result["periods"]]
+        self.assertEqual(dates, [periods[0]["date"], periods[3]["date"], periods[6]["date"]])
+
 
 class PaperTradingTests(unittest.TestCase):
     def setUp(self):

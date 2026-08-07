@@ -100,6 +100,21 @@ class SourceReliabilityTests(unittest.TestCase):
     def test_no_configured_sources_at_all_is_none(self):
         self.assertIsNone(run_source_reliability({}))
 
+    def test_sec_not_configured_is_excluded_like_any_other_unconfigured_source(self):
+        # SEC_USER_AGENT unset is an intentional gap, not evidence of an unreliable run.
+        result = run_source_reliability({
+            "fred": "healthy", "sec_form4": "unavailable_not_configured",
+        })
+        self.assertEqual(result, 1.0)
+
+    def test_sec_provider_error_counts_against_reliability_unlike_not_configured(self):
+        # SEC_USER_AGENT *was* set and EDGAR still failed for every symbol - that is real
+        # unreliability and must not be silently excluded the way "not configured" is.
+        result = run_source_reliability({
+            "fred": "healthy", "sec_form4": "unavailable_provider_error",
+        })
+        self.assertEqual(result, 0.5)
+
 
 class ConfidenceComponentsIntegrationTests(unittest.TestCase):
     def test_full_breakdown_reuses_the_existing_confidence_scalar_unchanged(self):

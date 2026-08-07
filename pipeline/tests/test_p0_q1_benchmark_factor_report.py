@@ -7,8 +7,35 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from p0_q1_benchmark_factor_report import (month_end_values, monthly_returns,
+from p0_q1_benchmark_factor_report import (blend_benchmark, month_end_values, monthly_returns,
                                            ols_newey_west, sector_coverage)
+
+
+class BlendBenchmarkTests(unittest.TestCase):
+    def test_blend_is_indexed_to_one_on_the_first_common_date(self):
+        a = {"dates": ["2024-01-01", "2024-01-02"], "closes": [100.0, 110.0]}
+        b = {"dates": ["2024-01-01", "2024-01-02"], "closes": [50.0, 45.0]}
+        blend = blend_benchmark(a, b)
+        self.assertAlmostEqual(blend["closes"][0], 1.0)
+        # Day 2: 0.5*(110/100) + 0.5*(45/50) = 0.55 + 0.45 = 1.0
+        self.assertAlmostEqual(blend["closes"][1], 0.5 * 1.10 + 0.5 * 0.90)
+
+    def test_only_common_dates_are_kept(self):
+        a = {"dates": ["2024-01-01", "2024-01-02", "2024-01-03"], "closes": [100.0, 101.0, 102.0]}
+        b = {"dates": ["2024-01-02", "2024-01-03"], "closes": [50.0, 51.0]}
+        blend = blend_benchmark(a, b)
+        self.assertEqual(blend["dates"], ["2024-01-02", "2024-01-03"])
+
+    def test_weight_is_configurable(self):
+        a = {"dates": ["2024-01-01", "2024-01-02"], "closes": [100.0, 200.0]}
+        b = {"dates": ["2024-01-01", "2024-01-02"], "closes": [100.0, 100.0]}
+        blend = blend_benchmark(a, b, weight_a=0.25)
+        self.assertAlmostEqual(blend["closes"][1], 0.25 * 2.0 + 0.75 * 1.0)
+
+    def test_no_overlap_returns_an_empty_series_not_a_crash(self):
+        a = {"dates": ["2024-01-01"], "closes": [100.0]}
+        b = {"dates": ["2024-02-01"], "closes": [50.0]}
+        self.assertEqual(blend_benchmark(a, b), {"dates": [], "closes": []})
 
 
 class MonthEndValuesTests(unittest.TestCase):

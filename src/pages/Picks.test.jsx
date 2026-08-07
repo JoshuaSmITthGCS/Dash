@@ -2,12 +2,14 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Picks from './Picks'
 import { useData } from '../lib/useData'
+import { useAlerts } from '../lib/useAlerts'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useWatchlist } from '../lib/useWatchlist'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../lib/useWatchlist', () => ({ useWatchlist: vi.fn() }))
+vi.mock('../lib/useAlerts', () => ({ useAlerts: vi.fn() }))
 
 const stock = (overrides = {}) => ({
   ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology', is_etf: false,
@@ -32,6 +34,7 @@ describe('Picks research page', () => {
     useWatchlist.mockReturnValue({
       items: [], loading: false, isWatched: () => false, addTicker: vi.fn(), removeTicker: vi.fn(),
     })
+    useAlerts.mockReturnValue({ createRule: vi.fn() })
   })
 
   it('never sorts a stock and an ETF into the same ranked pool', () => {
@@ -93,5 +96,44 @@ describe('Picks research page', () => {
     const bucketList = document.querySelector('.allocation-bucket-list')
     expect(within(bucketList).getByText('AAPL')).toBeVisible()
     expect(within(bucketList).queryByText('VOO')).not.toBeInTheDocument()
+  })
+
+  it('shows Buy Now for a buy-worthy pick that is not currently in a decline', () => {
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [stock()] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+
+    expect(screen.getAllByText('Buy Now').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Set Low Alert/)).not.toBeInTheDocument()
+  })
+
+  it('shows Set Low Alert and creates a below-price alert rule for a pick currently down from its highs', async () => {
+    const createRule = vi.fn().mockResolvedValue({ success: true })
+    useAlerts.mockReturnValue({ createRule })
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') {
+        return {
+          data: {
+            research: [stock({
+              price: 81,
+              technical_detail: { return_20d: 3, pct_from_52w_high: -19, pct_above_52w_low: 47.3, max_drawdown_252d: -22, return_60d: -12 },
+            })],
+          },
+          loading: false,
+        }
+      }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    const [alertButton] = screen.getAllByRole('button', { name: /Set Low Alert/ })
+    fireEvent.click(alertButton)
+
+    expect(createRule).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'price_cross', ticker: 'AAPL', direction: 'below',
+    }))
   })
 })

@@ -12,6 +12,8 @@ import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { rankBreakoutInProgress, rankMomentum, rankReversal } from '../lib/researchScreens.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import { entryTiming } from '../lib/entryTiming.js'
+import { useAlerts } from '../lib/useAlerts.js'
 
 const SORTS = {
   score: ['Research score', (a, b) => (b.score ?? -1) - (a.score ?? -1)],
@@ -62,7 +64,34 @@ function ScreenChips({ row }) {
   ))
 }
 
-function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
+/** Every buy-worthy row gets exactly one of Buy Now or Set Low Alert (src/lib/entryTiming.js,
+ * built on the existing dipWatch floor/recovery estimate) surfaced right on the research
+ * list, not one click deeper in the stock detail modal.
+ */
+function EntryTimingAction({ row, alerting, alertStatus, onSetAlert }) {
+  const timing = entryTiming(row)
+  if (!timing) return null
+  if (timing.verdict === 'buy_now') {
+    return <span className="chip entry-timing-chip buy-now" title={timing.reason}>Buy Now</span>
+  }
+  return (
+    <span className="entry-timing-wrap">
+      <button
+        className="chip entry-timing-chip set-low-alert"
+        title={timing.reason}
+        disabled={alerting}
+        onClick={(event) => { event.stopPropagation(); onSetAlert(row, timing) }}
+      >
+        {alerting ? 'Setting alert…' : `Set Low Alert · $${timing.alertPrice.toFixed(2)}`}
+      </button>
+      {alertStatus && (
+        <small className={`entry-timing-status ${alertStatus.error ? 'error' : ''}`} role="status">{alertStatus.message}</small>
+      )}
+    </span>
+  )
+}
+
+function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alertingTicker, alertStatuses, onSetAlert }) {
   const [expanded, setExpanded] = useState(false)
   return (
     <article className="research-mobile-card">
@@ -78,6 +107,8 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
         {row.is_etf ? <span className="chip asset-chip">ETF</span> : <ActionPill recommendation={getRecommendation(row)} />}
         <ScreenChips row={row} />
         <span className={`holding-chip ${held ? 'held' : ''}`}>{held ? 'Bought' : 'Not bought'}</span>
+        <EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
+          alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} />
       </div>
       <dl className="research-card-metrics">
         <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</dd></div>
@@ -111,7 +142,8 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy }) {
   )
 }
 
-function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatuses, onBuy }) {
+function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatuses, onBuy,
+                       alertingTicker, alertStatuses, onSetAlert }) {
   if (!rows.length) return null
   return (
     <section className="research-pool" aria-label={label}>
@@ -120,13 +152,14 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
         renderItem={(row, index) => <ResearchCard row={row}
           rank={index + 1} onOpen={onOpen}
           held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
-          buyStatus={buyStatuses[row.ticker]} onBuy={onBuy} />} />
+          buyStatus={buyStatuses[row.ticker]} onBuy={onBuy}
+          alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} />} />
       <div className="research-table card">
         <table>
           <thead><tr>
             <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Research rating</th><th scope="col">Signal</th>
             <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
-            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Portfolio</th>
+            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Timing</th><th scope="col">Portfolio</th>
             <th scope="col"><span className="sr-only">Watchlist</span></th><th scope="col"><span className="sr-only">Open</span></th>
           </tr></thead>
           <tbody>{rows.map((row, index) => (
@@ -139,6 +172,8 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
               <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
               <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
               <td className="mono num">{Math.round((row.confidence || 0) * 100)}%</td>
+              <td><EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
+                alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} /></td>
               <td>{heldTickers.has(row.ticker)
                 ? <span className="holding-chip held">Bought</span>
                 : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => onBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>}</td>
@@ -156,6 +191,7 @@ export default function Picks() {
   const { data, loading } = useData('advisor.json')
   const { data: etfData, loading: etfLoading } = useData('etfs.json')
   const { positions, loading: portfolioLoading, addPosition } = useFirebasePortfolio()
+  const { createRule } = useAlerts()
   const [sector, setSector] = useState('all')
   const [sort, setSort] = useState('score')
   const [query, setQuery] = useState('')
@@ -166,6 +202,8 @@ export default function Picks() {
   const [buyStatuses, setBuyStatuses] = useState({})
   const [tradeNotice, setTradeNotice] = useState(null)
   const [availableFunds, setAvailableFunds] = useState('')
+  const [alertingTicker, setAlertingTicker] = useState('')
+  const [alertStatuses, setAlertStatuses] = useState({})
 
   const stockResearch = data?.research || []
   // Momentum and reversal are separate screens (see /screens/momentum, /screens/matrix), each
@@ -232,6 +270,21 @@ export default function Picks() {
       : { error: true, message: result?.error ? `Could not add ${row.ticker}: ${result.error}` : 'Sign in to add this trade to your portfolio.' }
     setBuyStatuses((current) => ({ ...current, [row.ticker]: notice }))
     setTradeNotice(notice)
+  }
+
+  const handleSetLowAlert = async (row, timing) => {
+    setAlertingTicker(row.ticker)
+    setAlertStatuses((current) => ({ ...current, [row.ticker]: null }))
+    const result = await createRule({
+      type: 'price_cross', ticker: row.ticker, direction: 'below', threshold: timing.alertPrice,
+    })
+    setAlertingTicker('')
+    setAlertStatuses((current) => ({
+      ...current,
+      [row.ticker]: result?.success
+        ? { message: `Alert set: ${row.ticker} below $${timing.alertPrice.toFixed(2)}.` }
+        : { error: true, message: result?.error || `Could not set an alert for ${row.ticker}.` },
+    }))
   }
 
   return (
@@ -301,10 +354,12 @@ export default function Picks() {
 
       {showStocks && <ResearchPool label={showStocks && showEtfs ? 'Stocks' : null} rows={stockRows}
         onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
-        buyStatuses={buyStatuses} onBuy={handleQuickBuy} />}
+        buyStatuses={buyStatuses} onBuy={handleQuickBuy}
+        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} />}
       {showEtfs && <ResearchPool label={showStocks && showEtfs ? 'ETFs' : null} rows={etfRows}
         onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
-        buyStatuses={buyStatuses} onBuy={handleQuickBuy} />}
+        buyStatuses={buyStatuses} onBuy={handleQuickBuy}
+        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} />}
 
       {!rows.length && <Empty note="No companies match those filters." />}
       <div className="disclaimer">Research includes {stockResearch.length} ranked companies and {etfData?.etfs?.length || 0} ETFs. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>

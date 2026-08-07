@@ -179,7 +179,10 @@ export default function Portfolio() {
     reload,
     positions.map((position) => position.ticker),
   )
-  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
+  // SPY rides along with the portfolio's own quote requests so the move-explanation
+  // widget's market leg can use a live intraday benchmark return too, not just the
+  // holdings - same refresh cadence, same Netlify function, one extra symbol.
+  const portfolioQuotes = usePortfolioQuotes([...positions.map((position) => position.ticker), 'SPY'])
   const pullToRefresh = usePullToRefresh({
     onRefresh: portfolioQuotes.requestRefresh,
     enabled: positions.length > 0,
@@ -270,7 +273,12 @@ export default function Portfolio() {
     : 0
 
   const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
-  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory)
+  // Tagged the same way mergePortfolioQuotes tags a holding's live quote, since this is the
+  // raw Netlify-function payload rather than something already run through that merge.
+  const benchmarkQuote = quoteRefreshIsNewest && portfolioQuotes.quotes?.SPY
+    ? { ...portfolioQuotes.quotes.SPY, portfolioQuote: true }
+    : null
+  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory, { benchmarkQuote })
   const scoreHoldingsSeries = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
