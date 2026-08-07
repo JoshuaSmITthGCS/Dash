@@ -281,7 +281,9 @@ export default function Dashboard() {
   // Prefer the live, contribution-adjusted Strategy return (Modified Dietz, annualized) as
   // the outcome-distribution's center so it moves with the portfolio automatically, instead
   // of the static manual assumption from Finances -- that's still the fallback whenever there
-  // isn't yet enough dated snapshot history for a Modified Dietz result.
+  // isn't yet enough dated snapshot history for a Modified Dietz result. No minimum-history
+  // gate: this is wired to move with the account from day one and settles down on its own as
+  // more tracked days accumulate, rather than waiting on an arbitrary threshold.
   const liveStrategyAnnualReturnPct = returnSummary.strategy.available
     ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)
     : null
@@ -425,10 +427,10 @@ export default function Dashboard() {
       <DashboardWidget id="metric-grid" widgets={preferences.widgets}>
       <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest. ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown and ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>The portfolio score remains provisional whenever a component is missing. Standard performance statistics are reported separately and are not converted into a grade.</p></details>}</section>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 10px', fontSize: 12, color: 'var(--text-tertiary)' }}>
-        <input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} />
-        Evaluate only since {LIVE_TRACKING_START} (when live tracking started), not the full backtested history
-      </label>
+      <div className="settings-row" style={{ marginBottom: 14 }}>
+        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span></div>
+        <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
+      </div>
       <PerformanceMetrics metrics={performance} benchmarkLabel={preferences.defaultBenchmark} riskFree={riskFree} />
       </DashboardWidget>
 

@@ -92,7 +92,10 @@ export default function Planning() {
   // The account's own live, contribution-adjusted Strategy return (Modified Dietz), annualized
   // -- "if I keep running this strategy at its current rate, when can I retire" -- as an
   // alternative to the manually-set slider target below. Recomputes on every render from
-  // tracking state, so it moves automatically as the portfolio does.
+  // tracking state, so it moves automatically as the portfolio does (a new value lands here
+  // once a day, as often as a snapshot of the account is recorded). No minimum-history gate:
+  // this is deliberately wired up now and will settle down on its own as more days accumulate,
+  // rather than waiting on an arbitrary threshold before it does anything.
   const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
   const liveStrategyAnnualReturnPct = returnSummary.strategy.available
     ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)

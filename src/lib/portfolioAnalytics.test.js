@@ -71,6 +71,13 @@ describe('portfolio report analytics', () => {
     expect(annualizeReturnPct(5, '2026-01-01', '2026-01-01')).toBeNull()
   })
 
+  it('refuses to annualize a span shorter than the given minimum', () => {
+    // 18 days of live tracking stretched to a year would wildly overstate the rate.
+    expect(annualizeReturnPct(10.1, '2026-07-20', '2026-08-07', 30)).toBeNull()
+    expect(annualizeReturnPct(10.1, '2026-07-20', '2026-08-07')).not.toBeNull()
+    expect(annualizeReturnPct(10.1, '2026-01-01', '2026-08-07', 30)).not.toBeNull()
+  })
+
   it('slices a series to only dates on or after a cutoff', () => {
     const series = { dates: ['2026-06-01', '2026-07-19', '2026-07-20', '2026-08-01'], values: [10, 11, 12, 13] }
     expect(sliceSeriesFrom(series, '2026-07-20')).toMatchObject({ dates: ['2026-07-20', '2026-08-01'], values: [12, 13] })

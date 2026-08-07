@@ -583,10 +583,10 @@ export default function Portfolio() {
 
       <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 10px', fontSize: 12, color: 'var(--text-dim)' }}>
-        <input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} />
-        Evaluate only since {LIVE_TRACKING_START} (when live tracking started), not the full backtested history
-      </label>
+      <div className="settings-row" style={{ marginBottom: 14 }}>
+        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span></div>
+        <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
+      </div>
       <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
