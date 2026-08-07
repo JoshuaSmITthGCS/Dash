@@ -1,0 +1,365 @@
+{
+  "experiments": [
+    {
+      "artifacts": [
+        "docs/P0-REPAIRS.md"
+      ],
+      "category": "corrective",
+      "configuration": {
+        "file": "pipeline/observability.py"
+      },
+      "decision": "shipped_as_fix",
+      "hypothesis": "run_manifest.score_distribution describes the shadow v2 score, not the published champion, so the manifest certifies a different model than shipped",
+      "id": "wo1-manifest-reports-champion",
+      "metrics": {
+        "affected_committed_manifests": 14,
+        "published_mean_after": 75.05,
+        "published_mean_before": 68.85
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 1,
+      "reason": "confirmed by reading the source and by regenerating the manifest from the committed artifact; the buggy distribution undershot the real range by 7-11 points at every quantile",
+      "result": "supported",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "docs/P0-REPAIRS.md"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "file": "pipeline/sec_edgar.py"
+      },
+      "decision": "pending_data",
+      "hypothesis": "the Form 4 insider layer is dark solely because SEC_USER_AGENT is unset",
+      "id": "wo2-sec-insider-layer",
+      "metrics": {},
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 1,
+      "reason": "the gate is confirmed to be the single environment variable, but no refresh can run from an environment with no route to sec.gov; the secret's value is the repository owner's action, outside any commit",
+      "result": "blocked",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "docs/P0-REPAIRS.md",
+        "pipeline/reports/cost_regime_comparison.json"
+      ],
+      "category": "corrective",
+      "configuration": {
+        "cost_model": "tiered",
+        "scenarios": [
+          "optimistic",
+          "base",
+          "stress"
+        ]
+      },
+      "decision": "pending_data",
+      "hypothesis": "a realistic tiered cost model materially changes net performance at 64.9% monthly turnover",
+      "id": "wo3-tiered-costs-wired",
+      "metrics": {},
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 3,
+      "reason": "costs.py is wired into both backtest_monthly.py and ic_harness.py and proved equivalent to the old flat rate by default, but the three-regime re-run needs five years of daily price and volume history for ~860 names",
+      "result": "blocked",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "docs/P0-Q1-BENCHMARK.md",
+        "pipeline/reports/factor_regression_p0.json"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "benchmarks": [
+          "SPY",
+          "RSP",
+          "IWM"
+        ],
+        "factors": 6,
+        "standard_errors": "newey_west_3_lag"
+      },
+      "decision": "abandon",
+      "hypothesis": "the strategy's SPY shortfall is a benchmark artifact, and residual alpha survives controlling for the six factors the model is built from",
+      "id": "q1-benchmark-and-factor-regression",
+      "metrics": {
+        "annualized_alpha_pct": -2.57,
+        "capm_beta": 0.793,
+        "market_t": 6.5,
+        "momentum_t": 2.5,
+        "newey_west_t": -0.437,
+        "r_squared": 0.589,
+        "size_t": 2.06
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 2,
+      "reason": "half supported, half rejected. SPY is genuinely the wrong yardstick -- the strategy beats RSP and IWM on CAGR. But no residual alpha survives the six-factor control, at |t| = 0.437, well inside the brief's own 'no residual alpha' band. The significant loadings are market, size and momentum, not the value and profitability the score is built from",
+      "result": "rejected",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": "2021-09..2026-06"
+    },
+    {
+      "artifacts": [
+        "docs/P0-Q2-TURNOVER.md",
+        "pipeline/reports/turnover_attribution.json"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "source": "pipeline/pit_store/*.jsonl",
+        "transitions": 4
+      },
+      "decision": "abandon",
+      "hypothesis": "band quantization drives the 64.9% monthly turnover, so a continuous normalizer would materially reduce it",
+      "id": "q2-turnover-attribution",
+      "metrics": {
+        "availability_flicker_share": 0.9672,
+        "band_crossing_share": 0.0042,
+        "genuine_change_share": 0.0286
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 1,
+      "reason": "the leading hypothesis is probably wrong. Band crossings on effectively unchanged inputs are the smallest bucket at 0.42%; metric availability flicker dominates at 96.72%. Measured at the refresh-to-refresh horizon, not the monthly one, so it shifts the prior rather than settling the question",
+      "result": "rejected",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "pipeline/reports/news_availability_impact.json"
+      ],
+      "category": "corrective",
+      "configuration": {
+        "change": "return None instead of the neutral score when uncovered",
+        "file": "pipeline/news_intelligence.py"
+      },
+      "decision": "shipped_as_fix",
+      "hypothesis": "the 4% news component is neutral for essentially the whole universe and so moves score levels without ordering anything",
+      "id": "news-weight-is-inert",
+      "metrics": {
+        "maximum_score_delta": 1.4,
+        "mean_score_delta": 1.005,
+        "names_at_neutral_before": "373 of 374",
+        "names_changing_rank_position": 10
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 1,
+      "reason": "confirmed against the last published refresh. The weight now leaves the denominator when there is no coverage, which raises uncovered names above 50 and lowers those below it -- removing a pull toward neutral in both directions",
+      "result": "supported",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "docs/ENRICHMENT-BIAS-ANALYSIS.md",
+        "pipeline/reports/enrichment_bias.json"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "research_mode": "FULL_UNIVERSE_RESEARCH",
+        "source": "2026-08-06 full-universe refresh"
+      },
+      "decision": "pending_data",
+      "hypothesis": "shortlist gating materially changes which names can reach the top of the ranking",
+      "id": "enrichment-shortlist-bias",
+      "metrics": {
+        "mean_score_gap": 25.29,
+        "non_statement_category_gap_range": "11.8..19.8",
+        "top_100_enriched_share": 1.0,
+        "universe_enrichment_rate": 0.397
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 1,
+      "reason": "the structural half is settled -- no unenriched name reaches the top 100, and two categories worth 20% of the fundamental weight cannot contribute for 60% of the universe. The cost is not: the score gap is mostly circular, since enriched names already lead on the categories needing no enrichment. The unseeded comparison needs network access",
+      "result": "inconclusive",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "pipeline/reports/benchmark_comparison.json"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "benchmarks": 14,
+        "standard_errors": "newey_west_3_lag"
+      },
+      "decision": "abandon",
+      "hypothesis": "the strategy delivers something a liquid style ETF could not",
+      "id": "tradeable-benchmark-suite",
+      "metrics": {
+        "beaten_on_cagr": "9 of 14",
+        "largest_absolute_t": 1.11,
+        "significant_positive_alpha_count": 0,
+        "strategy_sharpe": 0.611,
+        "vtv_sharpe": 0.899
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 14,
+      "reason": "no benchmark in the set is beaten with statistically significant alpha. VTV returns more at lower volatility with a shallower drawdown -- a user could have bought the ETF instead",
+      "result": "rejected",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": "2021-09..2026-07"
+    },
+    {
+      "artifacts": [
+        "pipeline/reports/cost_sensitivity.json"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "method": "re-price recorded turnover across every costs.py rate"
+      },
+      "decision": "pending_data",
+      "hypothesis": "a realistic cost model gives up more than 200bps a year relative to the published flat 10bps",
+      "id": "cost-sensitivity-at-realized-turnover",
+      "metrics": {
+        "breakeven_one_way_bps": 35.7,
+        "mean_monthly_turnover": 0.649,
+        "worst_additional_drag_bps": 116.9,
+        "worst_modelled_one_way_bps": 25.0
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 9,
+      "reason": "the spread-and-fee floor does not cross the threshold at 64.9% turnover; the breakeven rate is ~36bps and the model's worst case without a volatility input is 25bps. Adding the omitted market-impact term could still cross it",
+      "result": "rejected",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "pipeline/portfolio_construction.py"
+      ],
+      "category": "corrective",
+      "configuration": {
+        "minimum_holding_months": [
+          1,
+          3,
+          6
+        ],
+        "rank_buffer": [
+          1.25,
+          1.5,
+          2.0
+        ],
+        "replacement_margin": [
+          2.0,
+          5.0
+        ],
+        "score_smoothing_alpha": [
+          0.5,
+          0.7
+        ]
+      },
+      "decision": "pending_data",
+      "hypothesis": "rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise",
+      "id": "turnover-controls",
+      "metrics": {},
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 10,
+      "reason": "all four are implemented as challengers behind flags that default to the champion's plain top-N selection, and each is proved to behave exactly as specified. Whether any improves net return needs a backtest re-run over ~860 names of daily history",
+      "result": "blocked",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    },
+    {
+      "artifacts": [
+        "pipeline/reports/strategy_diagnostics.json"
+      ],
+      "category": "diagnostic",
+      "configuration": {
+        "defined_from": "benchmark and macro series only, fixed before inspecting strategy performance",
+        "regimes": [
+          "market_direction",
+          "volatility",
+          "rates"
+        ]
+      },
+      "decision": "retain_shadow",
+      "hypothesis": "the strategy's edge is stable across market, volatility and rate regimes",
+      "id": "regime-conditional-performance",
+      "metrics": {
+        "bear_excess_pp": 10.3,
+        "bull_excess_pp": -11.2,
+        "falling_rates_excess_pp": 10.3,
+        "rising_rates_excess_pp": -16.9
+      },
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 3,
+      "reason": "the edge is not stable -- it is a duration and direction bet. The book is defensive in drawdowns and in falling rates and lags badly in rising rates and high volatility. Useful for describing the strategy honestly; not actionable as a timing overlay without out-of-sample evidence",
+      "result": "rejected",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": "2021-09..2026-07"
+    },
+    {
+      "artifacts": [
+        "docs/RESEARCH-CONTRACT.md"
+      ],
+      "category": "corrective",
+      "configuration": {
+        "horizon_basis": "trading_sessions",
+        "primary_horizon_sessions": 63,
+        "target": "residual_forward_return"
+      },
+      "decision": "shipped_as_fix",
+      "hypothesis": "measuring raw calendar-day forward returns instead of the contract's 63-session sector-residual target changes what the IC statistics mean",
+      "id": "forecast-target-correction",
+      "metrics": {},
+      "model_version": "3.2.0",
+      "number_of_variants_tested": 1,
+      "reason": "the medians coincide (63 sessions spans 91 calendar days) which is why the gap went unnoticed, but a fixed calendar horizon spans a varying session count, so label length drifted. Sector residualization changes the ranking outright: the best raw performer can be the worst residual performer",
+      "result": "supported",
+      "test_period": null,
+      "training_period": null,
+      "validation_period": null
+    }
+  ],
+  "purpose": "a durable record of every research attempt, so failed ideas are not rediscovered and the trial count feeding Deflated Sharpe and PBO reflects the whole programme rather than the configuration being written up",
+  "schema_version": 1,
+  "summary": {
+    "blocked_on_network_access": [
+      "cost-sensitivity-at-realized-turnover",
+      "enrichment-shortlist-bias",
+      "turnover-controls",
+      "wo2-sec-insider-layer",
+      "wo3-tiered-costs-wired"
+    ],
+    "by_result": {
+      "blocked": [
+        "turnover-controls",
+        "wo2-sec-insider-layer",
+        "wo3-tiered-costs-wired"
+      ],
+      "inconclusive": [
+        "enrichment-shortlist-bias"
+      ],
+      "rejected": [
+        "cost-sensitivity-at-realized-turnover",
+        "q1-benchmark-and-factor-regression",
+        "q2-turnover-attribution",
+        "regime-conditional-performance",
+        "tradeable-benchmark-suite"
+      ],
+      "supported": [
+        "forecast-target-correction",
+        "news-weight-is-inert",
+        "wo1-manifest-reports-champion"
+      ]
+    },
+    "experiments": 12,
+    "promoted_to_champion": [],
+    "total_variants_tested": 47
+  }
+}

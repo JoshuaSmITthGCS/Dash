@@ -36,6 +36,7 @@ from backtest_historical import (  # noqa: E402
 )
 from common import LOG  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
+from portfolio_construction import apply_controls  # noqa: E402
 
 COST_MODELS = ("flat", "tiered")
 
@@ -342,6 +343,20 @@ def main():
     parser.add_argument("--cost-scenario", choices=("optimistic", "base", "stress"),
                         default="base",
                         help="Which costs.py scenario to use when --cost-model=tiered")
+    # Turnover-control challengers (pipeline/portfolio_construction.py). All default to off,
+    # so omitting them reproduces the champion's plain top-N selection exactly.
+    parser.add_argument("--rank-buffer", type=float, default=None,
+                        help="hold an incumbent while its rank stays inside this multiple of "
+                             "top-n (e.g. 1.5); sell once past it")
+    parser.add_argument("--min-holding-months", type=int, default=None,
+                        help="hold a name at least this many months unless its rank collapses "
+                             "past 3x top-n")
+    parser.add_argument("--score-smoothing", type=float, default=None,
+                        help="exponentially weighted score smoothing alpha in (0, 1]; 1.0 is "
+                             "a no-op")
+    parser.add_argument("--replacement-margin", type=float, default=None,
+                        help="score points by which a challenger must beat the incumbent it "
+                             "would displace")
     parser.add_argument("--delay", type=float, default=0.1)
     parser.add_argument("--workers", type=int, default=6,
                         help="Concurrent cached Yahoo fetches (default 6)")
@@ -402,6 +417,7 @@ def main():
         return 1
 
     plans = []
+    holdings, held_months, previous_scores = [], {}, {}
     for index, (signal_date, execution_date) in enumerate(calendar, 1):
         spy_idx = price_index(benchmark["dates"], signal_date)
         spy_to_date = benchmark["closes"][:spy_idx + 1] if spy_idx is not None else []
@@ -409,10 +425,20 @@ def main():
             universe_data, spy_to_date, signal_date, args.report_lag_days,
             allow_current_shares=False, allow_empty_fundamentals=True,
         )
-        weights = appeal_weights(rows, args.top_n)
+        eligible = [row for row in rows if row.get("price") and row.get("score") is not None]
+        selected = apply_controls(
+            holdings, eligible, args.top_n,
+            previous_scores=previous_scores, held_months=held_months,
+            rank_buffer=args.rank_buffer, minimum_months=args.min_holding_months,
+            smoothing_alpha=args.score_smoothing,
+            replacement_margin=args.replacement_margin,
+        )
+        chosen = {row["ticker"]: row for row in eligible if row["ticker"] in set(selected)}
+        ordered = [chosen[ticker] for ticker in selected if ticker in chosen]
+        weights = appeal_weights(ordered, args.top_n)
         picks = [
             {"ticker": row["ticker"], "appeal_score": row["score"], "weight": round(weights[row["ticker"]], 8)}
-            for row in rows[:args.top_n] if row["ticker"] in weights
+            for row in ordered if row["ticker"] in weights
         ]
         plans.append({
             "signal_date": signal_date.isoformat(),
@@ -420,6 +446,11 @@ def main():
             "weights": weights,
             "picks": picks,
         })
+        carried = set(selected) & set(holdings)
+        held_months = {ticker: held_months.get(ticker, 0) + 1 if ticker in carried else 0
+                       for ticker in selected}
+        previous_scores = {row["ticker"]: row["score"] for row in eligible}
+        holdings = selected
         if index % 12 == 0:
             LOG.info(f"Ranked {index}/{len(calendar)} months; latest signal {signal_date}")
 
@@ -437,6 +468,15 @@ def main():
             "signal": "Dash appeal score at month-end adjusted close",
             "execution": "next SPY trading-day close after signal",
             "selection": f"top {args.top_n}",
+            "turnover_controls": {
+                "rank_buffer": args.rank_buffer,
+                "minimum_holding_months": args.min_holding_months,
+                "score_smoothing_alpha": args.score_smoothing,
+                "replacement_margin": args.replacement_margin,
+                "active": any(value is not None for value in (
+                    args.rank_buffer, args.min_holding_months,
+                    args.score_smoothing, args.replacement_margin)),
+            },
             "weighting": "appeal score divided by sum of selected appeal scores",
             "fundamental_availability": f"quarter end plus {args.report_lag_days} calendar days",
             "prices": "Yahoo adjusted close (split and dividend adjusted)",

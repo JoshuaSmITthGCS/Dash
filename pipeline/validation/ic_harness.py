@@ -316,6 +316,22 @@ def _forward_periods(refreshes, variant, horizon_sessions, calendar_source=None)
     return periods
 
 
+def research_trial_count():
+    """The honest number of configurations tried, for Deflated Sharpe.
+
+    ``settings.json validation.shadow_strategy_trials`` counts only the live shadow
+    strategies. Deflation needs the count of everything *searched*, across the whole research
+    programme -- understating it is the standard way a deflated Sharpe gets quietly
+    re-inflated. The experiment registry is the durable record of that, so it is the floor
+    here; the configured value wins only if it is somehow larger.
+    """
+    try:
+        from experiment_registry import total_variants_tested
+    except ImportError:      # registry not importable in a trimmed checkout
+        return CONFIG["shadow_strategy_trials"]
+    return max(CONFIG["shadow_strategy_trials"], total_variants_tested())
+
+
 def _spearman(left, right):
     if len(left) < 3:
         return None
@@ -475,10 +491,11 @@ def evaluate_variant(refreshes, variant, horizon_sessions, target=TARGET_FIELD):
             "cost_model": CONFIG.get("cost_model", "flat"),
             "cost_bps": mean(applied_cost_bps) if applied_cost_bps else CONFIG["long_short_cost_bps"],
         },
+        "trials_considered": research_trial_count(),
         "deflated_sharpe_probability": deflated_sharpe_ratio(
             spread_sharpe,
             observations=len(spreads),
-            trials=CONFIG["shadow_strategy_trials"],
+            trials=research_trial_count(),
         ) if spread_sharpe is not None else None,
         **_turnover_and_stability(periods),
     }
