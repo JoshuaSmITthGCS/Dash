@@ -1,0 +1,105 @@
+{
+  "note": "See pipeline/p0_q2_turnover_attribution.py docstring: this measures live refresh-to-refresh churn (2 days of PIT store, 4 transitions), NOT the backtest's monthly turnover directly, which requires network access this session does not have.",
+  "refreshes_observed": 5,
+  "transitions": [
+    {
+      "shared_tickers": 400,
+      "total_rank_movement_top_100": 607,
+      "metric_level_events": {
+        "band_crossing_unchanged_value": 1,
+        "genuine_input_change": 1,
+        "availability_flicker": 55
+      },
+      "metric_level_events_total": 57,
+      "metric_level_events_pct": {
+        "band_crossing_unchanged_value": 0.0175,
+        "genuine_input_change": 0.0175,
+        "availability_flicker": 0.9649
+      },
+      "price_driven_residual": {
+        "tickers_measured": 39,
+        "mean_abs_residual": 0.0491,
+        "note": "Reconstructed residual (overall champion score delta minus the fundamentals- and modifier-weighted reconstruction), not a directly stored market_behavior delta -- see script docstring."
+      },
+      "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
+      "current_refresh": "advisor-2026-08-06T00:42:44.869979+00:00"
+    },
+    {
+      "shared_tickers": 400,
+      "total_rank_movement_top_100": 375,
+      "metric_level_events": {
+        "band_crossing_unchanged_value": 0,
+        "genuine_input_change": 12,
+        "availability_flicker": 23
+      },
+      "metric_level_events_total": 35,
+      "metric_level_events_pct": {
+        "band_crossing_unchanged_value": 0.0,
+        "genuine_input_change": 0.3429,
+        "availability_flicker": 0.6571
+      },
+      "price_driven_residual": {
+        "tickers_measured": 38,
+        "mean_abs_residual": 0.1848,
+        "note": "Reconstructed residual (overall champion score delta minus the fundamentals- and modifier-weighted reconstruction), not a directly stored market_behavior delta -- see script docstring."
+      },
+      "previous_refresh": "advisor-2026-08-06T00:42:44.869979+00:00",
+      "current_refresh": "advisor-2026-08-06T02:04:34.587268+00:00"
+    },
+    {
+      "shared_tickers": 401,
+      "total_rank_movement_top_100": 1886,
+      "metric_level_events": {
+        "band_crossing_unchanged_value": 12,
+        "genuine_input_change": 94,
+        "availability_flicker": 2588
+      },
+      "metric_level_events_total": 2694,
+      "metric_level_events_pct": {
+        "band_crossing_unchanged_value": 0.0045,
+        "genuine_input_change": 0.0349,
+        "availability_flicker": 0.9607
+      },
+      "price_driven_residual": {
+        "tickers_measured": 22,
+        "mean_abs_residual": 16.396,
+        "note": "Reconstructed residual (overall champion score delta minus the fundamentals- and modifier-weighted reconstruction), not a directly stored market_behavior delta -- see script docstring."
+      },
+      "previous_refresh": "advisor-2026-08-06T02:04:34.587268+00:00",
+      "current_refresh": "advisor-2026-08-06T15:46:49.017773+00:00"
+    },
+    {
+      "shared_tickers": 416,
+      "total_rank_movement_top_100": 2755,
+      "metric_level_events": {
+        "band_crossing_unchanged_value": 6,
+        "genuine_input_change": 24,
+        "availability_flicker": 1760
+      },
+      "metric_level_events_total": 1790,
+      "metric_level_events_pct": {
+        "band_crossing_unchanged_value": 0.0034,
+        "genuine_input_change": 0.0134,
+        "availability_flicker": 0.9832
+      },
+      "price_driven_residual": {
+        "tickers_measured": 23,
+        "mean_abs_residual": 16.7997,
+        "note": "Reconstructed residual (overall champion score delta minus the fundamentals- and modifier-weighted reconstruction), not a directly stored market_behavior delta -- see script docstring."
+      },
+      "previous_refresh": "advisor-2026-08-06T15:46:49.017773+00:00",
+      "current_refresh": "advisor-2026-08-06T22:50:04.622623+00:00"
+    }
+  ],
+  "aggregate_metric_level_events": {
+    "band_crossing_unchanged_value": 19,
+    "genuine_input_change": 131,
+    "availability_flicker": 4426
+  },
+  "aggregate_metric_level_events_pct": {
+    "band_crossing_unchanged_value": 0.0042,
+    "genuine_input_change": 0.0286,
+    "availability_flicker": 0.9672
+  },
+  "band_crossing_relative_threshold": 0.02
+}

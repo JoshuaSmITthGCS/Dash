@@ -27,7 +27,7 @@ def _commit_hash():
 
 def run_manifest(payload, rejected=None):
     rows = payload.get("research", [])
-    scores = [row.get("analysis_v2", {}).get("structural", {}).get("effective_score") for row in rows]
+    scores = [row.get("score") for row in rows]
     scores = [score for score in scores if isinstance(score, (int, float))]
     conflicts = sum(len(row.get("analysis_v2", {}).get("structural", {}).get("provider_conflicts", [])) for row in rows)
     stale = sum(len(row.get("analysis_v2", {}).get("structural", {}).get("stale_metrics", [])) for row in rows)

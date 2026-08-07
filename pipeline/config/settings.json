@@ -65,8 +65,10 @@
     "confidence_interval_z": 1.96,
     "quantile_counts": [5, 10],
     "long_short_cost_bps": 10.0,
+    "cost_model": "flat",
+    "cost_scenario": "base",
     "shadow_strategy_trials": 5,
-    "snapshot_schema_version": 1,
+    "snapshot_schema_version": 2,
     "modifier_fields": [
       "sector_valuation",
       "short_interest",

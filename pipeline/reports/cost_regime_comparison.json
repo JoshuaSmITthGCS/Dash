@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-08-07T05:40:00Z",
+  "status": "blocked_network_policy",
+  "reason": "backtest_monthly.py needs each usable name's 5-year daily price and volume history to compute both the flat and tiered regimes, and no local price cache is committed (pipeline/data/backtest_cache/ is empty in this checkout). This session's network egress policy denies CONNECT to query1.finance.yahoo.com (403, confirmed via $HTTPS_PROXY/__agentproxy/status), so the fetch cannot run here.",
+  "wiring_verified": {
+    "backtest_monthly.py": "pipeline/tests/test_backtest_monthly.py::CostModelWiringTests (4 tests, synthetic data, all passing)",
+    "ic_harness.py": "pipeline/tests/test_ic_harness.py cost-model tests (3 tests, synthetic data, all passing)"
+  },
+  "reproduction_commands": [
+    "python pipeline/backtest_monthly.py --cost-model flat   --transaction-cost-bps 10 --out pipeline/reports/backtest_flat.json",
+    "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario base   --out pipeline/reports/backtest_tiered_base.json",
+    "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario stress --out pipeline/reports/backtest_tiered_stress.json"
+  ],
+  "regimes": {
+    "flat_10bps": {
+      "cagr": null, "annualized_volatility": null, "maximum_drawdown": null,
+      "sharpe_zero_rate": null, "estimated_transaction_cost": null
+    },
+    "tiered_base": {
+      "cagr": null, "annualized_volatility": null, "maximum_drawdown": null,
+      "sharpe_zero_rate": null, "estimated_transaction_cost": null
+    },
+    "tiered_stress": {
+      "cagr": null, "annualized_volatility": null, "maximum_drawdown": null,
+      "sharpe_zero_rate": null, "estimated_transaction_cost": null
+    },
+    "spy_benchmark": {
+      "cagr": 0.1280, "annualized_volatility": 0.1718, "maximum_drawdown": -0.2450,
+      "sharpe_zero_rate": 0.791,
+      "source": "pipeline/backtest_monthly_results.json (already on disk, flat-cost benchmark leg)"
+    }
+  },
+  "threshold_check": {
+    "description": "Brief's stated threshold: if costs.py base wipes out more than 200bps of annual CAGR relative to flat 10bps at 64.9% monthly turnover, cost realism is not a reporting problem and wiring the cost model into portfolio construction becomes the highest-value corrective item in the brief.",
+    "resolved": false,
+    "reason": "Requires the regimes table above to be populated from a live re-run, which is blocked in this session."
+  }
+}
