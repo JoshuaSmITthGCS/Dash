@@ -281,11 +281,11 @@ export default function Dashboard() {
   // Prefer the live, contribution-adjusted Strategy return (Modified Dietz, annualized) as
   // the outcome-distribution's center so it moves with the portfolio automatically, instead
   // of the static manual assumption from Finances -- that's still the fallback whenever there
-  // isn't yet enough dated snapshot history for a Modified Dietz result. The same 30-day floor
-  // as "Your return (money-weighted)" below (see moneyWeightedAccountReturn) applies here too:
-  // stretching a couple of weeks of live tracking into an annual rate would overstate it wildly.
+  // isn't yet enough dated snapshot history for a Modified Dietz result. No minimum-history
+  // gate: this is wired to move with the account from day one and settles down on its own as
+  // more tracked days accumulate, rather than waiting on an arbitrary threshold.
   const liveStrategyAnnualReturnPct = returnSummary.strategy.available
-    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate, projectionConfig.sparse_history_minimum_days)
+    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)
     : null
   const annualReturnTargetPct = normalizeAnnualReturnTarget(
     liveStrategyAnnualReturnPct ?? finances.settings.planningAnnualReturnTargetPct,
