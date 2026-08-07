@@ -62,6 +62,19 @@ describe('GrowthChart zoom', () => {
     expect(screen.getByRole('img')).toHaveAccessibleName(/Holdings: \$110/)
   })
 
+  it('renders a separate latest-value needle without replacing the closing marker', () => {
+    const { container } = render(<GrowthChart
+      dates={['2025-01-01', '2025-01-02']}
+      series={[{ label: 'Holdings', values: [100, 110], color: 'green', emphasis: true }]}
+      endMarkers={[{ label: 'After-hours', value: 112, color: 'orange' }]}
+    />)
+
+    expect(container.querySelectorAll('.chart-series-primary circle')).toHaveLength(1)
+    expect(container.querySelector('.chart-value-needle')).toBeInTheDocument()
+    expect(screen.getByRole('img')).toHaveAccessibleName(/After-hours: \$112/)
+    expect(screen.getByText('After-hours')).toBeInTheDocument()
+  })
+
   it('reserves mobile chart space for an overlaid account summary', () => {
     const originalMatchMedia = window.matchMedia
     window.matchMedia = () => ({

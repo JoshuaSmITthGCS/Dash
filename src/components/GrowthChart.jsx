@@ -98,6 +98,7 @@ export default function GrowthChart({
   className = '',
   valueFormatter = money,
   earningsMarker = null, // { value, label } – most recent earnings-surprise reading, if the pipeline has one
+  endMarkers = [], // { value, label, color } – live/extended-session values anchored to the latest date
 }) {
   const [zoom, setZoom] = useState('all')
   const [activeIndex, setActiveIndex] = useState(null)
@@ -123,10 +124,15 @@ export default function GrowthChart({
     ...line,
     values: line.values.slice(startIndex),
   }))
+  const visibleEndMarkers = endMarkers.filter((marker) =>
+    marker && typeof marker.value === 'number' && Number.isFinite(marker.value))
   const availableRanges = ZOOM_RANGES.filter((range) =>
     range.days == null || cutoffIndex(fullDates, range.days) > 0)
 
-  const allValues = lines.flatMap((line) => line.values.filter((value) => value != null))
+  const allValues = [
+    ...lines.flatMap((line) => line.values.filter((value) => value != null)),
+    ...visibleEndMarkers.map((marker) => marker.value),
+  ]
   const min = Math.min(...allValues)
   const max = Math.max(...allValues)
   const bounds = { min: min - (max - min) * 0.08 || 0, max: max + (max - min) * 0.08 }
@@ -141,7 +147,7 @@ export default function GrowthChart({
   const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {
     const values = line.values.filter((value) => value != null)
     return `${line.label}: ${valueFormatter(values[values.length - 1])}`
-  }).join('. ')} at the end of the period.`
+  }).join('. ')} at the end of the period.${visibleEndMarkers.length ? ` ${visibleEndMarkers.map((marker) => `${marker.label}: ${valueFormatter(marker.value)}`).join('. ')}.` : ''}`
   const selectPoint = (clientX, target) => {
     const bounds = target.getBoundingClientRect()
     const plotLeft = bounds.left + pad.left / chartWidth * bounds.width
@@ -163,6 +169,9 @@ export default function GrowthChart({
   const earningsPoint = earningsMarker?.value != null
     ? [...scalePoints(lines[0]?.values || [], usableDates, chartWidth, chartHeight, bounds, pad)].reverse().find(Boolean)
     : null
+  const primaryLatestPoint = [...scalePoints(lines[0]?.values || [], usableDates, chartWidth, chartHeight, bounds, pad)].reverse().find(Boolean)
+  const endMarkerX = chartWidth - pad.right
+  const endMarkerY = (value) => pad.top + innerHeight - ((value - bounds.min) / (bounds.max - bounds.min || 1)) * innerHeight
 
   return (
     <figure className={className} style={{ margin: 0 }}>
@@ -243,6 +252,20 @@ export default function GrowthChart({
             )
           })}
 
+          {visibleEndMarkers.map((marker) => {
+            const y = endMarkerY(marker.value)
+            const color = marker.color || 'var(--warning)'
+            return (
+              <g className="chart-value-needle" key={marker.label}>
+                {primaryLatestPoint && <line x1={endMarkerX} x2={endMarkerX} y1={primaryLatestPoint.y} y2={y}
+                  stroke={color} strokeWidth="1.5" strokeDasharray="3 3" />}
+                <circle cx={endMarkerX} cy={y} r="7" fill="var(--surface-primary)" stroke={color} strokeWidth="2" />
+                <circle cx={endMarkerX} cy={y} r="2.5" fill={color} />
+                <title>{marker.label}: {valueFormatter(marker.value)}</title>
+              </g>
+            )
+          })}
+
           {earningsPoint && (
             <g>
               <circle cx={earningsPoint.x} cy={earningsPoint.y} r="7.5" fill="none"
@@ -286,6 +309,11 @@ export default function GrowthChart({
             </div>
           )
         })}
+        {visibleEndMarkers.map((marker) => <div key={marker.label} className="chart-marker-legend">
+          <span className="chart-marker-key" style={{ color: marker.color || 'var(--warning)' }} />
+          <span style={{ color: 'var(--text-dim)' }}>{marker.label}</span>
+          <span className="mono" style={{ fontWeight: 600 }}>{valueFormatter(marker.value)}</span>
+        </div>)}
       </div>
       {earningsMarker?.value != null && (
         <p style={{ marginTop: 4, fontSize: 12, color: earningsMarker.value >= 0 ? 'var(--pos)' : 'var(--neg)' }}>

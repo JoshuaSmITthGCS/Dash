@@ -35,6 +35,33 @@ function yahooSymbol(symbol) {
   return symbol.replaceAll('.', '-')
 }
 
+function finiteNumber(value) {
+  if (value == null || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+// Yahoo's chart endpoint currently returns the extended-session candles even when its
+// convenient postMarket* meta fields are null. Recover the latest real post-market trade
+// from those candles so a successful refresh does not silently look like "no after-hours".
+function latestPostMarketPrice(chart) {
+  const timestamps = chart?.timestamp
+  const closes = chart?.indicators?.quote?.[0]?.close
+  const post = chart?.meta?.currentTradingPeriod?.post
+  const postStart = finiteNumber(post?.start)
+  const postEnd = finiteNumber(post?.end)
+  if (!Array.isArray(timestamps) || !Array.isArray(closes) || postStart == null) return null
+
+  for (let index = Math.min(timestamps.length, closes.length) - 1; index >= 0; index -= 1) {
+    const timestamp = finiteNumber(timestamps[index])
+    const close = finiteNumber(closes[index])
+    if (timestamp != null && close != null && timestamp >= postStart && (postEnd == null || timestamp <= postEnd)) {
+      return { price: close, time: timestamp }
+    }
+  }
+  return null
+}
+
 export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
   const results = await Promise.all(symbols.map(async (symbol) => {
     try {
@@ -51,16 +78,18 @@ export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
       )
       if (!response.ok) throw new Error(`quote provider returned ${response.status}`)
       const payload = await response.json()
-      const meta = payload?.chart?.result?.[0]?.meta
-      const price = Number(meta?.regularMarketPrice)
-      if (!Number.isFinite(price)) throw new Error('quote provider returned no price')
-      const previousClose = Number(meta?.chartPreviousClose ?? meta?.previousClose)
-      // Only present once the session has actually moved past the closing bell with a real
-      // post-market trade — Yahoo omits these fields entirely during regular hours, and that
-      // absence is the honest signal, not a 0 to paper over.
-      const postMarketPrice = Number(meta?.postMarketPrice)
-      const postMarketChange = Number(meta?.postMarketChange)
-      const postMarketChangePercent = Number(meta?.postMarketChangePercent)
+      const chart = payload?.chart?.result?.[0]
+      const meta = chart?.meta
+      const price = finiteNumber(meta?.regularMarketPrice)
+      if (price == null) throw new Error('quote provider returned no price')
+      const previousClose = finiteNumber(meta?.chartPreviousClose ?? meta?.previousClose)
+      const candlePostMarket = latestPostMarketPrice(chart)
+      const postMarketPrice = finiteNumber(meta?.postMarketPrice) ?? candlePostMarket?.price ?? null
+      const postMarketChange = finiteNumber(meta?.postMarketChange)
+        ?? (postMarketPrice == null ? null : postMarketPrice - price)
+      const postMarketChangePercent = finiteNumber(meta?.postMarketChangePercent)
+        ?? (postMarketChange == null || !price ? null : (postMarketChange / price) * 100)
+      const postMarketTime = finiteNumber(meta?.postMarketTime) ?? candlePostMarket?.time ?? null
       return {
         ok: true,
         symbol,
@@ -68,15 +97,16 @@ export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
           ticker: symbol,
           name: meta.longName || meta.shortName || symbol,
           price,
-          previousClose: Number.isFinite(previousClose) ? previousClose : null,
-          marketTime: Number.isFinite(Number(meta.regularMarketTime))
+          previousClose,
+          marketTime: finiteNumber(meta.regularMarketTime) != null
             ? new Date(Number(meta.regularMarketTime) * 1000).toISOString()
             : null,
           marketState: meta.marketState || null,
           currency: meta.currency || null,
-          postMarketPrice: Number.isFinite(postMarketPrice) ? postMarketPrice : null,
-          postMarketChange: Number.isFinite(postMarketChange) ? postMarketChange : null,
-          postMarketChangePercent: Number.isFinite(postMarketChangePercent) ? postMarketChangePercent : null,
+          postMarketPrice,
+          postMarketChange,
+          postMarketChangePercent,
+          postMarketTime: postMarketTime == null ? null : new Date(postMarketTime * 1000).toISOString(),
         },
       }
     } catch (error) {
