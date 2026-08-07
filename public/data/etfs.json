@@ -1,6 +1,6 @@
 {
   "schema_version": 5,
-  "generated_at": "2026-08-07T21:44:49.267197+00:00",
+  "generated_at": "2026-08-07T22:28:54.479742+00:00",
   "data_mode": "live",
   "benchmarks": {
     "sp500": "SPY",
@@ -840,6 +840,146 @@
       "peer_group_size": 11
     },
     {
+      "ticker": "IWD",
+      "name": "iShares Russell 1000 Value",
+      "category": "value",
+      "peer_group": "equity_broad",
+      "sector": "Value",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.19,
+      "price": 257.5,
+      "aum": 81898684416,
+      "avg_dollar_volume": 613644070.0,
+      "bid_ask_spread_pct": 0.3266,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 256.12817,
+      "premium_discount_pct": 0.559,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 4.51,
+        "3m": 10.98,
+        "6m": 16.61,
+        "1y": 32.29,
+        "3y": null
+      },
+      "index_symbol": "VTV",
+      "index_returns": {
+        "1m": 2.57,
+        "3m": 8.87,
+        "6m": 10.73,
+        "1y": 26.63,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 1.94,
+        "3m": 2.11,
+        "6m": 5.88,
+        "1y": 5.66,
+        "3y": null
+      },
+      "tracking_difference_1y": 5.66,
+      "tracking_error_pct": 2.985,
+      "total_cost_of_ownership_pct": 0.749,
+      "max_drawdown": -16.5,
+      "sharpe_ratio": 1.24,
+      "sortino_ratio": 1.82,
+      "beta": 0.73,
+      "sector_weights": {
+        "realestate": 0.0371,
+        "consumer_cyclical": 0.1124,
+        "basic_materials": 0.0322,
+        "consumer_defensive": 0.0735,
+        "technology": 0.1973,
+        "communication_services": 0.0329,
+        "financial_services": 0.1907,
+        "utilities": 0.0369,
+        "industrials": 0.101,
+        "energy": 0.0598,
+        "healthcare": 0.1262
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "AMZN",
+          "weight": 0.065253705,
+          "name": "Amazon.com Inc"
+        },
+        {
+          "ticker": "AAPL",
+          "weight": 0.0553156,
+          "name": "Apple Inc"
+        },
+        {
+          "ticker": "MSFT",
+          "weight": 0.046658,
+          "name": "Microsoft Corp"
+        },
+        {
+          "ticker": "BRK-B",
+          "weight": 0.0257474,
+          "name": "Berkshire Hathaway Inc Class B"
+        },
+        {
+          "ticker": "JPM",
+          "weight": 0.025422899,
+          "name": "JPMorgan Chase & Co"
+        },
+        {
+          "ticker": "XOM",
+          "weight": 0.0174842,
+          "name": "ExxonMobil Holdings Corp"
+        },
+        {
+          "ticker": "JNJ",
+          "weight": 0.0166952,
+          "name": "Johnson & Johnson"
+        },
+        {
+          "ticker": "CSCO",
+          "weight": 0.012386,
+          "name": "Cisco Systems Inc"
+        },
+        {
+          "ticker": "WMT",
+          "weight": 0.012059701,
+          "name": "Walmart Inc"
+        },
+        {
+          "ticker": "ABBV",
+          "weight": 0.0110502,
+          "name": "AbbVie Inc"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 89.8,
+        "risk": 80.1,
+        "cost": 56.3,
+        "liquidity": 44.9,
+        "quality": 100.0,
+        "overall": 75.5
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 1.8,
+        "dow_1m": 1.7,
+        "sp500_3m": 5.44,
+        "dow_3m": 2.31,
+        "sp500_6m": 2.67,
+        "dow_6m": 6.39,
+        "sp500_1y": 10.27,
+        "dow_1y": 10.36,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 8,
+      "peer_rank": 2,
+      "peer_group_size": 28
+    },
+    {
       "ticker": "XBI",
       "name": "S&P Biotech",
       "category": "thematic",
@@ -966,149 +1106,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 8,
-      "peer_rank": 2,
-      "peer_group_size": 16
-    },
-    {
-      "ticker": "IWD",
-      "name": "iShares Russell 1000 Value",
-      "category": "value",
-      "peer_group": "equity_broad",
-      "sector": "Value",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.19,
-      "price": 257.5,
-      "aum": 81898684416,
-      "avg_dollar_volume": 613644070.0,
-      "bid_ask_spread_pct": 0.3266,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 256.12817,
-      "premium_discount_pct": 0.559,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 4.51,
-        "3m": 10.98,
-        "6m": 16.61,
-        "1y": 32.29,
-        "3y": null
-      },
-      "index_symbol": "VTV",
-      "index_returns": {
-        "1m": 2.57,
-        "3m": 8.87,
-        "6m": 10.73,
-        "1y": 26.63,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 1.94,
-        "3m": 2.11,
-        "6m": 5.88,
-        "1y": 5.66,
-        "3y": null
-      },
-      "tracking_difference_1y": 5.66,
-      "tracking_error_pct": 2.985,
-      "total_cost_of_ownership_pct": 0.749,
-      "max_drawdown": -16.5,
-      "sharpe_ratio": 1.24,
-      "sortino_ratio": 1.82,
-      "beta": 0.73,
-      "sector_weights": {
-        "realestate": 0.0371,
-        "consumer_cyclical": 0.1124,
-        "basic_materials": 0.0322,
-        "consumer_defensive": 0.0735,
-        "technology": 0.1973,
-        "communication_services": 0.0329,
-        "financial_services": 0.1907,
-        "utilities": 0.0369,
-        "industrials": 0.101,
-        "energy": 0.0598,
-        "healthcare": 0.1262
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "AMZN",
-          "weight": 0.065253705,
-          "name": "Amazon.com Inc"
-        },
-        {
-          "ticker": "AAPL",
-          "weight": 0.0553156,
-          "name": "Apple Inc"
-        },
-        {
-          "ticker": "MSFT",
-          "weight": 0.046658,
-          "name": "Microsoft Corp"
-        },
-        {
-          "ticker": "BRK-B",
-          "weight": 0.0257474,
-          "name": "Berkshire Hathaway Inc Class B"
-        },
-        {
-          "ticker": "JPM",
-          "weight": 0.025422899,
-          "name": "JPMorgan Chase & Co"
-        },
-        {
-          "ticker": "XOM",
-          "weight": 0.0174842,
-          "name": "ExxonMobil Holdings Corp"
-        },
-        {
-          "ticker": "JNJ",
-          "weight": 0.0166952,
-          "name": "Johnson & Johnson"
-        },
-        {
-          "ticker": "CSCO",
-          "weight": 0.012386,
-          "name": "Cisco Systems Inc"
-        },
-        {
-          "ticker": "WMT",
-          "weight": 0.012059701,
-          "name": "Walmart Inc"
-        },
-        {
-          "ticker": "ABBV",
-          "weight": 0.0110502,
-          "name": "AbbVie Inc"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 89.8,
-        "risk": 80.1,
-        "cost": 56.3,
-        "liquidity": 43.1,
-        "quality": 100.0,
-        "overall": 75.2
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 1.8,
-        "dow_1m": 1.7,
-        "sp500_3m": 5.44,
-        "dow_3m": 2.31,
-        "sp500_6m": 2.67,
-        "dow_6m": 6.39,
-        "sp500_1y": 10.27,
-        "dow_1y": 10.36,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
       "overall_rank": 9,
       "peer_rank": 2,
-      "peer_group_size": 28
+      "peer_group_size": 16
     },
     {
       "ticker": "XLK",
@@ -1122,7 +1122,7 @@
       "price": 187.37,
       "aum": 115410993152,
       "avg_dollar_volume": 1776612283.0,
-      "bid_ask_spread_pct": 0.0106,
+      "bid_ask_spread_pct": 0.0213,
       "bid_ask_spread_source": "quoted_snapshot",
       "nav": 185.35104,
       "premium_discount_pct": 1.413,
@@ -1219,9 +1219,9 @@
         "performance": 74.0,
         "risk": 60.5,
         "cost": 64.0,
-        "liquidity": 92.7,
+        "liquidity": 91.2,
         "quality": 100.0,
-        "overall": 74.8
+        "overall": 74.5
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -1242,6 +1242,83 @@
       "peer_group_size": 25
     },
     {
+      "ticker": "GLDM",
+      "name": "SPDR Gold MiniShares",
+      "category": "commodity",
+      "peer_group": "commodity",
+      "sector": "Commodity",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.1,
+      "price": 85.88,
+      "aum": 27366232064,
+      "avg_dollar_volume": 292197664.0,
+      "bid_ask_spread_pct": 0.0116,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 84.42886,
+      "premium_discount_pct": 1.8017,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 5.33,
+        "3m": -7.7,
+        "6m": -9.79,
+        "1y": 28.63,
+        "3y": null
+      },
+      "index_symbol": "IAU",
+      "index_returns": {
+        "1m": 5.3,
+        "3m": -7.74,
+        "6m": -9.85,
+        "1y": 28.41,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.03,
+        "3m": 0.04,
+        "6m": 0.06,
+        "1y": 0.22,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.22,
+      "tracking_error_pct": 0.808,
+      "total_cost_of_ownership_pct": 1.9017,
+      "max_drawdown": -26.27,
+      "sharpe_ratio": 1.4,
+      "sortino_ratio": 1.98,
+      "beta": 0.23,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 50.0,
+        "risk": 86.7,
+        "cost": 79.0,
+        "liquidity": 71.4,
+        "quality": 100.0,
+        "overall": 74.3
+      },
+      "ranked_against": "commodity",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 2.62,
+        "dow_1m": 2.52,
+        "sp500_3m": -13.24,
+        "dow_3m": -16.37,
+        "sp500_6m": -23.73,
+        "dow_6m": -20.01,
+        "sp500_1y": 6.61,
+        "dow_1y": 6.7,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 11,
+      "peer_rank": 1,
+      "peer_group_size": 8
+    },
+    {
       "ticker": "XLF",
       "name": "Financials Select Sector",
       "category": "sector",
@@ -1253,7 +1330,7 @@
       "price": 57.58,
       "aum": 57884381184,
       "avg_dollar_volume": 1898663388.0,
-      "bid_ask_spread_pct": 0.0347,
+      "bid_ask_spread_pct": 0.2254,
       "bid_ask_spread_source": "quoted_snapshot",
       "nav": 57.80224,
       "premium_discount_pct": -0.3499,
@@ -1351,9 +1428,9 @@
         "performance": 67.7,
         "risk": 77.8,
         "cost": 54.7,
-        "liquidity": 83.7,
+        "liquidity": 77.7,
         "quality": 100.0,
-        "overall": 74.7
+        "overall": 73.7
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -1369,86 +1446,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 11,
+      "overall_rank": 12,
       "peer_rank": 2,
       "peer_group_size": 25
-    },
-    {
-      "ticker": "GLDM",
-      "name": "SPDR Gold MiniShares",
-      "category": "commodity",
-      "peer_group": "commodity",
-      "sector": "Commodity",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.1,
-      "price": 85.88,
-      "aum": 27366232064,
-      "avg_dollar_volume": 292197664.0,
-      "bid_ask_spread_pct": 0.0116,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 84.42886,
-      "premium_discount_pct": 1.8017,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 5.33,
-        "3m": -7.7,
-        "6m": -9.79,
-        "1y": 28.63,
-        "3y": null
-      },
-      "index_symbol": "IAU",
-      "index_returns": {
-        "1m": 5.3,
-        "3m": -7.74,
-        "6m": -9.85,
-        "1y": 28.41,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.03,
-        "3m": 0.04,
-        "6m": 0.06,
-        "1y": 0.22,
-        "3y": null
-      },
-      "tracking_difference_1y": 0.22,
-      "tracking_error_pct": 0.808,
-      "total_cost_of_ownership_pct": 1.9017,
-      "max_drawdown": -26.27,
-      "sharpe_ratio": 1.4,
-      "sortino_ratio": 1.98,
-      "beta": 0.23,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 50.0,
-        "risk": 86.7,
-        "cost": 79.0,
-        "liquidity": 71.4,
-        "quality": 100.0,
-        "overall": 74.3
-      },
-      "ranked_against": "commodity",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 2.62,
-        "dow_1m": 2.52,
-        "sp500_3m": -13.24,
-        "dow_3m": -16.37,
-        "sp500_6m": -23.73,
-        "dow_6m": -20.01,
-        "sp500_1y": 6.61,
-        "dow_1y": 6.7,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 12,
-      "peer_rank": 1,
-      "peer_group_size": 8
     },
     {
       "ticker": "IVV",
@@ -1568,9 +1568,9 @@
         "performance": 45.4,
         "risk": 82.3,
         "cost": 72.6,
-        "liquidity": 74.5,
+        "liquidity": 76.7,
         "quality": 100.0,
-        "overall": 71.2
+        "overall": 71.5
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -1730,6 +1730,273 @@
       "peer_group_size": 11
     },
     {
+      "ticker": "SCHF",
+      "name": "Schwab International Equity",
+      "category": "international",
+      "peer_group": "equity_international",
+      "sector": "International",
+      "confidence": 1.0,
+      "issuer": "Schwab",
+      "expense_ratio": 0.06,
+      "price": 28.16,
+      "aum": 67173683200,
+      "avg_dollar_volume": 217601620.0,
+      "bid_ask_spread_pct": 0.0708,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 27.93,
+      "premium_discount_pct": 1.0741,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.59,
+        "3m": 4.65,
+        "6m": 10.91,
+        "1y": 26.85,
+        "3y": null
+      },
+      "index_symbol": "VEA",
+      "index_returns": {
+        "1m": 2.79,
+        "3m": 4.35,
+        "6m": 10.32,
+        "1y": 26.79,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.2,
+        "3m": 0.3,
+        "6m": 0.59,
+        "1y": 0.06,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.06,
+      "tracking_error_pct": 3.228,
+      "total_cost_of_ownership_pct": 1.1341,
+      "max_drawdown": -14.51,
+      "sharpe_ratio": 1.03,
+      "sortino_ratio": 1.52,
+      "beta": 0.79,
+      "sector_weights": {
+        "realestate": 0.0209,
+        "consumer_cyclical": 0.0755,
+        "basic_materials": 0.0686,
+        "consumer_defensive": 0.0606,
+        "technology": 0.1451,
+        "communication_services": 0.035,
+        "financial_services": 0.2605,
+        "utilities": 0.0327,
+        "industrials": 0.178,
+        "energy": 0.0507,
+        "healthcare": 0.0724
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "005930.KS",
+          "weight": 0.022751998,
+          "name": "Samsung Electronics Co Ltd"
+        },
+        {
+          "ticker": "ASML.AS",
+          "weight": 0.0218699,
+          "name": "ASML Holding NV"
+        },
+        {
+          "ticker": "000660.KS",
+          "weight": 0.0174548,
+          "name": "SK hynix Inc"
+        },
+        {
+          "ticker": "HSBA.L",
+          "weight": 0.0125064,
+          "name": "HSBC Holdings PLC"
+        },
+        {
+          "ticker": "RY",
+          "weight": 0.010059101,
+          "name": "Royal Bank of Canada"
+        },
+        {
+          "ticker": "NOVN.SW",
+          "weight": 0.0100419,
+          "name": "Novartis AG Registered Shares"
+        },
+        {
+          "ticker": "NESN.SW",
+          "weight": 0.0089948,
+          "name": "Nestle SA"
+        },
+        {
+          "ticker": "AZN.L",
+          "weight": 0.00876,
+          "name": "AstraZeneca PLC"
+        },
+        {
+          "ticker": "SHEL.L",
+          "weight": 0.008556699,
+          "name": "Shell PLC"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 98,
+      "scores": {
+        "performance": 70.8,
+        "risk": 80.8,
+        "cost": 58.7,
+        "liquidity": 43.7,
+        "quality": 98,
+        "overall": 70.4
+      },
+      "ranked_against": "equity_international",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.12,
+        "dow_1m": -0.22,
+        "sp500_3m": -0.89,
+        "dow_3m": -4.02,
+        "sp500_6m": -3.03,
+        "dow_6m": 0.69,
+        "sp500_1y": 4.83,
+        "dow_1y": 4.92,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 15,
+      "peer_rank": 2,
+      "peer_group_size": 13
+    },
+    {
+      "ticker": "XLI",
+      "name": "Industrial Select Sector",
+      "category": "sector",
+      "peer_group": "equity_sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.09,
+      "price": 185.27,
+      "aum": 32876894208,
+      "avg_dollar_volume": 1255081397.0,
+      "bid_ask_spread_pct": 0.1189,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 184.7858,
+      "premium_discount_pct": 0.2133,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.3,
+        "3m": 6.48,
+        "6m": 10.04,
+        "1y": 22.76,
+        "3y": null
+      },
+      "index_symbol": "VIS",
+      "index_returns": {
+        "1m": 2.17,
+        "3m": 5.02,
+        "6m": 9.59,
+        "1y": 23.81,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.13,
+        "3m": 1.46,
+        "6m": 0.45,
+        "1y": -1.05,
+        "3y": null
+      },
+      "tracking_difference_1y": -1.05,
+      "tracking_error_pct": 2.687,
+      "total_cost_of_ownership_pct": 1.2633,
+      "max_drawdown": -19.15,
+      "sharpe_ratio": 1.14,
+      "sortino_ratio": 1.71,
+      "beta": 0.89,
+      "sector_weights": {
+        "consumer_cyclical": 0.002,
+        "technology": 0.0605,
+        "industrials": 0.9375
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "GE",
+          "weight": 0.0672661,
+          "name": "GE Aerospace"
+        },
+        {
+          "ticker": "CAT",
+          "weight": 0.0671985,
+          "name": "Caterpillar Inc"
+        },
+        {
+          "ticker": "RTX",
+          "weight": 0.051897403,
+          "name": "RTX Corp"
+        },
+        {
+          "ticker": "GEV",
+          "weight": 0.047648102,
+          "name": "GE Vernova Inc"
+        },
+        {
+          "ticker": "UNP",
+          "weight": 0.0310582,
+          "name": "Union Pacific Corp"
+        },
+        {
+          "ticker": "BA",
+          "weight": 0.030510599,
+          "name": "Boeing Co"
+        },
+        {
+          "ticker": "ETN",
+          "weight": 0.028870398,
+          "name": "Eaton Corp PLC"
+        },
+        {
+          "ticker": "DE",
+          "weight": 0.026660299,
+          "name": "Deere & Co"
+        },
+        {
+          "ticker": "UBER",
+          "weight": 0.0256481,
+          "name": "Uber Technologies Inc"
+        },
+        {
+          "ticker": "PH",
+          "weight": 0.022049401,
+          "name": "Parker Hannifin Corp"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 67.7,
+        "risk": 72.2,
+        "cost": 49.9,
+        "liquidity": 71.0,
+        "quality": 100.0,
+        "overall": 70.3
+      },
+      "ranked_against": "equity_sector",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.41,
+        "dow_1m": -0.51,
+        "sp500_3m": 0.94,
+        "dow_3m": -2.19,
+        "sp500_6m": -3.9,
+        "dow_6m": -0.18,
+        "sp500_1y": 0.74,
+        "dow_1y": 0.83,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 16,
+      "peer_rank": 3,
+      "peer_group_size": 25
+    },
+    {
       "ticker": "SOXX",
       "name": "iShares Semiconductor",
       "category": "thematic",
@@ -1855,144 +2122,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 15,
+      "overall_rank": 17,
       "peer_rank": 3,
       "peer_group_size": 16
-    },
-    {
-      "ticker": "SCHF",
-      "name": "Schwab International Equity",
-      "category": "international",
-      "peer_group": "equity_international",
-      "sector": "International",
-      "confidence": 1.0,
-      "issuer": "Schwab",
-      "expense_ratio": 0.06,
-      "price": 28.16,
-      "aum": 67173683200,
-      "avg_dollar_volume": 217601620.0,
-      "bid_ask_spread_pct": 0.0708,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 27.93,
-      "premium_discount_pct": 1.0741,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.59,
-        "3m": 4.65,
-        "6m": 10.91,
-        "1y": 26.85,
-        "3y": null
-      },
-      "index_symbol": "VEA",
-      "index_returns": {
-        "1m": 2.79,
-        "3m": 4.35,
-        "6m": 10.32,
-        "1y": 26.79,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.2,
-        "3m": 0.3,
-        "6m": 0.59,
-        "1y": 0.06,
-        "3y": null
-      },
-      "tracking_difference_1y": 0.06,
-      "tracking_error_pct": 3.228,
-      "total_cost_of_ownership_pct": 1.1341,
-      "max_drawdown": -14.51,
-      "sharpe_ratio": 1.03,
-      "sortino_ratio": 1.52,
-      "beta": 0.79,
-      "sector_weights": {
-        "realestate": 0.0209,
-        "consumer_cyclical": 0.0755,
-        "basic_materials": 0.0686,
-        "consumer_defensive": 0.0606,
-        "technology": 0.1451,
-        "communication_services": 0.035,
-        "financial_services": 0.2605,
-        "utilities": 0.0327,
-        "industrials": 0.178,
-        "energy": 0.0507,
-        "healthcare": 0.0724
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "005930.KS",
-          "weight": 0.022751998,
-          "name": "Samsung Electronics Co Ltd"
-        },
-        {
-          "ticker": "ASML.AS",
-          "weight": 0.0218699,
-          "name": "ASML Holding NV"
-        },
-        {
-          "ticker": "000660.KS",
-          "weight": 0.0174548,
-          "name": "SK hynix Inc"
-        },
-        {
-          "ticker": "HSBA.L",
-          "weight": 0.0125064,
-          "name": "HSBC Holdings PLC"
-        },
-        {
-          "ticker": "RY",
-          "weight": 0.010059101,
-          "name": "Royal Bank of Canada"
-        },
-        {
-          "ticker": "NOVN.SW",
-          "weight": 0.0100419,
-          "name": "Novartis AG Registered Shares"
-        },
-        {
-          "ticker": "NESN.SW",
-          "weight": 0.0089948,
-          "name": "Nestle SA"
-        },
-        {
-          "ticker": "AZN.L",
-          "weight": 0.00876,
-          "name": "AstraZeneca PLC"
-        },
-        {
-          "ticker": "SHEL.L",
-          "weight": 0.008556699,
-          "name": "Shell PLC"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 98,
-      "scores": {
-        "performance": 70.8,
-        "risk": 80.8,
-        "cost": 58.7,
-        "liquidity": 40.7,
-        "quality": 98,
-        "overall": 69.9
-      },
-      "ranked_against": "equity_international",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.12,
-        "dow_1m": -0.22,
-        "sp500_3m": -0.89,
-        "dow_3m": -4.02,
-        "sp500_6m": -3.03,
-        "dow_6m": 0.69,
-        "sp500_1y": 4.83,
-        "dow_1y": 4.92,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 16,
-      "peer_rank": 2,
-      "peer_group_size": 13
     },
     {
       "ticker": "VTV",
@@ -2112,9 +2244,9 @@
         "performance": 55.6,
         "risk": 77.1,
         "cost": 51.9,
-        "liquidity": 77.3,
+        "liquidity": 77.1,
         "quality": 100.0,
-        "overall": 69.6
+        "overall": 69.5
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -2130,7 +2262,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 17,
+      "overall_rank": 18,
       "peer_rank": 4,
       "peer_group_size": 28
     },
@@ -2216,141 +2348,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 18,
-      "peer_rank": 3,
-      "peer_group_size": 18
-    },
-    {
-      "ticker": "XLI",
-      "name": "Industrial Select Sector",
-      "category": "sector",
-      "peer_group": "equity_sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.09,
-      "price": 185.27,
-      "aum": 32876894208,
-      "avg_dollar_volume": 1255081397.0,
-      "bid_ask_spread_pct": 0.1189,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 184.7858,
-      "premium_discount_pct": 0.2133,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.3,
-        "3m": 6.48,
-        "6m": 10.04,
-        "1y": 22.76,
-        "3y": null
-      },
-      "index_symbol": "VIS",
-      "index_returns": {
-        "1m": 2.17,
-        "3m": 5.02,
-        "6m": 9.59,
-        "1y": 23.81,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.13,
-        "3m": 1.46,
-        "6m": 0.45,
-        "1y": -1.05,
-        "3y": null
-      },
-      "tracking_difference_1y": -1.05,
-      "tracking_error_pct": 2.687,
-      "total_cost_of_ownership_pct": 1.2633,
-      "max_drawdown": -19.15,
-      "sharpe_ratio": 1.14,
-      "sortino_ratio": 1.71,
-      "beta": 0.89,
-      "sector_weights": {
-        "consumer_cyclical": 0.002,
-        "technology": 0.0605,
-        "industrials": 0.9375
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "GE",
-          "weight": 0.0672661,
-          "name": "GE Aerospace"
-        },
-        {
-          "ticker": "CAT",
-          "weight": 0.0671985,
-          "name": "Caterpillar Inc"
-        },
-        {
-          "ticker": "RTX",
-          "weight": 0.051897403,
-          "name": "RTX Corp"
-        },
-        {
-          "ticker": "GEV",
-          "weight": 0.047648102,
-          "name": "GE Vernova Inc"
-        },
-        {
-          "ticker": "UNP",
-          "weight": 0.0310582,
-          "name": "Union Pacific Corp"
-        },
-        {
-          "ticker": "BA",
-          "weight": 0.030510599,
-          "name": "Boeing Co"
-        },
-        {
-          "ticker": "ETN",
-          "weight": 0.028870398,
-          "name": "Eaton Corp PLC"
-        },
-        {
-          "ticker": "DE",
-          "weight": 0.026660299,
-          "name": "Deere & Co"
-        },
-        {
-          "ticker": "UBER",
-          "weight": 0.0256481,
-          "name": "Uber Technologies Inc"
-        },
-        {
-          "ticker": "PH",
-          "weight": 0.022049401,
-          "name": "Parker Hannifin Corp"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 67.7,
-        "risk": 72.2,
-        "cost": 49.9,
-        "liquidity": 64.9,
-        "quality": 100.0,
-        "overall": 69.3
-      },
-      "ranked_against": "equity_sector",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.41,
-        "dow_1m": -0.51,
-        "sp500_3m": 0.94,
-        "dow_3m": -2.19,
-        "sp500_6m": -3.9,
-        "dow_6m": -0.18,
-        "sp500_1y": 0.74,
-        "dow_1y": 0.83,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
       "overall_rank": 19,
       "peer_rank": 3,
-      "peer_group_size": 25
+      "peer_group_size": 18
     },
     {
       "ticker": "VYM",
@@ -2493,6 +2493,146 @@
       "peer_group_size": 11
     },
     {
+      "ticker": "SPY",
+      "name": "S&P 500 (State Street)",
+      "category": "broad_market",
+      "peer_group": "equity_broad",
+      "sector": "Broad Market",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.0945,
+      "price": 772.1,
+      "aum": 795306885120,
+      "avg_dollar_volume": 38196047534.0,
+      "bid_ask_spread_pct": 0.0026,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 768.5823,
+      "premium_discount_pct": 0.6086,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.71,
+        "3m": 5.54,
+        "6m": 13.94,
+        "1y": 22.02,
+        "3y": null
+      },
+      "index_symbol": "IVV",
+      "index_returns": {
+        "1m": 2.74,
+        "3m": 5.55,
+        "6m": 13.99,
+        "1y": 22.01,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.03,
+        "3m": -0.01,
+        "6m": -0.05,
+        "1y": 0.01,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.01,
+      "tracking_error_pct": 1.253,
+      "total_cost_of_ownership_pct": 0.7031,
+      "max_drawdown": -19.0,
+      "sharpe_ratio": 1.25,
+      "sortino_ratio": 1.85,
+      "beta": 1.0,
+      "sector_weights": {
+        "realestate": 0.0188,
+        "consumer_cyclical": 0.0957,
+        "basic_materials": 0.0162,
+        "consumer_defensive": 0.0461,
+        "technology": 0.374,
+        "communication_services": 0.0991,
+        "financial_services": 0.1224,
+        "utilities": 0.0215,
+        "industrials": 0.0816,
+        "energy": 0.0336,
+        "healthcare": 0.091
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "NVDA",
+          "weight": 0.0754943,
+          "name": "NVIDIA Corp"
+        },
+        {
+          "ticker": "AAPL",
+          "weight": 0.070445,
+          "name": "Apple Inc"
+        },
+        {
+          "ticker": "MSFT",
+          "weight": 0.053599,
+          "name": "Microsoft Corp"
+        },
+        {
+          "ticker": "AMZN",
+          "weight": 0.0412761,
+          "name": "Amazon.com Inc"
+        },
+        {
+          "ticker": "GOOGL",
+          "weight": 0.032421898,
+          "name": "Alphabet Inc Class A"
+        },
+        {
+          "ticker": "AVGO",
+          "weight": 0.0286201,
+          "name": "Broadcom Inc"
+        },
+        {
+          "ticker": "GOOG",
+          "weight": 0.026171401,
+          "name": "Alphabet Inc Class C"
+        },
+        {
+          "ticker": "META",
+          "weight": 0.0189809,
+          "name": "Meta Platforms Inc Class A"
+        },
+        {
+          "ticker": "JPM",
+          "weight": 0.0146384,
+          "name": "JPMorgan Chase & Co"
+        },
+        {
+          "ticker": "BRK-B",
+          "weight": 0.0145635,
+          "name": "Berkshire Hathaway Inc Class B"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 42.1,
+        "risk": 73.7,
+        "cost": 53.1,
+        "liquidity": 96.3,
+        "quality": 100.0,
+        "overall": 68.1
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 0.0,
+        "dow_1m": -0.1,
+        "sp500_3m": 0.0,
+        "dow_3m": -3.13,
+        "sp500_6m": 0.0,
+        "dow_6m": 3.72,
+        "sp500_1y": 0.0,
+        "dow_1y": 0.09,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 21,
+      "peer_rank": 5,
+      "peer_group_size": 28
+    },
+    {
       "ticker": "BND",
       "name": "Total Bond Market",
       "category": "bonds",
@@ -2565,7 +2705,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 21,
+      "overall_rank": 22,
       "peer_rank": 4,
       "peer_group_size": 18
     },
@@ -2703,7 +2843,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 22,
+      "overall_rank": 23,
       "peer_rank": 5,
       "peer_group_size": 11
     },
@@ -2833,145 +2973,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 23,
-      "peer_rank": 4,
-      "peer_group_size": 16
-    },
-    {
-      "ticker": "VGT",
-      "name": "Vanguard Information Technology",
-      "category": "sector",
-      "peer_group": "equity_sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.09,
-      "price": 121.06,
-      "aum": 160616972288,
-      "avg_dollar_volume": 524023300.0,
-      "bid_ask_spread_pct": 0.107,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 119.62,
-      "premium_discount_pct": 1.5298,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.85,
-        "3m": 10.56,
-        "6m": 36.69,
-        "1y": 39.98,
-        "3y": null
-      },
-      "index_symbol": "XLK",
-      "index_returns": {
-        "1m": 1.09,
-        "3m": 10.42,
-        "6m": 38.15,
-        "1y": 42.46,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 1.76,
-        "3m": 0.14,
-        "6m": -1.46,
-        "1y": -2.48,
-        "3y": null
-      },
-      "tracking_difference_1y": -2.48,
-      "tracking_error_pct": 3.232,
-      "total_cost_of_ownership_pct": 4.0098,
-      "max_drawdown": -27.41,
-      "sharpe_ratio": 1.21,
-      "sortino_ratio": 1.77,
-      "beta": 1.46,
-      "sector_weights": {
-        "consumer_cyclical": 0.0008,
-        "basic_materials": 0.0002,
-        "technology": 0.9859,
-        "communication_services": 0.0049,
-        "financial_services": 0.0046,
-        "industrials": 0.0036,
-        "healthcare": 0.0001
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "NVDA",
-          "weight": 0.1609542,
-          "name": "NVIDIA Corp"
-        },
-        {
-          "ticker": "AAPL",
-          "weight": 0.1432527,
-          "name": "Apple Inc"
-        },
-        {
-          "ticker": "MSFT",
-          "weight": 0.0828039,
-          "name": "Microsoft Corp"
-        },
-        {
-          "ticker": "MU",
-          "weight": 0.050421,
-          "name": "Micron Technology Inc"
-        },
-        {
-          "ticker": "AVGO",
-          "weight": 0.038423702,
-          "name": "Broadcom Inc"
-        },
-        {
-          "ticker": "AMD",
-          "weight": 0.036467,
-          "name": "Advanced Micro Devices Inc"
-        },
-        {
-          "ticker": "INTC",
-          "weight": 0.024081599,
-          "name": "Intel Corp"
-        },
-        {
-          "ticker": "AMAT",
-          "weight": 0.022637501,
-          "name": "Applied Materials Inc"
-        },
-        {
-          "ticker": "LRCX",
-          "weight": 0.0214311,
-          "name": "Lam Research Corp"
-        },
-        {
-          "ticker": "CSCO",
-          "weight": 0.0182365,
-          "name": "Cisco Systems Inc"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 86.5,
-        "risk": 61.0,
-        "cost": 25.2,
-        "liquidity": 65.2,
-        "quality": 100.0,
-        "overall": 67.4
-      },
-      "ranked_against": "equity_sector",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 0.14,
-        "dow_1m": 0.04,
-        "sp500_3m": 5.02,
-        "dow_3m": 1.89,
-        "sp500_6m": 22.75,
-        "dow_6m": 26.47,
-        "sp500_1y": 17.96,
-        "dow_1y": 18.05,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
       "overall_rank": 24,
       "peer_rank": 4,
-      "peer_group_size": 25
+      "peer_group_size": 16
     },
     {
       "ticker": "AGG",
@@ -3193,148 +3197,144 @@
         "dow_3y": null
       },
       "overall_rank": 26,
-      "peer_rank": 5,
+      "peer_rank": 6,
       "peer_group_size": 28
     },
     {
-      "ticker": "SPY",
-      "name": "S&P 500 (State Street)",
-      "category": "broad_market",
-      "peer_group": "equity_broad",
-      "sector": "Broad Market",
+      "ticker": "VGT",
+      "name": "Vanguard Information Technology",
+      "category": "sector",
+      "peer_group": "equity_sector",
+      "sector": "Sector",
       "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.0945,
-      "price": 772.1,
-      "aum": 795306885120,
-      "avg_dollar_volume": 38196047534.0,
-      "bid_ask_spread_pct": 0.0504,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.09,
+      "price": 121.06,
+      "aum": 160616972288,
+      "avg_dollar_volume": 524023300.0,
+      "bid_ask_spread_pct": 0.255,
       "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 768.5823,
-      "premium_discount_pct": 0.6086,
+      "nav": 119.62,
+      "premium_discount_pct": 1.5298,
       "premium_discount_source": "quote NAV vs market price",
       "returns": {
-        "1m": 2.71,
-        "3m": 5.54,
-        "6m": 13.94,
-        "1y": 22.02,
+        "1m": 2.85,
+        "3m": 10.56,
+        "6m": 36.69,
+        "1y": 39.98,
         "3y": null
       },
-      "index_symbol": "IVV",
+      "index_symbol": "XLK",
       "index_returns": {
-        "1m": 2.74,
-        "3m": 5.55,
-        "6m": 13.99,
-        "1y": 22.01,
+        "1m": 1.09,
+        "3m": 10.42,
+        "6m": 38.15,
+        "1y": 42.46,
         "3y": null
       },
       "tracking_difference": {
-        "1m": -0.03,
-        "3m": -0.01,
-        "6m": -0.05,
-        "1y": 0.01,
+        "1m": 1.76,
+        "3m": 0.14,
+        "6m": -1.46,
+        "1y": -2.48,
         "3y": null
       },
-      "tracking_difference_1y": 0.01,
-      "tracking_error_pct": 1.253,
-      "total_cost_of_ownership_pct": 0.7031,
-      "max_drawdown": -19.0,
-      "sharpe_ratio": 1.25,
-      "sortino_ratio": 1.85,
-      "beta": 1.0,
+      "tracking_difference_1y": -2.48,
+      "tracking_error_pct": 3.232,
+      "total_cost_of_ownership_pct": 4.0098,
+      "max_drawdown": -27.41,
+      "sharpe_ratio": 1.21,
+      "sortino_ratio": 1.77,
+      "beta": 1.46,
       "sector_weights": {
-        "realestate": 0.0188,
-        "consumer_cyclical": 0.0957,
-        "basic_materials": 0.0162,
-        "consumer_defensive": 0.0461,
-        "technology": 0.374,
-        "communication_services": 0.0991,
-        "financial_services": 0.1224,
-        "utilities": 0.0215,
-        "industrials": 0.0816,
-        "energy": 0.0336,
-        "healthcare": 0.091
+        "consumer_cyclical": 0.0008,
+        "basic_materials": 0.0002,
+        "technology": 0.9859,
+        "communication_services": 0.0049,
+        "financial_services": 0.0046,
+        "industrials": 0.0036,
+        "healthcare": 0.0001
       },
       "sector_lookthrough_available": true,
       "top_holdings": [
         {
           "ticker": "NVDA",
-          "weight": 0.0754943,
+          "weight": 0.1609542,
           "name": "NVIDIA Corp"
         },
         {
           "ticker": "AAPL",
-          "weight": 0.070445,
+          "weight": 0.1432527,
           "name": "Apple Inc"
         },
         {
           "ticker": "MSFT",
-          "weight": 0.053599,
+          "weight": 0.0828039,
           "name": "Microsoft Corp"
         },
         {
-          "ticker": "AMZN",
-          "weight": 0.0412761,
-          "name": "Amazon.com Inc"
-        },
-        {
-          "ticker": "GOOGL",
-          "weight": 0.032421898,
-          "name": "Alphabet Inc Class A"
+          "ticker": "MU",
+          "weight": 0.050421,
+          "name": "Micron Technology Inc"
         },
         {
           "ticker": "AVGO",
-          "weight": 0.0286201,
+          "weight": 0.038423702,
           "name": "Broadcom Inc"
         },
         {
-          "ticker": "GOOG",
-          "weight": 0.026171401,
-          "name": "Alphabet Inc Class C"
+          "ticker": "AMD",
+          "weight": 0.036467,
+          "name": "Advanced Micro Devices Inc"
         },
         {
-          "ticker": "META",
-          "weight": 0.0189809,
-          "name": "Meta Platforms Inc Class A"
+          "ticker": "INTC",
+          "weight": 0.024081599,
+          "name": "Intel Corp"
         },
         {
-          "ticker": "JPM",
-          "weight": 0.0146384,
-          "name": "JPMorgan Chase & Co"
+          "ticker": "AMAT",
+          "weight": 0.022637501,
+          "name": "Applied Materials Inc"
         },
         {
-          "ticker": "BRK-B",
-          "weight": 0.0145635,
-          "name": "Berkshire Hathaway Inc Class B"
+          "ticker": "LRCX",
+          "weight": 0.0214311,
+          "name": "Lam Research Corp"
+        },
+        {
+          "ticker": "CSCO",
+          "weight": 0.0182365,
+          "name": "Cisco Systems Inc"
         }
       ],
       "position_lookthrough_available": true,
       "quality_score": 100.0,
       "scores": {
-        "performance": 42.1,
-        "risk": 73.7,
-        "cost": 53.1,
-        "liquidity": 86.6,
+        "performance": 86.5,
+        "risk": 61.0,
+        "cost": 25.2,
+        "liquidity": 62.1,
         "quality": 100.0,
-        "overall": 66.6
+        "overall": 66.9
       },
-      "ranked_against": "equity_broad",
+      "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
       "vs_benchmarks": {
-        "sp500_1m": 0.0,
-        "dow_1m": -0.1,
-        "sp500_3m": 0.0,
-        "dow_3m": -3.13,
-        "sp500_6m": 0.0,
-        "dow_6m": 3.72,
-        "sp500_1y": 0.0,
-        "dow_1y": 0.09,
+        "sp500_1m": 0.14,
+        "dow_1m": 0.04,
+        "sp500_3m": 5.02,
+        "dow_3m": 1.89,
+        "sp500_6m": 22.75,
+        "dow_6m": 26.47,
+        "sp500_1y": 17.96,
+        "dow_1y": 18.05,
         "sp500_3y": null,
         "dow_3y": null
       },
       "overall_rank": 27,
-      "peer_rank": 6,
-      "peer_group_size": 28
+      "peer_rank": 4,
+      "peer_group_size": 25
     },
     {
       "ticker": "IVW",
@@ -3453,9 +3453,9 @@
         "performance": 70.4,
         "risk": 69.7,
         "cost": 57.3,
-        "liquidity": 39.5,
+        "liquidity": 40.5,
         "quality": 100.0,
-        "overall": 66.6
+        "overall": 66.8
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -3793,9 +3793,9 @@
         "performance": 65.6,
         "risk": 59.8,
         "cost": 66.4,
-        "liquidity": 51.9,
+        "liquidity": 53.4,
         "quality": 100.0,
-        "overall": 66.1
+        "overall": 66.3
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -3933,9 +3933,9 @@
         "performance": 53.7,
         "risk": 75.9,
         "cost": 70.9,
-        "liquidity": 40.1,
+        "liquidity": 42.3,
         "quality": 98,
-        "overall": 65.8
+        "overall": 66.1
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -4063,9 +4063,9 @@
         "performance": 65.6,
         "risk": 70.4,
         "cost": 63.6,
-        "liquidity": 34.0,
+        "liquidity": 37.0,
         "quality": 100.0,
-        "overall": 65.6
+        "overall": 66.1
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -4097,7 +4097,7 @@
       "price": 85.01,
       "aum": 95865159680,
       "avg_dollar_volume": 231087913.0,
-      "bid_ask_spread_pct": 0.2461,
+      "bid_ask_spread_pct": 0.5045,
       "bid_ask_spread_source": "quoted_snapshot",
       "nav": 84.3,
       "premium_discount_pct": 1.0913,
@@ -4203,9 +4203,9 @@
         "performance": 47.9,
         "risk": 72.8,
         "cost": 75.7,
-        "liquidity": 42.9,
+        "liquidity": 46.0,
         "quality": 100.0,
-        "overall": 64.8
+        "overall": 65.3
       },
       "ranked_against": "equity_international",
       "cross_asset_class_rank": false,
@@ -4343,7 +4343,7 @@
         "performance": 56.5,
         "risk": 57.1,
         "cost": 72.1,
-        "liquidity": 57.7,
+        "liquidity": 57.6,
         "quality": 100.0,
         "overall": 64.7
       },
@@ -4364,83 +4364,6 @@
       "overall_rank": 35,
       "peer_rank": 9,
       "peer_group_size": 28
-    },
-    {
-      "ticker": "VCIT",
-      "name": "Vanguard Intermediate-Term Corporate Bond",
-      "category": "bonds",
-      "peer_group": "fixed_income",
-      "sector": "Bonds",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.03,
-      "price": 81.38,
-      "aum": 69771010048,
-      "avg_dollar_volume": 655401170.0,
-      "bid_ask_spread_pct": 0.0736,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 81.26,
-      "premium_discount_pct": 0.1969,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": -0.67,
-        "3m": -1.48,
-        "6m": -2.94,
-        "1y": -2.15,
-        "3y": null
-      },
-      "index_symbol": "LQD",
-      "index_returns": {
-        "1m": -1.14,
-        "3m": -2.07,
-        "6m": -3.63,
-        "1y": -3.08,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.47,
-        "3m": 0.59,
-        "6m": 0.69,
-        "1y": 0.93,
-        "3y": null
-      },
-      "tracking_difference_1y": 0.93,
-      "tracking_error_pct": 2.242,
-      "total_cost_of_ownership_pct": 0.2269,
-      "max_drawdown": -5.93,
-      "sharpe_ratio": 0.27,
-      "sortino_ratio": 0.38,
-      "beta": 0.12,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 33.8,
-        "risk": 65.2,
-        "cost": 90.6,
-        "liquidity": 61.3,
-        "quality": 100.0,
-        "overall": 64.3
-      },
-      "ranked_against": "fixed_income",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -3.38,
-        "dow_1m": -3.48,
-        "sp500_3m": -7.02,
-        "dow_3m": -10.15,
-        "sp500_6m": -16.88,
-        "dow_6m": -13.16,
-        "sp500_1y": -24.17,
-        "dow_1y": -24.08,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 36,
-      "peer_rank": 6,
-      "peer_group_size": 18
     },
     {
       "ticker": "VIS",
@@ -4557,9 +4480,9 @@
         "performance": 62.5,
         "risk": 65.8,
         "cost": 67.6,
-        "liquidity": 33.6,
+        "liquidity": 36.6,
         "quality": 100.0,
-        "overall": 64.1
+        "overall": 64.6
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -4575,7 +4498,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 37,
+      "overall_rank": 36,
       "peer_rank": 8,
       "peer_group_size": 25
     },
@@ -4634,9 +4557,9 @@
         "performance": 57.5,
         "risk": 56.6,
         "cost": 36.0,
-        "liquidity": 86.7,
+        "liquidity": 93.3,
         "quality": 100.0,
-        "overall": 63.4
+        "overall": 64.4
       },
       "ranked_against": "crypto",
       "cross_asset_class_rank": false,
@@ -4652,9 +4575,86 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 38,
+      "overall_rank": 37,
       "peer_rank": 2,
       "peer_group_size": 6
+    },
+    {
+      "ticker": "VCIT",
+      "name": "Vanguard Intermediate-Term Corporate Bond",
+      "category": "bonds",
+      "peer_group": "fixed_income",
+      "sector": "Bonds",
+      "confidence": 1.0,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.03,
+      "price": 81.38,
+      "aum": 69771010048,
+      "avg_dollar_volume": 655401170.0,
+      "bid_ask_spread_pct": 0.0736,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 81.26,
+      "premium_discount_pct": 0.1969,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": -0.67,
+        "3m": -1.48,
+        "6m": -2.94,
+        "1y": -2.15,
+        "3y": null
+      },
+      "index_symbol": "LQD",
+      "index_returns": {
+        "1m": -1.14,
+        "3m": -2.07,
+        "6m": -3.63,
+        "1y": -3.08,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.47,
+        "3m": 0.59,
+        "6m": 0.69,
+        "1y": 0.93,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.93,
+      "tracking_error_pct": 2.242,
+      "total_cost_of_ownership_pct": 0.2269,
+      "max_drawdown": -5.93,
+      "sharpe_ratio": 0.27,
+      "sortino_ratio": 0.38,
+      "beta": 0.12,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 33.8,
+        "risk": 65.2,
+        "cost": 90.6,
+        "liquidity": 61.3,
+        "quality": 100.0,
+        "overall": 64.3
+      },
+      "ranked_against": "fixed_income",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -3.38,
+        "dow_1m": -3.48,
+        "sp500_3m": -7.02,
+        "dow_3m": -10.15,
+        "sp500_6m": -16.88,
+        "dow_6m": -13.16,
+        "sp500_1y": -24.17,
+        "dow_1y": -24.08,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 38,
+      "peer_rank": 6,
+      "peer_group_size": 18
     },
     {
       "ticker": "PAVE",
@@ -4895,9 +4895,9 @@
         "performance": 58.3,
         "risk": 65.2,
         "cost": 41.3,
-        "liquidity": 59.3,
+        "liquidity": 62.4,
         "quality": 100.0,
-        "overall": 62.4
+        "overall": 62.9
       },
       "ranked_against": "equity_international",
       "cross_asset_class_rank": false,
@@ -4918,6 +4918,125 @@
       "peer_group_size": 13
     },
     {
+      "ticker": "HACK",
+      "name": "Amplify Cybersecurity",
+      "category": "thematic",
+      "peer_group": "equity_thematic",
+      "sector": "Thematic",
+      "confidence": 1.0,
+      "issuer": "Amplify",
+      "expense_ratio": 0.6,
+      "price": 114.94,
+      "aum": 2690588928,
+      "avg_dollar_volume": 27627289.0,
+      "bid_ask_spread_pct": 1.2639,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 112.9968,
+      "premium_discount_pct": 2.1445,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.74,
+        "3m": 35.69,
+        "6m": 57.71,
+        "1y": 35.61,
+        "3y": null
+      },
+      "index_symbol": null,
+      "index_returns": null,
+      "tracking_difference": null,
+      "tracking_difference_1y": null,
+      "tracking_error_pct": null,
+      "total_cost_of_ownership_pct": 2.7445,
+      "max_drawdown": -21.9,
+      "sharpe_ratio": 1.25,
+      "sortino_ratio": 1.84,
+      "beta": 1.09,
+      "sector_weights": {
+        "technology": 0.9025,
+        "industrials": 0.0975
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "PANW",
+          "weight": 0.062805,
+          "name": "Palo Alto Networks Inc"
+        },
+        {
+          "ticker": "AVGO",
+          "weight": 0.0607034,
+          "name": "Broadcom Inc"
+        },
+        {
+          "ticker": "CSCO",
+          "weight": 0.0560716,
+          "name": "Cisco Systems Inc"
+        },
+        {
+          "ticker": "FTNT",
+          "weight": 0.0553869,
+          "name": "Fortinet Inc"
+        },
+        {
+          "ticker": "CRWD",
+          "weight": 0.0543232,
+          "name": "CrowdStrike Holdings Inc Class A"
+        },
+        {
+          "ticker": "NET",
+          "weight": 0.053993702,
+          "name": "Cloudflare Inc"
+        },
+        {
+          "ticker": "GD",
+          "weight": 0.0522776,
+          "name": "General Dynamics Corp"
+        },
+        {
+          "ticker": "OKTA",
+          "weight": 0.045275103,
+          "name": "Okta Inc Class A"
+        },
+        {
+          "ticker": "NOC",
+          "weight": 0.0449158,
+          "name": "Northrop Grumman Corp"
+        },
+        {
+          "ticker": "QLYS",
+          "weight": 0.0427312,
+          "name": "Qualys Inc"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 60,
+      "scores": {
+        "performance": 78.3,
+        "risk": 83.5,
+        "cost": 42.2,
+        "liquidity": 23.9,
+        "quality": 60,
+        "overall": 62.7
+      },
+      "ranked_against": "equity_thematic",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 0.03,
+        "dow_1m": -0.07,
+        "sp500_3m": 30.15,
+        "dow_3m": 27.02,
+        "sp500_6m": 43.77,
+        "dow_6m": 47.49,
+        "sp500_1y": 13.59,
+        "dow_1y": 13.68,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 41,
+      "peer_rank": 6,
+      "peer_group_size": 16
+    },
+    {
       "ticker": "XLV",
       "name": "Health Care Select Sector",
       "category": "sector",
@@ -4929,7 +5048,7 @@
       "price": 164.99,
       "aum": 41749876736,
       "avg_dollar_volume": 1738531542.0,
-      "bid_ask_spread_pct": 0.0784,
+      "bid_ask_spread_pct": 0.199,
       "bid_ask_spread_source": "quoted_snapshot",
       "nav": 164.4177,
       "premium_discount_pct": 0.7677,
@@ -5043,7 +5162,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 41,
+      "overall_rank": 42,
       "peer_rank": 9,
       "peer_group_size": 25
     },
@@ -5120,128 +5239,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 42,
+      "overall_rank": 43,
       "peer_rank": 7,
       "peer_group_size": 18
-    },
-    {
-      "ticker": "HACK",
-      "name": "Amplify Cybersecurity",
-      "category": "thematic",
-      "peer_group": "equity_thematic",
-      "sector": "Thematic",
-      "confidence": 1.0,
-      "issuer": "Amplify",
-      "expense_ratio": 0.6,
-      "price": 114.94,
-      "aum": 2690588928,
-      "avg_dollar_volume": 27627289.0,
-      "bid_ask_spread_pct": 1.6502,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 112.9968,
-      "premium_discount_pct": 2.1445,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.74,
-        "3m": 35.69,
-        "6m": 57.71,
-        "1y": 35.61,
-        "3y": null
-      },
-      "index_symbol": null,
-      "index_returns": null,
-      "tracking_difference": null,
-      "tracking_difference_1y": null,
-      "tracking_error_pct": null,
-      "total_cost_of_ownership_pct": 2.7445,
-      "max_drawdown": -21.9,
-      "sharpe_ratio": 1.25,
-      "sortino_ratio": 1.84,
-      "beta": 1.09,
-      "sector_weights": {
-        "technology": 0.9025,
-        "industrials": 0.0975
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "PANW",
-          "weight": 0.062805,
-          "name": "Palo Alto Networks Inc"
-        },
-        {
-          "ticker": "AVGO",
-          "weight": 0.0607034,
-          "name": "Broadcom Inc"
-        },
-        {
-          "ticker": "CSCO",
-          "weight": 0.0560716,
-          "name": "Cisco Systems Inc"
-        },
-        {
-          "ticker": "FTNT",
-          "weight": 0.0553869,
-          "name": "Fortinet Inc"
-        },
-        {
-          "ticker": "CRWD",
-          "weight": 0.0543232,
-          "name": "CrowdStrike Holdings Inc Class A"
-        },
-        {
-          "ticker": "NET",
-          "weight": 0.053993702,
-          "name": "Cloudflare Inc"
-        },
-        {
-          "ticker": "GD",
-          "weight": 0.0522776,
-          "name": "General Dynamics Corp"
-        },
-        {
-          "ticker": "OKTA",
-          "weight": 0.045275103,
-          "name": "Okta Inc Class A"
-        },
-        {
-          "ticker": "NOC",
-          "weight": 0.0449158,
-          "name": "Northrop Grumman Corp"
-        },
-        {
-          "ticker": "QLYS",
-          "weight": 0.0427312,
-          "name": "Qualys Inc"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 60,
-      "scores": {
-        "performance": 78.3,
-        "risk": 83.5,
-        "cost": 42.2,
-        "liquidity": 18.8,
-        "quality": 60,
-        "overall": 61.9
-      },
-      "ranked_against": "equity_thematic",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 0.03,
-        "dow_1m": -0.07,
-        "sp500_3m": 30.15,
-        "dow_3m": 27.02,
-        "sp500_6m": 43.77,
-        "dow_6m": 47.49,
-        "sp500_1y": 13.59,
-        "dow_1y": 13.68,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 43,
-      "peer_rank": 6,
-      "peer_group_size": 16
     },
     {
       "ticker": "VXUS",
@@ -5361,9 +5361,9 @@
         "performance": 47.9,
         "risk": 59.9,
         "cost": 56.0,
-        "liquidity": 65.4,
+        "liquidity": 68.4,
         "quality": 100.0,
-        "overall": 61.6
+        "overall": 62.0
       },
       "ranked_against": "equity_international",
       "cross_asset_class_rank": false,
@@ -5382,6 +5382,89 @@
       "overall_rank": 44,
       "peer_rank": 5,
       "peer_group_size": 13
+    },
+    {
+      "ticker": "PDBC",
+      "name": "Invesco Optimum Yield Diversified Commodity",
+      "category": "commodity",
+      "peer_group": "commodity",
+      "sector": "Commodity",
+      "confidence": 1.0,
+      "issuer": "Invesco",
+      "expense_ratio": 0.59,
+      "price": 17.37,
+      "aum": 6395249152,
+      "avg_dollar_volume": 147990943.0,
+      "bid_ask_spread_pct": 0.1178,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 17.16,
+      "premium_discount_pct": 0.5245,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 5.8,
+        "3m": -3.76,
+        "6m": 23.03,
+        "1y": 33.84,
+        "3y": null
+      },
+      "index_symbol": "DBC",
+      "index_returns": {
+        "1m": 5.51,
+        "3m": -3.8,
+        "6m": 22.47,
+        "1y": 33.67,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.29,
+        "3m": 0.04,
+        "6m": 0.56,
+        "1y": 0.17,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.17,
+      "tracking_error_pct": 2.091,
+      "total_cost_of_ownership_pct": 1.1145,
+      "max_drawdown": -20.4,
+      "sharpe_ratio": 0.42,
+      "sortino_ratio": 0.58,
+      "beta": 0.11,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": [
+        {
+          "ticker": "IUGXX",
+          "weight": 0.7840541,
+          "name": "Invesco Premier US Government Money Inst"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 91,
+      "scores": {
+        "performance": 82.1,
+        "risk": 42.1,
+        "cost": 55.2,
+        "liquidity": 42.9,
+        "quality": 91,
+        "overall": 61.5
+      },
+      "ranked_against": "commodity",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 3.09,
+        "dow_1m": 2.99,
+        "sp500_3m": -9.3,
+        "dow_3m": -12.43,
+        "sp500_6m": 9.09,
+        "dow_6m": 12.81,
+        "sp500_1y": 11.82,
+        "dow_1y": 11.91,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 45,
+      "peer_rank": 2,
+      "peer_group_size": 8
     },
     {
       "ticker": "IAU",
@@ -5456,135 +5539,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 45,
-      "peer_rank": 2,
-      "peer_group_size": 8
-    },
-    {
-      "ticker": "DIA",
-      "name": "SPDR Dow Jones Industrial Average",
-      "category": "broad_market",
-      "peer_group": "equity_broad",
-      "sector": "Broad Market",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.16,
-      "price": 538.9,
-      "aum": 45207846912,
-      "avg_dollar_volume": 2090938400.0,
-      "bid_ask_spread_pct": 0.0056,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 538.1541,
-      "premium_discount_pct": 0.2724,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.81,
-        "3m": 8.67,
-        "6m": 10.22,
-        "1y": 21.93,
-        "3y": null
-      },
-      "index_symbol": null,
-      "index_returns": null,
-      "tracking_difference": null,
-      "tracking_difference_1y": null,
-      "tracking_error_pct": null,
-      "total_cost_of_ownership_pct": 0.4324,
-      "max_drawdown": -16.51,
-      "sharpe_ratio": 1.09,
-      "sortino_ratio": 1.64,
-      "beta": 0.78,
-      "sector_weights": {
-        "consumer_cyclical": 0.1037,
-        "basic_materials": 0.0386,
-        "consumer_defensive": 0.0389,
-        "technology": 0.1696,
-        "communication_services": 0.0512,
-        "financial_services": 0.2771,
-        "industrials": 0.1642,
-        "energy": 0.0223,
-        "healthcare": 0.1343
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "GS",
-          "weight": 0.1152211,
-          "name": "The Goldman Sachs Group Inc"
-        },
-        {
-          "ticker": "CAT",
-          "weight": 0.0921889,
-          "name": "Caterpillar Inc"
-        },
-        {
-          "ticker": "MSFT",
-          "weight": 0.052579198,
-          "name": "Microsoft Corp"
-        },
-        {
-          "ticker": "UNH",
-          "weight": 0.0468859,
-          "name": "UnitedHealth Group Inc"
-        },
-        {
-          "ticker": "AMGN",
-          "weight": 0.0435776,
-          "name": "Amgen Inc"
-        },
-        {
-          "ticker": "TRV",
-          "weight": 0.0423557,
-          "name": "The Travelers Companies Inc"
-        },
-        {
-          "ticker": "V",
-          "weight": 0.041424498,
-          "name": "Visa Inc Class A"
-        },
-        {
-          "ticker": "GOOGL",
-          "weight": 0.0402931,
-          "name": "Alphabet Inc Class A"
-        },
-        {
-          "ticker": "JPM",
-          "weight": 0.0398021,
-          "name": "JPMorgan Chase & Co"
-        },
-        {
-          "ticker": "SHW",
-          "weight": 0.038564302,
-          "name": "Sherwin-Williams Co"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 51.9,
-        "risk": 57.4,
-        "cost": 50.6,
-        "liquidity": 64.2,
-        "quality": 100.0,
-        "overall": 60.9
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 0.1,
-        "dow_1m": 0.0,
-        "sp500_3m": 3.13,
-        "dow_3m": 0.0,
-        "sp500_6m": -3.72,
-        "dow_6m": 0.0,
-        "sp500_1y": -0.09,
-        "dow_1y": 0.0,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
       "overall_rank": 46,
-      "peer_rank": 10,
-      "peer_group_size": 28
+      "peer_rank": 3,
+      "peer_group_size": 8
     },
     {
       "ticker": "VDE",
@@ -5719,89 +5676,6 @@
       "peer_group_size": 25
     },
     {
-      "ticker": "PDBC",
-      "name": "Invesco Optimum Yield Diversified Commodity",
-      "category": "commodity",
-      "peer_group": "commodity",
-      "sector": "Commodity",
-      "confidence": 1.0,
-      "issuer": "Invesco",
-      "expense_ratio": 0.59,
-      "price": 17.37,
-      "aum": 6395249152,
-      "avg_dollar_volume": 147990943.0,
-      "bid_ask_spread_pct": 0.1178,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 17.16,
-      "premium_discount_pct": 0.5245,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 5.8,
-        "3m": -3.76,
-        "6m": 23.03,
-        "1y": 33.84,
-        "3y": null
-      },
-      "index_symbol": "DBC",
-      "index_returns": {
-        "1m": 5.51,
-        "3m": -3.8,
-        "6m": 22.47,
-        "1y": 33.67,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.29,
-        "3m": 0.04,
-        "6m": 0.56,
-        "1y": 0.17,
-        "3y": null
-      },
-      "tracking_difference_1y": 0.17,
-      "tracking_error_pct": 2.091,
-      "total_cost_of_ownership_pct": 1.1145,
-      "max_drawdown": -20.4,
-      "sharpe_ratio": 0.42,
-      "sortino_ratio": 0.58,
-      "beta": 0.11,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": [
-        {
-          "ticker": "IUGXX",
-          "weight": 0.7840541,
-          "name": "Invesco Premier US Government Money Inst"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 91,
-      "scores": {
-        "performance": 82.1,
-        "risk": 42.1,
-        "cost": 55.2,
-        "liquidity": 38.1,
-        "quality": 91,
-        "overall": 60.8
-      },
-      "ranked_against": "commodity",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 3.09,
-        "dow_1m": 2.99,
-        "sp500_3m": -9.3,
-        "dow_3m": -12.43,
-        "sp500_6m": 9.09,
-        "dow_6m": 12.81,
-        "sp500_1y": 11.82,
-        "dow_1y": 11.91,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 48,
-      "peer_rank": 3,
-      "peer_group_size": 8
-    },
-    {
       "ticker": "IBB",
       "name": "iShares Biotechnology",
       "category": "thematic",
@@ -5927,7 +5801,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 49,
+      "overall_rank": 48,
       "peer_rank": 7,
       "peer_group_size": 16
     },
@@ -6006,86 +5880,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 50,
+      "overall_rank": 49,
       "peer_rank": 8,
       "peer_group_size": 18
-    },
-    {
-      "ticker": "GLD",
-      "name": "SPDR Gold Shares",
-      "category": "commodity",
-      "peer_group": "commodity",
-      "sector": "Commodity",
-      "confidence": 1.0,
-      "issuer": "State Street",
-      "expense_ratio": 0.4,
-      "price": 398.28,
-      "aum": 130322653184,
-      "avg_dollar_volume": 2745839160.0,
-      "bid_ask_spread_pct": 0.0376,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 391.51004,
-      "premium_discount_pct": 1.7777,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 5.31,
-        "3m": -7.74,
-        "6m": -9.87,
-        "1y": 28.27,
-        "3y": null
-      },
-      "index_symbol": "IAU",
-      "index_returns": {
-        "1m": 5.3,
-        "3m": -7.74,
-        "6m": -9.85,
-        "1y": 28.41,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.01,
-        "3m": 0.0,
-        "6m": -0.02,
-        "1y": -0.14,
-        "3y": null
-      },
-      "tracking_difference_1y": -0.14,
-      "tracking_error_pct": 0.478,
-      "total_cost_of_ownership_pct": 2.1777,
-      "max_drawdown": -26.4,
-      "sharpe_ratio": 1.38,
-      "sortino_ratio": 1.95,
-      "beta": 0.24,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 26.8,
-        "risk": 59.4,
-        "cost": 54.3,
-        "liquidity": 85.7,
-        "quality": 100.0,
-        "overall": 58.5
-      },
-      "ranked_against": "commodity",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 2.6,
-        "dow_1m": 2.5,
-        "sp500_3m": -13.28,
-        "dow_3m": -16.41,
-        "sp500_6m": -23.81,
-        "dow_6m": -20.09,
-        "sp500_1y": 6.25,
-        "dow_1y": 6.34,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 51,
-      "peer_rank": 4,
-      "peer_group_size": 8
     },
     {
       "ticker": "SCHB",
@@ -6205,9 +6002,9 @@
         "performance": 50.0,
         "risk": 66.9,
         "cost": 57.5,
-        "liquidity": 30.6,
+        "liquidity": 31.4,
         "quality": 98,
-        "overall": 58.5
+        "overall": 58.6
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -6223,8 +6020,8 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 52,
-      "peer_rank": 11,
+      "overall_rank": 50,
+      "peer_rank": 10,
       "peer_group_size": 28
     },
     {
@@ -6288,7 +6085,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 53,
+      "overall_rank": 51,
       "peer_rank": 9,
       "peer_group_size": 18
     },
@@ -6428,7 +6225,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 54,
+      "overall_rank": 52,
       "peer_rank": 6,
       "peer_group_size": 13
     },
@@ -6550,9 +6347,9 @@
         "performance": 40.7,
         "risk": 75.5,
         "cost": 61.5,
-        "liquidity": 22.2,
+        "liquidity": 24.2,
         "quality": 100.0,
-        "overall": 57.8
+        "overall": 58.1
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -6568,7 +6365,133 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 55,
+      "overall_rank": 53,
+      "peer_rank": 11,
+      "peer_group_size": 28
+    },
+    {
+      "ticker": "DIA",
+      "name": "SPDR Dow Jones Industrial Average",
+      "category": "broad_market",
+      "peer_group": "equity_broad",
+      "sector": "Broad Market",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.16,
+      "price": 538.9,
+      "aum": 45207846912,
+      "avg_dollar_volume": 2090938400.0,
+      "bid_ask_spread_pct": null,
+      "bid_ask_spread_source": null,
+      "nav": 538.1541,
+      "premium_discount_pct": 0.2724,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.81,
+        "3m": 8.67,
+        "6m": 10.22,
+        "1y": 21.93,
+        "3y": null
+      },
+      "index_symbol": null,
+      "index_returns": null,
+      "tracking_difference": null,
+      "tracking_difference_1y": null,
+      "tracking_error_pct": null,
+      "total_cost_of_ownership_pct": 0.4324,
+      "max_drawdown": -16.51,
+      "sharpe_ratio": 1.09,
+      "sortino_ratio": 1.64,
+      "beta": 0.78,
+      "sector_weights": {
+        "consumer_cyclical": 0.1037,
+        "basic_materials": 0.0386,
+        "consumer_defensive": 0.0389,
+        "technology": 0.1696,
+        "communication_services": 0.0512,
+        "financial_services": 0.2771,
+        "industrials": 0.1642,
+        "energy": 0.0223,
+        "healthcare": 0.1343
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "GS",
+          "weight": 0.1152211,
+          "name": "The Goldman Sachs Group Inc"
+        },
+        {
+          "ticker": "CAT",
+          "weight": 0.0921889,
+          "name": "Caterpillar Inc"
+        },
+        {
+          "ticker": "MSFT",
+          "weight": 0.052579198,
+          "name": "Microsoft Corp"
+        },
+        {
+          "ticker": "UNH",
+          "weight": 0.0468859,
+          "name": "UnitedHealth Group Inc"
+        },
+        {
+          "ticker": "AMGN",
+          "weight": 0.0435776,
+          "name": "Amgen Inc"
+        },
+        {
+          "ticker": "TRV",
+          "weight": 0.0423557,
+          "name": "The Travelers Companies Inc"
+        },
+        {
+          "ticker": "V",
+          "weight": 0.041424498,
+          "name": "Visa Inc Class A"
+        },
+        {
+          "ticker": "GOOGL",
+          "weight": 0.0402931,
+          "name": "Alphabet Inc Class A"
+        },
+        {
+          "ticker": "JPM",
+          "weight": 0.0398021,
+          "name": "JPMorgan Chase & Co"
+        },
+        {
+          "ticker": "SHW",
+          "weight": 0.038564302,
+          "name": "Sherwin-Williams Co"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 51.9,
+        "risk": 57.4,
+        "cost": 50.6,
+        "liquidity": 46.3,
+        "quality": 100.0,
+        "overall": 58.0
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 0.1,
+        "dow_1m": 0.0,
+        "sp500_3m": 3.13,
+        "dow_3m": 0.0,
+        "sp500_6m": -3.72,
+        "dow_6m": 0.0,
+        "sp500_1y": -0.09,
+        "dow_1y": 0.0,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 54,
       "peer_rank": 12,
       "peer_group_size": 28
     },
@@ -6690,7 +6613,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 56,
+      "overall_rank": 55,
       "peer_rank": 8,
       "peer_group_size": 16
     },
@@ -6800,9 +6723,9 @@
         "performance": 49.1,
         "risk": 71.4,
         "cost": 37.0,
-        "liquidity": 35.6,
+        "liquidity": 36.6,
         "quality": 100.0,
-        "overall": 57.0
+        "overall": 57.2
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -6818,9 +6741,226 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 57,
+      "overall_rank": 56,
       "peer_rank": 13,
       "peer_group_size": 28
+    },
+    {
+      "ticker": "GLD",
+      "name": "SPDR Gold Shares",
+      "category": "commodity",
+      "peer_group": "commodity",
+      "sector": "Commodity",
+      "confidence": 1.0,
+      "issuer": "State Street",
+      "expense_ratio": 0.4,
+      "price": 398.28,
+      "aum": 130322653184,
+      "avg_dollar_volume": 2745839160.0,
+      "bid_ask_spread_pct": 0.2206,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 391.51004,
+      "premium_discount_pct": 1.7777,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 5.31,
+        "3m": -7.74,
+        "6m": -9.87,
+        "1y": 28.27,
+        "3y": null
+      },
+      "index_symbol": "IAU",
+      "index_returns": {
+        "1m": 5.3,
+        "3m": -7.74,
+        "6m": -9.85,
+        "1y": 28.41,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.01,
+        "3m": 0.0,
+        "6m": -0.02,
+        "1y": -0.14,
+        "3y": null
+      },
+      "tracking_difference_1y": -0.14,
+      "tracking_error_pct": 0.478,
+      "total_cost_of_ownership_pct": 2.1777,
+      "max_drawdown": -26.4,
+      "sharpe_ratio": 1.38,
+      "sortino_ratio": 1.95,
+      "beta": 0.24,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 26.8,
+        "risk": 59.4,
+        "cost": 54.3,
+        "liquidity": 76.2,
+        "quality": 100.0,
+        "overall": 57.0
+      },
+      "ranked_against": "commodity",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 2.6,
+        "dow_1m": 2.5,
+        "sp500_3m": -13.28,
+        "dow_3m": -16.41,
+        "sp500_6m": -23.81,
+        "dow_6m": -20.09,
+        "sp500_1y": 6.25,
+        "dow_1y": 6.34,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 57,
+      "peer_rank": 4,
+      "peer_group_size": 8
+    },
+    {
+      "ticker": "IEMG",
+      "name": "iShares Core MSCI Emerging Markets",
+      "category": "international",
+      "peer_group": "equity_international",
+      "sector": "International",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.09,
+      "price": 79.74,
+      "aum": 152217387008,
+      "avg_dollar_volume": 1053030241.0,
+      "bid_ask_spread_pct": 0.025,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 79.11866,
+      "premium_discount_pct": 1.1013,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": -1.58,
+        "3m": -2.12,
+        "6m": 10.95,
+        "1y": 30.72,
+        "3y": null
+      },
+      "index_symbol": "VWO",
+      "index_returns": {
+        "1m": 1.47,
+        "3m": 0.26,
+        "6m": 7.72,
+        "1y": 19.82,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -3.05,
+        "3m": -2.38,
+        "6m": 3.23,
+        "1y": 10.9,
+        "3y": null
+      },
+      "tracking_difference_1y": 10.9,
+      "tracking_error_pct": 6.205,
+      "total_cost_of_ownership_pct": 1.1913,
+      "max_drawdown": -18.96,
+      "sharpe_ratio": 0.89,
+      "sortino_ratio": 1.28,
+      "beta": 0.86,
+      "sector_weights": {
+        "realestate": 0.016,
+        "consumer_cyclical": 0.0892,
+        "basic_materials": 0.0611,
+        "consumer_defensive": 0.0301,
+        "technology": 0.3907,
+        "communication_services": 0.0622,
+        "financial_services": 0.1878,
+        "utilities": 0.0198,
+        "industrials": 0.0745,
+        "energy": 0.0342,
+        "healthcare": 0.0344
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "2330.TW",
+          "weight": 0.1363283,
+          "name": "Taiwan Semiconductor Manufacturing Co Ltd"
+        },
+        {
+          "ticker": "005930.KS",
+          "weight": 0.0635144,
+          "name": "Samsung Electronics Co Ltd"
+        },
+        {
+          "ticker": "000660.KS",
+          "weight": 0.049091503,
+          "name": "SK hynix Inc"
+        },
+        {
+          "ticker": "0700.HK",
+          "weight": 0.027531099,
+          "name": "Tencent Holdings Ltd"
+        },
+        {
+          "ticker": "9988.HK",
+          "weight": 0.0184245,
+          "name": "Alibaba Group Holding Ltd Ordinary Shares"
+        },
+        {
+          "ticker": "2454.TW",
+          "weight": 0.0117109,
+          "name": "MediaTek Inc"
+        },
+        {
+          "ticker": "005935",
+          "weight": 0.0078958,
+          "name": "Samsung Electronics Co Ltd Participating Preferred"
+        },
+        {
+          "ticker": "00939",
+          "weight": 0.0073146997,
+          "name": "China Construction Bank Corp Class H"
+        },
+        {
+          "ticker": "2308.TW",
+          "weight": 0.0072849,
+          "name": "Delta Electronics Inc"
+        },
+        {
+          "ticker": "2317.TW",
+          "weight": 0.0069844,
+          "name": "Hon Hai Precision Industry Co Ltd"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 45.8,
+        "risk": 21.5,
+        "cost": 70.0,
+        "liquidity": 77.3,
+        "quality": 100.0,
+        "overall": 54.9
+      },
+      "ranked_against": "equity_international",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -4.29,
+        "dow_1m": -4.39,
+        "sp500_3m": -7.66,
+        "dow_3m": -10.79,
+        "sp500_6m": -2.99,
+        "dow_6m": 0.73,
+        "sp500_1y": 8.7,
+        "dow_1y": 8.79,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 58,
+      "peer_rank": 7,
+      "peer_group_size": 13
     },
     {
       "ticker": "GOVT",
@@ -6883,7 +7023,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 58,
+      "overall_rank": 59,
       "peer_rank": 10,
       "peer_group_size": 18
     },
@@ -7013,149 +7153,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 59,
+      "overall_rank": 60,
       "peer_rank": 11,
       "peer_group_size": 25
-    },
-    {
-      "ticker": "IEMG",
-      "name": "iShares Core MSCI Emerging Markets",
-      "category": "international",
-      "peer_group": "equity_international",
-      "sector": "International",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.09,
-      "price": 79.74,
-      "aum": 152217387008,
-      "avg_dollar_volume": 1053030241.0,
-      "bid_ask_spread_pct": 0.025,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 79.11866,
-      "premium_discount_pct": 1.1013,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": -1.58,
-        "3m": -2.12,
-        "6m": 10.95,
-        "1y": 30.72,
-        "3y": null
-      },
-      "index_symbol": "VWO",
-      "index_returns": {
-        "1m": 1.47,
-        "3m": 0.26,
-        "6m": 7.72,
-        "1y": 19.82,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -3.05,
-        "3m": -2.38,
-        "6m": 3.23,
-        "1y": 10.9,
-        "3y": null
-      },
-      "tracking_difference_1y": 10.9,
-      "tracking_error_pct": 6.205,
-      "total_cost_of_ownership_pct": 1.1913,
-      "max_drawdown": -18.96,
-      "sharpe_ratio": 0.89,
-      "sortino_ratio": 1.28,
-      "beta": 0.86,
-      "sector_weights": {
-        "realestate": 0.016,
-        "consumer_cyclical": 0.0892,
-        "basic_materials": 0.0611,
-        "consumer_defensive": 0.0301,
-        "technology": 0.3907,
-        "communication_services": 0.0622,
-        "financial_services": 0.1878,
-        "utilities": 0.0198,
-        "industrials": 0.0745,
-        "energy": 0.0342,
-        "healthcare": 0.0344
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "2330.TW",
-          "weight": 0.1363283,
-          "name": "Taiwan Semiconductor Manufacturing Co Ltd"
-        },
-        {
-          "ticker": "005930.KS",
-          "weight": 0.0635144,
-          "name": "Samsung Electronics Co Ltd"
-        },
-        {
-          "ticker": "000660.KS",
-          "weight": 0.049091503,
-          "name": "SK hynix Inc"
-        },
-        {
-          "ticker": "0700.HK",
-          "weight": 0.027531099,
-          "name": "Tencent Holdings Ltd"
-        },
-        {
-          "ticker": "9988.HK",
-          "weight": 0.0184245,
-          "name": "Alibaba Group Holding Ltd Ordinary Shares"
-        },
-        {
-          "ticker": "2454.TW",
-          "weight": 0.0117109,
-          "name": "MediaTek Inc"
-        },
-        {
-          "ticker": "005935",
-          "weight": 0.0078958,
-          "name": "Samsung Electronics Co Ltd Participating Preferred"
-        },
-        {
-          "ticker": "00939",
-          "weight": 0.0073146997,
-          "name": "China Construction Bank Corp Class H"
-        },
-        {
-          "ticker": "2308.TW",
-          "weight": 0.0072849,
-          "name": "Delta Electronics Inc"
-        },
-        {
-          "ticker": "2317.TW",
-          "weight": 0.0069844,
-          "name": "Hon Hai Precision Industry Co Ltd"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 45.8,
-        "risk": 21.5,
-        "cost": 70.0,
-        "liquidity": 74.2,
-        "quality": 100.0,
-        "overall": 54.4
-      },
-      "ranked_against": "equity_international",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -4.29,
-        "dow_1m": -4.39,
-        "sp500_3m": -7.66,
-        "dow_3m": -10.79,
-        "sp500_6m": -2.99,
-        "dow_6m": 0.73,
-        "sp500_1y": 8.7,
-        "dow_1y": 8.79,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 60,
-      "peer_rank": 7,
-      "peer_group_size": 13
     },
     {
       "ticker": "IJR",
@@ -7275,9 +7275,9 @@
         "performance": 69.4,
         "risk": 6.7,
         "cost": 63.4,
-        "liquidity": 64.1,
+        "liquidity": 64.6,
         "quality": 100.0,
-        "overall": 54.3
+        "overall": 54.4
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -7296,144 +7296,6 @@
       "overall_rank": 61,
       "peer_rank": 14,
       "peer_group_size": 28
-    },
-    {
-      "ticker": "BNDX",
-      "name": "Vanguard Total International Bond",
-      "category": "bonds",
-      "peer_group": "fixed_income",
-      "sector": "Bonds",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.07,
-      "price": 47.92,
-      "aum": 122521632768,
-      "avg_dollar_volume": 197807409.0,
-      "bid_ask_spread_pct": 0.1668,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 47.8,
-      "premium_discount_pct": 0.3138,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": -0.22,
-        "3m": -0.34,
-        "6m": -1.29,
-        "1y": -3.05,
-        "3y": null
-      },
-      "index_symbol": null,
-      "index_returns": null,
-      "tracking_difference": null,
-      "tracking_difference_1y": null,
-      "tracking_error_pct": null,
-      "total_cost_of_ownership_pct": 0.3838,
-      "max_drawdown": -6.45,
-      "sharpe_ratio": -0.05,
-      "sortino_ratio": -0.07,
-      "beta": 0.04,
-      "sector_weights": {
-        "technology": 1.0
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 70.6,
-        "risk": 33.0,
-        "cost": 37.3,
-        "liquidity": 43.4,
-        "quality": 100.0,
-        "overall": 54.0
-      },
-      "ranked_against": "fixed_income",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -2.93,
-        "dow_1m": -3.03,
-        "sp500_3m": -5.88,
-        "dow_3m": -9.01,
-        "sp500_6m": -15.23,
-        "dow_6m": -11.51,
-        "sp500_1y": -25.07,
-        "dow_1y": -24.98,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 62,
-      "peer_rank": 11,
-      "peer_group_size": 18
-    },
-    {
-      "ticker": "EMB",
-      "name": "iShares JP Morgan USD Emerging Markets Bond",
-      "category": "bonds",
-      "peer_group": "fixed_income",
-      "sector": "Bonds",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.39,
-      "price": 95.15,
-      "aum": 14607219712,
-      "avg_dollar_volume": 551554963.0,
-      "bid_ask_spread_pct": 3.2084,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 94.89232,
-      "premium_discount_pct": 0.3664,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": -0.84,
-        "3m": -0.78,
-        "6m": -1.33,
-        "1y": 2.05,
-        "3y": null
-      },
-      "index_symbol": null,
-      "index_returns": null,
-      "tracking_difference": null,
-      "tracking_difference_1y": null,
-      "tracking_error_pct": null,
-      "total_cost_of_ownership_pct": 0.7564,
-      "max_drawdown": -7.7,
-      "sharpe_ratio": 0.5,
-      "sortino_ratio": 0.7,
-      "beta": 0.29,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": [
-        {
-          "ticker": "XTSLA",
-          "weight": 0.015647,
-          "name": "BlackRock Cash Funds Treasury SL Agency"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 69.1,
-        "risk": 62.2,
-        "cost": 7.8,
-        "liquidity": 27.5,
-        "quality": 100.0,
-        "overall": 53.9
-      },
-      "ranked_against": "fixed_income",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -3.55,
-        "dow_1m": -3.65,
-        "sp500_3m": -6.32,
-        "dow_3m": -9.45,
-        "sp500_6m": -15.27,
-        "dow_6m": -11.55,
-        "sp500_1y": -19.97,
-        "dow_1y": -19.88,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 63,
-      "peer_rank": 12,
-      "peer_group_size": 18
     },
     {
       "ticker": "XLB",
@@ -7544,9 +7406,9 @@
         "performance": 59.4,
         "risk": 31.9,
         "cost": 53.0,
-        "liquidity": 46.0,
+        "liquidity": 49.0,
         "quality": 100.0,
-        "overall": 53.6
+        "overall": 54.1
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -7562,9 +7424,147 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 64,
+      "overall_rank": 62,
       "peer_rank": 12,
       "peer_group_size": 25
+    },
+    {
+      "ticker": "BNDX",
+      "name": "Vanguard Total International Bond",
+      "category": "bonds",
+      "peer_group": "fixed_income",
+      "sector": "Bonds",
+      "confidence": 1.0,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.07,
+      "price": 47.92,
+      "aum": 122521632768,
+      "avg_dollar_volume": 197807409.0,
+      "bid_ask_spread_pct": 0.1668,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 47.8,
+      "premium_discount_pct": 0.3138,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": -0.22,
+        "3m": -0.34,
+        "6m": -1.29,
+        "1y": -3.05,
+        "3y": null
+      },
+      "index_symbol": null,
+      "index_returns": null,
+      "tracking_difference": null,
+      "tracking_difference_1y": null,
+      "tracking_error_pct": null,
+      "total_cost_of_ownership_pct": 0.3838,
+      "max_drawdown": -6.45,
+      "sharpe_ratio": -0.05,
+      "sortino_ratio": -0.07,
+      "beta": 0.04,
+      "sector_weights": {
+        "technology": 1.0
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 70.6,
+        "risk": 33.0,
+        "cost": 37.3,
+        "liquidity": 43.4,
+        "quality": 100.0,
+        "overall": 54.0
+      },
+      "ranked_against": "fixed_income",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -2.93,
+        "dow_1m": -3.03,
+        "sp500_3m": -5.88,
+        "dow_3m": -9.01,
+        "sp500_6m": -15.23,
+        "dow_6m": -11.51,
+        "sp500_1y": -25.07,
+        "dow_1y": -24.98,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 63,
+      "peer_rank": 11,
+      "peer_group_size": 18
+    },
+    {
+      "ticker": "EMB",
+      "name": "iShares JP Morgan USD Emerging Markets Bond",
+      "category": "bonds",
+      "peer_group": "fixed_income",
+      "sector": "Bonds",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.39,
+      "price": 95.15,
+      "aum": 14607219712,
+      "avg_dollar_volume": 551554963.0,
+      "bid_ask_spread_pct": 3.2084,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 94.89232,
+      "premium_discount_pct": 0.3664,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": -0.84,
+        "3m": -0.78,
+        "6m": -1.33,
+        "1y": 2.05,
+        "3y": null
+      },
+      "index_symbol": null,
+      "index_returns": null,
+      "tracking_difference": null,
+      "tracking_difference_1y": null,
+      "tracking_error_pct": null,
+      "total_cost_of_ownership_pct": 0.7564,
+      "max_drawdown": -7.7,
+      "sharpe_ratio": 0.5,
+      "sortino_ratio": 0.7,
+      "beta": 0.29,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": [
+        {
+          "ticker": "XTSLA",
+          "weight": 0.015647,
+          "name": "BlackRock Cash Funds Treasury SL Agency"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 69.1,
+        "risk": 62.2,
+        "cost": 7.8,
+        "liquidity": 27.5,
+        "quality": 100.0,
+        "overall": 53.9
+      },
+      "ranked_against": "fixed_income",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -3.55,
+        "dow_1m": -3.65,
+        "sp500_3m": -6.32,
+        "dow_3m": -9.45,
+        "sp500_6m": -15.27,
+        "dow_6m": -11.55,
+        "sp500_1y": -19.97,
+        "dow_1y": -19.88,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 64,
+      "peer_rank": 12,
+      "peer_group_size": 18
     },
     {
       "ticker": "EWJ",
@@ -7695,144 +7695,69 @@
       "peer_group_size": 13
     },
     {
-      "ticker": "EEM",
-      "name": "iShares MSCI Emerging Markets",
-      "category": "international",
-      "peer_group": "equity_international",
-      "sector": "International",
+      "ticker": "ETHA",
+      "name": "iShares Ethereum Trust",
+      "category": "crypto",
+      "peer_group": "crypto",
+      "sector": "Crypto",
       "confidence": 1.0,
       "issuer": "iShares",
-      "expense_ratio": 0.68,
-      "price": 65.4,
-      "aum": 29159098368,
-      "avg_dollar_volume": 1560606058.0,
-      "bid_ask_spread_pct": 0.0152,
+      "expense_ratio": 0.25,
+      "price": 14.44,
+      "aum": 5423418368,
+      "avg_dollar_volume": 417463748.0,
+      "bid_ask_spread_pct": 0.2074,
       "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 64.97011,
-      "premium_discount_pct": 1.0311,
+      "nav": 14.38611,
+      "premium_discount_pct": 0.5831,
       "premium_discount_source": "quote NAV vs market price",
       "returns": {
-        "1m": -2.07,
-        "3m": -1.79,
-        "6m": 11.74,
-        "1y": 33.28,
+        "1m": 9.47,
+        "3m": -16.53,
+        "6m": 2.7,
+        "1y": -48.26,
         "3y": null
       },
-      "index_symbol": "IEMG",
-      "index_returns": {
-        "1m": -1.58,
-        "3m": -2.12,
-        "6m": 10.95,
-        "1y": 30.72,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.49,
-        "3m": 0.33,
-        "6m": 0.79,
-        "1y": 2.56,
-        "3y": null
-      },
-      "tracking_difference_1y": 2.56,
-      "tracking_error_pct": 1.457,
-      "total_cost_of_ownership_pct": 1.7111,
-      "max_drawdown": -18.67,
-      "sharpe_ratio": 0.91,
-      "sortino_ratio": 1.32,
-      "beta": 0.88,
-      "sector_weights": {
-        "realestate": 0.0102,
-        "consumer_cyclical": 0.0868,
-        "basic_materials": 0.0572,
-        "consumer_defensive": 0.0271,
-        "technology": 0.412,
-        "communication_services": 0.0662,
-        "financial_services": 0.1976,
-        "utilities": 0.0188,
-        "industrials": 0.0613,
-        "energy": 0.0357,
-        "healthcare": 0.0273
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "2330.TW",
-          "weight": 0.1543433,
-          "name": "Taiwan Semiconductor Manufacturing Co Ltd"
-        },
-        {
-          "ticker": "005930.KS",
-          "weight": 0.0719129,
-          "name": "Samsung Electronics Co Ltd"
-        },
-        {
-          "ticker": "000660.KS",
-          "weight": 0.05558,
-          "name": "SK hynix Inc"
-        },
-        {
-          "ticker": "0700.HK",
-          "weight": 0.031155601,
-          "name": "Tencent Holdings Ltd"
-        },
-        {
-          "ticker": "9988.HK",
-          "weight": 0.0208551,
-          "name": "Alibaba Group Holding Ltd Ordinary Shares"
-        },
-        {
-          "ticker": "2454.TW",
-          "weight": 0.0130995,
-          "name": "MediaTek Inc"
-        },
-        {
-          "ticker": "005935",
-          "weight": 0.0089692995,
-          "name": "Samsung Electronics Co Ltd Participating Preferred"
-        },
-        {
-          "ticker": "00939",
-          "weight": 0.0082658,
-          "name": "China Construction Bank Corp Class H"
-        },
-        {
-          "ticker": "2308.TW",
-          "weight": 0.0082307,
-          "name": "Delta Electronics Inc"
-        },
-        {
-          "ticker": "2317.TW",
-          "weight": 0.0079002,
-          "name": "Hon Hai Precision Industry Co Ltd"
-        }
-      ],
-      "position_lookthrough_available": true,
+      "index_symbol": null,
+      "index_returns": null,
+      "tracking_difference": null,
+      "tracking_difference_1y": null,
+      "tracking_error_pct": null,
+      "total_cost_of_ownership_pct": 0.8331,
+      "max_drawdown": -67.91,
+      "sharpe_ratio": -0.05,
+      "sortino_ratio": -0.08,
+      "beta": 2.1,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
       "quality_score": 100.0,
       "scores": {
-        "performance": 50.0,
-        "risk": 25.3,
-        "cost": 50.3,
-        "liquidity": 72.0,
+        "performance": 75.0,
+        "risk": 0.0,
+        "cost": 60.0,
+        "liquidity": 60.0,
         "quality": 100.0,
-        "overall": 52.9
+        "overall": 52.8
       },
-      "ranked_against": "equity_international",
+      "ranked_against": "crypto",
       "cross_asset_class_rank": false,
       "vs_benchmarks": {
-        "sp500_1m": -4.78,
-        "dow_1m": -4.88,
-        "sp500_3m": -7.33,
-        "dow_3m": -10.46,
-        "sp500_6m": -2.2,
-        "dow_6m": 1.52,
-        "sp500_1y": 11.26,
-        "dow_1y": 11.35,
+        "sp500_1m": 6.76,
+        "dow_1m": 6.66,
+        "sp500_3m": -22.07,
+        "dow_3m": -25.2,
+        "sp500_6m": -11.24,
+        "dow_6m": -7.52,
+        "sp500_1y": -70.28,
+        "dow_1y": -70.19,
         "sp500_3y": null,
         "dow_3y": null
       },
       "overall_rank": 66,
-      "peer_rank": 9,
-      "peer_group_size": 13
+      "peer_rank": 3,
+      "peer_group_size": 6
     },
     {
       "ticker": "SKYY",
@@ -8184,9 +8109,9 @@
         "performance": 60.4,
         "risk": 38.6,
         "cost": 27.8,
-        "liquidity": 55.1,
+        "liquidity": 56.6,
         "quality": 95,
-        "overall": 52.3
+        "overall": 52.5
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -8324,9 +8249,9 @@
         "performance": 44.0,
         "risk": 63.4,
         "cost": 54.6,
-        "liquidity": 9.4,
+        "liquidity": 11.2,
         "quality": 98,
-        "overall": 52.0
+        "overall": 52.3
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -8458,9 +8383,9 @@
         "performance": 26.0,
         "risk": 53.3,
         "cost": 68.9,
-        "liquidity": 40.9,
+        "liquidity": 42.4,
         "quality": 100.0,
-        "overall": 51.9
+        "overall": 52.2
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -8479,211 +8404,6 @@
       "overall_rank": 71,
       "peer_rank": 15,
       "peer_group_size": 25
-    },
-    {
-      "ticker": "SCHG",
-      "name": "Schwab US Large-Cap Growth",
-      "category": "growth",
-      "peer_group": "equity_broad",
-      "sector": "Growth",
-      "confidence": 1.0,
-      "issuer": "Schwab",
-      "expense_ratio": 0.04,
-      "price": 35.72,
-      "aum": 59973693440,
-      "avg_dollar_volume": 263450196.0,
-      "bid_ask_spread_pct": 0.5323,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 35.43,
-      "premium_discount_pct": 0.9879,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 3.4,
-        "3m": 5.39,
-        "6m": 17.25,
-        "1y": 18.18,
-        "3y": null
-      },
-      "index_symbol": "VUG",
-      "index_returns": {
-        "1m": 2.55,
-        "3m": 3.65,
-        "6m": 16.63,
-        "1y": 17.42,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.85,
-        "3m": 1.74,
-        "6m": 0.62,
-        "1y": 0.76,
-        "3y": null
-      },
-      "tracking_difference_1y": 0.76,
-      "tracking_error_pct": 2.483,
-      "total_cost_of_ownership_pct": 1.0279,
-      "max_drawdown": -23.47,
-      "sharpe_ratio": 1.18,
-      "sortino_ratio": 1.73,
-      "beta": 1.21,
-      "sector_weights": {
-        "realestate": 0.0056,
-        "consumer_cyclical": 0.1035,
-        "basic_materials": 0.0155,
-        "consumer_defensive": 0.0189,
-        "technology": 0.4622,
-        "communication_services": 0.1328,
-        "financial_services": 0.0819,
-        "utilities": 0.0043,
-        "industrials": 0.0681,
-        "energy": 0.0091,
-        "healthcare": 0.098
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "AAPL",
-          "weight": 0.1030716,
-          "name": "Apple Inc"
-        },
-        {
-          "ticker": "NVDA",
-          "weight": 0.0994292,
-          "name": "NVIDIA Corp"
-        },
-        {
-          "ticker": "MSFT",
-          "weight": 0.0705052,
-          "name": "Microsoft Corp"
-        },
-        {
-          "ticker": "AMZN",
-          "weight": 0.0484958,
-          "name": "Amazon.com Inc"
-        },
-        {
-          "ticker": "GOOGL",
-          "weight": 0.041171197,
-          "name": "Alphabet Inc Class A"
-        },
-        {
-          "ticker": "AVGO",
-          "weight": 0.0386701,
-          "name": "Broadcom Inc"
-        },
-        {
-          "ticker": "GOOG",
-          "weight": 0.033182498,
-          "name": "Alphabet Inc Class C"
-        },
-        {
-          "ticker": "LLY",
-          "weight": 0.0308438,
-          "name": "Eli Lilly and Co"
-        },
-        {
-          "ticker": "AMD",
-          "weight": 0.025776401,
-          "name": "Advanced Micro Devices Inc"
-        },
-        {
-          "ticker": "META",
-          "weight": 0.0249285,
-          "name": "Meta Platforms Inc Class A"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 98,
-      "scores": {
-        "performance": 50.0,
-        "risk": 40.7,
-        "cost": 63.9,
-        "liquidity": 25.3,
-        "quality": 98,
-        "overall": 51.7
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 0.69,
-        "dow_1m": 0.59,
-        "sp500_3m": -0.15,
-        "dow_3m": -3.28,
-        "sp500_6m": 3.31,
-        "dow_6m": 7.03,
-        "sp500_1y": -3.84,
-        "dow_1y": -3.75,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 72,
-      "peer_rank": 16,
-      "peer_group_size": 28
-    },
-    {
-      "ticker": "ETHA",
-      "name": "iShares Ethereum Trust",
-      "category": "crypto",
-      "peer_group": "crypto",
-      "sector": "Crypto",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.25,
-      "price": 14.44,
-      "aum": 5423418368,
-      "avg_dollar_volume": 417463748.0,
-      "bid_ask_spread_pct": 0.2074,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 14.38611,
-      "premium_discount_pct": 0.5831,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 9.47,
-        "3m": -16.53,
-        "6m": 2.7,
-        "1y": -48.26,
-        "3y": null
-      },
-      "index_symbol": null,
-      "index_returns": null,
-      "tracking_difference": null,
-      "tracking_difference_1y": null,
-      "tracking_error_pct": null,
-      "total_cost_of_ownership_pct": 0.8331,
-      "max_drawdown": -67.91,
-      "sharpe_ratio": -0.05,
-      "sortino_ratio": -0.08,
-      "beta": 2.1,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 75.0,
-        "risk": 0.0,
-        "cost": 60.0,
-        "liquidity": 53.3,
-        "quality": 100.0,
-        "overall": 51.7
-      },
-      "ranked_against": "crypto",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 6.76,
-        "dow_1m": 6.66,
-        "sp500_3m": -22.07,
-        "dow_3m": -25.2,
-        "sp500_6m": -11.24,
-        "dow_6m": -7.52,
-        "sp500_1y": -70.28,
-        "dow_1y": -70.19,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 73,
-      "peer_rank": 3,
-      "peer_group_size": 6
     },
     {
       "ticker": "ACWX",
@@ -8803,9 +8523,9 @@
         "performance": 43.8,
         "risk": 69.1,
         "cost": 40.0,
-        "liquidity": 11.9,
+        "liquidity": 14.9,
         "quality": 100.0,
-        "overall": 51.6
+        "overall": 52.1
       },
       "ranked_against": "equity_international",
       "cross_asset_class_rank": false,
@@ -8821,86 +8541,149 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 74,
-      "peer_rank": 10,
+      "overall_rank": 72,
+      "peer_rank": 9,
       "peer_group_size": 13
     },
     {
-      "ticker": "FBTC",
-      "name": "Fidelity Wise Origin Bitcoin",
-      "category": "crypto",
-      "peer_group": "crypto",
-      "sector": "Crypto",
+      "ticker": "SCHG",
+      "name": "Schwab US Large-Cap Growth",
+      "category": "growth",
+      "peer_group": "equity_broad",
+      "sector": "Growth",
       "confidence": 1.0,
-      "issuer": "Fidelity",
-      "expense_ratio": 0.25,
-      "price": 56.43,
-      "aum": 10813950976,
-      "avg_dollar_volume": 204909518.0,
-      "bid_ask_spread_pct": 0.6192,
+      "issuer": "Schwab",
+      "expense_ratio": 0.04,
+      "price": 35.72,
+      "aum": 59973693440,
+      "avg_dollar_volume": 263450196.0,
+      "bid_ask_spread_pct": 0.5323,
       "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 56.0195,
-      "premium_discount_pct": 0.9113,
+      "nav": 35.43,
+      "premium_discount_pct": 0.9879,
       "premium_discount_source": "quote NAV vs market price",
       "returns": {
-        "1m": 2.67,
-        "3m": -19.15,
-        "6m": 1.77,
-        "1y": -43.92,
+        "1m": 3.4,
+        "3m": 5.39,
+        "6m": 17.25,
+        "1y": 18.18,
         "3y": null
       },
-      "index_symbol": "IBIT",
+      "index_symbol": "VUG",
       "index_returns": {
-        "1m": 2.58,
-        "3m": -19.09,
-        "6m": 1.76,
-        "1y": -43.92,
+        "1m": 2.55,
+        "3m": 3.65,
+        "6m": 16.63,
+        "1y": 17.42,
         "3y": null
       },
       "tracking_difference": {
-        "1m": 0.09,
-        "3m": -0.06,
-        "6m": 0.01,
-        "1y": 0.0,
+        "1m": 0.85,
+        "3m": 1.74,
+        "6m": 0.62,
+        "1y": 0.76,
         "3y": null
       },
-      "tracking_difference_1y": 0.0,
-      "tracking_error_pct": 1.237,
-      "total_cost_of_ownership_pct": 1.1613,
-      "max_drawdown": -53.35,
-      "sharpe_ratio": 0.5,
-      "sortino_ratio": 0.75,
-      "beta": 1.26,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 66,
-      "scores": {
-        "performance": 57.5,
-        "risk": 49.4,
-        "cost": 40.0,
-        "liquidity": 46.7,
-        "quality": 66,
-        "overall": 51.6
+      "tracking_difference_1y": 0.76,
+      "tracking_error_pct": 2.483,
+      "total_cost_of_ownership_pct": 1.0279,
+      "max_drawdown": -23.47,
+      "sharpe_ratio": 1.18,
+      "sortino_ratio": 1.73,
+      "beta": 1.21,
+      "sector_weights": {
+        "realestate": 0.0056,
+        "consumer_cyclical": 0.1035,
+        "basic_materials": 0.0155,
+        "consumer_defensive": 0.0189,
+        "technology": 0.4622,
+        "communication_services": 0.1328,
+        "financial_services": 0.0819,
+        "utilities": 0.0043,
+        "industrials": 0.0681,
+        "energy": 0.0091,
+        "healthcare": 0.098
       },
-      "ranked_against": "crypto",
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "AAPL",
+          "weight": 0.1030716,
+          "name": "Apple Inc"
+        },
+        {
+          "ticker": "NVDA",
+          "weight": 0.0994292,
+          "name": "NVIDIA Corp"
+        },
+        {
+          "ticker": "MSFT",
+          "weight": 0.0705052,
+          "name": "Microsoft Corp"
+        },
+        {
+          "ticker": "AMZN",
+          "weight": 0.0484958,
+          "name": "Amazon.com Inc"
+        },
+        {
+          "ticker": "GOOGL",
+          "weight": 0.041171197,
+          "name": "Alphabet Inc Class A"
+        },
+        {
+          "ticker": "AVGO",
+          "weight": 0.0386701,
+          "name": "Broadcom Inc"
+        },
+        {
+          "ticker": "GOOG",
+          "weight": 0.033182498,
+          "name": "Alphabet Inc Class C"
+        },
+        {
+          "ticker": "LLY",
+          "weight": 0.0308438,
+          "name": "Eli Lilly and Co"
+        },
+        {
+          "ticker": "AMD",
+          "weight": 0.025776401,
+          "name": "Advanced Micro Devices Inc"
+        },
+        {
+          "ticker": "META",
+          "weight": 0.0249285,
+          "name": "Meta Platforms Inc Class A"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 98,
+      "scores": {
+        "performance": 50.0,
+        "risk": 40.7,
+        "cost": 63.9,
+        "liquidity": 27.0,
+        "quality": 98,
+        "overall": 51.9
+      },
+      "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
       "vs_benchmarks": {
-        "sp500_1m": -0.04,
-        "dow_1m": -0.14,
-        "sp500_3m": -24.69,
-        "dow_3m": -27.82,
-        "sp500_6m": -12.17,
-        "dow_6m": -8.45,
-        "sp500_1y": -65.94,
-        "dow_1y": -65.85,
+        "sp500_1m": 0.69,
+        "dow_1m": 0.59,
+        "sp500_3m": -0.15,
+        "dow_3m": -3.28,
+        "sp500_6m": 3.31,
+        "dow_6m": 7.03,
+        "sp500_1y": -3.84,
+        "dow_1y": -3.75,
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 75,
-      "peer_rank": 4,
-      "peer_group_size": 6
+      "overall_rank": 73,
+      "peer_rank": 16,
+      "peer_group_size": 28
     },
     {
       "ticker": "RSP",
@@ -9008,9 +8791,9 @@
         "performance": 52.3,
         "risk": 48.9,
         "cost": 21.0,
-        "liquidity": 56.9,
+        "liquidity": 58.9,
         "quality": 91,
-        "overall": 51.4
+        "overall": 51.8
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -9026,9 +8809,86 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 76,
+      "overall_rank": 74,
       "peer_rank": 17,
       "peer_group_size": 28
+    },
+    {
+      "ticker": "FBTC",
+      "name": "Fidelity Wise Origin Bitcoin",
+      "category": "crypto",
+      "peer_group": "crypto",
+      "sector": "Crypto",
+      "confidence": 1.0,
+      "issuer": "Fidelity",
+      "expense_ratio": 0.25,
+      "price": 56.43,
+      "aum": 10813950976,
+      "avg_dollar_volume": 204909518.0,
+      "bid_ask_spread_pct": 0.6192,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 56.0195,
+      "premium_discount_pct": 0.9113,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.67,
+        "3m": -19.15,
+        "6m": 1.77,
+        "1y": -43.92,
+        "3y": null
+      },
+      "index_symbol": "IBIT",
+      "index_returns": {
+        "1m": 2.58,
+        "3m": -19.09,
+        "6m": 1.76,
+        "1y": -43.92,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.09,
+        "3m": -0.06,
+        "6m": 0.01,
+        "1y": 0.0,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.0,
+      "tracking_error_pct": 1.237,
+      "total_cost_of_ownership_pct": 1.1613,
+      "max_drawdown": -53.35,
+      "sharpe_ratio": 0.5,
+      "sortino_ratio": 0.75,
+      "beta": 1.26,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 66,
+      "scores": {
+        "performance": 57.5,
+        "risk": 49.4,
+        "cost": 40.0,
+        "liquidity": 46.7,
+        "quality": 66,
+        "overall": 51.6
+      },
+      "ranked_against": "crypto",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.04,
+        "dow_1m": -0.14,
+        "sp500_3m": -24.69,
+        "dow_3m": -27.82,
+        "sp500_6m": -12.17,
+        "dow_6m": -8.45,
+        "sp500_1y": -65.94,
+        "dow_1y": -65.85,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 75,
+      "peer_rank": 4,
+      "peer_group_size": 6
     },
     {
       "ticker": "SIVR",
@@ -9103,7 +8963,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 77,
+      "overall_rank": 76,
       "peer_rank": 5,
       "peer_group_size": 8
     },
@@ -9243,7 +9103,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 78,
+      "overall_rank": 77,
       "peer_rank": 18,
       "peer_group_size": 28
     },
@@ -9364,9 +9224,9 @@
         "performance": 45.4,
         "risk": 35.9,
         "cost": 20.2,
-        "liquidity": 85.5,
+        "liquidity": 86.6,
         "quality": 91,
-        "overall": 50.4
+        "overall": 50.6
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -9382,7 +9242,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 79,
+      "overall_rank": 78,
       "peer_rank": 19,
       "peer_group_size": 28
     },
@@ -9512,288 +9372,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 80,
+      "overall_rank": 79,
       "peer_rank": 16,
       "peer_group_size": 25
-    },
-    {
-      "ticker": "IJH",
-      "name": "iShares Core S&P Mid-Cap",
-      "category": "mid_cap",
-      "peer_group": "equity_broad",
-      "sector": "Mid Cap",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.05,
-      "price": 77.86,
-      "aum": 122394140672,
-      "avg_dollar_volume": 478976300.0,
-      "bid_ask_spread_pct": 0.1286,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 76.76335,
-      "premium_discount_pct": 1.3374,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.86,
-        "3m": 5.71,
-        "6m": 11.99,
-        "1y": 24.27,
-        "3y": null
-      },
-      "index_symbol": "VO",
-      "index_returns": {
-        "1m": 2.44,
-        "3m": 6.93,
-        "6m": 12.63,
-        "1y": 16.4,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.42,
-        "3m": -1.22,
-        "6m": -0.64,
-        "1y": 7.87,
-        "3y": null
-      },
-      "tracking_difference_1y": 7.87,
-      "tracking_error_pct": 6.06,
-      "total_cost_of_ownership_pct": 1.3874,
-      "max_drawdown": -24.62,
-      "sharpe_ratio": 0.77,
-      "sortino_ratio": 1.14,
-      "beta": 0.99,
-      "sector_weights": {
-        "realestate": 0.0757,
-        "consumer_cyclical": 0.1075,
-        "basic_materials": 0.0464,
-        "consumer_defensive": 0.033,
-        "technology": 0.1583,
-        "communication_services": 0.0162,
-        "financial_services": 0.1459,
-        "utilities": 0.0282,
-        "industrials": 0.2332,
-        "energy": 0.0515,
-        "healthcare": 0.1041
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "ILMN",
-          "weight": 0.0087093,
-          "name": "Illumina Inc"
-        },
-        {
-          "ticker": "TWLO",
-          "weight": 0.0084064,
-          "name": "Twilio Inc Class A"
-        },
-        {
-          "ticker": "FTI",
-          "weight": 0.0080186995,
-          "name": "TechnipFMC PLC"
-        },
-        {
-          "ticker": "CW",
-          "weight": 0.0075063,
-          "name": "Curtiss-Wright Corp"
-        },
-        {
-          "ticker": "CRS",
-          "weight": 0.0072463,
-          "name": "Carpenter Technology Corp"
-        },
-        {
-          "ticker": "ATI",
-          "weight": 0.0071792,
-          "name": "ATI Inc"
-        },
-        {
-          "ticker": "NVT",
-          "weight": 0.0069821,
-          "name": "nVent Electric PLC"
-        },
-        {
-          "ticker": "P",
-          "weight": 0.0068342,
-          "name": "Everpure Inc Class A"
-        },
-        {
-          "ticker": "OKTA",
-          "weight": 0.0066785,
-          "name": "Okta Inc Class A"
-        },
-        {
-          "ticker": "XPO",
-          "weight": 0.0066224,
-          "name": "XPO Inc"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 50.9,
-        "risk": 16.6,
-        "cost": 62.2,
-        "liquidity": 56.3,
-        "quality": 100.0,
-        "overall": 50.3
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 0.15,
-        "dow_1m": 0.05,
-        "sp500_3m": 0.17,
-        "dow_3m": -2.96,
-        "sp500_6m": -1.95,
-        "dow_6m": 1.77,
-        "sp500_1y": 2.25,
-        "dow_1y": 2.34,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 81,
-      "peer_rank": 20,
-      "peer_group_size": 28
-    },
-    {
-      "ticker": "VUG",
-      "name": "Vanguard Growth",
-      "category": "growth",
-      "peer_group": "equity_broad",
-      "sector": "Growth",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.04,
-      "price": 89.19,
-      "aum": 371990364160,
-      "avg_dollar_volume": 688915437.0,
-      "bid_ask_spread_pct": 0.0336,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 88.67,
-      "premium_discount_pct": 0.8233,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.55,
-        "3m": 3.65,
-        "6m": 16.63,
-        "1y": 17.42,
-        "3y": null
-      },
-      "index_symbol": "SCHG",
-      "index_returns": {
-        "1m": 3.4,
-        "3m": 5.39,
-        "6m": 17.25,
-        "1y": 18.18,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.85,
-        "3m": -1.74,
-        "6m": -0.62,
-        "1y": -0.76,
-        "3y": null
-      },
-      "tracking_difference_1y": -0.76,
-      "tracking_error_pct": 2.483,
-      "total_cost_of_ownership_pct": 1.5833,
-      "max_drawdown": -23.04,
-      "sharpe_ratio": 1.16,
-      "sortino_ratio": 1.71,
-      "beta": 1.23,
-      "sector_weights": {
-        "realestate": 0.0095,
-        "consumer_cyclical": 0.115,
-        "basic_materials": 0.0053,
-        "consumer_defensive": 0.0135,
-        "technology": 0.5616,
-        "communication_services": 0.1543,
-        "financial_services": 0.0382,
-        "industrials": 0.0528,
-        "energy": 0.003,
-        "healthcare": 0.0468
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "NVDA",
-          "weight": 0.12593919,
-          "name": "NVIDIA Corp"
-        },
-        {
-          "ticker": "AAPL",
-          "weight": 0.116366394,
-          "name": "Apple Inc"
-        },
-        {
-          "ticker": "MSFT",
-          "weight": 0.075931504,
-          "name": "Microsoft Corp"
-        },
-        {
-          "ticker": "GOOGL",
-          "weight": 0.0573899,
-          "name": "Alphabet Inc Class A"
-        },
-        {
-          "ticker": "GOOG",
-          "weight": 0.0452007,
-          "name": "Alphabet Inc Class C"
-        },
-        {
-          "ticker": "AMZN",
-          "weight": 0.0445863,
-          "name": "Amazon.com Inc"
-        },
-        {
-          "ticker": "AVGO",
-          "weight": 0.042715997,
-          "name": "Broadcom Inc"
-        },
-        {
-          "ticker": "META",
-          "weight": 0.0339942,
-          "name": "Meta Platforms Inc Class A"
-        },
-        {
-          "ticker": "TSLA",
-          "weight": 0.0325772,
-          "name": "Tesla Inc"
-        },
-        {
-          "ticker": "LLY",
-          "weight": 0.027983101,
-          "name": "Eli Lilly and Co"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 31.5,
-        "risk": 34.2,
-        "cost": 44.5,
-        "liquidity": 75.2,
-        "quality": 100.0,
-        "overall": 49.7
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.16,
-        "dow_1m": -0.26,
-        "sp500_3m": -1.89,
-        "dow_3m": -5.02,
-        "sp500_6m": 2.69,
-        "dow_6m": 6.41,
-        "sp500_1y": -4.6,
-        "dow_1y": -4.51,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 82,
-      "peer_rank": 21,
-      "peer_group_size": 28
     },
     {
       "ticker": "XLP",
@@ -9904,9 +9485,9 @@
         "performance": 26.6,
         "risk": 43.4,
         "cost": 56.1,
-        "liquidity": 53.9,
+        "liquidity": 60.0,
         "quality": 100.0,
-        "overall": 49.3
+        "overall": 50.3
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -9922,9 +9503,148 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 83,
+      "overall_rank": 80,
       "peer_rank": 17,
       "peer_group_size": 25
+    },
+    {
+      "ticker": "VUG",
+      "name": "Vanguard Growth",
+      "category": "growth",
+      "peer_group": "equity_broad",
+      "sector": "Growth",
+      "confidence": 1.0,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.04,
+      "price": 89.19,
+      "aum": 371990364160,
+      "avg_dollar_volume": 688915437.0,
+      "bid_ask_spread_pct": 0.0447,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 88.67,
+      "premium_discount_pct": 0.8233,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.55,
+        "3m": 3.65,
+        "6m": 16.63,
+        "1y": 17.42,
+        "3y": null
+      },
+      "index_symbol": "SCHG",
+      "index_returns": {
+        "1m": 3.4,
+        "3m": 5.39,
+        "6m": 17.25,
+        "1y": 18.18,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.85,
+        "3m": -1.74,
+        "6m": -0.62,
+        "1y": -0.76,
+        "3y": null
+      },
+      "tracking_difference_1y": -0.76,
+      "tracking_error_pct": 2.483,
+      "total_cost_of_ownership_pct": 1.5833,
+      "max_drawdown": -23.04,
+      "sharpe_ratio": 1.16,
+      "sortino_ratio": 1.71,
+      "beta": 1.23,
+      "sector_weights": {
+        "realestate": 0.0095,
+        "consumer_cyclical": 0.115,
+        "basic_materials": 0.0053,
+        "consumer_defensive": 0.0135,
+        "technology": 0.5616,
+        "communication_services": 0.1543,
+        "financial_services": 0.0382,
+        "industrials": 0.0528,
+        "energy": 0.003,
+        "healthcare": 0.0468
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "NVDA",
+          "weight": 0.12593919,
+          "name": "NVIDIA Corp"
+        },
+        {
+          "ticker": "AAPL",
+          "weight": 0.116366394,
+          "name": "Apple Inc"
+        },
+        {
+          "ticker": "MSFT",
+          "weight": 0.075931504,
+          "name": "Microsoft Corp"
+        },
+        {
+          "ticker": "GOOGL",
+          "weight": 0.0573899,
+          "name": "Alphabet Inc Class A"
+        },
+        {
+          "ticker": "GOOG",
+          "weight": 0.0452007,
+          "name": "Alphabet Inc Class C"
+        },
+        {
+          "ticker": "AMZN",
+          "weight": 0.0445863,
+          "name": "Amazon.com Inc"
+        },
+        {
+          "ticker": "AVGO",
+          "weight": 0.042715997,
+          "name": "Broadcom Inc"
+        },
+        {
+          "ticker": "META",
+          "weight": 0.0339942,
+          "name": "Meta Platforms Inc Class A"
+        },
+        {
+          "ticker": "TSLA",
+          "weight": 0.0325772,
+          "name": "Tesla Inc"
+        },
+        {
+          "ticker": "LLY",
+          "weight": 0.027983101,
+          "name": "Eli Lilly and Co"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 31.5,
+        "risk": 34.2,
+        "cost": 44.5,
+        "liquidity": 72.8,
+        "quality": 100.0,
+        "overall": 49.3
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.16,
+        "dow_1m": -0.26,
+        "sp500_3m": -1.89,
+        "dow_3m": -5.02,
+        "sp500_6m": 2.69,
+        "dow_6m": 6.41,
+        "sp500_1y": -4.6,
+        "dow_1y": -4.51,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 81,
+      "peer_rank": 20,
+      "peer_group_size": 28
     },
     {
       "ticker": "QQQM",
@@ -10061,9 +9781,149 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 84,
-      "peer_rank": 22,
+      "overall_rank": 82,
+      "peer_rank": 21,
       "peer_group_size": 28
+    },
+    {
+      "ticker": "EEM",
+      "name": "iShares MSCI Emerging Markets",
+      "category": "international",
+      "peer_group": "equity_international",
+      "sector": "International",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.68,
+      "price": 65.4,
+      "aum": 29159098368,
+      "avg_dollar_volume": 1560606058.0,
+      "bid_ask_spread_pct": 0.9952,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 64.97011,
+      "premium_discount_pct": 1.0311,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": -2.07,
+        "3m": -1.79,
+        "6m": 11.74,
+        "1y": 33.28,
+        "3y": null
+      },
+      "index_symbol": "IEMG",
+      "index_returns": {
+        "1m": -1.58,
+        "3m": -2.12,
+        "6m": 10.95,
+        "1y": 30.72,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.49,
+        "3m": 0.33,
+        "6m": 0.79,
+        "1y": 2.56,
+        "3y": null
+      },
+      "tracking_difference_1y": 2.56,
+      "tracking_error_pct": 1.457,
+      "total_cost_of_ownership_pct": 1.7111,
+      "max_drawdown": -18.67,
+      "sharpe_ratio": 0.91,
+      "sortino_ratio": 1.32,
+      "beta": 0.88,
+      "sector_weights": {
+        "realestate": 0.0102,
+        "consumer_cyclical": 0.0868,
+        "basic_materials": 0.0572,
+        "consumer_defensive": 0.0271,
+        "technology": 0.412,
+        "communication_services": 0.0662,
+        "financial_services": 0.1976,
+        "utilities": 0.0188,
+        "industrials": 0.0613,
+        "energy": 0.0357,
+        "healthcare": 0.0273
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "2330.TW",
+          "weight": 0.1543433,
+          "name": "Taiwan Semiconductor Manufacturing Co Ltd"
+        },
+        {
+          "ticker": "005930.KS",
+          "weight": 0.0719129,
+          "name": "Samsung Electronics Co Ltd"
+        },
+        {
+          "ticker": "000660.KS",
+          "weight": 0.05558,
+          "name": "SK hynix Inc"
+        },
+        {
+          "ticker": "0700.HK",
+          "weight": 0.031155601,
+          "name": "Tencent Holdings Ltd"
+        },
+        {
+          "ticker": "9988.HK",
+          "weight": 0.0208551,
+          "name": "Alibaba Group Holding Ltd Ordinary Shares"
+        },
+        {
+          "ticker": "2454.TW",
+          "weight": 0.0130995,
+          "name": "MediaTek Inc"
+        },
+        {
+          "ticker": "005935",
+          "weight": 0.0089692995,
+          "name": "Samsung Electronics Co Ltd Participating Preferred"
+        },
+        {
+          "ticker": "00939",
+          "weight": 0.0082658,
+          "name": "China Construction Bank Corp Class H"
+        },
+        {
+          "ticker": "2308.TW",
+          "weight": 0.0082307,
+          "name": "Delta Electronics Inc"
+        },
+        {
+          "ticker": "2317.TW",
+          "weight": 0.0079002,
+          "name": "Hon Hai Precision Industry Co Ltd"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 50.0,
+        "risk": 25.3,
+        "cost": 50.3,
+        "liquidity": 47.7,
+        "quality": 100.0,
+        "overall": 49.0
+      },
+      "ranked_against": "equity_international",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -4.78,
+        "dow_1m": -4.88,
+        "sp500_3m": -7.33,
+        "dow_3m": -10.46,
+        "sp500_6m": -2.2,
+        "dow_6m": 1.52,
+        "sp500_1y": 11.26,
+        "dow_1y": 11.35,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 83,
+      "peer_rank": 10,
+      "peer_group_size": 13
     },
     {
       "ticker": "DVY",
@@ -10200,7 +10060,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 85,
+      "overall_rank": 84,
       "peer_rank": 6,
       "peer_group_size": 11
     },
@@ -10331,9 +10191,149 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 86,
+      "overall_rank": 85,
       "peer_rank": 18,
       "peer_group_size": 25
+    },
+    {
+      "ticker": "IJH",
+      "name": "iShares Core S&P Mid-Cap",
+      "category": "mid_cap",
+      "peer_group": "equity_broad",
+      "sector": "Mid Cap",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.05,
+      "price": 77.86,
+      "aum": 122394140672,
+      "avg_dollar_volume": 478976300.0,
+      "bid_ask_spread_pct": 1.2903,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 76.76335,
+      "premium_discount_pct": 1.3374,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.86,
+        "3m": 5.71,
+        "6m": 11.99,
+        "1y": 24.27,
+        "3y": null
+      },
+      "index_symbol": "VO",
+      "index_returns": {
+        "1m": 2.44,
+        "3m": 6.93,
+        "6m": 12.63,
+        "1y": 16.4,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.42,
+        "3m": -1.22,
+        "6m": -0.64,
+        "1y": 7.87,
+        "3y": null
+      },
+      "tracking_difference_1y": 7.87,
+      "tracking_error_pct": 6.06,
+      "total_cost_of_ownership_pct": 1.3874,
+      "max_drawdown": -24.62,
+      "sharpe_ratio": 0.77,
+      "sortino_ratio": 1.14,
+      "beta": 0.99,
+      "sector_weights": {
+        "realestate": 0.0757,
+        "consumer_cyclical": 0.1075,
+        "basic_materials": 0.0464,
+        "consumer_defensive": 0.033,
+        "technology": 0.1583,
+        "communication_services": 0.0162,
+        "financial_services": 0.1459,
+        "utilities": 0.0282,
+        "industrials": 0.2332,
+        "energy": 0.0515,
+        "healthcare": 0.1041
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "ILMN",
+          "weight": 0.0087093,
+          "name": "Illumina Inc"
+        },
+        {
+          "ticker": "TWLO",
+          "weight": 0.0084064,
+          "name": "Twilio Inc Class A"
+        },
+        {
+          "ticker": "FTI",
+          "weight": 0.0080186995,
+          "name": "TechnipFMC PLC"
+        },
+        {
+          "ticker": "CW",
+          "weight": 0.0075063,
+          "name": "Curtiss-Wright Corp"
+        },
+        {
+          "ticker": "CRS",
+          "weight": 0.0072463,
+          "name": "Carpenter Technology Corp"
+        },
+        {
+          "ticker": "ATI",
+          "weight": 0.0071792,
+          "name": "ATI Inc"
+        },
+        {
+          "ticker": "NVT",
+          "weight": 0.0069821,
+          "name": "nVent Electric PLC"
+        },
+        {
+          "ticker": "P",
+          "weight": 0.0068342,
+          "name": "Everpure Inc Class A"
+        },
+        {
+          "ticker": "OKTA",
+          "weight": 0.0066785,
+          "name": "Okta Inc Class A"
+        },
+        {
+          "ticker": "XPO",
+          "weight": 0.0066224,
+          "name": "XPO Inc"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 50.9,
+        "risk": 16.6,
+        "cost": 62.2,
+        "liquidity": 41.2,
+        "quality": 100.0,
+        "overall": 47.9
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": 0.15,
+        "dow_1m": 0.05,
+        "sp500_3m": 0.17,
+        "dow_3m": -2.96,
+        "sp500_6m": -1.95,
+        "dow_6m": 1.77,
+        "sp500_1y": 2.25,
+        "dow_1y": 2.34,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 86,
+      "peer_rank": 22,
+      "peer_group_size": 28
     },
     {
       "ticker": "VPU",
@@ -10445,9 +10445,9 @@
         "performance": 8.3,
         "risk": 73.2,
         "cost": 54.3,
-        "liquidity": 25.5,
+        "liquidity": 27.0,
         "quality": 100.0,
-        "overall": 47.4
+        "overall": 47.6
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -10665,6 +10665,146 @@
       "peer_group_size": 18
     },
     {
+      "ticker": "IXUS",
+      "name": "iShares Core MSCI Total International",
+      "category": "international",
+      "peer_group": "equity_international",
+      "sector": "International",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.07,
+      "price": 97.1,
+      "aum": 58385215488,
+      "avg_dollar_volume": 160178760.0,
+      "bid_ask_spread_pct": 0.5577,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 96.15502,
+      "premium_discount_pct": 1.2324,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.4,
+        "3m": 2.45,
+        "6m": 9.24,
+        "1y": 24.5,
+        "3y": null
+      },
+      "index_symbol": "VXUS",
+      "index_returns": {
+        "1m": 2.49,
+        "3m": 3.28,
+        "6m": 9.74,
+        "1y": 24.82,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.09,
+        "3m": -0.83,
+        "6m": -0.5,
+        "1y": -0.32,
+        "3y": null
+      },
+      "tracking_difference_1y": -0.32,
+      "tracking_error_pct": 3.065,
+      "total_cost_of_ownership_pct": 1.5524,
+      "max_drawdown": -14.97,
+      "sharpe_ratio": 0.98,
+      "sortino_ratio": 1.44,
+      "beta": 0.79,
+      "sector_weights": {
+        "realestate": 0.0228,
+        "consumer_cyclical": 0.0814,
+        "basic_materials": 0.07,
+        "consumer_defensive": 0.0512,
+        "technology": 0.1949,
+        "communication_services": 0.047,
+        "financial_services": 0.2363,
+        "utilities": 0.0294,
+        "industrials": 0.1498,
+        "energy": 0.0482,
+        "healthcare": 0.0691
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "2330.TW",
+          "weight": 0.043295898,
+          "name": "Taiwan Semiconductor Manufacturing Co Ltd"
+        },
+        {
+          "ticker": "005930.KS",
+          "weight": 0.0201898,
+          "name": "Samsung Electronics Co Ltd"
+        },
+        {
+          "ticker": "000660.KS",
+          "weight": 0.0156012,
+          "name": "SK hynix Inc"
+        },
+        {
+          "ticker": "ASML.AS",
+          "weight": 0.0150027005,
+          "name": "ASML Holding NV"
+        },
+        {
+          "ticker": "0700.HK",
+          "weight": 0.0087295,
+          "name": "Tencent Holdings Ltd"
+        },
+        {
+          "ticker": "HSBA.L",
+          "weight": 0.0084795,
+          "name": "HSBC Holdings PLC"
+        },
+        {
+          "ticker": "ROP.SW",
+          "weight": 0.0071733,
+          "name": "Roche Holding AG Ordinary Shares new"
+        },
+        {
+          "ticker": "RY",
+          "weight": 0.0068161,
+          "name": "Royal Bank of Canada"
+        },
+        {
+          "ticker": "NOVN.SW",
+          "weight": 0.0067288,
+          "name": "Novartis AG Registered Shares"
+        },
+        {
+          "ticker": "NESN.SW",
+          "weight": 0.0060177,
+          "name": "Nestle SA"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 35.4,
+        "risk": 52.6,
+        "cost": 41.3,
+        "liquidity": 23.0,
+        "quality": 100.0,
+        "overall": 46.8
+      },
+      "ranked_against": "equity_international",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.31,
+        "dow_1m": -0.41,
+        "sp500_3m": -3.09,
+        "dow_3m": -6.22,
+        "sp500_6m": -4.7,
+        "dow_6m": -0.98,
+        "sp500_1y": 2.48,
+        "dow_1y": 2.57,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 90,
+      "peer_rank": 11,
+      "peer_group_size": 13
+    },
+    {
       "ticker": "DBC",
       "name": "Invesco DB Commodity Index Tracking",
       "category": "commodity",
@@ -10758,140 +10898,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 90,
+      "overall_rank": 91,
       "peer_rank": 6,
       "peer_group_size": 8
-    },
-    {
-      "ticker": "IYR",
-      "name": "iShares US Real Estate",
-      "category": "sector",
-      "peer_group": "equity_sector",
-      "sector": "Sector",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.39,
-      "price": 104.74,
-      "aum": 4599244288,
-      "avg_dollar_volume": 561380130.0,
-      "bid_ask_spread_pct": 0.0191,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 104.17867,
-      "premium_discount_pct": 0.4908,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 1.69,
-        "3m": 2.13,
-        "6m": 8.95,
-        "1y": 9.94,
-        "3y": null
-      },
-      "index_symbol": "VNQ",
-      "index_returns": {
-        "1m": 1.43,
-        "3m": 2.17,
-        "6m": 8.43,
-        "1y": 9.98,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": 0.26,
-        "3m": -0.04,
-        "6m": 0.52,
-        "1y": -0.04,
-        "3y": null
-      },
-      "tracking_difference_1y": -0.04,
-      "tracking_error_pct": 2.779,
-      "total_cost_of_ownership_pct": 0.8808,
-      "max_drawdown": -18.46,
-      "sharpe_ratio": 0.46,
-      "sortino_ratio": 0.64,
-      "beta": 0.56,
-      "sector_weights": {
-        "realestate": 0.9948,
-        "communication_services": 0.0052
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "WELL",
-          "weight": 0.108967505,
-          "name": "Welltower Inc"
-        },
-        {
-          "ticker": "PLD",
-          "weight": 0.0907646,
-          "name": "Prologis Inc"
-        },
-        {
-          "ticker": "SPG",
-          "weight": 0.0476462,
-          "name": "Simon Property Group Inc"
-        },
-        {
-          "ticker": "DLR",
-          "weight": 0.0472244,
-          "name": "Digital Realty Trust Inc"
-        },
-        {
-          "ticker": "EQIX",
-          "weight": 0.043394398,
-          "name": "Equinix Inc"
-        },
-        {
-          "ticker": "O",
-          "weight": 0.0428992,
-          "name": "Realty Income Corp"
-        },
-        {
-          "ticker": "AMT",
-          "weight": 0.039811898,
-          "name": "American Tower Corp"
-        },
-        {
-          "ticker": "PSA",
-          "weight": 0.0391623,
-          "name": "Public Storage"
-        },
-        {
-          "ticker": "VTR",
-          "weight": 0.0327458,
-          "name": "Ventas Inc"
-        },
-        {
-          "ticker": "CBRE",
-          "weight": 0.030964201,
-          "name": "CBRE Group Inc Class A"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 98,
-      "scores": {
-        "performance": 44.8,
-        "risk": 34.9,
-        "cost": 30.8,
-        "liquidity": 48.0,
-        "quality": 98,
-        "overall": 46.6
-      },
-      "ranked_against": "equity_sector",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -1.02,
-        "dow_1m": -1.12,
-        "sp500_3m": -3.41,
-        "dow_3m": -6.54,
-        "sp500_6m": -4.99,
-        "dow_6m": -1.27,
-        "sp500_1y": -12.08,
-        "dow_1y": -11.99,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 91,
-      "peer_rank": 20,
-      "peer_group_size": 25
     },
     {
       "ticker": "VXF",
@@ -11011,7 +11020,7 @@
         "performance": 63.9,
         "risk": 17.4,
         "cost": 53.8,
-        "liquidity": 17.4,
+        "liquidity": 17.5,
         "quality": 100.0,
         "overall": 46.5
       },
@@ -11034,144 +11043,81 @@
       "peer_group_size": 28
     },
     {
-      "ticker": "IXUS",
-      "name": "iShares Core MSCI Total International",
-      "category": "international",
-      "peer_group": "equity_international",
-      "sector": "International",
+      "ticker": "SLV",
+      "name": "iShares Silver Trust",
+      "category": "commodity",
+      "peer_group": "commodity",
+      "sector": "Commodity",
       "confidence": 1.0,
       "issuer": "iShares",
-      "expense_ratio": 0.07,
-      "price": 97.1,
-      "aum": 58385215488,
-      "avg_dollar_volume": 160178760.0,
-      "bid_ask_spread_pct": 0.5577,
+      "expense_ratio": 0.5,
+      "price": 57.28,
+      "aum": 28081266688,
+      "avg_dollar_volume": 848395736.0,
+      "bid_ask_spread_pct": 0.0522,
       "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 96.15502,
-      "premium_discount_pct": 1.2324,
+      "nav": 55.79656,
+      "premium_discount_pct": 3.0529,
       "premium_discount_source": "quote NAV vs market price",
       "returns": {
-        "1m": 2.4,
-        "3m": 2.45,
-        "6m": 9.24,
-        "1y": 24.5,
+        "1m": 5.81,
+        "3m": -19.99,
+        "6m": -14.1,
+        "1y": 66.77,
         "3y": null
       },
-      "index_symbol": "VXUS",
+      "index_symbol": "SIVR",
       "index_returns": {
-        "1m": 2.49,
-        "3m": 3.28,
-        "6m": 9.74,
-        "1y": 24.82,
+        "1m": 5.85,
+        "3m": -19.96,
+        "6m": -13.96,
+        "1y": 67.03,
         "3y": null
       },
       "tracking_difference": {
-        "1m": -0.09,
-        "3m": -0.83,
-        "6m": -0.5,
-        "1y": -0.32,
+        "1m": -0.04,
+        "3m": -0.03,
+        "6m": -0.14,
+        "1y": -0.26,
         "3y": null
       },
-      "tracking_difference_1y": -0.32,
-      "tracking_error_pct": 3.065,
-      "total_cost_of_ownership_pct": 1.5524,
-      "max_drawdown": -14.97,
-      "sharpe_ratio": 0.98,
-      "sortino_ratio": 1.44,
-      "beta": 0.79,
-      "sector_weights": {
-        "realestate": 0.0228,
-        "consumer_cyclical": 0.0814,
-        "basic_materials": 0.07,
-        "consumer_defensive": 0.0512,
-        "technology": 0.1949,
-        "communication_services": 0.047,
-        "financial_services": 0.2363,
-        "utilities": 0.0294,
-        "industrials": 0.1498,
-        "energy": 0.0482,
-        "healthcare": 0.0691
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "2330.TW",
-          "weight": 0.043295898,
-          "name": "Taiwan Semiconductor Manufacturing Co Ltd"
-        },
-        {
-          "ticker": "005930.KS",
-          "weight": 0.0201898,
-          "name": "Samsung Electronics Co Ltd"
-        },
-        {
-          "ticker": "000660.KS",
-          "weight": 0.0156012,
-          "name": "SK hynix Inc"
-        },
-        {
-          "ticker": "ASML.AS",
-          "weight": 0.0150027005,
-          "name": "ASML Holding NV"
-        },
-        {
-          "ticker": "0700.HK",
-          "weight": 0.0087295,
-          "name": "Tencent Holdings Ltd"
-        },
-        {
-          "ticker": "HSBA.L",
-          "weight": 0.0084795,
-          "name": "HSBC Holdings PLC"
-        },
-        {
-          "ticker": "ROP.SW",
-          "weight": 0.0071733,
-          "name": "Roche Holding AG Ordinary Shares new"
-        },
-        {
-          "ticker": "RY",
-          "weight": 0.0068161,
-          "name": "Royal Bank of Canada"
-        },
-        {
-          "ticker": "NOVN.SW",
-          "weight": 0.0067288,
-          "name": "Novartis AG Registered Shares"
-        },
-        {
-          "ticker": "NESN.SW",
-          "weight": 0.0060177,
-          "name": "Nestle SA"
-        }
-      ],
-      "position_lookthrough_available": true,
+      "tracking_difference_1y": -0.26,
+      "tracking_error_pct": 1.373,
+      "total_cost_of_ownership_pct": 3.5529,
+      "max_drawdown": -52.28,
+      "sharpe_ratio": 1.01,
+      "sortino_ratio": 1.35,
+      "beta": 0.76,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
       "quality_score": 100.0,
       "scores": {
-        "performance": 35.4,
-        "risk": 52.6,
-        "cost": 41.3,
-        "liquidity": 19.9,
+        "performance": 39.3,
+        "risk": 27.6,
+        "cost": 20.0,
+        "liquidity": 71.4,
         "quality": 100.0,
-        "overall": 46.3
+        "overall": 45.3
       },
-      "ranked_against": "equity_international",
+      "ranked_against": "commodity",
       "cross_asset_class_rank": false,
       "vs_benchmarks": {
-        "sp500_1m": -0.31,
-        "dow_1m": -0.41,
-        "sp500_3m": -3.09,
-        "dow_3m": -6.22,
-        "sp500_6m": -4.7,
-        "dow_6m": -0.98,
-        "sp500_1y": 2.48,
-        "dow_1y": 2.57,
+        "sp500_1m": 3.1,
+        "dow_1m": 3.0,
+        "sp500_3m": -25.53,
+        "dow_3m": -28.66,
+        "sp500_6m": -28.04,
+        "dow_6m": -24.32,
+        "sp500_1y": 44.75,
+        "dow_1y": 44.84,
         "sp500_3y": null,
         "dow_3y": null
       },
       "overall_rank": 93,
-      "peer_rank": 11,
-      "peer_group_size": 13
+      "peer_rank": 7,
+      "peer_group_size": 8
     },
     {
       "ticker": "XLRE",
@@ -11185,7 +11131,7 @@
       "price": 45.02,
       "aum": 8563283968,
       "avg_dollar_volume": 228896612.0,
-      "bid_ask_spread_pct": 0.2446,
+      "bid_ask_spread_pct": 0.9373,
       "bid_ask_spread_source": "quoted_snapshot",
       "nav": 44.78643,
       "premium_discount_pct": 0.4322,
@@ -11281,9 +11227,9 @@
         "performance": 44.8,
         "risk": 34.2,
         "cost": 42.3,
-        "liquidity": 31.3,
+        "liquidity": 26.8,
         "quality": 100.0,
-        "overall": 46.0
+        "overall": 45.3
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -11300,85 +11246,8 @@
         "dow_3y": null
       },
       "overall_rank": 94,
-      "peer_rank": 21,
+      "peer_rank": 20,
       "peer_group_size": 25
-    },
-    {
-      "ticker": "ARKB",
-      "name": "ARK 21Shares Bitcoin",
-      "category": "crypto",
-      "peer_group": "crypto",
-      "sector": "Crypto",
-      "confidence": 1.0,
-      "issuer": "ARK",
-      "expense_ratio": 0.21,
-      "price": 21.49,
-      "aum": 2128186368,
-      "avg_dollar_volume": 34037851.0,
-      "bid_ask_spread_pct": 0.0464,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 21.347,
-      "premium_discount_pct": 0.9041,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.48,
-        "3m": -19.15,
-        "6m": 1.66,
-        "1y": -43.92,
-        "3y": null
-      },
-      "index_symbol": "FBTC",
-      "index_returns": {
-        "1m": 2.67,
-        "3m": -19.15,
-        "6m": 1.77,
-        "1y": -43.92,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.19,
-        "3m": 0.0,
-        "6m": -0.11,
-        "1y": 0.0,
-        "3y": null
-      },
-      "tracking_difference_1y": 0.0,
-      "tracking_error_pct": 1.148,
-      "total_cost_of_ownership_pct": 1.1141,
-      "max_drawdown": -53.33,
-      "sharpe_ratio": 0.5,
-      "sortino_ratio": 0.75,
-      "beta": 1.26,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 55,
-      "scores": {
-        "performance": 32.5,
-        "risk": 56.6,
-        "cost": 60.0,
-        "liquidity": 26.7,
-        "quality": 55,
-        "overall": 45.5
-      },
-      "ranked_against": "crypto",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.23,
-        "dow_1m": -0.33,
-        "sp500_3m": -24.69,
-        "dow_3m": -27.82,
-        "sp500_6m": -12.28,
-        "dow_6m": -8.56,
-        "sp500_1y": -65.94,
-        "dow_1y": -65.85,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 95,
-      "peer_rank": 5,
-      "peer_group_size": 6
     },
     {
       "ticker": "VOX",
@@ -11493,9 +11362,9 @@
         "performance": 10.4,
         "risk": 56.4,
         "cost": 71.7,
-        "liquidity": 17.0,
+        "liquidity": 18.6,
         "quality": 100.0,
-        "overall": 45.0
+        "overall": 45.3
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -11511,8 +11380,8 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 96,
-      "peer_rank": 22,
+      "overall_rank": 95,
+      "peer_rank": 21,
       "peer_group_size": 25
     },
     {
@@ -11633,9 +11502,9 @@
         "performance": 32.4,
         "risk": 38.3,
         "cost": 40.7,
-        "liquidity": 41.0,
+        "liquidity": 42.6,
         "quality": 100.0,
-        "overall": 44.9
+        "overall": 45.1
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -11651,7 +11520,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 97,
+      "overall_rank": 96,
       "peer_rank": 24,
       "peer_group_size": 28
     },
@@ -11791,86 +11660,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 98,
+      "overall_rank": 97,
       "peer_rank": 7,
       "peer_group_size": 11
-    },
-    {
-      "ticker": "SLV",
-      "name": "iShares Silver Trust",
-      "category": "commodity",
-      "peer_group": "commodity",
-      "sector": "Commodity",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.5,
-      "price": 57.28,
-      "aum": 28081266688,
-      "avg_dollar_volume": 848395736.0,
-      "bid_ask_spread_pct": 0.0522,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 55.79656,
-      "premium_discount_pct": 3.0529,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 5.81,
-        "3m": -19.99,
-        "6m": -14.1,
-        "1y": 66.77,
-        "3y": null
-      },
-      "index_symbol": "SIVR",
-      "index_returns": {
-        "1m": 5.85,
-        "3m": -19.96,
-        "6m": -13.96,
-        "1y": 67.03,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.04,
-        "3m": -0.03,
-        "6m": -0.14,
-        "1y": -0.26,
-        "3y": null
-      },
-      "tracking_difference_1y": -0.26,
-      "tracking_error_pct": 1.373,
-      "total_cost_of_ownership_pct": 3.5529,
-      "max_drawdown": -52.28,
-      "sharpe_ratio": 1.01,
-      "sortino_ratio": 1.35,
-      "beta": 0.76,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 39.3,
-        "risk": 27.6,
-        "cost": 20.0,
-        "liquidity": 66.7,
-        "quality": 100.0,
-        "overall": 44.5
-      },
-      "ranked_against": "commodity",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": 3.1,
-        "dow_1m": 3.0,
-        "sp500_3m": -25.53,
-        "dow_3m": -28.66,
-        "sp500_6m": -28.04,
-        "dow_6m": -24.32,
-        "sp500_1y": 44.75,
-        "dow_1y": 44.84,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 99,
-      "peer_rank": 7,
-      "peer_group_size": 8
     },
     {
       "ticker": "XOP",
@@ -11970,9 +11762,9 @@
         "performance": 72.9,
         "risk": 9.8,
         "cost": 30.6,
-        "liquidity": 25.9,
+        "liquidity": 28.9,
         "quality": 95,
-        "overall": 43.8
+        "overall": 44.3
       },
       "ranked_against": "equity_sector",
       "cross_asset_class_rank": false,
@@ -11988,7 +11780,138 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 100,
+      "overall_rank": 98,
+      "peer_rank": 22,
+      "peer_group_size": 25
+    },
+    {
+      "ticker": "IYR",
+      "name": "iShares US Real Estate",
+      "category": "sector",
+      "peer_group": "equity_sector",
+      "sector": "Sector",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.39,
+      "price": 104.74,
+      "aum": 4599244288,
+      "avg_dollar_volume": 561380130.0,
+      "bid_ask_spread_pct": 0.6515,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 104.17867,
+      "premium_discount_pct": 0.4908,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 1.69,
+        "3m": 2.13,
+        "6m": 8.95,
+        "1y": 9.94,
+        "3y": null
+      },
+      "index_symbol": "VNQ",
+      "index_returns": {
+        "1m": 1.43,
+        "3m": 2.17,
+        "6m": 8.43,
+        "1y": 9.98,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": 0.26,
+        "3m": -0.04,
+        "6m": 0.52,
+        "1y": -0.04,
+        "3y": null
+      },
+      "tracking_difference_1y": -0.04,
+      "tracking_error_pct": 2.779,
+      "total_cost_of_ownership_pct": 0.8808,
+      "max_drawdown": -18.46,
+      "sharpe_ratio": 0.46,
+      "sortino_ratio": 0.64,
+      "beta": 0.56,
+      "sector_weights": {
+        "realestate": 0.9948,
+        "communication_services": 0.0052
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "WELL",
+          "weight": 0.108967505,
+          "name": "Welltower Inc"
+        },
+        {
+          "ticker": "PLD",
+          "weight": 0.0907646,
+          "name": "Prologis Inc"
+        },
+        {
+          "ticker": "SPG",
+          "weight": 0.0476462,
+          "name": "Simon Property Group Inc"
+        },
+        {
+          "ticker": "DLR",
+          "weight": 0.0472244,
+          "name": "Digital Realty Trust Inc"
+        },
+        {
+          "ticker": "EQIX",
+          "weight": 0.043394398,
+          "name": "Equinix Inc"
+        },
+        {
+          "ticker": "O",
+          "weight": 0.0428992,
+          "name": "Realty Income Corp"
+        },
+        {
+          "ticker": "AMT",
+          "weight": 0.039811898,
+          "name": "American Tower Corp"
+        },
+        {
+          "ticker": "PSA",
+          "weight": 0.0391623,
+          "name": "Public Storage"
+        },
+        {
+          "ticker": "VTR",
+          "weight": 0.0327458,
+          "name": "Ventas Inc"
+        },
+        {
+          "ticker": "CBRE",
+          "weight": 0.030964201,
+          "name": "CBRE Group Inc Class A"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 98,
+      "scores": {
+        "performance": 44.8,
+        "risk": 34.9,
+        "cost": 30.8,
+        "liquidity": 31.3,
+        "quality": 98,
+        "overall": 44.0
+      },
+      "ranked_against": "equity_sector",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -1.02,
+        "dow_1m": -1.12,
+        "sp500_3m": -3.41,
+        "dow_3m": -6.54,
+        "sp500_6m": -4.99,
+        "dow_6m": -1.27,
+        "sp500_1y": -12.08,
+        "dow_1y": -11.99,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 99,
       "peer_rank": 23,
       "peer_group_size": 25
     },
@@ -12071,7 +11994,7 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 101,
+      "overall_rank": 100,
       "peer_rank": 14,
       "peer_group_size": 18
     },
@@ -12148,9 +12071,226 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 102,
+      "overall_rank": 101,
       "peer_rank": 15,
       "peer_group_size": 18
+    },
+    {
+      "ticker": "ARKB",
+      "name": "ARK 21Shares Bitcoin",
+      "category": "crypto",
+      "peer_group": "crypto",
+      "sector": "Crypto",
+      "confidence": 1.0,
+      "issuer": "ARK",
+      "expense_ratio": 0.21,
+      "price": 21.49,
+      "aum": 2128186368,
+      "avg_dollar_volume": 34037851.0,
+      "bid_ask_spread_pct": 0.3719,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 21.347,
+      "premium_discount_pct": 0.9041,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.48,
+        "3m": -19.15,
+        "6m": 1.66,
+        "1y": -43.92,
+        "3y": null
+      },
+      "index_symbol": "FBTC",
+      "index_returns": {
+        "1m": 2.67,
+        "3m": -19.15,
+        "6m": 1.77,
+        "1y": -43.92,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.19,
+        "3m": 0.0,
+        "6m": -0.11,
+        "1y": 0.0,
+        "3y": null
+      },
+      "tracking_difference_1y": 0.0,
+      "tracking_error_pct": 1.148,
+      "total_cost_of_ownership_pct": 1.1141,
+      "max_drawdown": -53.33,
+      "sharpe_ratio": 0.5,
+      "sortino_ratio": 0.75,
+      "beta": 1.26,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 55,
+      "scores": {
+        "performance": 32.5,
+        "risk": 56.6,
+        "cost": 60.0,
+        "liquidity": 13.3,
+        "quality": 55,
+        "overall": 43.3
+      },
+      "ranked_against": "crypto",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.23,
+        "dow_1m": -0.33,
+        "sp500_3m": -24.69,
+        "dow_3m": -27.82,
+        "sp500_6m": -12.28,
+        "dow_6m": -8.56,
+        "sp500_1y": -65.94,
+        "dow_1y": -65.85,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 102,
+      "peer_rank": 5,
+      "peer_group_size": 6
+    },
+    {
+      "ticker": "VTWO",
+      "name": "Vanguard Russell 2000",
+      "category": "small_cap",
+      "peer_group": "equity_broad",
+      "sector": "Small Cap",
+      "confidence": 1.0,
+      "issuer": "Vanguard",
+      "expense_ratio": 0.07,
+      "price": 121.72,
+      "aum": 17502060544,
+      "avg_dollar_volume": 192544447.0,
+      "bid_ask_spread_pct": 0.2227,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 120.54,
+      "premium_discount_pct": 1.0868,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 1.3,
+        "3m": 6.73,
+        "6m": 17.68,
+        "1y": 36.49,
+        "3y": null
+      },
+      "index_symbol": "IWM",
+      "index_returns": {
+        "1m": 1.31,
+        "3m": 6.69,
+        "6m": 17.71,
+        "1y": 36.54,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.01,
+        "3m": 0.04,
+        "6m": -0.03,
+        "1y": -0.05,
+        "3y": null
+      },
+      "tracking_difference_1y": -0.05,
+      "tracking_error_pct": 1.206,
+      "total_cost_of_ownership_pct": 1.1568,
+      "max_drawdown": -28.04,
+      "sharpe_ratio": 0.8,
+      "sortino_ratio": 1.19,
+      "beta": 1.12,
+      "sector_weights": {
+        "realestate": 0.067,
+        "consumer_cyclical": 0.0921,
+        "basic_materials": 0.0438,
+        "consumer_defensive": 0.026,
+        "technology": 0.1484,
+        "communication_services": 0.022,
+        "financial_services": 0.1757,
+        "utilities": 0.0273,
+        "industrials": 0.1411,
+        "energy": 0.0544,
+        "healthcare": 0.2023
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "MOG-A",
+          "weight": 0.0036879,
+          "name": "Moog Inc Class A"
+        },
+        {
+          "ticker": "HUT",
+          "weight": 0.0036221999,
+          "name": "Hut 8 Corp"
+        },
+        {
+          "ticker": "VSAT",
+          "weight": 0.0034652,
+          "name": "Viasat Inc"
+        },
+        {
+          "ticker": "BTSG",
+          "weight": 0.0034566,
+          "name": "BrightSpring Health Services Inc"
+        },
+        {
+          "ticker": "CYTK",
+          "weight": 0.003421,
+          "name": "Cytokinetics Inc"
+        },
+        {
+          "ticker": "MXL",
+          "weight": 0.0033682,
+          "name": "MaxLinear Inc"
+        },
+        {
+          "ticker": "AGX",
+          "weight": 0.0033362,
+          "name": "Argan Inc"
+        },
+        {
+          "ticker": "UMBF",
+          "weight": 0.0032011,
+          "name": "UMB Financial Corp"
+        },
+        {
+          "ticker": "FROG",
+          "weight": 0.0030132,
+          "name": "JFrog Ltd Ordinary Shares"
+        },
+        {
+          "ticker": "RIOT",
+          "weight": 0.0029689,
+          "name": "Riot Platforms Inc"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 64.8,
+        "risk": 12.3,
+        "cost": 33.8,
+        "liquidity": 23.3,
+        "quality": 100.0,
+        "overall": 42.9
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -1.41,
+        "dow_1m": -1.51,
+        "sp500_3m": 1.19,
+        "dow_3m": -1.94,
+        "sp500_6m": 3.74,
+        "dow_6m": 7.46,
+        "sp500_1y": 14.47,
+        "dow_1y": 14.56,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 103,
+      "peer_rank": 25,
+      "peer_group_size": 28
     },
     {
       "ticker": "VAW",
@@ -12283,149 +12423,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 103,
+      "overall_rank": 104,
       "peer_rank": 24,
       "peer_group_size": 25
-    },
-    {
-      "ticker": "VTWO",
-      "name": "Vanguard Russell 2000",
-      "category": "small_cap",
-      "peer_group": "equity_broad",
-      "sector": "Small Cap",
-      "confidence": 1.0,
-      "issuer": "Vanguard",
-      "expense_ratio": 0.07,
-      "price": 121.72,
-      "aum": 17502060544,
-      "avg_dollar_volume": 192544447.0,
-      "bid_ask_spread_pct": 0.2227,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 120.54,
-      "premium_discount_pct": 1.0868,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 1.3,
-        "3m": 6.73,
-        "6m": 17.68,
-        "1y": 36.49,
-        "3y": null
-      },
-      "index_symbol": "IWM",
-      "index_returns": {
-        "1m": 1.31,
-        "3m": 6.69,
-        "6m": 17.71,
-        "1y": 36.54,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.01,
-        "3m": 0.04,
-        "6m": -0.03,
-        "1y": -0.05,
-        "3y": null
-      },
-      "tracking_difference_1y": -0.05,
-      "tracking_error_pct": 1.206,
-      "total_cost_of_ownership_pct": 1.1568,
-      "max_drawdown": -28.04,
-      "sharpe_ratio": 0.8,
-      "sortino_ratio": 1.19,
-      "beta": 1.12,
-      "sector_weights": {
-        "realestate": 0.067,
-        "consumer_cyclical": 0.0921,
-        "basic_materials": 0.0438,
-        "consumer_defensive": 0.026,
-        "technology": 0.1484,
-        "communication_services": 0.022,
-        "financial_services": 0.1757,
-        "utilities": 0.0273,
-        "industrials": 0.1411,
-        "energy": 0.0544,
-        "healthcare": 0.2023
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "MOG-A",
-          "weight": 0.0036879,
-          "name": "Moog Inc Class A"
-        },
-        {
-          "ticker": "HUT",
-          "weight": 0.0036221999,
-          "name": "Hut 8 Corp"
-        },
-        {
-          "ticker": "VSAT",
-          "weight": 0.0034652,
-          "name": "Viasat Inc"
-        },
-        {
-          "ticker": "BTSG",
-          "weight": 0.0034566,
-          "name": "BrightSpring Health Services Inc"
-        },
-        {
-          "ticker": "CYTK",
-          "weight": 0.003421,
-          "name": "Cytokinetics Inc"
-        },
-        {
-          "ticker": "MXL",
-          "weight": 0.0033682,
-          "name": "MaxLinear Inc"
-        },
-        {
-          "ticker": "AGX",
-          "weight": 0.0033362,
-          "name": "Argan Inc"
-        },
-        {
-          "ticker": "UMBF",
-          "weight": 0.0032011,
-          "name": "UMB Financial Corp"
-        },
-        {
-          "ticker": "FROG",
-          "weight": 0.0030132,
-          "name": "JFrog Ltd Ordinary Shares"
-        },
-        {
-          "ticker": "RIOT",
-          "weight": 0.0029689,
-          "name": "Riot Platforms Inc"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 64.8,
-        "risk": 12.3,
-        "cost": 33.8,
-        "liquidity": 21.3,
-        "quality": 100.0,
-        "overall": 42.6
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -1.41,
-        "dow_1m": -1.51,
-        "sp500_3m": 1.19,
-        "dow_3m": -1.94,
-        "sp500_6m": 3.74,
-        "dow_6m": 7.46,
-        "sp500_1y": 14.47,
-        "dow_1y": 14.56,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 104,
-      "peer_rank": 25,
-      "peer_group_size": 28
     },
     {
       "ticker": "VCR",
@@ -12880,9 +12880,9 @@
         "performance": 54.6,
         "risk": 16.0,
         "cost": 23.2,
-        "liquidity": 31.3,
+        "liquidity": 33.0,
         "quality": 100.0,
-        "overall": 40.6
+        "overall": 40.8
       },
       "ranked_against": "equity_broad",
       "cross_asset_class_rank": false,
@@ -13043,6 +13043,146 @@
       "peer_group_size": 11
     },
     {
+      "ticker": "IVE",
+      "name": "iShares S&P 500 Value",
+      "category": "value",
+      "peer_group": "equity_broad",
+      "sector": "Value",
+      "confidence": 1.0,
+      "issuer": "iShares",
+      "expense_ratio": 0.18,
+      "price": 235.69,
+      "aum": 48975663104,
+      "avg_dollar_volume": 161228939.0,
+      "bid_ask_spread_pct": 0.3732,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 234.60406,
+      "premium_discount_pct": 0.5012,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.51,
+        "3m": 5.42,
+        "6m": 7.62,
+        "1y": 19.88,
+        "3y": null
+      },
+      "index_symbol": "VTV",
+      "index_returns": {
+        "1m": 2.57,
+        "3m": 8.87,
+        "6m": 10.73,
+        "1y": 26.63,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.06,
+        "3m": -3.45,
+        "6m": -3.11,
+        "1y": -6.75,
+        "3y": null
+      },
+      "tracking_difference_1y": -6.75,
+      "tracking_error_pct": 3.952,
+      "total_cost_of_ownership_pct": 7.2512,
+      "max_drawdown": -18.35,
+      "sharpe_ratio": 1.0,
+      "sortino_ratio": 1.46,
+      "beta": 0.69,
+      "sector_weights": {
+        "realestate": 0.0337,
+        "consumer_cyclical": 0.1053,
+        "basic_materials": 0.0319,
+        "consumer_defensive": 0.0878,
+        "technology": 0.2053,
+        "communication_services": 0.0297,
+        "financial_services": 0.1579,
+        "utilities": 0.0426,
+        "industrials": 0.1074,
+        "energy": 0.0732,
+        "healthcare": 0.1252
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "AAPL",
+          "weight": 0.076688096,
+          "name": "Apple Inc"
+        },
+        {
+          "ticker": "AMZN",
+          "weight": 0.0422391,
+          "name": "Amazon.com Inc"
+        },
+        {
+          "ticker": "XOM",
+          "weight": 0.0217803,
+          "name": "ExxonMobil Holdings Corp"
+        },
+        {
+          "ticker": "WMT",
+          "weight": 0.0164802,
+          "name": "Walmart Inc"
+        },
+        {
+          "ticker": "INTC",
+          "weight": 0.014405901,
+          "name": "Intel Corp"
+        },
+        {
+          "ticker": "COST",
+          "weight": 0.014276201,
+          "name": "Costco Wholesale Corp"
+        },
+        {
+          "ticker": "BAC",
+          "weight": 0.0136729,
+          "name": "Bank of America Corp"
+        },
+        {
+          "ticker": "UNH",
+          "weight": 0.012722,
+          "name": "UnitedHealth Group Inc"
+        },
+        {
+          "ticker": "CVX",
+          "weight": 0.012456699,
+          "name": "Chevron Corp"
+        },
+        {
+          "ticker": "PG",
+          "weight": 0.011374,
+          "name": "Procter & Gamble Co"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 100.0,
+      "scores": {
+        "performance": 17.6,
+        "risk": 55.0,
+        "cost": 29.4,
+        "liquidity": 21.3,
+        "quality": 100.0,
+        "overall": 40.2
+      },
+      "ranked_against": "equity_broad",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.2,
+        "dow_1m": -0.3,
+        "sp500_3m": -0.12,
+        "dow_3m": -3.25,
+        "sp500_6m": -6.32,
+        "dow_6m": -2.6,
+        "sp500_1y": -2.14,
+        "dow_1y": -2.05,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 110,
+      "peer_rank": 27,
+      "peer_group_size": 28
+    },
+    {
       "ticker": "NOBL",
       "name": "ProShares S&P 500 Dividend Aristocrats",
       "category": "dividend",
@@ -13177,226 +13317,9 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 110,
+      "overall_rank": 111,
       "peer_rank": 9,
       "peer_group_size": 11
-    },
-    {
-      "ticker": "IVE",
-      "name": "iShares S&P 500 Value",
-      "category": "value",
-      "peer_group": "equity_broad",
-      "sector": "Value",
-      "confidence": 1.0,
-      "issuer": "iShares",
-      "expense_ratio": 0.18,
-      "price": 235.69,
-      "aum": 48975663104,
-      "avg_dollar_volume": 161228939.0,
-      "bid_ask_spread_pct": 0.3732,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 234.60406,
-      "premium_discount_pct": 0.5012,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.51,
-        "3m": 5.42,
-        "6m": 7.62,
-        "1y": 19.88,
-        "3y": null
-      },
-      "index_symbol": "VTV",
-      "index_returns": {
-        "1m": 2.57,
-        "3m": 8.87,
-        "6m": 10.73,
-        "1y": 26.63,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.06,
-        "3m": -3.45,
-        "6m": -3.11,
-        "1y": -6.75,
-        "3y": null
-      },
-      "tracking_difference_1y": -6.75,
-      "tracking_error_pct": 3.952,
-      "total_cost_of_ownership_pct": 7.2512,
-      "max_drawdown": -18.35,
-      "sharpe_ratio": 1.0,
-      "sortino_ratio": 1.46,
-      "beta": 0.69,
-      "sector_weights": {
-        "realestate": 0.0337,
-        "consumer_cyclical": 0.1053,
-        "basic_materials": 0.0319,
-        "consumer_defensive": 0.0878,
-        "technology": 0.2053,
-        "communication_services": 0.0297,
-        "financial_services": 0.1579,
-        "utilities": 0.0426,
-        "industrials": 0.1074,
-        "energy": 0.0732,
-        "healthcare": 0.1252
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "AAPL",
-          "weight": 0.076688096,
-          "name": "Apple Inc"
-        },
-        {
-          "ticker": "AMZN",
-          "weight": 0.0422391,
-          "name": "Amazon.com Inc"
-        },
-        {
-          "ticker": "XOM",
-          "weight": 0.0217803,
-          "name": "ExxonMobil Holdings Corp"
-        },
-        {
-          "ticker": "WMT",
-          "weight": 0.0164802,
-          "name": "Walmart Inc"
-        },
-        {
-          "ticker": "INTC",
-          "weight": 0.014405901,
-          "name": "Intel Corp"
-        },
-        {
-          "ticker": "COST",
-          "weight": 0.014276201,
-          "name": "Costco Wholesale Corp"
-        },
-        {
-          "ticker": "BAC",
-          "weight": 0.0136729,
-          "name": "Bank of America Corp"
-        },
-        {
-          "ticker": "UNH",
-          "weight": 0.012722,
-          "name": "UnitedHealth Group Inc"
-        },
-        {
-          "ticker": "CVX",
-          "weight": 0.012456699,
-          "name": "Chevron Corp"
-        },
-        {
-          "ticker": "PG",
-          "weight": 0.011374,
-          "name": "Procter & Gamble Co"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 100.0,
-      "scores": {
-        "performance": 17.6,
-        "risk": 55.0,
-        "cost": 29.4,
-        "liquidity": 19.4,
-        "quality": 100.0,
-        "overall": 39.9
-      },
-      "ranked_against": "equity_broad",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.2,
-        "dow_1m": -0.3,
-        "sp500_3m": -0.12,
-        "dow_3m": -3.25,
-        "sp500_6m": -6.32,
-        "dow_6m": -2.6,
-        "sp500_1y": -2.14,
-        "dow_1y": -2.05,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 111,
-      "peer_rank": 27,
-      "peer_group_size": 28
-    },
-    {
-      "ticker": "GBTC",
-      "name": "Grayscale Bitcoin Trust",
-      "category": "crypto",
-      "peer_group": "crypto",
-      "sector": "Crypto",
-      "confidence": 1.0,
-      "issuer": "Grayscale",
-      "expense_ratio": 1.5,
-      "price": 50.21,
-      "aum": 8394089984,
-      "avg_dollar_volume": 77327642.0,
-      "bid_ask_spread_pct": 0.3384,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 49.87,
-      "premium_discount_pct": 0.8622,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.47,
-        "3m": -19.38,
-        "6m": 1.11,
-        "1y": -44.63,
-        "3y": null
-      },
-      "index_symbol": "IBIT",
-      "index_returns": {
-        "1m": 2.58,
-        "3m": -19.09,
-        "6m": 1.76,
-        "1y": -43.92,
-        "3y": null
-      },
-      "tracking_difference": {
-        "1m": -0.11,
-        "3m": -0.29,
-        "6m": -0.65,
-        "1y": -0.71,
-        "3y": null
-      },
-      "tracking_difference_1y": -0.71,
-      "tracking_error_pct": 1.32,
-      "total_cost_of_ownership_pct": 2.3622,
-      "max_drawdown": -53.75,
-      "sharpe_ratio": 0.96,
-      "sortino_ratio": 1.48,
-      "beta": 1.25,
-      "sector_weights": null,
-      "sector_lookthrough_available": false,
-      "top_holdings": null,
-      "position_lookthrough_available": false,
-      "quality_score": 66,
-      "scores": {
-        "performance": 5.0,
-        "risk": 80.8,
-        "cost": 12.0,
-        "liquidity": 40.0,
-        "quality": 66,
-        "overall": 39.6
-      },
-      "ranked_against": "crypto",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.24,
-        "dow_1m": -0.34,
-        "sp500_3m": -24.92,
-        "dow_3m": -28.05,
-        "sp500_6m": -12.83,
-        "dow_6m": -9.11,
-        "sp500_1y": -66.65,
-        "dow_1y": -66.56,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 112,
-      "peer_rank": 6,
-      "peer_group_size": 6
     },
     {
       "ticker": "VWO",
@@ -13516,9 +13439,9 @@
         "performance": 12.5,
         "risk": 23.3,
         "cost": 35.0,
-        "liquidity": 71.7,
+        "liquidity": 74.7,
         "quality": 100.0,
-        "overall": 39.2
+        "overall": 39.7
       },
       "ranked_against": "equity_international",
       "cross_asset_class_rank": false,
@@ -13534,9 +13457,86 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 113,
+      "overall_rank": 112,
       "peer_rank": 12,
       "peer_group_size": 13
+    },
+    {
+      "ticker": "GBTC",
+      "name": "Grayscale Bitcoin Trust",
+      "category": "crypto",
+      "peer_group": "crypto",
+      "sector": "Crypto",
+      "confidence": 1.0,
+      "issuer": "Grayscale",
+      "expense_ratio": 1.5,
+      "price": 50.21,
+      "aum": 8394089984,
+      "avg_dollar_volume": 77327642.0,
+      "bid_ask_spread_pct": 0.5759,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 49.87,
+      "premium_discount_pct": 0.8622,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.47,
+        "3m": -19.38,
+        "6m": 1.11,
+        "1y": -44.63,
+        "3y": null
+      },
+      "index_symbol": "IBIT",
+      "index_returns": {
+        "1m": 2.58,
+        "3m": -19.09,
+        "6m": 1.76,
+        "1y": -43.92,
+        "3y": null
+      },
+      "tracking_difference": {
+        "1m": -0.11,
+        "3m": -0.29,
+        "6m": -0.65,
+        "1y": -0.71,
+        "3y": null
+      },
+      "tracking_difference_1y": -0.71,
+      "tracking_error_pct": 1.32,
+      "total_cost_of_ownership_pct": 2.3622,
+      "max_drawdown": -53.75,
+      "sharpe_ratio": 0.96,
+      "sortino_ratio": 1.48,
+      "beta": 1.25,
+      "sector_weights": null,
+      "sector_lookthrough_available": false,
+      "top_holdings": null,
+      "position_lookthrough_available": false,
+      "quality_score": 66,
+      "scores": {
+        "performance": 5.0,
+        "risk": 80.8,
+        "cost": 12.0,
+        "liquidity": 40.0,
+        "quality": 66,
+        "overall": 39.6
+      },
+      "ranked_against": "crypto",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.24,
+        "dow_1m": -0.34,
+        "sp500_3m": -24.92,
+        "dow_3m": -28.05,
+        "sp500_6m": -12.83,
+        "dow_6m": -9.11,
+        "sp500_1y": -66.65,
+        "dow_1y": -66.56,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 113,
+      "peer_rank": 6,
+      "peer_group_size": 6
     },
     {
       "ticker": "JEPI",
@@ -13795,7 +13795,7 @@
       "price": 15.88,
       "aum": 1872068736,
       "avg_dollar_volume": 35276912.0,
-      "bid_ask_spread_pct": 0.6285,
+      "bid_ask_spread_pct": 0.8788,
       "bid_ask_spread_source": "quoted_snapshot",
       "nav": 15.63967,
       "premium_discount_pct": 1.3448,
@@ -13972,129 +13972,6 @@
       "peer_group_size": 16
     },
     {
-      "ticker": "BOTZ",
-      "name": "Global X Robotics & AI",
-      "category": "thematic",
-      "peer_group": "equity_thematic",
-      "sector": "Thematic",
-      "confidence": 1.0,
-      "issuer": "Global X",
-      "expense_ratio": 0.68,
-      "price": 37.5,
-      "aum": 3312529664,
-      "avg_dollar_volume": 31337381.0,
-      "bid_ask_spread_pct": 1.4606,
-      "bid_ask_spread_source": "quoted_snapshot",
-      "nav": 36.89,
-      "premium_discount_pct": 1.9517,
-      "premium_discount_source": "quote NAV vs market price",
-      "returns": {
-        "1m": 2.38,
-        "3m": -5.85,
-        "6m": 4.84,
-        "1y": 11.61,
-        "3y": null
-      },
-      "index_symbol": null,
-      "index_returns": null,
-      "tracking_difference": null,
-      "tracking_difference_1y": null,
-      "tracking_error_pct": null,
-      "total_cost_of_ownership_pct": 2.6317,
-      "max_drawdown": -29.02,
-      "sharpe_ratio": 0.53,
-      "sortino_ratio": 0.78,
-      "beta": 1.39,
-      "sector_weights": {
-        "consumer_cyclical": 0.0584,
-        "consumer_defensive": 0.0002,
-        "technology": 0.3306,
-        "communication_services": 0.0434,
-        "industrials": 0.4907,
-        "healthcare": 0.0766
-      },
-      "sector_lookthrough_available": true,
-      "top_holdings": [
-        {
-          "ticker": "6861.T",
-          "weight": 0.106048,
-          "name": "Keyence Corp"
-        },
-        {
-          "ticker": "ABBN.SW",
-          "weight": 0.09342709,
-          "name": "ABB Ltd"
-        },
-        {
-          "ticker": "6954.T",
-          "weight": 0.091423705,
-          "name": "Fanuc Corp"
-        },
-        {
-          "ticker": "NVDA",
-          "weight": 0.0886319,
-          "name": "NVIDIA Corp"
-        },
-        {
-          "ticker": "ISRG",
-          "weight": 0.0575817,
-          "name": "Intuitive Surgical Inc"
-        },
-        {
-          "ticker": "6273.T",
-          "weight": 0.046092,
-          "name": "SMC Corp"
-        },
-        {
-          "ticker": "300124.SZ",
-          "weight": 0.0423352,
-          "name": "Shenzhen Inovance Technology Co Ltd Class A"
-        },
-        {
-          "ticker": "6383.T",
-          "weight": 0.0323908,
-          "name": "Daifuku Co Ltd"
-        },
-        {
-          "ticker": "CGNX",
-          "weight": 0.0245243,
-          "name": "Cognex Corp"
-        },
-        {
-          "ticker": "AUR",
-          "weight": 0.024010701,
-          "name": "Aurora Innovation Inc Class A"
-        }
-      ],
-      "position_lookthrough_available": true,
-      "quality_score": 60,
-      "scores": {
-        "performance": 31.7,
-        "risk": 34.0,
-        "cost": 35.6,
-        "liquidity": 28.0,
-        "quality": 60,
-        "overall": 35.8
-      },
-      "ranked_against": "equity_thematic",
-      "cross_asset_class_rank": false,
-      "vs_benchmarks": {
-        "sp500_1m": -0.33,
-        "dow_1m": -0.43,
-        "sp500_3m": -11.39,
-        "dow_3m": -14.52,
-        "sp500_6m": -9.1,
-        "dow_6m": -5.38,
-        "sp500_1y": -10.41,
-        "dow_1y": -10.32,
-        "sp500_3y": null,
-        "dow_3y": null
-      },
-      "overall_rank": 118,
-      "peer_rank": 14,
-      "peer_group_size": 16
-    },
-    {
       "ticker": "IWF",
       "name": "iShares Russell 1000 Growth",
       "category": "growth",
@@ -14212,7 +14089,7 @@
         "performance": 6.5,
         "risk": 27.4,
         "cost": 17.3,
-        "liquidity": 71.5,
+        "liquidity": 71.4,
         "quality": 100.0,
         "overall": 35.6
       },
@@ -14230,9 +14107,132 @@
         "sp500_3y": null,
         "dow_3y": null
       },
-      "overall_rank": 119,
+      "overall_rank": 118,
       "peer_rank": 28,
       "peer_group_size": 28
+    },
+    {
+      "ticker": "BOTZ",
+      "name": "Global X Robotics & AI",
+      "category": "thematic",
+      "peer_group": "equity_thematic",
+      "sector": "Thematic",
+      "confidence": 1.0,
+      "issuer": "Global X",
+      "expense_ratio": 0.68,
+      "price": 37.5,
+      "aum": 3312529664,
+      "avg_dollar_volume": 31337381.0,
+      "bid_ask_spread_pct": 1.4606,
+      "bid_ask_spread_source": "quoted_snapshot",
+      "nav": 36.89,
+      "premium_discount_pct": 1.9517,
+      "premium_discount_source": "quote NAV vs market price",
+      "returns": {
+        "1m": 2.38,
+        "3m": -5.85,
+        "6m": 4.84,
+        "1y": 11.61,
+        "3y": null
+      },
+      "index_symbol": null,
+      "index_returns": null,
+      "tracking_difference": null,
+      "tracking_difference_1y": null,
+      "tracking_error_pct": null,
+      "total_cost_of_ownership_pct": 2.6317,
+      "max_drawdown": -29.02,
+      "sharpe_ratio": 0.53,
+      "sortino_ratio": 0.78,
+      "beta": 1.39,
+      "sector_weights": {
+        "consumer_cyclical": 0.0584,
+        "consumer_defensive": 0.0002,
+        "technology": 0.3306,
+        "communication_services": 0.0434,
+        "industrials": 0.4907,
+        "healthcare": 0.0766
+      },
+      "sector_lookthrough_available": true,
+      "top_holdings": [
+        {
+          "ticker": "6861.T",
+          "weight": 0.106048,
+          "name": "Keyence Corp"
+        },
+        {
+          "ticker": "ABBN.SW",
+          "weight": 0.09342709,
+          "name": "ABB Ltd"
+        },
+        {
+          "ticker": "6954.T",
+          "weight": 0.091423705,
+          "name": "Fanuc Corp"
+        },
+        {
+          "ticker": "NVDA",
+          "weight": 0.0886319,
+          "name": "NVIDIA Corp"
+        },
+        {
+          "ticker": "ISRG",
+          "weight": 0.0575817,
+          "name": "Intuitive Surgical Inc"
+        },
+        {
+          "ticker": "6273.T",
+          "weight": 0.046092,
+          "name": "SMC Corp"
+        },
+        {
+          "ticker": "300124.SZ",
+          "weight": 0.0423352,
+          "name": "Shenzhen Inovance Technology Co Ltd Class A"
+        },
+        {
+          "ticker": "6383.T",
+          "weight": 0.0323908,
+          "name": "Daifuku Co Ltd"
+        },
+        {
+          "ticker": "CGNX",
+          "weight": 0.0245243,
+          "name": "Cognex Corp"
+        },
+        {
+          "ticker": "AUR",
+          "weight": 0.024010701,
+          "name": "Aurora Innovation Inc Class A"
+        }
+      ],
+      "position_lookthrough_available": true,
+      "quality_score": 60,
+      "scores": {
+        "performance": 31.7,
+        "risk": 34.0,
+        "cost": 35.6,
+        "liquidity": 25.5,
+        "quality": 60,
+        "overall": 35.4
+      },
+      "ranked_against": "equity_thematic",
+      "cross_asset_class_rank": false,
+      "vs_benchmarks": {
+        "sp500_1m": -0.33,
+        "dow_1m": -0.43,
+        "sp500_3m": -11.39,
+        "dow_3m": -14.52,
+        "sp500_6m": -9.1,
+        "dow_6m": -5.38,
+        "sp500_1y": -10.41,
+        "dow_1y": -10.32,
+        "sp500_3y": null,
+        "dow_3y": null
+      },
+      "overall_rank": 119,
+      "peer_rank": 14,
+      "peer_group_size": 16
     },
     {
       "ticker": "JEPQ",
@@ -14799,9 +14799,9 @@
         "performance": 41.7,
         "risk": 22.5,
         "cost": 15.6,
-        "liquidity": 17.3,
+        "liquidity": 14.7,
         "quality": 60,
-        "overall": 30.4
+        "overall": 30.0
       },
       "ranked_against": "equity_thematic",
       "cross_asset_class_rank": false,
@@ -14902,8 +14902,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "dfeebcfc14fa095dc8809f56357503cb6185b79d",
+    "git_commit_sha": "a084a6507ec6426ea5d769dfca94c518ecbe6fdb",
     "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
-    "generated_at": "2026-08-07T21:44:49.267197+00:00"
+    "generated_at": "2026-08-07T22:28:54.479742+00:00"
   }
 }
