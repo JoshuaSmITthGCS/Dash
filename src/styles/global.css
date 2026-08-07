@@ -1591,3 +1591,44 @@ body { background: var(--app-background); background-image: none; }
 .allocation-funds-field input { min-height: 44px; }
 .planning-goals input, .planning-goals select { min-height: 44px; }
 .period-selector button, .period-control button { flex: 0 0 45px; min-width: 45px; min-height: 44px; }
+
+/* Research evidence panels (/screens/validation) --------------------------------------- */
+.evidence-stack { display: grid; gap: 14px; margin-bottom: 18px; }
+.evidence-panel, .evidence-headline { display: grid; gap: 12px; }
+.evidence-headline { border-left: 3px solid var(--accent, currentColor); }
+.evidence-note { margin: 0; color: var(--text-tertiary); font-size: 12px; line-height: 1.5; }
+.evidence-empty { display: grid; gap: 4px; padding: 12px; border-radius: 8px;
+  background: var(--surface-sunken, transparent); color: var(--text-tertiary); font-size: 12px; }
+.evidence-empty strong { color: var(--text-secondary); font-size: 13px; }
+/* Wide tables scroll inside the panel rather than pushing the page sideways. */
+.evidence-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.evidence-table { width: 100%; border-collapse: collapse; font: 500 12px var(--font-mono); }
+.evidence-table th, .evidence-table td { padding: 5px 8px; text-align: right; white-space: nowrap; }
+.evidence-table thead th { color: var(--text-faint); font-size: 10px; text-transform: uppercase;
+  font-weight: 600; border-bottom: 1px solid var(--border, currentColor); }
+.evidence-table tbody th[scope="row"] { text-align: left; color: var(--text-secondary); }
+.evidence-row-self { background: var(--surface-sunken, transparent); }
+.evidence-row-self th, .evidence-row-self td { font-weight: 700; }
+.evidence-significant { font-weight: 700; }
+.evidence-loadings, .evidence-regimes, .evidence-experiments { list-style: none; margin: 0; padding: 0; }
+.evidence-loadings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.evidence-loadings li, .evidence-regimes li { display: grid; gap: 2px; min-width: 0; }
+.evidence-loadings span, .evidence-regimes span { color: var(--text-faint); font-size: 10px;
+  text-transform: uppercase; }
+.evidence-loadings b, .evidence-regimes b { font: 600 14px var(--font-mono); }
+.evidence-loadings small, .evidence-regimes small { color: var(--text-tertiary); font-size: 10px; }
+.evidence-regimes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  margin: 6px 0 12px; }
+.evidence-details { font-size: 12px; }
+.evidence-details summary { cursor: pointer; color: var(--text-secondary); }
+.evidence-experiments { display: grid; gap: 10px; }
+.evidence-experiments li { display: grid; gap: 3px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border, transparent); }
+.evidence-experiments li > div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.evidence-experiments b { font: 600 12px var(--font-mono); }
+.evidence-experiments p { margin: 0; font-size: 12px; color: var(--text-secondary); }
+.evidence-experiments small { color: var(--text-tertiary); font-size: 11px; line-height: 1.45; }
+@media (max-width: 800px) {
+  .evidence-loadings, .evidence-regimes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) { .evidence-loadings { grid-template-columns: 1fr; } }

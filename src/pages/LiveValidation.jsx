@@ -1,5 +1,6 @@
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
+import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
 
 const title = (value = '') => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
@@ -99,10 +100,12 @@ function ICValidation({ data, error }) {
 export default function LiveValidation() {
   const { data, loading, error } = useData('validation/live_v2_validation.json')
   const { data: icData, loading: icLoading, error: icError } = useData('validation/ic_validation.json')
+  const { data: evidence, error: evidenceError } = useData('validation/research_evidence.json')
   if (loading || icLoading) return <><ScreenNavigation /><Loading /></>
   return <><ScreenNavigation />
     <div className="page-head"><div><span className="eyebrow">Controlled staging refresh</span><h1 className="page-title">Live v2 validation</h1>
       <p className="page-sub">Provider lineage, applicability, confidence gates, and independent decision layers. This view never replaces production output.</p></div></div>
+    <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
       : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>
