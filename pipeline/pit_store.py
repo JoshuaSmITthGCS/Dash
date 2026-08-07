@@ -43,6 +43,7 @@ TRACKED_FIELDS = (
     "stock_comp_to_revenue", "capex_to_depreciation", "days_sales_outstanding_trend",
     "inventory_days_trend", "short_percent_of_float", "days_to_cover", "beta",
     "analyst_rating", "analyst_target_upside", "analyst_count", "statement_periods",
+    "average_dollar_volume",
 )
 
 # How long a field stays trustworthy before it should be flagged, in hours. Statement-derived
@@ -57,6 +58,7 @@ DEFAULT_FIELD_TTL_HOURS = {
     "short_percent_of_float": 168,
     "days_to_cover": 168,
     "beta": 720,
+    "average_dollar_volume": 48,
     "default": 24 * 100,          # statement-derived metrics: a quarter plus slack
 }
 

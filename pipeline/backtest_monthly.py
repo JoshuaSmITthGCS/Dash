@@ -16,6 +16,7 @@ import argparse
 import json
 import math
 import os
+import statistics
 import sys
 import time
 from calendar import monthrange
@@ -34,6 +35,9 @@ from backtest_historical import (  # noqa: E402
     rank_week,
 )
 from common import LOG  # noqa: E402
+from costs import estimate_cost_bps  # noqa: E402
+
+COST_MODELS = ("flat", "tiered")
 
 
 def _month_end(year, month):
@@ -87,11 +91,86 @@ def _price_maps(universe_data):
     }
 
 
+def trailing_liquidity_and_volatility(ticker_data, as_of, window=60):
+    """60-trading-day median dollar volume and annualized volatility as of a date, using
+    only the trailing window (no look-ahead) from a ticker's already-fetched daily history.
+
+    This is the same shape of input costs.py.estimate_cost_bps expects, computed from data
+    the monthly backtest already holds in memory -- no additional fetch required once
+    ``universe_data`` (with volumes) is populated.
+    """
+    if not ticker_data:
+        return None, None
+    dates = ticker_data.get("dates") or []
+    closes = ticker_data.get("closes") or []
+    volumes = ticker_data.get("volumes") or []
+    idx = None
+    for position, day in enumerate(dates):
+        if day <= as_of:
+            idx = position
+        else:
+            break
+    if idx is None or idx < 1:
+        return None, None
+    start = max(0, idx - window + 1)
+    trail_closes = closes[start:idx + 1]
+    trail_volumes = volumes[start:idx + 1] if volumes else []
+    dollar_volumes = [
+        close * volume for close, volume in zip(trail_closes, trail_volumes)
+        if close and volume
+    ]
+    median_dollar_volume_60d = statistics.median(dollar_volumes) if dollar_volumes else None
+    returns = [
+        trail_closes[i] / trail_closes[i - 1] - 1
+        for i in range(1, len(trail_closes))
+        if trail_closes[i - 1]
+    ]
+    annualized_volatility = (
+        statistics.pstdev(returns) * math.sqrt(252) if len(returns) > 1 else None
+    )
+    return median_dollar_volume_60d, annualized_volatility
+
+
+def _rebalance_turnover_and_cost(current, target, value, day, *, cost_model,
+                                 cost_scenario, transaction_cost_bps, universe_data):
+    """Turnover is always the same portfolio-weight math; only the cost estimate changes
+    with ``cost_model``. ``flat`` reproduces the pre-existing single-rate behavior exactly
+    so old results stay reproducible; ``tiered`` prices every name's own trade through
+    costs.py using that name's trailing liquidity and volatility as of ``day``.
+    """
+    names = set(current) | set(target)
+    turnover = 0.5 * sum(abs(current.get(name, 0) - target.get(name, 0)) for name in names)
+    if not current and target:
+        turnover = 1.0
+    if cost_model == "flat":
+        return turnover, value * turnover * transaction_cost_bps / 10000
+    total_cost = 0.0
+    for name in names:
+        trade_weight = abs(current.get(name, 0) - target.get(name, 0))
+        trade_dollar_value = trade_weight * value
+        if trade_dollar_value <= 0:
+            continue
+        median_dollar_volume_60d, annualized_volatility = trailing_liquidity_and_volatility(
+            universe_data.get(name), day,
+        )
+        estimate = estimate_cost_bps(
+            median_dollar_volume_60d=median_dollar_volume_60d,
+            annualized_volatility=annualized_volatility,
+            trade_dollar_value=trade_dollar_value,
+            scenario=cost_scenario,
+        )
+        total_cost += trade_dollar_value * estimate["total_bps"] / 10000
+    return turnover, total_cost
+
+
 def simulate_locked_portfolio(plans, universe_data, benchmark, initial_capital,
-                              transaction_cost_bps=10.0):
+                              transaction_cost_bps=10.0, cost_model="flat",
+                              cost_scenario="base"):
     """Mark holdings daily; only replace weights on a predeclared execution date."""
     if not plans:
         return {"history": [], "rebalances": [], "metrics": {}}
+    if cost_model not in COST_MODELS:
+        raise ValueError(f"unsupported cost model: {cost_model}")
     price_maps = _price_maps(universe_data)
     benchmark_map = dict(zip(benchmark["dates"], benchmark["closes"]))
     executions = {plan["execution_date"]: plan for plan in plans}
@@ -130,11 +209,11 @@ def simulate_locked_portfolio(plans, universe_data, benchmark, initial_capital,
             weight_sum = sum(target.values())
             target = {ticker: weight / weight_sum for ticker, weight in target.items()} if weight_sum else {}
             current = {ticker: amount / value for ticker, amount in dollars.items()} if value else {}
-            names = set(current) | set(target)
-            turnover = 0.5 * sum(abs(current.get(name, 0) - target.get(name, 0)) for name in names)
-            if not dollars and target:
-                turnover = 1.0
-            cost = value * turnover * transaction_cost_bps / 10000
+            turnover, cost = _rebalance_turnover_and_cost(
+                current, target, value, day,
+                cost_model=cost_model, cost_scenario=cost_scenario,
+                transaction_cost_bps=transaction_cost_bps, universe_data=universe_data,
+            )
             value -= cost
             total_turnover += turnover
             total_cost += cost
@@ -253,7 +332,16 @@ def main():
     parser.add_argument("--top-n", type=int, default=20)
     parser.add_argument("--initial-capital", type=float, default=100000.0)
     parser.add_argument("--report-lag-days", type=int, default=REPORT_LAG_DAYS_DEFAULT)
-    parser.add_argument("--transaction-cost-bps", type=float, default=10.0)
+    parser.add_argument("--transaction-cost-bps", type=float, default=10.0,
+                        help="One-way cost in bps for --cost-model=flat (default 10.0)")
+    parser.add_argument("--cost-model", choices=COST_MODELS, default="flat",
+                        help="'flat' preserves the original single-rate cost (default, "
+                             "reproduces prior results exactly). 'tiered' prices each "
+                             "name's own trade through costs.py using its trailing "
+                             "60-day liquidity and volatility")
+    parser.add_argument("--cost-scenario", choices=("optimistic", "base", "stress"),
+                        default="base",
+                        help="Which costs.py scenario to use when --cost-model=tiered")
     parser.add_argument("--delay", type=float, default=0.1)
     parser.add_argument("--workers", type=int, default=6,
                         help="Concurrent cached Yahoo fetches (default 6)")
@@ -337,6 +425,7 @@ def main():
 
     portfolio = simulate_locked_portfolio(
         plans, universe_data, benchmark, args.initial_capital, args.transaction_cost_bps,
+        cost_model=args.cost_model, cost_scenario=args.cost_scenario,
     )
     benchmark_result = simulate_benchmark(
         benchmark, plans[0]["execution_date"], args.initial_capital,
@@ -352,6 +441,8 @@ def main():
             "fundamental_availability": f"quarter end plus {args.report_lag_days} calendar days",
             "prices": "Yahoo adjusted close (split and dividend adjusted)",
             "transaction_cost_bps_one_way": args.transaction_cost_bps,
+            "cost_model": args.cost_model,
+            "cost_scenario": args.cost_scenario if args.cost_model == "tiered" else None,
         },
         "bias_disclosures": {
             "signal_return_lookahead": False,

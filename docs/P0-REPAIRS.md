@@ -100,4 +100,70 @@ nothing changed.
 
 ---
 
-*(WO-3 to be appended after its commit.)*
+## WO-3 — Wire the cost model into validation
+
+**Defect confirmed.** `ic_harness.py` and `backtest_monthly.py` both used a flat one-way rate
+(10bps) with no reference to `costs.py` anywhere in either file.
+
+**What was wired (code, no network required):**
+
+1. **`pipeline/backtest_monthly.py`** — added `--cost-model {flat,tiered}` and
+   `--cost-scenario {optimistic,base,stress}`. `flat` (default) reproduces the exact original
+   `value * turnover * transaction_cost_bps / 10000` formula — proved by a regression test that
+   reconstructs the pre-cost value from the output and checks the identity holds. `tiered` prices
+   every traded name's own leg through `costs.py.estimate_cost_bps()`, using that name's trailing
+   60-trading-day median dollar volume and realized volatility computed from the price/volume
+   history the backtest already holds in memory (`trailing_liquidity_and_volatility()`,
+   look-ahead-safe: only uses data up to and including the rebalance date).
+2. **`pipeline/validation/ic_harness.py`** — added `validation.cost_model` /
+   `validation.cost_scenario` to `settings.json` (default `"flat"` / `"base"`, preserving the old
+   constant exactly — proved by test). When `cost_model="tiered"`, the long/short top-minus-bottom
+   quintile spread's cost deduction is computed per period from each top/bottom-bucket name's
+   tracked `average_dollar_volume` via `costs.py`, falling back to the flat rate for any name (or
+   period) missing that field.
+3. **`pipeline/pit_store.py`** — added `average_dollar_volume` to `TRACKED_FIELDS` (bumped
+   `validation.snapshot_schema_version` 1 → 2) so the harness's tiered path has a liquidity input
+   to read once new snapshots accumulate. No `annualized_volatility` field is tracked yet, so the
+   harness's tiered cost currently prices spread + fees only, not volatility-scaled market impact —
+   a conservative understatement, not a fabricated volatility number, and called out here rather
+   than silently shipped.
+
+**Tests.** `pipeline/tests/test_backtest_monthly.py` (4 new cases: flat-formula equivalence,
+stress > optimistic, illiquid > liquid for an equal-size trade, invalid model raises) and
+`pipeline/tests/test_ic_harness.py` (3 new cases: flat default reproduces 10.0 exactly, tiered
+stress prices an illiquid book above 10.0, tiered gracefully falls back to flat when volume is
+untracked). Full suite: 636 passed, 0 failed.
+
+**What could not be done: the three-regime backtest re-run.** `backtest_monthly.py` needs each of
+the ~860 usable names' 5-year daily price *and volume* history to compute `tiered` costs, and
+turnover/CAGR/vol/drawdown/Sharpe depend on the same history regardless of cost model. No local
+price cache is committed (`pipeline/data/backtest_cache/` is empty in this checkout — it appears
+the cache was simply never committed after the last real run), and this session's network policy
+blocks Yahoo Finance (see WO-2's proxy-status evidence). The same block applies to an
+`ic_harness.py` re-run, which is moot anyway: Phase 0 already confirmed 0 of 24 eligible periods,
+so no wiring change produces a different published statistic today.
+
+**Reproduction, once run from an environment with real internet access:**
+```bash
+python pipeline/backtest_monthly.py --cost-model flat   --transaction-cost-bps 10 \
+    --out pipeline/reports/backtest_flat.json
+python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario base \
+    --out pipeline/reports/backtest_tiered_base.json
+python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario stress \
+    --out pipeline/reports/backtest_tiered_stress.json
+```
+Each does a fresh ~860-symbol, 10-year Yahoo fetch (`--cache-dir` persists it across retries,
+`--workers` parallelizes); expect this to run well past the 90-minute production budget, per the
+brief's own allowance for research runs.
+
+**Deliverable status.** `pipeline/reports/cost_regime_comparison.json` is committed with the
+wiring verified and a `status: "blocked_network_policy"` marker instead of fabricated regime
+numbers — every field a real run would populate is present and `null`, with the exact commands
+above to populate them. **The brief's threshold check — whether `costs.py` base wipes out more
+than 200bps of annual return relative to flat 10bps at 64.9% monthly turnover — is unresolved**
+and is carried into the Phase 3 verdict as the single highest-priority open item, since the brief
+itself calls it "the single most important number in this phase."
+
+Quality gates after this work order: `pytest pipeline/tests` — 636 passed, 0 failed;
+`validate_data.py` — 9 contracts validated (no schema depends on the changed fields);
+`npm run lint` — clean (no frontend files touched).

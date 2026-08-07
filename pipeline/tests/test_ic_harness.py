@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 PIPELINE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PIPELINE_DIR)
 
+import validation.ic_harness as ic_harness_module
 from validation.ic_harness import append_refresh, build_report, evaluate_variant, read_snapshots
 
 
@@ -87,6 +88,67 @@ def test_icir_unlocks_only_after_twenty_four_monthly_periods():
     assert summary["long_short_top_minus_bottom_quintile"]["cost_bps"] == 10.0
     assert summary["mean_top_quintile_turnover"] == 0.0
     assert summary["mean_rank_stability"] == 1.0
+
+
+def test_cost_model_defaults_to_flat_and_reproduces_the_old_constant_rate():
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    refreshes = []
+    for period in range(2):
+        rows = [{
+            "ticker": f"T{index}", "price": 100.0 + period,
+            "scores": {"champion": float(index)},
+            "raw_metric_inputs": {"average_dollar_volume": 1_000_000.0},
+        } for index in range(10)]
+        refreshes.append({
+            "refresh_id": f"run-{period}",
+            "recorded_at": (start + timedelta(days=31 * period)).isoformat(),
+            "rows": rows,
+        })
+    summary = evaluate_variant(refreshes, "champion", 30)
+    assert ic_harness_module.CONFIG.get("cost_model", "flat") == "flat"
+    assert summary["long_short_top_minus_bottom_quintile"]["cost_model"] == "flat"
+    assert summary["long_short_top_minus_bottom_quintile"]["cost_bps"] == 10.0
+
+
+def test_tiered_cost_model_prices_illiquid_names_above_the_flat_rate(monkeypatch):
+    monkeypatch.setitem(ic_harness_module.CONFIG, "cost_model", "tiered")
+    monkeypatch.setitem(ic_harness_module.CONFIG, "cost_scenario", "stress")
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    refreshes = []
+    for period in range(2):
+        rows = [{
+            "ticker": f"T{index}", "price": 100.0 + period,
+            "scores": {"champion": float(index)},
+            # $1M/day median volume sits in costs.py's "illiquid" tier (< $5M).
+            "raw_metric_inputs": {"average_dollar_volume": 1_000_000.0},
+        } for index in range(10)]
+        refreshes.append({
+            "refresh_id": f"run-{period}",
+            "recorded_at": (start + timedelta(days=31 * period)).isoformat(),
+            "rows": rows,
+        })
+    summary = evaluate_variant(refreshes, "champion", 30)
+    long_short = summary["long_short_top_minus_bottom_quintile"]
+    assert long_short["cost_model"] == "tiered"
+    assert long_short["cost_bps"] > 10.0
+
+
+def test_tiered_cost_model_falls_back_to_flat_rate_when_volume_is_untracked(monkeypatch):
+    monkeypatch.setitem(ic_harness_module.CONFIG, "cost_model", "tiered")
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    refreshes = []
+    for period in range(2):
+        rows = [{
+            "ticker": f"T{index}", "price": 100.0 + period,
+            "scores": {"champion": float(index)},
+        } for index in range(10)]
+        refreshes.append({
+            "refresh_id": f"run-{period}",
+            "recorded_at": (start + timedelta(days=31 * period)).isoformat(),
+            "rows": rows,
+        })
+    summary = evaluate_variant(refreshes, "champion", 30)
+    assert summary["long_short_top_minus_bottom_quintile"]["cost_bps"] == 10.0
 
 
 def test_snapshot_jsonl_contains_required_reproducibility_fields(tmp_path):

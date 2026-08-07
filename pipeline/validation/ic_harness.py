@@ -21,6 +21,7 @@ if PIPELINE_DIR not in sys.path:
     sys.path.insert(0, PIPELINE_DIR)
 
 from common import LOG, DATA_DIR, load_json, save_json  # noqa: E402
+from costs import estimate_cost_bps  # noqa: E402
 from evaluation import deflated_sharpe_ratio, pearson, rank  # noqa: E402
 import pit_store as raw_pit_store  # noqa: E402
 
@@ -212,6 +213,7 @@ def _forward_periods(refreshes, variant, horizon_days):
                 "ticker": row["ticker"],
                 "score": score,
                 "forward_return": end_price / start_price - 1,
+                "average_dollar_volume": (row.get("raw_metric_inputs") or {}).get("average_dollar_volume"),
             })
         if scored:
             periods.append({"date": start["recorded_at"][:10], "rows": scored})
@@ -286,9 +288,34 @@ def _turnover_and_stability(periods):
     }
 
 
+def _period_cost_bps(rows, count):
+    """The flat rate unless ``validation.cost_model`` is "tiered", in which case each
+    top/bottom-bucket name is priced through costs.py using its own tracked
+    ``average_dollar_volume`` (no annualized-volatility field is point-in-time-tracked yet,
+    so this prices spread + fees only, not market impact -- a conservative, labeled
+    understatement rather than a fabricated volatility input). Falls back to the flat rate
+    for any name missing tracked volume, and for the period as a whole if none have it.
+    """
+    if CONFIG.get("cost_model", "flat") != "tiered":
+        return CONFIG["long_short_cost_bps"]
+    ordered = sorted(rows, key=lambda row: row["score"])
+    bucket_size = max(1, round(len(ordered) / count))
+    scenario = CONFIG.get("cost_scenario", "base")
+    bps_values = []
+    for row in (*ordered[-bucket_size:], *ordered[:bucket_size]):
+        median_dollar_volume_60d = row.get("average_dollar_volume")
+        if not median_dollar_volume_60d:
+            continue
+        bps_values.append(
+            estimate_cost_bps(median_dollar_volume_60d=median_dollar_volume_60d,
+                              scenario=scenario)["total_bps"]
+        )
+    return mean(bps_values) if bps_values else CONFIG["long_short_cost_bps"]
+
+
 def evaluate_variant(refreshes, variant, horizon_days):
     periods = _forward_periods(refreshes, variant, horizon_days)
-    ic_values, leaks, bucket_periods, spreads = [], [], defaultdict(list), []
+    ic_values, leaks, bucket_periods, spreads, applied_cost_bps = [], [], defaultdict(list), [], []
     for period in periods:
         rows = period["rows"]
         ic = _spearman([row["score"] for row in rows], [row["forward_return"] for row in rows])
@@ -304,9 +331,11 @@ def evaluate_variant(refreshes, variant, horizon_days):
             for bucket in buckets:
                 bucket_periods[(count, bucket["bucket"])].append(bucket["mean_forward_return"])
             if count == CONFIG["quantile_counts"][0] and len(buckets) == count:
+                cost_bps = _period_cost_bps(rows, count)
+                applied_cost_bps.append(cost_bps)
                 spreads.append(buckets[-1]["mean_forward_return"]
                                - buckets[0]["mean_forward_return"]
-                               - CONFIG["long_short_cost_bps"] / 10_000)
+                               - cost_bps / 10_000)
     bucket_output = {}
     for count in CONFIG["quantile_counts"]:
         aggregated = [{
@@ -332,7 +361,8 @@ def evaluate_variant(refreshes, variant, horizon_days):
         "bucket_returns": bucket_output,
         "long_short_top_minus_bottom_quintile": {
             "mean_net_return": mean(spreads) if spreads else None,
-            "cost_bps": CONFIG["long_short_cost_bps"],
+            "cost_model": CONFIG.get("cost_model", "flat"),
+            "cost_bps": mean(applied_cost_bps) if applied_cost_bps else CONFIG["long_short_cost_bps"],
         },
         "deflated_sharpe_probability": deflated_sharpe_ratio(
             spread_sharpe,
