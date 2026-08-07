@@ -1373,6 +1373,9 @@ def run():
         universe=symbols,
         published=ranked_tickers,
         model_version=SETTINGS["model"]["semantic_version"],
+        # So a dark provider's modifier is snapshotted as unavailable coverage rather than
+        # as a neutral 0.0 that later validation would grade as real evidence.
+        source_status=payload.get("source_status"),
     )
     score_history = build_score_history(read_snapshots())
     for row in research:

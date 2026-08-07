@@ -6,8 +6,9 @@ from datetime import date, datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
-                            build_research, insider_modifier, macro_regime_modifier,
-                            sentiment_score, shrink_research_components, technical_factors,
+                            blend_research_components, build_research, insider_modifier,
+                            macro_regime_modifier, sentiment_score,
+                            shrink_research_components, technical_factors,
                             technical_score_from_parts)
 from scorer import SETTINGS
 
@@ -271,6 +272,42 @@ class SignalCorrectionTests(unittest.TestCase):
         self.assertEqual(detail["cap"], 20.0)
 
 
+class UnavailableNewsIsNotNeutralEvidenceTests(unittest.TestCase):
+    """The 4% news weight must be removed from the denominator, not filled with 50.
+
+    Measured against the committed universe before this change: 373 of 374 screen-universe
+    names and 39 of 40 published names carried an identical hard 50.0 at coverage 0.0.
+    """
+
+    COVERAGE = {"fundamentals": 0.9, "market_behavior": 0.8, "news_sentiment": 0.0}
+
+    def test_unavailable_news_is_dropped_from_the_denominator(self):
+        components = {"fundamentals": 80.0, "market_behavior": 60.0, "news_sentiment": None}
+        blended = blend_research_components(components, self.COVERAGE)
+        # Reweighted proportionally over the two available components, not blended with a 50.
+        expected = (80.0 * RANKING_WEIGHTS["fundamentals"]
+                    + 60.0 * RANKING_WEIGHTS["market_behavior"]) / (
+            RANKING_WEIGHTS["fundamentals"] + RANKING_WEIGHTS["market_behavior"])
+        self.assertAlmostEqual(blended["raw_score"], round(expected, 1), places=6)
+
+    def test_neutral_fill_would_have_pulled_the_score_toward_fifty(self):
+        components = {"fundamentals": 80.0, "market_behavior": 60.0}
+        unavailable = blend_research_components({**components, "news_sentiment": None},
+                                                self.COVERAGE)
+        neutral_filled = blend_research_components({**components, "news_sentiment": 50.0},
+                                                   self.COVERAGE)
+        # Every uncovered name above 50 was being dragged down by the same amount, which is
+        # what made the component inert: it moved the level without ordering anything.
+        self.assertGreater(unavailable["raw_score"], neutral_filled["raw_score"])
+
+    def test_available_news_still_carries_its_weight(self):
+        components = {"fundamentals": 80.0, "market_behavior": 60.0, "news_sentiment": 90.0}
+        blended = blend_research_components(components,
+                                            {**self.COVERAGE, "news_sentiment": 0.5})
+        expected = sum(components[key] * RANKING_WEIGHTS[key] for key in RANKING_WEIGHTS)
+        self.assertAlmostEqual(blended["raw_score"], round(expected, 1), places=6)
+
+
 class SentimentWindowTests(unittest.TestCase):
     def _article(self, ticker, score, published_at):
         return {"published_at": published_at, "ticker": ticker,
@@ -284,10 +321,19 @@ class SentimentWindowTests(unittest.TestCase):
         self.assertEqual(detail["article_count"], 1)
         self.assertGreater(score, 50)
 
-    def test_no_coverage_reads_neutral_with_zero_confidence(self):
+    def test_no_coverage_is_unavailable_not_neutral(self):
+        """Absence of coverage must not be scored as neutral evidence.
+
+        Returning 50.0 here gave every uncovered name an identical score at the blend's 4%
+        news weight -- an apparently active component that could not distinguish between any
+        two companies. None makes the component unavailable, so
+        blend_research_components drops its weight from the denominator instead.
+        """
         score, detail = sentiment_score([], "TEST")
-        self.assertEqual(score, 50.0)
+        self.assertIsNone(score)
+        self.assertFalse(detail["news_available"])
         self.assertEqual(detail["coverage"], 0.0)
+        self.assertEqual(detail["article_count"], 0)
 
     def test_nine_syndicated_copies_count_as_one_article(self):
         now = datetime(2026, 8, 2, tzinfo=timezone.utc)
@@ -322,7 +368,10 @@ class SentimentWindowTests(unittest.TestCase):
         score, detail = sentiment_score([article], "TEST",
                                         now=datetime(2026, 8, 2, tzinfo=timezone.utc))
 
-        self.assertEqual(score, 50.0)
+        # Discarding the only article leaves no qualifying coverage, which reads as
+        # unavailable rather than neutral for the same reason as the empty-input case.
+        self.assertIsNone(score)
+        self.assertFalse(detail["news_available"])
         self.assertEqual(detail["discarded_low_confidence"], 1)
 
     def test_filing_and_commentary_are_labelled_in_weight_detail(self):

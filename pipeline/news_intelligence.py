@@ -175,7 +175,15 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
         })
 
     if not articles or total_weight <= 0:
-        return float(config["neutral_score"]), {
+        # No qualifying coverage is *absence of evidence*, not evidence of neutrality. Returning
+        # the neutral score here handed 373 of 374 names an identical 50.0 at the blend's 4%
+        # news weight, which pulled every score toward 50 without distinguishing between any two
+        # companies -- an apparently active component doing nothing. Returning None instead lets
+        # advisor_engine.blend_research_components drop the weight from the denominator and
+        # reweight the remaining components proportionally, which it already does for any
+        # component that is None.
+        return None, {
+            "news_available": False,
             "article_count": 0,
             "raw_article_count": len(news_items),
             "average": None,
@@ -194,6 +202,7 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
     score = max(config["score_minimum"], min(config["score_maximum"],
                 config["neutral_score"] + average * config["sentiment_score_scale"]))
     return round(score, 1), {
+        "news_available": True,
         "article_count": len(articles),
         "raw_article_count": len(news_items),
         "average": round(average, 3),
