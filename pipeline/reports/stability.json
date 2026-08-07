@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 6,
+  "refreshes_observed": 7,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -898,6 +898,128 @@
           ],
           "score_delta": 1.2,
           "confidence_delta": 0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-07T09:40:00.512554+00:00",
+      "current_refresh": "advisor-2026-08-07T10:44:30.228186+00:00",
+      "shared_tickers": 416,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 13,
+      "tickers_with_availability_driven_change_pct": 0.031,
+      "mean_abs_score_delta": 0.25,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CHRD",
+          "metrics_with_value_change": [
+            "ev_to_ebit",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 5.6,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "DDS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "peg"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "AGO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.2,
+          "confidence_delta": -0.07
+        },
+        {
+          "ticker": "EXPE",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "G",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.6,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "AFL",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "DEO",
+          "metrics_with_value_change": [
+            "free_cash_flow_yield",
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "revenue_growth"
+          ],
+          "score_delta": -2.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "GAP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -0.6,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "ADI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -0.4,
+          "confidence_delta": -0.03
         }
       ]
     }
