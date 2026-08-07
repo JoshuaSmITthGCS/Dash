@@ -68579,6 +68579,10 @@
       "news_sentiment": "Weighted as a 4% tilt using recency decay, source quality, source-of-record filing labels, entity confidence, and title-level novelty.",
       "insider_activity": "Form 4 trades split routine vs opportunistic per Cohen, Malloy & Pomorski (JF 2012); only opportunistic cluster activity scores.",
       "caveat": "Published factor premia are historical in-sample estimates. They indicate which signals have mattered, not what any of them will return next."
+    },
+    "canonical_layer": {
+      "model_version": "structural-timeliness-2.0.0",
+      "migration": "legacy fields retained; v2 decisions are independently versioned"
     }
   },
   "market": {
@@ -616012,7 +616016,7 @@
     "run_id": "advisor-2026-08-07T180849.559640+0000",
     "generated_at": "2026-08-07T18:08:49.559640+00:00",
     "data_cutoff": "2026-08-07T18:08:49.559640+00:00",
-    "code_commit_hash": "cdd9ac56923a4fa50d12a10e6c679cb80ede9941",
+    "code_commit_hash": "2274734ad99a9b195157967cc5f3598c9e49c41a",
     "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
     "schema_version": 5,
     "model_version": "3.2.0",
@@ -616129,7 +616133,7 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "cdd9ac56923a4fa50d12a10e6c679cb80ede9941",
+    "git_commit_sha": "2274734ad99a9b195157967cc5f3598c9e49c41a",
     "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
     "generated_at": "2026-08-07T18:08:49.559640+00:00"
   }
