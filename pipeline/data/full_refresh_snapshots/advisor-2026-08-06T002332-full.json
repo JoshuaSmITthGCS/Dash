@@ -1,0 +1,6132 @@
+{
+ "_note": "Field-trimmed extract of the 2026-08-06T00:23:32Z full-universe refresh (git d41ba4d public/data/advisor.json), kept only for reproducing pipeline/enrichment_bias.py without network access. Not a published artifact.",
+ "enrichment_selection": {
+  "challengers": [
+   "HIG",
+   "BPOP",
+   "CACC",
+   "FSLR",
+   "C"
+  ],
+  "previous_top": [
+   "CRUS",
+   "DECK",
+   "GMED",
+   "ACGL",
+   "CCK",
+   "DINO",
+   "ADBE",
+   "CI",
+   "GL",
+   "GNTX",
+   "ALL",
+   "ACN",
+   "ENS",
+   "FTI",
+   "BMY",
+   "EME",
+   "EXEL"
+  ],
+  "priority_count": 22
+ },
+ "generated_at": "2026-08-06T00:23:32.352074+00:00",
+ "model_version": "3.2.0",
+ "polled_count": 920,
+ "publish_limit": 40,
+ "research": [
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 78.0,
+    "capital_allocation": 88.8,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 74.6,
+    "valuation": 81.8
+   },
+   "market_cap": 10932872192,
+   "name": "Globus Medical, Inc.",
+   "score": 84.3,
+   "sector": "Healthcare",
+   "stance": "ATTRACTIVE",
+   "ticker": "GMED"
+  },
+  {
+   "extended_coverage": 0.85,
+   "fundamental_categories": {
+    "accounting_quality": 96.0,
+    "capital_allocation": 83.3,
+    "financial_health": 100.0,
+    "growth": 80.8,
+    "profitability": 90.8,
+    "valuation": 95.7
+   },
+   "market_cap": 39365185536,
+   "name": "The Hartford Insurance Group, I",
+   "score": 82.7,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "HIG"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 79.8,
+    "capital_allocation": 100.0,
+    "financial_health": 100.0,
+    "growth": 56.1,
+    "profitability": 94.8,
+    "valuation": 93.1
+   },
+   "market_cap": 13524219904,
+   "name": "Deckers Outdoor Corporation",
+   "score": 82.6,
+   "sector": "Consumer Cyclical",
+   "stance": "ATTRACTIVE",
+   "ticker": "DECK"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 92.8,
+    "capital_allocation": 100.0,
+    "financial_health": 54.1,
+    "growth": 86.5,
+    "profitability": 74.7,
+    "valuation": 92.9
+   },
+   "market_cap": 13284008960,
+   "name": "Crown Holdings, Inc.",
+   "score": 79.4,
+   "sector": "Consumer Cyclical",
+   "stance": "ATTRACTIVE",
+   "ticker": "CCK"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 88.0,
+    "financial_health": 100.0,
+    "growth": 37.4,
+    "profitability": 90.8,
+    "valuation": 92.2
+   },
+   "market_cap": 33789687808,
+   "name": "Arch Capital Group Ltd.",
+   "score": 78.0,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "ACGL"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 84.4,
+    "capital_allocation": 88.0,
+    "financial_health": 79.7,
+    "growth": 76.4,
+    "profitability": 59.9,
+    "valuation": 89.2
+   },
+   "market_cap": 14752504832,
+   "name": "HF Sinclair Corporation",
+   "score": 77.3,
+   "sector": "Energy",
+   "stance": "ATTRACTIVE",
+   "ticker": "DINO"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 60.7,
+    "financial_health": 88.5,
+    "growth": 74.0,
+    "profitability": 100.0,
+    "valuation": 90.4
+   },
+   "market_cap": 103079706624,
+   "name": "Adobe Inc.",
+   "score": 77.2,
+   "sector": "Technology",
+   "stance": "ATTRACTIVE",
+   "ticker": "ADBE"
+  },
+  {
+   "extended_coverage": 0.85,
+   "fundamental_categories": {
+    "accounting_quality": 90.7,
+    "capital_allocation": 78.8,
+    "financial_health": 100.0,
+    "growth": 57.0,
+    "profitability": 73.5,
+    "valuation": 100.0
+   },
+   "market_cap": 14163252224,
+   "name": "CNA Financial Corporation",
+   "score": 76.3,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "CNA"
+  },
+  {
+   "extended_coverage": 0.85,
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 73.9,
+    "financial_health": 100.0,
+    "growth": 86.1,
+    "profitability": 93.3,
+    "valuation": 67.8
+   },
+   "market_cap": 68111003648,
+   "name": "Allstate Corporation (The)",
+   "score": 76.2,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "ALL"
+  },
+  {
+   "extended_coverage": 0.8,
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 94.4,
+    "financial_health": 100.0,
+    "growth": 80.5,
+    "profitability": 96.8,
+    "valuation": 71.6
+   },
+   "market_cap": 49595056128,
+   "name": "Ameriprise Financial, Inc.",
+   "score": 76.1,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "AMP"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 71.9,
+    "capital_allocation": 94.4,
+    "financial_health": 100.0,
+    "growth": 58.8,
+    "profitability": 83.8,
+    "valuation": 96.8
+   },
+   "market_cap": 5136398336,
+   "name": "Gentex Corporation",
+   "score": 76.0,
+   "sector": "Consumer Cyclical",
+   "stance": "ATTRACTIVE",
+   "ticker": "GNTX"
+  },
+  {
+   "extended_coverage": 0.85,
+   "fundamental_categories": {
+    "accounting_quality": 57.7,
+    "capital_allocation": 73.5,
+    "financial_health": 80.0,
+    "growth": 71.4,
+    "profitability": 70.3,
+    "valuation": 100.0
+   },
+   "market_cap": 13753949184,
+   "name": "Fidelity National Financial, In",
+   "score": 75.9,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "FNF"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 83.3,
+    "capital_allocation": 75.4,
+    "financial_health": 95.5,
+    "growth": 47.5,
+    "profitability": 82.6,
+    "valuation": 80.4
+   },
+   "market_cap": 12520997888,
+   "name": "Align Technology, Inc.",
+   "score": 75.8,
+   "sector": "Healthcare",
+   "stance": "ATTRACTIVE",
+   "ticker": "ALGN"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 80.2,
+    "capital_allocation": 83.3,
+    "financial_health": 63.6,
+    "growth": 61.0,
+    "profitability": 69.4,
+    "valuation": 98.7
+   },
+   "market_cap": 71477051392,
+   "name": "The Cigna Group",
+   "score": 75.7,
+   "sector": "Healthcare",
+   "stance": "ATTRACTIVE",
+   "ticker": "CI"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 52.4,
+    "financial_health": 95.5,
+    "growth": 55.0,
+    "profitability": 95.5,
+    "valuation": 95.0
+   },
+   "market_cap": 104476868608,
+   "name": "Accenture plc",
+   "score": 75.1,
+   "sector": "Technology",
+   "stance": "ATTRACTIVE",
+   "ticker": "ACN"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 96.8,
+    "capital_allocation": 100.0,
+    "financial_health": 95.5,
+    "growth": 86.1,
+    "profitability": 82.4,
+    "valuation": 55.9
+   },
+   "market_cap": 27165224960,
+   "name": "TechnipFMC plc",
+   "score": 75.1,
+   "sector": "Energy",
+   "stance": "ATTRACTIVE",
+   "ticker": "FTI"
+  },
+  {
+   "extended_coverage": 0.8,
+   "fundamental_categories": {
+    "accounting_quality": 74.9,
+    "capital_allocation": 100.0,
+    "financial_health": 80.0,
+    "growth": 63.9,
+    "profitability": 86.2,
+    "valuation": 87.9
+   },
+   "market_cap": 14275765248,
+   "name": "Globe Life Inc.",
+   "score": 75.1,
+   "sector": "Financial Services",
+   "stance": "ATTRACTIVE",
+   "ticker": "GL"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 72.0,
+    "capital_allocation": 79.9,
+    "financial_health": 95.5,
+    "growth": 85.2,
+    "profitability": 85.1,
+    "valuation": 55.6
+   },
+   "market_cap": 36265394176,
+   "name": "EMCOR Group, Inc.",
+   "score": 74.9,
+   "sector": "Industrials",
+   "stance": "PROMISING",
+   "ticker": "EME"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 60.1,
+    "financial_health": 82.7,
+    "growth": 74.3,
+    "profitability": 92.8,
+    "valuation": 71.7
+   },
+   "market_cap": 163589242880,
+   "name": "Gilead Sciences, Inc.",
+   "score": 74.4,
+   "sector": "Healthcare",
+   "stance": "PROMISING",
+   "ticker": "GILD"
+  },
+  {
+   "extended_coverage": 0.6,
+   "fundamental_categories": {
+    "accounting_quality": 94.8,
+    "capital_allocation": 88.0,
+    "financial_health": null,
+    "growth": 53.7,
+    "profitability": 85.6,
+    "valuation": 87.9
+   },
+   "market_cap": 11337613312,
+   "name": "Popular, Inc.",
+   "score": 74.1,
+   "sector": "Financial Services",
+   "stance": "PROMISING",
+   "ticker": "BPOP"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 87.6,
+    "capital_allocation": 79.7,
+    "financial_health": 100.0,
+    "growth": 93.8,
+    "profitability": 92.8,
+    "valuation": 75.5
+   },
+   "market_cap": 14251833344,
+   "name": "Exelixis, Inc.",
+   "score": 74.1,
+   "sector": "Healthcare",
+   "stance": "PROMISING",
+   "ticker": "EXEL"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 79.8,
+    "capital_allocation": 94.4,
+    "financial_health": 84.7,
+    "growth": 43.6,
+    "profitability": 74.2,
+    "valuation": 68.2
+   },
+   "market_cap": 6921924608,
+   "name": "EnerSys",
+   "score": 74.0,
+   "sector": "Industrials",
+   "stance": "PROMISING",
+   "ticker": "ENS"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 100.0,
+    "capital_allocation": 79.1,
+    "financial_health": 70.6,
+    "growth": 82.3,
+    "profitability": 75.9,
+    "valuation": 75.6
+   },
+   "market_cap": 11001178112,
+   "name": "Encompass Health Corporation",
+   "score": 73.8,
+   "sector": "Healthcare",
+   "stance": "PROMISING",
+   "ticker": "EHC"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 75.4,
+    "financial_health": 28.3,
+    "growth": 96.2,
+    "profitability": 88.4,
+    "valuation": 91.3
+   },
+   "market_cap": 16730229760,
+   "name": "Gen Digital Inc.",
+   "score": 73.5,
+   "sector": "Technology",
+   "stance": "PROMISING",
+   "ticker": "GEN"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 61.9,
+    "capital_allocation": 89.3,
+    "financial_health": 78.7,
+    "growth": 58.9,
+    "profitability": 66.2,
+    "valuation": 84.8
+   },
+   "market_cap": 26582355968,
+   "name": "Halliburton Company",
+   "score": 73.4,
+   "sector": "Energy",
+   "stance": "PROMISING",
+   "ticker": "HAL"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 50.9,
+    "financial_health": 56.6,
+    "growth": 74.3,
+    "profitability": 89.6,
+    "valuation": 80.2
+   },
+   "market_cap": 129977933824,
+   "name": "Bristol-Myers Squibb Company",
+   "score": 73.3,
+   "sector": "Healthcare",
+   "stance": "PROMISING",
+   "ticker": "BMY"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 91.0,
+    "capital_allocation": 100.0,
+    "financial_health": 84.7,
+    "growth": 10.0,
+    "profitability": 56.0,
+    "valuation": 92.1
+   },
+   "market_cap": 140152537088,
+   "name": "ConocoPhillips",
+   "score": 73.0,
+   "sector": "Energy",
+   "stance": "PROMISING",
+   "ticker": "COP"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 100.0,
+    "capital_allocation": 67.1,
+    "financial_health": 61.6,
+    "growth": 70.2,
+    "profitability": 52.7,
+    "valuation": 94.5
+   },
+   "market_cap": 10554381312,
+   "name": "Antero Resources Corporation",
+   "score": 72.9,
+   "sector": "Energy",
+   "stance": "PROMISING",
+   "ticker": "AR"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 60.9,
+    "capital_allocation": 100.0,
+    "financial_health": 98.0,
+    "growth": 53.1,
+    "profitability": 74.0,
+    "valuation": 84.3
+   },
+   "market_cap": 71494729728,
+   "name": "EOG Resources, Inc.",
+   "score": 72.9,
+   "sector": "Energy",
+   "stance": "PROMISING",
+   "ticker": "EOG"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 92.8,
+    "capital_allocation": 68.5,
+    "financial_health": 84.7,
+    "growth": 96.2,
+    "profitability": 76.6,
+    "valuation": 55.5
+   },
+   "market_cap": 12395005952,
+   "name": "Five Below, Inc.",
+   "score": 72.9,
+   "sector": "Consumer Cyclical",
+   "stance": "PROMISING",
+   "ticker": "FIVE"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 76.5,
+    "capital_allocation": 73.9,
+    "financial_health": 100.0,
+    "growth": 41.4,
+    "profitability": 94.6,
+    "valuation": 93.6
+   },
+   "market_cap": null,
+   "name": "Dillard's, Inc.",
+   "score": 72.7,
+   "sector": "Consumer Cyclical",
+   "stance": "PROMISING",
+   "ticker": "DDS"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 100.0,
+    "capital_allocation": 79.1,
+    "financial_health": 80.0,
+    "growth": 88.6,
+    "profitability": 73.5,
+    "valuation": 72.4
+   },
+   "market_cap": 7656478720,
+   "name": "First American Corporation (New",
+   "score": 72.5,
+   "sector": "Financial Services",
+   "stance": "PROMISING",
+   "ticker": "FAF"
+  },
+  {
+   "extended_coverage": 1.0,
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 75.4,
+    "financial_health": 100.0,
+    "growth": 68.0,
+    "profitability": 81.4,
+    "valuation": 92.4
+   },
+   "market_cap": 5740098048,
+   "name": "EPAM Systems, Inc.",
+   "score": 72.0,
+   "sector": "Technology",
+   "stance": "PROMISING",
+   "ticker": "EPAM"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 64.9,
+    "capital_allocation": 79.1,
+    "financial_health": 78.2,
+    "growth": 59.0,
+    "profitability": 88.5,
+    "valuation": 96.3
+   },
+   "market_cap": null,
+   "name": "Gap, Inc. (The)",
+   "score": 72.0,
+   "sector": "Consumer Cyclical",
+   "stance": "PROMISING",
+   "ticker": "GAP"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 70.7,
+    "capital_allocation": 59.1,
+    "financial_health": 41.1,
+    "growth": 86.7,
+    "profitability": 78.4,
+    "valuation": 82.2
+   },
+   "market_cap": 25787238400,
+   "name": "Corpay, Inc.",
+   "score": 71.9,
+   "sector": "Technology",
+   "stance": "PROMISING",
+   "ticker": "CPAY"
+  },
+  {
+   "extended_coverage": 0.9,
+   "fundamental_categories": {
+    "accounting_quality": 91.0,
+    "capital_allocation": 89.3,
+    "financial_health": 61.5,
+    "growth": 31.4,
+    "profitability": 79.6,
+    "valuation": 96.8
+   },
+   "market_cap": null,
+   "name": "APA Corporation",
+   "score": 71.8,
+   "sector": "Energy",
+   "stance": "PROMISING",
+   "ticker": "APA"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 73.2,
+    "capital_allocation": 100.0,
+    "financial_health": 100.0,
+    "growth": 30.0,
+    "profitability": 79.3,
+    "valuation": 89.1
+   },
+   "market_cap": 2925253376,
+   "name": "Columbia Sportswear Company",
+   "score": 71.7,
+   "sector": "Consumer Cyclical",
+   "stance": "PROMISING",
+   "ticker": "COLM"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 91.0,
+    "capital_allocation": 76.2,
+    "financial_health": 100.0,
+    "growth": 39.0,
+    "profitability": 77.7,
+    "valuation": 86.7
+   },
+   "market_cap": 25448847360,
+   "name": "First Solar, Inc.",
+   "score": 71.3,
+   "sector": "Technology",
+   "stance": "PROMISING",
+   "ticker": "FSLR"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 71.1,
+    "capital_allocation": 88.8,
+    "financial_health": 55.3,
+    "growth": 76.4,
+    "profitability": 95.5,
+    "valuation": 78.4
+   },
+   "market_cap": 38366257152,
+   "name": "Expedia Group, Inc.",
+   "score": 70.9,
+   "sector": "Consumer Cyclical",
+   "stance": "PROMISING",
+   "ticker": "EXPE"
+  },
+  {
+   "extended_coverage": 0.95,
+   "fundamental_categories": {
+    "accounting_quality": 75.9,
+    "capital_allocation": 67.7,
+    "financial_health": 41.8,
+    "growth": 86.1,
+    "profitability": 98.0,
+    "valuation": 89.6
+   },
+   "market_cap": 11622459392,
+   "name": "GoDaddy Inc.",
+   "score": 70.7,
+   "sector": "Technology",
+   "stance": "PROMISING",
+   "ticker": "GDDY"
+  }
+ ],
+ "schema_version": 5,
+ "screen_universe": [
+  {
+   "fundamental_categories": {
+    "accounting_quality": 92.3,
+    "capital_allocation": 86.7,
+    "financial_health": 98.0,
+    "growth": 42.1,
+    "profitability": 91.6,
+    "valuation": 76.7
+   },
+   "name": "A.O. Smith Corporation",
+   "score": 70.5,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AOS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 64.8,
+    "capital_allocation": 81.2,
+    "financial_health": 93.2,
+    "growth": 77.5,
+    "profitability": 76.7,
+    "valuation": 55.5
+   },
+   "name": "Dover Corporation",
+   "score": 70.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DOV"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 72.5,
+    "capital_allocation": 59.2,
+    "financial_health": 53.5,
+    "growth": 44.5,
+    "profitability": 65.1,
+    "valuation": 94.9
+   },
+   "name": "Delta Air Lines, Inc.",
+   "score": 70.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DAL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 87.6,
+    "capital_allocation": 75.6,
+    "financial_health": 100.0,
+    "growth": 72.7,
+    "profitability": 92.8,
+    "valuation": 51.3
+   },
+   "name": "Graco Inc.",
+   "score": 70.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GGG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 79.8,
+    "capital_allocation": 100.0,
+    "financial_health": 49.5,
+    "growth": 40.5,
+    "profitability": 95.0,
+    "valuation": 95.5
+   },
+   "name": "Bath & Body Works, Inc.",
+   "score": 69.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BBWI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 79.9,
+    "financial_health": 82.7,
+    "growth": 72.7,
+    "profitability": 88.5,
+    "valuation": 90.0
+   },
+   "name": "Genpact Limited",
+   "score": 69.6,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "G"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 93.4,
+    "capital_allocation": 75.6,
+    "financial_health": null,
+    "growth": 63.2,
+    "profitability": 80.6,
+    "valuation": 80.2
+   },
+   "name": "Citizens Financial Group, Inc.",
+   "score": 69.3,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CFG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.2,
+    "capital_allocation": 68.4,
+    "financial_health": 71.1,
+    "growth": 90.0,
+    "profitability": 76.1,
+    "valuation": 74.8
+   },
+   "name": "Salesforce, Inc.",
+   "score": 69.2,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CRM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.2,
+    "capital_allocation": 72.9,
+    "financial_health": 93.5,
+    "growth": 93.8,
+    "profitability": 92.8,
+    "valuation": 31.3
+   },
+   "name": "DexCom, Inc.",
+   "score": 69.1,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DXCM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 64.8,
+    "capital_allocation": 94.4,
+    "financial_health": 95.2,
+    "growth": 77.5,
+    "profitability": 90.8,
+    "valuation": 49.9
+   },
+   "name": "Donaldson Company, Inc.",
+   "score": 69.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DCI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 75.9,
+    "capital_allocation": 69.2,
+    "financial_health": 100.0,
+    "growth": 72.7,
+    "profitability": 67.1,
+    "valuation": 84.2
+   },
+   "name": "DoubleVerify Holdings, Inc.",
+   "score": 68.9,
+   "sector": "Communication Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DV"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 89.3,
+    "capital_allocation": 79.1,
+    "financial_health": 55.6,
+    "growth": 62.7,
+    "profitability": 73.3,
+    "valuation": 97.4
+   },
+   "name": "AECOM",
+   "score": 68.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ACM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 58.6,
+    "financial_health": 69.7,
+    "growth": 71.5,
+    "profitability": 86.2,
+    "valuation": 81.7
+   },
+   "name": "Broadridge Financial Solutions,",
+   "score": 68.7,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 100.0,
+    "capital_allocation": 52.4,
+    "financial_health": 91.0,
+    "growth": 100.0,
+    "profitability": 92.8,
+    "valuation": 36.4
+   },
+   "name": "Applovin Corporation",
+   "score": 68.6,
+   "sector": "Communication Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "APP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": 83.3,
+    "financial_health": 100.0,
+    "growth": 82.8,
+    "profitability": 91.1,
+    "valuation": 80.7
+   },
+   "name": "Cirrus Logic, Inc.",
+   "score": 68.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CRUS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 72.5,
+    "capital_allocation": 82.4,
+    "financial_health": 100.0,
+    "growth": 78.2,
+    "profitability": 85.6,
+    "valuation": 36.8
+   },
+   "name": "Applied Materials, Inc.",
+   "score": 68.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AMAT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 79.8,
+    "capital_allocation": 59.7,
+    "financial_health": 84.2,
+    "growth": 100.0,
+    "profitability": 82.4,
+    "valuation": 36.8
+   },
+   "name": "Amphenol Corporation",
+   "score": 68.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "APH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 65.3,
+    "capital_allocation": 59.4,
+    "financial_health": 95.2,
+    "growth": 65.0,
+    "profitability": 81.1,
+    "valuation": 60.9
+   },
+   "name": "Acuity Inc.",
+   "score": 68.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AYI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 64.5,
+    "capital_allocation": 64.2,
+    "financial_health": 79.7,
+    "growth": 77.5,
+    "profitability": 56.5,
+    "valuation": 82.8
+   },
+   "name": "Graham Holdings Company",
+   "score": 68.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GHC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.0,
+    "capital_allocation": 67.1,
+    "financial_health": 80.0,
+    "growth": 56.9,
+    "profitability": 36.8,
+    "valuation": 87.1
+   },
+   "name": "Franklin Resources, Inc.",
+   "score": 67.7,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BEN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 72.1,
+    "capital_allocation": 50.9,
+    "financial_health": 100.0,
+    "growth": 84.8,
+    "profitability": 78.7,
+    "valuation": 62.9
+   },
+   "name": "The Descartes Systems Group Inc",
+   "score": 67.7,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DSGX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 49.2,
+    "capital_allocation": 79.1,
+    "financial_health": 70.6,
+    "growth": 49.2,
+    "profitability": 69.5,
+    "valuation": 81.9
+   },
+   "name": "GE HealthCare Technologies Inc.",
+   "score": 67.7,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GEHC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 100.0,
+    "financial_health": 80.0,
+    "growth": 46.2,
+    "profitability": 52.1,
+    "valuation": 100.0
+   },
+   "name": "American International Group, I",
+   "score": 67.2,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AIG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 87.6,
+    "capital_allocation": 65.0,
+    "financial_health": 78.7,
+    "growth": 77.5,
+    "profitability": 77.1,
+    "valuation": 70.4
+   },
+   "name": "Boston Scientific Corporation",
+   "score": 67.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BSX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 57.6,
+    "capital_allocation": 92.2,
+    "financial_health": 62.2,
+    "growth": 86.5,
+    "profitability": 61.5,
+    "valuation": 74.5
+   },
+   "name": "Ball Corporation",
+   "score": 67.1,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BALL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 90.7,
+    "capital_allocation": 79.1,
+    "financial_health": 86.2,
+    "growth": 77.5,
+    "profitability": 82.9,
+    "valuation": 61.8
+   },
+   "name": "Automatic Data Processing, Inc.",
+   "score": 67.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ADP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 60.9,
+    "capital_allocation": 76.2,
+    "financial_health": 60.7,
+    "growth": 63.7,
+    "profitability": 70.1,
+    "valuation": 78.6
+   },
+   "name": "Carter's, Inc.",
+   "score": 66.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CRI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 96.0,
+    "capital_allocation": 68.6,
+    "financial_health": 81.7,
+    "growth": 86.1,
+    "profitability": 70.2,
+    "valuation": 56.5
+   },
+   "name": "HealthEquity, Inc.",
+   "score": 66.8,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "HQY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 79.1,
+    "financial_health": null,
+    "growth": 63.1,
+    "profitability": 87.5,
+    "valuation": 91.1
+   },
+   "name": "International Bancshares Corpor",
+   "score": 66.8,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "IBOC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 87.6,
+    "capital_allocation": 44.6,
+    "financial_health": 100.0,
+    "growth": 42.1,
+    "profitability": 76.1,
+    "valuation": 81.2
+   },
+   "name": "Dolby Laboratories",
+   "score": 66.6,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DLB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 76.5,
+    "capital_allocation": 80.3,
+    "financial_health": 70.4,
+    "growth": 39.8,
+    "profitability": 95.0,
+    "valuation": 95.1
+   },
+   "name": "BellRing Brands, Inc.",
+   "score": 66.5,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BRBR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 35.3,
+    "financial_health": null,
+    "growth": 100.0,
+    "profitability": 80.6,
+    "valuation": 95.7
+   },
+   "name": "Capital One Financial Corporati",
+   "score": 66.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "COF"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 86.6,
+    "capital_allocation": 94.4,
+    "financial_health": 68.4,
+    "growth": 53.9,
+    "profitability": 94.2,
+    "valuation": 93.6
+   },
+   "name": "H&R Block, Inc.",
+   "score": 66.5,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "HRB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 84.4,
+    "capital_allocation": 72.7,
+    "financial_health": 63.1,
+    "growth": 77.5,
+    "profitability": 59.7,
+    "valuation": 71.3
+   },
+   "name": "Gates Industrial Corporation Lt",
+   "score": 66.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GTES"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 72.1,
+    "capital_allocation": 67.7,
+    "financial_health": 67.0,
+    "growth": 94.8,
+    "profitability": 87.6,
+    "valuation": 52.6
+   },
+   "name": "Halozyme Therapeutics, Inc.",
+   "score": 66.3,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "HALO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 56.5,
+    "capital_allocation": 87.6,
+    "financial_health": 61.1,
+    "growth": 20.0,
+    "profitability": 51.8,
+    "valuation": 92.5
+   },
+   "name": "Elevance Health, Inc.",
+   "score": 66.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ELV"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 89.3,
+    "capital_allocation": 74.7,
+    "financial_health": 100.0,
+    "growth": 70.2,
+    "profitability": 70.6,
+    "valuation": 75.9
+   },
+   "name": "Credit Acceptance Corporation",
+   "score": 66.1,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CACC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.2,
+    "capital_allocation": 82.4,
+    "financial_health": 78.0,
+    "growth": 88.6,
+    "profitability": 82.9,
+    "valuation": 64.6
+   },
+   "name": "Booking Holdings Inc. Common St",
+   "score": 66.0,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BKNG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 75.1,
+    "capital_allocation": 68.0,
+    "financial_health": 74.8,
+    "growth": 77.5,
+    "profitability": 93.5,
+    "valuation": 69.7
+   },
+   "name": "DocuSign, Inc.",
+   "score": 66.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DOCU"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 60.9,
+    "capital_allocation": 88.8,
+    "financial_health": 31.6,
+    "growth": 67.5,
+    "profitability": 83.4,
+    "valuation": 83.5
+   },
+   "name": "DaVita Inc.",
+   "score": 65.9,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DVA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 92.8,
+    "capital_allocation": 75.6,
+    "financial_health": 87.2,
+    "growth": 88.2,
+    "profitability": 58.2,
+    "valuation": 43.7
+   },
+   "name": "Analog Devices, Inc.",
+   "score": 65.8,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ADI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 65.3,
+    "capital_allocation": 100.0,
+    "financial_health": 64.6,
+    "growth": 37.9,
+    "profitability": 40.0,
+    "valuation": 86.8
+   },
+   "name": "Chord Energy Corporation",
+   "score": 65.8,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CHRD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 83.7,
+    "capital_allocation": 80.6,
+    "financial_health": 87.4,
+    "growth": 66.9,
+    "profitability": 89.6,
+    "valuation": 32.1
+   },
+   "name": "Apple Inc.",
+   "score": 65.4,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AAPL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 93.4,
+    "capital_allocation": 75.1,
+    "financial_health": null,
+    "growth": 57.4,
+    "profitability": 94.4,
+    "valuation": 67.8
+   },
+   "name": "East West Bancorp, Inc.",
+   "score": 65.3,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "EWBC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 72.1,
+    "capital_allocation": 79.1,
+    "financial_health": 95.2,
+    "growth": 68.7,
+    "profitability": 78.0,
+    "valuation": 41.3
+   },
+   "name": "Agilent Technologies, Inc.",
+   "score": 65.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "A"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 67.5,
+    "capital_allocation": 62.9,
+    "financial_health": 100.0,
+    "growth": 90.0,
+    "profitability": 85.6,
+    "valuation": 37.2
+   },
+   "name": "Garmin Ltd.",
+   "score": 65.2,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GRMN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 71.1,
+    "capital_allocation": 45.4,
+    "financial_health": 72.3,
+    "growth": 82.0,
+    "profitability": 94.8,
+    "valuation": 54.7
+   },
+   "name": "Autodesk, Inc.",
+   "score": 65.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ADSK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 64.5,
+    "capital_allocation": 63.6,
+    "financial_health": 100.0,
+    "growth": 39.8,
+    "profitability": 61.1,
+    "valuation": 74.2
+   },
+   "name": "BioMarin Pharmaceutical Inc.",
+   "score": 65.0,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BMRN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 68.0,
+    "financial_health": 95.5,
+    "growth": 72.4,
+    "profitability": 69.6,
+    "valuation": 56.8
+   },
+   "name": "Dynatrace, Inc.",
+   "score": 65.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 73.5,
+    "capital_allocation": 44.6,
+    "financial_health": 84.7,
+    "growth": 100.0,
+    "profitability": 79.2,
+    "valuation": 36.2
+   },
+   "name": "Broadcom Inc.",
+   "score": 64.9,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AVGO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 51.4,
+    "financial_health": 100.0,
+    "growth": 81.4,
+    "profitability": 93.3,
+    "valuation": 44.0
+   },
+   "name": "Cincinnati Financial Corporatio",
+   "score": 64.9,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CINF"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 63.2,
+    "capital_allocation": 35.3,
+    "financial_health": null,
+    "growth": 50.3,
+    "profitability": 87.5,
+    "valuation": 93.8
+   },
+   "name": "Columbia Banking System, Inc.",
+   "score": 64.9,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "COLB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 43.1,
+    "capital_allocation": 100.0,
+    "financial_health": 100.0,
+    "growth": 59.3,
+    "profitability": 66.3,
+    "valuation": 78.1
+   },
+   "name": "AFLAC Incorporated",
+   "score": 64.8,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AFL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 61.5,
+    "financial_health": 100.0,
+    "growth": 47.5,
+    "profitability": 94.8,
+    "valuation": 87.3
+   },
+   "name": "Doximity, Inc.",
+   "score": 64.7,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DOCS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.8,
+    "capital_allocation": 63.8,
+    "financial_health": 52.3,
+    "growth": 67.7,
+    "profitability": 60.5,
+    "valuation": 74.9
+   },
+   "name": "Gaming and Leisure Properties, ",
+   "score": 64.7,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GLPI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 90.7,
+    "capital_allocation": 93.3,
+    "financial_health": null,
+    "growth": 53.7,
+    "profitability": 87.5,
+    "valuation": 77.6
+   },
+   "name": "BOK Financial Corporation",
+   "score": 64.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BOKF"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 56.5,
+    "capital_allocation": 85.0,
+    "financial_health": null,
+    "growth": 88.7,
+    "profitability": 56.4,
+    "valuation": 87.9
+   },
+   "name": "Bank of America Corporation",
+   "score": 64.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BAC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 36.5,
+    "capital_allocation": 89.3,
+    "financial_health": null,
+    "growth": 88.7,
+    "profitability": 40.6,
+    "valuation": 100.0
+   },
+   "name": "Citigroup, Inc.",
+   "score": 64.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "C"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 49.2,
+    "capital_allocation": 79.9,
+    "financial_health": 100.0,
+    "growth": 91.4,
+    "profitability": 71.9,
+    "valuation": 35.8
+   },
+   "name": "Fabrinet",
+   "score": 64.3,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 60.6,
+    "capital_allocation": 92.3,
+    "financial_health": 72.1,
+    "growth": 96.2,
+    "profitability": 59.2,
+    "valuation": 45.1
+   },
+   "name": "Flex Ltd.",
+   "score": 64.2,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FLEX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 73.2,
+    "capital_allocation": 68.1,
+    "financial_health": 55.1,
+    "growth": 57.1,
+    "profitability": 46.0,
+    "valuation": 77.3
+   },
+   "name": "Eastman Chemical Company",
+   "score": 63.8,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "EMN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 69.2,
+    "capital_allocation": 73.7,
+    "financial_health": 74.2,
+    "growth": 48.5,
+    "profitability": 59.7,
+    "valuation": 67.2
+   },
+   "name": "Fortive Corporation",
+   "score": 63.8,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FTV"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 68.5,
+    "capital_allocation": 26.8,
+    "financial_health": 94.7,
+    "growth": 63.1,
+    "profitability": 55.9,
+    "valuation": 80.1
+   },
+   "name": "Chevron Corporation",
+   "score": 63.7,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CVX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 84.0,
+    "capital_allocation": 100.0,
+    "financial_health": 80.0,
+    "growth": 33.2,
+    "profitability": 51.8,
+    "valuation": 100.0
+   },
+   "name": "Assured Guaranty Ltd.",
+   "score": 63.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AGO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 53.2,
+    "capital_allocation": 43.9,
+    "financial_health": 100.0,
+    "growth": 59.3,
+    "profitability": 63.7,
+    "valuation": 78.1
+   },
+   "name": "BlackRock, Inc.",
+   "score": 63.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BLK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 61.3,
+    "capital_allocation": 77.9,
+    "financial_health": 42.1,
+    "growth": 91.4,
+    "profitability": 77.7,
+    "valuation": 50.2
+   },
+   "name": "Dell Technologies Inc.",
+   "score": 63.3,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "DELL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 77.1,
+    "capital_allocation": 82.8,
+    "financial_health": 89.2,
+    "growth": 60.8,
+    "profitability": 67.0,
+    "valuation": 79.1
+   },
+   "name": "Birkenstock Holding plc",
+   "score": 62.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "BIRK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 58.5,
+    "capital_allocation": 60.1,
+    "financial_health": 79.7,
+    "growth": 63.6,
+    "profitability": 63.4,
+    "valuation": 93.7
+   },
+   "name": "Globant S.A.",
+   "score": 62.6,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GLOB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 83.8,
+    "capital_allocation": 51.6,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 62.4,
+    "valuation": 33.5
+   },
+   "name": "Advanced Micro Devices, Inc.",
+   "score": 62.5,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AMD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.8,
+    "capital_allocation": 57.3,
+    "financial_health": 100.0,
+    "growth": 79.6,
+    "profitability": 77.6,
+    "valuation": 31.5
+   },
+   "name": "Alphabet Inc.",
+   "score": 62.3,
+   "sector": "Communication Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GOOGL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 82.4,
+    "financial_health": null,
+    "growth": 53.7,
+    "profitability": 67.5,
+    "valuation": 81.2
+   },
+   "name": "First Horizon Corporation",
+   "score": 61.7,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FHN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 61.7,
+    "capital_allocation": 67.1,
+    "financial_health": 100.0,
+    "growth": 50.8,
+    "profitability": 89.2,
+    "valuation": 78.1
+   },
+   "name": "FactSet Research Systems Inc.",
+   "score": 61.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FDS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 62.5,
+    "capital_allocation": 35.1,
+    "financial_health": 100.0,
+    "growth": 86.7,
+    "profitability": 100.0,
+    "valuation": 66.2
+   },
+   "name": "Hamilton Lane Incorporated",
+   "score": 61.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "HLNE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 91.0,
+    "capital_allocation": 80.6,
+    "financial_health": 61.6,
+    "growth": 94.8,
+    "profitability": 64.1,
+    "valuation": 33.7
+   },
+   "name": "Ciena Corporation",
+   "score": 61.4,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CIEN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 93.4,
+    "capital_allocation": 84.7,
+    "financial_health": 40.6,
+    "growth": 85.2,
+    "profitability": 47.7,
+    "valuation": 51.7
+   },
+   "name": "Aramark",
+   "score": 61.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ARMK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 83.4,
+    "capital_allocation": 27.7,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 85.6,
+    "valuation": 29.5
+   },
+   "name": "Credo Technology Group Holding ",
+   "score": 61.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CRDO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 83.3,
+    "capital_allocation": 74.7,
+    "financial_health": 60.7,
+    "growth": 81.7,
+    "profitability": 65.2,
+    "valuation": 62.9
+   },
+   "name": "Haemonetics Corporation",
+   "score": 61.0,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "HAE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 50.3,
+    "financial_health": null,
+    "growth": 80.0,
+    "profitability": 35.0,
+    "valuation": 100.0
+   },
+   "name": "Ally Financial Inc.",
+   "score": 60.9,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "ALLY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 60.1,
+    "capital_allocation": 86.7,
+    "financial_health": 90.7,
+    "growth": 37.3,
+    "profitability": 70.7,
+    "valuation": 70.1
+   },
+   "name": "FTI Consulting, Inc.",
+   "score": 60.8,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FCN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 75.9,
+    "capital_allocation": 58.6,
+    "financial_health": 91.9,
+    "growth": 46.9,
+    "profitability": 54.2,
+    "valuation": 78.5
+   },
+   "name": "GlobalFoundries Inc.",
+   "score": 60.5,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GFS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 69.8,
+    "capital_allocation": 93.2,
+    "financial_health": null,
+    "growth": 57.4,
+    "profitability": 94.4,
+    "valuation": 61.2
+   },
+   "name": "American Express Company",
+   "score": 60.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "AXP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 61.2,
+    "capital_allocation": 70.6,
+    "financial_health": 67.8,
+    "growth": 82.3,
+    "profitability": 85.8,
+    "valuation": 60.4
+   },
+   "name": "Chewy, Inc.",
+   "score": 60.4,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CHWY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 45.9,
+    "capital_allocation": 87.4,
+    "financial_health": null,
+    "growth": 100.0,
+    "profitability": 54.4,
+    "valuation": 77.6
+   },
+   "name": "Goldman Sachs Group, Inc. (The)",
+   "score": 60.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "GS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 72.1,
+    "capital_allocation": 86.7,
+    "financial_health": 63.1,
+    "growth": 51.3,
+    "profitability": 85.1,
+    "valuation": 43.6
+   },
+   "name": "Chipotle Mexican Grill, Inc.",
+   "score": 60.3,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "CMG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 82.4,
+    "financial_health": 35.5,
+    "growth": 86.7,
+    "profitability": 64.4,
+    "valuation": 72.2
+   },
+   "name": "Fidelity National Information S",
+   "score": 60.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "PROMISING",
+   "ticker": "FIS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.0,
+    "capital_allocation": 49.7,
+    "financial_health": null,
+    "growth": 70.9,
+    "profitability": 80.6,
+    "valuation": 69.8
+   },
+   "name": "Glacier Bancorp, Inc.",
+   "score": 59.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "GBCI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 79.8,
+    "capital_allocation": 82.8,
+    "financial_health": 61.6,
+    "growth": 76.8,
+    "profitability": 33.3,
+    "valuation": 63.5
+   },
+   "name": "Diamondback Energy, Inc.",
+   "score": 59.1,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "FANG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.2,
+    "capital_allocation": 68.0,
+    "financial_health": 66.7,
+    "growth": 94.8,
+    "profitability": 92.0,
+    "valuation": 48.3
+   },
+   "name": "Fair Isaac Corporation",
+   "score": 59.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "FICO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 96.0,
+    "capital_allocation": 51.6,
+    "financial_health": 59.5,
+    "growth": 79.3,
+    "profitability": 79.1,
+    "valuation": 50.7
+   },
+   "name": "Bentley Systems, Incorporated",
+   "score": 58.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "BSY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 61.5,
+    "capital_allocation": 39.8,
+    "financial_health": 62.9,
+    "growth": 86.9,
+    "profitability": 70.2,
+    "valuation": 56.3
+   },
+   "name": "Elastic N.V.",
+   "score": 58.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "ESTC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 34.5,
+    "financial_health": 60.4,
+    "growth": 86.1,
+    "profitability": 58.2,
+    "valuation": 66.0
+   },
+   "name": "Five9, Inc.",
+   "score": 58.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "FIVN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.8,
+    "capital_allocation": 51.0,
+    "financial_health": 94.4,
+    "growth": 100.0,
+    "profitability": 59.4,
+    "valuation": 57.4
+   },
+   "name": "HubSpot, Inc.",
+   "score": 57.3,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "HUBS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 52.2,
+    "capital_allocation": 56.5,
+    "financial_health": 67.6,
+    "growth": 39.5,
+    "profitability": 64.5,
+    "valuation": 75.8
+   },
+   "name": "ESAB Corporation",
+   "score": 56.8,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "ESAB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 71.8,
+    "capital_allocation": 22.5,
+    "financial_health": null,
+    "growth": 65.9,
+    "profitability": 92.3,
+    "valuation": 68.8
+   },
+   "name": "Evercore Inc.",
+   "score": 56.8,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "EVR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 57.7,
+    "capital_allocation": 93.2,
+    "financial_health": 69.1,
+    "growth": 71.1,
+    "profitability": 49.6,
+    "valuation": 42.9
+   },
+   "name": "Commercial Metals Company",
+   "score": 56.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CMC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 62.5,
+    "capital_allocation": 71.4,
+    "financial_health": 36.1,
+    "growth": 28.3,
+    "profitability": 38.9,
+    "valuation": 93.8
+   },
+   "name": "Centene Corporation",
+   "score": 56.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CNC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 79.8,
+    "capital_allocation": 76.2,
+    "financial_health": 43.3,
+    "growth": 84.5,
+    "profitability": 23.3,
+    "valuation": 64.9
+   },
+   "name": "Albemarle Corporation",
+   "score": 55.7,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "ALB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.6,
+    "capital_allocation": 100.0,
+    "financial_health": 10.0,
+    "growth": 20.8,
+    "profitability": 36.5,
+    "valuation": 100.0
+   },
+   "name": "Corebridge Financial Inc.",
+   "score": 55.6,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CRBG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 64.9,
+    "capital_allocation": 77.9,
+    "financial_health": 43.9,
+    "growth": 42.2,
+    "profitability": 76.0,
+    "valuation": 58.2
+   },
+   "name": "Crocs, Inc.",
+   "score": 55.5,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CROX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 65.1,
+    "capital_allocation": 54.1,
+    "financial_health": 25.1,
+    "growth": 91.9,
+    "profitability": 66.0,
+    "valuation": 52.2
+   },
+   "name": "Hasbro, Inc.",
+   "score": 55.1,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "HAS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 87.8,
+    "capital_allocation": 77.0,
+    "financial_health": 41.1,
+    "growth": 40.0,
+    "profitability": 58.8,
+    "valuation": 94.9
+   },
+   "name": "The Campbell's Company",
+   "score": 54.7,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CPB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 53.4,
+    "capital_allocation": 47.7,
+    "financial_health": 54.1,
+    "growth": 31.7,
+    "profitability": 71.7,
+    "valuation": 78.3
+   },
+   "name": "Crane NXT, Co.",
+   "score": 54.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CXT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 61.3,
+    "capital_allocation": 54.1,
+    "financial_health": 34.6,
+    "growth": 59.2,
+    "profitability": 45.5,
+    "valuation": 96.0
+   },
+   "name": "Helen of Troy Limited",
+   "score": 54.7,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "HELE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 57.3,
+    "capital_allocation": 22.1,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 89.6,
+    "valuation": 58.5
+   },
+   "name": "Duolingo, Inc.",
+   "score": 54.4,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DUOL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 85.2,
+    "capital_allocation": 62.8,
+    "financial_health": 54.8,
+    "growth": 87.6,
+    "profitability": 38.0,
+    "valuation": 63.8
+   },
+   "name": "BILL Holdings, Inc.",
+   "score": 52.9,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "BILL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 10.0,
+    "capital_allocation": 69.5,
+    "financial_health": 87.2,
+    "growth": 73.1,
+    "profitability": 40.6,
+    "valuation": 66.2
+   },
+   "name": "Amkor Technology, Inc.",
+   "score": 52.8,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "AMKR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 80.0,
+    "capital_allocation": 87.6,
+    "financial_health": null,
+    "growth": 47.8,
+    "profitability": 54.4,
+    "valuation": 57.4
+   },
+   "name": "Cullen/Frost Bankers, Inc.",
+   "score": 52.1,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CFR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 21.3,
+    "profitability": 55.6,
+    "valuation": 96.7
+   },
+   "name": "General Motors Company",
+   "score": 50.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "GM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 60.4,
+    "profitability": 30.0,
+    "valuation": 95.7
+   },
+   "name": "BorgWarner Inc.",
+   "score": 50.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BWA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 60.4,
+    "profitability": 67.5,
+    "valuation": 57.4
+   },
+   "name": "Host Hotels & Resorts, Inc.",
+   "score": 50.7,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HST"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 92.9,
+    "growth": 65.9,
+    "profitability": 67.5,
+    "valuation": 54.2
+   },
+   "name": "Expeditors International of Was",
+   "score": 50.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EXPD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 80.0,
+    "growth": 55.0,
+    "profitability": 55.0,
+    "valuation": 84.1
+   },
+   "name": "Etsy, Inc.",
+   "score": 50.1,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ETSY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 38.8,
+    "capital_allocation": 47.3,
+    "financial_health": 76.1,
+    "growth": 100.0,
+    "profitability": 67.1,
+    "valuation": 46.8
+   },
+   "name": "Celsius Holdings, Inc.",
+   "score": 50.0,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CELH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 88.7,
+    "profitability": 63.3,
+    "valuation": 65.7
+   },
+   "name": "Cisco Systems, Inc.",
+   "score": 50.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CSCO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 100.0,
+    "profitability": 21.1,
+    "valuation": 90.8
+   },
+   "name": "Bunge Limited",
+   "score": 49.8,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "BG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 74.6,
+    "profitability": 35.6,
+    "valuation": 96.7
+   },
+   "name": "CVS Health Corporation",
+   "score": 49.8,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CVS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 60.9,
+    "profitability": 65.0,
+    "valuation": 71.9
+   },
+   "name": "Fifth Third Bancorp",
+   "score": 49.7,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FITB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 10.0,
+    "profitability": 55.6,
+    "valuation": 88.8
+   },
+   "name": "ICU Medical, Inc.",
+   "score": 49.6,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ICUI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 66.8,
+    "capital_allocation": 49.1,
+    "financial_health": 100.0,
+    "growth": 53.1,
+    "profitability": 49.0,
+    "valuation": 41.8
+   },
+   "name": "CoStar Group, Inc.",
+   "score": 49.1,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CSGP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 35.4,
+    "profitability": 48.1,
+    "valuation": 87.5
+   },
+   "name": "Akamai Technologies, Inc.",
+   "score": 48.8,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "AKAM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 49.6,
+    "profitability": 78.6,
+    "valuation": 68.3
+   },
+   "name": "EPR Properties",
+   "score": 48.7,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EPR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 49.6,
+    "profitability": 54.4,
+    "valuation": 83.7
+   },
+   "name": "AerCap Holdings N.V.",
+   "score": 48.6,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AER"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 74.6,
+    "profitability": 52.2,
+    "valuation": 78.9
+   },
+   "name": "H. B. Fuller Company",
+   "score": 48.4,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FUL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 49.1,
+    "profitability": 67.5,
+    "valuation": 65.5
+   },
+   "name": "Flowserve Corporation",
+   "score": 48.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FLS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 74.6,
+    "profitability": 41.1,
+    "valuation": 85.5
+   },
+   "name": "Brunswick Corporation",
+   "score": 48.2,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "BC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 80.0,
+    "profitability": 55.0,
+    "valuation": 68.9
+   },
+   "name": "Quest Diagnostics Incorporated",
+   "score": 48.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DGX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 74.6,
+    "profitability": 48.1,
+    "valuation": 68.9
+   },
+   "name": "Entegris, Inc.",
+   "score": 48.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "ENTG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": 53.5,
+    "capital_allocation": 64.7,
+    "financial_health": 42.0,
+    "growth": 64.5,
+    "profitability": 34.8,
+    "valuation": 74.9
+   },
+   "name": "Ashland Inc.",
+   "score": 47.8,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "ASH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 65.9,
+    "profitability": 61.9,
+    "valuation": 63.0
+   },
+   "name": "General Dynamics Corporation",
+   "score": 47.8,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 74.6,
+    "profitability": 80.0,
+    "valuation": 59.5
+   },
+   "name": "Honeywell International Inc.",
+   "score": 47.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HON"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 55.0,
+    "profitability": 41.1,
+    "valuation": 81.6
+   },
+   "name": "Henry Schein, Inc.",
+   "score": 47.7,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "HSIC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 88.7,
+    "profitability": 61.9,
+    "valuation": 58.7
+   },
+   "name": "Clean Harbors, Inc.",
+   "score": 47.6,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CLH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 55.0,
+    "profitability": 74.4,
+    "valuation": 63.3
+   },
+   "name": "Carlisle Companies Incorporated",
+   "score": 47.6,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CSL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 65.9,
+    "profitability": 66.1,
+    "valuation": 73.7
+   },
+   "name": "Dollar General Corporation",
+   "score": 47.6,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 55.0,
+    "growth": 21.3,
+    "profitability": 92.3,
+    "valuation": 67.5
+   },
+   "name": "Dropbox, Inc.",
+   "score": 47.5,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DBX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 17.1,
+    "growth": 49.1,
+    "profitability": 60.6,
+    "valuation": 93.4
+   },
+   "name": "AutoNation, Inc.",
+   "score": 47.4,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "AN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 21.3,
+    "profitability": 41.1,
+    "valuation": 95.7
+   },
+   "name": "Avantor, Inc.",
+   "score": 47.4,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AVTR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 88.7,
+    "profitability": 28.1,
+    "valuation": 82.9
+   },
+   "name": "Huntington Ingalls Industries, ",
+   "score": 47.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HII"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 75.0,
+    "growth": 88.7,
+    "profitability": 55.0,
+    "valuation": 67.8
+   },
+   "name": "Darling Ingredients Inc.",
+   "score": 47.2,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DAR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 80.0,
+    "profitability": 46.7,
+    "valuation": 90.8
+   },
+   "name": "GXO Logistics, Inc.",
+   "score": 47.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GXO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 55.0,
+    "profitability": 67.5,
+    "valuation": 57.4
+   },
+   "name": "Cummins Inc.",
+   "score": 47.1,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CMI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 60.9,
+    "profitability": 65.0,
+    "valuation": 71.9
+   },
+   "name": "Huntington Bancshares Incorpora",
+   "score": 47.0,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HBAN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 74.6,
+    "profitability": 30.0,
+    "valuation": 72.4
+   },
+   "name": "Archer-Daniels-Midland Company",
+   "score": 46.9,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ADM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.1,
+    "growth": 100.0,
+    "profitability": 41.9,
+    "valuation": 75.8
+   },
+   "name": "GATX Corporation",
+   "score": 46.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GATX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 88.7,
+    "profitability": 41.1,
+    "valuation": 72.5
+   },
+   "name": "Generac Holdlings Inc.",
+   "score": 46.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GNRC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 75.0,
+    "growth": 74.6,
+    "profitability": 67.5,
+    "valuation": 59.7
+   },
+   "name": "Chemed Corp",
+   "score": 46.6,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CHE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 60.9,
+    "profitability": 30.0,
+    "valuation": 96.7
+   },
+   "name": "Amcor plc",
+   "score": 46.5,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "AMCR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 10.0,
+    "profitability": 43.9,
+    "valuation": 87.5
+   },
+   "name": "Enphase Energy, Inc.",
+   "score": 46.5,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "ENPH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 100.0,
+    "profitability": 30.0,
+    "valuation": 74.8
+   },
+   "name": "Element Solutions Inc.",
+   "score": 46.5,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ESI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 100.0,
+    "profitability": 41.1,
+    "valuation": 70.5
+   },
+   "name": "Humana Inc.",
+   "score": 46.5,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HUM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 88.7,
+    "profitability": 48.1,
+    "valuation": 74.8
+   },
+   "name": "APi Group Corporation",
+   "score": 46.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "APG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 60.4,
+    "profitability": 65.0,
+    "valuation": 75.9
+   },
+   "name": "Best Buy Co., Inc.",
+   "score": 46.3,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BBY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 92.9,
+    "growth": 35.4,
+    "profitability": 42.5,
+    "valuation": 70.7
+   },
+   "name": "Biogen Inc.",
+   "score": 46.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "BIIB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 80.4,
+    "profitability": 40.6,
+    "valuation": 87.5
+   },
+   "name": "Dick's Sporting Goods Inc",
+   "score": 46.2,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DKS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 100.0,
+    "profitability": 68.9,
+    "valuation": 35.7
+   },
+   "name": "Fortinet, Inc.",
+   "score": 46.2,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "FTNT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 65.9,
+    "profitability": 61.9,
+    "valuation": 40.9
+   },
+   "name": "IDEX Corporation",
+   "score": 46.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "IEX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 10.0,
+    "profitability": 59.2,
+    "valuation": 90.8
+   },
+   "name": "AGCO Corporation",
+   "score": 46.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AGCO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 10.0,
+    "profitability": 42.5,
+    "valuation": 85.3
+   },
+   "name": "International Flavors & Fragran",
+   "score": 46.0,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "IFF"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 80.0,
+    "profitability": 77.5,
+    "valuation": 65.5
+   },
+   "name": "Avery Dennison Corporation",
+   "score": 45.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AVY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 35.4,
+    "profitability": 66.1,
+    "valuation": 70.9
+   },
+   "name": "Axalta Coating Systems Ltd.",
+   "score": 45.8,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AXTA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 35.4,
+    "profitability": 73.1,
+    "valuation": 59.4
+   },
+   "name": "Chubb Limited",
+   "score": 45.8,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 60.4,
+    "profitability": 74.4,
+    "valuation": 46.3
+   },
+   "name": "Comfort Systems USA, Inc.",
+   "score": 45.8,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FIX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 30.0,
+    "growth": 49.6,
+    "profitability": 73.1,
+    "valuation": 75.0
+   },
+   "name": "Cardinal Health, Inc.",
+   "score": 45.7,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CAH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 49.1,
+    "profitability": 55.6,
+    "valuation": 84.2
+   },
+   "name": "DXC Technology Company",
+   "score": 45.7,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DXC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 88.7,
+    "profitability": 60.6,
+    "valuation": 57.8
+   },
+   "name": "C.H. Robinson Worldwide, Inc.",
+   "score": 45.6,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CHRW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 74.6,
+    "profitability": 55.0,
+    "valuation": 49.5
+   },
+   "name": "Hexcel Corporation",
+   "score": 45.5,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HXL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 10.0,
+    "profitability": 55.0,
+    "valuation": 100.0
+   },
+   "name": "The Carlyle Group Inc.",
+   "score": 45.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 55.0,
+    "profitability": 20.0,
+    "valuation": 95.7
+   },
+   "name": "The Cooper Companies, Inc.",
+   "score": 45.4,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "COO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 74.6,
+    "profitability": 41.1,
+    "valuation": 75.4
+   },
+   "name": "Baxter International Inc.",
+   "score": 45.3,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "BAX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 88.7,
+    "profitability": 80.0,
+    "valuation": 44.3
+   },
+   "name": "CSX Corporation",
+   "score": 45.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CSX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 65.9,
+    "profitability": 48.1,
+    "valuation": 75.4
+   },
+   "name": "CACI International, Inc.",
+   "score": 45.2,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "CACI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 74.6,
+    "profitability": 55.0,
+    "valuation": 69.9
+   },
+   "name": "Danaher Corporation",
+   "score": 45.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DHR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 65.9,
+    "profitability": 78.6,
+    "valuation": 65.7
+   },
+   "name": "Dollar Tree, Inc.",
+   "score": 45.2,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "DLTR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 88.7,
+    "profitability": 68.9,
+    "valuation": 34.5
+   },
+   "name": "Howmet Aerospace Inc.",
+   "score": 45.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HWM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 22.5,
+    "valuation": 63.7
+   },
+   "name": "Coherent Corp.",
+   "score": 45.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "COHR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 10.0,
+    "profitability": 80.0,
+    "valuation": 72.4
+   },
+   "name": "Devon Energy Corporation",
+   "score": 45.0,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DVN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 10.0,
+    "profitability": 66.1,
+    "valuation": 80.1
+   },
+   "name": "Fortune Brands Innovations, Inc",
+   "score": 45.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FBIN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 65.9,
+    "profitability": 85.6,
+    "valuation": 57.8
+   },
+   "name": "frontdoor, inc.",
+   "score": 45.0,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "FTDR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 21.3,
+    "profitability": 85.6,
+    "valuation": 72.4
+   },
+   "name": "International Business Machines",
+   "score": 45.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "MIXED",
+   "ticker": "IBM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 74.6,
+    "profitability": 28.1,
+    "valuation": 96.7
+   },
+   "name": "The AES Corporation",
+   "score": 44.9,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AES"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 88.7,
+    "profitability": 63.3,
+    "valuation": 46.8
+   },
+   "name": "Amazon.com, Inc.",
+   "score": 44.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "AMZN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 100.0,
+    "profitability": 10.0,
+    "valuation": 95.7
+   },
+   "name": "Global Payments Inc.",
+   "score": 44.9,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GPN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 10.0,
+    "profitability": 73.1,
+    "valuation": 63.0
+   },
+   "name": "Baker Hughes Company",
+   "score": 44.8,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BKR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 10.0,
+    "profitability": 50.0,
+    "valuation": 100.0
+   },
+   "name": "Coty Inc.",
+   "score": 44.5,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "COTY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 29.6,
+    "profitability": 60.6,
+    "valuation": 82.8
+   },
+   "name": "Core & Main, Inc.",
+   "score": 44.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CNM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 55.0,
+    "profitability": 77.5,
+    "valuation": 59.4
+   },
+   "name": "First Financial Bankshares, Inc",
+   "score": 44.3,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FFIN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 74.6,
+    "profitability": 67.5,
+    "valuation": 36.6
+   },
+   "name": "First Industrial Realty Trust, ",
+   "score": 44.3,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 30.0,
+    "growth": 88.7,
+    "profitability": 55.0,
+    "valuation": 75.8
+   },
+   "name": "AbbVie Inc.",
+   "score": 44.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ABBV"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 80.0,
+    "profitability": 74.4,
+    "valuation": 51.4
+   },
+   "name": "Allegion plc",
+   "score": 44.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ALLE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.0,
+    "growth": 10.0,
+    "profitability": 87.5,
+    "valuation": 84.2
+   },
+   "name": "Booz Allen Hamilton Holding Cor",
+   "score": 44.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BAH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 58.3,
+    "profitability": 77.5,
+    "valuation": 59.4
+   },
+   "name": "Commerce Bancshares, Inc.",
+   "score": 44.2,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CBSH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 74.6,
+    "profitability": 67.5,
+    "valuation": 51.6
+   },
+   "name": "Coca-Cola Consolidated, Inc.",
+   "score": 44.2,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "COKE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 91.3,
+    "profitability": 68.9,
+    "valuation": 40.9
+   },
+   "name": "Crane Company",
+   "score": 44.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 68.9,
+    "valuation": 28.6
+   },
+   "name": "Arista Networks, Inc.",
+   "score": 44.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ANET"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 49.1,
+    "profitability": 55.0,
+    "valuation": 51.2
+   },
+   "name": "Freeport-McMoRan, Inc.",
+   "score": 44.1,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FCX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 55.0,
+    "profitability": 30.0,
+    "valuation": 87.9
+   },
+   "name": "Becton, Dickinson and Company",
+   "score": 44.0,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BDX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 49.6,
+    "profitability": 55.0,
+    "valuation": 85.5
+   },
+   "name": "CBRE Group Inc",
+   "score": 43.9,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CBRE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 30.0,
+    "growth": 65.9,
+    "profitability": 55.0,
+    "valuation": 82.9
+   },
+   "name": "HCA Healthcare, Inc.",
+   "score": 43.8,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HCA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 49.1,
+    "profitability": 10.0,
+    "valuation": 100.0
+   },
+   "name": "Equitable Holdings, Inc.",
+   "score": 43.7,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "EQH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 74.6,
+    "profitability": 74.4,
+    "valuation": 63.3
+   },
+   "name": "The Hershey Company",
+   "score": 43.6,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "HSY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 100.0,
+    "profitability": 80.0,
+    "valuation": 37.5
+   },
+   "name": "Cboe Global Markets, Inc.",
+   "score": 43.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CBOE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 69.1,
+    "profitability": 74.4,
+    "valuation": 55.4
+   },
+   "name": "eBay Inc.",
+   "score": 43.5,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "EBAY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 80.0,
+    "profitability": 77.5,
+    "valuation": 32.8
+   },
+   "name": "W.W. Grainger, Inc.",
+   "score": 43.5,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GWW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 69.1,
+    "profitability": 74.4,
+    "valuation": 40.4
+   },
+   "name": "Airbnb, Inc.",
+   "score": 43.4,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "ABNB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 49.6,
+    "profitability": 41.1,
+    "valuation": 62.8
+   },
+   "name": "Elanco Animal Health Incorporat",
+   "score": 43.4,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "ELAN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 92.9,
+    "growth": 88.7,
+    "profitability": 80.0,
+    "valuation": 25.0
+   },
+   "name": "Curtiss-Wright Corporation",
+   "score": 43.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 100.0,
+    "profitability": 43.9,
+    "valuation": 65.6
+   },
+   "name": "Affirm Holdings, Inc.",
+   "score": 43.1,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "AFRM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 80.0,
+    "profitability": 67.5,
+    "valuation": 30.3
+   },
+   "name": "AMETEK, Inc.",
+   "score": 43.1,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AME"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 40.4,
+    "profitability": 87.5,
+    "valuation": 80.9
+   },
+   "name": "Charter Communications, Inc.",
+   "score": 43.1,
+   "sector": "Communication Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CHTR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 10.0,
+    "profitability": 75.0,
+    "valuation": 78.7
+   },
+   "name": "Comcast Corporation",
+   "score": 43.1,
+   "sector": "Communication Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CMCSA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 77.5,
+    "valuation": 80.9
+   },
+   "name": "Euronet Worldwide, Inc.",
+   "score": 43.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EEFT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 60.4,
+    "profitability": 61.9,
+    "valuation": 54.7
+   },
+   "name": "Emerson Electric Company",
+   "score": 43.1,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EMR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 10.0,
+    "profitability": 80.0,
+    "valuation": 80.0
+   },
+   "name": "Houlihan Lokey, Inc.",
+   "score": 43.1,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HLI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 35.4,
+    "profitability": 67.5,
+    "valuation": 82.8
+   },
+   "name": "Carnival Corporation Ltd.",
+   "score": 43.0,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CCL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 10.0,
+    "profitability": 80.6,
+    "valuation": 88.2
+   },
+   "name": "Capri Holdings Limited",
+   "score": 43.0,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CPRI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 10.0,
+    "profitability": 77.5,
+    "valuation": 66.2
+   },
+   "name": "Installed Building Products, In",
+   "score": 42.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "IBP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 80.0,
+    "profitability": 50.8,
+    "valuation": 55.8
+   },
+   "name": "Corning Incorporated",
+   "score": 42.7,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "GLW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 100.0,
+    "profitability": 61.1,
+    "valuation": 74.3
+   },
+   "name": "Shift4 Payments, Inc.",
+   "score": 42.6,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FOUR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 55.0,
+    "profitability": 18.9,
+    "valuation": 88.8
+   },
+   "name": "Cleveland-Cliffs Inc.",
+   "score": 42.0,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CLF"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 49.1,
+    "profitability": 57.8,
+    "valuation": 70.7
+   },
+   "name": "Edison International",
+   "score": 42.0,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EIX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 55.0,
+    "profitability": 65.0,
+    "valuation": 79.3
+   },
+   "name": "CDW Corporation",
+   "score": 41.9,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CDW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 35.4,
+    "profitability": 46.7,
+    "valuation": 79.6
+   },
+   "name": "Genuine Parts Company",
+   "score": 41.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "GPC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 50.0,
+    "growth": 21.3,
+    "profitability": 55.0,
+    "valuation": 74.2
+   },
+   "name": "Eversource Energy (D/B/A)",
+   "score": 41.8,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ES"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 49.6,
+    "profitability": 80.0,
+    "valuation": 40.9
+   },
+   "name": "Edwards Lifesciences Corporatio",
+   "score": 41.8,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 100.0,
+    "profitability": 90.0,
+    "valuation": 32.8
+   },
+   "name": "Caterpillar, Inc.",
+   "score": 41.6,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CAT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 75.0,
+    "growth": 35.4,
+    "profitability": 67.5,
+    "valuation": 75.0
+   },
+   "name": "Amdocs Limited",
+   "score": 41.6,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DOX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 80.0,
+    "valuation": 17.2
+   },
+   "name": "Heico Corporation",
+   "score": 41.4,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HEI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 49.6,
+    "profitability": 63.3,
+    "valuation": 51.4
+   },
+   "name": "Hubbell Inc",
+   "score": 41.4,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HUBB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 78.6,
+    "valuation": 45.9
+   },
+   "name": "Brixmor Property Group Inc.",
+   "score": 41.3,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BRX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 65.9,
+    "profitability": 74.4,
+    "valuation": 76.8
+   },
+   "name": "Churchill Downs, Incorporated",
+   "score": 41.3,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CHDN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 35.4,
+    "profitability": 77.5,
+    "valuation": 53.8
+   },
+   "name": "Home BancShares, Inc.",
+   "score": 41.3,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HOMB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 49.6,
+    "profitability": 37.7,
+    "valuation": 88.8
+   },
+   "name": "American Airlines Group, Inc.",
+   "score": 41.1,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AAL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 30.0,
+    "growth": 49.1,
+    "profitability": 65.4,
+    "valuation": 80.9
+   },
+   "name": "Avis Budget Group, Inc.",
+   "score": 41.1,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CAR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 60.9,
+    "profitability": 55.0,
+    "valuation": 61.7
+   },
+   "name": "Guidewire Software, Inc.",
+   "score": 41.1,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "GWRE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 55.0,
+    "profitability": 80.0,
+    "valuation": 49.5
+   },
+   "name": "Amgen Inc.",
+   "score": 40.9,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "AMGN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 88.7,
+    "profitability": 67.5,
+    "valuation": 63.7
+   },
+   "name": "Darden Restaurants, Inc.",
+   "score": 40.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "DRI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 10.0,
+    "profitability": 41.1,
+    "valuation": 96.7
+   },
+   "name": "Group 1 Automotive, Inc.",
+   "score": 40.9,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "GPI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.1,
+    "growth": 35.4,
+    "profitability": 28.1,
+    "valuation": 91.4
+   },
+   "name": "Hilton Grand Vacations Inc.",
+   "score": 40.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HGV"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 65.9,
+    "profitability": 67.5,
+    "valuation": 59.4
+   },
+   "name": "Intercontinental Exchange Inc.",
+   "score": 40.8,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "ICE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 35.4,
+    "profitability": 55.0,
+    "valuation": 63.0
+   },
+   "name": "AptarGroup, Inc.",
+   "score": 40.7,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "ATR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 80.0,
+    "profitability": 49.4,
+    "valuation": 61.7
+   },
+   "name": "Burlington Stores, Inc.",
+   "score": 40.7,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "BURL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 88.7,
+    "profitability": 28.1,
+    "valuation": 72.2
+   },
+   "name": "CenterPoint Energy, Inc (Holdin",
+   "score": 40.3,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CNP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 80.0,
+    "profitability": 63.3,
+    "valuation": 25.0
+   },
+   "name": "Fastenal Company",
+   "score": 40.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FAST"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 92.9,
+    "growth": 100.0,
+    "profitability": 68.9,
+    "valuation": 32.1
+   },
+   "name": "Cadence Design Systems, Inc.",
+   "score": 40.2,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CDNS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 88.7,
+    "profitability": 43.9,
+    "valuation": 42.4
+   },
+   "name": "Caseys General Stores, Inc.",
+   "score": 40.1,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CASY"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 80.0,
+    "growth": 55.0,
+    "profitability": 55.0,
+    "valuation": 64.3
+   },
+   "name": "Domino's Pizza Inc",
+   "score": 40.1,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DPZ"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 65.9,
+    "profitability": 60.6,
+    "valuation": 30.3
+   },
+   "name": "EastGroup Properties, Inc.",
+   "score": 40.1,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EGP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 55.0,
+    "profitability": 90.0,
+    "valuation": 37.6
+   },
+   "name": "Ecolab Inc.",
+   "score": 40.0,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ECL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 65.9,
+    "profitability": 55.0,
+    "valuation": 62.1
+   },
+   "name": "Consolidated Edison, Inc.",
+   "score": 40.0,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ED"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 35.4,
+    "profitability": 30.0,
+    "valuation": 74.9
+   },
+   "name": "Carrier Global Corporation",
+   "score": 39.9,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CARR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.1,
+    "growth": 21.3,
+    "profitability": 35.6,
+    "valuation": 88.8
+   },
+   "name": "CNH Industrial N.V.",
+   "score": 39.9,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CNH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 17.1,
+    "growth": 74.6,
+    "profitability": 40.6,
+    "valuation": 80.3
+   },
+   "name": "Cencora, Inc.",
+   "score": 39.9,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "COR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.1,
+    "growth": 49.6,
+    "profitability": 71.7,
+    "valuation": 66.8
+   },
+   "name": "Commvault Systems, Inc.",
+   "score": 39.9,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CVLT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 40.4,
+    "profitability": 42.5,
+    "valuation": 48.9
+   },
+   "name": "Bio-Rad Laboratories, Inc.",
+   "score": 39.8,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "BIO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 74.6,
+    "profitability": 80.0,
+    "valuation": 55.4
+   },
+   "name": "American Tower Corporation (REI",
+   "score": 39.7,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AMT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 80.0,
+    "profitability": 46.7,
+    "valuation": 62.4
+   },
+   "name": "Clearway Energy, Inc.",
+   "score": 39.6,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CWEN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 21.3,
+    "profitability": 30.0,
+    "valuation": 68.9
+   },
+   "name": "Bruker Corporation",
+   "score": 39.5,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "BRKR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 40.9,
+    "profitability": 74.4,
+    "valuation": 59.4
+   },
+   "name": "Erie Indemnity Company",
+   "score": 39.2,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "ERIE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 80.0,
+    "profitability": 18.9,
+    "valuation": 67.5
+   },
+   "name": "Dow Inc.",
+   "score": 39.1,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DOW"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 21.3,
+    "profitability": 63.3,
+    "valuation": 63.0
+   },
+   "name": "Eagle Materials Inc",
+   "score": 39.1,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EXP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 35.4,
+    "profitability": 55.0,
+    "valuation": 72.4
+   },
+   "name": "Walt Disney Company (The)",
+   "score": 39.0,
+   "sector": "Communication Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DIS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 41.1,
+    "valuation": 52.4
+   },
+   "name": "GitLab Inc.",
+   "score": 39.0,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GTLB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.0,
+    "growth": 30.0,
+    "profitability": 50.0,
+    "valuation": 76.3
+   },
+   "name": "Chemours Company (The)",
+   "score": 38.9,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 80.0,
+    "profitability": 57.8,
+    "valuation": 28.8
+   },
+   "name": "Freshpet, Inc.",
+   "score": 38.9,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FRPT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 67.5,
+    "valuation": 37.4
+   },
+   "name": "Federal Realty Investment Trust",
+   "score": 38.8,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FRT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 55.0,
+    "profitability": 61.1,
+    "valuation": 75.4
+   },
+   "name": "Flowers Foods, Inc.",
+   "score": 38.7,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FLO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 30.0,
+    "growth": 55.0,
+    "profitability": 80.0,
+    "valuation": 67.2
+   },
+   "name": "AutoZone, Inc.",
+   "score": 38.4,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AZO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 49.6,
+    "profitability": 55.0,
+    "valuation": 63.0
+   },
+   "name": "Abbott Laboratories",
+   "score": 38.2,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "ABT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 80.0,
+    "profitability": 35.0,
+    "valuation": 66.3
+   },
+   "name": "Duke Energy Corporation (Holdin",
+   "score": 38.1,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DUK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 51.7,
+    "profitability": 40.6,
+    "valuation": 58.0
+   },
+   "name": "Atmos Energy Corporation",
+   "score": 37.9,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ATO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 10.0,
+    "profitability": 50.0,
+    "valuation": 84.9
+   },
+   "name": "Celanese Corporation",
+   "score": 37.9,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 10.0,
+    "profitability": 30.0,
+    "valuation": 87.5
+   },
+   "name": "Apollo Global Management, Inc. ",
+   "score": 37.8,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "APO"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 55.0,
+    "profitability": 28.1,
+    "valuation": 72.2
+   },
+   "name": "FirstEnergy Corp.",
+   "score": 37.8,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 10.0,
+    "profitability": 30.0,
+    "valuation": 76.7
+   },
+   "name": "Harley-Davidson, Inc.",
+   "score": 37.7,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HOG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 35.4,
+    "profitability": 59.2,
+    "valuation": 85.2
+   },
+   "name": "Bright Horizons Family Solution",
+   "score": 37.6,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BFAM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 100.0,
+    "profitability": 48.9,
+    "valuation": 54.5
+   },
+   "name": "Constellation Energy Corporatio",
+   "score": 37.6,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CEG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 30.0,
+    "profitability": 10.0,
+    "valuation": 81.0
+   },
+   "name": "Charles River Laboratories Inte",
+   "score": 37.6,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CRL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 74.6,
+    "profitability": 41.1,
+    "valuation": 61.0
+   },
+   "name": "Floor & Decor Holdings, Inc.",
+   "score": 37.5,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FND"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.8,
+    "growth": 49.1,
+    "profitability": 35.0,
+    "valuation": 72.2
+   },
+   "name": "DTE Energy Company",
+   "score": 37.4,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DTE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 69.1,
+    "profitability": 49.4,
+    "valuation": 40.9
+   },
+   "name": "DT Midstream, Inc.",
+   "score": 37.3,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DTM"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 60.9,
+    "profitability": 80.0,
+    "valuation": 30.7
+   },
+   "name": "Eaton Corporation, PLC",
+   "score": 37.2,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ETN"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 40.9,
+    "profitability": 61.9,
+    "valuation": 37.4
+   },
+   "name": "Church & Dwight Company, Inc.",
+   "score": 37.1,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CHD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 44.6,
+    "growth": 10.0,
+    "profitability": 50.0,
+    "valuation": 88.2
+   },
+   "name": "FMC Corporation",
+   "score": 37.0,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "FMC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 17.1,
+    "growth": 35.4,
+    "profitability": 80.0,
+    "valuation": 57.4
+   },
+   "name": "Choice Hotels International, In",
+   "score": 36.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CHH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 65.9,
+    "profitability": 80.0,
+    "valuation": 27.0
+   },
+   "name": "Equity Lifestyle Properties, In",
+   "score": 36.6,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ELS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 35.4,
+    "profitability": 77.5,
+    "valuation": 58.6
+   },
+   "name": "Home Depot, Inc. (The)",
+   "score": 36.6,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 58.3,
+    "profitability": 55.0,
+    "valuation": 60.7
+   },
+   "name": "Equifax, Inc.",
+   "score": 36.4,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EFX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 65.9,
+    "profitability": 35.0,
+    "valuation": 58.0
+   },
+   "name": "Evergy, Inc.",
+   "score": 36.4,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EVRG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 92.9,
+    "growth": 10.0,
+    "profitability": 30.0,
+    "valuation": 69.8
+   },
+   "name": "Hormel Foods Corporation",
+   "score": 36.4,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HRL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 24.4,
+    "valuation": 22.6
+   },
+   "name": "Datadog, Inc.",
+   "score": 36.3,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "DDOG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 49.4,
+    "valuation": 67.8
+   },
+   "name": "BJ's Wholesale Club Holdings, I",
+   "score": 36.1,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "BJ"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 55.0,
+    "profitability": 10.0,
+    "valuation": 90.8
+   },
+   "name": "Alaska Air Group, Inc.",
+   "score": 36.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ALK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 40.9,
+    "profitability": 78.6,
+    "valuation": 30.3
+   },
+   "name": "CubeSmart",
+   "score": 35.9,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CUBE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 21.3,
+    "profitability": 71.7,
+    "valuation": 33.6
+   },
+   "name": "AvalonBay Communities, Inc.",
+   "score": 35.8,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AVB"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 91.3,
+    "profitability": 63.3,
+    "valuation": 13.2
+   },
+   "name": "GE Aerospace",
+   "score": 35.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 80.0,
+    "profitability": 68.9,
+    "valuation": 25.0
+   },
+   "name": "IDEXX Laboratories, Inc.",
+   "score": 35.4,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "IDXX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 88.7,
+    "profitability": 15.6,
+    "valuation": 44.2
+   },
+   "name": "Cousins Properties Incorporated",
+   "score": 35.2,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CUZ"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 88.7,
+    "profitability": 61.9,
+    "valuation": 15.1
+   },
+   "name": "Equinix, Inc.",
+   "score": 35.2,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EQIX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 51.7,
+    "profitability": 65.0,
+    "valuation": 30.0
+   },
+   "name": "American Homes 4 Rent",
+   "score": 35.0,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AMH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 60.7,
+    "growth": 10.0,
+    "profitability": 46.7,
+    "valuation": 71.1
+   },
+   "name": "Builders FirstSource, Inc.",
+   "score": 34.8,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BLDR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 100.0,
+    "profitability": 49.4,
+    "valuation": 28.6
+   },
+   "name": "Costco Wholesale Corporation",
+   "score": 34.6,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "COST"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 55.0,
+    "profitability": 55.0,
+    "valuation": 56.2
+   },
+   "name": "Ares Management Corporation",
+   "score": 34.3,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ARES"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 18.9,
+    "valuation": 14.1
+   },
+   "name": "Glaukos Corporation",
+   "score": 34.1,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GKOS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.1,
+    "growth": 10.0,
+    "profitability": 50.8,
+    "valuation": 49.5
+   },
+   "name": "Deere & Company",
+   "score": 34.0,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 41.9,
+    "valuation": 58.0
+   },
+   "name": "American Electric Power Company",
+   "score": 33.9,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AEP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 65.9,
+    "profitability": 63.3,
+    "valuation": 25.0
+   },
+   "name": "Cintas Corporation",
+   "score": 33.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CTAS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 40.4,
+    "profitability": 41.9,
+    "valuation": 58.0
+   },
+   "name": "Ameren Corporation",
+   "score": 33.5,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AEE"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 40.9,
+    "profitability": 74.4,
+    "valuation": 31.9
+   },
+   "name": "CME Group Inc.",
+   "score": 33.5,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CME"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 44.6,
+    "growth": 35.4,
+    "profitability": 42.5,
+    "valuation": 40.7
+   },
+   "name": "BXP, Inc.",
+   "score": 33.4,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BXP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 58.9,
+    "growth": 60.9,
+    "profitability": 53.6,
+    "valuation": 21.7
+   },
+   "name": "Digital Realty Trust, Inc.",
+   "score": 33.2,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DLR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 100.0,
+    "growth": 100.0,
+    "profitability": 22.3,
+    "valuation": 9.8
+   },
+   "name": "Guardant Health, Inc.",
+   "score": 33.1,
+   "sector": "Healthcare",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 35.4,
+    "profitability": 41.9,
+    "valuation": 50.1
+   },
+   "name": "Entergy Corporation",
+   "score": 32.9,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ETR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 92.9,
+    "growth": 100.0,
+    "profitability": 18.9,
+    "valuation": 13.2
+   },
+   "name": "CrowdStrike Holdings, Inc.",
+   "score": 32.8,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CRWD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 35.4,
+    "profitability": 67.5,
+    "valuation": 35.7
+   },
+   "name": "Colgate-Palmolive Company",
+   "score": 32.6,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "CL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 30.0,
+    "growth": 65.9,
+    "profitability": 30.0,
+    "valuation": 57.4
+   },
+   "name": "HP Inc.",
+   "score": 32.5,
+   "sector": "Technology",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HPQ"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 17.1,
+    "growth": 55.0,
+    "profitability": 50.0,
+    "valuation": 41.8
+   },
+   "name": "Caesars Entertainment, Inc.",
+   "score": 32.3,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CZR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 100.0,
+    "profitability": 18.9,
+    "valuation": 40.4
+   },
+   "name": "e.l.f. Beauty, Inc.",
+   "score": 32.3,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ELF"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 10.0,
+    "profitability": 10.0,
+    "valuation": 75.4
+   },
+   "name": "Ford Motor Company",
+   "score": 32.1,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "F"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 60.9,
+    "profitability": 48.1,
+    "valuation": 27.0
+   },
+   "name": "DoorDash, Inc.",
+   "score": 32.0,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "DASH"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 10.0,
+    "profitability": 77.5,
+    "valuation": 51.7
+   },
+   "name": "Clorox Company (The)",
+   "score": 31.6,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CLX"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 30.0,
+    "profitability": 30.0,
+    "valuation": 67.8
+   },
+   "name": "Graphic Packaging Holding Compa",
+   "score": 31.6,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GPK"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 10.0,
+    "profitability": 72.3,
+    "valuation": 54.1
+   },
+   "name": "Crown Castle Inc.",
+   "score": 31.3,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CCI"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 71.7,
+    "valuation": 18.4
+   },
+   "name": "Essex Property Trust, Inc.",
+   "score": 31.3,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "ESS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 76.8,
+    "growth": 10.0,
+    "profitability": 10.0,
+    "valuation": 57.4
+   },
+   "name": "Helmerich & Payne, Inc.",
+   "score": 31.3,
+   "sector": "Energy",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HP"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 21.3,
+    "profitability": 65.0,
+    "valuation": 23.8
+   },
+   "name": "Equity Residential",
+   "score": 30.9,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EQR"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 10.0,
+    "growth": 51.7,
+    "profitability": 56.9,
+    "valuation": 35.1
+   },
+   "name": "Hilton Worldwide Holdings Inc.",
+   "score": 30.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "HLT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 26.1,
+    "growth": 55.0,
+    "profitability": 60.6,
+    "valuation": 28.6
+   },
+   "name": "Boeing Company (The)",
+   "score": 30.7,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "BA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 44.1,
+    "profitability": 35.0,
+    "valuation": 44.2
+   },
+   "name": "IDACORP, Inc.",
+   "score": 30.7,
+   "sector": "Utilities",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "IDA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 100.0,
+    "profitability": 36.9,
+    "valuation": 13.2
+   },
+   "name": "Axon Enterprise, Inc.",
+   "score": 30.3,
+   "sector": "Industrials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "AXON"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 67.9,
+    "growth": 74.6,
+    "profitability": 32.5,
+    "valuation": 18.6
+   },
+   "name": "Healthpeak Properties, Inc.",
+   "score": 30.3,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "DOC"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 55.0,
+    "profitability": 10.0,
+    "valuation": 54.7
+   },
+   "name": "Air Products and Chemicals, Inc",
+   "score": 29.9,
+   "sector": "Basic Materials",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "APD"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 42.9,
+    "growth": 55.0,
+    "profitability": 10.0,
+    "valuation": 67.8
+   },
+   "name": "ConAgra Brands, Inc.",
+   "score": 28.6,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CAG"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": null,
+    "growth": 65.9,
+    "profitability": 67.5,
+    "valuation": 15.0
+   },
+   "name": "CorVel Corp.",
+   "score": 28.4,
+   "sector": "Financial Services",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CRVL"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 51.8,
+    "growth": 69.6,
+    "profitability": 36.9,
+    "valuation": 16.7
+   },
+   "name": "Dutch Bros Inc.",
+   "score": 28.0,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "CAUTION",
+   "ticker": "BROS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 10.0,
+    "profitability": 65.0,
+    "valuation": 19.5
+   },
+   "name": "Camden Property Trust",
+   "score": 27.1,
+   "sector": "Real Estate",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CPT"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 83.9,
+    "growth": 60.9,
+    "profitability": 21.1,
+    "valuation": 26.0
+   },
+   "name": "CAVA Group, Inc.",
+   "score": 25.8,
+   "sector": "Consumer Cyclical",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "CAVA"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 19.6,
+    "growth": 21.3,
+    "profitability": 10.0,
+    "valuation": 63.4
+   },
+   "name": "General Mills, Inc.",
+   "score": 22.2,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "GIS"
+  },
+  {
+   "fundamental_categories": {
+    "accounting_quality": null,
+    "capital_allocation": null,
+    "financial_health": 35.7,
+    "growth": 35.4,
+    "profitability": 10.0,
+    "valuation": 35.3
+   },
+   "name": "Estee Lauder Companies, Inc. (T",
+   "score": 20.9,
+   "sector": "Consumer Defensive",
+   "stale_carryforward": false,
+   "stance": "INSUFFICIENT DATA",
+   "ticker": "EL"
+  }
+ ],
+ "statement_enriched_count": 150,
+ "universe_count": 920,
+ "universe_mode": "full"
+}

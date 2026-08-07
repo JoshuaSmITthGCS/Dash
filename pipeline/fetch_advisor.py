@@ -817,8 +817,41 @@ def carry_forward_rows(research, symbols, previous_payload):
     ]
 
 
-def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=()):
-    """Choose prior leaders, five best outsiders, then any explicit portfolio coverage."""
+def full_universe_research_enabled():
+    """True when this run is an unconstrained research pass, not a production refresh.
+
+    Set ``FULL_UNIVERSE_RESEARCH=true`` to enrich as much of the eligible universe as the
+    run budget allows, with no seeding from the previous refresh's ranking. Expensive
+    (statement enrichment is several requests per name against a rate-limited provider), so
+    it is opt-in and never the default production path.
+    """
+    return os.getenv("FULL_UNIVERSE_RESEARCH", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def select_enrichment_priority(previous_top, preliminary_symbols, available,
+                               portfolio_symbols=(), research_mode=None):
+    """Choose prior leaders, five best outsiders, then any explicit portfolio coverage.
+
+    Production behaviour seeds the statement-enrichment queue with the previous refresh's
+    top ``INCUMBENT_ENRICH_LIMIT`` names and admits only ``CHALLENGER_ENRICH_LIMIT`` new
+    candidates. That makes the metrics carrying most of the model's weight -- EV/EBITDA,
+    ROIC, interest coverage, Piotroski F -- available almost exclusively to companies a
+    weaker preliminary model already ranked highly, and it compounds: today's leaders are
+    seeded from yesterday's. A company whose best evidence is exactly the evidence that is
+    never computed for it cannot surface.
+
+    In research mode the previous ranking is ignored entirely and the challenger cap is
+    lifted, so enrichment order depends only on this run's own preliminary score. That
+    ordering is still not neutral -- it is the preliminary model's -- but nothing carries
+    over from a prior refresh, which is what makes the two runs comparable.
+    """
+    research_mode = full_universe_research_enabled() if research_mode is None else research_mode
+    if research_mode:
+        # Deliberately does not read ``previous_top`` at all. The test suite asserts that a
+        # populated previous_top produces byte-identical output to an empty one.
+        challengers = tuple(preliminary_symbols)
+        priority = tuple(dict.fromkeys((*challengers, *portfolio_symbols)))
+        return (), challengers, priority
     incumbents = tuple(
         symbol for symbol in previous_top
         if symbol in available
@@ -890,6 +923,16 @@ def run():
     )
     publish_limit = max(1, int(os.getenv("ADVISOR_PUBLISH_LIMIT", PUBLISH_LIMIT)))
     extended_limit = max(publish_limit, int(os.getenv("ADVISOR_EXTENDED_LIMIT", EXTENDED_LIMIT)))
+    research_mode = full_universe_research_enabled()
+    if research_mode:
+        # Lifting the shortlist cap is the point of the mode: capping enrichment at
+        # EXTENDED_LIMIT would leave the same statement-coverage gate in place with only the
+        # incumbent seeding removed. ADVISOR_EXTENDED_LIMIT still wins if set explicitly, so
+        # a budgeted multi-run accumulation can cover the universe in slices.
+        if not os.getenv("ADVISOR_EXTENDED_LIMIT"):
+            extended_limit = len(symbols)
+        LOG.info(f"FULL_UNIVERSE_RESEARCH: enrichment unseeded, "
+                 f"statement budget {extended_limit} of {len(symbols)} symbols")
     # Intraday refreshes don't need to re-poll all ~900 names - only the previously ranked
     # leaders move enough intraday to matter for the leaderboard. The full universe still
     # gets swept once a day (ADVISOR_UNIVERSE_MODE=full); everything left out of a fast
@@ -1010,7 +1053,8 @@ def run():
     all_news.extend(discovery_news)
 
     incumbents, challengers, statement_priority = select_enrichment_priority(
-        previous_top, preliminary_symbols, available, portfolio_symbols
+        previous_top, preliminary_symbols, available, portfolio_symbols,
+        research_mode=research_mode,
     )
     enriched_count, enrichment_diagnostics = enrich(contexts, extended_limit, delay, statement_priority)
 
@@ -1229,6 +1273,9 @@ def run():
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
         "universe_mode": universe_mode, "polled_count": len(refresh_symbols),
         "enrichment_selection": {
+            "mode": "full_universe_research" if research_mode else "production_shortlist",
+            "seeded_from_previous_ranking": not research_mode,
+            "statement_budget": extended_limit,
             "previous_top": list(incumbents),
             "challengers": list(challengers),
             "priority_count": len(incumbents) + len(challengers),

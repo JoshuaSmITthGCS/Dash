@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 import pandas as pd
 
@@ -8,8 +9,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (_screen_row, build_portfolio_coverage, carry_forward_rows,
                            compact_news, curate_candidate_news, enrich, latest_unique_news,
-                           previous_rows_by_ticker, previous_top_symbols,
-                           resolve_refresh_symbols, select_enrichment_priority, yahoo_extended)
+                           full_universe_research_enabled, previous_rows_by_ticker,
+                           previous_top_symbols, resolve_refresh_symbols,
+                           select_enrichment_priority, yahoo_extended)
 
 
 class RefreshSymbolTests(unittest.TestCase):
@@ -67,6 +69,67 @@ class EnrichmentPriorityTests(unittest.TestCase):
 
         self.assertEqual(preliminary[:20], incumbents)
         self.assertEqual(preliminary[20:25], challengers)
+
+
+class FullUniverseResearchModeTests(unittest.TestCase):
+    """The research pass must not be able to inherit the previous refresh's ranking.
+
+    Production seeds statement enrichment with the previous top 20 and admits 5 challengers,
+    so the metrics carrying most of the model's weight are computed almost exclusively for
+    names an earlier, weaker model already liked -- and today's leaders are seeded from
+    yesterday's. Research mode exists to measure that bias, which it can only do if it is
+    provably free of it.
+    """
+
+    PREVIOUS = tuple(f"P{i:02d}" for i in range(20))
+    PRELIMINARY = (*(f"P{i:02d}" for i in range(20)), *(f"C{i:02d}" for i in range(8)))
+
+    def test_previous_ranking_cannot_influence_research_mode_selection(self):
+        seeded = select_enrichment_priority(
+            self.PREVIOUS, self.PRELIMINARY, set(self.PRELIMINARY), ("PORT",),
+            research_mode=True,
+        )
+        unseeded = select_enrichment_priority(
+            (), self.PRELIMINARY, set(self.PRELIMINARY), ("PORT",),
+            research_mode=True,
+        )
+
+        # Identical output from a populated and an empty previous ranking is the whole claim.
+        self.assertEqual(seeded, unseeded)
+
+    def test_research_mode_reports_no_incumbents_and_caps_no_challengers(self):
+        incumbents, challengers, priority = select_enrichment_priority(
+            self.PREVIOUS, self.PRELIMINARY, set(self.PRELIMINARY), ("PORT",),
+            research_mode=True,
+        )
+
+        self.assertEqual((), incumbents)
+        self.assertEqual(self.PRELIMINARY, challengers)
+        self.assertEqual((*self.PRELIMINARY, "PORT"), priority)
+
+    def test_production_mode_still_seeds_and_caps(self):
+        """The expensive research path must not become the default by accident."""
+        incumbents, challengers, _ = select_enrichment_priority(
+            self.PREVIOUS, self.PRELIMINARY, set(self.PRELIMINARY), research_mode=False,
+        )
+
+        self.assertEqual(self.PREVIOUS, incumbents)
+        self.assertEqual(5, len(challengers))
+
+    def test_mode_defaults_from_the_environment_and_is_off_unless_set(self):
+        for value, expected in (("", False), ("true", True), ("1", True), ("on", True),
+                                ("yes", True), ("false", False), ("0", False)):
+            with self.subTest(value=value):
+                with mock.patch.dict(os.environ, {"FULL_UNIVERSE_RESEARCH": value}):
+                    self.assertEqual(full_universe_research_enabled(), expected)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(full_universe_research_enabled())
+
+    def test_portfolio_symbols_are_still_covered_in_research_mode(self):
+        _, _, priority = select_enrichment_priority(
+            (), ("AAA", "BBB"), {"AAA", "BBB"}, ("HELD",), research_mode=True,
+        )
+        self.assertIn("HELD", priority)
 
 
 class PortfolioCoverageTests(unittest.TestCase):

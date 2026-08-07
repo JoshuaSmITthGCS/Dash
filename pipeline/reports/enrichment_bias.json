@@ -1,0 +1,195 @@
+{
+  "defect": "statement-derived metrics are computed only for a shortlist chosen by a preliminary score that does not contain them, seeded with the previous refresh's top 20 and admitting 5 new candidates per refresh",
+  "enrichment_selection_as_published": {
+    "mode": "production_shortlist",
+    "priority_count": 22,
+    "seeded_from_previous_ranking": true,
+    "statement_enriched_count": 150,
+    "universe_count": 920
+  },
+  "generated_at": "2026-08-06T00:23:32.352074+00:00",
+  "interpretation": "The footprint is measurable; the cost is not. The hard structural finding is that no unenriched name reaches the top 100 -- the two statement-only categories are 20% of the fundamental weight and can never contribute for the ~60% of the published universe that is never enriched. The headline score gap, by contrast, is largely circular: enrichment is targeted at names the preliminary model already liked, and non_statement_category_gap shows enriched names already score well ahead on the categories that need no enrichment at all. So the gap is mostly selection, not proof that the gate hides good companies. Whether it does can only be answered by running the universe unseeded and comparing, which needs network access. Note also that docs/P0-Q1-BENCHMARK.md found no residual alpha after controlling for the six factors this model targets, which lowers the stakes: a gate that starves an alpha-generating process matters less when the process has not been shown to generate alpha.",
+  "observed_footprint": {
+    "category_coverage": {
+      "accounting_quality": {
+        "coverage": 0.394,
+        "of": 378,
+        "scored": 149
+      },
+      "capital_allocation": {
+        "coverage": 0.397,
+        "of": 378,
+        "scored": 150
+      },
+      "financial_health": {
+        "coverage": 0.913,
+        "of": 378,
+        "scored": 345
+      },
+      "growth": {
+        "coverage": 1.0,
+        "of": 378,
+        "scored": 378
+      },
+      "profitability": {
+        "coverage": 1.0,
+        "of": 378,
+        "scored": 378
+      },
+      "valuation": {
+        "coverage": 1.0,
+        "of": 378,
+        "scored": 378
+      }
+    },
+    "names_considered": 378,
+    "non_statement_category_gap": {
+      "financial_health": {
+        "gap": 19.8,
+        "not_enriched_mean": 57.6,
+        "statement_enriched_mean": 77.4
+      },
+      "growth": {
+        "gap": 12.6,
+        "not_enriched_mean": 56.5,
+        "statement_enriched_mean": 69.1
+      },
+      "profitability": {
+        "gap": 19.3,
+        "not_enriched_mean": 54.2,
+        "statement_enriched_mean": 73.5
+      },
+      "valuation": {
+        "gap": 11.8,
+        "not_enriched_mean": 60.8,
+        "statement_enriched_mean": 72.5
+      }
+    },
+    "rank_concentration": {
+      "by_rank_band": {
+        "top_10": {
+          "names": 10,
+          "share": 1.0,
+          "statement_enriched": 10
+        },
+        "top_100": {
+          "names": 100,
+          "share": 1.0,
+          "statement_enriched": 100
+        },
+        "top_20": {
+          "names": 20,
+          "share": 1.0,
+          "statement_enriched": 20
+        },
+        "top_40": {
+          "names": 40,
+          "share": 1.0,
+          "statement_enriched": 40
+        }
+      },
+      "universe_enrichment_rate": 0.397
+    },
+    "score_gap": {
+      "mean_gap": 25.29,
+      "not_enriched": {
+        "count": 228,
+        "maximum": 50.9,
+        "mean": 40.91,
+        "median": 41.7,
+        "minimum": 20.9
+      },
+      "statement_enriched": {
+        "count": 150,
+        "maximum": 84.3,
+        "mean": 66.2,
+        "median": 66.25,
+        "minimum": 47.8
+      }
+    },
+    "sector_composition": {
+      "Basic Materials": {
+        "names": 16,
+        "rate": 0.188,
+        "statement_enriched": 3
+      },
+      "Communication Services": {
+        "names": 6,
+        "rate": 0.5,
+        "statement_enriched": 3
+      },
+      "Consumer Cyclical": {
+        "names": 55,
+        "rate": 0.327,
+        "statement_enriched": 18
+      },
+      "Consumer Defensive": {
+        "names": 24,
+        "rate": 0.167,
+        "statement_enriched": 4
+      },
+      "Energy": {
+        "names": 14,
+        "rate": 0.714,
+        "statement_enriched": 10
+      },
+      "Financial Services": {
+        "names": 51,
+        "rate": 0.667,
+        "statement_enriched": 34
+      },
+      "Healthcare": {
+        "names": 46,
+        "rate": 0.413,
+        "statement_enriched": 19
+      },
+      "Industrials": {
+        "names": 64,
+        "rate": 0.266,
+        "statement_enriched": 17
+      },
+      "Real Estate": {
+        "names": 23,
+        "rate": 0.087,
+        "statement_enriched": 2
+      },
+      "Technology": {
+        "names": 63,
+        "rate": 0.635,
+        "statement_enriched": 40
+      },
+      "Utilities": {
+        "names": 16,
+        "rate": 0.0,
+        "statement_enriched": 0
+      }
+    },
+    "statement_only_categories": [
+      "capital_allocation",
+      "accounting_quality"
+    ]
+  },
+  "schema_version": 1,
+  "source": "pipeline/data/full_refresh_snapshots/advisor-2026-08-06T002332-full.json",
+  "source_polled_count": 920,
+  "source_universe_mode": "full",
+  "unconstrained_comparison": {
+    "metrics_that_would_populate": [
+      "top_40_overlap",
+      "top_100_overlap",
+      "spearman_rank_correlation",
+      "unconstrained_top_40_missing_from_production_shortlist",
+      "difference_by_market_cap",
+      "difference_by_sector",
+      "difference_by_valuation_profile",
+      "difference_by_profitability",
+      "forward_return_difference"
+    ],
+    "reason": "requires a live unseeded enrichment pass over the full universe; this environment has no route to any market-data provider",
+    "reproduction": [
+      "FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py",
+      "python pipeline/enrichment_bias.py  # re-run to populate the comparison block"
+    ],
+    "status": "blocked_network_policy"
+  }
+}
