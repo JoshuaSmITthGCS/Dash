@@ -32,6 +32,7 @@ import { usePullToRefresh } from '../lib/usePullToRefresh'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
+import AnimatedNumber from '../components/AnimatedNumber.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import {
   alignSeries,
@@ -492,12 +493,12 @@ export default function Portfolio() {
 
       <div className="portfolio-summary">
         <div className="portfolio-value-card">
-          <div className="kpi-label">Total Value</div>
-          <div className="kpi-value">{money(trackedAccountValue, 2)}</div>
+          <div className="kpi-label"><span className="report-hero-label">Total Value{portfolioQuotes.refreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</span></div>
+          <div className="kpi-value">{trackedAccountValue == null ? '–' : <AnimatedNumber value={trackedAccountValue} format={(v) => money(v, 2)} />}</div>
           <div className="portfolio-delta" style={{ color: moveColor(returnSummary.strategy.available ? returnSummary.strategy.gain : portfolioStats.totalGain) }}>
             {returnSummary.strategy.available
-              ? `${returnSummary.strategy.gain >= 0 ? '+' : '−'}${money(Math.abs(returnSummary.strategy.gain), 2)} · ${signedPct(returnSummary.strategy.returnPct, 2)} strategy return`
-              : `${portfolioStats.totalGain >= 0 ? '+' : '−'}${money(Math.abs(portfolioStats.totalGain))} · ${signedPct(totalGainPct, 2)}`}
+              ? <>{returnSummary.strategy.gain >= 0 ? '+' : '−'}<AnimatedNumber value={Math.abs(returnSummary.strategy.gain)} format={(v) => money(v, 2)} /> · <AnimatedNumber value={returnSummary.strategy.returnPct} format={(v) => signedPct(v, 2)} /> strategy return</>
+              : <>{portfolioStats.totalGain >= 0 ? '+' : '−'}<AnimatedNumber value={Math.abs(portfolioStats.totalGain)} format={money} /> · <AnimatedNumber value={totalGainPct} format={(v) => signedPct(v, 2)} /></>}
           </div>
           <div className="kpi-note">{returnSummary.strategy.available ? 'Modified Dietz with settled external flows' : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
         </div>

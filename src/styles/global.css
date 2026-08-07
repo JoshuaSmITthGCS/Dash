@@ -1121,6 +1121,7 @@ body { background: var(--app-background); background-image: none; }
 .report-hero-grid { display: grid; grid-template-columns: 1.7fr repeat(3, 1fr); overflow: hidden; margin-bottom: var(--section-gap); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
 .report-hero, .report-metric { min-width: 0; padding: clamp(18px, 2.6vw, 30px); border-right: 1px solid var(--border-subtle); }.report-hero-grid > :last-child { border-right: 0; }
 .report-hero > span, .report-metric > span { display: block; color: var(--text-tertiary); font-size: 11px; }.report-hero > strong { display: block; margin: 14px 0 10px; font: 750 clamp(38px, 5vw, 60px)/.95 var(--font-display); letter-spacing: -.055em; font-variant-numeric: tabular-nums; }.report-hero > small, .report-metric small { color: var(--text-tertiary); font-size: 10px; line-height: 1.45; }
+.report-hero-label { display: inline-flex !important; align-items: center; gap: 6px; }.hero-value-spinner { color: var(--text-tertiary); }
 .report-today { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }.report-today b { font: 700 15px var(--font-mono); }.report-today span { font-size: 11px; }
 .report-hero-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 10px; }
 .value-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; font: 650 12px var(--font-mono); white-space: nowrap; }

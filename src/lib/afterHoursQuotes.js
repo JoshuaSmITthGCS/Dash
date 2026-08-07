@@ -42,3 +42,40 @@ export function afterHoursPortfolioReturn(positions, quotes = {}) {
     tickers: rows.map((row) => row.ticker),
   }
 }
+
+/**
+ * The portfolio's live day-so-far dollar and percent move: each holding's fetched price
+ * versus its own previousClose (Yahoo's `chartPreviousClose`, carried onto the merged price
+ * row by mergePortfolioQuotes), summed across whichever holdings currently have a live
+ * quote. Falls back to nothing (`available: false`) when no holding has one yet, so a caller
+ * can fall back to the report's close-to-close move instead of showing a false $0.
+ */
+export function liveTodayPortfolioReturn(positions, priceData = {}) {
+  const rows = (positions || [])
+    .map((position) => {
+      const source = priceData[String(position.ticker || '').toUpperCase()]
+      const shares = Number(position.shares)
+      if (!source?.portfolioQuote || !finite(shares) || !finite(source.price) || !finite(source.previousClose) || !source.previousClose) return null
+      return {
+        ticker: position.ticker,
+        dollarReturn: (source.price - source.previousClose) * shares,
+        priorValue: source.previousClose * shares,
+      }
+    })
+    .filter(Boolean)
+
+  if (!rows.length) {
+    return { available: false, reason: 'No live quote is available yet for any held position.', coverage: 0 }
+  }
+
+  const dollarReturn = rows.reduce((sum, row) => sum + row.dollarReturn, 0)
+  const priorValue = rows.reduce((sum, row) => sum + row.priorValue, 0)
+
+  return {
+    available: true,
+    dollarReturn,
+    returnPct: priorValue ? (dollarReturn / priorValue) * 100 : null,
+    coverage: rows.length,
+    tickers: rows.map((row) => row.ticker),
+  }
+}
