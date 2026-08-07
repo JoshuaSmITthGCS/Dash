@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-06T22:50:05.385365+00:00",
+  "generated_at": "2026-08-07T09:40:01.320141+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "reconstructed, look-ahead contaminated"
   },
-  "snapshot_refreshes": 7,
+  "snapshot_refreshes": 8,
   "monthly_score_snapshots": 1,
   "variants": {
     "champion": {
@@ -102,6 +102,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -200,6 +201,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -298,6 +300,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -396,6 +399,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -496,6 +500,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -594,6 +599,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -692,6 +698,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -790,6 +797,7 @@
         },
         "long_short_top_minus_bottom_quintile": {
           "mean_net_return": null,
+          "cost_model": "flat",
           "cost_bps": 10.0
         },
         "deflated_sharpe_probability": null,
@@ -823,8 +831,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "e83a18ae369d567c6272792fb9a39351fcd8fe79",
-    "config_hash": "400884052c9bd01fb417c882a13450b57b0c356a56dea2c8028329da8e467f6b",
-    "generated_at": "2026-08-06T22:50:05.385365+00:00"
+    "git_commit_sha": "043a4353d49bcd75c823fbb5106c8091e9aeafaa",
+    "config_hash": "c522e0387f9968dc5ee57c8ec90f97503a91e9850d70e4ae38b1d90a2b77f5d0",
+    "generated_at": "2026-08-07T09:40:01.320141+00:00"
   }
 }
