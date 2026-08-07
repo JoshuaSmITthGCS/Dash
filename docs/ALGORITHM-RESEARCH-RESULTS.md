@@ -159,6 +159,16 @@ data, not a simulation.
 | Worst rate the model produces without volatility | 25.0 bps (stress, illiquid) |
 | Additional drag at that worst case | 116.9 bps/yr |
 
+**Subsequently resolved, and it inverts the concern.** Once the backtest became runnable
+offline, pricing every leg through `costs.py` from its own trailing liquidity and volatility
+*lowered* total cost from **$4,194** at flat 10bps to **$1,002** (base) and **$2,020**
+(stress). The cached book is liquid enough that the flat 10bps assumption was conservative,
+not optimistic, and net CAGR *rises* 0.55pp under base. The 360-name cache is more liquid than
+the full 910-name universe, so this is not the last word on the published backtest — but the
+direction is the opposite of what was feared.
+
+The original offline estimate below stands as the reasoning that preceded it.
+
 **The spread-and-fee floor does not cross the threshold.** But these rates omit the
 volatility-scaled market-impact term for want of per-name volatility, so every figure is a
 lower bound, and the full model could push an illiquid book past 36bps. Turnover this high is a
@@ -293,15 +303,36 @@ bands actually consumed, with a test pinning that they cannot diverge.
 
 ---
 
-## 12. Turnover controls
+## 12. Turnover controls — now measured, and not promotable
 
-Four challengers implemented behind flags that all default to the champion's plain top-N
-selection: rank buffer (1.25/1.5/2.0×N), minimum holding period (1/3/6 months with a
-thesis-break release), score smoothing (α ∈ {0.5, 0.7}), replacement margin (2 or 5 points).
+`main` brought `pipeline/data/backtest_cache/` (360 symbols × 2,513 sessions) into the repo,
+and adding a committed-SPY fallback to `--cache-only` made the whole backtest runnable with no
+network. So this is no longer blocked.
 
-**Result. Blocked.** Each is proved to behave exactly as specified — 33 tests including exact
-boundary conditions and the turnover-reduction property — which is the precondition for
-trusting the measurement. Whether any improves net-of-cost return needs a backtest re-run.
+**Levels are not comparable to the published 11.14% CAGR** — that used 860 names, this cache
+holds 360. Differences between variants are comparable, because every variant runs the same
+names over the same months.
+
+| Variant | CAGR | ΔCAGR | Sharpe | Turnover | Cost |
+|---|---:|---:|---:|---:|---:|
+| **smooth07** (α = 0.7) | 16.84% | **+2.64pp** | 0.905 | 43.9% | $3,414 |
+| **hold6** (6-month floor) | 16.65% | **+2.46pp** | 0.891 | **30.9%** | $2,383 |
+| tiered_base | 14.75% | +0.55pp | 0.798 | 54.6% | **$1,002** |
+| tiered_stress | 14.59% | +0.39pp | 0.792 | 54.7% | $2,020 |
+| margin5 | 14.45% | +0.26pp | 0.782 | 34.9% | $2,622 |
+| *champion* | *14.20%* | — | *0.775* | *54.7%* | *$4,194* |
+| hold3 | 13.01% | −1.19pp | 0.721 | 36.9% | $2,828 |
+| buffer20 | 12.34% | −1.85pp | 0.691 | 37.8% | $2,798 |
+| buffer15 | 12.33% | −1.86pp | 0.694 | 44.2% | $3,223 |
+
+**Result. Inconclusive — and the shape of the result is why.** A 3-month holding floor *hurts*
+while a 6-month floor helps. Both rank buffers hurt. A real effect does not usually flip sign
+with its own parameter, and a 4.5pp spread across nine configurations on a single in-sample
+path is well inside what noise produces at this sample size.
+
+**Decision: KEEP AS CHALLENGERS. Promoted: none.** Promotion needs out-of-sample rank IC,
+deflated Sharpe, PBO and a walk-forward split. One in-sample path satisfies none of them, and
+the nine variants are counted toward the deflation trial total.
 
 ---
 
@@ -358,7 +389,7 @@ sleeve to an unvalidated model adds surface area, not evidence.
 |---|---|
 | 24 monthly PIT periods showing positive rank IC on the 63-session sector-residual target | A |
 | Unseeded full-universe enrichment producing a materially different, better-performing top 40 | A (partly) |
-| A turnover control lifting net-of-cost return by >150bps with the signal intact | A |
+| Score smoothing or the 6-month floor surviving a walk-forward split with purge/embargo | A (partly) |
 | More of the same: null residual alpha once PIT history exists | C |
 
 ### The three highest-expected-value next actions
@@ -370,9 +401,10 @@ sleeve to an unvalidated model adds surface area, not evidence.
    dates.** Everything downstream — component IC, calibration, ICIR, the entire verdict — is
    gated on periods accumulating, and waiting two years for them is a choice, not a constraint.
    EDGAR carries real filing timestamps and is free.
-3. **Re-run the backtest under tiered costs and each turnover control**
-   (`--cost-model tiered`, `--rank-buffer`, `--min-holding-months`). Three of the brief's
-   open thresholds resolve in one batch of runs, and all the code exists.
+3. **Walk-forward the two turnover controls that won in-sample** (score smoothing α=0.7 and
+   a 6-month holding floor). They are the only challengers with a measured effect worth
+   testing properly, and the machinery — `walk_forward_splits` with purge/embargo, deflated
+   Sharpe, PBO — is already built and waiting for exactly this input.
 
 Notably absent from that list: any new factor, sleeve, or indicator. The bottleneck has not
 moved — it is still evidence, not signal count.

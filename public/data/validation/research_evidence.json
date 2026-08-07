@@ -490,10 +490,10 @@
     "status": "measured",
     "summary": {
       "experiments": 12,
-      "total_variants_tested": 44,
+      "total_variants_tested": 43,
       "by_decision": {
-        "ABANDON": 3,
-        "INCONCLUSIVE": 3,
+        "ABANDON": 4,
+        "INCONCLUSIVE": 2,
         "KEEP_AS_CHALLENGER": 2,
         "PROMOTE": 4
       },
@@ -590,19 +590,19 @@
         "id": "C3-cost-sensitivity-at-realized-turnover",
         "hypothesis": "A realistic tiered cost model gives up more than 200bps a year relative to the published flat 10bps.",
         "category": "cost_realism",
-        "result": "The spread-and-fee floor does not cross the threshold: breakeven is ~36bps one-way and the model's worst case without a volatility input is 25bps.",
-        "decision": "INCONCLUSIVE",
-        "reason": "Every rate here omits the volatility-scaled market-impact term for want of per-name volatility, so all figures are a lower bound and the full model could still cross. Turnover this high is a real cost problem, just not yet a demonstrated 200bps one.",
+        "result": "Resolved, and it inverts the concern. Re-running the backtest with costs.py pricing every leg from its own trailing liquidity and volatility (now possible offline from the committed price cache) *lowers* total cost from $4,194 at flat 10bps to $1,002 base / $2,020 stress -- the cached book is liquid enough that the flat 10bps assumption was conservative, not optimistic. Net CAGR rises 0.55pp under base and 0.39pp under stress.",
+        "decision": "ABANDON",
+        "reason": "The hypothesis was that realistic costs would give up more than 200bps. They give up less than the flat assumption already charged. This holds for the 360-name cached universe, which is more liquid than the full 910-name configured one, so it is not the last word on the published backtest -- but the direction is the opposite of what was feared.",
         "number_of_variants_tested": 9
       },
       {
         "id": "C4-turnover-controls",
         "hypothesis": "Rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise rather than information.",
         "category": "portfolio_construction",
-        "result": "Not measured. Each control is proved to behave exactly as specified (33 tests, including exact buffer and margin boundaries and the turnover-reduction property), which is the precondition for trusting the measurement when it runs.",
+        "result": "Measured in-sample against the 360-symbol committed price cache. Score smoothing (+2.64pp CAGR, turnover 54.7% -> 43.9%) and a 6-month holding floor (+2.46pp, turnover -> 30.9%) both improve return and cut turnover; both rank buffers *hurt* (-1.85pp) and a 3-month floor hurts (-1.19pp) while a 6-month floor helps.",
         "decision": "KEEP_AS_CHALLENGER",
-        "reason": "Measuring net-of-cost impact needs a backtest re-run over ~860 names of five-year daily history, which needs network access this environment does not have.",
-        "number_of_variants_tested": 10
+        "reason": "The non-monotonicity is the tell: a real effect does not usually flip sign with the parameter, and a 4.5pp spread across nine configurations on one in-sample path is well inside what noise produces. Promotion needs out-of-sample rank IC, deflated Sharpe, PBO and a walk-forward split; none of that is satisfied here. Reported as a diagnostic.",
+        "number_of_variants_tested": 9
       },
       {
         "id": "C5-score-calibration",
@@ -739,7 +739,7 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "122968791bc6494b1ffd5da4353d1e42aea07b48",
+    "git_commit_sha": "7c0057f82f040caf2e570c40c3a2a8c40e4a398e",
     "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
     "generated_at": "2026-08-07T12:05:57.965197+00:00"
   }

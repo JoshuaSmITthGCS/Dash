@@ -55,7 +55,10 @@ more depth.
   rules but no scoring function exists (`docs/SCREEN-PRESETS.md`).
 - **Only 1 of 6 portfolio-construction methods is built** (score-weighted top-N;
   `docs/PORTFOLIO-CONSTRUCTION.md`). Four turnover controls exist as tested challengers
-  (`portfolio_construction.py`) but have never been measured against a backtest.
+  (`portfolio_construction.py`), now measured in-sample on the 360-symbol price cache
+  (`pipeline/reports/turnover_control_matrix.json`) but with no walk-forward evidence, and
+  none promoted. The results are non-monotonic in their own parameters, which is the usual
+  signature of noise.
 - **Portfolio size and weighting matrices cannot be evaluated from committed data.** The
   backtest artifact stores only each rebalance's top-20 picks — no full ranking and no per-name
   returns — so top-10/40/60 and alternative weighting schemes cannot be replayed offline.

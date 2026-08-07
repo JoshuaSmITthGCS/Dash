@@ -37,6 +37,7 @@ target correction came from `main`; the availability channel is this branch's.
 | `strategy_diagnostics.py` | Expectancy, profit factor, payoff, R-multiples, streaks, Sortino/Calmar, rolling Sharpe, regime attribution |
 | `benchmark_suite.py` | Per-benchmark Newey-West regression of the strategy on each of 14 tradeable ETFs |
 | `score_calibration.py` | Score-bucket outcome table behind an observation gate |
+| `turnover_control_matrix.py` | Runs the nine backtest variants offline and reports their differences |
 | `build_research_evidence.py` | Aggregates the reports into one UI artifact |
 | `src/components/ResearchEvidence.jsx` | Seven panels on `/screens/validation` |
 
@@ -65,6 +66,7 @@ not look for).
 | `fetch_advisor.py` | `source_status` passed into the PIT snapshot |
 | `backtest_monthly.py` | `--rank-buffer`, `--min-holding-months`, `--score-smoothing`, `--replacement-margin`, all defaulting off |
 | `confidence.py` | `historical_calibration_component`; explicit "not a probability" interpretation |
+| `backtest_monthly.py` | `committed_benchmark()` -- SPY from committed ETF history, so `--cache-only` no longer fails at the last hop with no network |
 | `p0_q1_benchmark_factor_report.py` | Loaders and OLS reused by `benchmark_suite.py` |
 | `src/components/AnalysisLayers.jsx` | "Confidence" → "Evidence confidence" |
 
@@ -103,7 +105,7 @@ model manifests, the cost model, champion/challenger. All existed and were corre
 ## Artifacts produced
 
 `benchmark_alpha_regressions.json` · `strategy_diagnostics.json` · `score_calibration.json` ·
-`public/data/validation/research_evidence.json`
+`turnover_control_matrix.json` · `public/data/validation/research_evidence.json`
 
 `benchmark_alpha_regressions.json` is deliberately a separate file from
 `benchmark_comparison.json`: `p0_q1_benchmark_factor_report.py` owns the latter and writes
@@ -137,8 +139,8 @@ reproduces without network access.
 
 | Item | Reason |
 |---|---|
-| Backtest re-run under tiered costs or any turnover control | Needs 5y daily price/volume for ~860 names; no network egress |
-| Unseeded full-universe enrichment comparison | Same |
+| Unseeded full-universe enrichment comparison | Needs a live enrichment pass over ~900 names; no network egress |
+| Walk-forward validation of the two winning turnover controls | Needs point-in-time periods, not just a price path |
 | Component IC, ICIR, populated calibration | 0 of 24 PIT periods |
 | Portfolio size / weighting matrices | The artifact stores only the top-20 picks, no full rankings or per-name returns |
 | Sector-neutral benchmark composite | Only 193 of 397 historical picks carry a sector label; labelling the rest is fabrication |

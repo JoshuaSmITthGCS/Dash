@@ -85,6 +85,29 @@ def appeal_weights(rows, top_n):
     return {row["ticker"]: score / total for row, score in zip(selected, scores)}
 
 
+def committed_benchmark(ticker="SPY"):
+    """The benchmark's daily series from committed ETF history, for offline reproduction.
+
+    ``--cache-only`` loads every universe symbol from ``pipeline/data/backtest_cache`` but the
+    benchmark was still fetched live, so the whole backtest failed at the last hop with no
+    network. ``public/data/etf/SPY.json`` carries 8,437 real sessions and is already committed
+    for the ETF comparison feature, which is more history than the 10-year fetch it replaces.
+
+    Returns None rather than raising if the series is absent, so the caller's existing
+    "could not fetch" path still handles it.
+    """
+    path = os.path.join(os.path.dirname(HERE), "public", "data", "etf", f"{ticker}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as handle:
+        series = (json.load(handle).get("price_series") or {}).get("fund") or []
+    rows = [row for row in series if row.get("date") and row.get("adjusted_close") is not None]
+    if not rows:
+        return None
+    return {"dates": [str(row["date"])[:10] for row in rows],
+            "closes": [float(row["adjusted_close"]) for row in rows]}
+
+
 def _price_maps(universe_data):
     return {
         symbol: dict(zip(data["dates"], data["closes"]))
@@ -407,7 +430,8 @@ def main():
         LOG.info(f"Fetch complete: {len(universe_data)}/{len(symbols)} usable")
         return 0
 
-    benchmark = fetch_benchmark(yf, "SPY", args.delay, history_period="10y")
+    benchmark = committed_benchmark("SPY") if args.cache_only else fetch_benchmark(
+        yf, "SPY", args.delay, history_period="10y")
     if not benchmark:
         LOG.error("Could not fetch SPY")
         return 1
