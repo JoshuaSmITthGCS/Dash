@@ -9,7 +9,29 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from fetch_advisor import (_screen_row, build_portfolio_coverage, carry_forward_rows,
                            compact_news, curate_candidate_news, enrich, latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols,
-                           resolve_refresh_symbols, select_enrichment_priority, yahoo_extended)
+                           resolve_refresh_symbols, select_enrichment_priority,
+                           watchlist_symbols, yahoo_extended)
+
+
+class WatchlistSymbolTests(unittest.TestCase):
+    def test_skips_cleanly_without_firebase_credentials(self):
+        previous = os.environ.pop("FIREBASE_SERVICE_ACCOUNT_JSON", None)
+        try:
+            self.assertEqual(watchlist_symbols(), ())
+        finally:
+            if previous is not None:
+                os.environ["FIREBASE_SERVICE_ACCOUNT_JSON"] = previous
+
+    def test_skips_cleanly_on_malformed_credentials(self):
+        previous = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+        os.environ["FIREBASE_SERVICE_ACCOUNT_JSON"] = "not valid json"
+        try:
+            self.assertEqual(watchlist_symbols(), ())
+        finally:
+            if previous is None:
+                os.environ.pop("FIREBASE_SERVICE_ACCOUNT_JSON", None)
+            else:
+                os.environ["FIREBASE_SERVICE_ACCOUNT_JSON"] = previous
 
 
 class RefreshSymbolTests(unittest.TestCase):

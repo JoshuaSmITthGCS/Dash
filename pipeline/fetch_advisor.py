@@ -1,5 +1,6 @@
 """Build the public investment-research dataset from Alpha Vantage + Yahoo fundamentals."""
 
+import json
 import math
 import os
 import re
@@ -181,6 +182,34 @@ def resolve_refresh_symbols(
         (*valid_symbols(requested_symbols), *portfolio_symbols)
     ))
     return symbols, portfolio_symbols
+
+
+def watchlist_symbols():
+    """Every ticker any signed-in user has saved, across every user's watchlist.
+
+    src/lib/useWatchlist.js lets a user save any ticker, including ones outside
+    advisor_universe.json - the frontend has no way to edit that file - but until now
+    nothing read those Firestore docs back into a refresh, so an out-of-universe watchlist
+    entry sat unpublished forever (see the "no current quote or research record was
+    published" empty state in src/pages/Watchlist.jsx). Folding every user's watchlist in
+    here means the next refresh - fast or full, whichever runs next - fetches and scores
+    it, and it keeps riding along on every later refresh for as long as it stays saved.
+    Mirrors evaluate_alerts.py's Firestore access: missing credentials skip cleanly so
+    local refreshes and forks without Firestore access still work.
+    """
+    credentials = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    if not credentials:
+        return ()
+    try:
+        import firebase_admin
+        from firebase_admin import credentials as firebase_credentials, firestore
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(firebase_credentials.Certificate(json.loads(credentials)))
+        db = firestore.client()
+        return tuple(dict.fromkeys(snapshot.id for snapshot in db.collection_group("items").stream()))
+    except Exception as error:  # noqa: BLE001 - never let a Firestore hiccup break the refresh
+        LOG.warn(f"Watchlist symbol lookup skipped: {error}")
+        return ()
 
 
 def number(value, digits=4):
@@ -899,7 +928,8 @@ def run():
         if row.get("ticker")
     )
     configured = os.getenv("ADVISOR_SYMBOLS")
-    requested_symbols = configured.split(",") if configured else DEFAULT_SYMBOLS
+    watchlisted = watchlist_symbols()
+    requested_symbols = (*(configured.split(",") if configured else DEFAULT_SYMBOLS), *watchlisted)
     symbols, portfolio_symbols = resolve_refresh_symbols(
         requested_symbols,
         PORTFOLIO_SYMBOLS,
@@ -934,11 +964,14 @@ def run():
         yf = None
 
     if universe_mode == "fast":
-        fast_priority = set(previous_top_symbols(previous_payload, fast_universe_size)) | set(portfolio_symbols)
+        # Watchlisted tickers ride along on fast refreshes too, alongside portfolio
+        # holdings, rather than waiting for the next once-daily full sweep - a ticker
+        # someone just saved should show up within hours, not by tomorrow morning.
+        fast_priority = set(previous_top_symbols(previous_payload, fast_universe_size)) | set(portfolio_symbols) | set(watchlisted)
         refresh_symbols = tuple(symbol for symbol in symbols if symbol in fast_priority) or symbols
         LOG.info(f"Fast refresh: polling {len(refresh_symbols)}/{len(symbols)} symbols "
-                 f"(prior top {fast_universe_size} plus portfolio holdings); the rest carry "
-                 "forward from the last full refresh")
+                 f"(prior top {fast_universe_size}, portfolio holdings, and watchlisted tickers); "
+                 "the rest carry forward from the last full refresh")
     else:
         refresh_symbols = symbols
 
