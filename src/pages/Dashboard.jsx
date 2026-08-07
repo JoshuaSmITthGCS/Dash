@@ -5,7 +5,7 @@ import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useWatchlist } from '../lib/useWatchlist.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
-import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
+import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
@@ -22,7 +22,8 @@ import Icon from '../components/Icons.jsx'
 import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
-import { afterHoursPortfolioReturn } from '../lib/afterHoursQuotes.js'
+import { afterHoursPortfolioReturn, liveTodayPortfolioReturn } from '../lib/afterHoursQuotes.js'
+import AnimatedNumber from '../components/AnimatedNumber.jsx'
 import { rankBreakoutInProgress, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
 import {
   actualRecordedValueSeries,
@@ -204,7 +205,12 @@ export default function Dashboard() {
   if (!data?.research?.length) return <Empty note="No advisor dataset is available yet." />
 
   const rows = data.research
-  const prices = buildPortfolioPriceData(data.screen_universe || [], data.portfolio_coverage || [], rows)
+  const publishedPrices = buildPortfolioPriceData(data.screen_universe || [], data.portfolio_coverage || [], rows)
+  // A quote refresh older than the latest published report is stale relative to it (e.g. a
+  // fresh nightly pipeline run) and must not override those newer closes on the hero number.
+  const quoteRefreshIsNewest = portfolioQuotes.fetchedAt
+    && new Date(portfolioQuotes.fetchedAt) >= new Date(data?.generated_at || 0)
+  const prices = mergePortfolioQuotes(publishedPrices, quoteRefreshIsNewest ? portfolioQuotes.quotes : {})
   const portfolio = enrichPortfolio(positions, prices)
   const holdingsSeries = currentHoldingsSeries(positions, prices, data.benchmark_history?.dates || [])
   const recordedSeries = actualRecordedValueSeries(tracking.snapshots, tracking.activities)
@@ -220,6 +226,13 @@ export default function Dashboard() {
   const comparison = effectiveChartMode === 'backtest' ? compareBenchmarkSeries(selected, selectedBenchmarkSeries) : null
   const chartedPortfolio = comparison?.portfolio || selected
   const today = latestMarketDayReturn(holdingsSeries)
+  // Prefer each holding's live price vs. its own previousClose (real-time, updates on every
+  // quote refresh) over the report's close-to-close move, so the headline number on the
+  // report tracks the same live figure the Portfolio page shows after a refresh.
+  const liveToday = quoteRefreshIsNewest ? liveTodayPortfolioReturn(positions, prices) : { available: false }
+  const heroToday = liveToday.available
+    ? liveToday
+    : today ? { dollarReturn: today.dollarReturn, returnPct: today.returnPct } : null
   const afterHours = afterHoursPortfolioReturn(positions, portfolioQuotes.quotes)
   const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
   const scorePortfolioPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
@@ -323,12 +336,16 @@ export default function Dashboard() {
       <DashboardWidget id="portfolio-summary" widgets={preferences.widgets}>
       <section className="report-hero-grid">
         <article className="report-hero">
-          <span>Current portfolio value</span>
-          <strong>{money(portfolio.totalValue)}</strong>
+          <span className="report-hero-label">Current portfolio value{portfolioQuotes.refreshing && <Icon name="sync" size={13} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</span>
+          <strong>{preferences.privacyMode || portfolio.totalValue == null
+            ? money(portfolio.totalValue)
+            : <AnimatedNumber value={portfolio.totalValue} format={money} />}</strong>
           <div className="report-hero-pills">
-            <DirectionPill value={today?.dollarReturn}>{today ? `${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)} today` : 'Today: unavailable'}</DirectionPill>
+            <DirectionPill value={heroToday?.dollarReturn}>{heroToday ? <>
+              <AnimatedNumber value={Math.abs(heroToday.dollarReturn)} format={money} /> · <AnimatedNumber value={heroToday.returnPct} format={(v) => signedPct(v, 2)} /> today
+            </> : 'Today: unavailable'}</DirectionPill>
             <DirectionPill value={afterHours.available ? afterHours.dollarReturn : null}>{afterHours.available
-              ? `${money(Math.abs(afterHours.dollarReturn))}${afterHours.returnPct != null ? ` · ${signedPct(afterHours.returnPct, 2)}` : ''} after-hours`
+              ? <><AnimatedNumber value={Math.abs(afterHours.dollarReturn)} format={money} />{afterHours.returnPct != null && <> · <AnimatedNumber value={afterHours.returnPct} format={(v) => signedPct(v, 2)} /></>} after-hours</>
               : 'After-hours refreshes at 9pm'}</DirectionPill>
           </div>
           <button type="button" className="secondary-button compact after-hours-refresh" onClick={portfolioQuotes.requestRefresh} disabled={portfolioQuotes.refreshing}
@@ -357,7 +374,7 @@ export default function Dashboard() {
           <Link className="secondary-button compact" to="/portfolio/insights">Trader insights →</Link>
         </div>
         <div className="insights-recap-stats">
-          <div><span>Today</span><b className={tone(today?.dollarReturn)}>{today ? `${signedPct(today.returnPct, 2)} · ${money(Math.abs(today.dollarReturn))}` : '–'}</b></div>
+          <div><span>Today</span><b className={tone(heroToday?.dollarReturn)}>{heroToday ? `${signedPct(heroToday.returnPct, 2)} · ${money(Math.abs(heroToday.dollarReturn))}` : '–'}</b></div>
           <div><span>Strategy return</span><b className={tone(returnSummary.strategy.returnPct)}>{returnSummary.strategy.available ? signedPct(returnSummary.strategy.returnPct, 1) : 'Unavailable'}</b></div>
           {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${preferences.defaultBenchmark}` : `Trailing ${preferences.defaultBenchmark}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
         </div>
