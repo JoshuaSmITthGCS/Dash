@@ -66,8 +66,12 @@ export function usePortfolioTracking() {
   const recordActivity = async ({ type, amount, effectiveDate, note = '' }) => {
     const cashMovement = ['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase'].includes(type)
     const cashIncrease = ['deposit', 'sale_proceeds'].includes(type)
+    // Counted toward net invested capital (see portfolioAnalytics.js CONTRIBUTION_TYPES) but
+    // never touches the tracked uninvested-cash balance -- the money went straight into the
+    // position, it never sat as cash.
+    const contributionOnly = type === 'external_contribution'
     const numericAmount = Number(amount)
-    if (!currentUser || !['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase', 'realized_gain', 'dividend', 'fee'].includes(type) || !Number.isFinite(numericAmount) || (cashMovement && numericAmount <= 0)) return { success: false, error: 'Choose an activity type and enter a valid amount. Cash movements must be greater than zero.' }
+    if (!currentUser || !['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase', 'realized_gain', 'dividend', 'fee', 'external_contribution'].includes(type) || !Number.isFinite(numericAmount) || ((cashMovement || contributionOnly) && numericAmount <= 0)) return { success: false, error: 'Choose an activity type and enter a valid amount. Cash movements must be greater than zero.' }
     if (cashMovement && !cashIncrease && numericAmount > Number(effectiveTrackingState?.cashBalance || 0)) return { success: false, error: 'That amount is larger than the tracked uninvested cash balance. Set the current balance first if Dash is behind.' }
     try {
       await ensureTrackingStarted()
@@ -75,7 +79,7 @@ export function usePortfolioTracking() {
       const batch = writeBatch(db)
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `${type}-${Date.now()}`), {
         type, amount: numericAmount, effectiveDate, note, recordedAt,
-        source: cashMovement ? 'manual_cash_tracker' : 'manual_earnings_ledger',
+        source: cashMovement ? 'manual_cash_tracker' : contributionOnly ? 'add_position_new_money' : 'manual_earnings_ledger',
       })
       if (cashMovement) batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
         cashBalance: increment(cashIncrease ? numericAmount : -numericAmount),

@@ -68,6 +68,21 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
   return { dates: rows.map((row) => row.date), values: rows.map((row) => row.value), coverage: rows.map((row) => row.coveragePct), methodology: 'Current quantities applied to historical daily closes. This is not actual historical account value.' }
 }
 
+/** Drops every observation before cutoffDate, keeping a series' own shape intact. Used to let
+ * risk/performance stats be evaluated only since a given date (e.g. when live tracking
+ * actually started), instead of over the full backtested-basket history. */
+export function sliceSeriesFrom(series, cutoffDate) {
+  if (!series?.dates?.length || !cutoffDate) return series
+  const startIndex = series.dates.findIndex((date) => date >= cutoffDate)
+  if (startIndex < 0) return null
+  return {
+    ...series,
+    dates: series.dates.slice(startIndex),
+    values: series.values ? series.values.slice(startIndex) : undefined,
+    coverage: series.coverage ? series.coverage.slice(startIndex) : undefined,
+  }
+}
+
 export function selectPeriod(series, period = '1M') {
   if (!series?.dates?.length || !series?.values?.length) return null
   const days = PERIOD_DAYS[period] ?? null
@@ -161,11 +176,21 @@ export function intradayPortfolioHigh(points = []) {
   return { value: Number(high.value), timestamp: high.timestamp || high.recordedAt, belowHigh: Number(high.value) - current, observations: usable.length }
 }
 
+// 'external_contribution' is logged automatically when a new position is added and the
+// purchase is flagged as funded by money outside the tracked account (see the Add Position
+// form) -- it counts toward net invested capital exactly like a deposit, without touching
+// the tracked uninvested-cash balance, since the money never sat in that bucket. Without
+// this, buying a new holding outright looked identical to organic investment gain: the
+// account's tracked value jumped by the purchase amount with no offsetting contribution, so
+// Modified Dietz (and the contribution-adjusted gain below) credited the strategy for money
+// that was simply deposited and immediately spent.
+const CONTRIBUTION_TYPES = ['deposit', 'external_contribution']
+
 export function netInvestedCapital(transactions) {
   if (!Array.isArray(transactions) || !transactions.length) return { available: false, value: null, reason: 'Complete contribution and withdrawal history is unavailable.' }
-  const external = transactions.filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))
+  const external = transactions.filter((row) => [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))
   if (!external.length || external.some((row) => !(row.effectiveDate || row.date))) return { available: false, value: null, reason: 'Complete dated external cash flows are unavailable.' }
-  const deposits = external.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount), 0)
+  const deposits = external.filter((row) => CONTRIBUTION_TYPES.includes(row.type)).reduce((sum, row) => sum + Number(row.amount), 0)
   const withdrawals = external.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount), 0)
   return { available: true, value: deposits - withdrawals, deposits, withdrawals, count: external.length, reason: 'External deposits minus external withdrawals.' }
 }
@@ -218,7 +243,7 @@ function settledExternalFlows(transactions = [], startDate = null, endDate = nul
   const end = endDate == null ? null : Date.parse(endDate)
   return transactions.filter((row) => {
     const date = Date.parse(row.effectiveDate || row.date)
-    return ['deposit', 'withdrawal'].includes(row.type)
+    return [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type)
       && finite(row.amount)
       && !['pending', 'processing'].includes(row.status)
       && Number.isFinite(date)
@@ -226,7 +251,7 @@ function settledExternalFlows(transactions = [], startDate = null, endDate = nul
       && (end == null || date <= end)
   }).map((row) => ({
     date: row.effectiveDate || row.date,
-    amount: (row.type === 'deposit' ? 1 : -1) * Number(row.amount),
+    amount: (CONTRIBUTION_TYPES.includes(row.type) ? 1 : -1) * Number(row.amount),
     type: row.type,
   })).sort((left, right) => left.date.localeCompare(right.date))
 }
@@ -329,6 +354,18 @@ export function moneyWeightedAccountReturn(snapshots = [], transactions = [], hi
     flowCount: external.length,
     methodology: result.available ? 'Annualized XIRR from recorded account values and settled external cash flows.' : undefined,
   }
+}
+
+/** Converts a realized return over an arbitrary span into an annual rate: (1+r)^(365/days) - 1. */
+export function annualizeReturnPct(returnPct, startDate, endDate) {
+  const start = Date.parse(startDate)
+  const end = Date.parse(endDate)
+  if (!finite(returnPct) || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+  const elapsedDays = (end - start) / 86400000
+  const growth = 1 + Number(returnPct) / 100
+  if (growth <= 0) return null
+  const annualized = growth ** (365 / elapsedDays) - 1
+  return Number.isFinite(annualized) ? annualized * 100 : null
 }
 
 export function portfolioReturnSummary(snapshots = [], transactions = [], historyComplete = false) {

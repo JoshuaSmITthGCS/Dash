@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
+  alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, trackedAllTimeEarnings, trailingCashFlowPace,
+  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -53,6 +53,29 @@ describe('portfolio report analytics', () => {
     ], '2026-01-01', '2026-01-11', true)
     expect(result.returnPct).toBeCloseTo(12, 8)
     expect(result.weightedCapital).toBe(125)
+  })
+
+  it('treats a new position funded by new money as a contribution, not strategy gain', () => {
+    const rows = [{ type: 'external_contribution', amount: 1000, effectiveDate: '2026-06-01' }]
+    expect(netInvestedCapital(rows)).toMatchObject({ value: 1000, deposits: 1000, withdrawals: 0 })
+    const dietz = modifiedDietzReturn(1000, 2200, rows, '2026-01-01', '2026-07-01', true)
+    // The $1000 contribution explains $1000 of the $1200 jump; only the remaining $200 is
+    // attributed to the strategy, instead of the whole jump looking like investment gain.
+    expect(dietz.netExternalFlows).toBe(1000)
+    expect(dietz.gain).toBe(200)
+  })
+
+  it('annualizes a realized return over an arbitrary span', () => {
+    expect(annualizeReturnPct(12, '2026-01-01', '2026-07-02')).toBeCloseTo(25.5, 1)
+    expect(annualizeReturnPct(null, '2026-01-01', '2026-07-01')).toBeNull()
+    expect(annualizeReturnPct(5, '2026-01-01', '2026-01-01')).toBeNull()
+  })
+
+  it('slices a series to only dates on or after a cutoff', () => {
+    const series = { dates: ['2026-06-01', '2026-07-19', '2026-07-20', '2026-08-01'], values: [10, 11, 12, 13] }
+    expect(sliceSeriesFrom(series, '2026-07-20')).toMatchObject({ dates: ['2026-07-20', '2026-08-01'], values: [12, 13] })
+    expect(sliceSeriesFrom(series, '2027-01-01')).toBeNull()
+    expect(sliceSeriesFrom(null, '2026-07-20')).toBeNull()
   })
 
   it('excludes processing transfers from actual gains and the observed contribution pace', () => {

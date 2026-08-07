@@ -46,7 +46,7 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
   const dates = benchmarkHistory?.dates || []
   const closes = benchmarkHistory?.closes || []
   const flows = cashFlows
-    .filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount) && row.effectiveDate && !['pending', 'processing'].includes(row.status))
+    .filter((row) => ['deposit', 'external_contribution', 'withdrawal'].includes(row.type) && finite(row.amount) && row.effectiveDate && !['pending', 'processing'].includes(row.status))
     .map((row) => ({ type: row.type, amount: Number(row.amount), effectiveDate: row.effectiveDate }))
     .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate))
   if (!flows.length || dates.length < 2) return { available: false, reason: 'Not enough cash-flow or benchmark history to build a comparison.' }
@@ -64,7 +64,7 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
     if (!finite(close)) continue
     while (pending.length && pending[0].effectiveDate <= date) {
       const flow = pending.shift()
-      if (flow.type === 'deposit') { units += flow.amount / close; netContributions += flow.amount }
+      if (flow.type === 'deposit' || flow.type === 'external_contribution') { units += flow.amount / close; netContributions += flow.amount }
       else { units = Math.max(0, units - flow.amount / close); netContributions -= flow.amount }
     }
     outDates.push(date)
