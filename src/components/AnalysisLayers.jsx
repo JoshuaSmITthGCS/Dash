@@ -14,7 +14,13 @@ function ScoreLayer({ title, layer, description }) {
       <dl className="analysis-quality-grid">
         <div><dt>Raw</dt><dd>{raw == null ? 'Unavailable' : Math.round(raw)}</dd></div>
         <div><dt>Coverage</dt><dd>{Math.round(layer.coverage * 100)}%</dd></div>
-        <div><dt>Confidence</dt><dd>{Math.round(layer.confidence * 100)}%</dd></div>
+        {/* "Evidence confidence", not "confidence": the number measures how reliable the
+            inputs behind this layer are, and a bare "Confidence: 87%" invites reading it as
+            a probability the stock rises. No score bucket has the closed forward windows to
+            support that reading -- see /screens/validation. */}
+        <div><dt>Evidence confidence</dt>
+          <dd title="How reliable this layer's evidence is, not a probability of a price move">
+            {Math.round(layer.confidence * 100)}%</dd></div>
       </dl>
       {layer.confidence < 0.4 && (
         <small className="analysis-warning">Insufficient evidence: this layer cannot issue prescriptive company guidance.</small>

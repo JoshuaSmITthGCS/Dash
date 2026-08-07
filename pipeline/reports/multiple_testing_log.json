@@ -54,5 +54,45 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "INCONCLUSIVE"
+  },
+  {
+    "test_id": "C1-benchmark-suite",
+    "declared_at": "2026-08-07T14:20:00+00:00",
+    "hypothesis": "The strategy delivers something a liquid, tradeable style ETF could not -- a blunter bar than the academic factor model, and the one a user of this product actually faces.",
+    "holdout_start": "2021-09..2026-07",
+    "number_of_variants_tested": 14,
+    "decision": "ABANDON"
+  },
+  {
+    "test_id": "C2-strategy-diagnostics-and-regimes",
+    "declared_at": "2026-08-07T14:05:00+00:00",
+    "hypothesis": "The strategy's edge is stable across market-direction, volatility and rate regimes.",
+    "holdout_start": "2021-09..2026-07",
+    "number_of_variants_tested": 3,
+    "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "C3-cost-sensitivity-at-realized-turnover",
+    "declared_at": "2026-08-07T14:12:00+00:00",
+    "hypothesis": "A realistic tiered cost model gives up more than 200bps a year relative to the published flat 10bps.",
+    "holdout_start": "2021-08..2026-07",
+    "number_of_variants_tested": 9,
+    "decision": "INCONCLUSIVE"
+  },
+  {
+    "test_id": "C4-turnover-controls",
+    "declared_at": "2026-08-07T14:35:00+00:00",
+    "hypothesis": "Rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise rather than information.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 10,
+    "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "C5-score-calibration",
+    "declared_at": "2026-08-07T14:50:00+00:00",
+    "hypothesis": "Score buckets carry a measurable historical outcome distribution that can give a 0-100 score empirical meaning.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "INCONCLUSIVE"
   }
 ]

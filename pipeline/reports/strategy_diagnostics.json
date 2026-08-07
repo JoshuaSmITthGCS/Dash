@@ -1,0 +1,379 @@
+{
+  "benchmark": {
+    "annualized_return": 0.12315,
+    "name": "SPY"
+  },
+  "drawdown": {
+    "longest_underwater_periods": 23,
+    "max_drawdown": -0.20764
+  },
+  "expectancy": {
+    "average_loss": 0.04215,
+    "average_win": 0.04293,
+    "expectancy_per_period": 0.00977,
+    "mean_return_per_period": 0.00977,
+    "payoff_ratio": 1.019,
+    "periods": 59,
+    "win_rate": 0.6102
+  },
+  "generated_at": "2026-08-03T06:46:54.135869Z",
+  "profit_factor": {
+    "gross_loss": 0.96937,
+    "gross_profit": 1.54562,
+    "profit_factor": 1.594
+  },
+  "r_multiples": {
+    "basis": "standard deviation of losing periods (portfolio level, not per-position stops)",
+    "best_r": 3.646,
+    "mean_r": 0.261,
+    "median_r": 0.221,
+    "risk_unit": 0.03739,
+    "worst_r": -4.333
+  },
+  "regime_attribution": {
+    "market_direction": {
+      "bear": {
+        "benchmark_annualized": -0.24219,
+        "excess_annualized": 0.10361,
+        "months": 11,
+        "strategy_annualized": -0.13858,
+        "strategy_mean_monthly": -0.00974,
+        "win_rate": 0.4545
+      },
+      "bull": {
+        "benchmark_annualized": 0.31276,
+        "excess_annualized": -0.11133,
+        "months": 40,
+        "strategy_annualized": 0.20143,
+        "strategy_mean_monthly": 0.01659,
+        "win_rate": 0.675
+      }
+    },
+    "rates": {
+      "falling_rates": {
+        "benchmark_annualized": 0.08615,
+        "excess_annualized": 0.10332,
+        "months": 32,
+        "strategy_annualized": 0.18947,
+        "strategy_mean_monthly": 0.01611,
+        "win_rate": 0.625
+      },
+      "rising_rates": {
+        "benchmark_annualized": 0.17547,
+        "excess_annualized": -0.16902,
+        "months": 26,
+        "strategy_annualized": 0.00645,
+        "strategy_mean_monthly": 0.00207,
+        "win_rate": 0.5769
+      }
+    },
+    "volatility": {
+      "high_volatility": {
+        "benchmark_annualized": 0.07924,
+        "excess_annualized": -0.09999,
+        "months": 29,
+        "strategy_annualized": -0.02075,
+        "strategy_mean_monthly": -0.00011,
+        "win_rate": 0.5862
+      },
+      "low_volatility": {
+        "benchmark_annualized": 0.17015,
+        "excess_annualized": 0.06947,
+        "months": 28,
+        "strategy_annualized": 0.23962,
+        "strategy_mean_monthly": 0.01948,
+        "win_rate": 0.6429
+      }
+    }
+  },
+  "regime_definitions": {
+    "market_direction": "benchmark above/below its trailing 200-session mean",
+    "preregistration": "all three rules are functions of benchmark or macro series only, never of strategy performance",
+    "rates": "6-month change in the Ken French risk-free series",
+    "volatility": "trailing 63-session realized volatility of the benchmark, split at the sample median"
+  },
+  "risk_adjusted": {
+    "annualized_return": 0.10331,
+    "annualized_volatility": 0.19195,
+    "calmar": 0.498,
+    "recovery_factor": 0.498,
+    "sharpe_zero_rate": 0.611,
+    "sortino_zero_rate": 0.905
+  },
+  "rolling_12m": [
+    {
+      "return": -0.10058,
+      "sharpe": -0.356,
+      "through": "2022-08"
+    },
+    {
+      "return": -0.15847,
+      "sharpe": -0.616,
+      "through": "2022-09"
+    },
+    {
+      "return": -0.08483,
+      "sharpe": -0.192,
+      "through": "2022-10"
+    },
+    {
+      "return": -0.07698,
+      "sharpe": -0.161,
+      "through": "2022-11"
+    },
+    {
+      "return": -0.15558,
+      "sharpe": -0.492,
+      "through": "2022-12"
+    },
+    {
+      "return": -0.05345,
+      "sharpe": -0.09,
+      "through": "2023-01"
+    },
+    {
+      "return": -0.08498,
+      "sharpe": -0.231,
+      "through": "2023-02"
+    },
+    {
+      "return": -0.16711,
+      "sharpe": -0.654,
+      "through": "2023-03"
+    },
+    {
+      "return": -0.13039,
+      "sharpe": -0.476,
+      "through": "2023-04"
+    },
+    {
+      "return": -0.18548,
+      "sharpe": -0.765,
+      "through": "2023-05"
+    },
+    {
+      "return": 0.0378,
+      "sharpe": 0.291,
+      "through": "2023-06"
+    },
+    {
+      "return": 0.01586,
+      "sharpe": 0.174,
+      "through": "2023-07"
+    },
+    {
+      "return": -0.00073,
+      "sharpe": 0.084,
+      "through": "2023-08"
+    },
+    {
+      "return": 0.01407,
+      "sharpe": 0.164,
+      "through": "2023-09"
+    },
+    {
+      "return": -0.11489,
+      "sharpe": -1.057,
+      "through": "2023-10"
+    },
+    {
+      "return": -0.04113,
+      "sharpe": -0.251,
+      "through": "2023-11"
+    },
+    {
+      "return": 0.05423,
+      "sharpe": 0.473,
+      "through": "2023-12"
+    },
+    {
+      "return": 0.03811,
+      "sharpe": 0.353,
+      "through": "2024-01"
+    },
+    {
+      "return": 0.16244,
+      "sharpe": 0.962,
+      "through": "2024-02"
+    },
+    {
+      "return": 0.29646,
+      "sharpe": 1.538,
+      "through": "2024-03"
+    },
+    {
+      "return": 0.26422,
+      "sharpe": 1.367,
+      "through": "2024-04"
+    },
+    {
+      "return": 0.42531,
+      "sharpe": 2.029,
+      "through": "2024-05"
+    },
+    {
+      "return": 0.27361,
+      "sharpe": 1.348,
+      "through": "2024-06"
+    },
+    {
+      "return": 0.30326,
+      "sharpe": 1.475,
+      "through": "2024-07"
+    },
+    {
+      "return": 0.39111,
+      "sharpe": 1.825,
+      "through": "2024-08"
+    },
+    {
+      "return": 0.49989,
+      "sharpe": 2.5,
+      "through": "2024-09"
+    },
+    {
+      "return": 0.53991,
+      "sharpe": 2.735,
+      "through": "2024-10"
+    },
+    {
+      "return": 0.63048,
+      "sharpe": 2.758,
+      "through": "2024-11"
+    },
+    {
+      "return": 0.4348,
+      "sharpe": 1.763,
+      "through": "2024-12"
+    },
+    {
+      "return": 0.52925,
+      "sharpe": 2.084,
+      "through": "2025-01"
+    },
+    {
+      "return": 0.25145,
+      "sharpe": 1.11,
+      "through": "2025-02"
+    },
+    {
+      "return": 0.10403,
+      "sharpe": 0.557,
+      "through": "2025-03"
+    },
+    {
+      "return": 0.12525,
+      "sharpe": 0.647,
+      "through": "2025-04"
+    },
+    {
+      "return": 0.0618,
+      "sharpe": 0.393,
+      "through": "2025-05"
+    },
+    {
+      "return": 0.17131,
+      "sharpe": 0.886,
+      "through": "2025-06"
+    },
+    {
+      "return": 0.14355,
+      "sharpe": 0.766,
+      "through": "2025-07"
+    },
+    {
+      "return": 0.0825,
+      "sharpe": 0.501,
+      "through": "2025-08"
+    },
+    {
+      "return": 0.08569,
+      "sharpe": 0.516,
+      "through": "2025-09"
+    },
+    {
+      "return": 0.09462,
+      "sharpe": 0.557,
+      "through": "2025-10"
+    },
+    {
+      "return": 0.00313,
+      "sharpe": 0.099,
+      "through": "2025-11"
+    },
+    {
+      "return": 0.08872,
+      "sharpe": 0.724,
+      "through": "2025-12"
+    },
+    {
+      "return": 0.11508,
+      "sharpe": 0.844,
+      "through": "2026-01"
+    },
+    {
+      "return": 0.25849,
+      "sharpe": 2.24,
+      "through": "2026-02"
+    },
+    {
+      "return": 0.35317,
+      "sharpe": 3.604,
+      "through": "2026-03"
+    },
+    {
+      "return": 0.39654,
+      "sharpe": 4.259,
+      "through": "2026-04"
+    },
+    {
+      "return": 0.32471,
+      "sharpe": 3.014,
+      "through": "2026-05"
+    },
+    {
+      "return": 0.19484,
+      "sharpe": 1.624,
+      "through": "2026-06"
+    },
+    {
+      "return": 0.20067,
+      "sharpe": 1.674,
+      "through": "2026-07"
+    }
+  ],
+  "sample": {
+    "first": "2021-09",
+    "last": "2026-07",
+    "months": 59
+  },
+  "schema_version": 1,
+  "source": "pipeline/backtest_monthly_results.json",
+  "streaks": {
+    "longest_losing_streak": 3,
+    "longest_winning_streak": 7
+  },
+  "turnover": {
+    "annualized_cost_drag": 0.0078,
+    "annualized_turnover": 7.79,
+    "mean_cost_drag_per_rebalance": 0.00065,
+    "mean_monthly_turnover": 0.6492,
+    "median_monthly_turnover": 0.6527,
+    "rebalances": 60
+  },
+  "turnover_adjusted_return": {
+    "annualized_cost_drag": 0.0078,
+    "implied_gross_annualized_return": 0.11111,
+    "net_annualized_return": 0.10331,
+    "share_of_gross_return_consumed_by_costs": 0.0702
+  },
+  "unit_of_account": {
+    "not_measured": [
+      "per-position R-multiples",
+      "per-name win rate",
+      "per-name maximum adverse excursion"
+    ],
+    "trade": "one monthly rebalance period holding a 20-name book",
+    "why": "the committed backtest stores per-rebalance picks and the portfolio value path but not per-name entry and exit prices, so position-level statistics cannot be computed from it"
+  }
+}

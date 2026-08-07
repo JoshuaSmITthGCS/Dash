@@ -117,14 +117,40 @@ def run_source_reliability(source_health):
     return round(healthy / weight, 2) if weight else None
 
 
-def confidence_components(row, *, source_reliability=None, now=None):
+def historical_calibration_component(row, calibration=None):
+    """The score bucket's measured outcome rate, or None while the evidence is absent.
+
+    ``calibration`` is a ``score_calibration.build_report()`` payload. It gates itself: until
+    at least one bucket clears the observation minimum, the whole report is
+    ``insufficient_data`` and this returns None. That is deliberate and load-bearing -- a
+    number here would read as "we know what scores like this have done", and we do not.
+    """
+    if not calibration or not calibration.get("publishable_to_confidence_detail"):
+        return None
+    score = row.get("score")
+    if not isinstance(score, (int, float)):
+        return None
+    for bucket in calibration.get("fixed_score_bands", []):
+        if bucket.get("status") != "measured":
+            continue
+        label = bucket["bucket"]
+        low = float(label.rstrip("+").split("-")[0])
+        high = 101.0 if label.endswith("+") else float(label.split("-")[1]) + 1
+        if low <= score < high:
+            return round(_clamp01(bucket["beat_sector_rate"]), 2)
+    return None
+
+
+def confidence_components(row, *, source_reliability=None, now=None, calibration=None):
     """Full confidence breakdown for one published row:
       {"confidence": <existing scalar>, "components": {...}, "limitations": [...]}
 
-    ``confidence`` is exactly ``row["confidence"]`` -- unchanged. ``historical_calibration``
-    stays null until the IC harness has enough prospective periods; as of
-    docs/BASELINE-2026-08-06.md that harness has observed 0 of the 24 periods it requires, so
-    reporting anything else here would be inventing evidence.
+    ``confidence`` is exactly ``row["confidence"]`` -- unchanged, and a measure of how
+    reliable the evidence behind the rank is, never a probability that the stock rises.
+
+    ``historical_calibration`` stays null until the IC harness has enough prospective periods.
+    Pass ``calibration`` (a ``score_calibration.build_report()`` payload) to populate it once
+    that gate is met; the report gates itself, so passing an unqualified one changes nothing.
     """
     calibration_minimum = CFG.get("historical_calibration_minimum_periods", 24)
     components = {
@@ -133,12 +159,20 @@ def confidence_components(row, *, source_reliability=None, now=None):
         "source_reliability": source_reliability,
         "peer_sample": peer_sample_component(row),
         "model_agreement": model_agreement_component(row),
-        "historical_calibration": None,
+        "historical_calibration": historical_calibration_component(row, calibration),
     }
-    limitations = [
-        f"insufficient prospective calibration history (requires {calibration_minimum} eligible IC periods)"
-    ]
+    limitations = []
+    if components["historical_calibration"] is None:
+        limitations.append(
+            f"insufficient prospective calibration history (requires {calibration_minimum} "
+            "eligible IC periods)")
     for name, value in components.items():
         if value is None and name != "historical_calibration":
             limitations.append(f"{name} unavailable for this row")
-    return {"confidence": row.get("confidence"), "components": components, "limitations": limitations}
+    return {
+        "confidence": row.get("confidence"),
+        "components": components,
+        "limitations": limitations,
+        "interpretation": ("confidence measures how reliable the evidence behind this rank is, "
+                           "not the probability that the stock rises"),
+    }

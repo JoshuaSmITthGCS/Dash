@@ -53,19 +53,61 @@ def _metric_scores(detail):
     return {metric: detail.get(metric) for metric in sorted(metric_names)}
 
 
-def _modifier_contract(detail):
-    """Keep original detail and add an explicit zero-inclusive modifier point map."""
+# Maps a modifier field to the provider whose absence makes that modifier unobservable.
+# A modifier with no entry here is always computable from data the pipeline already holds.
+MODIFIER_SOURCE = {
+    "insider_activity": "sec_form4",
+    "macro_regime": "fred",
+}
+
+# Provider statuses that mean "we never got to look", as distinct from "we looked and saw
+# nothing". confidence.run_source_reliability draws the same distinction.
+_UNAVAILABLE_STATUSES = {"unavailable", "failed", "configuration_required", "opt_in",
+                         "disabled_for_intraday_refresh"}
+
+
+def unavailable_modifiers(source_status=None):
+    """Modifier fields whose underlying provider was dark for this refresh.
+
+    ``source_status`` is the published ``advisor.json`` ``source_status`` map, whose values
+    are either a bare status string or a ``{"status": ...}`` block.
+    """
+    source_status = source_status or {}
+    dark = set()
+    for field, provider in MODIFIER_SOURCE.items():
+        entry = source_status.get(provider)
+        status = entry.get("status") if isinstance(entry, dict) else entry
+        if status is None or status in _UNAVAILABLE_STATUSES:
+            dark.add(field)
+    return dark
+
+
+def _modifier_contract(detail, unavailable=()):
+    """Keep original detail and add an explicit zero-inclusive modifier point map.
+
+    ``all_points`` records a literal 0.0 for any modifier that did not fire. That is correct
+    for a modifier the pipeline evaluated and found neutral, but *wrong* for one whose
+    provider was never reachable -- a dark SEC Form 4 layer would otherwise be recorded as
+    "we reviewed insider activity and it was neutral" in an immutable validation snapshot,
+    and later graded as real evidence. ``availability`` separates the two so unavailable
+    coverage can never be counted as an observation.
+    """
     detail = dict(detail or {})
     applied = detail.get("applied") or {}
+    unavailable = set(unavailable)
     detail["all_points"] = {
         name: applied.get(name, 0.0)
+        for name in CONFIG["modifier_fields"]
+    }
+    detail["availability"] = {
+        name: "unavailable" if name in unavailable and name not in applied else "available"
         for name in CONFIG["modifier_fields"]
     }
     return detail
 
 
 def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, published,
-                 model_version, config_hash):
+                 model_version, config_hash, dark_modifiers=()):
     """Project one scored row into the immutable validation contract."""
     variants = row.get("score_variants") or {}
     champion = variants.get("champion") or {}
@@ -100,8 +142,8 @@ def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, publishe
             "challenger": challenger.get("confidence"),
         },
         "modifiers": {
-            "champion": _modifier_contract(row.get("modifiers")),
-            "challenger": _modifier_contract(challenger.get("modifiers")),
+            "champion": _modifier_contract(row.get("modifiers"), dark_modifiers),
+            "challenger": _modifier_contract(challenger.get("modifiers"), dark_modifiers),
         },
         "scores": {
             "champion": champion.get("score", row.get("score")),
@@ -118,7 +160,8 @@ def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, publishe
 
 
 def append_refresh(rows, *, refresh_id, recorded_at=None, data_as_of=None, universe=(),
-                   published=(), model_version=None, config_hash=None, root=PIT_ROOT):
+                   published=(), model_version=None, config_hash=None, root=PIT_ROOT,
+                   source_status=None):
     """Append one immutable JSONL row per scored ticker for a refresh.
 
     An identical ``refresh_id`` is idempotent. Existing records are never changed, and a
@@ -140,6 +183,7 @@ def append_refresh(rows, *, refresh_id, recorded_at=None, data_as_of=None, unive
         ticker = str(row.get("ticker") or "").upper()
         if ticker:
             unique.setdefault(ticker, row)
+    dark_modifiers = unavailable_modifiers(source_status)
     snapshots = [snapshot_row(
         row,
         refresh_id=refresh_id,
@@ -149,6 +193,7 @@ def append_refresh(rows, *, refresh_id, recorded_at=None, data_as_of=None, unive
         published=published,
         model_version=model_version,
         config_hash=config_hash,
+        dark_modifiers=dark_modifiers,
     ) for row in unique.values()]
     with open(path, "a") as handle:
         for snapshot in snapshots:
@@ -294,6 +339,22 @@ def _forward_periods_sessions(refreshes, variant, horizon_sessions, calendar=Non
             periods.append({"date": start["recorded_at"][:10],
                             "rows": sector_residual_returns(scored)})
     return periods
+
+
+def research_trial_count():
+    """The honest number of configurations tried, for Deflated Sharpe.
+
+    ``settings.json validation.shadow_strategy_trials`` counts only the live shadow
+    strategies. Deflation needs the count of everything *searched* across the whole research
+    programme -- understating it is the standard way a deflated Sharpe gets quietly
+    re-inflated. The experiment registry is the durable record of that, so it is the floor
+    here; the configured value wins only if it is somehow larger.
+    """
+    try:
+        from experiment_registry import total_variants_tested
+    except ImportError:      # registry not importable in a trimmed checkout
+        return CONFIG["shadow_strategy_trials"]
+    return max(CONFIG["shadow_strategy_trials"], total_variants_tested())
 
 
 def _spearman(left, right):
@@ -443,10 +504,11 @@ def _evaluate_periods(periods, variant, *, return_field="forward_return"):
             "cost_model": CONFIG.get("cost_model", "flat"),
             "cost_bps": mean(applied_cost_bps) if applied_cost_bps else CONFIG["long_short_cost_bps"],
         },
+        "trials_considered": research_trial_count(),
         "deflated_sharpe_probability": deflated_sharpe_ratio(
             spread_sharpe,
             observations=len(spreads),
-            trials=CONFIG["shadow_strategy_trials"],
+            trials=research_trial_count(),
         ) if spread_sharpe is not None else None,
         **_turnover_and_stability(periods),
         **({"sector_residual_fallback_rows": sum(fallback_periods)} if return_field == "sector_residual_return" else {}),

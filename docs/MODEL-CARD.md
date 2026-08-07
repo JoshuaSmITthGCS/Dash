@@ -4,9 +4,13 @@
 
 The champion score is a cross-sectional rank of companies by evidence quality — fundamentals
 (78%), market behavior (18%, includes the new technical_extended factor at ~6% of that
-share), and news sentiment (4%). It is designed as a research-evidence summary, not a
-validated forecast of forward returns. See "Validation state" below for what has and hasn't
-been tested.
+share), and news sentiment (4%, dropped from the denominator when a company has no qualifying
+coverage). It is designed as a research-evidence summary, not a validated forecast of forward
+returns.
+
+**It is not a probability.** A score of 84 is a rank position, not an 84% chance of anything.
+No score bucket has enough closed forward windows to carry an empirical meaning — see
+"Validation state".
 
 ## What it does not predict
 
@@ -44,29 +48,59 @@ data typically lags 1-3 months after fiscal period end. See `docs/DATA-LINEAGE.m
 Not a single number: `pipeline/confidence.py` publishes completeness, freshness,
 source_reliability, peer_sample, and model_agreement components alongside the scalar.
 `historical_calibration` is always `null` — the IC harness has not accumulated enough
-prospective periods to report one (see "Validation state").
+prospective periods to report one (see "Validation state"). `score_calibration.py` will
+populate it once at least one score band clears 30 closed observations, and refuses to before
+then.
+
+Confidence measures **how reliable the evidence behind a rank is**, never the probability of a
+price move. The UI labels it "Evidence confidence" for that reason.
 
 ## Validation state
 
-**No promotion has occurred.** As of `docs/BASELINE-2026-08-06.md`, the IC harness had
-observed 0 of the 24 eligible periods `minimum_icir_periods` requires, across 6 refreshes.
-No IC, Sharpe, drawdown, or hit-rate statistic reported anywhere in this repository should be
-read as a validated result — see `pipeline/reports/stability.json` and
-`docs/VALIDATION-METHODOLOGY.md` for what the harness actually measures once it has enough
-history.
+**No signal has been promoted.** The IC harness has observed 0 of the 24 eligible periods
+`minimum_icir_periods` requires. No IC, Sharpe, drawdown, or hit-rate statistic reported
+anywhere in this repository should be read as a validated result.
+
+**What has been measured**, from a survivorship-biased five-year backtest that uses
+approximated filing timestamps and raw rather than sector-residual returns
+(`docs/ALGORITHM-RESEARCH-RESULTS.md`):
+
+- Six-factor regression (Newey-West, 58 months): annualized alpha **−2.57%, |t| = 0.437**.
+  Significant loadings are market (6.50), size (2.06) and momentum (2.50) — not the value and
+  profitability the score is mostly built from.
+- Against 14 tradeable style/size ETFs: **none beaten with statistically significant alpha**,
+  largest |t| = 1.11. VTV returns more at lower volatility with a shallower drawdown.
+- Regime-dependent: **+10.3pp** annualized against SPY in bear markets and in falling rates,
+  **−16.9pp** in rising rates.
+
+**Current classification: B — a transparent factor tilt with no demonstrated residual alpha**,
+carrying a real Verdict D caveat because the contract's own target has never been measured.
+Do not present SPY outperformance as this model's objective.
+
+The forecast target is now implemented as specified: 63 **trading sessions**, sector-residual,
+preregistered as primary. Deflation uses the honest trial count (44 variants across 12
+experiments, `pipeline/reports/experiment_registry.json`), not the 5 configured shadow
+strategies.
 
 ## Transaction costs
 
 `pipeline/costs.py` models `half_spread + fees + volatility_scaled_impact` across three
-scenarios, with a labeled (not measured) spread proxy — see `docs/TRANSACTION-COSTS.md`. Not
-yet wired into the validation harness, which still uses a flat 10bps assumption.
+scenarios, with a labeled (not measured) spread proxy — see `docs/TRANSACTION-COSTS.md`. Wired
+into both `backtest_monthly.py` and `ic_harness.py` behind `validation.cost_model`, defaulting
+to the original flat 10bps so prior results reproduce exactly.
+
+At the realized 64.9% monthly turnover, the published 10bps costs **78bps a year**, or 7.0% of
+gross return. A tiered model would need a rate above **35.7bps one-way** to give up 200bps more;
+the worst rate the model produces without a volatility input is 25bps
+(`pipeline/reports/cost_sensitivity.json`).
 
 ## Known limitations
 
-See `docs/LIMITATIONS.md` for the full list. Headline items: no sector-residual forecast
-target implemented (raw forward return only), only 1 of 6 portfolio-construction methods
-built, 9 of 16 screen presets are specification-only, 12 of 32 scored fundamentals metrics
-have no formal `metric_registry.json` declaration yet.
+See `docs/LIMITATIONS.md` for the full list. Headline items: no empirical score calibration,
+no residual alpha demonstrated after factor controls, statement-derived metrics computed only
+for a shortlist (no unenriched name reaches the top 100 —
+`docs/ENRICHMENT-BIAS-ANALYSIS.md`), only 1 of 6 portfolio-construction methods built, 9 of 16
+screen presets are specification-only.
 
 ## Promotion status
 

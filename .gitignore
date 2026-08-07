@@ -3,6 +3,10 @@
 **/__pycache__/
 **/.pytest_cache/
 **/.venv/
+# Any virtualenv variant, including backups like .venv.py39.bak -- a committed venv is
+# thousands of files of vendored, machine-specific code, and its bundled JavaScript breaks
+# the lint job.
+**/.venv*/
 **/node_modules/
 **/dist/
 **/coverage/

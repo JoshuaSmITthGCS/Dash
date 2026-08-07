@@ -14,3 +14,23 @@ Object.defineProperties(localStorageMock, {
 
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, configurable: true })
 Object.defineProperty(window, 'localStorage', { value: localStorageMock, configurable: true })
+
+// Firebase initializes at module load: `src/lib/firebase.js` calls getAuth() as a side effect
+// of being imported, and getAuth throws `auth/invalid-api-key` when VITE_FIREBASE_API_KEY is
+// undefined. Any test that transitively imports `App.jsx` therefore fails in a checkout with
+// no `.env.local` -- which is every CI run, and every fresh clone.
+//
+// These are placeholder values, never real credentials. They only need to be syntactically
+// well-formed enough for initializeApp/getAuth to construct without throwing; no test makes a
+// network call, and anything exercising real auth behaviour mocks the module outright. A real
+// `.env.local` still wins, because Vite resolves those before this file runs.
+for (const [key, value] of Object.entries({
+  VITE_FIREBASE_API_KEY: 'test-api-key',
+  VITE_FIREBASE_AUTH_DOMAIN: 'test.firebaseapp.com',
+  VITE_FIREBASE_PROJECT_ID: 'test-project',
+  VITE_FIREBASE_STORAGE_BUCKET: 'test-project.appspot.com',
+  VITE_FIREBASE_MESSAGING_SENDER_ID: '1234567890',
+  VITE_FIREBASE_APP_ID: '1:1234567890:web:testappid',
+})) {
+  if (!import.meta.env[key]) import.meta.env[key] = value
+}

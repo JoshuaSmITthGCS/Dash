@@ -1,0 +1,746 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-07T12:05:57.965197+00:00",
+  "model_version": "3.2.0",
+  "code_commit_hash": "dd8c0b2c564003cd31875fc2c459cb123d0f2a42",
+  "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
+  "headline": {
+    "validation_status": "no calibration history yet",
+    "ic_periods_accumulated": 0,
+    "ic_periods_required": 24,
+    "forecast_target": null,
+    "score_is_not_a_probability": "The Research Score ranks attractiveness. Confidence measures how reliable that rank's evidence is. Neither is a probability that the stock rises, and no score bucket has enough closed forward windows to state one."
+  },
+  "benchmarks": {
+    "status": "measured",
+    "window": {
+      "initial_capital": 100000.0,
+      "start": "2021-08-02"
+    },
+    "strategy": {
+      "cagr": 0.10331,
+      "final_value": 169478.08,
+      "max_drawdown": -0.20764,
+      "sharpe": 0.611,
+      "volatility": 0.19195
+    },
+    "rows": [
+      {
+        "name": "SPY",
+        "description": "S&P 500 -- the published, least representative comparison",
+        "cagr": 0.12736,
+        "volatility": 0.15741,
+        "sharpe": 0.844,
+        "max_drawdown": -0.23927,
+        "beta": 0.7872,
+        "annualized_alpha_pct": 1.557,
+        "newey_west_t_statistic": 0.247,
+        "significant": false
+      },
+      {
+        "name": "VUG",
+        "description": "CRSP US large growth",
+        "cagr": 0.12252,
+        "volatility": 0.20401,
+        "sharpe": 0.671,
+        "max_drawdown": -0.33159,
+        "beta": 0.4759,
+        "annualized_alpha_pct": 5.632,
+        "newey_west_t_statistic": 0.767,
+        "significant": false
+      },
+      {
+        "name": "VTV",
+        "description": "CRSP US large value",
+        "cagr": 0.12171,
+        "volatility": 0.13904,
+        "sharpe": 0.899,
+        "max_drawdown": -0.15344,
+        "beta": 0.9843,
+        "annualized_alpha_pct": -0.483,
+        "newey_west_t_statistic": -0.088,
+        "significant": false
+      },
+      {
+        "name": "IWF",
+        "description": "Russell 1000 Growth",
+        "cagr": 0.11832,
+        "volatility": 0.19368,
+        "sharpe": 0.677,
+        "max_drawdown": -0.30748,
+        "beta": 0.5193,
+        "annualized_alpha_pct": 5.388,
+        "newey_west_t_statistic": 0.747,
+        "significant": false
+      },
+      {
+        "name": "IWD",
+        "description": "Russell 1000 Value",
+        "cagr": 0.1157,
+        "volatility": 0.14872,
+        "sharpe": 0.814,
+        "max_drawdown": -0.17796,
+        "beta": 0.9303,
+        "annualized_alpha_pct": 0.594,
+        "newey_west_t_statistic": 0.106,
+        "significant": false
+      },
+      {
+        "name": "IJH+IWD 50/50",
+        "description": "matches the realized beta 0.79 / SMB 0.455 profile the six-factor regression measured, using a fixed 50/50 rather than a fitted mix",
+        "cagr": 0.10046,
+        "volatility": 0.1619,
+        "sharpe": 0.674,
+        "max_drawdown": -0.19687,
+        "beta": 0.8834,
+        "annualized_alpha_pct": 2.264,
+        "newey_west_t_statistic": 0.423,
+        "significant": false
+      },
+      {
+        "name": "SCHD",
+        "description": "Dow Jones US Dividend 100 -- quality/dividend screen",
+        "cagr": 0.09236,
+        "volatility": 0.1472,
+        "sharpe": 0.675,
+        "max_drawdown": -0.15702,
+        "beta": 0.8804,
+        "annualized_alpha_pct": 2.981,
+        "newey_west_t_statistic": 0.504,
+        "significant": false
+      },
+      {
+        "name": "RSP",
+        "description": "S&P 500 equal weight -- breadth-matched",
+        "cagr": 0.08732,
+        "volatility": 0.1577,
+        "sharpe": 0.611,
+        "max_drawdown": -0.20684,
+        "beta": 0.8667,
+        "annualized_alpha_pct": 3.571,
+        "newey_west_t_statistic": 0.623,
+        "significant": false
+      },
+      {
+        "name": "IJH",
+        "description": "S&P MidCap 400 -- the strategy's actual size band",
+        "cagr": 0.08435,
+        "volatility": 0.18107,
+        "sharpe": 0.539,
+        "max_drawdown": -0.21581,
+        "beta": 0.7875,
+        "annualized_alpha_pct": 4.307,
+        "newey_west_t_statistic": 0.807,
+        "significant": false
+      },
+      {
+        "name": "VB",
+        "description": "CRSP US small cap",
+        "cagr": 0.07527,
+        "volatility": 0.18842,
+        "sharpe": 0.48,
+        "max_drawdown": -0.24432,
+        "beta": 0.7457,
+        "annualized_alpha_pct": 5.34,
+        "newey_west_t_statistic": 0.968,
+        "significant": false
+      },
+      {
+        "name": "IJR",
+        "description": "S&P SmallCap 600",
+        "cagr": 0.07331,
+        "volatility": 0.20032,
+        "sharpe": 0.453,
+        "max_drawdown": -0.23118,
+        "beta": 0.6555,
+        "annualized_alpha_pct": 6.051,
+        "newey_west_t_statistic": 1.002,
+        "significant": false
+      },
+      {
+        "name": "IWM",
+        "description": "Russell 2000 -- small cap",
+        "cagr": 0.07036,
+        "volatility": 0.20634,
+        "sharpe": 0.433,
+        "max_drawdown": -0.26752,
+        "beta": 0.6475,
+        "annualized_alpha_pct": 6.338,
+        "newey_west_t_statistic": 1.045,
+        "significant": false
+      },
+      {
+        "name": "NOBL",
+        "description": "S&P 500 Dividend Aristocrats -- quality proxy",
+        "cagr": 0.06483,
+        "volatility": 0.15127,
+        "sharpe": 0.492,
+        "max_drawdown": -0.17486,
+        "beta": 0.8282,
+        "annualized_alpha_pct": 5.914,
+        "newey_west_t_statistic": 0.908,
+        "significant": false
+      },
+      {
+        "name": "VXF",
+        "description": "Extended market (completion index) -- everything outside the S&P 500",
+        "cagr": 0.06295,
+        "volatility": 0.20066,
+        "sharpe": 0.405,
+        "max_drawdown": -0.33241,
+        "beta": 0.6595,
+        "annualized_alpha_pct": 6.87,
+        "newey_west_t_statistic": 1.109,
+        "significant": false
+      }
+    ],
+    "summary": {
+      "beaten_on_cagr": [
+        "IJH",
+        "IJH+IWD 50/50",
+        "IJR",
+        "IWM",
+        "NOBL",
+        "RSP",
+        "SCHD",
+        "VB",
+        "VXF"
+      ],
+      "beaten_on_cagr_count": "9 of 14",
+      "benchmarks_compared": 14,
+      "significant_positive_alpha_against": [],
+      "verdict": "no tradeable benchmark in this set is beaten with statistically significant alpha"
+    }
+  },
+  "factor_exposures": {
+    "status": "measured",
+    "months": 58,
+    "r_squared": 0.5889018674529483,
+    "annualized_alpha_pct": -2.5678747724307005,
+    "loadings": [
+      {
+        "factor": "alpha",
+        "estimate": -0.002165502070115501,
+        "newey_west_t_statistic": -0.4365254513783112,
+        "significant": false
+      },
+      {
+        "factor": "market_excess",
+        "estimate": 0.8591821580596294,
+        "newey_west_t_statistic": 6.495519495466118,
+        "significant": true
+      },
+      {
+        "factor": "size",
+        "estimate": 0.45458133296073217,
+        "newey_west_t_statistic": 2.0623716126371794,
+        "significant": true
+      },
+      {
+        "factor": "value",
+        "estimate": 0.1977808933537769,
+        "newey_west_t_statistic": 0.9967387636123345,
+        "significant": false
+      },
+      {
+        "factor": "profitability",
+        "estimate": 0.16210189948270992,
+        "newey_west_t_statistic": 0.6984502359074549,
+        "significant": false
+      },
+      {
+        "factor": "investment",
+        "estimate": 0.08274444510652086,
+        "newey_west_t_statistic": 0.3056849729268716,
+        "significant": false
+      },
+      {
+        "factor": "momentum",
+        "estimate": 0.40448506175136084,
+        "newey_west_t_statistic": 2.4984807046204565,
+        "significant": true
+      }
+    ]
+  },
+  "strategy_diagnostics": {
+    "status": "measured",
+    "unit_of_account": {
+      "not_measured": [
+        "per-position R-multiples",
+        "per-name win rate",
+        "per-name maximum adverse excursion"
+      ],
+      "trade": "one monthly rebalance period holding a 20-name book",
+      "why": "the committed backtest stores per-rebalance picks and the portfolio value path but not per-name entry and exit prices, so position-level statistics cannot be computed from it"
+    },
+    "sample": {
+      "first": "2021-09",
+      "last": "2026-07",
+      "months": 59
+    },
+    "expectancy": {
+      "average_loss": 0.04215,
+      "average_win": 0.04293,
+      "expectancy_per_period": 0.00977,
+      "mean_return_per_period": 0.00977,
+      "payoff_ratio": 1.019,
+      "periods": 59,
+      "win_rate": 0.6102
+    },
+    "profit_factor": {
+      "gross_loss": 0.96937,
+      "gross_profit": 1.54562,
+      "profit_factor": 1.594
+    },
+    "streaks": {
+      "longest_losing_streak": 3,
+      "longest_winning_streak": 7
+    },
+    "risk_adjusted": {
+      "annualized_return": 0.10331,
+      "annualized_volatility": 0.19195,
+      "calmar": 0.498,
+      "recovery_factor": 0.498,
+      "sharpe_zero_rate": 0.611,
+      "sortino_zero_rate": 0.905
+    },
+    "turnover": {
+      "annualized_cost_drag": 0.0078,
+      "annualized_turnover": 7.79,
+      "mean_cost_drag_per_rebalance": 0.00065,
+      "mean_monthly_turnover": 0.6492,
+      "median_monthly_turnover": 0.6527,
+      "rebalances": 60
+    },
+    "turnover_adjusted_return": {
+      "annualized_cost_drag": 0.0078,
+      "implied_gross_annualized_return": 0.11111,
+      "net_annualized_return": 0.10331,
+      "share_of_gross_return_consumed_by_costs": 0.0702
+    },
+    "regime_definitions": {
+      "market_direction": "benchmark above/below its trailing 200-session mean",
+      "preregistration": "all three rules are functions of benchmark or macro series only, never of strategy performance",
+      "rates": "6-month change in the Ken French risk-free series",
+      "volatility": "trailing 63-session realized volatility of the benchmark, split at the sample median"
+    },
+    "regime_attribution": {
+      "market_direction": {
+        "bear": {
+          "benchmark_annualized": -0.24219,
+          "excess_annualized": 0.10361,
+          "months": 11,
+          "strategy_annualized": -0.13858,
+          "strategy_mean_monthly": -0.00974,
+          "win_rate": 0.4545
+        },
+        "bull": {
+          "benchmark_annualized": 0.31276,
+          "excess_annualized": -0.11133,
+          "months": 40,
+          "strategy_annualized": 0.20143,
+          "strategy_mean_monthly": 0.01659,
+          "win_rate": 0.675
+        }
+      },
+      "rates": {
+        "falling_rates": {
+          "benchmark_annualized": 0.08615,
+          "excess_annualized": 0.10332,
+          "months": 32,
+          "strategy_annualized": 0.18947,
+          "strategy_mean_monthly": 0.01611,
+          "win_rate": 0.625
+        },
+        "rising_rates": {
+          "benchmark_annualized": 0.17547,
+          "excess_annualized": -0.16902,
+          "months": 26,
+          "strategy_annualized": 0.00645,
+          "strategy_mean_monthly": 0.00207,
+          "win_rate": 0.5769
+        }
+      },
+      "volatility": {
+        "high_volatility": {
+          "benchmark_annualized": 0.07924,
+          "excess_annualized": -0.09999,
+          "months": 29,
+          "strategy_annualized": -0.02075,
+          "strategy_mean_monthly": -0.00011,
+          "win_rate": 0.5862
+        },
+        "low_volatility": {
+          "benchmark_annualized": 0.17015,
+          "excess_annualized": 0.06947,
+          "months": 28,
+          "strategy_annualized": 0.23962,
+          "strategy_mean_monthly": 0.01948,
+          "win_rate": 0.6429
+        }
+      }
+    }
+  },
+  "costs": {
+    "status": "measured",
+    "turnover": {
+      "rebalances": 60,
+      "mean_turnover": 0.6492,
+      "total_turnover": 38.9494,
+      "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)"
+    },
+    "realized_flat_10bps": {
+      "cost_bps": 10.0,
+      "total_cost": 4522.44,
+      "final_value": 169478.08,
+      "cagr": 0.111423
+    },
+    "scenarios": [
+      {
+        "scenario": "gross",
+        "cost_bps": 0.0,
+        "total_cost": 0.0,
+        "drag_vs_realized_flat": -4522.44
+      },
+      {
+        "scenario": "optimistic",
+        "cost_bps": 6.25,
+        "total_cost": 2826.54,
+        "drag_vs_realized_flat": -1695.9
+      },
+      {
+        "scenario": "base",
+        "cost_bps": 12.5,
+        "total_cost": 5653.03,
+        "drag_vs_realized_flat": 1130.59
+      },
+      {
+        "scenario": "stress",
+        "cost_bps": 25.0,
+        "total_cost": 11306.05,
+        "drag_vs_realized_flat": 6783.61
+      }
+    ],
+    "per_name_liquidity_legs": {
+      "status": "blocked_network_policy",
+      "measures": [
+        "adv_participation_pct",
+        "estimated_spread_bps_by_name",
+        "estimated_market_impact_bps_by_name",
+        "days_to_liquidate"
+      ],
+      "reason": "costs.estimate_cost_bps's tiered/impact legs need each traded name's own median_dollar_volume_60d and annualized_volatility on the rebalance date. pipeline/data/backtest_cache/ (per-name price/volume history) is empty in this checkout, and this session's network policy blocks fetching it.",
+      "reproduction_command": "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario {optimistic,base,stress} --out pipeline/reports/backtest_tiered_<scenario>.json"
+    },
+    "never_present_gross_as_net": true
+  },
+  "calibration": {
+    "status": "insufficient_data",
+    "observations": 0,
+    "target": "residual_forward_return",
+    "horizon_sessions": 63,
+    "fixed_score_bands": [
+      {
+        "bucket": "80+",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "75-79",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "70-74",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "65-69",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "60-64",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "0-59",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      }
+    ],
+    "publishable": false,
+    "what_would_populate_this": "24 monthly point-in-time periods whose 63-session forward windows have closed; roughly two years of production refreshes, or a point-in-time reconstruction from SEC EDGAR filing dates"
+  },
+  "experiments": {
+    "status": "measured",
+    "summary": {
+      "experiments": 12,
+      "total_variants_tested": 43,
+      "by_decision": {
+        "ABANDON": 4,
+        "INCONCLUSIVE": 2,
+        "KEEP_AS_CHALLENGER": 2,
+        "PROMOTE": 4
+      },
+      "promoted_to_champion": [
+        "WO-1",
+        "WO-2",
+        "WO-3",
+        "A1-NEWS-NEUTRAL"
+      ]
+    },
+    "experiments": [
+      {
+        "id": "WO-1",
+        "hypothesis": "run_manifest.score_distribution reports the champion score shown in the UI and used for ranking, not a shadow scoring variant.",
+        "category": "data_integrity",
+        "result": "Defect confirmed by direct source read: line 30 pulled the wrong field.",
+        "decision": "PROMOTE",
+        "reason": "One-line fix; pipeline/tests/test_observability.py locks score_distribution to row['score'] with a synthetic divergence case and a full advisor.json replay.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-2",
+        "hypothesis": "The insider (SEC Form 4) layer is dark because SEC_USER_AGENT is unset, and unavailable insider evidence is read as neutral rather than absent.",
+        "category": "data_integrity",
+        "result": "insider_signal.py already returned 0.0 points with available: False on empty input (correct behavior); the gate is genuinely just the missing secret, which is the repository owner's action, not a code defect.",
+        "decision": "PROMOTE",
+        "reason": "Locked with pipeline/tests/test_insider_signal.py::test_no_transactions_reports_unavailable_rather_than_neutral_zero. A3 session additionally split source_status.sec_form4.status into unavailable_not_configured vs. unavailable_provider_error so confidence.py never conflates the two.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-3",
+        "hypothesis": "ic_harness.py and backtest_monthly.py price every trade at a flat 10bps, ignoring costs.py's liquidity- and volatility-aware cost model entirely.",
+        "category": "validation_infrastructure",
+        "result": "Confirmed and wired. The three-regime backtest re-run under tiered costs remains blocked_network_policy: no committed per-name price/volume cache exists to price the tiered leg without a live fetch.",
+        "decision": "PROMOTE",
+        "reason": "7 new regression tests (4 in test_backtest_monthly.py, 3 in test_ic_harness.py); flat model proved byte-identical to the pre-existing formula.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-4",
+        "hypothesis": "After controlling for the six standard factors (market, size, value, profitability, investment, momentum), ValueSignal's realized return stream shows residual alpha.",
+        "category": "factor_regression",
+        "result": "|t| = 0.437, below the brief's own 1.0 threshold for 'no residual alpha, factor tilt is the leading candidate' (Verdict B). Significant loadings are market, size, and momentum -- not value or profitability, despite the score being 78% fundamentals by construction.",
+        "decision": "ABANDON",
+        "reason": "The hypothesis under test -- 'ValueSignal generates residual alpha beyond known factor exposure' -- is rejected by this sample. This is the decisive result the rest of this session's honesty framing (docs/ALGORITHM-RESEARCH-RESULTS.md) is built on.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-5",
+        "hypothesis": "Band/quantization artifacts (a metric crossing a scoring-band boundary on a small raw move) are the primary driver of the backtest's 64.9%-per-month rank churn.",
+        "category": "turnover_attribution",
+        "result": "Availability flicker dominates every single transition (96.7% of events), not band quantization (0.4%). The brief's leading hypothesis is very likely wrong, though this measures live intraday churn as a proxy for the blocked monthly-backtest churn, not the backtest itself.",
+        "decision": "ABANDON",
+        "reason": "Band-quantization hypothesis rejected by the closest available evidence. Availability flicker is the real driver and needs its own follow-up (why does per-name data availability flip refresh-to-refresh?), out of scope for this registry entry.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "A1-NEWS-NEUTRAL",
+        "hypothesis": "news_intelligence.py::weighted_sentiment returning the configured neutral_score (50.0) for zero-coverage names, instead of signaling unavailability, distorts published scores for the 373 of 374 screen-universe names with no cleared news coverage.",
+        "category": "data_integrity",
+        "result": "See pipeline/reports/news_fix_score_delta.json (generated by pipeline/rescore.py) for the measured before/after score delta on the committed universe.",
+        "decision": "PROMOTE",
+        "reason": "Lands on the champion per explicit user decision, with the before/after delta committed alongside it, not silently applied.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "A3-FULL-UNIVERSE-ENRICHMENT",
+        "hypothesis": "Seeding statement enrichment from the prior refresh's top 20 + 5 challengers (select_enrichment_priority) starves the model of statement-derived metrics for names a weaker prior model never surfaced, biasing which names can ever earn a high capital_allocation/accounting_quality score.",
+        "category": "selection_bias",
+        "result": "Offline coverage/composition gap confirmed and quantified (docs/ENRICHMENT-BIAS-ANALYSIS.md). The causal question -- would full-universe enrichment surface different top-40 names -- is blocked_network_policy.",
+        "decision": "INCONCLUSIVE",
+        "reason": "Code path implemented and unit-tested (byte-identical priority regardless of previous_top, in pipeline/tests/test_fetch_advisor.py). The measurement that would resolve PROMOTE vs. ABANDON needs a live run: FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "C1-benchmark-suite",
+        "hypothesis": "The strategy delivers something a liquid, tradeable style ETF could not -- a blunter bar than the academic factor model, and the one a user of this product actually faces.",
+        "category": "signal_evidence",
+        "result": "No benchmark in the set is beaten with statistically significant alpha; the largest |t| is 1.11. VTV returns more at lower volatility with a shallower drawdown -- better on every dimension.",
+        "decision": "ABANDON",
+        "reason": "The 'beats the market' framing is not supported against any tradeable alternative. Reposition as a transparent factor tilt. Also caught a defect before publishing: the alpha t-statistic was read under a key ols_newey_west does not emit, and the .get() default published 0.00 for all 14 benchmarks, which reads as a confident null.",
+        "number_of_variants_tested": 14
+      },
+      {
+        "id": "C2-strategy-diagnostics-and-regimes",
+        "hypothesis": "The strategy's edge is stable across market-direction, volatility and rate regimes.",
+        "category": "signal_evidence",
+        "result": "The edge is not stable. This is a duration-sensitive, defensive book: +10.3pp annualized against SPY in bear markets and in falling rates, -16.9pp in rising rates.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "A coherent and useful description of what the strategy is, and it belongs in the model card. Not actionable as a timing overlay without out-of-sample evidence, and turning regimes into an optimization layer is exactly what the brief rules out.",
+        "number_of_variants_tested": 3
+      },
+      {
+        "id": "C3-cost-sensitivity-at-realized-turnover",
+        "hypothesis": "A realistic tiered cost model gives up more than 200bps a year relative to the published flat 10bps.",
+        "category": "cost_realism",
+        "result": "Resolved, and it inverts the concern. Re-running the backtest with costs.py pricing every leg from its own trailing liquidity and volatility (now possible offline from the committed price cache) *lowers* total cost from $4,194 at flat 10bps to $1,002 base / $2,020 stress -- the cached book is liquid enough that the flat 10bps assumption was conservative, not optimistic. Net CAGR rises 0.55pp under base and 0.39pp under stress.",
+        "decision": "ABANDON",
+        "reason": "The hypothesis was that realistic costs would give up more than 200bps. They give up less than the flat assumption already charged. This holds for the 360-name cached universe, which is more liquid than the full 910-name configured one, so it is not the last word on the published backtest -- but the direction is the opposite of what was feared.",
+        "number_of_variants_tested": 9
+      },
+      {
+        "id": "C4-turnover-controls",
+        "hypothesis": "Rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise rather than information.",
+        "category": "portfolio_construction",
+        "result": "Measured in-sample against the 360-symbol committed price cache. Score smoothing (+2.64pp CAGR, turnover 54.7% -> 43.9%) and a 6-month holding floor (+2.46pp, turnover -> 30.9%) both improve return and cut turnover; both rank buffers *hurt* (-1.85pp) and a 3-month floor hurts (-1.19pp) while a 6-month floor helps.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "The non-monotonicity is the tell: a real effect does not usually flip sign with the parameter, and a 4.5pp spread across nine configurations on one in-sample path is well inside what noise produces. Promotion needs out-of-sample rank IC, deflated Sharpe, PBO and a walk-forward split; none of that is satisfied here. Reported as a diagnostic.",
+        "number_of_variants_tested": 9
+      },
+      {
+        "id": "C5-score-calibration",
+        "hypothesis": "Score buckets carry a measurable historical outcome distribution that can give a 0-100 score empirical meaning.",
+        "category": "signal_evidence",
+        "result": "Blocked. The harness has 0 of 24 periods and the PIT store is three days deep, so every bucket reports insufficient_data with its shortfall named and confidence_detail.historical_calibration stays null.",
+        "decision": "INCONCLUSIVE",
+        "reason": "The gate is the deliverable: fabricating calibration would convert an admitted unknown into a false claim. Caught one inconsistency in testing -- publishability was gated on adaptive quintiles while confidence.py reads fixed bands, and the two can disagree.",
+        "number_of_variants_tested": 1
+      }
+    ]
+  },
+  "enrichment_bias": {
+    "status": "measured",
+    "coverage_by_collection": {
+      "research": {
+        "collection": "research",
+        "total_rows": 40,
+        "categories": {
+          "accounting_quality": {
+            "scored": 40,
+            "total": 40
+          },
+          "capital_allocation": {
+            "scored": 40,
+            "total": 40
+          },
+          "financial_health": {
+            "scored": 39,
+            "total": 40
+          },
+          "growth": {
+            "scored": 40,
+            "total": 40
+          },
+          "profitability": {
+            "scored": 40,
+            "total": 40
+          },
+          "valuation": {
+            "scored": 40,
+            "total": 40
+          }
+        }
+      },
+      "screen_universe": {
+        "collection": "screen_universe",
+        "total_rows": 343,
+        "categories": {
+          "accounting_quality": {
+            "scored": 110,
+            "total": 343
+          },
+          "capital_allocation": {
+            "scored": 110,
+            "total": 343
+          },
+          "financial_health": {
+            "scored": 311,
+            "total": 343
+          },
+          "growth": {
+            "scored": 343,
+            "total": 343
+          },
+          "profitability": {
+            "scored": 343,
+            "total": 343
+          },
+          "valuation": {
+            "scored": 343,
+            "total": 343
+          }
+        }
+      }
+    },
+    "enriched_vs_non_enriched": {
+      "enriched_count": 150,
+      "non_enriched_count": 233,
+      "score": {
+        "enriched": {
+          "n": 150,
+          "mean": 67.39,
+          "median": 67.3,
+          "stdev": 7.56
+        },
+        "non_enriched": {
+          "n": 233,
+          "mean": 40.82,
+          "median": 41.4,
+          "stdev": 6.07
+        }
+      },
+      "sector_distribution": {
+        "enriched": {
+          "Technology": 38,
+          "Financial Services": 33,
+          "Consumer Cyclical": 18,
+          "Healthcare": 16,
+          "Industrials": 16,
+          "Energy": 11,
+          "Consumer Defensive": 4,
+          "Communication Services": 3,
+          "Real Estate": 3,
+          "Basic Materials": 3,
+          "HEALTHCARE": 2,
+          "TECHNOLOGY": 1,
+          "CONSUMER CYCLICAL": 1,
+          "FINANCIAL SERVICES": 1
+        },
+        "non_enriched": {
+          "Industrials": 48,
+          "Consumer Cyclical": 36,
+          "Healthcare": 31,
+          "Technology": 24,
+          "Consumer Defensive": 21,
+          "Real Estate": 21,
+          "Financial Services": 17,
+          "Utilities": 16,
+          "Basic Materials": 13,
+          "Energy": 3,
+          "Communication Services": 3
+        }
+      },
+      "market_cap_comparison": {
+        "status": "not_measurable",
+        "rows_with_market_cap": 37,
+        "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
+      },
+      "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
+    },
+    "unconstrained_comparison_status": "blocked_network_policy",
+    "method": "Computed entirely from public/data/advisor.json as committed -- no network calls."
+  },
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "7c0057f82f040caf2e570c40c3a2a8c40e4a398e",
+    "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
+    "generated_at": "2026-08-07T12:05:57.965197+00:00"
+  }
+}
