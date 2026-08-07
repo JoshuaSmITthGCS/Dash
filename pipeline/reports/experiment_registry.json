@@ -1,0 +1,196 @@
+{
+  "schema": [
+    "id",
+    "hypothesis",
+    "category",
+    "configuration",
+    "train_period",
+    "validation_period",
+    "test_period",
+    "metrics",
+    "number_of_variants_tested",
+    "result",
+    "decision",
+    "reason"
+  ],
+  "total_experiments": 7,
+  "by_decision": {
+    "ABANDON": 2,
+    "INCONCLUSIVE": 1,
+    "KEEP_AS_CHALLENGER": 0,
+    "PROMOTE": 4
+  },
+  "total_variants_tested": 7,
+  "experiments": [
+    {
+      "id": "WO-1",
+      "declared_at": "2026-08-07T05:29:54+00:00",
+      "hypothesis": "run_manifest.score_distribution reports the champion score shown in the UI and used for ranking, not a shadow scoring variant.",
+      "category": "data_integrity",
+      "configuration": {
+        "file": "pipeline/observability.py",
+        "change": "run_manifest.score_distribution built from row['score'] instead of row['analysis_v2']['structural']['effective_score'] (the v2 shadow canonical-metrics score)."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {},
+      "number_of_variants_tested": 1,
+      "result": "Defect confirmed by direct source read: line 30 pulled the wrong field.",
+      "decision": "PROMOTE",
+      "reason": "One-line fix; pipeline/tests/test_observability.py locks score_distribution to row['score'] with a synthetic divergence case and a full advisor.json replay."
+    },
+    {
+      "id": "WO-2",
+      "declared_at": "2026-08-07T05:43:04+00:00",
+      "hypothesis": "The insider (SEC Form 4) layer is dark because SEC_USER_AGENT is unset, and unavailable insider evidence is read as neutral rather than absent.",
+      "category": "data_integrity",
+      "configuration": {
+        "files": [
+          "pipeline/sec_edgar.py",
+          "pipeline/insider_signal.py"
+        ],
+        "note": "SecEdgarClient.available == bool(os.getenv('SEC_USER_AGENT')). .env.example, refresh-advisor.yml, and SYSTEM-SETUP.md already documented the variable before this session."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {},
+      "number_of_variants_tested": 1,
+      "result": "insider_signal.py already returned 0.0 points with available: False on empty input (correct behavior); the gate is genuinely just the missing secret, which is the repository owner's action, not a code defect.",
+      "decision": "PROMOTE",
+      "reason": "Locked with pipeline/tests/test_insider_signal.py::test_no_transactions_reports_unavailable_rather_than_neutral_zero. A3 session additionally split source_status.sec_form4.status into unavailable_not_configured vs. unavailable_provider_error so confidence.py never conflates the two."
+    },
+    {
+      "id": "WO-3",
+      "declared_at": "2026-08-07T05:43:29+00:00",
+      "hypothesis": "ic_harness.py and backtest_monthly.py price every trade at a flat 10bps, ignoring costs.py's liquidity- and volatility-aware cost model entirely.",
+      "category": "validation_infrastructure",
+      "configuration": {
+        "files": [
+          "pipeline/backtest_monthly.py",
+          "pipeline/validation/ic_harness.py",
+          "pipeline/pit_store.py"
+        ],
+        "change": "Added --cost-model {flat,tiered} / --cost-scenario {optimistic,base,stress}; tracked average_dollar_volume in pit_store snapshots (schema v1 -> v2)."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {},
+      "number_of_variants_tested": 1,
+      "result": "Confirmed and wired. The three-regime backtest re-run under tiered costs remains blocked_network_policy: no committed per-name price/volume cache exists to price the tiered leg without a live fetch.",
+      "decision": "PROMOTE",
+      "reason": "7 new regression tests (4 in test_backtest_monthly.py, 3 in test_ic_harness.py); flat model proved byte-identical to the pre-existing formula."
+    },
+    {
+      "id": "WO-4",
+      "declared_at": "2026-08-07T08:54:31+00:00",
+      "hypothesis": "After controlling for the six standard factors (market, size, value, profitability, investment, momentum), ValueSignal's realized return stream shows residual alpha.",
+      "category": "factor_regression",
+      "configuration": {
+        "script": "pipeline/p0_q1_benchmark_factor_report.py",
+        "method": "OLS with Newey-West HAC standard errors (Bartlett kernel, 3 lags), Ken French five factors + momentum, monthly resample of the cost-aware 60-rebalance backtest."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": "2021-09 to 2026-06 (n=58 months; full-sample regression, no walk-forward split)",
+      "metrics": {
+        "annualized_alpha_pct": -2.57,
+        "monthly_alpha_pct": -0.217,
+        "newey_west_t_alpha": -0.437,
+        "r_squared": 0.589,
+        "capm_beta": 0.793,
+        "capm_beta_newey_west_t": 6.44,
+        "significant_loadings_newey_west_t": {
+          "market_excess": 6.5,
+          "smb_size": 2.06,
+          "momentum": 2.5
+        },
+        "not_significant_newey_west_t": {
+          "hml_value": 1.0,
+          "rmw_profitability": 0.7,
+          "cma_investment": 0.31
+        }
+      },
+      "number_of_variants_tested": 1,
+      "result": "|t| = 0.437, below the brief's own 1.0 threshold for 'no residual alpha, factor tilt is the leading candidate' (Verdict B). Significant loadings are market, size, and momentum -- not value or profitability, despite the score being 78% fundamentals by construction.",
+      "decision": "ABANDON",
+      "reason": "The hypothesis under test -- 'ValueSignal generates residual alpha beyond known factor exposure' -- is rejected by this sample. This is the decisive result the rest of this session's honesty framing (docs/ALGORITHM-RESEARCH-RESULTS.md) is built on."
+    },
+    {
+      "id": "WO-5",
+      "declared_at": "2026-08-07T09:21:38+00:00",
+      "hypothesis": "Band/quantization artifacts (a metric crossing a scoring-band boundary on a small raw move) are the primary driver of the backtest's 64.9%-per-month rank churn.",
+      "category": "turnover_attribution",
+      "configuration": {
+        "script": "pipeline/p0_q2_turnover_attribution.py",
+        "method": "decompose_score_delta (stability_report.py) applied to pipeline/pit_store/*.jsonl consecutive-refresh transitions -- live intraday churn, not the blocked monthly-backtest churn."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": "pipeline/pit_store, 2 days deep, 4 refresh-to-refresh transitions",
+      "metrics": {
+        "band_crossing_pct": 0.42,
+        "genuine_change_pct": 2.86,
+        "availability_flicker_pct": 96.72,
+        "band_crossing_events": 19,
+        "genuine_change_events": 131,
+        "availability_flicker_events": 4426
+      },
+      "number_of_variants_tested": 1,
+      "result": "Availability flicker dominates every single transition (96.7% of events), not band quantization (0.4%). The brief's leading hypothesis is very likely wrong, though this measures live intraday churn as a proxy for the blocked monthly-backtest churn, not the backtest itself.",
+      "decision": "ABANDON",
+      "reason": "Band-quantization hypothesis rejected by the closest available evidence. Availability flicker is the real driver and needs its own follow-up (why does per-name data availability flip refresh-to-refresh?), out of scope for this registry entry."
+    },
+    {
+      "id": "A1-NEWS-NEUTRAL",
+      "declared_at": "2026-08-07T00:00:00+00:00",
+      "hypothesis": "news_intelligence.py::weighted_sentiment returning the configured neutral_score (50.0) for zero-coverage names, instead of signaling unavailability, distorts published scores for the 373 of 374 screen-universe names with no cleared news coverage.",
+      "category": "data_integrity",
+      "configuration": {
+        "files": [
+          "pipeline/news_intelligence.py",
+          "pipeline/advisor_engine.py",
+          "src/components/StockCard.jsx"
+        ],
+        "change": "weighted_sentiment returns None (not neutral_score) with news_available: False when coverage is zero; blend_research_components already renormalizes over non-None components. Publishes news_available on every row. Fixed a downstream consumer (StockCard.jsx) that treated null the same as undefined."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {},
+      "number_of_variants_tested": 1,
+      "result": "See pipeline/reports/news_fix_score_delta.json (generated by pipeline/rescore.py) for the measured before/after score delta on the committed universe.",
+      "decision": "PROMOTE",
+      "reason": "Lands on the champion per explicit user decision, with the before/after delta committed alongside it, not silently applied."
+    },
+    {
+      "id": "A3-FULL-UNIVERSE-ENRICHMENT",
+      "declared_at": "2026-08-07T00:00:00+00:00",
+      "hypothesis": "Seeding statement enrichment from the prior refresh's top 20 + 5 challengers (select_enrichment_priority) starves the model of statement-derived metrics for names a weaker prior model never surfaced, biasing which names can ever earn a high capital_allocation/accounting_quality score.",
+      "category": "selection_bias",
+      "configuration": {
+        "files": [
+          "pipeline/fetch_advisor.py",
+          "pipeline/enrichment_bias.py"
+        ],
+        "change": "FULL_UNIVERSE_RESEARCH=true env var makes select_enrichment_priority ignore previous_top entirely and enrich every preliminary candidate; not the default production path."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {
+        "screen_universe_capital_allocation_coverage": "84/374",
+        "enriched_population_mean_score": 66.31,
+        "enriched_population_n": 124,
+        "non_enriched_population_mean_score": 41.77,
+        "non_enriched_population_n": 290
+      },
+      "number_of_variants_tested": 1,
+      "result": "Offline coverage/composition gap confirmed and quantified (docs/ENRICHMENT-BIAS-ANALYSIS.md). The causal question -- would full-universe enrichment surface different top-40 names -- is blocked_network_policy.",
+      "decision": "INCONCLUSIVE",
+      "reason": "Code path implemented and unit-tested (byte-identical priority regardless of previous_top, in pipeline/tests/test_fetch_advisor.py). The measurement that would resolve PROMOTE vs. ABANDON needs a live run: FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py."
+    }
+  ]
+}

@@ -59,6 +59,15 @@
       "6M": 182,
       "12M": 365
     },
+    "_horizons_days_comment": "Calendar-day horizons: secondary diagnostics only. horizons_sessions below is the preregistered primary target (B1) -- real trading sessions from public/data/etf/SPY.json, not calendar time.",
+    "horizons_sessions": {
+      "1M": 21,
+      "3M": 63,
+      "6M": 126,
+      "12M": 252
+    },
+    "primary_horizon": "3M",
+    "sector_residual_minimum_peers": 3,
     "periods_per_year": 12,
     "minimum_icir_periods": 24,
     "lookahead_rank_ic_threshold": 0.1,

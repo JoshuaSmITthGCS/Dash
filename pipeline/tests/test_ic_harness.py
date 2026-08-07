@@ -1,13 +1,16 @@
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 PIPELINE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PIPELINE_DIR)
 
 import validation.ic_harness as ic_harness_module
-from validation.ic_harness import append_refresh, build_report, evaluate_variant, read_snapshots
+from validation.ic_harness import (append_refresh, build_report, evaluate_variant,
+                                   evaluate_variant_sessions, read_snapshots,
+                                   sector_residual_returns)
+from validation.trading_calendar import TradingCalendar
 
 
 def scored_row(ticker="AAA", champion=60.0, challenger=62.0, price=100.0):
@@ -167,3 +170,113 @@ def test_snapshot_jsonl_contains_required_reproducibility_fields(tmp_path):
         "sector_valuation", "short_interest", "liquidity", "expectations",
         "macro_regime", "insider_activity",
     }
+
+
+def _weekday_calendar(start, days):
+    sessions = []
+    current = start
+    while len(sessions) < days:
+        if current.weekday() < 5:
+            sessions.append(current)
+        current += timedelta(days=1)
+    return TradingCalendar(sessions)
+
+
+def test_sector_residual_returns_subtracts_the_peer_group_mean():
+    rows = [
+        {"ticker": "A", "sector": "Technology", "forward_return": 0.10},
+        {"ticker": "B", "sector": "Technology", "forward_return": 0.20},
+        {"ticker": "C", "sector": "Technology", "forward_return": 0.30},
+        {"ticker": "D", "sector": "Technology", "forward_return": 0.00},
+    ]
+    labeled = sector_residual_returns(rows, minimum_peers=2)
+    by_ticker = {row["ticker"]: row for row in labeled}
+    # A's peers are B, C, D (excluding itself): mean = (0.20+0.30+0.00)/3 = 0.1667
+    assert round(by_ticker["A"]["sector_residual_return"], 4) == round(0.10 - (0.20 + 0.30 + 0.00) / 3, 4)
+    assert by_ticker["A"]["sector_residual_fallback"] is False
+
+
+def test_sector_residual_falls_back_to_universe_mean_for_a_thin_sector():
+    rows = [
+        {"ticker": "A", "sector": "Utilities", "forward_return": 0.10},
+        {"ticker": "B", "sector": "Technology", "forward_return": 0.20},
+        {"ticker": "C", "sector": "Technology", "forward_return": 0.30},
+        {"ticker": "D", "sector": "Technology", "forward_return": 0.00},
+    ]
+    labeled = sector_residual_returns(rows, minimum_peers=2)
+    by_ticker = {row["ticker"]: row for row in labeled}
+    # A is the only Utilities name (0 peers < minimum_peers=2), so it falls back to the
+    # equal-weight mean of every *other* name: (0.20+0.30+0.00)/3.
+    assert by_ticker["A"]["sector_residual_fallback"] is True
+    assert round(by_ticker["A"]["sector_residual_return"], 4) == round(0.10 - (0.20 + 0.30 + 0.00) / 3, 4)
+    # A well-populated sector never falls back.
+    assert by_ticker["B"]["sector_residual_fallback"] is False
+
+
+def test_missing_sector_always_falls_back_to_the_universe_mean():
+    rows = [
+        {"ticker": "A", "sector": None, "forward_return": 0.10},
+        {"ticker": "B", "sector": "Technology", "forward_return": 0.20},
+        {"ticker": "C", "sector": "Technology", "forward_return": 0.30},
+        {"ticker": "D", "sector": "Technology", "forward_return": 0.00},
+    ]
+    labeled = sector_residual_returns(rows, minimum_peers=2)
+    by_ticker = {row["ticker"]: row for row in labeled}
+    assert by_ticker["A"]["sector_residual_fallback"] is True
+
+
+def test_evaluate_variant_sessions_uses_a_trading_session_horizon_not_calendar_days():
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    start_date = calendar.sessions[0]
+    # Ten trading sessions after start_date lands mid the-following-week; a naive
+    # calendar-day version of a "10 trading day" horizon (e.g. +14 calendar days) would
+    # pick a different, later refresh as the match.
+    ten_sessions_later = calendar.add_sessions(start_date, 10)
+    just_under = ten_sessions_later - timedelta(days=1)
+
+    refreshes = [
+        {
+            "refresh_id": "start",
+            "recorded_at": datetime.combine(start_date, datetime.min.time(), tzinfo=timezone.utc).isoformat(),
+            "rows": [
+                {"ticker": "A", "price": 100.0, "scores": {"champion": 1.0},
+                 "raw_metric_inputs": {"sector": "Technology"}},
+                {"ticker": "B", "price": 100.0, "scores": {"champion": 2.0},
+                 "raw_metric_inputs": {"sector": "Technology"}},
+                {"ticker": "C", "price": 100.0, "scores": {"champion": 3.0},
+                 "raw_metric_inputs": {"sector": "Technology"}},
+            ],
+        },
+        {
+            # Deliberately one calendar day short of the 10-session target: must NOT match.
+            "refresh_id": "too-early",
+            "recorded_at": datetime.combine(just_under, datetime.min.time(), tzinfo=timezone.utc).isoformat(),
+            "rows": [
+                {"ticker": "A", "price": 999.0, "scores": {"champion": 1.0}},
+                {"ticker": "B", "price": 999.0, "scores": {"champion": 2.0}},
+                {"ticker": "C", "price": 999.0, "scores": {"champion": 3.0}},
+            ],
+        },
+        {
+            "refresh_id": "target",
+            "recorded_at": datetime.combine(ten_sessions_later, datetime.min.time(), tzinfo=timezone.utc).isoformat(),
+            "rows": [
+                {"ticker": "A", "price": 110.0, "scores": {"champion": 1.0}},
+                {"ticker": "B", "price": 120.0, "scores": {"champion": 2.0}},
+                {"ticker": "C", "price": 130.0, "scores": {"champion": 3.0}},
+            ],
+        },
+    ]
+    summary = evaluate_variant_sessions(refreshes, "champion", 10, calendar)
+    assert summary["periods_accumulated"] == 1
+    ic = summary["monthly_rank_ic"][0]
+    assert ic is not None
+
+
+def test_build_report_publishes_a_primary_session_based_target(monkeypatch):
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    monkeypatch.setattr(ic_harness_module, "default_calendar", lambda: calendar)
+    report = build_report([])
+    assert report["primary_horizon"] == "3M"
+    assert report["primary_target"] == "sector_residual_return_over_trading_sessions"
+    assert set(report["primary_variants"]["champion"]) == {"1M", "3M", "6M", "12M"}

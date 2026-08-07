@@ -193,7 +193,7 @@ export default function StockCard({ stock, rank, totalStocks = 20, defaultExpand
                     color="#3b82f6"
                   />
                 )}
-                {components.news_sentiment !== undefined && (
+                {components.news_sentiment != null && (
                   <ComponentBar
                     label="News Sentiment"
                     value={components.news_sentiment}

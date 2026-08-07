@@ -129,7 +129,10 @@
                 "maximum": 100
               },
               "news_sentiment": {
-                "type": "number",
+                "type": [
+                  "number",
+                  "null"
+                ],
                 "minimum": 0,
                 "maximum": 100
               }
