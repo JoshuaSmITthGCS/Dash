@@ -314,6 +314,13 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .research-trade-status { margin-top: 8px; color: var(--pos); font-size: 10px; line-height: 1.45; }.research-trade-status.error { color: var(--neg); }
 .research-trade-notice { margin: -6px 0 16px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--pos) 36%, var(--border)); border-radius: var(--control-radius); background: color-mix(in srgb, var(--pos) 8%, var(--bg-card)); color: var(--pos); font-size: 11px; }.research-trade-notice.error { border-color: color-mix(in srgb, var(--neg) 36%, var(--border)); background: color-mix(in srgb, var(--neg) 8%, var(--bg-card)); color: var(--neg); }
 .research-table-buy { min-width: 92px; white-space: nowrap; }
+.entry-timing-chip.buy-now { border-color: color-mix(in srgb, var(--pos) 45%, var(--border)); color: var(--pos); }
+.entry-timing-chip.set-low-alert { cursor: pointer; border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, var(--bg-elev)); }
+.entry-timing-chip.set-low-alert:disabled { cursor: default; opacity: .6; }
+.entry-timing-chip.set-low-alert:hover:not(:disabled) { background: color-mix(in srgb, var(--warn) 14%, var(--bg-elev)); }
+.entry-timing-wrap { display: inline-flex; flex-direction: column; gap: 4px; }
+.entry-timing-status { color: var(--pos); font: 9px/1.4 var(--font-mono); max-width: 180px; }
+.entry-timing-status.error { color: var(--neg); }
 .screen-chip-momentum { border-color: color-mix(in srgb, var(--up) 45%, var(--border)); color: var(--up); }
 .screen-chip-reversal { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--warn); }
 .screen-chip-breakout { border-color: color-mix(in srgb, var(--accent, var(--up)) 45%, var(--border)); color: var(--accent, var(--up)); }
