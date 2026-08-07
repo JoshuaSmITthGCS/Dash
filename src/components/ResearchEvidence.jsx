@@ -166,20 +166,36 @@ export function CostPanel({ panel }) {
   if (!panel || panel.status !== 'measured') {
     return <NotGenerated panel={panel} name="Cost sensitivity" />
   }
-  const published = panel.published_assumption || {}
-  const check = panel.threshold_check || {}
+  const flat = panel.realized_flat_10bps || {}
   return <section className="card evidence-panel">
     <header className="section-heading">
-      <div><span className="eyebrow">What turnover costs</span><h2>Cost sensitivity</h2></div>
+      <div><span className="eyebrow">What turnover costs</span><h2>Cost sensitivity</h2>
+        <p>The published backtest charges a flat 10bps one-way. These re-price its own
+          recorded turnover at each rate the cost model can produce.</p></div>
     </header>
     <dl className="analysis-quality-grid">
-      <div><dt>Mean monthly turnover</dt><dd>{pct(panel.realized_turnover?.mean_monthly)}</dd></div>
-      <div><dt>Assumed rate</dt><dd>{published.one_way_bps} bps one-way</dd></div>
-      <div><dt>Net return</dt><dd>{pct(published.net_annualized_return, 2)}</dd></div>
-      <div><dt>Implied gross</dt><dd>{pct(published.implied_gross_annualized_return, 2)}</dd></div>
-      <div><dt>Breakeven rate</dt><dd>{num(check.breakeven_one_way_bps, 1)} bps</dd></div>
+      <div><dt>Mean monthly turnover</dt><dd>{pct(panel.turnover?.mean_turnover)}</dd></div>
+      <div><dt>Rebalances</dt><dd>{panel.turnover?.rebalances ?? '–'}</dd></div>
+      <div><dt>Published CAGR at 10bps</dt><dd>{pct(flat.cagr, 2)}</dd></div>
     </dl>
-    <p className="evidence-note">{check.interpretation}</p>
+    <div className="evidence-table-scroll">
+      <table className="evidence-table">
+        <thead><tr>
+          <th scope="col">Scenario</th><th scope="col">One-way</th>
+          <th scope="col">Total cost</th><th scope="col">vs flat 10bps</th>
+        </tr></thead>
+        <tbody>
+          {(panel.scenarios || []).map((row) => <tr key={row.scenario}>
+            <th scope="row">{title(row.scenario)}</th>
+            <td>{num(row.cost_bps, 2)} bps</td>
+            <td>{row.total_cost == null ? '–' : `$${Math.round(row.total_cost).toLocaleString()}`}</td>
+            <td>{row.drag_vs_realized_flat == null ? '–'
+              : `${row.drag_vs_realized_flat > 0 ? '+' : ''}$${Math.round(row.drag_vs_realized_flat).toLocaleString()}`}</td>
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+    <p className="evidence-note">{panel.never_present_gross_as_net}</p>
   </section>
 }
 

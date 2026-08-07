@@ -4,13 +4,22 @@ Changes made during the research-driven algorithm overhaul. Evidence and reasoni
 `docs/ALGORITHM-RESEARCH-RESULTS.md`; this is the what-and-where.
 
 Baseline at start: 652 Python tests, 337 frontend tests, 9 data contracts.
-At completion: **819 Python tests, 354 frontend tests**, 9 data contracts, lint and build clean.
+At completion, merged with `main` (which landed PR #46's overlapping work first):
+**820 Python tests, 373 frontend tests**, 9 data contracts, lint and build clean.
+
+**Overlap with PR #46.** That branch solved several of the same problems and merged first.
+Where the two converged this branch takes `main`'s implementation and drops its own: the
+trading calendar, the sector-residual/session target, purge/embargo, unseeded enrichment mode,
+the news-availability fix, the experiment registry, `cost_sensitivity.py`, `enrichment_bias.py`,
+and `news_fix_impact.py` (which supersedes this branch's `news_weight_impact.py` -- it also
+recomputes stance, finding 5 stance changes this branch's narrower version missed).
 
 ---
 
 ## Behaviour changes to the production champion
 
-Three, all defect fixes rather than model changes. No new signal was promoted.
+All defect fixes rather than model changes. No new signal was promoted. The news fix and the
+target correction came from `main`; the availability channel is this branch's.
 
 | Change | File | Effect |
 |---|---|---|
@@ -20,32 +29,42 @@ Three, all defect fixes rather than model changes. No new signal was promoted.
 
 ---
 
-## New modules
+## New modules this branch contributes
 
 | Module | Purpose |
 |---|---|
-| `validation/trading_calendar.py` | 8,437 real NYSE sessions read from committed SPY history. Raises rather than degrading to calendar days |
 | `portfolio_construction.py` | Four turnover-control challengers: rank buffer, minimum holding, score smoothing, replacement margin |
 | `strategy_diagnostics.py` | Expectancy, profit factor, payoff, R-multiples, streaks, Sortino/Calmar, rolling Sharpe, regime attribution |
-| `cost_sensitivity.py` | Re-prices realized turnover across every rate `costs.py` produces |
-| `benchmark_suite.py` | 14 tradeable benchmarks with per-benchmark Newey-West regressions |
-| `enrichment_bias.py` | Shortlist-gating footprint, gated on a full-universe source |
+| `benchmark_suite.py` | Per-benchmark Newey-West regression of the strategy on each of 14 tradeable ETFs |
 | `score_calibration.py` | Score-bucket outcome table behind an observation gate |
-| `experiment_registry.py` | Every attempt, including failures; supplies the deflation trial count |
-| `news_weight_impact.py` | Measures the news fix against the last published refresh |
 | `build_research_evidence.py` | Aggregates the reports into one UI artifact |
 | `src/components/ResearchEvidence.jsx` | Seven panels on `/screens/validation` |
 
-## Extended, not rebuilt
+## Adopted from `main` (PR #46), not from this branch
+
+Both branches built these independently. `main` merged first, so its implementation stands and
+this branch's equivalents were discarded rather than merged on top.
+
+`validation/trading_calendar.py` · `validation/ic_harness.py`'s session/sector-residual target ·
+`validation_framework.py` purge/embargo · `evaluation.py` purge · `experiment_registry.py` ·
+`cost_sensitivity.py` · `enrichment_bias.py` · `news_intelligence.py`'s availability fix ·
+`fetch_advisor.py`'s `FULL_UNIVERSE_RESEARCH` · `config/settings.json` horizon config ·
+`news_fix_impact.py`
+
+Where `main`'s version is better it is worth naming: its harness keeps the calendar-day raw-return
+path as a *labelled diagnostic* beside the new primary target rather than replacing it, and its
+`news_fix_impact.py` also recomputes stance (finding 5 stance changes this branch's version did
+not look for).
+
+## Extended on top of `main`
 
 | File | Addition |
 |---|---|
-| `validation_framework.py` | `purge_periods` / `embargo_periods` on `walk_forward_splits`; `label_overlap_periods` |
-| `evaluation.py` | `purge_periods` on `walk_forward` and `evaluate_candidate` |
+| `validation/ic_harness.py` | `unavailable_modifiers()` + `modifiers.availability`; `research_trial_count()` sourcing deflation from the registry |
+| `experiment_registry.py` | `total_variants_tested()` accessor; 5 experiments from this branch |
+| `fetch_advisor.py` | `source_status` passed into the PIT snapshot |
 | `backtest_monthly.py` | `--rank-buffer`, `--min-holding-months`, `--score-smoothing`, `--replacement-margin`, all defaulting off |
 | `confidence.py` | `historical_calibration_component`; explicit "not a probability" interpretation |
-| `fetch_advisor.py` | `FULL_UNIVERSE_RESEARCH` mode; `source_status` passed to the PIT snapshot |
-| `config/settings.json` | `horizons_sessions`, `primary_horizon`, `sector_residual_minimum_peers` |
 | `p0_q1_benchmark_factor_report.py` | Loaders and OLS reused by `benchmark_suite.py` |
 | `src/components/AnalysisLayers.jsx` | "Confidence" → "Evidence confidence" |
 
@@ -67,15 +86,29 @@ model manifests, the cost model, champion/challenger. All existed and were corre
    published refresh — a *fast* one where 288 of 290 unenriched rows were simply names not
    re-polled. The script now refuses any payload more than 5% carry-forwards.
 4. **Understated deflation trial count.** The harness deflated against 5 configured shadow
-   strategies when 47 variants had been tried. Now sourced from the experiment registry.
+   strategies when 44 variants had been tried. Now sourced from the experiment registry.
+5. **Silent report-path collision, caught during the merge.** `benchmark_suite.py` and
+   `p0_q1_benchmark_factor_report.py` both wrote `benchmark_comparison.json` with different
+   schemas, so whichever ran last silently won and the UI panel would have read whichever it
+   got. Retargeted to `benchmark_alpha_regressions.json`.
+6. **Three UI panels reporting "measured" with every field empty**, also caught during the
+   merge: `build_research_evidence.py` read this branch's report schemas, and `main`'s
+   differ. Remapped, with a null sweep over the published artifact to confirm.
+7. **Calibration reading the wrong harness path.** `observations_from_harness` called the
+   calendar-day raw-return diagnostic and read a field it never produces. Invisible while the
+   PIT store is empty, since both paths return nothing. Now pinned by a test.
 
 ---
 
 ## Artifacts produced
 
-`enrichment_bias.json` · `benchmark_comparison.json` · `strategy_diagnostics.json` ·
-`cost_sensitivity.json` · `score_calibration.json` · `experiment_registry.json` ·
-`news_availability_impact.json` · `public/data/validation/research_evidence.json`
+`benchmark_alpha_regressions.json` · `strategy_diagnostics.json` · `score_calibration.json` ·
+`public/data/validation/research_evidence.json`
+
+`benchmark_alpha_regressions.json` is deliberately a separate file from
+`benchmark_comparison.json`: `p0_q1_benchmark_factor_report.py` owns the latter and writes
+buy-and-hold metrics for the same benchmark set. Two scripts writing one path would mean
+whichever ran last silently won.
 
 Plus `pipeline/data/full_refresh_snapshots/advisor-2026-08-06T002332-full.json`, a 140K
 field-trimmed extract of the last clean full-universe refresh so the enrichment measurement

@@ -35,6 +35,10 @@ if HERE not in sys.path:
 
 from common import load_json  # noqa: E402
 
+# The harness's own field name for the preregistered label. Kept as a reference to that
+# contract rather than a local string, so the two cannot drift apart.
+TARGET_FIELD = "sector_residual_return"
+
 SETTINGS = load_json("settings.json", from_config=True) or {}
 VALIDATION = SETTINGS.get("validation", {})
 CONFIDENCE = SETTINGS.get("confidence", {})
@@ -68,8 +72,7 @@ def _mean_interval(values):
 
 def summarize_bucket(label, rows, minimum=MINIMUM_BUCKET_OBSERVATIONS):
     """Outcome statistics for one score bucket, or a refusal with the shortfall named."""
-    outcomes = [row["residual_forward_return"] for row in rows
-                if row.get("residual_forward_return") is not None]
+    outcomes = [row[TARGET_FIELD] for row in rows if row.get(TARGET_FIELD) is not None]
     if len(outcomes) < minimum:
         return {
             "bucket": label,
@@ -154,7 +157,7 @@ def build_report(rows=None):
     eligible = is_eligible(fixed)
     return {
         "schema_version": 1,
-        "target": "residual_forward_return",
+        "target": TARGET_FIELD,
         "horizon_sessions": VALIDATION.get("horizons_sessions", {}).get(
             VALIDATION.get("primary_horizon", "3M")),
         "status": "measured" if eligible else "insufficient_data",
@@ -176,18 +179,28 @@ def build_report(rows=None):
     }
 
 
-def observations_from_harness(report=None):
-    """Closed (score, residual return) pairs from the IC harness's own periods."""
-    from validation.ic_harness import _forward_periods, _monthly_refreshes, _refreshes, read_snapshots
+def observations_from_harness(snapshots=None):
+    """Closed (score, sector-residual return) pairs from the harness's *primary* path.
 
-    horizon = VALIDATION.get("horizons_sessions", {}).get(VALIDATION.get("primary_horizon", "3M"))
-    refreshes = _monthly_refreshes(_refreshes(read_snapshots()))
-    rows = []
-    for period in _forward_periods(refreshes, "champion", horizon):
-        rows.extend({"score": row["score"],
-                     "residual_forward_return": row["residual_forward_return"]}
-                    for row in period["rows"])
-    return rows
+    Deliberately ``_forward_periods_sessions``, not ``_forward_periods``: the latter is the
+    retained calendar-day, raw-return diagnostic, and calibrating a published score against
+    it would attach outcome statistics to a label the contract does not preregister. The
+    field name follows the harness (``sector_residual_return``) rather than being
+    re-invented here, so a rename there breaks this loudly instead of silently returning
+    nothing.
+    """
+    from validation.ic_harness import (_forward_periods_sessions, _monthly_refreshes,
+                                       _refreshes, read_snapshots)
+
+    horizon = VALIDATION["horizons_sessions"][VALIDATION["primary_horizon"]]
+    rows = read_snapshots() if snapshots is None else snapshots
+    refreshes = _monthly_refreshes(_refreshes(rows))
+    observations = []
+    for period in _forward_periods_sessions(refreshes, "champion", horizon):
+        observations.extend({"score": row["score"],
+                             TARGET_FIELD: row[TARGET_FIELD]}
+                            for row in period["rows"])
+    return observations
 
 
 def main():

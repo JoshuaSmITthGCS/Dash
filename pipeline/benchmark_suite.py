@@ -22,8 +22,13 @@ No network access. A sector-neutral composite is still not built, for the reason
 `docs/P0-Q1-BENCHMARK.md`: only 193 of the 397 tickers that passed through the portfolio have a
 sector label anywhere on disk, and fabricating the other 51% is not evidence.
 
+`p0_q1_benchmark_factor_report.py` already publishes buy-and-hold metrics for this benchmark
+set to `benchmark_comparison.json`. What it does not publish, and what decides the question
+above, is a regression of the strategy *on each individual fund*. That is what this adds, to
+its own artifact.
+
 Usage: python pipeline/benchmark_suite.py
-Output: pipeline/reports/benchmark_comparison.json
+Output: pipeline/reports/benchmark_alpha_regressions.json
 """
 
 import json
@@ -41,7 +46,11 @@ from backtest_monthly import simulate_benchmark  # noqa: E402
 from p0_q1_benchmark_factor_report import (BACKTEST_PATH, ETF_DIR, load_etf_benchmark,  # noqa: E402
                                            monthly_returns, ols_newey_west)
 
-OUT_PATH = os.path.join(HERE, "reports", "benchmark_comparison.json")
+# Deliberately NOT benchmark_comparison.json: p0_q1_benchmark_factor_report.py owns that
+# file and writes buy-and-hold metrics for the same benchmark set. This module adds the one
+# thing that report does not have -- a Newey-West regression of the strategy on each
+# individual tradeable fund -- so it gets its own path rather than racing for the same one.
+OUT_PATH = os.path.join(HERE, "reports", "benchmark_alpha_regressions.json")
 ENTRY_COST_BPS = 10.0
 
 # Committed ETFs standing in for the exposures the six-factor regression found significant

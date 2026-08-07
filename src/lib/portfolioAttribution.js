@@ -21,6 +21,12 @@
  * News-driven catalyst attribution (linking a move to a specific headline) needs the event
  * classification work planned for a later phase (docs/CHANGELOG-QUANT-UPGRADE.md) and is not
  * available yet -- catalysts is always [] with an explicit status, never guessed.
+ *
+ * daily_return_pct prefers a live quote (price vs. previousClose, fetched via
+ * usePortfolioQuotes) over the pipeline snapshot's history.closes whenever one has been
+ * fetched for that symbol -- otherwise this widget would show a stale close-to-close move
+ * for a holding priced live everywhere else on the page. Same preference applies to the
+ * benchmark leg via the optional `benchmarkQuote` option.
  */
 
 const finite = (value) => typeof value === 'number' && Number.isFinite(value)
@@ -35,8 +41,22 @@ function benchmarkDailyReturnPct(benchmarkHistory) {
   return latestDailyReturnPct(benchmarkHistory)
 }
 
-export function explainPortfolioMove(positions = [], benchmarkHistory = null, { defaultBeta = 1 } = {}) {
-  const benchmarkReturnPct = benchmarkDailyReturnPct(benchmarkHistory)
+// A live quote (fetched on demand via usePortfolioQuotes / the portfolio-prices Netlify
+// function) is today's actual price versus its own previousClose - a true intraday return.
+// The pipeline snapshot's history.closes only advances when the research pipeline itself
+// refreshes (a few times a day at most), so without this a holding priced live everywhere
+// else on the page would still show yesterday's close-to-close move here. Falls back to
+// history.closes whenever no live quote has been fetched for that symbol yet.
+function liveQuoteDailyReturnPct(quote) {
+  if (!quote?.portfolioQuote) return null
+  const { price, previousClose } = quote
+  if (!finite(price) || !finite(previousClose) || previousClose === 0) return null
+  return (price / previousClose - 1) * 100
+}
+
+export function explainPortfolioMove(positions = [], benchmarkHistory = null,
+                                     { defaultBeta = 1, benchmarkQuote = null } = {}) {
+  const benchmarkReturnPct = liveQuoteDailyReturnPct(benchmarkQuote) ?? benchmarkDailyReturnPct(benchmarkHistory)
   if (benchmarkReturnPct == null) {
     return {
       available: false,
@@ -50,7 +70,8 @@ export function explainPortfolioMove(positions = [], benchmarkHistory = null, { 
   const holdings = positions
     .filter((position) => finite(position.allocationPct) && position.allocationPct > 0)
     .map((position) => {
-      const dailyReturnPct = latestDailyReturnPct(position.priceInfo?.history)
+      const dailyReturnPct = liveQuoteDailyReturnPct(position.priceInfo)
+        ?? latestDailyReturnPct(position.priceInfo?.history)
       const weight = position.allocationPct / 100
       const beta = finite(position.priceInfo?.technical_detail?.beta)
         ? position.priceInfo.technical_detail.beta

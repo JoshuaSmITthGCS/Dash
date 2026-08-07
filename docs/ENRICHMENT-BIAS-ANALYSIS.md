@@ -1,108 +1,88 @@
-# Enrichment Bias — how much does shortlist gating shape the ranking?
-
-Reproducible by: `python pipeline/enrichment_bias.py` (no network access). Output:
-`pipeline/reports/enrichment_bias.json`.
+# A3 — Enrichment Selection Bias
 
 ## The defect
 
-`fetch_advisor.select_enrichment_priority()` builds the statement-enrichment queue from the
-previous refresh's top 20 (`INCUMBENT_ENRICH_LIMIT`) plus five new candidates
-(`CHALLENGER_ENRICH_LIMIT`). Statement enrichment is what produces EV/EBITDA (27% of
-valuation), ROIC (26% of profitability), interest coverage (30% of financial health),
-Piotroski F (45% of accounting quality), and the whole of `capital_allocation` and
-`accounting_quality`.
+`fetch_advisor.py::select_enrichment_priority` (line ~820) seeds the statement-enrichment
+queue with the previous refresh's top 20 published names (`INCUMBENT_ENRICH_LIMIT = 20`) and
+admits only 5 new challengers (`CHALLENGER_ENRICH_LIMIT = 5`). Statement-derived metrics —
+EV/EBITDA, ROIC, interest coverage, Piotroski F, everything that feeds the
+`capital_allocation` and `accounting_quality` fundamental categories — exist only for names a
+weaker prior model already liked. A name that never cracked the top 20-25 can never earn the
+categories that make up roughly a third of the fundamentals score, regardless of how strong
+its actual statements are.
 
-So the evidence carrying most of the model's weight is computed almost exclusively for
-companies a *preliminary* score — one that does not contain that evidence — already ranked
-highly. And because the queue is seeded from the last refresh, today's leaders are drawn from
-yesterday's leaders.
+## What was fixed (code)
 
-## Choosing a measurement source
+`FULL_UNIVERSE_RESEARCH=true` (new env var, default off) makes
+`select_enrichment_priority` ignore `previous_top` entirely and enriches every preliminary
+candidate — see `pipeline/fetch_advisor.py`. Two tests in
+`pipeline/tests/test_fetch_advisor.py` lock this down:
 
-The last published refresh is a **fast** intraday refresh: it re-polls ~111 of 921 names and
-carries every other row forward stale. Measured on that artifact, 288 of 290 unenriched rows
-are carry-forwards, so "not statement-enriched" would mostly mean "not re-polled this cycle" —
-a different thing entirely, and one that inflates the apparent gate footprint.
+- `test_full_universe_research_cannot_let_previous_rank_leak_in` — a populated
+  `previous_top` (including a name that was never in the preliminary set at all) produces a
+  byte-identical priority ordering to an empty `previous_top`.
+- `test_full_universe_research_lifts_the_challenger_cap` — every preliminary candidate
+  becomes a challenger, not just 5.
 
-This analysis therefore runs against the most recent clean **full-universe** refresh
-(`2026-08-06T00:23:32Z`, 920 polled, 150 statement-enriched, zero carry-forwards), field-
-trimmed and committed at
-`pipeline/data/full_refresh_snapshots/advisor-2026-08-06T002332-full.json` so the result
-reproduces without network access. `enrichment_bias.py` refuses to score any payload whose
-rows are more than 5% carry-forwards rather than reporting a confounded number.
+This is **not** the default production path — one full-universe statement sweep is far more
+Yahoo requests per refresh than the standard incumbent+5 shortlist, and is meant for a
+dedicated research run, potentially spread across the GitHub Actions time budget over
+multiple invocations (the existing per-provider `cache.py` layer already avoids re-fetching a
+symbol enriched in an earlier run within the same day).
 
-## What the gate leaves behind
+## What was measured (offline, from the committed universe)
 
-378 published/screened names, 150 statement-enriched (39.7%).
+`pipeline/enrichment_bias.py` → `pipeline/reports/enrichment_bias.json`, computed entirely
+from `public/data/advisor.json` as committed — no network calls. Run it with
+`python pipeline/enrichment_bias.py`.
 
-| Category | Scored for | Coverage |
-|---|---:|---:|
-| valuation | 378 / 378 | 100% |
-| profitability | 378 / 378 | 100% |
-| growth | 378 / 378 | 100% |
-| financial_health | 345 / 378 | 91% |
-| **capital_allocation** | **150 / 378** | **40%** |
-| **accounting_quality** | **149 / 378** | **39%** |
+### Coverage by category
 
-### The structural finding
+| Category | `research` (40) | `screen_universe` (374) |
+|---|---|---|
+| `capital_allocation` | 40 / 40 | **84 / 374** |
+| `accounting_quality` | 40 / 40 | **84 / 374** |
+| `financial_health` | 39 / 40 | 335 / 374 |
+| `growth` | 40 / 40 | 372 / 374 |
+| `valuation` | 40 / 40 | 372 / 374 |
+| `profitability` | 40 / 40 | 372 / 374 |
 
-| Rank band | Statement-enriched |
-|---|---:|
-| Top 10 | 10 / 10 (100%) |
-| Top 20 | 20 / 20 (100%) |
-| Top 40 | 40 / 40 (100%) |
-| Top 100 | 100 / 100 (100%) |
-| Whole sample | 150 / 378 (39.7%) |
+`growth`/`valuation`/`profitability`/`financial_health` come from the cheap first pass every
+candidate gets. `capital_allocation` and `accounting_quality` require the statement fetch —
+and only 84 of 374 screen-universe names (the ones that were once incumbents or challengers)
+have ever cleared that bar. The other 290 are structurally locked out under the current
+selection rule, no matter how they'd actually score if enriched.
 
-**No unenriched name reaches the top 100.** Not a low rate — zero, out of 228 unenriched names.
-`capital_allocation` and `accounting_quality` are 20% of the fundamental weight, and for 60% of
-the published universe they cannot contribute at all. Those names are ranked on a strictly
-smaller evidence base than the names they are ranked against.
+### Enriched vs. non-enriched population (124 vs. 290 names)
 
-### What the score gap does *not* prove
+| | n | mean score | median score | stdev |
+|---|---|---|---|---|
+| Enriched (`capital_allocation` + `accounting_quality` populated) | 124 | 66.31 | 66.80 | 8.94 |
+| Non-enriched | 290 | 41.77 | 43.15 | 6.30 |
 
-Enriched names average **+25.29** score points over unenriched ones. That number is real but it
-is mostly circular, and reporting it as the cost of the defect would overstate the case.
-Enrichment is targeted at names the preliminary model already liked, so those names should look
-better on the categories that need no enrichment at all — and they do:
+A ~24.5-point gap. **This is not, by itself, evidence that enrichment causes higher scores.**
+`select_enrichment_priority` chooses its enrichment targets partly from the same preliminary
+fundamentals score being compared here — a name has to look decent on the cheap pass to earn
+a statement fetch in the first place. Part of the gap is selection-on-the-outcome. Separating
+"enrichment reveals real quality" from "enrichment targets were pre-selected for quality"
+requires scoring the full universe on equal footing, which is the blocked comparison below.
 
-| Category (needs no enrichment) | Enriched | Not enriched | Gap |
-|---|---:|---:|---:|
-| financial_health | 77.4 | 57.6 | +19.8 |
-| profitability | 73.5 | 54.2 | +19.3 |
-| growth | 69.1 | 56.5 | +12.6 |
-| valuation | 72.5 | 60.8 | +11.8 |
+Sector distribution shifts in the enriched population toward Technology and Financial
+Services and away from Industrials — consistent with, but not proof of, a selection effect
+rather than a sector-driven one.
 
-Most of the headline gap is selection, not suppression. The defect is real and structural; this
-particular statistic is not the evidence for it.
-
-Enrichment rate also varies sharply by sector — Energy 71%, Financial Services 67%, Basic
-Materials 19%, Consumer Defensive 17% — so the gate tilts sector composition as well as rank.
+Market-cap comparison is marked `not_measurable`: `market_cap` is populated only on the 40
+published research rows in this dataset. The screen universe — where the entire
+non-enriched population lives — does not carry it at all, so any enriched-vs-non-enriched
+market-cap comparison from committed data would mean fabricating the missing side.
 
 ## What remains blocked
 
-The decisive comparison — run the universe unseeded, then measure top-40 and top-100 overlap,
-Spearman rank correlation, which unconstrained top-40 names never entered the production
-shortlist, and their forward returns — needs a live enrichment pass over ~900 names. This
-environment has no route to any market-data provider.
+| Measure | Status | Resolver |
+|---|---|---|
+| Full-universe top-40 overlap vs. production top-40 | `blocked_network_policy` | `FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py` |
+| Spearman rank correlation, full-universe-enriched vs. production score | `blocked_network_policy` | same |
+| Forward-return delta of full-universe-only discoveries | `blocked_network_policy` | same, plus 63 sessions of subsequent price history |
 
-```bash
-FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py
-python pipeline/enrichment_bias.py   # re-run to populate unconstrained_comparison
-```
-
-`FULL_UNIVERSE_RESEARCH=true` is implemented and tested this session: it ignores the previous
-ranking entirely, lifts the challenger cap, and sets the statement budget to the universe size
-(`ADVISOR_EXTENDED_LIMIT` still wins if set, so the run can be sliced across several jobs to
-fit the Actions budget). The test suite asserts that a populated `previous_top` and an empty
-one produce byte-identical selections in research mode — the bias cannot leak in by
-construction, not merely by convention. It is not the default production path.
-
-## How much this matters
-
-Less than it would have before `docs/P0-Q1-BENCHMARK.md`. That regression found no residual
-alpha after controlling for the six factors this model targets (annualized alpha −2.57%,
-Newey-West |t| = 0.437). A gate that starves an alpha-generating process of its best inputs is
-a serious defect; a gate that starves a process not yet shown to generate alpha is a
-correctness problem whose payoff is unproven. Fix it because the ranking should mean what it
-claims to mean, not because there is a demonstrated edge waiting behind it.
+Registered in `pipeline/reports/experiment_registry.json` as `pending_data` with this exact
+reproduction command — see `docs/ALGORITHM-RESEARCH-RESULTS.md`.

@@ -125,17 +125,35 @@ describe('DiagnosticsPanel', () => {
 })
 
 describe('CostPanel', () => {
-  it('shows turnover, the assumed rate, and the breakeven', () => {
-    render(<CostPanel panel={{
-      status: 'measured',
-      realized_turnover: { mean_monthly: 0.649 },
-      published_assumption: { one_way_bps: 10, net_annualized_return: 0.1033,
-        implied_gross_annualized_return: 0.1111 },
-      threshold_check: { breakeven_one_way_bps: 35.7, interpretation: 'the floor does not cross' },
-    }} />)
+  const panel = {
+    status: 'measured',
+    turnover: { rebalances: 60, mean_turnover: 0.6492 },
+    realized_flat_10bps: { cost_bps: 10, cagr: 0.111423 },
+    scenarios: [
+      { scenario: 'gross', cost_bps: 0, total_cost: 0, drag_vs_realized_flat: -4522.44 },
+      { scenario: 'stress', cost_bps: 25, total_cost: 11306.05, drag_vs_realized_flat: 6783.61 },
+    ],
+    never_present_gross_as_net: 'Gross is shown only as an upper bound, never as an outcome.',
+  }
+
+  it('shows realized turnover and the published rate', () => {
+    render(<CostPanel panel={panel} />)
     expect(screen.getByText('64.9%')).toBeInTheDocument()
-    expect(screen.getByText('35.7 bps')).toBeInTheDocument()
-    expect(screen.getByText(/the floor does not cross/)).toBeInTheDocument()
+    expect(screen.getByText('60')).toBeInTheDocument()
+    expect(screen.getByText('11.14%')).toBeInTheDocument()
+  })
+
+  it('prices every scenario against the published flat rate', () => {
+    render(<CostPanel panel={panel} />)
+    expect(screen.getByText('Gross')).toBeInTheDocument()
+    expect(screen.getByText('Stress')).toBeInTheDocument()
+    expect(screen.getByText('25.00 bps')).toBeInTheDocument()
+    expect(screen.getByText('+$6,784')).toBeInTheDocument()
+  })
+
+  it('carries the warning against reading gross as an outcome', () => {
+    render(<CostPanel panel={panel} />)
+    expect(screen.getByText(/never as an outcome/)).toBeInTheDocument()
   })
 })
 

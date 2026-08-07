@@ -1,97 +1,74 @@
-import json
 import os
 import sys
-import tempfile
 import unittest
+from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from validation import trading_calendar
-from validation.trading_calendar import TradingCalendarUnavailable
+from validation.trading_calendar import TradingCalendar, load_sessions
 
 
-def _source(dates):
-    """Write a minimal SPY.json-shaped payload and return its path."""
-    handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
-    json.dump({"price_series": {"fund": [{"date": date} for date in dates]}}, handle)
-    handle.close()
-    return handle.name
+def _synthetic_sessions(start, end, holidays):
+    """Every weekday between start and end, minus a handful of holidays -- a realistic
+    stand-in for "63 trading sessions" spanning more than 63 calendar days.
+    """
+    sessions = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5 and current not in holidays:
+            sessions.append(current)
+        current += timedelta(days=1)
+    return sessions
 
 
-class SessionSeriesTests(unittest.TestCase):
-    def test_committed_series_supplies_a_long_real_session_history(self):
-        sessions = trading_calendar.sessions()
+class TradingCalendarTests(unittest.TestCase):
+    def setUp(self):
+        self.holidays = {date(2026, 1, 1), date(2026, 1, 19), date(2026, 2, 16),
+                         date(2026, 4, 3), date(2026, 5, 25), date(2026, 6, 19),
+                         date(2026, 7, 3), date(2026, 9, 7), date(2026, 10, 12),
+                         date(2026, 11, 11), date(2026, 11, 26), date(2026, 12, 25)}
+        self.sessions = _synthetic_sessions(date(2026, 1, 1), date(2026, 12, 31), self.holidays)
+        self.calendar = TradingCalendar(self.sessions)
+
+    def test_63_sessions_do_not_equal_91_calendar_days(self):
+        start = date(2026, 1, 5)
+        session_target = self.calendar.add_sessions(start, 63)
+        calendar_day_target = start + timedelta(days=91)
+        # A naive "add 91 calendar days" stand-in for "63 trading days" is exactly the bug
+        # this module fixes: weekends and holidays inside the window push the real session
+        # target later than that fixed-day approximation.
+        self.assertNotEqual(session_target, calendar_day_target)
+        self.assertGreater(session_target, calendar_day_target)
+
+    def test_a_holiday_is_never_returned_as_a_session_target(self):
+        # Choose a start where the naive +N-weekday count would land on Presidents' Day.
+        target = self.calendar.add_sessions(date(2026, 2, 2), 10)
+        self.assertNotIn(target, self.holidays)
+
+    def test_index_of_a_weekend_start_rolls_forward_to_the_next_session(self):
+        saturday = date(2026, 1, 3)
+        index = self.calendar.index_of(saturday)
+        self.assertEqual(self.calendar.sessions[index], date(2026, 1, 5))
+
+    def test_horizon_running_off_the_end_of_history_returns_none_not_an_extrapolation(self):
+        result = self.calendar.add_sessions(date(2026, 12, 30), 10)
+        self.assertIsNone(result)
+
+    def test_empty_calendar_is_rejected(self):
+        with self.assertRaises(ValueError):
+            TradingCalendar([])
+
+
+class LoadSessionsFromCommittedDataTests(unittest.TestCase):
+    def test_loads_the_committed_spy_history(self):
+        sessions = load_sessions()
         self.assertGreater(len(sessions), 8000)
-        self.assertEqual(sessions, tuple(sorted(sessions)))
-        self.assertEqual(len(set(sessions)), len(sessions))
+        self.assertEqual(sessions, sorted(sessions))
+        self.assertEqual(len(sessions), len(set(sessions)))
 
-    def test_weekends_are_absent_from_the_series(self):
-        from datetime import date
-        sessions = trading_calendar.sessions()
-        weekend = [day for day in sessions[-500:]
-                   if date.fromisoformat(day).weekday() >= 5]
-        self.assertEqual(weekend, [])
-
-    def test_a_missing_source_reports_unavailable_rather_than_degrading(self):
-        """Silently falling back to calendar days is the defect this module removes."""
-        with self.assertRaises(TradingCalendarUnavailable):
-            trading_calendar.sessions("/nonexistent/spy.json")
-        self.assertFalse(trading_calendar.is_available("/nonexistent/spy.json"))
-
-    def test_a_too_short_series_is_rejected(self):
-        path = _source([f"2024-01-{day:02d}" for day in range(1, 29)])
-        try:
-            with self.assertRaises(TradingCalendarUnavailable):
-                trading_calendar.sessions(path)
-        finally:
-            os.unlink(path)
-
-
-class AdvanceTests(unittest.TestCase):
-    def test_advance_counts_sessions_not_days(self):
-        self.assertEqual(trading_calendar.advance("2024-01-02", 1), "2024-01-03")
-        # 2024-01-06/07 is a weekend, so five sessions from the 2nd lands on the 9th.
-        self.assertEqual(trading_calendar.advance("2024-01-02", 5), "2024-01-09")
-
-    def test_advance_from_a_non_session_starts_at_the_next_session(self):
-        # 2024-01-06 is a Saturday; the next session is Monday the 8th.
-        self.assertEqual(trading_calendar.advance("2024-01-06", 0), "2024-01-08")
-
-    def test_advance_past_the_end_of_the_calendar_returns_none(self):
-        last = trading_calendar.sessions()[-1]
-        self.assertIsNone(trading_calendar.advance(last, 1))
-
-    def test_zero_sessions_is_the_next_session_on_or_after_the_date(self):
-        self.assertEqual(trading_calendar.advance("2024-01-02", 0), "2024-01-02")
-
-
-class SpanTests(unittest.TestCase):
-    def test_sessions_between_is_exclusive_of_start_and_inclusive_of_end(self):
-        self.assertEqual(trading_calendar.sessions_between("2024-01-02", "2024-01-02"), 0)
-        self.assertEqual(trading_calendar.sessions_between("2024-01-02", "2024-01-03"), 1)
-
-    def test_advance_and_sessions_between_are_inverses(self):
-        for start in ("2015-02-17", "2019-11-01", "2022-07-05", "2024-03-15"):
-            for count in (21, 63, 126, 252):
-                with self.subTest(start=start, count=count):
-                    end = trading_calendar.advance(start, count)
-                    self.assertEqual(trading_calendar.sessions_between(start, end), count)
-
-    def test_median_calendar_span_matches_the_old_calendar_day_horizons(self):
-        """Why the bug was invisible: the medians are exactly the old constants."""
-        self.assertEqual(trading_calendar.calendar_days_for_sessions(21), 30)
-        self.assertEqual(trading_calendar.calendar_days_for_sessions(63), 91)
-        self.assertEqual(trading_calendar.calendar_days_for_sessions(126), 182)
-        self.assertEqual(trading_calendar.calendar_days_for_sessions(252), 365)
-
-    def test_a_fixed_calendar_day_horizon_spans_a_varying_number_of_sessions(self):
-        """And why it mattered: the same 91 days is not always 63 sessions."""
-        from datetime import date, timedelta
-        spans = set()
-        for start in ("2022-01-03", "2022-06-01", "2023-03-01", "2023-11-01", "2024-09-03"):
-            end = (date.fromisoformat(start) + timedelta(days=91)).isoformat()
-            spans.add(trading_calendar.sessions_between(start, end))
-        self.assertGreater(len(spans), 1, "expected calendar-day horizons to drift in sessions")
+    def test_missing_source_raises_rather_than_returning_an_empty_calendar(self):
+        with self.assertRaises(FileNotFoundError):
+            load_sessions("etf/DOES_NOT_EXIST.json", loader=lambda name: None)
 
 
 if __name__ == "__main__":

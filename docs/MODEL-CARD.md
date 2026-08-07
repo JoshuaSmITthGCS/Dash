@@ -78,7 +78,7 @@ carrying a real Verdict D caveat because the contract's own target has never bee
 Do not present SPY outperformance as this model's objective.
 
 The forecast target is now implemented as specified: 63 **trading sessions**, sector-residual,
-preregistered as primary. Deflation uses the honest trial count (47 variants across 12
+preregistered as primary. Deflation uses the honest trial count (44 variants across 12
 experiments, `pipeline/reports/experiment_registry.json`), not the 5 configured shadow
 strategies.
 

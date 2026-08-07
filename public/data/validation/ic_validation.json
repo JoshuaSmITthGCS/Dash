@@ -1,28 +1,16 @@
 {
-  "schema_version": 2,
-  "generated_at": "2026-08-07T14:37:43.212154+00:00",
+  "schema_version": 1,
+  "generated_at": "2026-08-07T12:05:59.333201+00:00",
   "data_integrity": "prospective_point_in_time",
-  "forecast_target": {
-    "primary_horizon": "3M",
-    "primary_horizon_sessions": 63,
-    "target": "residual_forward_return",
-    "definition": "stock total return over N trading sessions minus the equal-weight mean return of its own sector over the same window",
-    "horizon_basis": "trading_sessions",
-    "secondary_horizons": [
-      "1M",
-      "6M",
-      "12M"
-    ],
-    "secondary_horizons_are_diagnostic_only": true,
-    "trading_calendar_available": true
-  },
   "reconstructed_history": {
     "included": false,
     "label": "reconstructed, look-ahead contaminated"
   },
-  "snapshot_refreshes": 8,
+  "snapshot_refreshes": 10,
   "monthly_score_snapshots": 1,
-  "variants": {
+  "primary_horizon": "3M",
+  "primary_target": "sector_residual_return_over_trading_sessions",
+  "primary_variants": {
     "champion": {
       "1M": {
         "periods_accumulated": 0,
@@ -38,10 +26,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 21,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -123,7 +107,812 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      },
+      "3M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      },
+      "6M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      },
+      "12M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      }
+    },
+    "challenger": {
+      "1M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      },
+      "3M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      },
+      "6M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      },
+      "12M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
+        "deflated_sharpe_probability": null,
+        "mean_top_quintile_turnover": null,
+        "mean_rank_stability": null,
+        "sector_residual_fallback_rows": 0
+      }
+    }
+  },
+  "variants": {
+    "champion": {
+      "1M": {
+        "periods_accumulated": 0,
+        "minimum_periods": 24,
+        "status": "accumulating",
+        "status_message": "accumulating, 0 of 24 periods",
+        "mean_rank_ic": null,
+        "ic_standard_deviation": null,
+        "standard_error": null,
+        "confidence_interval_95": [
+          null,
+          null
+        ],
+        "icir": null,
+        "annualized_icir": null,
+        "monthly_rank_ic": [],
+        "probable_lookahead_flags": [],
+        "bucket_returns": {
+          "5": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          },
+          "10": {
+            "buckets": [
+              {
+                "bucket": 1,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 2,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 3,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 4,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 5,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 6,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 7,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 8,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 9,
+                "mean_forward_return": null
+              },
+              {
+                "bucket": 10,
+                "mean_forward_return": null
+              }
+            ],
+            "monotonicity_spearman": null,
+            "monotonic": false
+          }
+        },
+        "long_short_top_minus_bottom_quintile": {
+          "mean_net_return": null,
+          "cost_model": "flat",
+          "cost_bps": 10.0
+        },
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -142,10 +931,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 63,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -227,7 +1012,6 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -246,10 +1030,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 126,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -331,7 +1111,6 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -350,10 +1129,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 252,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -435,7 +1210,6 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -456,10 +1230,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 21,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -541,7 +1311,6 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -560,10 +1329,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 63,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -645,7 +1410,6 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -664,10 +1428,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 126,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -749,7 +1509,6 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
@@ -768,10 +1527,6 @@
         ],
         "icir": null,
         "annualized_icir": null,
-        "target": "residual_forward_return",
-        "horizon_sessions": 252,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -853,44 +1608,40 @@
           "cost_model": "flat",
           "cost_bps": 10.0
         },
-        "trials_considered": 47,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": null,
         "mean_rank_stability": null
       }
     }
   },
+  "variants_label": "calendar_day_horizon_raw_return_secondary_diagnostic",
   "comparison": {
     "1M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false,
-      "primary": false
+      "eligible": false
     },
     "3M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false,
-      "primary": true
+      "eligible": false
     },
     "6M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false,
-      "primary": false
+      "eligible": false
     },
     "12M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false,
-      "primary": false
+      "eligible": false
     }
   },
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "52ff7ae8d25086b018c2b59bc91b68fdef870dde",
-    "config_hash": "010ba10ca6c6befc28cb866e67deedb401b7f412ca7f1615ec0cfffdbc57a21e",
-    "generated_at": "2026-08-07T14:37:43.212154+00:00"
+    "git_commit_sha": "dd8c0b2c564003cd31875fc2c459cb123d0f2a42",
+    "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
+    "generated_at": "2026-08-07T12:05:59.333201+00:00"
   }
 }

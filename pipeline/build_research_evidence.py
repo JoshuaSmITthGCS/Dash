@@ -29,7 +29,7 @@ REPORTS_DIR = os.path.join(HERE, "reports")
 PUBLIC_NAME = "validation/research_evidence.json"
 
 SOURCES = {
-    "benchmarks": "benchmark_comparison.json",
+    "benchmarks": "benchmark_alpha_regressions.json",
     "diagnostics": "strategy_diagnostics.json",
     "costs": "cost_sensitivity.json",
     "calibration": "score_calibration.json",
@@ -122,13 +122,21 @@ def diagnostics_panel(report):
 def cost_panel(report):
     if not report:
         return _missing(SOURCES["costs"])
+    scenarios = report.get("scenarios") or {}
+    flat = report.get("realized_flat_10bps") or {}
     return {
         "status": "measured",
-        "realized_turnover": report.get("realized_turnover"),
-        "published_assumption": report.get("published_assumption"),
-        "threshold_check": report.get("threshold_check"),
-        "rates_are_a_floor": report.get("rates_are_a_floor"),
-        "unresolved": report.get("unresolved"),
+        "turnover": report.get("turnover"),
+        "realized_flat_10bps": flat,
+        "scenarios": [
+            {"scenario": name,
+             "cost_bps": block.get("cost_bps"),
+             "total_cost": block.get("total_cost"),
+             "drag_vs_realized_flat": block.get("cost_drag_vs_realized_flat_10bps")}
+            for name, block in scenarios.items()
+        ],
+        "per_name_liquidity_legs": report.get("per_name_liquidity_legs"),
+        "never_present_gross_as_net": report.get("never_present_gross_as_net"),
     }
 
 
@@ -151,9 +159,15 @@ def experiment_panel(report):
         return _missing(SOURCES["experiments"])
     return {
         "status": "measured",
-        "summary": report.get("summary"),
+        "summary": {
+            "experiments": report.get("total_experiments"),
+            "total_variants_tested": report.get("total_variants_tested"),
+            "by_decision": report.get("by_decision"),
+            "promoted_to_champion": [item["id"] for item in report.get("experiments", [])
+                                     if item.get("decision") == "PROMOTE"],
+        },
         "experiments": [
-            {key: item[key] for key in
+            {key: item.get(key) for key in
              ("id", "hypothesis", "category", "result", "decision", "reason",
               "number_of_variants_tested")}
             for item in report.get("experiments", [])
@@ -164,13 +178,13 @@ def experiment_panel(report):
 def enrichment_panel(report):
     if not report:
         return _missing(SOURCES["enrichment"])
-    footprint = report.get("observed_footprint") or {}
+    comparison = report.get("full_universe_comparison") or {}
     return {
-        "status": footprint.get("status", "measured"),
-        "source_universe_mode": report.get("source_universe_mode"),
-        "category_coverage": footprint.get("category_coverage"),
-        "rank_concentration": footprint.get("rank_concentration"),
-        "interpretation": report.get("interpretation"),
+        "status": "measured",
+        "coverage_by_collection": report.get("coverage_by_collection"),
+        "enriched_vs_non_enriched": report.get("enriched_vs_non_enriched"),
+        "unconstrained_comparison_status": comparison.get("status"),
+        "method": report.get("method"),
     }
 
 

@@ -9,12 +9,12 @@ from confidence import confidence_components, historical_calibration_component
 
 
 def rows(count, score, outcome=0.02):
-    return [{"score": score, "residual_forward_return": outcome} for _ in range(count)]
+    return [{"score": score, sc.TARGET_FIELD: outcome} for _ in range(count)]
 
 
 def mixed(count, score, positive_share=0.6):
     positives = int(count * positive_share)
-    return [{"score": score, "residual_forward_return": 0.03 if index < positives else -0.02}
+    return [{"score": score, sc.TARGET_FIELD: 0.03 if index < positives else -0.02}
             for index in range(count)]
 
 
@@ -46,7 +46,7 @@ class GateTests(unittest.TestCase):
         self.assertEqual(bucket["observations"], sc.MINIMUM_BUCKET_OBSERVATIONS)
 
     def test_observations_missing_an_outcome_do_not_count_toward_the_minimum(self):
-        incomplete = [{"score": 82.0, "residual_forward_return": None}
+        incomplete = [{"score": 82.0, sc.TARGET_FIELD: None}
                       for _ in range(sc.MINIMUM_BUCKET_OBSERVATIONS)]
         self.assertEqual(sc.summarize_bucket("test", incomplete)["status"], "insufficient_data")
 
@@ -65,7 +65,7 @@ class MeasurementTests(unittest.TestCase):
                            bucket["beat_sector_rate"])
 
     def test_adaptive_buckets_split_by_equal_count_not_equal_width(self):
-        observations = [{"score": float(index), "residual_forward_return": 0.01}
+        observations = [{"score": float(index), sc.TARGET_FIELD: 0.01}
                         for index in range(100)]
         buckets = sc.adaptive_buckets(observations, count=5)
         self.assertEqual(len(buckets), 5)
@@ -120,6 +120,32 @@ class LiveHarnessTests(unittest.TestCase):
         self.assertEqual(report["status"], "insufficient_data")
         self.assertFalse(report["publishable_to_confidence_detail"])
         self.assertIn("EDGAR", report["what_would_populate_this"])
+
+    def test_calibration_reads_the_harness_primary_path_not_the_raw_diagnostic(self):
+        """Guards a silent mismatch: with no data, reading the wrong path also returns [].
+
+        The harness keeps a calendar-day, raw-return diagnostic beside the preregistered
+        sector-residual/session path. Calibrating against the diagnostic would attach outcome
+        statistics to a label the contract does not preregister -- and because both return
+        nothing while the store is empty, the mistake is invisible until real data arrives.
+        This pins the field and the horizon unit instead.
+        """
+        import inspect
+
+        source = inspect.getsource(sc.observations_from_harness)
+        self.assertIn("_forward_periods_sessions", source)
+        self.assertNotIn("_forward_periods(", source)
+        self.assertEqual(sc.TARGET_FIELD, "sector_residual_return")
+
+    def test_target_field_matches_the_harness_contract(self):
+        """A rename in the harness must break this loudly, not silently zero the buckets."""
+        from validation.ic_harness import sector_residual_returns
+
+        residualized = sector_residual_returns([
+            {"ticker": t, "score": 60.0, "forward_return": r, "sector": "Tech"}
+            for t, r in (("A", 0.10), ("B", 0.20), ("C", 0.30))
+        ])
+        self.assertIn(sc.TARGET_FIELD, residualized[0])
 
 
 

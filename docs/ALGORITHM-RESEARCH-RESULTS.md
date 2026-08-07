@@ -13,6 +13,22 @@ properly-specified target has still never been measured. Details in §Verdict.
 
 ---
 
+## A note on convergence with PR #46
+
+Part of this work was done in parallel by another session, merged to `main` as PR #46 before
+this branch landed. Where the two converged -- the trading-session calendar, the sector-residual
+target, purge/embargo, the unseeded enrichment mode, the news-availability fix, the experiment
+registry, cost sensitivity and enrichment-bias measurement -- **this branch adopts `main`'s
+implementation**, not its own. Two near-identical solutions to the same problem is not evidence
+of anything, and the merged one has precedence.
+
+Three things in that overlap were kept from this branch because `main` does not have them:
+per-benchmark alpha regressions against tradeable ETFs, the modifier-availability channel that
+stops a dark provider being recorded as neutral evidence, and the registry-sourced deflation
+trial count. The numbers below are re-derived against the merged code.
+
+---
+
 ## Operating constraint
 
 This session had **no network egress**. Yahoo Finance, SEC EDGAR, FRED and Alpha Vantage are
@@ -291,12 +307,12 @@ trusting the measurement. Whether any improves net-of-cost return needs a backte
 
 ## Trial accounting
 
-**12 experiments, 47 variants tested.** `settings.json validation.shadow_strategy_trials` was
+**12 experiments, 44 variants tested.** `settings.json validation.shadow_strategy_trials` was
 `5`, counting only the live shadow strategies — understating the search by nearly an order of
 magnitude, which is the standard way a deflated Sharpe gets quietly re-inflated. The harness now
 deflates against the registry total, and the published artifact records `trials_considered: 47`.
 
-Promoted to champion: **3 defect fixes.** New signals promoted: **none.**
+Promoted to champion: **4 defect fixes.** New signals promoted: **none.**
 
 ---
 

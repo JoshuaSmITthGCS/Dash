@@ -29,9 +29,9 @@ more depth.
   `insufficient_data` for every bucket and `confidence_detail.historical_calibration` stays
   null. A score of 84 is a rank, not a statement about historical outcomes
   (`docs/ALGORITHM-RESEARCH-RESULTS.md` §11).
-- **No promotion has occurred.** Three defect fixes shipped to the champion; no new signal has
-  been promoted, and 47 variants have been tried across 12 experiments
-  (`pipeline/reports/experiment_registry.json`).
+- **No signal has been promoted.** The four PROMOTE decisions in the registry are all defect
+  fixes to existing behaviour, not new evidence; 44 variants have been tried across 12
+  experiments (`pipeline/reports/experiment_registry.json`).
 - **The only measured evidence points to a factor tilt, not alpha.** Six-factor annualized
   alpha −2.57% at Newey-West |t| = 0.437; none of 14 tradeable benchmarks beaten with
   significant alpha. That evidence comes from a survivorship-biased five-year backtest using

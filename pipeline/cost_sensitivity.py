@@ -1,205 +1,157 @@
-"""How much of the strategy's return does turning the book over consume?
+"""B3 — cost sensitivity report, built entirely from committed data.
 
-`docs/P0-REPAIRS.md` WO-3 wired `costs.py` into the backtest and the IC harness but could not
-answer the question the brief called "the single most important number in this phase": whether
-a realistic tiered cost model wipes out more than 200bps of annual return relative to the flat
-10bps the published backtest assumed. Answering it exactly needs a full re-run with per-name
-liquidity, which needs network access.
+``costs.py`` (WO-3) is already wired into ``backtest_monthly.py`` and ``ic_harness.py``. What
+was missing is a report that actually shows the sensitivity. Re-running the backtest itself
+under each cost regime needs each traded name's 5-year daily price/volume history, which is
+not committed (``pipeline/data/backtest_cache/`` is empty) and cannot be fetched under this
+session's network policy -- see ``pipeline/reports/cost_regime_comparison.json`` for that
+blocked leg.
 
-It does not need network access to answer it *approximately*, and the approximation is tight,
-because the published backtest already records what actually drives the answer: the realized
-turnover of every one of the 60 rebalances. Cost drag is
-``turnover x one-way rate``, so re-pricing the same realized trading at a different rate is
-arithmetic on committed data, not a simulation.
+What *is* real: every one of the 60 monthly rebalances in
+``pipeline/backtest_monthly_results.json`` already stores its realized ``turnover`` and the
+dollar ``cost`` actually charged under the flat 10bps model
+(``cost = value_before * turnover * bps / 10000``). Because that formula is linear in bps,
+``value_before`` is recoverable exactly from the two numbers already on each rebalance
+(``value_before = cost / (turnover * 10 / 10000)``), without needing any price data. That
+lets every rebalance be re-priced at a different flat bps rate -- gross (0bps) and the
+optimistic/base/stress spread-only rates ``costs.estimate_cost_bps`` returns when no per-name
+liquidity is available (conservative illiquid-tier spread, zero market impact, since impact
+needs a trade size and per-name volatility this dataset does not carry).
 
-What this cannot do is derive the correct rate per name -- that needs each traded name's own
-median dollar volume and realized volatility. So instead of inventing those, this prices the
-recorded turnover across the full range of rates `costs.py` can produce, from its most
-optimistic liquid-name assumption to its stress illiquid one, and reports where the 200bps
-threshold falls. The reader can then locate the strategy's actual book within that range.
-
-Usage: python pipeline/cost_sensitivity.py
-Output: pipeline/reports/cost_sensitivity.json
+What this does NOT do, stated plainly: it re-prices each historical trade at a different
+rate holding the realized portfolio-value path fixed. It does not re-simulate the
+compounding effect of a higher-cost regime on smaller future trade sizes -- that requires
+the full backtest re-run, which is the blocked leg. This is a sensitivity estimate on the
+already-realized trade sequence, not a new simulated one.
 """
 
 import json
 import os
-import sys
-from statistics import mean, median
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-if HERE not in sys.path:
-    sys.path.insert(0, HERE)
+from costs import estimate_cost_bps
 
-from costs import IMPACT_SCENARIOS, SPREAD_PROXY_BPS_BY_LIQUIDITY_TIER, estimate_cost_bps  # noqa: E402
-from strategy_diagnostics import _annualized  # noqa: E402
-from p0_q1_benchmark_factor_report import monthly_returns  # noqa: E402
-
+HERE = os.path.dirname(__file__)
+REPORT_PATH = os.path.join(HERE, "reports", "cost_sensitivity.json")
 BACKTEST_PATH = os.path.join(HERE, "backtest_monthly_results.json")
-OUT_PATH = os.path.join(HERE, "reports", "cost_sensitivity.json")
-
-PERIODS_PER_YEAR = 12
-PUBLISHED_RATE_BPS = 10.0
-THRESHOLD_BPS_OF_ANNUAL_RETURN = 200.0
-
-# Median dollar volumes standing in for each liquidity tier, used only to read the rate
-# costs.py assigns to that tier -- not to claim the strategy's book sits at any of them.
-TIER_PROBES = {"liquid": 200_000_000.0, "thin": 12_000_000.0, "illiquid": 2_000_000.0}
+FLAT_BPS_REALIZED = 10.0  # the rate pipeline/backtest_monthly_results.json was actually run at
+SCENARIOS = ("gross", "optimistic", "base", "stress")
 
 
-def realized_turnover(rebalances):
-    values = [row["turnover"] for row in rebalances if row.get("turnover") is not None]
-    return {
-        "rebalances": len(values),
-        "mean_monthly": round(mean(values), 4) if values else None,
-        "median_monthly": round(median(values), 4) if values else None,
-        "annualized": round(mean(values) * PERIODS_PER_YEAR, 3) if values else None,
-    }
-
-
-def annual_drag_bps(mean_turnover, one_way_bps):
-    """Annual return given up to trading, in basis points.
-
-    The backtest charges ``value * turnover * bps / 10000`` per rebalance, so annual drag is
-    ``mean_turnover * bps * 12``. This reproduces that identity rather than re-deriving it.
+def _scenario_bps():
+    """Spread-only bps per scenario (no per-name liquidity/volatility available, so impact
+    is necessarily zero -- costs.py itself falls back to the conservative illiquid tier's
+    spread proxy when median_dollar_volume_60d is None, never a fabricated tighter number).
     """
-    return mean_turnover * one_way_bps * PERIODS_PER_YEAR
+    bps = {"gross": 0.0}
+    for scenario in ("optimistic", "base", "stress"):
+        estimate = estimate_cost_bps(median_dollar_volume_60d=None, scenario=scenario)
+        bps[scenario] = estimate["total_bps"]
+    return bps
 
 
-def tier_rates():
-    """The one-way rate costs.py assigns per liquidity tier and scenario.
-
-    No volatility is supplied, so these are spread plus fees only -- market impact scales
-    with a name's realized volatility, which this environment cannot observe. That makes
-    every figure here a *floor*, and it is labelled as one rather than presented as the
-    answer.
+def reprice_rebalance(rebalance, bps):
+    """value_before recovered from the known flat-10bps cost actually charged, then the
+    same trade re-priced at ``bps``. turnover == 0 costs nothing at any rate.
     """
-    return {
-        scenario: {
-            tier: round(estimate_cost_bps(median_dollar_volume_60d=volume,
-                                          scenario=scenario)["total_bps"], 2)
-            for tier, volume in TIER_PROBES.items()
-        }
-        for scenario in IMPACT_SCENARIOS
-    }
+    turnover = rebalance.get("turnover") or 0.0
+    cost = rebalance.get("cost") or 0.0
+    if turnover <= 0:
+        return 0.0, 0.0
+    value_before = cost / (turnover * FLAT_BPS_REALIZED / 10_000) if cost else None
+    if value_before is None:
+        return None, turnover
+    return round(value_before * turnover * bps / 10_000, 2), turnover
+
+
+def _load_backtest():
+    with open(BACKTEST_PATH) as handle:
+        return json.load(handle)
 
 
 def build_report(backtest=None):
-    if backtest is None:
-        with open(BACKTEST_PATH, encoding="utf-8") as handle:
-            backtest = json.load(handle)
-    portfolio = backtest["portfolio"]
-    rebalances = portfolio["rebalances"]
-    turnover = realized_turnover(rebalances)
-    dates = [row["date"] for row in portfolio["history"]]
-    values = [row["value"] for row in portfolio["history"]]
-    monthly = monthly_returns(dates, values)
-    net_return = _annualized([monthly[month] for month in sorted(monthly)])
+    backtest = backtest or _load_backtest()
+    rebalances = (backtest.get("portfolio") or {}).get("rebalances") or []
+    metrics = (backtest.get("portfolio") or {}).get("metrics") or {}
+    scenario_bps = _scenario_bps()
 
-    published_drag = annual_drag_bps(turnover["mean_monthly"], PUBLISHED_RATE_BPS)
-    gross_return = net_return + published_drag / 10_000
-
-    rates = tier_rates()
-    scenarios = {}
-    for scenario, by_tier in rates.items():
-        scenarios[scenario] = {
-            tier: {
-                "one_way_bps": rate,
-                "annual_drag_bps": round(annual_drag_bps(turnover["mean_monthly"], rate), 1),
-                "net_annualized_return": round(
-                    gross_return - annual_drag_bps(turnover["mean_monthly"], rate) / 10_000, 5),
-                "additional_drag_vs_published_bps": round(
-                    annual_drag_bps(turnover["mean_monthly"], rate) - published_drag, 1),
-                "exceeds_200bp_threshold": (
-                    annual_drag_bps(turnover["mean_monthly"], rate) - published_drag
-                    > THRESHOLD_BPS_OF_ANNUAL_RETURN),
-            }
-            for tier, rate in by_tier.items()
+    per_scenario = {}
+    for scenario, bps in scenario_bps.items():
+        costs_by_rebalance = []
+        total_cost = 0.0
+        for rebalance in rebalances:
+            cost, turnover = reprice_rebalance(rebalance, bps)
+            if cost is not None:
+                total_cost += cost
+            costs_by_rebalance.append({
+                "signal_date": rebalance.get("signal_date"),
+                "turnover": turnover,
+                "cost": cost,
+            })
+        per_scenario[scenario] = {
+            "cost_bps": bps,
+            "total_cost": round(total_cost, 2),
+            "cost_drag_vs_realized_flat_10bps": round(total_cost - metrics.get("estimated_transaction_cost", 0.0), 2),
         }
 
-    breakeven_rate = (PUBLISHED_RATE_BPS + THRESHOLD_BPS_OF_ANNUAL_RETURN
-                      / (turnover["mean_monthly"] * PERIODS_PER_YEAR))
-    worst_modelled_rate = max(rate for by_tier in rates.values() for rate in by_tier.values())
-    worst_additional = annual_drag_bps(turnover["mean_monthly"], worst_modelled_rate) - published_drag
+    turnovers = [rebalance.get("turnover") for rebalance in rebalances if isinstance(rebalance.get("turnover"), (int, float))]
     return {
-        "schema_version": 1,
-        "generated_at": backtest.get("generated_at"),
-        "source": "pipeline/backtest_monthly_results.json",
-        "method": ("re-prices the backtest's own recorded per-rebalance turnover at each rate "
-                   "costs.py can produce; annual drag = mean_monthly_turnover x one_way_bps x 12, "
-                   "which is the identity backtest_monthly.py already charges"),
-        "realized_turnover": turnover,
-        "published_assumption": {
-            "one_way_bps": PUBLISHED_RATE_BPS,
-            "annual_drag_bps": round(published_drag, 1),
-            "net_annualized_return": round(net_return, 5),
-            "implied_gross_annualized_return": round(gross_return, 5),
-            "share_of_gross_consumed": round((published_drag / 10_000) / gross_return, 4)
-            if gross_return else None,
+        "method": (
+            "Each rebalance's already-realized turnover and flat-10bps cost are used to "
+            "recover value_before (cost = value_before * turnover * bps / 10000, solved for "
+            "value_before), then re-priced at gross/optimistic/base/stress spread-only bps. "
+            "Holds the realized portfolio-value path fixed; does not re-simulate compounding "
+            "effects. No network calls."
+        ),
+        "realized_flat_10bps": {
+            "cost_bps": FLAT_BPS_REALIZED,
+            "total_cost": metrics.get("estimated_transaction_cost"),
+            "final_value": metrics.get("final_value"),
+            "cagr": metrics.get("cagr"),
         },
-        "cost_model_rates_by_tier": rates,
-        "rates_are_a_floor": ("no per-name realized volatility is available in this "
-                              "environment, so estimate_cost_bps prices spread and fees only "
-                              "and omits volatility-scaled market impact; every drag figure "
-                              "here is therefore a lower bound"),
-        "scenarios": scenarios,
-        "threshold_check": {
-            "question": ("does a realistic cost model give up more than 200bps of annual "
-                         "return relative to the published flat 10bps?"),
-            "breakeven_one_way_bps": round(breakeven_rate, 1),
-            "worst_modelled_one_way_bps": worst_modelled_rate,
-            "worst_modelled_additional_drag_bps": round(worst_additional, 1),
-            "verdict": ("not_crossed_by_the_spread_and_fee_floor"
-                        if worst_additional <= THRESHOLD_BPS_OF_ANNUAL_RETURN
-                        else "crossed"),
-            "interpretation": (
-                f"at {turnover['mean_monthly']:.1%} mean monthly turnover, any one-way rate "
-                f"above roughly {breakeven_rate:.0f}bps crosses the 200bps threshold. The most "
-                f"pessimistic rate this cost model produces without a volatility input is "
-                f"{worst_modelled_rate:.0f}bps (stress scenario, illiquid tier), giving up "
-                f"{worst_additional:.0f}bps a year more than the published flat 10bps -- under "
-                "the threshold. But these rates are spread and fees only; the volatility-scaled "
-                "market-impact term is omitted for want of per-name volatility, and adding it "
-                "could push an illiquid book past 36bps. So: the floor does not cross the "
-                "threshold, and the full model might. Turnover this high is a real cost "
-                "problem, just not yet a demonstrated 200bps one."),
+        "scenarios": per_scenario,
+        "turnover": {
+            "rebalances": len(rebalances),
+            "mean_turnover": round(sum(turnovers) / len(turnovers), 4) if turnovers else None,
+            "total_turnover": round(sum(turnovers), 4) if turnovers else None,
+            "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)",
         },
-        "unresolved": {
+        "per_name_liquidity_legs": {
             "status": "blocked_network_policy",
-            "what_is_missing": ("per-traded-name median dollar volume and realized volatility, "
-                                "which decide the tier and the impact term for each leg"),
-            "reproduction": [
-                "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario base "
-                "--out pipeline/reports/backtest_tiered_base.json",
-                "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario stress "
-                "--out pipeline/reports/backtest_tiered_stress.json",
-            ],
+            "measures": ["adv_participation_pct", "estimated_spread_bps_by_name",
+                        "estimated_market_impact_bps_by_name", "days_to_liquidate"],
+            "reason": (
+                "costs.estimate_cost_bps's tiered/impact legs need each traded name's own "
+                "median_dollar_volume_60d and annualized_volatility on the rebalance date. "
+                "pipeline/data/backtest_cache/ (per-name price/volume history) is empty in "
+                "this checkout, and this session's network policy blocks fetching it."
+            ),
+            "reproduction_command": (
+                "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario "
+                "{optimistic,base,stress} --out pipeline/reports/backtest_tiered_<scenario>.json"
+            ),
         },
+        "never_present_gross_as_net": True,
     }
 
 
-def main():
-    report = build_report()
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    with open(OUT_PATH, "w") as handle:
-        json.dump(report, handle, indent=2, sort_keys=True)
+def write_report(backtest=None, path=REPORT_PATH):
+    report = build_report(backtest)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    temporary = f"{path}.tmp"
+    with open(temporary, "w") as handle:
+        json.dump(report, handle, indent=2)
         handle.write("\n")
-    published = report["published_assumption"]
-    print(f"mean monthly turnover: {report['realized_turnover']['mean_monthly']:.1%}")
-    print(f"published 10bps: {published['annual_drag_bps']:.0f}bps/yr drag, "
-          f"net {published['net_annualized_return']:.2%}, "
-          f"implied gross {published['implied_gross_annualized_return']:.2%}")
-    for scenario, tiers in report["scenarios"].items():
-        parts = "  ".join(
-            f"{tier} {block['one_way_bps']:.0f}bps -> {block['annual_drag_bps']:.0f}bps/yr "
-            f"(net {block['net_annualized_return']:.2%})"
-            for tier, block in tiers.items())
-        print(f"{scenario:<11} {parts}")
-    check = report["threshold_check"]
-    print(f"200bps threshold crossed above ~{check['breakeven_one_way_bps']:.0f}bps one-way")
-    print(f"wrote {OUT_PATH}")
+    os.replace(temporary, path)
     return report
 
 
+def main():
+    report = write_report()
+    print(f"Wrote {REPORT_PATH}")
+    for scenario, detail in report["scenarios"].items():
+        print(f"  {scenario}: {detail['cost_bps']:.2f}bps, total_cost=${detail['total_cost']:.2f}")
+    return 0
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

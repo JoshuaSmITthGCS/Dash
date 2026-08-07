@@ -1,124 +1,49 @@
 {
-  "cost_model_rates_by_tier": {
-    "base": {
-      "illiquid": 12.5,
-      "liquid": 1.0,
-      "thin": 4.0
-    },
-    "optimistic": {
-      "illiquid": 6.25,
-      "liquid": 0.5,
-      "thin": 2.0
-    },
-    "stress": {
-      "illiquid": 25.0,
-      "liquid": 2.0,
-      "thin": 8.0
-    }
-  },
-  "generated_at": "2026-08-03T06:46:54.135869Z",
-  "method": "re-prices the backtest's own recorded per-rebalance turnover at each rate costs.py can produce; annual drag = mean_monthly_turnover x one_way_bps x 12, which is the identity backtest_monthly.py already charges",
-  "published_assumption": {
-    "annual_drag_bps": 77.9,
-    "implied_gross_annualized_return": 0.1111,
-    "net_annualized_return": 0.10331,
-    "one_way_bps": 10.0,
-    "share_of_gross_consumed": 0.0701
-  },
-  "rates_are_a_floor": "no per-name realized volatility is available in this environment, so estimate_cost_bps prices spread and fees only and omits volatility-scaled market impact; every drag figure here is therefore a lower bound",
-  "realized_turnover": {
-    "annualized": 7.79,
-    "mean_monthly": 0.6492,
-    "median_monthly": 0.6527,
-    "rebalances": 60
+  "method": "Each rebalance's already-realized turnover and flat-10bps cost are used to recover value_before (cost = value_before * turnover * bps / 10000, solved for value_before), then re-priced at gross/optimistic/base/stress spread-only bps. Holds the realized portfolio-value path fixed; does not re-simulate compounding effects. No network calls.",
+  "realized_flat_10bps": {
+    "cost_bps": 10.0,
+    "total_cost": 4522.44,
+    "final_value": 169478.08,
+    "cagr": 0.111423
   },
   "scenarios": {
-    "base": {
-      "illiquid": {
-        "additional_drag_vs_published_bps": 19.5,
-        "annual_drag_bps": 97.4,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.10137,
-        "one_way_bps": 12.5
-      },
-      "liquid": {
-        "additional_drag_vs_published_bps": -70.1,
-        "annual_drag_bps": 7.8,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.11032,
-        "one_way_bps": 1.0
-      },
-      "thin": {
-        "additional_drag_vs_published_bps": -46.7,
-        "annual_drag_bps": 31.2,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.10799,
-        "one_way_bps": 4.0
-      }
+    "gross": {
+      "cost_bps": 0.0,
+      "total_cost": 0.0,
+      "cost_drag_vs_realized_flat_10bps": -4522.44
     },
     "optimistic": {
-      "illiquid": {
-        "additional_drag_vs_published_bps": -29.2,
-        "annual_drag_bps": 48.7,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.10623,
-        "one_way_bps": 6.25
-      },
-      "liquid": {
-        "additional_drag_vs_published_bps": -74.0,
-        "annual_drag_bps": 3.9,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.11071,
-        "one_way_bps": 0.5
-      },
-      "thin": {
-        "additional_drag_vs_published_bps": -62.3,
-        "annual_drag_bps": 15.6,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.10955,
-        "one_way_bps": 2.0
-      }
+      "cost_bps": 6.25,
+      "total_cost": 2826.54,
+      "cost_drag_vs_realized_flat_10bps": -1695.9
+    },
+    "base": {
+      "cost_bps": 12.5,
+      "total_cost": 5653.03,
+      "cost_drag_vs_realized_flat_10bps": 1130.59
     },
     "stress": {
-      "illiquid": {
-        "additional_drag_vs_published_bps": 116.9,
-        "annual_drag_bps": 194.8,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.09163,
-        "one_way_bps": 25.0
-      },
-      "liquid": {
-        "additional_drag_vs_published_bps": -62.3,
-        "annual_drag_bps": 15.6,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.10955,
-        "one_way_bps": 2.0
-      },
-      "thin": {
-        "additional_drag_vs_published_bps": -15.6,
-        "annual_drag_bps": 62.3,
-        "exceeds_200bp_threshold": false,
-        "net_annualized_return": 0.10487,
-        "one_way_bps": 8.0
-      }
+      "cost_bps": 25.0,
+      "total_cost": 11306.05,
+      "cost_drag_vs_realized_flat_10bps": 6783.61
     }
   },
-  "schema_version": 1,
-  "source": "pipeline/backtest_monthly_results.json",
-  "threshold_check": {
-    "breakeven_one_way_bps": 35.7,
-    "interpretation": "at 64.9% mean monthly turnover, any one-way rate above roughly 36bps crosses the 200bps threshold. The most pessimistic rate this cost model produces without a volatility input is 25bps (stress scenario, illiquid tier), giving up 117bps a year more than the published flat 10bps -- under the threshold. But these rates are spread and fees only; the volatility-scaled market-impact term is omitted for want of per-name volatility, and adding it could push an illiquid book past 36bps. So: the floor does not cross the threshold, and the full model might. Turnover this high is a real cost problem, just not yet a demonstrated 200bps one.",
-    "question": "does a realistic cost model give up more than 200bps of annual return relative to the published flat 10bps?",
-    "verdict": "not_crossed_by_the_spread_and_fee_floor",
-    "worst_modelled_additional_drag_bps": 116.9,
-    "worst_modelled_one_way_bps": 25.0
+  "turnover": {
+    "rebalances": 60,
+    "mean_turnover": 0.6492,
+    "total_turnover": 38.9494,
+    "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)"
   },
-  "unresolved": {
-    "reproduction": [
-      "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario base --out pipeline/reports/backtest_tiered_base.json",
-      "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario stress --out pipeline/reports/backtest_tiered_stress.json"
-    ],
+  "per_name_liquidity_legs": {
     "status": "blocked_network_policy",
-    "what_is_missing": "per-traded-name median dollar volume and realized volatility, which decide the tier and the impact term for each leg"
-  }
+    "measures": [
+      "adv_participation_pct",
+      "estimated_spread_bps_by_name",
+      "estimated_market_impact_bps_by_name",
+      "days_to_liquidate"
+    ],
+    "reason": "costs.estimate_cost_bps's tiered/impact legs need each traded name's own median_dollar_volume_60d and annualized_volatility on the rebalance date. pipeline/data/backtest_cache/ (per-name price/volume history) is empty in this checkout, and this session's network policy blocks fetching it.",
+    "reproduction_command": "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario {optimistic,base,stress} --out pipeline/reports/backtest_tiered_<scenario>.json"
+  },
+  "never_present_gross_as_net": true
 }

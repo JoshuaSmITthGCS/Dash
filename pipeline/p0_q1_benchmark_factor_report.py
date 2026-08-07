@@ -59,6 +59,19 @@ FRENCH_PATH = os.path.join(ROOT, "public", "data", "factors", "french.json")
 ADVISOR_PATH = os.path.join(ROOT, "public", "data", "advisor.json")
 ETF_DIR = os.path.join(ROOT, "public", "data", "etf")
 OUT_PATH = os.path.join(HERE, "reports", "factor_regression_p0.json")
+BENCHMARK_COMPARISON_PATH = os.path.join(HERE, "reports", "benchmark_comparison.json")
+FACTOR_REGRESSION_PATH = os.path.join(HERE, "reports", "factor_regression.json")
+
+# C1: the strategy runs at beta 0.79 / SMB 0.455 (see the six-factor regression below) --
+# a small/mid-tilted book with less market beta than SPY. These style/size ETFs, all
+# committed and covering the full 2021-08-02..2026-07-31 backtest window, let the question
+# "is this more than repackaged factor exposure?" get asked against benchmarks that actually
+# share that risk profile, not just SPY and the two already-published RSP/IWM legs.
+STYLE_SIZE_BENCHMARKS = {
+    "iwd_value": "IWD", "iwf_growth": "IWF", "ijh_mid_cap": "IJH", "ijr_small_cap": "IJR",
+    "vb_small_cap": "VB", "schd_quality_dividend": "SCHD", "nobl_quality_dividend": "NOBL",
+    "vxf_extended_market": "VXF",
+}
 
 FACTOR_NAMES = ["market_excess", "size", "value", "profitability", "investment", "momentum"]
 NEWEY_WEST_LAGS = 3
@@ -79,6 +92,24 @@ def month_end_values(dates, values):
         by_month[day[:7]] = value  # dates are sorted ascending; last write per month wins
     months = sorted(by_month)
     return months, [by_month[month] for month in months]
+
+
+def blend_benchmark(a, b, weight_a=0.5):
+    """A static (non-rebalanced) growth-weighted blend of two ETF daily series, indexed to
+    1.0 on their first common date. ``simulate_benchmark`` only ever uses the ratio of a
+    close to the first usable day's close, so this arbitrary-scale growth index feeds it
+    exactly like a real price series would.
+    """
+    a_map, b_map = dict(zip(a["dates"], a["closes"])), dict(zip(b["dates"], b["closes"]))
+    common_dates = sorted(set(a_map) & set(b_map))
+    if not common_dates:
+        return {"dates": [], "closes": []}
+    a_start, b_start = a_map[common_dates[0]], b_map[common_dates[0]]
+    closes = [
+        weight_a * (a_map[day] / a_start) + (1 - weight_a) * (b_map[day] / b_start)
+        for day in common_dates
+    ]
+    return {"dates": common_dates, "closes": closes}
 
 
 def monthly_returns(dates, values):
@@ -175,12 +206,31 @@ def main():
         "coverage": sector_coverage(backtest_tickers),
     }
 
+    # C1: style/size/quality benchmarks matched to the strategy's realized beta 0.79 / SMB
+    # 0.455 profile, plus a 50/50 IWD+IJH blend as the closest single passive match.
+    style_size_results = {
+        label: simulate_benchmark(load_etf_benchmark(ticker), start_date, initial_capital, 10.0)["metrics"]
+        for label, ticker in STYLE_SIZE_BENCHMARKS.items()
+    }
+    iwd_ijh_blend = blend_benchmark(load_etf_benchmark("IWD"), load_etf_benchmark("IJH"))
+    style_size_results["iwd_ijh_50_50_blend"] = simulate_benchmark(
+        iwd_ijh_blend, start_date, initial_capital, 10.0
+    )["metrics"]
+
     benchmark_comparison = {
         "strategy": portfolio["metrics"],
         "spy": spy["metrics"],
         "rsp_equal_weight_sp500": rsp_result["metrics"],
         "iwm_small_mid_cap": iwm_result["metrics"],
+        **style_size_results,
         "sector_neutral_composite": sector_neutral_status,
+        "method": (
+            "All ETF legs use backtest_monthly.simulate_benchmark: buy-and-hold from the "
+            "strategy's own first execution date, one 10bps entry cost, no further trading -- "
+            "identical method and cost to the SPY/RSP/IWM legs, so every row is directly "
+            "comparable. iwd_ijh_50_50_blend is a static (non-rebalanced) growth-weighted "
+            "blend, not a rebalanced index."
+        ),
     }
 
     # --- Six-factor regression ---------------------------------------------------------
@@ -247,11 +297,28 @@ def main():
     with open(OUT_PATH, "w", encoding="utf-8") as handle:
         json.dump(output, handle, indent=2)
     LOG.info(f"Wrote {OUT_PATH}")
+
+    # C1: the same content, split into the two brief-specified report files (kept alongside
+    # the original combined factor_regression_p0.json, not replacing it).
+    with open(BENCHMARK_COMPARISON_PATH, "w", encoding="utf-8") as handle:
+        json.dump({"generated_at": output["generated_at"], **benchmark_comparison}, handle, indent=2)
+    LOG.info(f"Wrote {BENCHMARK_COMPARISON_PATH}")
+    with open(FACTOR_REGRESSION_PATH, "w", encoding="utf-8") as handle:
+        json.dump({
+            "generated_at": output["generated_at"],
+            "six_factor_regression": regression,
+            "single_factor_capm": capm,
+            "shortfall_decomposition": shortfall_decomposition,
+        }, handle, indent=2)
+    LOG.info(f"Wrote {FACTOR_REGRESSION_PATH}")
+
     alpha = regression["coefficients"]["alpha"]
     print(f"n={regression['observations']} months ({regression['first_month']}..{regression['last_month']})")
     print(f"alpha monthly={alpha['estimate']:.5f} annualized={regression['annualized_alpha_pct']:.2f}%")
     print(f"alpha classical t={alpha['classical_t_statistic']:.3f} NW(3) t={alpha['newey_west_t_statistic']:.3f}")
     print(f"R^2={regression['r_squared']:.4f}")
+    print(f"strategy CAGR={portfolio['metrics']['cagr']:.4f} vs. "
+          f"iwd_ijh_50_50_blend CAGR={style_size_results['iwd_ijh_50_50_blend']['cagr']:.4f}")
     return 0
 
 

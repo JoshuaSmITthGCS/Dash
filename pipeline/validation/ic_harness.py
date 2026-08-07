@@ -24,7 +24,7 @@ from common import LOG, DATA_DIR, load_json, save_json  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from evaluation import deflated_sharpe_ratio, pearson, rank  # noqa: E402
 import pit_store as raw_pit_store  # noqa: E402
-from validation import trading_calendar  # noqa: E402
+from validation.trading_calendar import default_calendar  # noqa: E402
 
 
 SETTINGS = load_json("settings.json", from_config=True) or {}
@@ -61,7 +61,7 @@ MODIFIER_SOURCE = {
 }
 
 # Provider statuses that mean "we never got to look", as distinct from "we looked and saw
-# nothing". confidence.run_source_reliability uses the same distinction.
+# nothing". confidence.run_source_reliability draws the same distinction.
 _UNAVAILABLE_STATUSES = {"unavailable", "failed", "configuration_required", "opt_in",
                          "disabled_for_intraday_refresh"}
 
@@ -86,11 +86,11 @@ def _modifier_contract(detail, unavailable=()):
     """Keep original detail and add an explicit zero-inclusive modifier point map.
 
     ``all_points`` records a literal 0.0 for any modifier that did not fire. That is correct
-    for a modifier the pipeline evaluated and found neutral, but it is *wrong* for one whose
+    for a modifier the pipeline evaluated and found neutral, but *wrong* for one whose
     provider was never reachable -- a dark SEC Form 4 layer would otherwise be recorded as
-    "we reviewed insider activity and it was neutral" in an immutable validation snapshot.
-    ``availability`` separates the two so unavailable coverage can never be graded as
-    evidence.
+    "we reviewed insider activity and it was neutral" in an immutable validation snapshot,
+    and later graded as real evidence. ``availability`` separates the two so unavailable
+    coverage can never be counted as an observation.
     """
     detail = dict(detail or {})
     applied = detail.get("applied") or {}
@@ -166,9 +166,6 @@ def append_refresh(rows, *, refresh_id, recorded_at=None, data_as_of=None, unive
 
     An identical ``refresh_id`` is idempotent. Existing records are never changed, and a
     later invocation with a different refresh id only appends.
-
-    ``source_status`` is the refresh's provider-health map. It is used only to mark
-    provider-dark modifiers as unavailable rather than neutral in the snapshot.
     """
     recorded_at = _iso(recorded_at)
     data_as_of = _iso(data_as_of or recorded_at)
@@ -242,52 +239,86 @@ def _monthly_refreshes(refreshes):
     return [monthly[key] for key in sorted(monthly)]
 
 
-def _sector_residuals(scored, minimum_peers=None):
-    """Subtract each name's own sector's equal-weight mean return from its raw return.
-
-    ``docs/RESEARCH-CONTRACT.md`` specifies a sector-residual target, not a raw one. Ranking a
-    utility against a semiconductor on raw forward return mostly measures which sector moved,
-    which is not what a cross-sectional stock-selection score claims to predict.
-
-    A sector with too few names in the period cannot supply a meaningful mean, so those names
-    fall back to the universe mean and are flagged. The fallback is recorded per row rather
-    than hidden, because a period where most names fell back is measuring something closer to
-    a market-residual target and should be readable as such.
+def _forward_periods(refreshes, variant, horizon_days):
+    """Secondary diagnostic path: calendar-day horizon, raw (non-residualized) forward
+    return. See ``_forward_periods_sessions`` for the preregistered primary target (B1).
     """
-    minimum_peers = (CONFIG.get("sector_residual_minimum_peers", 3)
-                     if minimum_peers is None else minimum_peers)
-    by_sector = defaultdict(list)
-    for row in scored:
-        by_sector[row.get("sector")].append(row["forward_return"])
-    universe_mean = mean(row["forward_return"] for row in scored)
-    for row in scored:
-        peers = by_sector.get(row.get("sector")) or []
-        usable = row.get("sector") and len(peers) >= minimum_peers
-        benchmark = mean(peers) if usable else universe_mean
-        row["sector_return"] = benchmark
-        row["residual_forward_return"] = row["forward_return"] - benchmark
-        row["residual_basis"] = "sector" if usable else "universe_fallback"
-    return scored
-
-
-def _forward_periods(refreshes, variant, horizon_sessions, calendar_source=None):
-    """Score/label pairs where the label is a completed ``horizon_sessions`` forward window.
-
-    The horizon is counted in **trading sessions** off a real exchange calendar, not calendar
-    days. The two agree at the median (63 sessions spans 91 calendar days) but drift by
-    several sessions around holidays, so a fixed calendar-day horizon silently produced labels
-    of varying length. See ``validation/trading_calendar.py``.
-    """
-    calendar_source = calendar_source or trading_calendar.DEFAULT_SESSION_SOURCE
     periods = []
     for index, start in enumerate(refreshes):
-        recorded_at = start["recorded_at"]
-        target_date = trading_calendar.advance(recorded_at[:10], horizon_sessions,
-                                               source=calendar_source)
-        if not target_date:
+        start_date = datetime.fromisoformat(start["recorded_at"].replace("Z", "+00:00"))
+        target = start_date + timedelta(days=horizon_days)
+        end = next((candidate for candidate in refreshes[index + 1:]
+                    if datetime.fromisoformat(candidate["recorded_at"].replace("Z", "+00:00")) >= target), None)
+        if not end:
+            continue
+        end_prices = {row["ticker"]: row.get("price") for row in end["rows"]}
+        scored = []
+        for row in start["rows"]:
+            score = (row.get("scores") or {}).get(variant)
+            start_price, end_price = row.get("price"), end_prices.get(row.get("ticker"))
+            if not isinstance(score, (int, float)) or not start_price or not end_price:
+                continue
+            scored.append({
+                "ticker": row["ticker"],
+                "score": score,
+                "forward_return": end_price / start_price - 1,
+                "average_dollar_volume": (row.get("raw_metric_inputs") or {}).get("average_dollar_volume"),
+            })
+        if scored:
+            periods.append({"date": start["recorded_at"][:10], "rows": scored})
+    return periods
+
+
+def sector_residual_returns(scored_rows, *, minimum_peers=None):
+    """Label = stock forward return minus the equal-weight mean forward return of every
+    *other* name in the same sector over the same window. Falls back to the equal-weight
+    universe mean (still excluding the stock itself) when a sector has fewer than
+    ``minimum_peers`` other names -- flagged explicitly via ``sector_residual_fallback``
+    rather than silently blending a thin sector into a number that looks the same as a real
+    one.
+    """
+    minimum_peers = CONFIG["sector_residual_minimum_peers"] if minimum_peers is None else minimum_peers
+    by_sector = defaultdict(list)
+    for row in scored_rows:
+        by_sector[row.get("sector") or None].append(row)
+    universe_total = sum(row["forward_return"] for row in scored_rows)
+    universe_count = len(scored_rows)
+    labeled = []
+    for row in scored_rows:
+        sector = row.get("sector")
+        peers = [peer for peer in by_sector.get(sector, ()) if peer is not row] if sector else []
+        if sector and len(peers) >= minimum_peers:
+            peer_mean = mean(peer["forward_return"] for peer in peers)
+            fallback = False
+        else:
+            other_count = universe_count - 1
+            peer_mean = ((universe_total - row["forward_return"]) / other_count) if other_count > 0 else 0.0
+            fallback = True
+        labeled.append({
+            **row,
+            "sector_residual_return": row["forward_return"] - peer_mean,
+            "sector_residual_fallback": fallback,
+            "sector_peer_count": len(peers),
+        })
+    return labeled
+
+
+def _forward_periods_sessions(refreshes, variant, horizon_sessions, calendar=None):
+    """Preregistered primary target (B1): a real trading-session horizon (not calendar
+    days) and a sector-residual label (not raw return) -- see settings.json
+    ``validation.horizons_sessions`` / ``primary_horizon``. ``sector`` arrives on every row
+    via ``raw_metric_inputs`` (pit_store.TRACKED_FIELDS already tracks it).
+    """
+    calendar = calendar or default_calendar()
+    periods = []
+    for index, start in enumerate(refreshes):
+        start_date = datetime.fromisoformat(start["recorded_at"].replace("Z", "+00:00")).date()
+        target = calendar.add_sessions(start_date, horizon_sessions)
+        if target is None:
             continue
         end = next((candidate for candidate in refreshes[index + 1:]
-                    if candidate["recorded_at"][:10] >= target_date), None)
+                    if datetime.fromisoformat(candidate["recorded_at"].replace("Z", "+00:00")).date() >= target),
+                   None)
         if not end:
             continue
         end_prices = {row["ticker"]: row.get("price") for row in end["rows"]}
@@ -305,14 +336,8 @@ def _forward_periods(refreshes, variant, horizon_sessions, calendar_source=None)
                 "average_dollar_volume": (row.get("raw_metric_inputs") or {}).get("average_dollar_volume"),
             })
         if scored:
-            periods.append({
-                "date": recorded_at[:10],
-                "label_end_date": end["recorded_at"][:10],
-                "horizon_sessions": horizon_sessions,
-                "realized_sessions": trading_calendar.sessions_between(
-                    recorded_at[:10], end["recorded_at"][:10], source=calendar_source),
-                "rows": _sector_residuals(scored),
-            })
+            periods.append({"date": start["recorded_at"][:10],
+                            "rows": sector_residual_returns(scored)})
     return periods
 
 
@@ -320,7 +345,7 @@ def research_trial_count():
     """The honest number of configurations tried, for Deflated Sharpe.
 
     ``settings.json validation.shadow_strategy_trials`` counts only the live shadow
-    strategies. Deflation needs the count of everything *searched*, across the whole research
+    strategies. Deflation needs the count of everything *searched* across the whole research
     programme -- understating it is the standard way a deflated Sharpe gets quietly
     re-inflated. The experiment registry is the durable record of that, so it is the floor
     here; the configured value wins only if it is somehow larger.
@@ -338,14 +363,7 @@ def _spearman(left, right):
     return pearson(rank(left), rank(right))
 
 
-# The contract's target. Kept as a named constant so every statistic in this module is
-# demonstrably measuring the same label, and so the raw-return diagnostic cannot be mistaken
-# for the preregistered one.
-TARGET_FIELD = "residual_forward_return"
-DIAGNOSTIC_TARGET_FIELD = "forward_return"
-
-
-def _buckets(rows, count, target=TARGET_FIELD):
+def _buckets(rows, count, return_field="forward_return"):
     ordered = sorted(rows, key=lambda row: row["score"])
     buckets = []
     for index in range(count):
@@ -356,7 +374,7 @@ def _buckets(rows, count, target=TARGET_FIELD):
             buckets.append({
                 "bucket": index + 1,
                 "count": len(chunk),
-                "mean_forward_return": mean(row[target] for row in chunk),
+                "mean_forward_return": mean(row[return_field] for row in chunk),
             })
     return buckets
 
@@ -432,15 +450,11 @@ def _period_cost_bps(rows, count):
     return mean(bps_values) if bps_values else CONFIG["long_short_cost_bps"]
 
 
-def evaluate_variant(refreshes, variant, horizon_sessions, target=TARGET_FIELD):
-    periods = _forward_periods(refreshes, variant, horizon_sessions)
+def _evaluate_periods(periods, variant, *, return_field="forward_return"):
     ic_values, leaks, bucket_periods, spreads, applied_cost_bps = [], [], defaultdict(list), [], []
-    fallback_rows = total_rows = 0
     for period in periods:
         rows = period["rows"]
-        fallback_rows += sum(row.get("residual_basis") == "universe_fallback" for row in rows)
-        total_rows += len(rows)
-        ic = _spearman([row["score"] for row in rows], [row[target] for row in rows])
+        ic = _spearman([row["score"] for row in rows], [row[return_field] for row in rows])
         if ic is not None:
             ic_values.append(ic)
             if abs(ic) > CONFIG["lookahead_rank_ic_threshold"]:
@@ -449,7 +463,7 @@ def evaluate_variant(refreshes, variant, horizon_sessions, target=TARGET_FIELD):
                 leaks.append(leak)
                 LOG.error(f"LOOK-AHEAD WARNING {variant} {period['date']}: rank IC {ic:.3f}")
         for count in CONFIG["quantile_counts"]:
-            buckets = _buckets(rows, count, target=target)
+            buckets = _buckets(rows, count, return_field)
             for bucket in buckets:
                 bucket_periods[(count, bucket["bucket"])].append(bucket["mean_forward_return"])
             if count == CONFIG["quantile_counts"][0] and len(buckets) == count:
@@ -476,13 +490,12 @@ def evaluate_variant(refreshes, variant, horizon_sessions, target=TARGET_FIELD):
             "monotonic": monotonicity is not None and monotonicity > 0,
         }
     spread_sharpe = mean(spreads) / stdev(spreads) if len(spreads) > 1 and stdev(spreads) else None
+    fallback_periods = [
+        sum(1 for row in period["rows"] if row.get("sector_residual_fallback"))
+        for period in periods
+    ]
     return {
         **_ic_summary(ic_values),
-        "target": target,
-        "horizon_sessions": horizon_sessions,
-        "horizon_basis": "trading_sessions",
-        "sector_residual_fallback_share": (round(fallback_rows / total_rows, 3)
-                                           if total_rows else None),
         "monthly_rank_ic": ic_values,
         "probable_lookahead_flags": leaks,
         "bucket_returns": bucket_output,
@@ -498,52 +511,69 @@ def evaluate_variant(refreshes, variant, horizon_sessions, target=TARGET_FIELD):
             trials=research_trial_count(),
         ) if spread_sharpe is not None else None,
         **_turnover_and_stability(periods),
+        **({"sector_residual_fallback_rows": sum(fallback_periods)} if return_field == "sector_residual_return" else {}),
     }
+
+
+def evaluate_variant(refreshes, variant, horizon_days):
+    """Secondary diagnostic: calendar-day horizon, raw forward return. Kept for continuity
+    with existing published reports; ``evaluate_variant_sessions`` is the primary target.
+    """
+    periods = _forward_periods(refreshes, variant, horizon_days)
+    return _evaluate_periods(periods, variant, return_field="forward_return")
+
+
+def evaluate_variant_sessions(refreshes, variant, horizon_sessions, calendar=None):
+    """Primary target (B1): real trading-session horizon, sector-residual label."""
+    periods = _forward_periods_sessions(refreshes, variant, horizon_sessions, calendar)
+    return _evaluate_periods(periods, variant, return_field="sector_residual_return")
 
 
 def build_report(rows=None):
     rows = read_snapshots() if rows is None else rows
     refreshes = _refreshes(rows)
     monthly_refreshes = _monthly_refreshes(refreshes)
-    horizons = CONFIG["horizons_sessions"]
-    primary = CONFIG["primary_horizon"]
     variants = {variant: {} for variant in ("champion", "challenger")}
     for variant in variants:
-        for label, session_count in horizons.items():
-            variants[variant][label] = evaluate_variant(monthly_refreshes, variant, session_count)
+        for label, days in CONFIG["horizons_days"].items():
+            variants[variant][label] = evaluate_variant(monthly_refreshes, variant, days)
+
+    primary_variants = {variant: {} for variant in ("champion", "challenger")}
+    try:
+        calendar = default_calendar()
+    except (FileNotFoundError, ValueError) as exc:
+        calendar = None
+        LOG.warn(f"Trading calendar unavailable, primary (session-based) IC skipped: {exc}")
+    if calendar is not None:
+        for variant in primary_variants:
+            for label, sessions in CONFIG["horizons_sessions"].items():
+                primary_variants[variant][label] = evaluate_variant_sessions(
+                    monthly_refreshes, variant, sessions, calendar
+                )
+
     return {
-        "schema_version": 2,
+        "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "data_integrity": "prospective_point_in_time",
-        "forecast_target": {
-            # Preregistered before any of these statistics had a value, so that the best of
-            # four horizons cannot be selected after the fact.
-            "primary_horizon": primary,
-            "primary_horizon_sessions": horizons[primary],
-            "target": TARGET_FIELD,
-            "definition": ("stock total return over N trading sessions minus the equal-weight "
-                           "mean return of its own sector over the same window"),
-            "horizon_basis": "trading_sessions",
-            "secondary_horizons": [label for label in horizons if label != primary],
-            "secondary_horizons_are_diagnostic_only": True,
-            "trading_calendar_available": trading_calendar.is_available(),
-        },
         "reconstructed_history": {
             "included": False,
             "label": "reconstructed, look-ahead contaminated",
         },
         "snapshot_refreshes": len(refreshes),
         "monthly_score_snapshots": len(monthly_refreshes),
+        "primary_horizon": CONFIG["primary_horizon"],
+        "primary_target": "sector_residual_return_over_trading_sessions",
+        "primary_variants": primary_variants,
         "variants": variants,
+        "variants_label": "calendar_day_horizon_raw_return_secondary_diagnostic",
         "comparison": {
             label: {
                 "champion_mean_rank_ic": variants["champion"][label]["mean_rank_ic"],
                 "challenger_mean_rank_ic": variants["challenger"][label]["mean_rank_ic"],
                 "eligible": (variants["champion"][label]["status"] == "eligible"
                              and variants["challenger"][label]["status"] == "eligible"),
-                "primary": label == primary,
             }
-            for label in horizons
+            for label in CONFIG["horizons_days"]
         },
     }
 

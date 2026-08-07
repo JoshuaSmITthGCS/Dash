@@ -4,103 +4,76 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-import cost_sensitivity as cs
+from cost_sensitivity import build_report, reprice_rebalance
 
 
-class DragArithmeticTests(unittest.TestCase):
-    def test_annual_drag_reproduces_the_identity_the_backtest_charges(self):
-        """backtest_monthly.py charges value * turnover * bps / 10000 per rebalance."""
-        self.assertAlmostEqual(cs.annual_drag_bps(0.649, 10.0), 0.649 * 10.0 * 12)
-
-    def test_drag_is_linear_in_both_turnover_and_rate(self):
-        self.assertAlmostEqual(cs.annual_drag_bps(0.5, 20.0), cs.annual_drag_bps(1.0, 10.0))
-        self.assertAlmostEqual(cs.annual_drag_bps(0.65, 20.0),
-                               2 * cs.annual_drag_bps(0.65, 10.0))
-
-    def test_zero_turnover_costs_nothing(self):
-        self.assertEqual(cs.annual_drag_bps(0.0, 25.0), 0.0)
-
-
-class TierRateTests(unittest.TestCase):
-    def test_rates_widen_as_liquidity_thins_within_every_scenario(self):
-        for scenario, tiers in cs.tier_rates().items():
-            with self.subTest(scenario=scenario):
-                self.assertLess(tiers["liquid"], tiers["thin"])
-                self.assertLess(tiers["thin"], tiers["illiquid"])
-
-    def test_stress_prices_above_base_which_prices_above_optimistic(self):
-        rates = cs.tier_rates()
-        for tier in ("liquid", "thin", "illiquid"):
-            with self.subTest(tier=tier):
-                self.assertLess(rates["optimistic"][tier], rates["base"][tier])
-                self.assertLess(rates["base"][tier], rates["stress"][tier])
-
-
-class ThresholdTests(unittest.TestCase):
-    BACKTEST = {
-        "generated_at": "2026-08-03T00:00:00Z",
+def _backtest(rebalances, estimated_transaction_cost=0.0, final_value=100000.0, cagr=0.0):
+    return {
         "portfolio": {
-            "rebalances": [{"turnover": 0.649, "cost": 649.0, "portfolio_value": 100_000.0}] * 12,
-            "history": [{"date": "2024-01-31", "value": 100_000.0},
-                        {"date": "2024-02-29", "value": 101_000.0},
-                        {"date": "2024-03-28", "value": 102_000.0}],
+            "rebalances": rebalances,
+            "metrics": {"estimated_transaction_cost": estimated_transaction_cost,
+                       "final_value": final_value, "cagr": cagr},
         },
     }
 
-    def test_breakeven_rate_is_where_extra_drag_reaches_the_threshold(self):
-        report = cs.build_report(self.BACKTEST)
-        check = report["threshold_check"]
-        extra = cs.annual_drag_bps(0.649, check["breakeven_one_way_bps"]) - \
-            cs.annual_drag_bps(0.649, cs.PUBLISHED_RATE_BPS)
-        self.assertAlmostEqual(extra, cs.THRESHOLD_BPS_OF_ANNUAL_RETURN, delta=1.0)
 
-    def test_verdict_reports_the_floor_does_not_cross_at_this_turnover(self):
-        """The honest answer: spread+fees alone stays under 200bps at 64.9% turnover."""
-        check = cs.build_report(self.BACKTEST)["threshold_check"]
-        self.assertEqual(check["verdict"], "not_crossed_by_the_spread_and_fee_floor")
-        self.assertLess(check["worst_modelled_additional_drag_bps"],
-                        cs.THRESHOLD_BPS_OF_ANNUAL_RETURN)
+class RepriceRebalanceTests(unittest.TestCase):
+    def test_zero_turnover_costs_nothing_at_any_rate(self):
+        cost, turnover = reprice_rebalance({"turnover": 0.0, "cost": 0.0}, bps=25.0)
+        self.assertEqual(cost, 0.0)
 
-    def test_much_higher_turnover_does_cross_the_threshold(self):
-        """The verdict tracks turnover, not a hardcoded conclusion.
+    def test_reprices_a_known_flat_10bps_trade_at_a_different_rate(self):
+        # value_before = 100 / (1.0 * 10/10000) = 100,000. At 25bps: 100000*1.0*25/10000=250.
+        cost, turnover = reprice_rebalance({"turnover": 1.0, "cost": 100.0}, bps=25.0)
+        self.assertAlmostEqual(cost, 250.0, places=2)
 
-        At 150% monthly turnover the breakeven rate falls to ~21bps, below the model's
-        25bps stress/illiquid worst case, so the same cost model now crosses.
-        """
-        heavy = {**self.BACKTEST, "portfolio": {
-            **self.BACKTEST["portfolio"],
-            "rebalances": [{"turnover": 1.5, "cost": 1500.0, "portfolio_value": 100_000.0}] * 12,
-        }}
-        self.assertEqual(cs.build_report(heavy)["threshold_check"]["verdict"], "crossed")
-
-    def test_gross_return_is_net_plus_the_published_drag(self):
-        published = cs.build_report(self.BACKTEST)["published_assumption"]
-        self.assertAlmostEqual(
-            published["implied_gross_annualized_return"],
-            published["net_annualized_return"] + published["annual_drag_bps"] / 10_000,
-            places=5)
-
-    def test_every_scenario_net_return_is_below_the_implied_gross(self):
-        report = cs.build_report(self.BACKTEST)
-        gross = report["published_assumption"]["implied_gross_annualized_return"]
-        for tiers in report["scenarios"].values():
-            for block in tiers.values():
-                self.assertLess(block["net_annualized_return"], gross)
-
-    def test_the_rates_are_declared_a_floor_and_the_gap_is_declared_blocked(self):
-        report = cs.build_report(self.BACKTEST)
-        self.assertIn("lower bound", report["rates_are_a_floor"])
-        self.assertEqual(report["unresolved"]["status"], "blocked_network_policy")
-        self.assertTrue(report["unresolved"]["reproduction"])
+    def test_reproduces_the_realized_cost_at_the_realized_rate(self):
+        cost, _ = reprice_rebalance({"turnover": 0.852004, "cost": 89.67}, bps=10.0)
+        self.assertAlmostEqual(cost, 89.67, places=2)
 
 
-class CommittedBacktestTests(unittest.TestCase):
-    def test_committed_backtest_turnover_is_the_documented_figure(self):
-        if not os.path.exists(cs.BACKTEST_PATH):
-            self.skipTest("backtest artifact not present in this checkout")
-        turnover = cs.build_report()["realized_turnover"]
-        self.assertAlmostEqual(turnover["mean_monthly"], 0.649, places=2)
-        self.assertEqual(turnover["rebalances"], 60)
+class BuildReportTests(unittest.TestCase):
+    def test_gross_scenario_is_always_zero_cost(self):
+        backtest = _backtest([{"signal_date": "2026-01", "turnover": 1.0, "cost": 100.0}],
+                             estimated_transaction_cost=100.0)
+        report = build_report(backtest)
+        self.assertEqual(report["scenarios"]["gross"]["total_cost"], 0.0)
+
+    def test_stress_costs_more_than_optimistic(self):
+        backtest = _backtest([{"signal_date": "2026-01", "turnover": 1.0, "cost": 100.0}],
+                             estimated_transaction_cost=100.0)
+        report = build_report(backtest)
+        self.assertGreater(report["scenarios"]["stress"]["cost_bps"],
+                           report["scenarios"]["optimistic"]["cost_bps"])
+        self.assertGreater(report["scenarios"]["stress"]["total_cost"],
+                           report["scenarios"]["optimistic"]["total_cost"])
+
+    def test_turnover_summary_reflects_the_committed_rebalance_log(self):
+        backtest = _backtest([
+            {"signal_date": "2026-01", "turnover": 1.0, "cost": 100.0},
+            {"signal_date": "2026-02", "turnover": 0.5, "cost": 50.0},
+        ], estimated_transaction_cost=150.0)
+        report = build_report(backtest)
+        self.assertEqual(report["turnover"]["rebalances"], 2)
+        self.assertAlmostEqual(report["turnover"]["mean_turnover"], 0.75, places=4)
+
+    def test_per_name_liquidity_legs_are_marked_blocked_never_fabricated(self):
+        report = build_report(_backtest([]))
+        blocked = report["per_name_liquidity_legs"]
+        self.assertEqual(blocked["status"], "blocked_network_policy")
+        self.assertIn("adv_participation_pct", blocked["measures"])
+
+    def test_never_presents_gross_as_net(self):
+        report = build_report(_backtest([]))
+        self.assertTrue(report["never_present_gross_as_net"])
+        self.assertIn("gross", report["scenarios"])
+        self.assertIn("realized_flat_10bps", report)
+
+    def test_loads_and_reports_against_the_real_committed_backtest(self):
+        # No mocking - this is the actual verification command from the brief.
+        report = build_report()
+        self.assertEqual(report["turnover"]["rebalances"], 60)
+        self.assertGreater(report["scenarios"]["base"]["total_cost"], 0)
 
 
 if __name__ == "__main__":

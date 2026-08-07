@@ -175,15 +175,12 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
         })
 
     if not articles or total_weight <= 0:
-        # No qualifying coverage is *absence of evidence*, not evidence of neutrality. Returning
-        # the neutral score here handed 373 of 374 names an identical 50.0 at the blend's 4%
-        # news weight, which pulled every score toward 50 without distinguishing between any two
-        # companies -- an apparently active component doing nothing. Returning None instead lets
-        # advisor_engine.blend_research_components drop the weight from the denominator and
-        # reweight the remaining components proportionally, which it already does for any
-        # component that is None.
+        # No cleared coverage is not the same claim as "sentiment is neutral" - it is an
+        # absence of evidence. Returning the neutral_score here used to make 373 of 374
+        # screen-universe names read as "we checked and it's neutral" when the honest
+        # statement is "we have nothing". None lets blend_research_components renormalize
+        # over the components that actually have evidence instead of anchoring on a fake one.
         return None, {
-            "news_available": False,
             "article_count": 0,
             "raw_article_count": len(news_items),
             "average": None,
@@ -196,13 +193,13 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
             "syndicated_copies_removed": max(0, len(eligible) - len(unique)),
             "articles": [],
             "weighting_method": "recency_source_filing_entity_novelty",
+            "news_available": False,
         }
 
     average = weighted_total / total_weight
     score = max(config["score_minimum"], min(config["score_maximum"],
                 config["neutral_score"] + average * config["sentiment_score_scale"]))
     return round(score, 1), {
-        "news_available": True,
         "article_count": len(articles),
         "raw_article_count": len(news_items),
         "average": round(average, 3),
@@ -218,4 +215,5 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
         "commentary_count": sum(item["content_type"] == "commentary" for item in articles),
         "articles": articles,
         "weighting_method": "recency_source_filing_entity_novelty",
+        "news_available": True,
     }

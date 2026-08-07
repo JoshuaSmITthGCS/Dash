@@ -1,324 +1,346 @@
-"""A durable record of every research attempt, including the failures.
+"""A4 — experiment registry.
 
-Two problems this solves.
+The brief's evidence discipline only works if the multiple-testing machinery already built
+(``validation_framework.deflated_sharpe_ratio``, ``append_multiple_testing_log``) sees the
+real trial count, and the repository has an honest record of what was tried, including
+what failed and what is still blocked. Before this module nothing fed those trial counts
+anywhere, and the only record of WO-1 through WO-5/Q1/Q2 was prose scattered across
+``docs/P0-*.md``.
 
-**Rediscovery.** Without a registry, an idea that was tried and rejected gets tried again by
-whoever forgets. The most expensive version of that is re-running a search that already failed
-and stopping at the run that happens to look good.
-
-**Honest deflation.** `evaluation.deflated_sharpe_ratio` and
-`probability_of_backtest_overfitting` both take a trial count, and understating it is the
-single most common way a deflated Sharpe gets quietly re-inflated. That count has to come from
-somewhere durable. It comes from here: `total_variants_tested()` sums the variants across every
-recorded experiment, so the deflation reflects the whole research programme rather than the one
-configuration being written up.
-
-Entries are append-or-update by id and carry their own evidence status, so a blocked experiment
-is recorded as blocked rather than omitted -- an absent experiment and a failed one are
-different facts.
-
-Usage: python pipeline/experiment_registry.py   (rebuilds the registry from RECORDED)
-Output: pipeline/reports/experiment_registry.json
+``REGISTRY`` is a hand-maintained backfill of every experiment already run this project,
+in the brief's schema (id, hypothesis, category, configuration, train/validation/test
+periods, metrics, number_of_variants_tested, result, decision, reason). It is intentionally
+data, not a computed report -- these are historical facts (what was tried, when, and what it
+found), not something to re-derive from artifacts on every run. New experiments get appended
+here going forward.
 """
 
 import json
 import os
-import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-if HERE not in sys.path:
-    sys.path.insert(0, HERE)
+from validation_framework import append_multiple_testing_log
 
-OUT_PATH = os.path.join(HERE, "reports", "experiment_registry.json")
+REPORT_PATH = os.path.join(os.path.dirname(__file__), "reports", "experiment_registry.json")
+# Deliberately not pipeline/reports/p0_trial_log.jsonl: that file is an existing, unrelated
+# ad hoc JSONL log of raw diagnostic numbers, one JSON object per line. This is the JSON-array
+# format validation_framework.append_multiple_testing_log actually reads and writes.
+MULTIPLE_TESTING_LOG_PATH = os.path.join(os.path.dirname(__file__), "reports", "multiple_testing_log.json")
 
-RESULTS = {"supported", "rejected", "inconclusive", "blocked"}
-DECISIONS = {"promote", "retain_shadow", "abandon", "pending_data", "shipped_as_fix"}
-CATEGORIES = {"diagnostic", "corrective"}
+DECISIONS = {"PROMOTE", "KEEP_AS_CHALLENGER", "ABANDON", "INCONCLUSIVE"}
 
-
-def entry(*, id, hypothesis, category, result, decision, reason, model_version="3.2.0",
-          configuration=None, training_period=None, validation_period=None, test_period=None,
-          metrics=None, number_of_variants_tested=0, artifacts=None):
-    if category not in CATEGORIES:
-        raise ValueError(f"category must be one of {sorted(CATEGORIES)}")
-    if result not in RESULTS:
-        raise ValueError(f"result must be one of {sorted(RESULTS)}")
-    if decision not in DECISIONS:
-        raise ValueError(f"decision must be one of {sorted(DECISIONS)}")
-    if number_of_variants_tested < 0:
-        raise ValueError("number_of_variants_tested must be non-negative")
-    return {
-        "id": id,
-        "hypothesis": hypothesis,
-        "category": category,
-        "model_version": model_version,
-        "configuration": configuration or {},
-        "training_period": training_period,
-        "validation_period": validation_period,
-        "test_period": test_period,
-        "metrics": metrics or {},
-        "number_of_variants_tested": number_of_variants_tested,
-        "result": result,
-        "decision": decision,
-        "reason": reason,
-        "artifacts": artifacts or [],
-    }
-
-
-# Every experiment run against this system to date, including the ones that produced nothing.
-# Backfilled from docs/P0-*.md and this session's work so the trial count is honest rather than
-# starting from whatever was measured most recently.
-RECORDED = [
-    entry(
-        id="wo1-manifest-reports-champion",
-        hypothesis="run_manifest.score_distribution describes the shadow v2 score, not the "
-                   "published champion, so the manifest certifies a different model than shipped",
-        category="corrective",
-        configuration={"file": "pipeline/observability.py"},
-        metrics={"published_mean_before": 68.85, "published_mean_after": 75.05,
-                 "affected_committed_manifests": 14},
-        number_of_variants_tested=1,
-        result="supported",
-        decision="shipped_as_fix",
-        reason="confirmed by reading the source and by regenerating the manifest from the "
-               "committed artifact; the buggy distribution undershot the real range by 7-11 "
-               "points at every quantile",
-        artifacts=["docs/P0-REPAIRS.md"],
-    ),
-    entry(
-        id="wo2-sec-insider-layer",
-        hypothesis="the Form 4 insider layer is dark solely because SEC_USER_AGENT is unset",
-        category="diagnostic",
-        configuration={"file": "pipeline/sec_edgar.py"},
-        number_of_variants_tested=1,
-        result="blocked",
-        decision="pending_data",
-        reason="the gate is confirmed to be the single environment variable, but no refresh "
-               "can run from an environment with no route to sec.gov; the secret's value is "
-               "the repository owner's action, outside any commit",
-        artifacts=["docs/P0-REPAIRS.md"],
-    ),
-    entry(
-        id="wo3-tiered-costs-wired",
-        hypothesis="a realistic tiered cost model materially changes net performance at 64.9% "
-                   "monthly turnover",
-        category="corrective",
-        configuration={"cost_model": "tiered", "scenarios": ["optimistic", "base", "stress"]},
-        number_of_variants_tested=3,
-        result="blocked",
-        decision="pending_data",
-        reason="costs.py is wired into both backtest_monthly.py and ic_harness.py and proved "
-               "equivalent to the old flat rate by default, but the three-regime re-run needs "
-               "five years of daily price and volume history for ~860 names",
-        artifacts=["docs/P0-REPAIRS.md", "pipeline/reports/cost_regime_comparison.json"],
-    ),
-    entry(
-        id="q1-benchmark-and-factor-regression",
-        hypothesis="the strategy's SPY shortfall is a benchmark artifact, and residual alpha "
-                   "survives controlling for the six factors the model is built from",
-        category="diagnostic",
-        configuration={"benchmarks": ["SPY", "RSP", "IWM"], "factors": 6,
-                       "standard_errors": "newey_west_3_lag"},
-        validation_period="2021-09..2026-06",
-        metrics={"annualized_alpha_pct": -2.57, "newey_west_t": -0.437, "r_squared": 0.589,
-                 "capm_beta": 0.793, "market_t": 6.50, "size_t": 2.06, "momentum_t": 2.50},
-        number_of_variants_tested=2,
-        result="rejected",
-        decision="abandon",
-        reason="half supported, half rejected. SPY is genuinely the wrong yardstick -- the "
-               "strategy beats RSP and IWM on CAGR. But no residual alpha survives the "
-               "six-factor control, at |t| = 0.437, well inside the brief's own 'no residual "
-               "alpha' band. The significant loadings are market, size and momentum, not the "
-               "value and profitability the score is built from",
-        artifacts=["docs/P0-Q1-BENCHMARK.md", "pipeline/reports/factor_regression_p0.json"],
-    ),
-    entry(
-        id="q2-turnover-attribution",
-        hypothesis="band quantization drives the 64.9% monthly turnover, so a continuous "
-                   "normalizer would materially reduce it",
-        category="diagnostic",
-        configuration={"source": "pipeline/pit_store/*.jsonl", "transitions": 4},
-        metrics={"band_crossing_share": 0.0042, "genuine_change_share": 0.0286,
-                 "availability_flicker_share": 0.9672},
-        number_of_variants_tested=1,
-        result="rejected",
-        decision="abandon",
-        reason="the leading hypothesis is probably wrong. Band crossings on effectively "
-               "unchanged inputs are the smallest bucket at 0.42%; metric availability "
-               "flicker dominates at 96.72%. Measured at the refresh-to-refresh horizon, not "
-               "the monthly one, so it shifts the prior rather than settling the question",
-        artifacts=["docs/P0-Q2-TURNOVER.md", "pipeline/reports/turnover_attribution.json"],
-    ),
-    entry(
-        id="news-weight-is-inert",
-        hypothesis="the 4% news component is neutral for essentially the whole universe and so "
-                   "moves score levels without ordering anything",
-        category="corrective",
-        configuration={"file": "pipeline/news_intelligence.py",
-                       "change": "return None instead of the neutral score when uncovered"},
-        metrics={"names_at_neutral_before": "373 of 374", "mean_score_delta": 1.005,
-                 "maximum_score_delta": 1.40, "names_changing_rank_position": 10},
-        number_of_variants_tested=1,
-        result="supported",
-        decision="shipped_as_fix",
-        reason="confirmed against the last published refresh. The weight now leaves the "
-               "denominator when there is no coverage, which raises uncovered names above 50 "
-               "and lowers those below it -- removing a pull toward neutral in both directions",
-        artifacts=["pipeline/reports/news_availability_impact.json"],
-    ),
-    entry(
-        id="enrichment-shortlist-bias",
-        hypothesis="shortlist gating materially changes which names can reach the top of the "
-                   "ranking",
-        category="diagnostic",
-        configuration={"source": "2026-08-06 full-universe refresh",
-                       "research_mode": "FULL_UNIVERSE_RESEARCH"},
-        metrics={"universe_enrichment_rate": 0.397, "top_100_enriched_share": 1.0,
-                 "mean_score_gap": 25.29, "non_statement_category_gap_range": "11.8..19.8"},
-        number_of_variants_tested=1,
-        result="inconclusive",
-        decision="pending_data",
-        reason="the structural half is settled -- no unenriched name reaches the top 100, and "
-               "two categories worth 20% of the fundamental weight cannot contribute for 60% "
-               "of the universe. The cost is not: the score gap is mostly circular, since "
-               "enriched names already lead on the categories needing no enrichment. The "
-               "unseeded comparison needs network access",
-        artifacts=["docs/ENRICHMENT-BIAS-ANALYSIS.md", "pipeline/reports/enrichment_bias.json"],
-    ),
-    entry(
-        id="tradeable-benchmark-suite",
-        hypothesis="the strategy delivers something a liquid style ETF could not",
-        category="diagnostic",
-        configuration={"benchmarks": 14, "standard_errors": "newey_west_3_lag"},
-        validation_period="2021-09..2026-07",
-        metrics={"beaten_on_cagr": "9 of 14", "significant_positive_alpha_count": 0,
-                 "largest_absolute_t": 1.11, "vtv_sharpe": 0.899, "strategy_sharpe": 0.611},
-        number_of_variants_tested=14,
-        result="rejected",
-        decision="abandon",
-        reason="no benchmark in the set is beaten with statistically significant alpha. VTV "
-               "returns more at lower volatility with a shallower drawdown -- a user could "
-               "have bought the ETF instead",
-        artifacts=["pipeline/reports/benchmark_comparison.json"],
-    ),
-    entry(
-        id="cost-sensitivity-at-realized-turnover",
-        hypothesis="a realistic cost model gives up more than 200bps a year relative to the "
-                   "published flat 10bps",
-        category="diagnostic",
-        configuration={"method": "re-price recorded turnover across every costs.py rate"},
-        metrics={"mean_monthly_turnover": 0.649, "breakeven_one_way_bps": 35.7,
-                 "worst_modelled_one_way_bps": 25.0, "worst_additional_drag_bps": 116.9},
-        number_of_variants_tested=9,
-        result="rejected",
-        decision="pending_data",
-        reason="the spread-and-fee floor does not cross the threshold at 64.9% turnover; the "
-               "breakeven rate is ~36bps and the model's worst case without a volatility "
-               "input is 25bps. Adding the omitted market-impact term could still cross it",
-        artifacts=["pipeline/reports/cost_sensitivity.json"],
-    ),
-    entry(
-        id="turnover-controls",
-        hypothesis="rank buffering, a minimum holding period, score smoothing or a "
-                   "replacement margin improves net-of-cost return by suppressing trades that "
-                   "act on noise",
-        category="corrective",
-        configuration={"rank_buffer": [1.25, 1.5, 2.0], "minimum_holding_months": [1, 3, 6],
-                       "score_smoothing_alpha": [0.5, 0.7], "replacement_margin": [2.0, 5.0]},
-        number_of_variants_tested=10,
-        result="blocked",
-        decision="pending_data",
-        reason="all four are implemented as challengers behind flags that default to the "
-               "champion's plain top-N selection, and each is proved to behave exactly as "
-               "specified. Whether any improves net return needs a backtest re-run over ~860 "
-               "names of daily history",
-        artifacts=["pipeline/portfolio_construction.py"],
-    ),
-    entry(
-        id="regime-conditional-performance",
-        hypothesis="the strategy's edge is stable across market, volatility and rate regimes",
-        category="diagnostic",
-        configuration={"regimes": ["market_direction", "volatility", "rates"],
-                       "defined_from": "benchmark and macro series only, fixed before "
-                                       "inspecting strategy performance"},
-        validation_period="2021-09..2026-07",
-        metrics={"bear_excess_pp": 10.3, "bull_excess_pp": -11.2,
-                 "rising_rates_excess_pp": -16.9, "falling_rates_excess_pp": 10.3},
-        number_of_variants_tested=3,
-        result="rejected",
-        decision="retain_shadow",
-        reason="the edge is not stable -- it is a duration and direction bet. The book is "
-               "defensive in drawdowns and in falling rates and lags badly in rising rates "
-               "and high volatility. Useful for describing the strategy honestly; not "
-               "actionable as a timing overlay without out-of-sample evidence",
-        artifacts=["pipeline/reports/strategy_diagnostics.json"],
-    ),
-    entry(
-        id="forecast-target-correction",
-        hypothesis="measuring raw calendar-day forward returns instead of the contract's "
-                   "63-session sector-residual target changes what the IC statistics mean",
-        category="corrective",
-        configuration={"horizon_basis": "trading_sessions", "primary_horizon_sessions": 63,
-                       "target": "residual_forward_return"},
-        number_of_variants_tested=1,
-        result="supported",
-        decision="shipped_as_fix",
-        reason="the medians coincide (63 sessions spans 91 calendar days) which is why the "
-               "gap went unnoticed, but a fixed calendar horizon spans a varying session "
-               "count, so label length drifted. Sector residualization changes the ranking "
-               "outright: the best raw performer can be the worst residual performer",
-        artifacts=["docs/RESEARCH-CONTRACT.md"],
-    ),
+REGISTRY = [
+    {
+        "id": "WO-1",
+        "declared_at": "2026-08-07T05:29:54+00:00",
+        "hypothesis": "run_manifest.score_distribution reports the champion score shown in the UI and used for ranking, not a shadow scoring variant.",
+        "category": "data_integrity",
+        "configuration": {
+            "file": "pipeline/observability.py",
+            "change": "run_manifest.score_distribution built from row['score'] instead of row['analysis_v2']['structural']['effective_score'] (the v2 shadow canonical-metrics score).",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {},
+        "number_of_variants_tested": 1,
+        "result": "Defect confirmed by direct source read: line 30 pulled the wrong field.",
+        "decision": "PROMOTE",
+        "reason": "One-line fix; pipeline/tests/test_observability.py locks score_distribution to row['score'] with a synthetic divergence case and a full advisor.json replay.",
+    },
+    {
+        "id": "WO-2",
+        "declared_at": "2026-08-07T05:43:04+00:00",
+        "hypothesis": "The insider (SEC Form 4) layer is dark because SEC_USER_AGENT is unset, and unavailable insider evidence is read as neutral rather than absent.",
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/sec_edgar.py", "pipeline/insider_signal.py"],
+            "note": "SecEdgarClient.available == bool(os.getenv('SEC_USER_AGENT')). .env.example, refresh-advisor.yml, and SYSTEM-SETUP.md already documented the variable before this session.",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {},
+        "number_of_variants_tested": 1,
+        "result": "insider_signal.py already returned 0.0 points with available: False on empty input (correct behavior); the gate is genuinely just the missing secret, which is the repository owner's action, not a code defect.",
+        "decision": "PROMOTE",
+        "reason": "Locked with pipeline/tests/test_insider_signal.py::test_no_transactions_reports_unavailable_rather_than_neutral_zero. A3 session additionally split source_status.sec_form4.status into unavailable_not_configured vs. unavailable_provider_error so confidence.py never conflates the two.",
+    },
+    {
+        "id": "WO-3",
+        "declared_at": "2026-08-07T05:43:29+00:00",
+        "hypothesis": "ic_harness.py and backtest_monthly.py price every trade at a flat 10bps, ignoring costs.py's liquidity- and volatility-aware cost model entirely.",
+        "category": "validation_infrastructure",
+        "configuration": {
+            "files": ["pipeline/backtest_monthly.py", "pipeline/validation/ic_harness.py", "pipeline/pit_store.py"],
+            "change": "Added --cost-model {flat,tiered} / --cost-scenario {optimistic,base,stress}; tracked average_dollar_volume in pit_store snapshots (schema v1 -> v2).",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {},
+        "number_of_variants_tested": 1,
+        "result": "Confirmed and wired. The three-regime backtest re-run under tiered costs remains blocked_network_policy: no committed per-name price/volume cache exists to price the tiered leg without a live fetch.",
+        "decision": "PROMOTE",
+        "reason": "7 new regression tests (4 in test_backtest_monthly.py, 3 in test_ic_harness.py); flat model proved byte-identical to the pre-existing formula.",
+    },
+    {
+        "id": "WO-4",
+        "declared_at": "2026-08-07T08:54:31+00:00",
+        "hypothesis": "After controlling for the six standard factors (market, size, value, profitability, investment, momentum), ValueSignal's realized return stream shows residual alpha.",
+        "category": "factor_regression",
+        "configuration": {
+            "script": "pipeline/p0_q1_benchmark_factor_report.py",
+            "method": "OLS with Newey-West HAC standard errors (Bartlett kernel, 3 lags), Ken French five factors + momentum, monthly resample of the cost-aware 60-rebalance backtest.",
+        },
+        "train_period": None, "validation_period": None,
+        "test_period": "2021-09 to 2026-06 (n=58 months; full-sample regression, no walk-forward split)",
+        "metrics": {
+            "annualized_alpha_pct": -2.57, "monthly_alpha_pct": -0.217,
+            "newey_west_t_alpha": -0.437, "r_squared": 0.589,
+            "capm_beta": 0.793, "capm_beta_newey_west_t": 6.44,
+            "significant_loadings_newey_west_t": {"market_excess": 6.50, "smb_size": 2.06, "momentum": 2.50},
+            "not_significant_newey_west_t": {"hml_value": 1.00, "rmw_profitability": 0.70, "cma_investment": 0.31},
+        },
+        "number_of_variants_tested": 1,
+        "result": "|t| = 0.437, below the brief's own 1.0 threshold for 'no residual alpha, factor tilt is the leading candidate' (Verdict B). Significant loadings are market, size, and momentum -- not value or profitability, despite the score being 78% fundamentals by construction.",
+        "decision": "ABANDON",
+        "reason": "The hypothesis under test -- 'ValueSignal generates residual alpha beyond known factor exposure' -- is rejected by this sample. This is the decisive result the rest of this session's honesty framing (docs/ALGORITHM-RESEARCH-RESULTS.md) is built on.",
+    },
+    {
+        "id": "WO-5",
+        "declared_at": "2026-08-07T09:21:38+00:00",
+        "hypothesis": "Band/quantization artifacts (a metric crossing a scoring-band boundary on a small raw move) are the primary driver of the backtest's 64.9%-per-month rank churn.",
+        "category": "turnover_attribution",
+        "configuration": {
+            "script": "pipeline/p0_q2_turnover_attribution.py",
+            "method": "decompose_score_delta (stability_report.py) applied to pipeline/pit_store/*.jsonl consecutive-refresh transitions -- live intraday churn, not the blocked monthly-backtest churn.",
+        },
+        "train_period": None, "validation_period": None,
+        "test_period": "pipeline/pit_store, 2 days deep, 4 refresh-to-refresh transitions",
+        "metrics": {
+            "band_crossing_pct": 0.42, "genuine_change_pct": 2.86, "availability_flicker_pct": 96.72,
+            "band_crossing_events": 19, "genuine_change_events": 131, "availability_flicker_events": 4426,
+        },
+        "number_of_variants_tested": 1,
+        "result": "Availability flicker dominates every single transition (96.7% of events), not band quantization (0.4%). The brief's leading hypothesis is very likely wrong, though this measures live intraday churn as a proxy for the blocked monthly-backtest churn, not the backtest itself.",
+        "decision": "ABANDON",
+        "reason": "Band-quantization hypothesis rejected by the closest available evidence. Availability flicker is the real driver and needs its own follow-up (why does per-name data availability flip refresh-to-refresh?), out of scope for this registry entry.",
+    },
+    {
+        "id": "A1-NEWS-NEUTRAL",
+        "declared_at": "2026-08-07T00:00:00+00:00",
+        "hypothesis": "news_intelligence.py::weighted_sentiment returning the configured neutral_score (50.0) for zero-coverage names, instead of signaling unavailability, distorts published scores for the 373 of 374 screen-universe names with no cleared news coverage.",
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/news_intelligence.py", "pipeline/advisor_engine.py", "src/components/StockCard.jsx"],
+            "change": "weighted_sentiment returns None (not neutral_score) with news_available: False when coverage is zero; blend_research_components already renormalizes over non-None components. Publishes news_available on every row. Fixed a downstream consumer (StockCard.jsx) that treated null the same as undefined.",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {},
+        "number_of_variants_tested": 1,
+        "result": "See pipeline/reports/news_fix_score_delta.json (generated by pipeline/rescore.py) for the measured before/after score delta on the committed universe.",
+        "decision": "PROMOTE",
+        "reason": "Lands on the champion per explicit user decision, with the before/after delta committed alongside it, not silently applied.",
+    },
+    {
+        "id": "A3-FULL-UNIVERSE-ENRICHMENT",
+        "declared_at": "2026-08-07T00:00:00+00:00",
+        "hypothesis": "Seeding statement enrichment from the prior refresh's top 20 + 5 challengers (select_enrichment_priority) starves the model of statement-derived metrics for names a weaker prior model never surfaced, biasing which names can ever earn a high capital_allocation/accounting_quality score.",
+        "category": "selection_bias",
+        "configuration": {
+            "files": ["pipeline/fetch_advisor.py", "pipeline/enrichment_bias.py"],
+            "change": "FULL_UNIVERSE_RESEARCH=true env var makes select_enrichment_priority ignore previous_top entirely and enrich every preliminary candidate; not the default production path.",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "screen_universe_capital_allocation_coverage": "84/374",
+            "enriched_population_mean_score": 66.31, "enriched_population_n": 124,
+            "non_enriched_population_mean_score": 41.77, "non_enriched_population_n": 290,
+        },
+        "number_of_variants_tested": 1,
+        "result": "Offline coverage/composition gap confirmed and quantified (docs/ENRICHMENT-BIAS-ANALYSIS.md). The causal question -- would full-universe enrichment surface different top-40 names -- is blocked_network_policy.",
+        "decision": "INCONCLUSIVE",
+        "reason": "Code path implemented and unit-tested (byte-identical priority regardless of previous_top, in pipeline/tests/test_fetch_advisor.py). The measurement that would resolve PROMOTE vs. ABANDON needs a live run: FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py.",
+    },
+    {
+        "id": "C1-benchmark-suite",
+        "declared_at": "2026-08-07T14:20:00+00:00",
+        "hypothesis": "The strategy delivers something a liquid, tradeable style ETF could not -- a blunter bar than the academic factor model, and the one a user of this product actually faces.",
+        "category": "signal_evidence",
+        "configuration": {
+            "file": "pipeline/benchmark_suite.py",
+            "benchmarks": ["SPY", "RSP", "IWM", "IJH", "IJR", "VB", "IWD", "IWF", "VTV",
+                           "VUG", "SCHD", "NOBL", "VXF", "IJH+IWD 50/50"],
+            "method": "each leg buy-and-hold from the strategy's own start date with one 10bps entry cost, identical to how backtest_monthly.py prices its SPY leg, then a Newey-West regression of the strategy on each",
+        },
+        "train_period": None, "validation_period": "2021-09..2026-07", "test_period": None,
+        "metrics": {
+            "beaten_on_cagr": "9 of 14",
+            "significant_positive_alpha_count": 0,
+            "largest_absolute_newey_west_t": 1.11,
+            "strategy_cagr": 0.1033, "strategy_sharpe": 0.611,
+            "vtv_cagr": 0.1217, "vtv_sharpe": 0.899, "vtv_max_drawdown": -0.1534,
+        },
+        "number_of_variants_tested": 14,
+        "result": "No benchmark in the set is beaten with statistically significant alpha; the largest |t| is 1.11. VTV returns more at lower volatility with a shallower drawdown -- better on every dimension.",
+        "decision": "ABANDON",
+        "reason": "The 'beats the market' framing is not supported against any tradeable alternative. Reposition as a transparent factor tilt. Also caught a defect before publishing: the alpha t-statistic was read under a key ols_newey_west does not emit, and the .get() default published 0.00 for all 14 benchmarks, which reads as a confident null.",
+    },
+    {
+        "id": "C2-strategy-diagnostics-and-regimes",
+        "declared_at": "2026-08-07T14:05:00+00:00",
+        "hypothesis": "The strategy's edge is stable across market-direction, volatility and rate regimes.",
+        "category": "signal_evidence",
+        "configuration": {
+            "file": "pipeline/strategy_diagnostics.py",
+            "regimes": ["market_direction", "volatility", "rates"],
+            "defined_from": "benchmark and macro series only, fixed before any strategy performance was inspected",
+        },
+        "train_period": None, "validation_period": "2021-09..2026-07", "test_period": None,
+        "metrics": {
+            "expectancy_per_month": 0.00977, "profit_factor": 1.594, "win_rate": 0.61,
+            "payoff_ratio": 1.019, "longest_losing_streak_months": 3,
+            "bear_excess_pp": 10.3, "bull_excess_pp": -11.2,
+            "rising_rates_excess_pp": -16.9, "falling_rates_excess_pp": 10.3,
+        },
+        "number_of_variants_tested": 3,
+        "result": "The edge is not stable. This is a duration-sensitive, defensive book: +10.3pp annualized against SPY in bear markets and in falling rates, -16.9pp in rising rates.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "A coherent and useful description of what the strategy is, and it belongs in the model card. Not actionable as a timing overlay without out-of-sample evidence, and turning regimes into an optimization layer is exactly what the brief rules out.",
+    },
+    {
+        "id": "C3-cost-sensitivity-at-realized-turnover",
+        "declared_at": "2026-08-07T14:12:00+00:00",
+        "hypothesis": "A realistic tiered cost model gives up more than 200bps a year relative to the published flat 10bps.",
+        "category": "cost_realism",
+        "configuration": {
+            "file": "pipeline/cost_sensitivity.py",
+            "method": "re-price the backtest's own recorded per-rebalance turnover at every rate costs.py can produce; annual drag = mean_monthly_turnover x one_way_bps x 12, the identity backtest_monthly.py already charges",
+        },
+        "train_period": None, "validation_period": "2021-08..2026-07", "test_period": None,
+        "metrics": {
+            "mean_monthly_turnover": 0.649, "published_drag_bps": 78.0,
+            "breakeven_one_way_bps": 35.7, "worst_modelled_one_way_bps": 25.0,
+            "worst_additional_drag_bps": 116.9,
+        },
+        "number_of_variants_tested": 9,
+        "result": "The spread-and-fee floor does not cross the threshold: breakeven is ~36bps one-way and the model's worst case without a volatility input is 25bps.",
+        "decision": "INCONCLUSIVE",
+        "reason": "Every rate here omits the volatility-scaled market-impact term for want of per-name volatility, so all figures are a lower bound and the full model could still cross. Turnover this high is a real cost problem, just not yet a demonstrated 200bps one.",
+    },
+    {
+        "id": "C4-turnover-controls",
+        "declared_at": "2026-08-07T14:35:00+00:00",
+        "hypothesis": "Rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise rather than information.",
+        "category": "portfolio_construction",
+        "configuration": {
+            "file": "pipeline/portfolio_construction.py",
+            "rank_buffer": [1.25, 1.5, 2.0], "minimum_holding_months": [1, 3, 6],
+            "score_smoothing_alpha": [0.5, 0.7], "replacement_margin": [2.0, 5.0],
+            "note": "wired into backtest_monthly.py behind flags that all default to None, so omitting them reproduces the champion's plain top-N selection exactly",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {},
+        "number_of_variants_tested": 10,
+        "result": "Not measured. Each control is proved to behave exactly as specified (33 tests, including exact buffer and margin boundaries and the turnover-reduction property), which is the precondition for trusting the measurement when it runs.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "Measuring net-of-cost impact needs a backtest re-run over ~860 names of five-year daily history, which needs network access this environment does not have.",
+    },
+    {
+        "id": "C5-score-calibration",
+        "declared_at": "2026-08-07T14:50:00+00:00",
+        "hypothesis": "Score buckets carry a measurable historical outcome distribution that can give a 0-100 score empirical meaning.",
+        "category": "signal_evidence",
+        "configuration": {
+            "file": "pipeline/score_calibration.py",
+            "minimum_observations_per_bucket": 30,
+            "buckets": "adaptive quantiles plus the fixed score bands confidence.py reads",
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"observations": 0, "measured_buckets": 0},
+        "number_of_variants_tested": 1,
+        "result": "Blocked. The harness has 0 of 24 periods and the PIT store is three days deep, so every bucket reports insufficient_data with its shortfall named and confidence_detail.historical_calibration stays null.",
+        "decision": "INCONCLUSIVE",
+        "reason": "The gate is the deliverable: fabricating calibration would convert an admitted unknown into a false claim. Caught one inconsistency in testing -- publishability was gated on adaptive quintiles while confidence.py reads fixed bands, and the two can disagree.",
+    },
 ]
 
 
-def total_variants_tested(entries=None):
-    """The honest trial count for Deflated Sharpe and PBO."""
-    return sum(item["number_of_variants_tested"] for item in (entries or RECORDED))
+def _validate(entry):
+    required = {"id", "hypothesis", "category", "configuration", "train_period",
+               "validation_period", "test_period", "metrics", "number_of_variants_tested",
+               "result", "decision", "reason"}
+    missing = required - set(entry)
+    if missing:
+        raise ValueError(f"{entry.get('id', '<unknown>')}: missing registry fields {sorted(missing)}")
+    if entry["decision"] not in DECISIONS:
+        raise ValueError(f"{entry['id']}: decision '{entry['decision']}' not in {sorted(DECISIONS)}")
 
 
-def build_report(entries=None):
-    entries = list(entries if entries is not None else RECORDED)
-    identifiers = [item["id"] for item in entries]
-    duplicates = sorted({key for key in identifiers if identifiers.count(key) > 1})
-    if duplicates:
-        raise ValueError(f"duplicate experiment ids: {duplicates}")
-    by_result = {}
-    for item in entries:
-        by_result.setdefault(item["result"], []).append(item["id"])
+def backfill_multiple_testing_log(registry=REGISTRY, path=MULTIPLE_TESTING_LOG_PATH):
+    """Feed every registry entry's trial count into the deflated-Sharpe multiple-testing
+    log, so validation_framework.deflated_sharpe_ratio can see the real number of trials
+    instead of assuming one. Idempotent: entries already logged (by test_id) are skipped
+    rather than raising, since append_multiple_testing_log rejects duplicate test_ids and
+    this function is meant to be safe to call on every run.
+    """
+    appended = 0
+    for entry in registry:
+        test = {
+            "test_id": entry["id"],
+            "declared_at": entry["declared_at"],
+            "hypothesis": entry["hypothesis"],
+            "holdout_start": entry.get("test_period") or entry.get("validation_period") or "not_applicable",
+            "number_of_variants_tested": entry["number_of_variants_tested"],
+            "decision": entry["decision"],
+        }
+        try:
+            append_multiple_testing_log(path, test)
+            appended += 1
+        except FileExistsError:
+            continue
+    return appended
+
+
+def total_variants_tested(registry=REGISTRY):
+    """Every configuration searched across the whole research programme.
+
+    ``validation.ic_harness.research_trial_count`` reads this so Deflated Sharpe deflates
+    against the real search, not against the handful of live shadow strategies.
+    """
+    return sum(entry["number_of_variants_tested"] for entry in registry)
+
+
+def build_report(registry=REGISTRY):
+    for entry in registry:
+        _validate(entry)
     return {
-        "schema_version": 1,
-        "purpose": ("a durable record of every research attempt, so failed ideas are not "
-                    "rediscovered and the trial count feeding Deflated Sharpe and PBO reflects "
-                    "the whole programme rather than the configuration being written up"),
-        "experiments": entries,
-        "summary": {
-            "experiments": len(entries),
-            "total_variants_tested": total_variants_tested(entries),
-            "by_result": {key: sorted(value) for key, value in sorted(by_result.items())},
-            "blocked_on_network_access": sorted(
-                item["id"] for item in entries if item["decision"] == "pending_data"),
-            "promoted_to_champion": sorted(
-                item["id"] for item in entries if item["decision"] == "promote"),
+        "schema": ["id", "hypothesis", "category", "configuration", "train_period",
+                  "validation_period", "test_period", "metrics", "number_of_variants_tested",
+                  "result", "decision", "reason"],
+        "total_experiments": len(registry),
+        "by_decision": {
+            decision: sum(1 for entry in registry if entry["decision"] == decision)
+            for decision in sorted(DECISIONS)
         },
+        "total_variants_tested": total_variants_tested(registry),
+        "experiments": registry,
     }
 
 
-def main():
-    report = build_report()
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    with open(OUT_PATH, "w") as handle:
-        json.dump(report, handle, indent=2, sort_keys=True)
+def write_report(registry=REGISTRY, path=REPORT_PATH):
+    report = build_report(registry)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    temporary = f"{path}.tmp"
+    with open(temporary, "w") as handle:
+        json.dump(report, handle, indent=2)
         handle.write("\n")
-    summary = report["summary"]
-    print(f"{summary['experiments']} experiments, "
-          f"{summary['total_variants_tested']} variants tested in total")
-    for result, ids in summary["by_result"].items():
-        print(f"  {result:<13} {len(ids)}  {', '.join(ids)}")
-    print(f"promoted to champion: {summary['promoted_to_champion'] or 'none'}")
-    print(f"wrote {OUT_PATH}")
+    os.replace(temporary, path)
     return report
 
 
+def main():
+    report = write_report()
+    appended = backfill_multiple_testing_log()
+    print(f"Wrote {REPORT_PATH}: {report['total_experiments']} experiments, "
+          f"{report['total_variants_tested']} variants tested, by decision: {report['by_decision']}")
+    print(f"Multiple-testing log: {appended} new entries appended to {MULTIPLE_TESTING_LOG_PATH}")
+    return 0
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

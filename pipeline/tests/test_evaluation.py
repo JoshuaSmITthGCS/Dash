@@ -167,6 +167,28 @@ class WalkForwardTests(unittest.TestCase):
         result = ev.walk_forward(periods)
         self.assertIsNone(result["periods"][0]["rank_ic"])
 
+    def test_purge_periods_default_to_zero_reproducing_the_exact_prior_behavior(self):
+        periods = synthetic_periods(6, 1.0)
+        default = ev.walk_forward(periods)
+        explicit_zero = ev.walk_forward(periods, purge_periods=0, embargo_periods=0)
+        self.assertEqual(default, explicit_zero)
+
+    def test_embargo_drops_the_most_recent_periods_whose_label_window_is_unresolved(self):
+        periods = synthetic_periods(6, 1.0)
+        result = ev.walk_forward(periods, embargo_periods=2)
+        self.assertEqual(len(result["periods"]), 4)
+        dates = [row["date"] for row in result["periods"]]
+        self.assertEqual(dates, [period["date"] for period in periods[:4]])
+
+    def test_purge_keeps_only_non_overlapping_periods_for_a_three_period_label(self):
+        periods = synthetic_periods(9, 1.0)
+        result = ev.walk_forward(periods, purge_periods=2)
+        # A label spanning purge_periods+1=3 periods means adjacent periods' forward windows
+        # overlap; only every third period is an independent (non-overlapping) observation.
+        self.assertEqual(len(result["periods"]), 3)
+        dates = [row["date"] for row in result["periods"]]
+        self.assertEqual(dates, [periods[0]["date"], periods[3]["date"], periods[6]["date"]])
+
 
 class PaperTradingTests(unittest.TestCase):
     def setUp(self):
@@ -195,49 +217,3 @@ class PaperTradingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-# --- unresolved trailing labels are purged ------------------------------------------------
-
-def _period(date, scores, returns):
-    return {"date": date, "scores": scores, "forward_returns": returns}
-
-
-def _series(count):
-    return [_period(f"2024-{month:02d}-01",
-                    {"A": 90.0, "B": 50.0, "C": 10.0},
-                    {"A": 0.05, "B": 0.01, "C": -0.03})
-            for month in range(1, count + 1)]
-
-
-def test_walk_forward_purges_the_trailing_unresolved_periods():
-    """A 63-session label observed monthly is unresolved for the last two periods."""
-    full = ev.walk_forward(_series(10))
-    purged = ev.walk_forward(_series(10), purge_periods=2)
-
-    assert len(full["periods"]) == 10
-    assert len(purged["periods"]) == 8
-    assert purged["purged_periods"] == 2
-    assert purged["periods"][-1]["date"] == "2024-08-01"
-
-
-def test_purging_defaults_to_off_so_existing_callers_are_unchanged():
-    assert ev.walk_forward(_series(6))["purged_periods"] == 0
-    assert len(ev.walk_forward(_series(6))["periods"]) == 6
-
-
-def test_purging_more_periods_than_exist_leaves_nothing_rather_than_wrapping():
-    result = ev.walk_forward(_series(3), purge_periods=5)
-    assert result["periods"] == []
-
-
-def test_negative_purge_is_rejected():
-    import pytest
-    with pytest.raises(ValueError):
-        ev.walk_forward(_series(3), purge_periods=-1)
-
-
-def test_evaluate_candidate_forwards_the_purge():
-    verdict = ev.evaluate_candidate(_series(10), trials=3, purge_periods=2)
-    assert verdict["purged_periods"] == 2
-    assert len(verdict["periods"]) == 8
