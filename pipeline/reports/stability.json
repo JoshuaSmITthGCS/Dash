@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 11,
+  "refreshes_observed": 12,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -2070,6 +2070,120 @@
           ],
           "score_delta": 10.6,
           "confidence_delta": 0.4
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-07T18:59:29.327733+00:00",
+      "current_refresh": "advisor-2026-08-07T19:44:09.528421+00:00",
+      "shared_tickers": 874,
+      "rank_turnover": {
+        "top_40": 0.025,
+        "top_100": 0.025
+      },
+      "tickers_with_availability_driven_change": 11,
+      "tickers_with_availability_driven_change_pct": 0.013,
+      "mean_abs_score_delta": 0.04,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "AIG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -4.7,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "AGO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.9,
+          "confidence_delta": -0.07
+        },
+        {
+          "ticker": "AFL",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.0,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.7,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "CRM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "G",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.8,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "GAP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.6,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "NUE",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.4,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "APA",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.4,
+          "confidence_delta": 0.0
+        },
+        {
+          "ticker": "DVN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation"
+          ],
+          "score_delta": 0.2,
+          "confidence_delta": 0.01
         }
       ]
     }
