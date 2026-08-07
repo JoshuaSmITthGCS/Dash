@@ -284,10 +284,14 @@ class SentimentWindowTests(unittest.TestCase):
         self.assertEqual(detail["article_count"], 1)
         self.assertGreater(score, 50)
 
-    def test_no_coverage_reads_neutral_with_zero_confidence(self):
+    def test_no_coverage_is_reported_unavailable_not_neutral(self):
+        # A component with no evidence must not silently read as "neutral" - that fabricates
+        # a data point. blend_research_components renormalizes over the components that
+        # remain, rather than anchoring the blend on a manufactured 50.0.
         score, detail = sentiment_score([], "TEST")
-        self.assertEqual(score, 50.0)
+        self.assertIsNone(score)
         self.assertEqual(detail["coverage"], 0.0)
+        self.assertFalse(detail["news_available"])
 
     def test_nine_syndicated_copies_count_as_one_article(self):
         now = datetime(2026, 8, 2, tzinfo=timezone.utc)
@@ -322,8 +326,27 @@ class SentimentWindowTests(unittest.TestCase):
         score, detail = sentiment_score([article], "TEST",
                                         now=datetime(2026, 8, 2, tzinfo=timezone.utc))
 
-        self.assertEqual(score, 50.0)
+        self.assertIsNone(score)
+        self.assertFalse(detail["news_available"])
         self.assertEqual(detail["discarded_low_confidence"], 1)
+
+    def test_unavailable_news_is_excluded_from_the_blend_not_treated_as_neutral(self):
+        # A row with zero cleared news coverage must renormalize fundamentals/market_behavior
+        # to fill the full weight, not silently blend in a manufactured 50.0 news score.
+        snap = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+                "peg": 1.1, "forward_pe": 22, "price_to_sales": 5, "return_on_equity": 0.18}
+        closes = [100 + index * 0.2 for index in range(300)]
+        row = build_research("TEST", snap, closes, closes, [])
+        self.assertIsNone(row["components"]["news_sentiment"])
+        self.assertFalse(row["news_available"])
+        self.assertFalse(row["sentiment_detail"]["news_available"])
+        expected_raw = round(
+            (row["components"]["fundamentals"] * RANKING_WEIGHTS["fundamentals"]
+             + row["components"]["market_behavior"] * RANKING_WEIGHTS["market_behavior"])
+            / (RANKING_WEIGHTS["fundamentals"] + RANKING_WEIGHTS["market_behavior"]),
+            1,
+        )
+        self.assertEqual(row["raw_score"], expected_raw)
 
     def test_filing_and_commentary_are_labelled_in_weight_detail(self):
         now = datetime(2026, 8, 2, tzinfo=timezone.utc)

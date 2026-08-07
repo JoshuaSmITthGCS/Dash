@@ -20,10 +20,13 @@ from scorer import SETTINGS
 CFG = SETTINGS.get("confidence", {})
 
 # Providers that are intentionally not attempted this run (opt-in features, quota-gated
-# intraday refreshes) must not drag reliability down -- an unconfigured feature is not the
-# same thing as a broken one.
-_NOT_CONFIGURED_STATUSES = {"unavailable", "opt_in", "disabled_for_intraday_refresh",
-                            "configuration_required"}
+# intraday refreshes, or a secret like SEC_USER_AGENT that was never set) must not drag
+# reliability down -- an unconfigured feature is not the same thing as a broken one.
+# "unavailable_provider_error" is deliberately absent from this set: that status means the
+# provider *was* configured and still failed, which is real evidence of unreliability, not
+# an intentional gap, so it must count against source_reliability like "degraded"/"failed".
+_NOT_CONFIGURED_STATUSES = {"unavailable", "unavailable_not_configured", "opt_in",
+                            "disabled_for_intraday_refresh", "configuration_required"}
 
 
 def _clamp01(value):

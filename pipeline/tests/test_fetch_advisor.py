@@ -68,6 +68,36 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertEqual(preliminary[:20], incumbents)
         self.assertEqual(preliminary[20:25], challengers)
 
+    def test_full_universe_research_cannot_let_previous_rank_leak_in(self):
+        # A3: statement enrichment must be decided from this run's fundamentals alone in
+        # research mode. A populated previous_top - the exact incumbency the production
+        # path favors - must produce byte-identical priority to an empty previous_top.
+        preliminary = tuple(f"S{i:02d}" for i in range(30))
+        previous_top_populated = tuple(f"S{i:02d}" for i in range(25, 30)) + ("OUTSIDER",)
+        available = set(preliminary)
+
+        with_history = select_enrichment_priority(
+            previous_top_populated, preliminary, available, ("PORT",),
+            full_universe_research=True,
+        )
+        without_history = select_enrichment_priority(
+            (), preliminary, available, ("PORT",),
+            full_universe_research=True,
+        )
+
+        self.assertEqual(with_history, without_history)
+        self.assertEqual(with_history[0], ())
+        self.assertEqual(with_history[1], preliminary)
+        self.assertEqual(with_history[2], (*preliminary, "PORT"))
+
+    def test_full_universe_research_lifts_the_challenger_cap(self):
+        preliminary = tuple(f"S{i:02d}" for i in range(150))
+        _, challengers, priority = select_enrichment_priority(
+            (), preliminary, set(preliminary), full_universe_research=True,
+        )
+        self.assertEqual(len(challengers), 150)
+        self.assertEqual(len(priority), 150)
+
 
 class PortfolioCoverageTests(unittest.TestCase):
     def test_every_configured_holding_gets_a_coverage_row(self):

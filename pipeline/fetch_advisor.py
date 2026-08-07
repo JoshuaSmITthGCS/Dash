@@ -54,6 +54,14 @@ PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
 NEWS_DISCOVERY_LIMIT = 75
+# Research-mode override (A3): the production enrichment queue seeds itself with the prior
+# refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
+# (EV/EBITDA, ROIC, interest coverage, Piotroski F) only ever exist for names a weaker model
+# already liked - the champion can never discover a name its own history didn't surface.
+# Setting FULL_UNIVERSE_RESEARCH=true ignores that history entirely for one run so every
+# candidate gets statement enrichment on equal footing. Never the default production path -
+# a full-universe statement sweep is far more Yahoo requests than the normal fast refresh.
+FULL_UNIVERSE_RESEARCH = os.getenv("FULL_UNIVERSE_RESEARCH", "").strip().lower() in {"1", "true", "yes"}
 
 # The unpublished remainder of the universe rides along so the value and momentum screens
 # can scan more than the leaderboard. It carries only the fields those screens actually
@@ -817,8 +825,18 @@ def carry_forward_rows(research, symbols, previous_payload):
     ]
 
 
-def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=()):
-    """Choose prior leaders, five best outsiders, then any explicit portfolio coverage."""
+def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
+                               full_universe_research=False):
+    """Choose prior leaders, five best outsiders, then any explicit portfolio coverage.
+
+    ``full_universe_research=True`` is the A3 research-mode override: ``previous_top`` is
+    ignored completely (not truncated, not consulted - the parameter is simply never read
+    in this branch) and every preliminary candidate becomes a challenger, so the resulting
+    priority ordering cannot depend on what a prior, weaker model happened to rank highly.
+    """
+    if full_universe_research:
+        priority = tuple(dict.fromkeys((*preliminary_symbols, *portfolio_symbols)))
+        return (), tuple(preliminary_symbols), priority
     incumbents = tuple(
         symbol for symbol in previous_top
         if symbol in available
@@ -1010,9 +1028,11 @@ def run():
     all_news.extend(discovery_news)
 
     incumbents, challengers, statement_priority = select_enrichment_priority(
-        previous_top, preliminary_symbols, available, portfolio_symbols
+        previous_top, preliminary_symbols, available, portfolio_symbols,
+        full_universe_research=FULL_UNIVERSE_RESEARCH,
     )
-    enriched_count, enrichment_diagnostics = enrich(contexts, extended_limit, delay, statement_priority)
+    effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
+    enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)
 
     challenger_cfg = (SETTINGS.get("challengers") or {}).get(
         "cross_sectional_normalization", {}
@@ -1355,7 +1375,16 @@ def run():
                         "a company still enriches on statement frames alone if only .info fails.",
             },
             "sec_form4": {
-                "status": "unavailable" if not sec.available else ("degraded" if sec_failures else "healthy"),
+                # Distinguish "we never asked" from "we asked and SEC EDGAR failed us" -
+                # confidence.py excludes the former from source reliability (an unconfigured
+                # feature is not evidence of anything) and counts the latter as a real
+                # failure, same as any other provider outage.
+                "status": (
+                    "unavailable_not_configured" if not sec.available else
+                    "unavailable_provider_error" if sec_failures and not insider_signals else
+                    "degraded" if sec_failures else
+                    "healthy"
+                ),
                 "failed_symbols": sec_failures,
                 "scored_symbols": len(insider_signals),
                 "note": "Set SEC_USER_AGENT to enable free source-of-record insider transactions" if not sec.available else
