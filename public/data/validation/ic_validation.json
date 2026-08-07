@@ -1,7 +1,21 @@
 {
-  "schema_version": 1,
-  "generated_at": "2026-08-07T09:40:01.320141+00:00",
+  "schema_version": 2,
+  "generated_at": "2026-08-07T10:24:54.001095+00:00",
   "data_integrity": "prospective_point_in_time",
+  "forecast_target": {
+    "primary_horizon": "3M",
+    "primary_horizon_sessions": 63,
+    "target": "residual_forward_return",
+    "definition": "stock total return over N trading sessions minus the equal-weight mean return of its own sector over the same window",
+    "horizon_basis": "trading_sessions",
+    "secondary_horizons": [
+      "1M",
+      "6M",
+      "12M"
+    ],
+    "secondary_horizons_are_diagnostic_only": true,
+    "trading_calendar_available": true
+  },
   "reconstructed_history": {
     "included": false,
     "label": "reconstructed, look-ahead contaminated"
@@ -24,6 +38,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 21,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -123,6 +141,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 63,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -222,6 +244,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 126,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -321,6 +347,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 252,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -422,6 +452,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 21,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -521,6 +555,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 63,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -620,6 +658,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 126,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -719,6 +761,10 @@
         ],
         "icir": null,
         "annualized_icir": null,
+        "target": "residual_forward_return",
+        "horizon_sessions": 252,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": null,
         "monthly_rank_ic": [],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -810,29 +856,33 @@
     "1M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false
+      "eligible": false,
+      "primary": false
     },
     "3M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false
+      "eligible": false,
+      "primary": true
     },
     "6M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false
+      "eligible": false,
+      "primary": false
     },
     "12M": {
       "champion_mean_rank_ic": null,
       "challenger_mean_rank_ic": null,
-      "eligible": false
+      "eligible": false,
+      "primary": false
     }
   },
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "043a4353d49bcd75c823fbb5106c8091e9aeafaa",
-    "config_hash": "c522e0387f9968dc5ee57c8ec90f97503a91e9850d70e4ae38b1d90a2b77f5d0",
-    "generated_at": "2026-08-07T09:40:01.320141+00:00"
+    "git_commit_sha": "68e6a81e8cf32b768a6dbc306c96f31cb04a5305",
+    "config_hash": "010ba10ca6c6befc28cb866e67deedb401b7f412ca7f1615ec0cfffdbc57a21e",
+    "generated_at": "2026-08-07T10:24:54.001095+00:00"
   }
 }

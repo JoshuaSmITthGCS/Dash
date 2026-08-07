@@ -24,6 +24,7 @@ from common import LOG, DATA_DIR, load_json, save_json  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from evaluation import deflated_sharpe_ratio, pearson, rank  # noqa: E402
 import pit_store as raw_pit_store  # noqa: E402
+from validation import trading_calendar  # noqa: E402
 
 
 SETTINGS = load_json("settings.json", from_config=True) or {}
@@ -241,13 +242,52 @@ def _monthly_refreshes(refreshes):
     return [monthly[key] for key in sorted(monthly)]
 
 
-def _forward_periods(refreshes, variant, horizon_days):
+def _sector_residuals(scored, minimum_peers=None):
+    """Subtract each name's own sector's equal-weight mean return from its raw return.
+
+    ``docs/RESEARCH-CONTRACT.md`` specifies a sector-residual target, not a raw one. Ranking a
+    utility against a semiconductor on raw forward return mostly measures which sector moved,
+    which is not what a cross-sectional stock-selection score claims to predict.
+
+    A sector with too few names in the period cannot supply a meaningful mean, so those names
+    fall back to the universe mean and are flagged. The fallback is recorded per row rather
+    than hidden, because a period where most names fell back is measuring something closer to
+    a market-residual target and should be readable as such.
+    """
+    minimum_peers = (CONFIG.get("sector_residual_minimum_peers", 3)
+                     if minimum_peers is None else minimum_peers)
+    by_sector = defaultdict(list)
+    for row in scored:
+        by_sector[row.get("sector")].append(row["forward_return"])
+    universe_mean = mean(row["forward_return"] for row in scored)
+    for row in scored:
+        peers = by_sector.get(row.get("sector")) or []
+        usable = row.get("sector") and len(peers) >= minimum_peers
+        benchmark = mean(peers) if usable else universe_mean
+        row["sector_return"] = benchmark
+        row["residual_forward_return"] = row["forward_return"] - benchmark
+        row["residual_basis"] = "sector" if usable else "universe_fallback"
+    return scored
+
+
+def _forward_periods(refreshes, variant, horizon_sessions, calendar_source=None):
+    """Score/label pairs where the label is a completed ``horizon_sessions`` forward window.
+
+    The horizon is counted in **trading sessions** off a real exchange calendar, not calendar
+    days. The two agree at the median (63 sessions spans 91 calendar days) but drift by
+    several sessions around holidays, so a fixed calendar-day horizon silently produced labels
+    of varying length. See ``validation/trading_calendar.py``.
+    """
+    calendar_source = calendar_source or trading_calendar.DEFAULT_SESSION_SOURCE
     periods = []
     for index, start in enumerate(refreshes):
-        start_date = datetime.fromisoformat(start["recorded_at"].replace("Z", "+00:00"))
-        target = start_date + timedelta(days=horizon_days)
+        recorded_at = start["recorded_at"]
+        target_date = trading_calendar.advance(recorded_at[:10], horizon_sessions,
+                                               source=calendar_source)
+        if not target_date:
+            continue
         end = next((candidate for candidate in refreshes[index + 1:]
-                    if datetime.fromisoformat(candidate["recorded_at"].replace("Z", "+00:00")) >= target), None)
+                    if candidate["recorded_at"][:10] >= target_date), None)
         if not end:
             continue
         end_prices = {row["ticker"]: row.get("price") for row in end["rows"]}
@@ -261,10 +301,18 @@ def _forward_periods(refreshes, variant, horizon_days):
                 "ticker": row["ticker"],
                 "score": score,
                 "forward_return": end_price / start_price - 1,
+                "sector": (row.get("raw_metric_inputs") or {}).get("sector"),
                 "average_dollar_volume": (row.get("raw_metric_inputs") or {}).get("average_dollar_volume"),
             })
         if scored:
-            periods.append({"date": start["recorded_at"][:10], "rows": scored})
+            periods.append({
+                "date": recorded_at[:10],
+                "label_end_date": end["recorded_at"][:10],
+                "horizon_sessions": horizon_sessions,
+                "realized_sessions": trading_calendar.sessions_between(
+                    recorded_at[:10], end["recorded_at"][:10], source=calendar_source),
+                "rows": _sector_residuals(scored),
+            })
     return periods
 
 
@@ -274,7 +322,14 @@ def _spearman(left, right):
     return pearson(rank(left), rank(right))
 
 
-def _buckets(rows, count):
+# The contract's target. Kept as a named constant so every statistic in this module is
+# demonstrably measuring the same label, and so the raw-return diagnostic cannot be mistaken
+# for the preregistered one.
+TARGET_FIELD = "residual_forward_return"
+DIAGNOSTIC_TARGET_FIELD = "forward_return"
+
+
+def _buckets(rows, count, target=TARGET_FIELD):
     ordered = sorted(rows, key=lambda row: row["score"])
     buckets = []
     for index in range(count):
@@ -285,7 +340,7 @@ def _buckets(rows, count):
             buckets.append({
                 "bucket": index + 1,
                 "count": len(chunk),
-                "mean_forward_return": mean(row["forward_return"] for row in chunk),
+                "mean_forward_return": mean(row[target] for row in chunk),
             })
     return buckets
 
@@ -361,12 +416,15 @@ def _period_cost_bps(rows, count):
     return mean(bps_values) if bps_values else CONFIG["long_short_cost_bps"]
 
 
-def evaluate_variant(refreshes, variant, horizon_days):
-    periods = _forward_periods(refreshes, variant, horizon_days)
+def evaluate_variant(refreshes, variant, horizon_sessions, target=TARGET_FIELD):
+    periods = _forward_periods(refreshes, variant, horizon_sessions)
     ic_values, leaks, bucket_periods, spreads, applied_cost_bps = [], [], defaultdict(list), [], []
+    fallback_rows = total_rows = 0
     for period in periods:
         rows = period["rows"]
-        ic = _spearman([row["score"] for row in rows], [row["forward_return"] for row in rows])
+        fallback_rows += sum(row.get("residual_basis") == "universe_fallback" for row in rows)
+        total_rows += len(rows)
+        ic = _spearman([row["score"] for row in rows], [row[target] for row in rows])
         if ic is not None:
             ic_values.append(ic)
             if abs(ic) > CONFIG["lookahead_rank_ic_threshold"]:
@@ -375,7 +433,7 @@ def evaluate_variant(refreshes, variant, horizon_days):
                 leaks.append(leak)
                 LOG.error(f"LOOK-AHEAD WARNING {variant} {period['date']}: rank IC {ic:.3f}")
         for count in CONFIG["quantile_counts"]:
-            buckets = _buckets(rows, count)
+            buckets = _buckets(rows, count, target=target)
             for bucket in buckets:
                 bucket_periods[(count, bucket["bucket"])].append(bucket["mean_forward_return"])
             if count == CONFIG["quantile_counts"][0] and len(buckets) == count:
@@ -404,6 +462,11 @@ def evaluate_variant(refreshes, variant, horizon_days):
     spread_sharpe = mean(spreads) / stdev(spreads) if len(spreads) > 1 and stdev(spreads) else None
     return {
         **_ic_summary(ic_values),
+        "target": target,
+        "horizon_sessions": horizon_sessions,
+        "horizon_basis": "trading_sessions",
+        "sector_residual_fallback_share": (round(fallback_rows / total_rows, 3)
+                                           if total_rows else None),
         "monthly_rank_ic": ic_values,
         "probable_lookahead_flags": leaks,
         "bucket_returns": bucket_output,
@@ -425,14 +488,29 @@ def build_report(rows=None):
     rows = read_snapshots() if rows is None else rows
     refreshes = _refreshes(rows)
     monthly_refreshes = _monthly_refreshes(refreshes)
+    horizons = CONFIG["horizons_sessions"]
+    primary = CONFIG["primary_horizon"]
     variants = {variant: {} for variant in ("champion", "challenger")}
     for variant in variants:
-        for label, days in CONFIG["horizons_days"].items():
-            variants[variant][label] = evaluate_variant(monthly_refreshes, variant, days)
+        for label, session_count in horizons.items():
+            variants[variant][label] = evaluate_variant(monthly_refreshes, variant, session_count)
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "data_integrity": "prospective_point_in_time",
+        "forecast_target": {
+            # Preregistered before any of these statistics had a value, so that the best of
+            # four horizons cannot be selected after the fact.
+            "primary_horizon": primary,
+            "primary_horizon_sessions": horizons[primary],
+            "target": TARGET_FIELD,
+            "definition": ("stock total return over N trading sessions minus the equal-weight "
+                           "mean return of its own sector over the same window"),
+            "horizon_basis": "trading_sessions",
+            "secondary_horizons": [label for label in horizons if label != primary],
+            "secondary_horizons_are_diagnostic_only": True,
+            "trading_calendar_available": trading_calendar.is_available(),
+        },
         "reconstructed_history": {
             "included": False,
             "label": "reconstructed, look-ahead contaminated",
@@ -446,8 +524,9 @@ def build_report(rows=None):
                 "challenger_mean_rank_ic": variants["challenger"][label]["mean_rank_ic"],
                 "eligible": (variants["champion"][label]["status"] == "eligible"
                              and variants["challenger"][label]["status"] == "eligible"),
+                "primary": label == primary,
             }
-            for label in CONFIG["horizons_days"]
+            for label in horizons
         },
     }
 

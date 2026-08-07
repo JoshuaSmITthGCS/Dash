@@ -59,6 +59,16 @@
       "6M": 182,
       "12M": 365
     },
+    "horizons_days_note": "Retained only as the pre-correction calendar-day approximation. The harness measures horizons_sessions off a real exchange calendar (pipeline/validation/trading_calendar.py). 63 sessions spans 91 calendar days at the median but drifts by several sessions around holidays, so a fixed calendar-day horizon produced labels of varying length.",
+    "horizons_sessions": {
+      "1M": 21,
+      "3M": 63,
+      "6M": 126,
+      "12M": 252
+    },
+    "primary_horizon": "3M",
+    "primary_horizon_note": "Preregistered per docs/RESEARCH-CONTRACT.md before any of these statistics had a value. The other three horizons are diagnostic only and must not be promoted to primary after seeing results.",
+    "sector_residual_minimum_peers": 3,
     "periods_per_year": 12,
     "minimum_icir_periods": 24,
     "lookahead_rank_ic_threshold": 0.1,

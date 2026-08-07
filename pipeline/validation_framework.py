@@ -55,11 +55,54 @@ def import_external_rankings(path):
     return clean
 
 
-def walk_forward_splits(observations, train_periods, test_periods):
-    """Expanding-window splits; test observations are never used to fit earlier weights."""
+def label_overlap_periods(horizon_sessions, sessions_per_period=21):
+    """How many observation periods a forward label spans.
+
+    A 63-session label observed at period t is still resolving at t+1 and t+2. Those periods'
+    labels are built from overlapping price paths, so training on them and testing on t leaks
+    the answer. Rounded up: a label that spills even partly into the next period overlaps it.
+    """
+    if horizon_sessions <= 0 or sessions_per_period <= 0:
+        return 0
+    return max(0, -(-horizon_sessions // sessions_per_period) - 1)
+
+
+def walk_forward_splits(observations, train_periods, test_periods, *, purge_periods=0,
+                        embargo_periods=0):
+    """Expanding-window splits; test observations are never used to fit earlier weights.
+
+    ``purge_periods`` drops training observations immediately before the test window whose
+    forward labels overlap it -- the leak that overlapping labels create in any horizon longer
+    than the rebalance interval (Lopez de Prado, *Advances in Financial Machine Learning*,
+    ch. 7). ``embargo_periods`` additionally drops observations immediately *after* the test
+    window from later training folds, so serial correlation across the boundary cannot carry
+    test information back into training.
+
+    ``embargo_periods`` drops a further band on top of the purge, to break serial correlation
+    across the boundary rather than only label overlap.
+
+    Both act on the *trailing edge of training* because these splits are strictly expanding:
+    training is always earlier than test, so the post-test embargo band of combinatorial
+    cross-validation has no analogue here -- there is no path by which post-test data reaches
+    a training fold. Claiming otherwise would be theatre.
+
+    Both default to zero, which reproduces the original behaviour exactly. Derive the purge
+    from the target horizon with ``label_overlap_periods``.
+    """
+    if purge_periods < 0 or embargo_periods < 0:
+        raise ValueError("purge_periods and embargo_periods must be non-negative")
+    excluded = purge_periods + embargo_periods
     splits, end = [], train_periods
     while end + test_periods <= len(observations):
-        splits.append({"train": observations[:end], "test": observations[end:end + test_periods]})
+        test_start, test_end = end, end + test_periods
+        train_end = max(0, test_start - excluded)
+        splits.append({
+            "train": observations[:train_end],
+            "test": observations[test_start:test_end],
+            "purged": observations[train_end:test_start],
+            "purge_periods": purge_periods,
+            "embargo_periods": embargo_periods,
+        })
         end += test_periods
     return splits
 

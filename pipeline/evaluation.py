@@ -268,13 +268,24 @@ def probability_of_backtest_overfitting(performance_matrix, *, splits=8):
 
 # ---------------- walk-forward driver ----------------
 
-def walk_forward(periods, *, quantiles=5, periods_per_year=12):
+def walk_forward(periods, *, quantiles=5, periods_per_year=12, purge_periods=0):
     """Evaluate a scored universe period by period.
 
     ``periods`` is a sequence of ``{"date", "scores": {ticker: score},
     "forward_returns": {ticker: return}}``. Each period is scored against the returns that
     followed it and nothing else, so there is no way for a later observation to leak in.
+
+    ``purge_periods`` drops the trailing periods whose forward labels have not finished
+    resolving. This matters whenever the target horizon is longer than the interval between
+    periods: with a 63-session label observed monthly, the last two periods' returns are
+    still incomplete, and scoring them treats a partial path as a realized one. Zero (the
+    default) is correct only when the label fits inside one period. See
+    ``validation_framework.label_overlap_periods``.
     """
+    if purge_periods < 0:
+        raise ValueError("purge_periods must be non-negative")
+    if purge_periods:
+        periods = periods[:len(periods) - purge_periods] if purge_periods < len(periods) else []
     ic_series, spreads, rows = [], [], []
     for period in periods:
         scores = period.get("scores") or {}
@@ -304,6 +315,7 @@ def walk_forward(periods, *, quantiles=5, periods_per_year=12):
     return {
         "periods": rows,
         "ic": summary,
+        "purged_periods": purge_periods,
         "mean_quantile_spread": round(spread_mean, 4) if spread_mean is not None else None,
         "monotonic_periods": sum(1 for row in rows if row["monotonic"]),
         "spread_sharpe_per_period": round(spread_sharpe, 3) if spread_sharpe is not None else None,
@@ -311,13 +323,15 @@ def walk_forward(periods, *, quantiles=5, periods_per_year=12):
 
 
 def evaluate_candidate(periods, *, trials=1, quantiles=5, periods_per_year=12,
-                       baseline=None):
+                       baseline=None, purge_periods=0):
     """Full verdict on one candidate configuration, deflation included.
 
     ``trials`` must be the honest count of configurations tried, not one. Understating it is
-    the most common way a deflated Sharpe gets quietly re-inflated.
+    the most common way a deflated Sharpe gets quietly re-inflated. ``purge_periods`` is
+    forwarded to ``walk_forward`` to drop unresolved trailing labels.
     """
-    result = walk_forward(periods, quantiles=quantiles, periods_per_year=periods_per_year)
+    result = walk_forward(periods, quantiles=quantiles, periods_per_year=periods_per_year,
+                          purge_periods=purge_periods)
     deflated = deflated_sharpe_ratio(
         result["spread_sharpe_per_period"],
         observations=result["ic"]["periods"] or len(periods),
