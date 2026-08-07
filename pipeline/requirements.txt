@@ -15,3 +15,7 @@ jsonschema>=4.22
 pyyaml>=6.0
 pytest>=8.0
 firebase-admin>=6.5
+# OLS + Newey-West HAC standard errors for pipeline/p0_q1_benchmark_factor_report.py.
+# statsmodels/scipy are not pulled in for one regression script -- numpy alone is enough for a
+# direct sandwich-estimator implementation (see that file's docstring for the exact formula).
+numpy>=1.26
