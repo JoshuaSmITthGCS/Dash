@@ -55,11 +55,43 @@ def import_external_rankings(path):
     return clean
 
 
-def walk_forward_splits(observations, train_periods, test_periods):
-    """Expanding-window splits; test observations are never used to fit earlier weights."""
+# A 63-trading-session (~3 calendar month) forward-return label spans roughly three
+# monthly evaluation periods, so an observation dated up to 3 periods before a test window
+# can still have a forward-return label that reaches into it - training on that observation
+# would let information from the test period leak into the fitted model through the label.
+DEFAULT_LABEL_OVERLAP_PERIODS = 3
+
+
+def walk_forward_splits(observations, train_periods, test_periods, *,
+                        purge_periods=None, embargo_periods=None):
+    """Expanding-window splits; test observations are never used to fit earlier weights.
+
+    ``purge_periods`` drops that many observations immediately before each test window from
+    training - their forward-return label can overlap into the test period even though the
+    observation itself is chronologically earlier, which would leak test-period information
+    into training through the label alone. ``embargo_periods`` additionally excludes that
+    many observations immediately after each test window from *ever* entering training in a
+    later split, for the same reason in the other direction (a later split's expanding train
+    window would otherwise pick them straight back up). Both default to
+    ``DEFAULT_LABEL_OVERLAP_PERIODS`` - the label-overlap gap this project's primary 3M
+    (63-session) horizon actually implies - rather than 0, so purge/embargo protection is on
+    unless a caller deliberately opts out with 0.
+    """
+    purge_periods = DEFAULT_LABEL_OVERLAP_PERIODS if purge_periods is None else purge_periods
+    embargo_periods = DEFAULT_LABEL_OVERLAP_PERIODS if embargo_periods is None else embargo_periods
     splits, end = [], train_periods
+    excluded = set()
     while end + test_periods <= len(observations):
-        splits.append({"train": observations[:end], "test": observations[end:end + test_periods]})
+        test_start, test_end = end, end + test_periods
+        purge_start = max(0, test_start - purge_periods)
+        train_indices = [index for index in range(purge_start) if index not in excluded]
+        splits.append({
+            "train": [observations[index] for index in train_indices],
+            "test": observations[test_start:test_end],
+            "purged": observations[purge_start:test_start],
+            "embargo_periods": embargo_periods,
+        })
+        excluded.update(range(test_end, min(len(observations), test_end + embargo_periods)))
         end += test_periods
     return splits
 

@@ -1,0 +1,49 @@
+{
+  "method": "Each rebalance's already-realized turnover and flat-10bps cost are used to recover value_before (cost = value_before * turnover * bps / 10000, solved for value_before), then re-priced at gross/optimistic/base/stress spread-only bps. Holds the realized portfolio-value path fixed; does not re-simulate compounding effects. No network calls.",
+  "realized_flat_10bps": {
+    "cost_bps": 10.0,
+    "total_cost": 4522.44,
+    "final_value": 169478.08,
+    "cagr": 0.111423
+  },
+  "scenarios": {
+    "gross": {
+      "cost_bps": 0.0,
+      "total_cost": 0.0,
+      "cost_drag_vs_realized_flat_10bps": -4522.44
+    },
+    "optimistic": {
+      "cost_bps": 6.25,
+      "total_cost": 2826.54,
+      "cost_drag_vs_realized_flat_10bps": -1695.9
+    },
+    "base": {
+      "cost_bps": 12.5,
+      "total_cost": 5653.03,
+      "cost_drag_vs_realized_flat_10bps": 1130.59
+    },
+    "stress": {
+      "cost_bps": 25.0,
+      "total_cost": 11306.05,
+      "cost_drag_vs_realized_flat_10bps": 6783.61
+    }
+  },
+  "turnover": {
+    "rebalances": 60,
+    "mean_turnover": 0.6492,
+    "total_turnover": 38.9494,
+    "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)"
+  },
+  "per_name_liquidity_legs": {
+    "status": "blocked_network_policy",
+    "measures": [
+      "adv_participation_pct",
+      "estimated_spread_bps_by_name",
+      "estimated_market_impact_bps_by_name",
+      "days_to_liquidate"
+    ],
+    "reason": "costs.estimate_cost_bps's tiered/impact legs need each traded name's own median_dollar_volume_60d and annualized_volatility on the rebalance date. pipeline/data/backtest_cache/ (per-name price/volume history) is empty in this checkout, and this session's network policy blocks fetching it.",
+    "reproduction_command": "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario {optimistic,base,stress} --out pipeline/reports/backtest_tiered_<scenario>.json"
+  },
+  "never_present_gross_as_net": true
+}
