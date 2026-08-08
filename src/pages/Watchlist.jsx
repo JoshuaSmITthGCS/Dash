@@ -110,8 +110,26 @@ export default function Watchlist() {
   const [alertNotice, setAlertNotice] = useState(null)
   const [activeFilters, setActiveFilters] = useState([])
   const [sortBy, setSortBy] = useState('recent')
+  // Mobile cards default to a thin head + compact stat grid so more names are visible at
+  // once for comparison; the chart, full setup breakdown, and price-target editor sit behind
+  // a per-card expand toggle. Desktop always shows everything, same as before this existed.
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia?.('(max-width: 900px)').matches ?? false)
+  const [expandedTickers, setExpandedTickers] = useState(() => new Set())
   const tickers = watchlist.items.map((item) => item.ticker)
   const refresh = useAdvisorRefresh(data?.generated_at, reload, tickers)
+
+  useEffect(() => {
+    const query = window.matchMedia?.('(max-width: 900px)')
+    if (!query) return undefined
+    const update = (event) => setIsMobile(event.matches)
+    query.addEventListener?.('change', update)
+    return () => query.removeEventListener?.('change', update)
+  }, [])
+  const toggleExpanded = (ticker) => setExpandedTickers((current) => {
+    const next = new Set(current)
+    if (next.has(ticker)) next.delete(ticker); else next.add(ticker)
+    return next
+  })
 
   useEffect(() => {
     try {
@@ -294,36 +312,61 @@ export default function Watchlist() {
               )}
               {row ? (
                 <>
-                  <Sparkline values={row.history?.closes || row.history?.growth || []} label={`${ticker} trend`} height={92} />
-                  <small className="as-of-line">As of {row.history?.dates?.at(-1) || row.data_as_of || 'the latest published close'}</small>
-                  <div className="watchlist-stats">
-                    <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : 'Unavailable'}</b></div>
-                    <div><span>Setup quality</span><b>{guidance.setupScore.toFixed(0)}</b></div>
-                    <div><span>Score</span><b>{row.score}</b></div>
-                  </div>
-                  <SetupQualityBreakdown guidance={guidance} compact />
-                  <div className="watchlist-plan">
-                    <div>
-                      <span>Yahoo consensus target</span>
-                      <b>{guidance.target ? `$${guidance.target.toFixed(2)}` : 'Unavailable'}</b>
-                      <small>{guidance.targetUpside == null
-                        ? 'Yahoo did not publish a usable target'
-                        : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '–'} analysts`}</small>
+                  {isMobile && (
+                    <div className="watchlist-compact-grid">
+                      <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : '–'}</b></div>
+                      <div><span>Setup</span><b>{guidance.setupScore.toFixed(0)}</b></div>
+                      <div><span>Score</span><b>{row.score}</b></div>
+                      <div><span>Upside</span><b>{guidance.targetUpside == null ? '–'
+                        : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}%`}</b></div>
+                      <div><span>Max size</span><b>{guidance.allocation > 0
+                        ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b></div>
+                      <div><span>Dip target</span><b>{item.dipPrice != null ? `$${Number(item.dipPrice).toFixed(2)}` : 'Not set'}</b></div>
                     </div>
-                    <div>
-                      <span>{guidance.sizingMode === 'inverse-volatility' ? 'Equal-risk maximum' : 'Capped maximum'}</span>
-                      <b>{guidance.allocation > 0 ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b>
-                      <small>{guidance.shares > 0
-                        ? guidance.sizingFallback
-                          ? `Up to ${guidance.shares} shares with capped fallback`
-                          : `Up to ${guidance.shares} shares${guidance.annualizedVolatility == null ? '' : ` at ${guidance.annualizedVolatility.toFixed(0)}% volatility`}`
-                        : guidance.hardBlocked ? 'Sizing blocked by published evidence' : 'Enter a budget above'}</small>
+                  )}
+                  {isMobile && (
+                    <button type="button" className="expand-button" aria-expanded={expandedTickers.has(ticker)}
+                      onClick={() => toggleExpanded(ticker)}>
+                      {expandedTickers.has(ticker) ? 'Hide chart & price targets' : 'Show chart, setup breakdown & price targets'}
+                      <Icon name="chevron" size={17} className={expandedTickers.has(ticker) ? 'rotated' : ''} />
+                    </button>
+                  )}
+                  {(!isMobile || expandedTickers.has(ticker)) && (
+                    <div className={isMobile ? 'research-expanded' : undefined}>
+                      <Sparkline values={row.history?.closes || row.history?.growth || []} label={`${ticker} trend`} height={92} />
+                      <small className="as-of-line">As of {row.history?.dates?.at(-1) || row.data_as_of || 'the latest published close'}</small>
+                      {!isMobile && (
+                        <div className="watchlist-stats">
+                          <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : 'Unavailable'}</b></div>
+                          <div><span>Setup quality</span><b>{guidance.setupScore.toFixed(0)}</b></div>
+                          <div><span>Score</span><b>{row.score}</b></div>
+                        </div>
+                      )}
+                      <SetupQualityBreakdown guidance={guidance} compact />
+                      <div className="watchlist-plan">
+                        <div>
+                          <span>Yahoo consensus target</span>
+                          <b>{guidance.target ? `$${guidance.target.toFixed(2)}` : 'Unavailable'}</b>
+                          <small>{guidance.targetUpside == null
+                            ? 'Yahoo did not publish a usable target'
+                            : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '–'} analysts`}</small>
+                        </div>
+                        <div>
+                          <span>{guidance.sizingMode === 'inverse-volatility' ? 'Equal-risk maximum' : 'Capped maximum'}</span>
+                          <b>{guidance.allocation > 0 ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b>
+                          <small>{guidance.shares > 0
+                            ? guidance.sizingFallback
+                              ? `Up to ${guidance.shares} shares with capped fallback`
+                              : `Up to ${guidance.shares} shares${guidance.annualizedVolatility == null ? '' : ` at ${guidance.annualizedVolatility.toFixed(0)}% volatility`}`
+                            : guidance.hardBlocked ? 'Sizing blocked by published evidence' : 'Enter a budget above'}</small>
+                        </div>
+                      </div>
+                      <PriceTargetEditor item={item} suggested={suggested}
+                        onSave={(updates) => watchlist.updateTargets(ticker, updates)}
+                        onCreateAlert={(dipPrice) => handleCreateDipAlert(item, dipPrice)}
+                        alertBusy={alertBusyTicker === ticker} />
                     </div>
-                  </div>
-                  <PriceTargetEditor item={item} suggested={suggested}
-                    onSave={(updates) => watchlist.updateTargets(ticker, updates)}
-                    onCreateAlert={(dipPrice) => handleCreateDipAlert(item, dipPrice)}
-                    alertBusy={alertBusyTicker === ticker} />
+                  )}
                 </>
               ) : <div className="inline-empty">This ticker is saved, but no current quote or research record was published. It will populate after a successful pipeline refresh that covers it.</div>}
             </article>

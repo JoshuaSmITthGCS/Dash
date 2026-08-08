@@ -58,6 +58,7 @@ export const MOBILE_NAV = [
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/planning', label: 'Planning', icon: 'finances' },
+  { to: '/screens/momentum', label: 'Screens', icon: 'market' },
 ]
 
 function ProfilePanel() {
