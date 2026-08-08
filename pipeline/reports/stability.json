@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 19,
+  "refreshes_observed": 20,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -2449,6 +2449,102 @@
           ],
           "score_delta": 2.8,
           "confidence_delta": 0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-08T02:12:58.669586+00:00",
+      "current_refresh": "advisor-2026-08-08T03:21:58.826111+00:00",
+      "shared_tickers": 879,
+      "rank_turnover": {
+        "top_40": 0.0,
+        "top_100": 0.0
+      },
+      "tickers_with_availability_driven_change": 8,
+      "tickers_with_availability_driven_change_pct": 0.009,
+      "mean_abs_score_delta": 0.02,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -4.2,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "AGO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.9,
+          "confidence_delta": -0.07
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.7,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "CRM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "GAP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.6,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "NUE",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.4,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "DVN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation"
+          ],
+          "score_delta": 0.4,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "MU",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 0.1,
+          "confidence_delta": -0.02
         }
       ]
     }
