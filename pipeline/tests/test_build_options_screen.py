@@ -69,14 +69,14 @@ def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
 
 
 def test_select_expiration_prefers_nearest_to_target_within_window():
-    expirations = ["2024-03-02", "2024-03-15", "2024-04-20", "2024-03-25"]
+    expirations = ["2024-03-02", "2024-03-08", "2024-03-15", "2024-04-20"]
     expiration, dte = module.select_expiration(expirations, as_of=TODAY)
-    assert expiration == "2024-03-15"
-    assert dte == 14
+    assert expiration == "2024-03-08"
+    assert dte == 7
 
 
 def test_select_expiration_excludes_out_of_window_dates():
-    expirations = ["2024-03-01", "2024-03-02", "2024-05-01"]
+    expirations = ["2024-03-01", "2024-03-20", "2024-05-01"]
     expiration, dte = module.select_expiration(expirations, as_of=TODAY)
     assert expiration is None
     assert dte is None

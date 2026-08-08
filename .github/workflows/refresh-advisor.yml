@@ -151,24 +151,24 @@ jobs:
         # Reads the same on-disk Yahoo price cache the previous step just warmed - no new
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
-      - name: Build multi-day options screen from the price history just fetched
+      - name: Build multi-day options, covered-call, cash-secured-put, and short-term-trades screens from one shared chain fetch per ticker
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        # Costs one extra options-chain request per ticker on top of what fetch_advisor.py
-        # already pulled; a Yahoo hiccup here shouldn't block the rest of the refresh.
-        run: python pipeline/build_options_screen.py || echo "::warning::Options screen build failed; keeping previous options.json"
-      - name: Build covered-call screen from the price history just fetched
-        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        # Each of these six strategy screens costs its own options-chain request per ticker
-        # on top of the multi-day options screen above - left opt-in (ENABLE_*_SCREEN unset
-        # here) same as ENABLE_OPTIONS_VOLATILITY in fetch_advisor.py, so six more full sweeps
-        # of the universe don't silently multiply this job's Yahoo request volume and runtime.
-        # Set the matching env var below to enable one on the schedule.
-        run: python pipeline/build_covered_call_screen.py || echo "::warning::Covered-call screen build failed; keeping previous covered-calls.json"
-      - name: Build cash-secured-put screen from the price history just fetched
-        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        run: python pipeline/build_cash_secured_put_screen.py || echo "::warning::Cash-secured-put screen build failed; keeping previous cash-secured-puts.json"
+        # build_options_strategies.py fetches ONE option chain per ticker (both mechanisms
+        # share the same 1-14-day window) and derives all four of these screens from it -
+        # one extra options-chain request per ticker on top of what fetch_advisor.py already
+        # pulled, not four. Replaces build_options_screen.py/build_covered_call_screen.py/
+        # build_cash_secured_put_screen.py's own run() as the live-data source for
+        # options.json/covered-calls.json/cash-secured-puts.json; those three files' run()
+        # functions still exist and are still directly testable, they're just not what's
+        # called here anymore. A Yahoo hiccup here shouldn't block the rest of the refresh.
+        run: python pipeline/build_options_strategies.py || echo "::warning::Options strategies build failed; keeping previous screen files"
       - name: Build protective-put screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Protective put, collar, vertical spread, and advanced strategies each still cost
+        # their own options-chain request per ticker on top of the shared fetch above - left
+        # opt-in (ENABLE_*_SCREEN unset here) same as ENABLE_OPTIONS_VOLATILITY in
+        # fetch_advisor.py, so four more full sweeps of the universe don't silently multiply
+        # this job's Yahoo request volume and runtime. Set the matching env var to enable one.
         run: python pipeline/build_protective_put_screen.py || echo "::warning::Protective-put screen build failed; keeping previous protective-puts.json"
       - name: Build collar screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'

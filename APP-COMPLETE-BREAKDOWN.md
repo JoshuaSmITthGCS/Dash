@@ -2,7 +2,7 @@
 
 Generated from live config and source on 2026-08-08
 
-Source commit: `e543daf`
+Source commit: `53c810a`
 
 Application model: `3.2.0`
 
@@ -37,6 +37,7 @@ The Home route is eagerly bundled. Other routes and the stock detail sheet load 
 - `/screens/collar`: Application route.
 - `/screens/vertical-spread`: Application route.
 - `/screens/advanced-strategies`: Application route.
+- `/screens/short-term-trades`: Application route.
 - `/screens/momentum`: Monthly skip-month momentum research screen.
 - `/screens/quality-value`: Quality at multi-year valuation lows.
 - `/screens/earnings`: Point-in-time earnings timeliness.

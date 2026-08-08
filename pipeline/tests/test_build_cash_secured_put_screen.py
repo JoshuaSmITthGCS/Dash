@@ -61,7 +61,7 @@ def make_yahoo_history(per_ticker):
 
 
 TODAY = date(2024, 3, 1)
-EXPIRATION = "2024-03-31"  # 30 days out from TODAY, matches TARGET_DAYS_TO_EXPIRATION
+EXPIRATION = "2024-03-08"  # 7 days out from TODAY, matches TARGET_DAYS_TO_EXPIRATION
 
 
 def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
@@ -69,17 +69,17 @@ def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
             "impliedVolatility": iv, "volume": volume}
 
 
-# Puts at price=100: delta(strike=95) ~ -0.307, the closest of these to -0.30.
+# Puts at price=100, dte=7: delta(strike=97) ~ -0.282, the closest of these to -0.30.
 PUTS_AT_100 = [
-    contract(strike=90, bid=0.60, ask=0.70),
-    contract(strike=95, bid=1.90, ask=2.10),
+    contract(strike=92, bid=0.60, ask=0.70),
+    contract(strike=97, bid=1.90, ask=2.10),
     contract(strike=100, bid=4.60, ask=4.90),
 ]
 
-# Puts at price=80: delta(strike=76) ~ -0.307, same 0.95 moneyness ratio as above.
+# Puts at price=80, dte=7: delta(strike=78) ~ -0.314, closest of these to -0.30.
 PUTS_AT_80 = [
-    contract(strike=72, bid=0.50, ask=0.60),
-    contract(strike=76, bid=1.55, ask=1.70),
+    contract(strike=74, bid=0.50, ask=0.60),
+    contract(strike=78, bid=1.55, ask=1.70),
     contract(strike=80, bid=3.70, ask=3.95),
 ]
 
@@ -98,11 +98,11 @@ def test_build_row_selects_put_near_target_delta(monkeypatch):
     row = module.build_row(entry, fake_yf, as_of=TODAY)
 
     assert row is not None
-    assert row["put"]["strike"] == 95
-    assert row["days_to_expiration"] == 30
+    assert row["put"]["strike"] == 97
+    assert row["days_to_expiration"] == 7
     assert row["expiration"] == EXPIRATION
     assert abs(row["put"]["delta"] - (-0.30)) < 0.02
-    assert row["capital_required"] == 95 * 100
+    assert row["capital_required"] == 97 * 100
 
 
 def test_build_row_returns_none_when_history_too_thin(monkeypatch):
@@ -124,8 +124,8 @@ def test_build_row_returns_none_when_options_unavailable(monkeypatch):
 def test_build_row_returns_none_without_qualifying_expiration(monkeypatch):
     entry = universe_entry("SHORTDATED")
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"SHORTDATED": fake_history()}))
-    # 9 days out - below MIN_DAYS_TO_EXPIRATION (15)
-    fake_yf = FakeYf({"SHORTDATED": FakeTicker(options=["2024-03-10"])})
+    # Same-day expiration (0 days out) - below MIN_DAYS_TO_EXPIRATION (1)
+    fake_yf = FakeYf({"SHORTDATED": FakeTicker(options=["2024-03-01"])})
 
     assert module.build_row(entry, fake_yf, as_of=TODAY) is None
 

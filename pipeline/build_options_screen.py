@@ -26,9 +26,9 @@ from options_common import select_expiration as _select_expiration
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
-MIN_DAYS_TO_EXPIRATION = 2
-MAX_DAYS_TO_EXPIRATION = 45
-TARGET_DAYS_TO_EXPIRATION = 14
+MIN_DAYS_TO_EXPIRATION = 1
+MAX_DAYS_TO_EXPIRATION = 14
+TARGET_DAYS_TO_EXPIRATION = 7
 MINIMUM_HISTORY_SESSIONS = 21
 
 WEIGHTS = {"iv_value": .35, "liquidity": .35, "trend_strength": .30}

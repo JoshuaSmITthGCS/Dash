@@ -17,6 +17,7 @@ import build_cash_secured_put_screen
 import build_collar_screen
 import build_covered_call_screen
 import build_options_screen
+import build_options_strategies
 import build_protective_put_screen
 import build_vertical_spread_screen
 
@@ -28,6 +29,7 @@ BACKTEST_MODULES = [
     ("Collar", build_collar_screen),
     ("Vertical spread", build_vertical_spread_screen),
     ("Advanced strategies", build_advanced_options_screen),
+    ("Short-term trades (combined)", build_options_strategies),
 ]
 
 
