@@ -6,6 +6,7 @@ import { activeThemes, rankThemeExposure } from '../lib/researchScreens.js'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
+import InfoTag from '../components/InfoTag.jsx'
 
 const SOURCE_LABEL = {
   published_leader: 'Published leader',
@@ -17,9 +18,41 @@ function ThemeTable({ rows, onOpen }) {
   return <div className="research-table card"><table>
     <thead><tr>
       <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th>
-      <th scope="col">Research rating</th><th scope="col" className="num">Exposure</th>
-      <th scope="col" className="num">Opportunity</th><th scope="col">Leading signals</th>
-      <th scope="col">Eligible</th><th scope="col"><span className="sr-only">Open</span></th>
+      <th scope="col">Research rating</th>
+      <th scope="col" className="num">Exposure
+        <InfoTag label="Exposure" align="right">
+          <strong>Exposure</strong>
+          <p>0–100. How exposed this company is to the theme, from filing evidence (segment revenue,
+            keyword density in its own 10-K language, supply-chain ties to confirmed spenders) - never
+            from price action. See /screens/themes' page intro for the full guardrail.</p>
+        </InfoTag>
+      </th>
+      <th scope="col" className="num">Opportunity
+        <InfoTag label="Opportunity" align="right">
+          <strong>Opportunity</strong>
+          <p>Exposure × business quality × how cheap the stock still is. Ranks names that combine real
+            exposure with a business that holds up and a price that has not already run - not just the
+            purest-play, most expensive name in the theme.</p>
+        </InfoTag>
+      </th>
+      <th scope="col">Leading signals
+        <InfoTag label="Leading signals" align="right">
+          <strong>Leading signals</strong>
+          <p>How many "leading" signals fired - evidence of what a company is building (e.g. rising
+            self-description of the theme in its own filings), as opposed to lagging evidence like
+            historical segment revenue. At least one leading signal is required for a name to count as
+            eligible.</p>
+        </InfoTag>
+      </th>
+      <th scope="col">Eligible
+        <InfoTag label="Eligible" align="right">
+          <strong>Eligible</strong>
+          <p>"No" means this name already trades in the top valuation decile of its sector, or no
+            leading signal confirmed the exposure - real exposure, but flagged rather than promoted, per
+            the guardrail against buying whatever has already run.</p>
+        </InfoTag>
+      </th>
+      <th scope="col"><span className="sr-only">Open</span></th>
     </tr></thead>
     <tbody>{rows.map((row, index) => <tr key={row.ticker}>
       <td className="rank">#{index + 1}</td>
@@ -87,12 +120,29 @@ export default function ThemeExposureScreen() {
             <p>{theme.thesis}</p>
           </header>
 
-          <h3>Leaders</h3>
+          <h3>Leaders
+            <InfoTag label="Leaders">
+              <strong>Leaders</strong>
+              <p>Names already a published top research score or one of your holdings, that also
+                cleared this theme's signal minimum. These are the recognized, already-priced-in
+                exposure to the trend.</p>
+            </InfoTag>
+          </h3>
           {!leaders.length
             ? <p className="disclaimer">No published leader or holding cleared this theme's signal minimum yet.</p>
             : <ThemeTable rows={leaders} onOpen={setSelectedStock} />}
 
-          <h3>Connected, not yet re-rated</h3>
+          <h3>Connected, not yet re-rated
+            <InfoTag label="Connected, not yet re-rated">
+              <strong>Connected, not yet re-rated</strong>
+              <p>Sector/peer-group neighbours of this theme's anchor companies that are not already a
+                published top research score - the kind of name riding the same wave as a proven leader
+                before the market has fully connected the dots. This is a sector/peer-group heuristic,
+                not the more rigorous product-space (10-K similarity) peer matching this feature aims
+                for eventually - a peer-group match only makes a name a candidate, the exposure and
+                eligibility columns still come from real filing evidence.</p>
+            </InfoTag>
+          </h3>
           <p className="disclaimer">
             Sector/peer-group neighbours of this theme's anchor companies that are not already a
             published top research score, ranked by exposure × business quality × how cheap the

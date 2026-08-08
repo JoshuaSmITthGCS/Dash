@@ -2,6 +2,7 @@ import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
+import InfoTag from '../components/InfoTag.jsx'
 
 const title = (value = '') => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 const pct = (value) => value == null ? '–' : `${Math.round(Number(value) * 100)}%`
@@ -78,7 +79,14 @@ function VariantValidation({ name, horizons = {} }) {
         </dl>
       </section>)}
     </div>
-    <div className="ic-chart-head"><b>1M quintiles</b><span>{oneMonth.bucket_returns?.['5']?.monotonic ? 'Monotonic' : oneMonth.periods_accumulated ? 'Not monotonic' : 'Accumulating'}</span></div>
+    <div className="ic-chart-head"><b>1M quintiles
+      <InfoTag label="1M quintiles">
+        <strong>1-month quintile returns</strong>
+        <p>Splits scored companies into five equal-size groups (quintiles) by this variant's score,
+          then shows each group's mean forward 1-month return. A useful model shows a monotonic
+          staircase - Q5 (highest score) beating Q1 (lowest) - not a flat or reversed pattern.</p>
+      </InfoTag>
+    </b><span>{oneMonth.bucket_returns?.['5']?.monotonic ? 'Monotonic' : oneMonth.periods_accumulated ? 'Not monotonic' : 'Accumulating'}</span></div>
     <BucketChart summary={oneMonth} />
   </article>
 }

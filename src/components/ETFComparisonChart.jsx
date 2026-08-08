@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import GrowthChart from './GrowthChart'
+import InfoTag from './InfoTag.jsx'
 import { comparisonLines } from '../lib/etfComparison'
 
 const RANGE_ORDER = ['1M', '3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'MAX']
@@ -35,7 +36,15 @@ export function ETFComparisonChart({ data, initialRange = '1Y' }) {
   ]
   return <section className="etf-comparison" aria-label={`${data.ticker} benchmark comparison`}>
     <div className="etf-benchmark-heading">
-      <div><span className="sec-label">Benchmark</span><h3>{benchmarkLabel}</h3></div>
+      <div><span className="sec-label">Benchmark</span><h3>{benchmarkLabel}
+        <InfoTag label="Benchmark comparison">
+          <strong>Fund vs. benchmark</strong>
+          <p>Normalized growth of $100 invested in this fund vs. its benchmark, over the selected
+            range. Switch views above for relative strength (fund return minus benchmark return over
+            time) or drawdown comparison (peak-to-trough decline for each). Tracking error/difference
+            only shown when the benchmark type supports it.</p>
+        </InfoTag>
+      </h3></div>
       <span className="chip">{benchmark.quality_label} · {Math.round((benchmark.confidence || 0) * 100)}% source confidence</span>
     </div>
     <div className="etf-controls">
@@ -46,6 +55,11 @@ export function ETFComparisonChart({ data, initialRange = '1Y' }) {
     </div>
     <GrowthChart dates={range.series.map((row) => row.date)} series={lines}
       title={view === 'growth' ? `Normalized growth of 100 – ${data.ticker} vs ${benchmarkLabel}` : view === 'relative' ? `${data.ticker} relative to ${benchmarkLabel}` : 'Drawdown comparison'}
+      description={view === 'growth'
+        ? `$100 invested on the same date in ${data.ticker} and in ${benchmarkLabel}, indexed so both start at 100 - shows compounding difference, not raw price.`
+        : view === 'relative'
+          ? `${data.ticker}'s cumulative return minus ${benchmarkLabel}'s, so a flat line means matching the benchmark - rising means outperforming, falling means lagging.`
+          : `Peak-to-trough decline for ${data.ticker} and ${benchmarkLabel} side by side - deeper is worse, and the gap between the two lines is the difference in downside experienced.`}
       valueFormatter={view === 'drawdown' ? pct : (value) => Number(value).toFixed(1)} />
     <div className="etf-metric-grid">{cards.map(([label, value]) => <div className="card kpi" key={label}>
       <div className="kpi-label">{label}</div><div className="kpi-value">{value}</div></div>)}</div>

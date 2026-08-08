@@ -1,4 +1,5 @@
 import ProjectionFanChart from './ProjectionFanChart.jsx'
+import InfoTag from './InfoTag.jsx'
 import { formatAnnualReturnTarget } from '../lib/projectionEngine.js'
 
 const percentileRows = [
@@ -35,7 +36,17 @@ export default function ProjectionPanel({ state, source, money, annualReturnTarg
 
   return <section className="projection-panel" aria-labelledby="projection-panel-title">
     <header>
-      <div><span className="eyebrow">Historical simulation</span><h2 id="projection-panel-title">{title}</h2></div>
+      <div><span className="eyebrow">Historical simulation</span><h2 id="projection-panel-title">{title}
+        <InfoTag label={title}>
+          <strong>{title}</strong>
+          <p>A Monte Carlo simulation: {result.pathCount.toLocaleString()} randomly resampled paths
+            built from historical monthly returns ({source.label}), not a forecast of any single
+            outcome. The fan chart shows the spread between the 10th and 90th percentile paths, with
+            the median (50th percentile) as the dotted line. Wider spread means more uncertainty at
+            that point in time. Simulated outcomes are not predictions - see "Model and data
+            disclosure" below for exactly what went into this run.</p>
+        </InfoTag>
+      </h2></div>
       <span className="projection-path-count">{result.pathCount.toLocaleString()} paths</span>
     </header>
     {assumptionNote && <p className="projection-assumption">{assumptionNote}</p>}

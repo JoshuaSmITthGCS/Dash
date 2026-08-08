@@ -6,6 +6,7 @@ import { Loading, RefreshProgress } from '../components/Bits'
 import { ActionPill } from '../components/ActionGuidance'
 import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
+import InfoTag from '../components/InfoTag.jsx'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
 import { stopLossLevels, withStopLoss } from '../lib/positionRisk'
@@ -124,7 +125,7 @@ function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirectio
   return <ResponsiveControlPanel label={`Sort: ${selectedLabel || 'holdings'}`} title="Sort holdings">{controls}</ResponsiveControlPanel>
 }
 
-function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
+function SortableHeader({ sortKey, sort, onSort, children, numeric = false, info }) {
   const active = sort.key === sortKey
   return (
     <th
@@ -142,6 +143,10 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
           <i className={`sort-arrow down ${active && sort.direction === 'desc' ? 'selected' : ''}`} />
         </span>
       </button>
+      {/* Outside the button, not inside it - <details> is interactive content and
+          invalid inside a <button>, and a click would otherwise bubble up and trigger
+          a sort toggle instead of opening the info panel. */}
+      {info}
     </th>
   )
 }
@@ -815,7 +820,13 @@ export default function Portfolio() {
               )}
               {editingId !== pos.id && sellingId !== pos.id && pos.trendValues.length > 1 && (
                 <div className="holding-trend">
-                  <div><span>1-month trend</span><Move value={pos.trendPct} /></div>
+                  <div><span>1-month trend
+                    <InfoTag label="1-month trend">
+                      <strong>1-month trend</strong>
+                      <p>Trailing 30-day price movement for this holding - direction and shape only,
+                        not a substitute for the full research score.</p>
+                    </InfoTag>
+                  </span><Move value={pos.trendPct} /></div>
                   <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={48} />
                 </div>
               )}
@@ -850,7 +861,13 @@ export default function Portfolio() {
                 <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>
                 <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
                 <SortableHeader numeric sortKey="score" sort={portfolioSort} onSort={setSortKey}>Score</SortableHeader>
-                <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}>1M trend</SortableHeader>
+                <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}
+                  info={<InfoTag label="1M trend" align="right">
+                    <strong>1-month trend</strong>
+                    <p>Trailing 30-day price movement for this holding, shown as a mini line chart -
+                      direction and shape only, not a substitute for the full research score.</p>
+                  </InfoTag>}
+                >1M trend</SortableHeader>
                 <th scope="col">Action</th>
               </tr>
             </thead>

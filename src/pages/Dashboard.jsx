@@ -17,6 +17,7 @@ import { beatMarketStreak, portfolioMood, valueStreak } from '../lib/traderInsig
 import { Loading, Empty, Move, RefreshProgress, Tier } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
 import PortfolioChartOverlay from '../components/PortfolioChartOverlay.jsx'
+import InfoTag from '../components/InfoTag.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import { getRecommendation } from '../lib/recommendation.js'
@@ -406,7 +407,15 @@ export default function Dashboard() {
 
       <DashboardWidget id="performance-chart" widgets={preferences.widgets}>
       <section className="report-chart-card home-portfolio-chart">
-        <header className="section-heading"><div className="home-chart-title"><span className="eyebrow">Performance</span><h2>{PORTFOLIO_HISTORY_LABELS[effectiveChartMode]}</h2>{chartedPortfolio && <p className={tone(chartedPortfolio.dollarReturn)}><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong><span>{signedPct(chartedPortfolio.returnPct)} for {period === 'All' ? 'all recorded dates' : period}</span></p>}</div><div className="chart-controls"><div className="period-control series-control" aria-label="Portfolio series"><button className={effectiveChartMode === 'backtest' ? 'active' : ''} aria-pressed={effectiveChartMode === 'backtest'} onClick={() => setChartMode('backtest')}>Backtested basket</button><button className={effectiveChartMode === 'actual' ? 'active' : ''} aria-pressed={effectiveChartMode === 'actual'} disabled={!recordedSeries} onClick={() => setChartMode('actual')}>Recorded value</button></div><div className="period-control range-control" aria-label="Performance date range">{PERIODS.map((item) => <button key={item} className={period === item ? 'active' : ''} aria-pressed={period === item} onClick={() => { setPeriod(item); updatePreferences({ defaultChartPeriod: item }) }}>{item === 'All' ? 'ALL' : item}</button>)}</div></div></header>
+        <header className="section-heading"><div className="home-chart-title"><span className="eyebrow">Performance</span><h2>{PORTFOLIO_HISTORY_LABELS[effectiveChartMode]}
+          <InfoTag label={PORTFOLIO_HISTORY_LABELS[effectiveChartMode]}>
+            <strong>{PORTFOLIO_HISTORY_LABELS[effectiveChartMode]}</strong>
+            <p>{effectiveChartMode === 'actual'
+              ? 'Your portfolio’s recorded value over time, from stored snapshots since live tracking began - not a backtest.'
+              : 'Applies today’s share quantities to past closes to show what your current holdings would have been worth historically. Not reconstructed account history - use "Recorded value" for that.'}
+            {' '}Compare against up to three ETF benchmark proxies below.</p>
+          </InfoTag>
+        </h2>{chartedPortfolio && <p className={tone(chartedPortfolio.dollarReturn)}><strong>{chartedPortfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(chartedPortfolio.dollarReturn))}</strong><span>{signedPct(chartedPortfolio.returnPct)} for {period === 'All' ? 'all recorded dates' : period}</span></p>}</div><div className="chart-controls"><div className="period-control series-control" aria-label="Portfolio series"><button className={effectiveChartMode === 'backtest' ? 'active' : ''} aria-pressed={effectiveChartMode === 'backtest'} onClick={() => setChartMode('backtest')}>Backtested basket</button><button className={effectiveChartMode === 'actual' ? 'active' : ''} aria-pressed={effectiveChartMode === 'actual'} disabled={!recordedSeries} onClick={() => setChartMode('actual')}>Recorded value</button></div><div className="period-control range-control" aria-label="Performance date range">{PERIODS.map((item) => <button key={item} className={period === item ? 'active' : ''} aria-pressed={period === item} onClick={() => { setPeriod(item); updatePreferences({ defaultChartPeriod: item }) }}>{item === 'All' ? 'ALL' : item}</button>)}</div></div></header>
         <div className="home-benchmark-control"><ResponsiveControlPanel label={`Benchmarks: ${selectedBenchmarkSymbols.join(', ')}`} title="Choose benchmarks"><fieldset className="benchmark-picker" aria-label="Comparison benchmarks"><legend>Compare with up to three ETF proxies</legend><div>{BENCHMARKS.map((item) => { const checked = selectedBenchmarkSymbols.includes(item.symbol); return <label key={item.symbol} className={checked ? 'selected' : ''}><input type="checkbox" checked={checked} disabled={!checked && selectedBenchmarkSymbols.length >= 3} onChange={() => toggleBenchmark(item.symbol)} /><span>{item.symbol}</span></label> })}</div></fieldset></ResponsiveControlPanel></div>
         {chartedPortfolio ? <div className="home-chart-stage">
           <PortfolioChartOverlay
@@ -435,7 +444,14 @@ export default function Dashboard() {
       </DashboardWidget>
 
       <DashboardWidget id="allocation" widgets={preferences.widgets}>
-        <section className="report-section sector-allocation-widget"><header className="section-heading"><div><span className="eyebrow">Allocation</span><h2>Sector allocation</h2></div><Link to="/portfolio/diversification">Full analysis →</Link></header><div>{sectorAllocation.map((item) => <article key={item.sector}><div><strong>{item.sector}</strong><span>{item.pct.toFixed(1)}%</span></div><i aria-hidden="true"><span style={{ width: `${item.pct}%` }} /></i><small>{money(item.value)}</small></article>)}</div></section>
+        <section className="report-section sector-allocation-widget"><header className="section-heading"><div><span className="eyebrow">Allocation</span><h2>Sector allocation
+          <InfoTag label="Sector allocation">
+            <strong>Sector allocation</strong>
+            <p>Share of your covered portfolio value in each GICS sector, by current market value.
+              Concentrated in one or two sectors means the portfolio moves with that sector's fate -
+              see Diversification for the full look-through breakdown including ETF holdings.</p>
+          </InfoTag>
+        </h2></div><Link to="/portfolio/diversification">Full analysis →</Link></header><div>{sectorAllocation.map((item) => <article key={item.sector}><div><strong>{item.sector}</strong><span>{item.pct.toFixed(1)}%</span></div><i aria-hidden="true"><span style={{ width: `${item.pct}%` }} /></i><small>{money(item.value)}</small></article>)}</div></section>
       </DashboardWidget>
 
       <DashboardWidget id="top-signal" widgets={preferences.widgets}>

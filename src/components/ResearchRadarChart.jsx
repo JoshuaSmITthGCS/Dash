@@ -1,3 +1,5 @@
+import InfoTag from './InfoTag.jsx'
+
 const labelize = (value) => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 
 export function radarEntries(stock) {
@@ -28,7 +30,14 @@ export default function ResearchRadarChart({ stock }) {
   return (
     <figure className="research-radar" aria-label={`${stock.ticker} section scores: ${summary}`}>
       <div className="research-radar-heading">
-        <div><span className="sec-label">Section radar</span><h3>Research profile</h3></div>
+        <div><span className="sec-label">Section radar</span><h3>Research profile
+          <InfoTag label="Research profile">
+            <strong>Research profile</strong>
+            <p>Each axis is one structural research category (e.g. valuation, profitability, growth) on
+              a 0–100 scale, higher is stronger. Shows the shape of a company's evidence at a glance -
+              a broad, even shape is a different story from a name that is strong on one axis only.</p>
+          </InfoTag>
+        </h3></div>
         <span>0–100 · higher is stronger</span>
       </div>
       <svg viewBox="0 0 320 320" role="img" aria-hidden="true">
