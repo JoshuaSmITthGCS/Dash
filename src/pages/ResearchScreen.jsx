@@ -8,6 +8,7 @@ import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 export const SCREEN_NAV = [
   ['/screens/fast-growth', 'Fast growth'],
+  ['/screens/options', 'Best multi-day options'],
   ['/screens/momentum', 'Momentum'], ['/screens/quality-value', 'Quality at valuation lows'],
   ['/screens/earnings', 'Earnings timeliness'], ['/screens/matrix', 'Structural vs tactical'],
   ['/screens/early-session', 'Early session'],

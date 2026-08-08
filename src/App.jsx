@@ -23,6 +23,7 @@ const Finances = lazy(() => import('./pages/Finances.jsx'))
 const Planning = lazy(() => import('./pages/Planning.jsx'))
 const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
 const FastGrowthScreen = lazy(() => import('./pages/FastGrowthScreen.jsx'))
+const OptionsScreen = lazy(() => import('./pages/OptionsScreen.jsx'))
 const ThemeExposureScreen = lazy(() => import('./pages/ThemeExposureScreen.jsx'))
 const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
@@ -145,6 +146,7 @@ function AppContent() {
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
           <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
           <Route path="/screens/fast-growth" element={<FastGrowthScreen />} />
+          <Route path="/screens/options" element={<OptionsScreen />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability–kept separate from structural quality." />} />

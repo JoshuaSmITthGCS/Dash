@@ -76,6 +76,10 @@ jobs:
       # concurrency behind cache.py's shared 4-request/second Yahoo limiter.
       YAHOO_BATCH_SIZE: '100'
       YAHOO_QUOTE_WORKERS: '10'
+      # Unlike ENABLE_OPTIONS_VOLATILITY (left off - see fetch_advisor.py), the multi-day
+      # options screen is a real, user-facing feature, so its own extra options-chain
+      # requests are enabled here rather than left opt-in.
+      ENABLE_MULTIDAY_OPTIONS_SCREEN: '1'
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window
@@ -147,6 +151,11 @@ jobs:
         # Reads the same on-disk Yahoo price cache the previous step just warmed - no new
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
+      - name: Build multi-day options screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Costs one extra options-chain request per ticker on top of what fetch_advisor.py
+        # already pulled; a Yahoo hiccup here shouldn't block the rest of the refresh.
+        run: python pipeline/build_options_screen.py || echo "::warning::Options screen build failed; keeping previous options.json"
       - name: Fetch ETF growth screen
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here
