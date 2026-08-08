@@ -13,7 +13,9 @@ vi.mock('../lib/useAlerts', () => ({ useAlerts: vi.fn() }))
 
 const stock = (overrides = {}) => ({
   ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology', is_etf: false,
-  score: 62, confidence: 0.44, stance: 'PROMISING', price: 200,
+  // Above the 0.75 conviction band: entry-timing verdicts and action labels are gated on
+  // confidence, so a fixture below it would never carry either.
+  score: 62, confidence: 0.82, stance: 'PROMISING', price: 200,
   components: { fundamentals: 65 }, technical_detail: { return_20d: 3 },
   history: { closes: [200, 201] },
   ...overrides,
@@ -134,16 +136,20 @@ describe('Picks research page', () => {
     expect(within(stocksSection).getAllByText('MU').length).toBeGreaterThan(0)
   })
 
-  it('a strategy lens returns its own screened list, not the research leaderboard re-sorted', () => {
+  it('a ranking model returns its own screened list, not the research leaderboard re-sorted', () => {
     // The bug this guards: selecting a lens used to re-sort the same rows, so a published
     // leader with no catalyst at all still sat in the list (just lower down), and the top
     // of the page still looked like the fundamentals leaderboard. A lens is a screen - a
     // name that does not clear its bar is absent, not ranked last.
     const strongCatalyst = {
       ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
-      components: { fundamentals: 50, news_sentiment: 92 },
+      components: { fundamentals: 50 },
       technical_detail: { return_5d: 4, return_20d: 5 },
-      insider_activity: { available: true, points: 4 },
+      evidence_summary: {
+        event_count: 1, news_score: 92, dominant_age_trading_days: 0,
+        insider_score: 84, insider_freshest_age_trading_days: 2,
+        expectation_score: 80, expectation_inputs_resolved: 3,
+      },
     }
     useData.mockImplementation((file) => {
       if (file === 'advisor.json') {
@@ -167,11 +173,15 @@ describe('Picks research page', () => {
     expect(tickers.some((text) => text.includes('AAPL'))).toBe(false)
   })
 
-  it('a lens list is capped at the top 20 even when far more names clear the bar', () => {
+  it('a model list is capped at the top 20 even when far more names clear the gate', () => {
     const qualifier = (index) => ({
-      ticker: `T${index}`, name: `Ticker ${index}`, sector: 'Technology', score: 50,
-      components: { fundamentals: 60 },
-      technical_detail: { return_5d: 1 + index / 100, return_20d: 5, momentum_12_1: 60 },
+      ticker: `T${index}`, name: `Ticker ${index}`, sector: 'Technology', industry: 'Semiconductors',
+      score: 50, components: { fundamentals: 60 },
+      technical_detail: {
+        return_5d: 1 + index / 100, return_20d: 5, return_60d: 8,
+        momentum_12_1: 60, momentum_12_1_pct: 10 + index, volume_confirmation: 60,
+        risk_adjusted: 60, drawdown_60d: -8, pct_from_52w_high: -5,
+      },
     })
     useData.mockImplementation((file) => {
       if (file === 'advisor.json') {
@@ -190,7 +200,7 @@ describe('Picks research page', () => {
     expect(screen.getByText(/Showing the top 20 of 40 companies that clear it/)).toBeVisible()
   })
 
-  it('states why a row qualified under the active lens', () => {
+  it('states which components produced the score under the active model', () => {
     // "Some of these are not even showing why they are reversals" - the Reversal chip used
     // to be the whole explanation.
     const bouncing = {
@@ -206,11 +216,11 @@ describe('Picks research page', () => {
     render(<MemoryRouter><Picks /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'reversal' } })
 
-    expect(screen.getAllByText(/down 10.4% over 20 days.*27.7% below its 60-day high.*\+6.6% this week.*fundamentals 63/).length)
-      .toBeGreaterThan(0)
+    expect(screen.getAllByText(/volatility-scaled price shock/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/statistical overextension/i).length).toBeGreaterThan(0)
   })
 
-  it('reports which missing input kept most of the universe out of a lens', () => {
+  it('counts the reasons the rest of the universe did not clear the gate', () => {
     // A short list because the data is dark and a short list because few names are
     // attractive look identical otherwise.
     const scorable = {
@@ -231,8 +241,29 @@ describe('Picks research page', () => {
     render(<MemoryRouter><Picks /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'reversal' } })
 
-    expect(screen.getByText(/1 of 2 could not be evaluated/)).toBeVisible()
-    expect(screen.getByText(/binding one is 60-day drawdown, published for 1 of 2 rows/)).toBeVisible()
+    expect(screen.getByText(/1 of 2 did not clear the gate/)).toBeVisible()
+    expect(screen.getAllByText(/no 60-day drawdown published for this row/).length).toBeGreaterThan(0)
+  })
+
+  it('never shows an action label beside a row with no data confidence', () => {
+    // Straight from the screenshot: VRT displayed "Data confidence 0%", "HOLD" and "BUY NOW"
+    // at the same time.
+    const lightweight = {
+      ticker: 'VRT', name: 'Vertiv Holdings', sector: 'Industrials', score: 63,
+      stance: 'PROMISING', price: 100,
+      components: { fundamentals: 65 },
+      technical_detail: { return_20d: -14.6, pct_from_52w_high: -2, pct_above_52w_low: 129, return_60d: 5 },
+      recommendation: { action: 'HOLD', agreement_count: 2 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+
+    expect(screen.queryByText('Buy Now')).not.toBeInTheDocument()
+    expect(screen.getAllByText(/INSUFFICIENT DATA/).length).toBeGreaterThan(0)
   })
 
   it('shows a missing data confidence as – rather than a measured 0%', () => {
@@ -254,25 +285,28 @@ describe('Picks research page', () => {
     expect(within(table).getAllByText('Lighter data').length).toBeGreaterThan(0)
   })
 
-  it('a corroborated catalyst outranks a thin-evidence one even with a lower raw score, and shows the chip', () => {
-    const thinButHighScore = {
+  it('a well-evidenced catalyst outranks a thin one with a higher raw reading', () => {
+    // Confidence shrinkage: a 99 resting on one stray headline must not outrank a 78 backed
+    // by news, insider activity and revisions that all resolved.
+    const thinButHighReading = {
       ticker: 'THIN', name: 'Thin Co', sector: 'Technology', score: 50,
-      components: { fundamentals: 50, news_sentiment: 95 },
-      technical_detail: { return_5d: 5 },
-      insider_activity: { available: false, points: 0 },
+      components: { fundamentals: 50 },
+      technical_detail: { return_5d: 5, return_20d: 2 },
+      evidence_summary: { event_count: 1, news_score: 99, dominant_age_trading_days: 0 },
     }
-    const corroboratedButLowerScore = {
+    const wellEvidenced = {
       ticker: 'SOLID', name: 'Solid Co', sector: 'Technology', score: 50,
-      components: { fundamentals: 50, news_sentiment: 60 },
-      technical_detail: { return_5d: 1 },
-      insider_activity: {
-        available: true, points: 4,
-        buy_cluster: { insider_count: 3, pattern_confidence: 0.9 },
+      components: { fundamentals: 50 },
+      technical_detail: { return_5d: 1, return_20d: 2 },
+      evidence_summary: {
+        event_count: 3, news_score: 78, dominant_age_trading_days: 0,
+        insider_score: 80, insider_freshest_age_trading_days: 1,
+        expectation_score: 76, expectation_inputs_resolved: 3,
       },
     }
     useData.mockImplementation((file) => {
       if (file === 'advisor.json') {
-        return { data: { research: [], screen_universe: [thinButHighScore, corroboratedButLowerScore] }, loading: false }
+        return { data: { research: [], screen_universe: [thinButHighReading, wellEvidenced] }, loading: false }
       }
       return { data: { etfs: [] }, loading: false }
     })
@@ -288,12 +322,12 @@ describe('Picks research page', () => {
       .toBeGreaterThan(0)
   })
 
-  it('the Thin evidence chip does not appear under a sort where the row was not corroboration-checked', () => {
+  it('the Thin evidence chip does not appear under a plain column sort', () => {
     const thin = {
       ticker: 'THIN', name: 'Thin Co', sector: 'Technology', score: 50,
-      components: { fundamentals: 50, news_sentiment: 95 },
+      components: { fundamentals: 50 },
       technical_detail: { return_5d: 5, return_20d: 2 },
-      insider_activity: { available: false, points: 0 },
+      evidence_summary: { event_count: 1, news_score: 95 },
     }
     useData.mockImplementation((file) => {
       if (file === 'advisor.json') return { data: { research: [], screen_universe: [thin] }, loading: false }
@@ -301,18 +335,59 @@ describe('Picks research page', () => {
     })
 
     render(<MemoryRouter><Picks /></MemoryRouter>)
-    // Default sort is "score" - catalyst corroboration is irrelevant to this lens.
+    // Default is a column sort - no model ran, so there is no model confidence to warn about.
     expect(screen.queryByText('Thin evidence')).not.toBeInTheDocument()
   })
 
-  it('never screens a fund as a stock, even when its advisor row omits the ETF flag', () => {
+  it('never shows an action label beside a row with no data confidence', () => {
+    // Straight from the screenshot: VRT displayed "Data confidence 0%", "HOLD" and "BUY NOW"
+    // at the same time.
+    const lightweight = {
+      ticker: 'VRT', name: 'Vertiv Holdings', sector: 'Industrials', score: 63,
+      stance: 'PROMISING', price: 100,
+      components: { fundamentals: 65 },
+      technical_detail: { return_20d: -14.6, pct_from_52w_high: -2, pct_above_52w_low: 129, return_60d: 5 },
+      recommendation: { action: 'HOLD', agreement_count: 2 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+
+    expect(screen.queryByText('Buy Now')).not.toBeInTheDocument()
+    expect(screen.getAllByText(/INSUFFICIENT DATA/).length).toBeGreaterThan(0)
+  })
+
+  it('shows a missing data confidence as – rather than a measured 0%', () => {
+    // A lightweight universe row has no confidence at all; rendering it as 0% reads as
+    // "we measured this and it is terrible."
+    const lightweight = {
+      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+      components: { fundamentals: 63 }, technical_detail: { return_20d: -10.4 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+
+    const table = document.querySelector('.research-table')
+    expect(within(table).queryByText('0%')).not.toBeInTheDocument()
+    expect(within(table).getAllByText('Lighter data').length).toBeGreaterThan(0)
+  })
+
+  it('never scores a fund under a per-security model, even when its row omits the ETF flag', () => {
     // The lightweight screen_universe projection used to drop `is_etf`, so VOO competed in
     // screens that gate on per-security fundamentals no fund reports - and briefly was the
     // only name clearing the catalyst screen in the published dataset.
     const fundWithoutFlag = {
       ticker: 'VOO', name: 'Vanguard S&P 500 ETF', sector: 'Diversified', score: 70,
-      components: { fundamentals: 60, news_sentiment: 90 },
+      components: { fundamentals: 60 },
       technical_detail: { return_5d: 3, return_20d: 5 },
+      evidence_summary: { event_count: 1, news_score: 90, dominant_age_trading_days: 0 },
     }
     useData.mockImplementation((file) => {
       if (file === 'advisor.json') return { data: { research: [], screen_universe: [fundWithoutFlag] }, loading: false }
@@ -323,7 +398,7 @@ describe('Picks research page', () => {
     fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
 
     expect(document.querySelector('.research-table')).toBeNull()
-    expect(screen.getByText(/No company clears this screen/)).toBeVisible()
+    expect(screen.getByText(/No company clears this model's gate/)).toBeVisible()
   })
 
   it('shows Set Low Alert and creates a below-price alert rule for a pick currently down from its highs', async () => {

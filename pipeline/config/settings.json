@@ -72,7 +72,10 @@
     "minimum_icir_periods": 24,
     "lookahead_rank_ic_threshold": 0.1,
     "confidence_interval_z": 1.96,
-    "quantile_counts": [5, 10],
+    "quantile_counts": [
+      5,
+      10
+    ],
     "long_short_cost_bps": 10.0,
     "cost_model": "flat",
     "cost_scenario": "base",
@@ -148,12 +151,30 @@
     "trading_days_per_year": 252,
     "performance_minimum_observations": 20,
     "performance_metric_tones": {
-      "informationRatio": { "good_min": 0.25, "bad_max": -0.25 },
-      "sharpe": { "good_min": 0.5, "bad_max": 0.0 },
-      "sortino": { "good_min": 0.5, "bad_max": 0.0 },
-      "calmar": { "good_min": 0.5, "bad_max": 0.0 },
-      "maxDrawdown": { "good_min": -10.0, "bad_max": -20.0 },
-      "currentDrawdown": { "good_min": -5.0, "bad_max": -10.0 }
+      "informationRatio": {
+        "good_min": 0.25,
+        "bad_max": -0.25
+      },
+      "sharpe": {
+        "good_min": 0.5,
+        "bad_max": 0.0
+      },
+      "sortino": {
+        "good_min": 0.5,
+        "bad_max": 0.0
+      },
+      "calmar": {
+        "good_min": 0.5,
+        "bad_max": 0.0
+      },
+      "maxDrawdown": {
+        "good_min": -10.0,
+        "bad_max": -20.0
+      },
+      "currentDrawdown": {
+        "good_min": -5.0,
+        "bad_max": -10.0
+      }
     },
     "risk_free_series": "fed_funds",
     "risk_free_fallback_annual_pct": 0.0,
@@ -165,7 +186,7 @@
     "xirr_max_iterations": 120,
     "correlation_lookback_days": 252,
     "correlation_minimum_observations": 60,
-    "eigenvalue_tolerance": 0.0000000001,
+    "eigenvalue_tolerance": 1e-10,
     "eigenvalue_max_iterations": 100,
     "diversification_target_effective_holdings": 12.0,
     "diversification_target_effective_sectors": 6.0,
@@ -186,7 +207,7 @@
     "factor_minimum_monthly_observations": 24,
     "factor_annualization_months": 12,
     "factor_loading_summary_threshold": 0.15,
-    "factor_standard_error_tolerance": 0.000000000001,
+    "factor_standard_error_tolerance": 1e-12,
     "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration. Performance metric tones use configured good minimums and bad maximums. Values between those boundaries remain neutral, and drawdowns are better when they are closer to zero."
   },
   "etf_lookthrough": {
@@ -218,38 +239,97 @@
     "history_chart_width": 300,
     "history_chart_height": 80,
     "stance_bands": [
-      { "minimum": 75.0, "label": "ATTRACTIVE" },
-      { "minimum": 60.0, "label": "PROMISING" },
-      { "minimum": 45.0, "label": "MIXED" },
-      { "minimum": 0.0, "label": "CAUTION" }
+      {
+        "minimum": 75.0,
+        "label": "ATTRACTIVE"
+      },
+      {
+        "minimum": 60.0,
+        "label": "PROMISING"
+      },
+      {
+        "minimum": 45.0,
+        "label": "MIXED"
+      },
+      {
+        "minimum": 0.0,
+        "label": "CAUTION"
+      }
     ],
     "factor_groups": {
-      "value": ["valuation"],
-      "quality": ["profitability", "financial_health", "accounting_quality"],
-      "growth": ["growth"],
-      "momentum": ["momentum_12_1", "relative_strength"],
-      "sentiment": ["news_sentiment"],
-      "risk": ["financial_health", "risk_adjusted", "drawdown_resilience", "low_beta"]
+      "value": [
+        "valuation"
+      ],
+      "quality": [
+        "profitability",
+        "financial_health",
+        "accounting_quality"
+      ],
+      "growth": [
+        "growth"
+      ],
+      "momentum": [
+        "momentum_12_1",
+        "relative_strength"
+      ],
+      "sentiment": [
+        "news_sentiment"
+      ],
+      "risk": [
+        "financial_health",
+        "risk_adjusted",
+        "drawdown_resilience",
+        "low_beta"
+      ]
     },
     "percent_metrics": [
-      "return_on_equity", "return_on_invested_capital", "gross_profits_to_assets",
-      "free_cash_flow_yield", "profit_margin", "revenue_growth", "earnings_growth",
-      "fcf_growth_3y", "operating_margin_trend", "earnings_surprise", "net_buyback_yield",
-      "stock_comp_to_revenue", "asset_growth", "accruals_ratio",
-      "days_sales_outstanding_trend", "inventory_days_trend"
+      "return_on_equity",
+      "return_on_invested_capital",
+      "gross_profits_to_assets",
+      "free_cash_flow_yield",
+      "profit_margin",
+      "revenue_growth",
+      "earnings_growth",
+      "fcf_growth_3y",
+      "operating_margin_trend",
+      "earnings_surprise",
+      "net_buyback_yield",
+      "stock_comp_to_revenue",
+      "asset_growth",
+      "accruals_ratio",
+      "days_sales_outstanding_trend",
+      "inventory_days_trend"
     ],
     "multiple_metrics": [
-      "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
-      "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "debt_to_equity", "current_ratio",
-      "interest_coverage", "net_debt_to_ebitda", "capex_to_depreciation"
+      "peg",
+      "forward_pe",
+      "sales_multiple",
+      "price_to_book",
+      "price_to_tangible_book",
+      "ev_to_ebitda",
+      "ev_to_ebit",
+      "ev_to_fcf",
+      "debt_to_equity",
+      "current_ratio",
+      "interest_coverage",
+      "net_debt_to_ebitda",
+      "capex_to_depreciation"
     ],
     "anomaly_rules": [
       {
         "id": "margin_growth_divergence",
         "severity": "watch",
         "conditions": [
-          { "metric": "operating_margin_trend", "operator": "lte", "value": -0.01 },
-          { "metric": "revenue_growth", "operator": "gte", "value": 0.1 }
+          {
+            "metric": "operating_margin_trend",
+            "operator": "lte",
+            "value": -0.01
+          },
+          {
+            "metric": "revenue_growth",
+            "operator": "gte",
+            "value": 0.1
+          }
         ],
         "message": "Operating margin is declining while revenue is still growing quickly. This divergence often signals that incremental growth is becoming less profitable."
       },
@@ -257,8 +337,16 @@
         "id": "cash_earnings_divergence",
         "severity": "warning",
         "conditions": [
-          { "metric": "accruals_ratio", "operator": "gte", "value": 0.05 },
-          { "metric": "fcf_growth_3y", "operator": "lt_metric", "compared_to": "earnings_growth" }
+          {
+            "metric": "accruals_ratio",
+            "operator": "gte",
+            "value": 0.05
+          },
+          {
+            "metric": "fcf_growth_3y",
+            "operator": "lt_metric",
+            "compared_to": "earnings_growth"
+          }
         ],
         "message": "Accruals are elevated while free cash flow growth trails earnings growth. This pattern can indicate weaker cash conversion of reported earnings."
       },
@@ -266,8 +354,16 @@
         "id": "receivables_growth_divergence",
         "severity": "watch",
         "conditions": [
-          { "metric": "days_sales_outstanding_trend", "operator": "gte", "value": 0.05 },
-          { "metric": "revenue_growth", "operator": "lte", "value": 0.0 }
+          {
+            "metric": "days_sales_outstanding_trend",
+            "operator": "gte",
+            "value": 0.05
+          },
+          {
+            "metric": "revenue_growth",
+            "operator": "lte",
+            "value": 0.0
+          }
         ],
         "message": "Days sales outstanding is extending while revenue growth is nonpositive. This pattern can indicate slower customer collections."
       },
@@ -275,8 +371,16 @@
         "id": "leveraged_buyback",
         "severity": "watch",
         "conditions": [
-          { "metric": "net_buyback_yield", "operator": "gt", "value": 0.0 },
-          { "metric": "net_debt_to_ebitda", "operator": "gte", "value": 2.5 }
+          {
+            "metric": "net_buyback_yield",
+            "operator": "gt",
+            "value": 0.0
+          },
+          {
+            "metric": "net_debt_to_ebitda",
+            "operator": "gte",
+            "value": 2.5
+          }
         ],
         "message": "Buyback yield is positive while net debt to EBITDA is elevated. This combination means repurchases are occurring alongside meaningful leverage."
       }
@@ -305,7 +409,13 @@
     "baseline_minimum_days": 30,
     "minimum_volatility_for_rescaling_pct": 0.1,
     "minimum_years_until_retirement": 1,
-    "percentiles": [0.1, 0.25, 0.5, 0.75, 0.9],
+    "percentiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
     "default_retirement_end_age": 95,
     "default_monthly_withdrawal": 3000.0,
     "default_inflation_pct": 2.5,
@@ -320,27 +430,71 @@
       "display_decimals": 1
     },
     "success_bands": [
-      { "minimum": 0.8, "label": "On track" },
-      { "minimum": 0.6, "label": "Needs attention" },
-      { "minimum": 0.0, "label": "Off track" }
+      {
+        "minimum": 0.8,
+        "label": "On track"
+      },
+      {
+        "minimum": 0.6,
+        "label": "Needs attention"
+      },
+      {
+        "minimum": 0.0,
+        "label": "Off track"
+      }
     ],
     "lever_ranges": {
-      "monthly_contribution": { "minimum": 0, "maximum": 5000, "step": 50 },
-      "retirement_age": { "minimum": 18, "maximum": 80, "step": 1 },
-      "annual_withdrawal": { "minimum": 0, "maximum": 240000, "step": 1000 }
+      "monthly_contribution": {
+        "minimum": 0,
+        "maximum": 5000,
+        "step": 50
+      },
+      "retirement_age": {
+        "minimum": 18,
+        "maximum": 80,
+        "step": 1
+      },
+      "annual_withdrawal": {
+        "minimum": 0,
+        "maximum": 240000,
+        "step": 1000
+      }
     },
     "contribution_lever_step": 150,
     "allocation_default": "growth",
     "allocation_assumptions": {
-      "conservative": { "label": "Conservative", "annual_return_pct": 4.5, "annual_volatility_pct": 7.0 },
-      "balanced": { "label": "Balanced", "annual_return_pct": 6.0, "annual_volatility_pct": 10.0 },
-      "growth": { "label": "Growth", "annual_return_pct": 7.5, "annual_volatility_pct": 15.0 },
-      "aggressive": { "label": "Aggressive", "annual_return_pct": 9.0, "annual_volatility_pct": 21.0 }
+      "conservative": {
+        "label": "Conservative",
+        "annual_return_pct": 4.5,
+        "annual_volatility_pct": 7.0
+      },
+      "balanced": {
+        "label": "Balanced",
+        "annual_return_pct": 6.0,
+        "annual_volatility_pct": 10.0
+      },
+      "growth": {
+        "label": "Growth",
+        "annual_return_pct": 7.5,
+        "annual_volatility_pct": 15.0
+      },
+      "aggressive": {
+        "label": "Aggressive",
+        "annual_return_pct": 9.0,
+        "annual_volatility_pct": 21.0
+      }
     },
     "sequence_risk_example": {
       "starting_balance": 1000000,
       "annual_withdrawal": 60000,
-      "annual_returns": [-0.22, -0.1, 0.04, 0.09, 0.17, 0.24]
+      "annual_returns": [
+        -0.22,
+        -0.1,
+        0.04,
+        0.09,
+        0.17,
+        0.24
+      ]
     },
     "goal_default_years": 5,
     "goal_default_amount": 50000,
@@ -354,10 +508,35 @@
     "home_signal_limit": 4,
     "home_theme_limit": 6,
     "mobile_preview_positions": [
-      {"id": "preview-msft", "ticker": "MSFT", "shares": 12, "costBasis": 430, "purchaseDate": "2025-01-02", "snapshotSource": "User-provided brokerage snapshot"},
-      {"id": "preview-aapl", "ticker": "AAPL", "shares": 20, "costBasis": 260, "purchaseDate": "2025-01-02"},
-      {"id": "preview-qcom", "ticker": "QCOM", "shares": 30, "costBasis": 140, "purchaseDate": "2025-01-02"},
-      {"id": "preview-voo", "ticker": "VOO", "shares": 10, "costBasis": 650, "purchaseDate": "2025-01-02"}
+      {
+        "id": "preview-msft",
+        "ticker": "MSFT",
+        "shares": 12,
+        "costBasis": 430,
+        "purchaseDate": "2025-01-02",
+        "snapshotSource": "User-provided brokerage snapshot"
+      },
+      {
+        "id": "preview-aapl",
+        "ticker": "AAPL",
+        "shares": 20,
+        "costBasis": 260,
+        "purchaseDate": "2025-01-02"
+      },
+      {
+        "id": "preview-qcom",
+        "ticker": "QCOM",
+        "shares": 30,
+        "costBasis": 140,
+        "purchaseDate": "2025-01-02"
+      },
+      {
+        "id": "preview-voo",
+        "ticker": "VOO",
+        "shares": 10,
+        "costBasis": 650,
+        "purchaseDate": "2025-01-02"
+      }
     ],
     "score_dial": {
       "size": 220,
@@ -371,7 +550,10 @@
       "minimum_gap": 0.8,
       "maximum_gap": 5.0
     },
-    "mobile_acceptance_widths": [390, 430],
+    "mobile_acceptance_widths": [
+      390,
+      430
+    ],
     "minimum_touch_target_px": 44,
     "colorblind_minimum_rgb_distance": 0.12,
     "minimum_text_contrast_ratio": 4.5,
@@ -928,15 +1110,34 @@
     "source_quality": {
       "regulatory_primary": {
         "weight": 1.5,
-        "matches": ["sec.gov", "sec edgar", "investor relations", "business wire", "globe newswire"]
+        "matches": [
+          "sec.gov",
+          "sec edgar",
+          "investor relations",
+          "business wire",
+          "globe newswire"
+        ]
       },
       "established_press": {
         "weight": 1.2,
-        "matches": ["reuters", "bloomberg", "financial times", "wall street journal", "associated press", "cnbc"]
+        "matches": [
+          "reuters",
+          "bloomberg",
+          "financial times",
+          "wall street journal",
+          "associated press",
+          "cnbc"
+        ]
       },
       "aggregator_syndicated": {
         "weight": 0.65,
-        "matches": ["yahoo finance", "msn", "newsbreak", "finanzen.net", "marketscreener"]
+        "matches": [
+          "yahoo finance",
+          "msn",
+          "newsbreak",
+          "finanzen.net",
+          "marketscreener"
+        ]
       },
       "neutral": {
         "weight": 1.0,
@@ -945,21 +1146,118 @@
     },
     "event_type_markers": {
       "_comment": "Keyword classification (brief section 15) -- deterministic and title/source-based, same approach as content_type/source_quality above. A headline can match multiple types; classify_event_type returns every match, ordered by this dict's key order, so the caller decides how to prioritize rather than this function silently picking one.",
-      "earnings": ["earnings", "quarterly results", "eps of", "q1 results", "q2 results", "q3 results", "q4 results", "fiscal year results"],
-      "guidance": ["guidance", "outlook raised", "outlook lowered", "forecast raised", "forecast cut", "raises forecast", "cuts forecast"],
-      "product": ["launches", "unveils", "new product", "product recall", "ships"],
-      "regulatory": ["fda", "ftc", "doj", "antitrust", "regulatory approval", "regulator", "sec investigation", "compliance"],
-      "litigation": ["lawsuit", "sues", "sued", "class action", "settlement", "court ruling"],
-      "financing": ["secondary offering", "debt offering", "credit facility", "raises capital", "private placement", "bond issuance"],
-      "m_and_a": ["acquire", "acquisition", "merger", "to be acquired", "buyout", "divest"],
-      "management": ["ceo", "cfo", "appoints", "resigns", "steps down", "names new"],
-      "auditor": ["auditor", "going concern", "material weakness"],
-      "restatement": ["restate", "restatement", "accounting error"],
-      "government_contract": ["government contract", "awarded contract", "department of defense", "federal contract"],
-      "insider_transaction": ["insider buying", "insider selling", "form 4", "director purchase", "executive sells"],
-      "political_disclosure": ["congressional", "senator", "representative", "stock act", "periodic transaction report"],
-      "analyst_revision": ["upgrades", "downgrades", "price target raised", "price target lowered", "initiates coverage"],
-      "macro_exposure": ["tariff", "interest rate", "inflation report", "fed decision", "recession"]
+      "earnings": [
+        "earnings",
+        "quarterly results",
+        "eps of",
+        "q1 results",
+        "q2 results",
+        "q3 results",
+        "q4 results",
+        "fiscal year results"
+      ],
+      "guidance": [
+        "guidance",
+        "outlook raised",
+        "outlook lowered",
+        "forecast raised",
+        "forecast cut",
+        "raises forecast",
+        "cuts forecast"
+      ],
+      "product": [
+        "launches",
+        "unveils",
+        "new product",
+        "product recall",
+        "ships"
+      ],
+      "regulatory": [
+        "fda",
+        "ftc",
+        "doj",
+        "antitrust",
+        "regulatory approval",
+        "regulator",
+        "sec investigation",
+        "compliance"
+      ],
+      "litigation": [
+        "lawsuit",
+        "sues",
+        "sued",
+        "class action",
+        "settlement",
+        "court ruling"
+      ],
+      "financing": [
+        "secondary offering",
+        "debt offering",
+        "credit facility",
+        "raises capital",
+        "private placement",
+        "bond issuance"
+      ],
+      "m_and_a": [
+        "acquire",
+        "acquisition",
+        "merger",
+        "to be acquired",
+        "buyout",
+        "divest"
+      ],
+      "management": [
+        "ceo",
+        "cfo",
+        "appoints",
+        "resigns",
+        "steps down",
+        "names new"
+      ],
+      "auditor": [
+        "auditor",
+        "going concern",
+        "material weakness"
+      ],
+      "restatement": [
+        "restate",
+        "restatement",
+        "accounting error"
+      ],
+      "government_contract": [
+        "government contract",
+        "awarded contract",
+        "department of defense",
+        "federal contract"
+      ],
+      "insider_transaction": [
+        "insider buying",
+        "insider selling",
+        "form 4",
+        "director purchase",
+        "executive sells"
+      ],
+      "political_disclosure": [
+        "congressional",
+        "senator",
+        "representative",
+        "stock act",
+        "periodic transaction report"
+      ],
+      "analyst_revision": [
+        "upgrades",
+        "downgrades",
+        "price target raised",
+        "price target lowered",
+        "initiates coverage"
+      ],
+      "macro_exposure": [
+        "tariff",
+        "interest rate",
+        "inflation report",
+        "fed decision",
+        "recession"
+      ]
     }
   },
   "market_behavior": {
@@ -973,5 +1271,70 @@
       "low_beta": 0.06,
       "technical_extended": 0.06
     }
+  },
+  "evidence_events": {
+    "_comment": "Event-level evidence weights. Every number here is a starting prior chosen from the published literature and ordinary market experience, NOT a measured constant - they are frozen deliberately so the point-in-time store accumulates observations under one fixed policy, and they should only move when walk-forward evidence supports it. Half-lives are in TRADING days: an event that lands on Friday must not have burned two half-lives by Monday open.",
+    "event_materiality": {
+      "_comment": "How much a headline of this kind can move an expected cash-flow path, 0-1. This is what stops a +0.95-sentiment 'best places to work' award from outranking a +0.75-sentiment guidance raise. Highest matched type wins (see event_materiality).",
+      "guidance": 1.0,
+      "restatement": 1.0,
+      "auditor": 1.0,
+      "m_and_a": 0.95,
+      "earnings": 0.9,
+      "regulatory": 0.85,
+      "financing": 0.7,
+      "government_contract": 0.65,
+      "litigation": 0.6,
+      "analyst_revision": 0.55,
+      "product": 0.5,
+      "management": 0.45,
+      "insider_transaction": 0.4,
+      "macro_exposure": 0.3,
+      "political_disclosure": 0.2,
+      "routine_commentary": 0.15
+    },
+    "event_half_life_trading_days": {
+      "_comment": "How long this kind of information stays live. Strategic and regulatory outcomes resolve slowly and keep repricing; ordinary commentary is stale within a session or two. Longest matched type wins, because the slowest-resolving element of a story is what keeps it relevant.",
+      "m_and_a": 20.0,
+      "restatement": 15.0,
+      "auditor": 15.0,
+      "regulatory": 10.0,
+      "guidance": 8.0,
+      "litigation": 8.0,
+      "government_contract": 7.0,
+      "financing": 6.0,
+      "product": 6.0,
+      "earnings": 5.0,
+      "analyst_revision": 5.0,
+      "management": 5.0,
+      "insider_transaction": 5.0,
+      "macro_exposure": 3.0,
+      "political_disclosure": 3.0,
+      "routine_commentary": 1.5
+    },
+    "insider_half_life_trading_days": {
+      "_comment": "Far slower than news, and deliberately so. Cohen, Malloy & Pomorski measure the opportunistic-insider effect over roughly one to three months, so a purchase is still informative weeks later - decaying it on a news schedule would throw away the signal.",
+      "catalyst": 30.0,
+      "long_term": 60.0
+    },
+    "insider_sell_weight": 0.5,
+    "cluster_title_similarity": 0.72,
+    "cluster_window_hours": 72.0,
+    "source_breadth_step": 0.08,
+    "max_source_breadth_bonus": 1.3,
+    "published_event_limit": 12,
+    "expectation_weights": {
+      "_comment": "Analyst conviction is about CHANGE, not level: a static 2.6/5 consensus is already in the price. Recommendation changes accompanied by estimate revisions are the ones that provoke drift, so revision breadth and magnitude carry most of the weight.",
+      "revision_breadth": 0.35,
+      "revision_magnitude": 0.35,
+      "upgrades": 0.2,
+      "target_change": 0.1
+    },
+    "eps_revision_scale": 200.0,
+    "upgrade_scale": 6.0,
+    "target_change_scale": 1.2,
+    "news_saturation": 1.0,
+    "insider_saturation": 1.2,
+    "_saturation_comment": "Signed event strengths are summed and squashed through tanh rather than averaged. An average divides materiality straight back out (the average of one trivial event is that event), and an unbounded sum would let the most-covered company run away with the screen."
   }
 }

@@ -27,6 +27,7 @@ from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
+from evidence_events import build_evidence
 from news_intelligence import annotate_article, deduplicate_articles
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
@@ -47,6 +48,10 @@ UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
+# The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
+# title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
+# on top, so it reads one merged config rather than two half-configs.
+EVIDENCE_CONFIG = {**NEWS_CONFIG, **SETTINGS["evidence_events"]}
 MIN_ALPHA_PRIMARY_RELEVANCE = NEWS_CONFIG["alpha_vantage_primary_relevance_minimum"]
 # How many shortlisted companies get the multi-request financial-statement treatment.
 EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
@@ -156,6 +161,39 @@ def _sentiment_summary(sentiment_detail):
     }
 
 
+def _evidence_summary(evidence):
+    """The evidence block trimmed to what a client-side screen actually reads.
+
+    The full per-event breakdown is for the published leaderboard, where a reader can open one
+    company and audit it. Shipping twelve fully-detailed events for each of ~900 universe rows
+    would roughly double the payload to answer a question nobody asks of the 800th-ranked
+    name, so the tail carries the scores, the freshness that produced them, and the single
+    dominant event - enough for a screen to rank on and explain itself.
+    """
+    if not evidence:
+        return None
+    # A carried-forward row from a fast refresh arrives already in this shape (it was
+    # projected by an earlier run), so re-projecting it would strip the dominant-event fields
+    # it already holds - same "may already be lightweight" case _screen_row handles.
+    if "news_detail" not in evidence and "event_count" in evidence:
+        return evidence
+    news_detail = evidence.get("news_detail") or {}
+    insider_detail = evidence.get("insider_detail") or {}
+    return {
+        "news_score": evidence.get("news_score"),
+        "insider_score": evidence.get("insider_score"),
+        "insider_score_long_term": evidence.get("insider_score_long_term"),
+        "expectation_score": evidence.get("expectation_score"),
+        "dominant_event": news_detail.get("dominant_event"),
+        "dominant_event_types": news_detail.get("dominant_event_types"),
+        "dominant_age_trading_days": news_detail.get("dominant_age_trading_days"),
+        "dominant_materiality": news_detail.get("dominant_materiality"),
+        "event_count": news_detail.get("event_count", 0),
+        "insider_freshest_age_trading_days": insider_detail.get("freshest_age_trading_days"),
+        "expectation_inputs_resolved": (evidence.get("expectation_detail") or {}).get("inputs_resolved", 0),
+    }
+
+
 def _screen_row(row):
     """Project a full or already-lightweight row into the screen_universe shape.
 
@@ -204,6 +242,10 @@ def _screen_row(row):
         "days_to_cover": row.get("days_to_cover"),
         "sector_valuation_percentile": row.get("sector_valuation_percentile"),
         "sentiment_summary": _sentiment_summary(row.get("sentiment_detail")),
+        # Dated evidence for the whole universe, not just the leaderboard - the catalyst and
+        # analyst-conviction screens are meant to surface names that are *not* already top
+        # fundamentals scores, so they need this on the tail or they cannot do their job.
+        "evidence_summary": _evidence_summary(row.get("evidence") or row.get("evidence_summary")),
         "stale_carryforward": row.get("stale_carryforward", False),
     }
 
@@ -1259,6 +1301,10 @@ def run():
         # rows join `screen_universe` later and keep their older stamp), so the poll time is
         # simply now. The next fast refresh reads it to decide what has waited longest.
         row["last_polled_at"] = polled_at
+        # Dated evidence with per-event decay, published alongside the static component
+        # scores rather than replacing them: the screens read the events, the long-term
+        # score keeps reading the blended components it was calibrated on.
+        row["evidence"] = build_evidence(row, context["news"], EVIDENCE_CONFIG)
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
