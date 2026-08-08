@@ -264,6 +264,8 @@ describe('Picks research page', () => {
 
     expect(screen.queryByText('Buy Now')).not.toBeInTheDocument()
     expect(screen.getAllByText(/INSUFFICIENT DATA/).length).toBeGreaterThan(0)
+    // And it says so where Buy Now used to be, rather than leaving an unexplained blank.
+    expect(screen.getAllByText('No timing call').length).toBeGreaterThan(0)
   })
 
   it('shows a missing data confidence as – rather than a measured 0%', () => {
@@ -337,46 +339,6 @@ describe('Picks research page', () => {
     render(<MemoryRouter><Picks /></MemoryRouter>)
     // Default is a column sort - no model ran, so there is no model confidence to warn about.
     expect(screen.queryByText('Thin evidence')).not.toBeInTheDocument()
-  })
-
-  it('never shows an action label beside a row with no data confidence', () => {
-    // Straight from the screenshot: VRT displayed "Data confidence 0%", "HOLD" and "BUY NOW"
-    // at the same time.
-    const lightweight = {
-      ticker: 'VRT', name: 'Vertiv Holdings', sector: 'Industrials', score: 63,
-      stance: 'PROMISING', price: 100,
-      components: { fundamentals: 65 },
-      technical_detail: { return_20d: -14.6, pct_from_52w_high: -2, pct_above_52w_low: 129, return_60d: 5 },
-      recommendation: { action: 'HOLD', agreement_count: 2 },
-    }
-    useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
-      return { data: { etfs: [] }, loading: false }
-    })
-
-    render(<MemoryRouter><Picks /></MemoryRouter>)
-
-    expect(screen.queryByText('Buy Now')).not.toBeInTheDocument()
-    expect(screen.getAllByText(/INSUFFICIENT DATA/).length).toBeGreaterThan(0)
-  })
-
-  it('shows a missing data confidence as – rather than a measured 0%', () => {
-    // A lightweight universe row has no confidence at all; rendering it as 0% reads as
-    // "we measured this and it is terrible."
-    const lightweight = {
-      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
-      components: { fundamentals: 63 }, technical_detail: { return_20d: -10.4 },
-    }
-    useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
-      return { data: { etfs: [] }, loading: false }
-    })
-
-    render(<MemoryRouter><Picks /></MemoryRouter>)
-
-    const table = document.querySelector('.research-table')
-    expect(within(table).queryByText('0%')).not.toBeInTheDocument()
-    expect(within(table).getAllByText('Lighter data').length).toBeGreaterThan(0)
   })
 
   it('never scores a fund under a per-security model, even when its row omits the ETF flag', () => {

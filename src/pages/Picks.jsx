@@ -217,6 +217,9 @@ function EntryTimingAction({ row, alerting, alertStatus, onSetAlert }) {
   if (timing.verdict === 'review') {
     return <span className="chip entry-timing-chip review" title={timing.reason}>Review</span>
   }
+  if (timing.verdict === 'insufficient_data') {
+    return <span className="chip entry-timing-chip no-call" title={timing.reason}>No timing call</span>
+  }
   return (
     <span className="entry-timing-wrap">
       <button

@@ -1665,6 +1665,7 @@ body { background: var(--app-background); background-image: none; }
 }
 @media (max-width: 520px) { .evidence-loadings { grid-template-columns: 1fr; } }
 .entry-timing-chip.review { border-color: color-mix(in srgb, var(--text-faint) 45%, var(--border)); color: var(--text-dim); cursor: help; }
+.entry-timing-chip.no-call { border-style: dashed; border-color: var(--border); color: var(--text-faint); cursor: help; }
 .lens-summary-composition { color: var(--text-faint); font: 10px/1.5 var(--font-mono); }
 .model-why { margin: 0 0 12px; }
 .model-why-shrink { color: var(--text-faint); font-weight: 400; }
