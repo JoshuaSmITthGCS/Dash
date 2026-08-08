@@ -211,6 +211,11 @@ its own input coverage on screen. Measured against the 2026-08-08 payload, 875 s
       `components.news_sentiment` resolved for 3 of 877 rows and the catalyst screen has
       essentially no news leg to stand on. Either widen the Marketaux symbol coverage per
       run or accept that Catalyst is a shortlist-only lens and say so in its description.
+      **This is now the single binding constraint on the catalyst model** — the event layer,
+      clustering, materiality weighting and decay are all in place and tested; they have
+      almost nothing to score. `ticker.get_news()` is free and per-symbol, so routing the
+      event builder at Yahoo's own news feed rather than Marketaux alone is the obvious next
+      move.
 - [ ] **Reversal sees 119 of 875 names** because `drawdown_60d` only ships on freshly polled
       rows. The fast-refresh rotation added in `rotation_slice` re-polls the stalest tail
       every run, which should close this within a handful of refreshes — re-measure after
@@ -218,6 +223,35 @@ its own input coverage on screen. Measured against the 2026-08-08 payload, 875 s
 - [ ] Analyst coverage resolves for 114 of 875 rows. Worth checking whether that is a Yahoo
       coverage limit or an enrichment-budget artifact before treating the lens as narrow by
       nature.
+- [ ] **Re-measure the table above after one full refresh on the new collection path.**
+      `pipeline/yahoo_estimates.py` now collects EPS revision counts, the EPS trend, rating
+      changes and consensus targets, so analyst conviction should stop publishing raw 98s at
+      30% confidence (which is what "ranked on level, with no evidence of change" correctly
+      looks like today). `target_change_30d_pct` stays null until a second run exists to
+      compare against — Yahoo has no as-of-a-past-date endpoint, which is exactly why the
+      revision fields are now in `pit_store.TRACKED_FIELDS`.
+
+---
+
+## 7. Ranking-model priors awaiting validation
+
+The nine models in `src/lib/rankingModels.js` carry declared, frozen weights. They are
+starting priors drawn from the literature and ordinary market experience — **not** measured
+optima, and nothing in this repository has yet tested whether any of them predicts anything.
+They are frozen deliberately so the point-in-time store accumulates observations under one
+fixed policy; changing them before there is walk-forward evidence would reset that clock.
+
+- [ ] Run the IC harness against each model separately once §3 has eligible periods. A model
+      that answers a different question needs its own evaluation, not the champion's.
+- [ ] The published research score (`advisor_engine.blend_research_components`) is deliberately
+      **unchanged** and still drives `row["score"]`, the calibration bands, the shadow
+      portfolios and the PIT observations. The `research` ranking model is a differently
+      composed view sitting alongside it. If the evidence eventually favours the new
+      composition, promote it through the existing challenger/champion machinery
+      (`score_variants`, `experiment_registry`) rather than by editing the champion in place.
+- [ ] Event materiality and half-lives (`settings.evidence_events`) are the least evidenced
+      numbers in the system. The honest test is whether the decayed event score at time t
+      predicts return over t+1..t+k better than article count does.
 
 ---
 

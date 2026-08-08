@@ -29,6 +29,7 @@ from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
 from evidence_events import build_evidence
 from news_intelligence import annotate_article, deduplicate_articles
+from yahoo_estimates import collect_estimate_detail
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
 from normalization_report import write_normalization_report
@@ -233,6 +234,10 @@ def _screen_row(row):
         "analyst_count": row.get("analyst_count"),
         "analyst_rating": row.get("analyst_rating"),
         "analyst_target_upside": row.get("analyst_target_upside"),
+        "analyst_consensus_target": row.get("analyst_consensus_target"),
+        # Small enough to carry for the whole universe, and the analyst-conviction model is
+        # specifically meant to surface names outside the published leaderboard.
+        "estimate_detail": row.get("estimate_detail"),
         "theme_exposure": row.get("theme_exposure"),
         # Corroboration inputs for the strategy-lens gates (rankReversal,
         # rankValueTurnarounds, rankAnalystConviction, rankCatalyst) - independent
@@ -1254,6 +1259,7 @@ def run():
 
     research = []
     polled_at = datetime.now(timezone.utc).isoformat()
+    previous_rows = previous_rows_by_ticker(previous_payload)
     for context in contexts:
         symbol = context["symbol"]
         row = build_research(
@@ -1266,6 +1272,24 @@ def run():
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
+        # Expectation change - the leg the catalyst and analyst-conviction models were missing.
+        # The previous run's consensus target is the only comparison point that exists for
+        # target drift: Yahoo serves today's view and nothing else, which is precisely why
+        # the snapshot archive has to be written from day one.
+        estimate_detail = collect_estimate_detail(
+            symbol, context.get("ticker_obj"),
+            previous_target=(previous_rows.get(symbol) or {}).get("analyst_consensus_target"),
+        )
+        row["estimate_detail"] = estimate_detail
+        # Lifted flat alongside analyst_rating/analyst_target_upside, which already live at
+        # row level, so the point-in-time store archives them without having to learn about
+        # nested blocks. The consensus target only fills a gap - it never overwrites a value
+        # another source already resolved.
+        for field in ("revision_breadth_30d", "eps_revision_30d_pct", "net_upgrades_90d"):
+            if estimate_detail.get(field) is not None:
+                row[field] = estimate_detail[field]
+        if row.get("analyst_consensus_target") is None and estimate_detail.get("consensus_target") is not None:
+            row["analyst_consensus_target"] = estimate_detail["consensus_target"]
         row["alpha_enriched"] = context["alpha_enriched"]
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
         champion_variant = {
