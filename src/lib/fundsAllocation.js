@@ -10,20 +10,25 @@
 
 const finite = (value) => typeof value === 'number' && Number.isFinite(value)
 
-export function allocateFunds(rows, availableFunds, { limit = 8, power = 2 } = {}) {
+export function allocateFunds(rows, availableFunds, { limit = 8, power = 2, scoreOf } = {}) {
   if (!finite(availableFunds) || availableFunds <= 0) {
     return { available: false, reason: 'Enter an available funds amount greater than $0.', buckets: [] }
   }
 
+  // `scoreOf` lets a caller weight by the ranking actually on screen. Under a strategy
+  // lens the visible order is that lens's rank score, and weighting those rows by the
+  // long-term research score instead would hand the largest bucket to whichever name
+  // happens to rank well on a measure the user deliberately looked past.
+  const scoreFor = scoreOf || ((row) => row.score)
   const eligible = (rows || [])
-    .filter((row) => finite(row.score) && row.score > 0)
+    .filter((row) => finite(scoreFor(row)) && scoreFor(row) > 0)
     .slice(0, limit)
 
   if (!eligible.length) {
     return { available: false, reason: 'No scored companies in the current view to allocate across.', buckets: [] }
   }
 
-  const weights = eligible.map((row) => row.score ** power)
+  const weights = eligible.map((row) => scoreFor(row) ** power)
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0)
 
   const buckets = eligible.map((row, index) => {
@@ -33,7 +38,7 @@ export function allocateFunds(rows, availableFunds, { limit = 8, power = 2 } = {
     return {
       ticker: row.ticker,
       name: row.name,
-      score: row.score,
+      score: scoreFor(row),
       isEtf: Boolean(row.is_etf),
       weightPct,
       amount,

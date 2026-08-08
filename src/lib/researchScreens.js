@@ -95,6 +95,8 @@ export function rankValueTurnarounds(rows, limit = 5) {
         screen: {
           weekReturn,
           aboveLow,
+          valuation,
+          fundamentals,
           rankScore: valuation * 0.4 + fundamentals * 0.3 + proximity * 0.2 + upturn * 0.1,
           corroborated,
           corroborationGaps,
@@ -207,7 +209,7 @@ export function rankReversal(rows, limit = 5) {
       return {
         ...row,
         screen: {
-          weekReturn, monthReturn, drawdown,
+          weekReturn, monthReturn, drawdown, fundamentals,
           rankScore: bounce * 0.45 + pulledBack * 0.35 + clamp(fundamentals) * 0.20,
           corroborated,
           corroborationGaps,
@@ -405,6 +407,7 @@ export function rankCatalyst(rows, limit = 5) {
           newsSentiment: newsSentiment ?? null,
           insiderPoints,
           weekReturn,
+          articleCount: newsCorroboration(row).articleCount,
           rankScore,
           corroborated,
           corroborationGaps,
@@ -498,5 +501,204 @@ export function rankThemeExposure(theme, limit = 5) {
 // theme whose signals were all unavailable this run.
 export function activeThemes(screen) {
   return (screen?.themes || []).filter((theme) => (theme.rows || []).length > 0)
+}
+
+// Best theme-exposure opportunity across every structural trend a name is connected to,
+// expressed as a screen the same shape as every other rankX() above so the tailwind lens
+// can be a real ranked list (with a qualifying bar and a stated reason) rather than a bare
+// number the caller re-sorts on. A row with no scored theme exposure does not qualify -
+// previously it fell back to -1 and padded the bottom of the list.
+export function rankTailwind(rows, limit = 5) {
+  return stocksOnly(rows)
+    .map((row) => {
+      const best = (row.theme_exposure || [])
+        .filter((exposure) => finite(exposure.opportunity_score))
+        .sort((left, right) => right.opportunity_score - left.opportunity_score)[0]
+      if (!best) return null
+      return {
+        ...row,
+        screen: {
+          rankScore: best.opportunity_score,
+          themeName: best.display_name || best.theme_id,
+          themeExposure: best.theme_exposure_score,
+          // A name the theme layer excluded on valuation grounds is still worth seeing
+          // (see rankThemeExposure) but is flagged rather than presented as a clean setup.
+          corroborated: best.eligible !== false,
+          corroborationGaps: best.eligible === false
+            ? ['the theme layer excluded this name on valuation grounds - high exposure at a euphoric price']
+            : [],
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
+const pct = (value, digits = 1) => (finite(value) ? `${value > 0 ? '+' : ''}${value.toFixed(digits)}%` : null)
+const round = (value) => (finite(value) ? Math.round(value) : null)
+
+/**
+ * One entry per strategy lens: how to rank the universe by it, what raw inputs a row must
+ * carry to be evaluable at all, and how to state in plain language why a row that
+ * qualified actually qualified.
+ *
+ * `inputs` exists so the UI can answer "why is this list short/empty?" from the data
+ * rather than leaving the user to guess. A lens whose inputs are dark across the universe
+ * (Catalyst, when no news article or Form 4 filing resolved this run) is a data-coverage
+ * problem, and saying so is more useful than silently rendering the fundamentals
+ * leaderboard in a different order.
+ *
+ * `inputMode: 'any'` means a row needs at least one input present to be evaluable at all;
+ * 'all' means every listed input is required by the screen's own gate.
+ */
+export const STRATEGY_LENSES = {
+  catalyst: {
+    label: 'Short-term catalyst (news + insider)',
+    rank: rankCatalyst,
+    inputMode: 'any',
+    inputs: [
+      { label: 'fresh news sentiment', has: (row) => finite(row.components?.news_sentiment) },
+      { label: 'Form 4 insider activity', has: (row) => Boolean(row.insider_activity?.available) },
+    ],
+    why: (screen) => [
+      finite(screen.newsSentiment)
+        ? `news sentiment ${round(screen.newsSentiment)}/100${finite(screen.articleCount) ? ` across ${screen.articleCount} article${screen.articleCount === 1 ? '' : 's'}` : ''}`
+        : null,
+      finite(screen.insiderPoints) && screen.insiderPoints !== 0
+        ? `opportunistic insider ${screen.insiderPoints > 0 ? 'buying' : 'selling'} (${screen.insiderPoints > 0 ? '+' : ''}${screen.insiderPoints.toFixed(1)} pts)`
+        : null,
+      pct(screen.weekReturn) ? `${pct(screen.weekReturn)} this week` : null,
+    ].filter(Boolean),
+  },
+  momentum: {
+    label: 'Momentum',
+    rank: rankMomentum,
+    inputMode: 'all',
+    inputs: [
+      { label: '5-day return', has: (row) => finite(row.technical_detail?.return_5d) || weeklyCloses(row).length >= 2 },
+      { label: '20-day return', has: (row) => finite(row.technical_detail?.return_20d) },
+    ],
+    why: (screen) => [
+      finite(screen.momentum12m) ? `12-1 momentum ${pct(screen.momentum12m, 0)}` : null,
+      pct(screen.monthReturn) ? `${pct(screen.monthReturn)} over 20 days` : null,
+      pct(screen.weekReturn) ? `${pct(screen.weekReturn)} this week` : null,
+    ].filter(Boolean),
+  },
+  reversal: {
+    label: 'Reversal',
+    rank: rankReversal,
+    inputMode: 'all',
+    inputs: [
+      { label: '5-day return', has: (row) => finite(row.technical_detail?.return_5d) || weeklyCloses(row).length >= 2 },
+      { label: '20-day return', has: (row) => finite(row.technical_detail?.return_20d) },
+      { label: '60-day drawdown', has: (row) => finite(row.technical_detail?.drawdown_60d) },
+      { label: 'fundamentals score', has: (row) => finite(row.components?.fundamentals) },
+    ],
+    why: (screen) => [
+      pct(screen.monthReturn) ? `down ${Math.abs(screen.monthReturn).toFixed(1)}% over 20 days` : null,
+      finite(screen.drawdown) ? `${Math.abs(screen.drawdown).toFixed(1)}% below its 60-day high` : null,
+      pct(screen.weekReturn) ? `but ${pct(screen.weekReturn)} this week` : null,
+      finite(screen.fundamentals) ? `fundamentals ${round(screen.fundamentals)}` : null,
+    ].filter(Boolean),
+  },
+  valueTurnaround: {
+    label: 'Value turnaround',
+    rank: rankValueTurnarounds,
+    inputMode: 'all',
+    inputs: [
+      { label: 'fundamentals score', has: (row) => finite(row.components?.fundamentals) },
+      { label: 'sector valuation score', has: (row) => finite(row.fundamental_categories?.valuation) },
+      { label: '52-week-low distance', has: (row) => finite(row.technical_detail?.pct_above_52w_low) || weeklyCloses(row).length >= 26 },
+    ],
+    why: (screen) => [
+      finite(screen.valuation) ? `valuation ${round(screen.valuation)}` : null,
+      finite(screen.fundamentals) ? `fundamentals ${round(screen.fundamentals)}` : null,
+      finite(screen.aboveLow) ? `${screen.aboveLow.toFixed(1)}% above its 52-week low` : null,
+      pct(screen.weekReturn) ? `${pct(screen.weekReturn)} this week` : null,
+    ].filter(Boolean),
+  },
+  analystConviction: {
+    label: 'Analyst conviction',
+    rank: rankAnalystConviction,
+    inputMode: 'all',
+    inputs: [
+      { label: 'analyst coverage (3+)', has: (row) => finite(row.analyst_count) && row.analyst_count >= 3 },
+      {
+        label: 'consensus rating or target',
+        has: (row) => finite(row.analyst_rating) || finite(row.analyst_target_upside),
+      },
+    ],
+    why: (screen) => [
+      finite(screen.analystCount) ? `${screen.analystCount} analysts covering` : null,
+      finite(screen.analystRating) ? `average rating ${screen.analystRating.toFixed(1)}/5 (1 = strong buy)` : null,
+      finite(screen.targetUpside) ? `consensus target ${pct(screen.targetUpside)} vs. price` : null,
+    ].filter(Boolean),
+  },
+  tailwind: {
+    label: 'Connected / not yet re-rated',
+    rank: rankTailwind,
+    inputMode: 'all',
+    inputs: [
+      {
+        label: 'scored theme exposure',
+        has: (row) => (row.theme_exposure || []).some((exposure) => finite(exposure.opportunity_score)),
+      },
+    ],
+    why: (screen) => [
+      screen.themeName ? `connected to ${screen.themeName}` : null,
+      finite(screen.themeExposure) ? `exposure ${round(screen.themeExposure)}/100` : null,
+      finite(screen.rankScore) ? `opportunity ${round(screen.rankScore)}/100` : null,
+    ].filter(Boolean),
+  },
+}
+
+export function isStrategyLens(key) {
+  return Object.prototype.hasOwnProperty.call(STRATEGY_LENSES, key)
+}
+
+/**
+ * Why a lens returned the list it returned: how many names it could scan, how many carry
+ * the raw inputs it needs, and which input is the binding constraint.
+ *
+ * This is deliberately computed from the same rows the lens ranks, not from a published
+ * summary - a lens that quietly sees 121 of 877 names because the rest were carried
+ * forward from an older refresh should say so on screen, not look like a short list of
+ * genuinely unattractive candidates.
+ */
+export function lensCoverage(rows, key) {
+  const lens = STRATEGY_LENSES[key]
+  if (!lens) return null
+  const universe = stocksOnly(rows || [])
+  const inputs = lens.inputs.map((input) => {
+    const present = universe.filter((row) => input.has(row)).length
+    return { label: input.label, present, missing: universe.length - present }
+  })
+  const evaluable = universe.filter((row) => (lens.inputMode === 'any'
+    ? lens.inputs.some((input) => input.has(row))
+    : lens.inputs.every((input) => input.has(row)))).length
+  const binding = inputs.slice().sort((left, right) => right.missing - left.missing)[0] || null
+  return {
+    scanned: universe.length,
+    evaluable,
+    missingInputs: universe.length - evaluable,
+    inputs,
+    // The single input that excludes the most rows - the honest answer to "why is this
+    // list not the whole universe?"
+    binding: binding && binding.missing > 0 ? binding : null,
+  }
+}
+
+/** Rank the universe by one lens, returning only rows that genuinely clear its bar. */
+export function rankByLens(rows, key, limit = 20) {
+  const lens = STRATEGY_LENSES[key]
+  return lens ? lens.rank(rows, limit) : []
+}
+
+/** Plain-language statement of why a ranked row qualified under the active lens. */
+export function lensReason(row, key) {
+  const lens = STRATEGY_LENSES[key]
+  if (!lens || !row?.screen) return ''
+  return lens.why(row.screen).join(' · ')
 }
 
