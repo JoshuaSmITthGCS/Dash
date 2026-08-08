@@ -6,6 +6,7 @@ import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import BacktestSummary from '../components/BacktestSummary.jsx'
 
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
 const pct = (value, digits = 1) => value == null ? '–' : `${(value * 100).toFixed(digits)}%`
@@ -115,6 +116,8 @@ export default function OptionsScreen() {
       worthless. Confirm live bid/ask, open interest, and your own risk limits in your broker before acting on
       anything here — nothing in this app places orders or connects to a brokerage account.
     </div>
+
+    <BacktestSummary file="screens/options-backtest.json" />
 
     <div className="research-toolbar">
       <label><span className="sr-only">Direction</span><select value={optionType} onChange={(event) => setOptionType(event.target.value)}>

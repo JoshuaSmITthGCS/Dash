@@ -30,6 +30,7 @@ import os
 import statistics
 from datetime import datetime, timezone
 
+from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, contract_liquidity, liquidity_factor,
@@ -341,6 +342,152 @@ def run(as_of=None):
              f"({sum(1 for row in scored_condors if row['eligibility'])} eligible), "
              f"{len(scored_straddles)} straddle candidates "
              f"({sum(1 for row in scored_straddles if row['eligibility'])} eligible)")
+    return result
+
+
+def backtest_iron_condor(universe, yf, as_of=None):
+    """Walk-forward simulated backtest of the iron condor strategy against real settlement.
+
+    Entry prices are Black-Scholes estimates (see backtest_common module docstring); every
+    trade settles against the REAL historical closing price at expiry_index. iv is computed
+    only from closes[:entry_index + 1] - no lookahead into price history past entry.
+    """
+    period_returns, trade_pnls = [], []
+    for entry in universe:
+        ticker = entry.get("ticker")
+        if not ticker:
+            continue
+        closes = yahoo_history(ticker, yf)["closes"]
+        for entry_index, expiry_index in walk_periods(closes, TARGET_DAYS_TO_EXPIRATION):
+            price, settle_price = closes[entry_index], closes[expiry_index]
+            iv = realized_volatility_20d(closes[:entry_index + 1])
+            if not iv or not price:
+                continue
+            calls, puts = synthetic_chain(price, iv, TARGET_DAYS_TO_EXPIRATION)
+            short_call = select_by_target_delta(calls, price, TARGET_DAYS_TO_EXPIRATION, side="call", target_delta=SHORT_WING_TARGET_DELTA)
+            long_call = select_by_target_delta(calls, price, TARGET_DAYS_TO_EXPIRATION, side="call", target_delta=LONG_WING_TARGET_DELTA)
+            short_put = select_by_target_delta(puts, price, TARGET_DAYS_TO_EXPIRATION, side="put", target_delta=SHORT_WING_TARGET_DELTA)
+            long_put = select_by_target_delta(puts, price, TARGET_DAYS_TO_EXPIRATION, side="put", target_delta=LONG_WING_TARGET_DELTA)
+            if None in (short_call, long_call, short_put, long_put):
+                continue
+            if not (long_call["strike"] > short_call["strike"] > price > short_put["strike"] > long_put["strike"]):
+                continue
+            net_credit = (short_call["mid"] - long_call["mid"]) + (short_put["mid"] - long_put["mid"])
+            call_width = long_call["strike"] - short_call["strike"]
+            put_width = short_put["strike"] - long_put["strike"]
+            max_loss = max(call_width, put_width) - net_credit
+            fee = 4 * CONTRACT_FEE
+            if net_credit <= 0 or max_loss <= 0:
+                continue
+            if short_put["strike"] <= settle_price <= short_call["strike"]:
+                paid_out = 0
+            elif short_call["strike"] < settle_price <= long_call["strike"]:
+                paid_out = settle_price - short_call["strike"]
+            elif settle_price > long_call["strike"]:
+                paid_out = call_width
+            elif long_put["strike"] <= settle_price < short_put["strike"]:
+                paid_out = short_put["strike"] - settle_price
+            else:  # settle_price < long_put["strike"]
+                paid_out = put_width
+            pnl = (net_credit - paid_out) * 100 - fee
+            period_returns.append(pnl / (max_loss * 100))
+            trade_pnls.append(pnl)
+    return performance_stats(period_returns, periods_per_year=365 / TARGET_DAYS_TO_EXPIRATION, trade_pnls=trade_pnls)
+
+
+def backtest_straddle(universe, yf, as_of=None):
+    """Walk-forward simulated backtest of the straddle strategy against real settlement.
+
+    Mirrors build_straddle_row's strike-matching fallback via _contract_at_strike. Entry
+    prices are Black-Scholes estimates; trades settle against the REAL historical closing
+    price at expiry_index. iv is computed only from closes[:entry_index + 1].
+    """
+    period_returns, trade_pnls = [], []
+    for entry in universe:
+        ticker = entry.get("ticker")
+        if not ticker:
+            continue
+        closes = yahoo_history(ticker, yf)["closes"]
+        for entry_index, expiry_index in walk_periods(closes, TARGET_DAYS_TO_EXPIRATION):
+            price, settle_price = closes[entry_index], closes[expiry_index]
+            iv = realized_volatility_20d(closes[:entry_index + 1])
+            if not iv or not price:
+                continue
+            calls, puts = synthetic_chain(price, iv, TARGET_DAYS_TO_EXPIRATION)
+            call = select_contract(calls, price)
+            put = select_contract(puts, price)
+            if call is None or put is None:
+                continue
+            if call["strike"] != put["strike"]:
+                matched_put = _contract_at_strike(puts, call["strike"], price)
+                if matched_put is not None:
+                    put = matched_put
+                else:
+                    matched_call = _contract_at_strike(calls, put["strike"], price)
+                    if matched_call is None:
+                        continue
+                    call = matched_call
+            if call["strike"] != put["strike"]:
+                continue
+            strike = call["strike"]
+            cost = (call["mid"] + put["mid"]) * 100 + 2 * CONTRACT_FEE
+            if cost <= 0:
+                continue
+            payoff = abs(settle_price - strike) * 100
+            pnl = payoff - cost
+            period_returns.append(pnl / cost)
+            trade_pnls.append(pnl)
+    return performance_stats(period_returns, periods_per_year=365 / TARGET_DAYS_TO_EXPIRATION, trade_pnls=trade_pnls)
+
+
+def run_backtest(as_of=None):
+    """Publishes a walk-forward simulated backtest for BOTH strategies (see module docstring
+    and backtest_common's for the simulated-entry/real-settlement methodology). Unlike run(),
+    this needs no live option-chain data - it only reads yahoo_history's cached price
+    history - so it always attempts to run, with no ENABLE_ADVANCED_OPTIONS_SCREEN gate.
+    """
+    payload = load_json("advisor.json") or {}
+    universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    generated_at = datetime.now(timezone.utc).isoformat()
+    methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
+                   "realized volatility as the implied-volatility input, not quoted historical "
+                   "prices. Real historical bid/ask spreads, open interest, and fill quality are "
+                   "not modeled. Trade settlement uses real historical closing prices. The "
+                   "straddle backtest has no earnings-calendar awareness, same as the live screen.")
+    if not universe:
+        result = {"schema_version": "1.0.0", "model_version": "advanced-options-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "NO_PUBLISHED_UNIVERSE", "methodology": methodology}
+        save_json("screens/advanced-strategies-backtest.json", result)
+        return result
+    try:
+        import yfinance as yf
+    except ImportError:
+        yf = None
+    if yf is None:
+        result = {"schema_version": "1.0.0", "model_version": "advanced-options-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "YFINANCE_UNAVAILABLE", "methodology": methodology}
+        save_json("screens/advanced-strategies-backtest.json", result)
+        return result
+    condor_stats = backtest_iron_condor(universe, yf, as_of)
+    straddle_stats = backtest_straddle(universe, yf, as_of)
+    if condor_stats is None and straddle_stats is None:
+        result = {"schema_version": "1.0.0", "model_version": "advanced-options-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "INSUFFICIENT_HISTORY", "methodology": methodology}
+        save_json("screens/advanced-strategies-backtest.json", result)
+        return result
+    result = {"schema_version": "1.0.0", "model_version": "advanced-options-backtest-v1.0.0",
+              "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
+              "methodology": methodology, "universe_tickers": len(universe),
+              "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
+                         "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
+                         "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION},
+              "backtest": {"iron_condor": condor_stats, "straddle": straddle_stats}}
+    save_json("screens/advanced-strategies-backtest.json", result)
+    LOG.info(f"Advanced-strategies backtest: condor {condor_stats['num_trades'] if condor_stats else 0} trades, "
+             f"straddle {straddle_stats['num_trades'] if straddle_stats else 0} trades")
     return result
 
 

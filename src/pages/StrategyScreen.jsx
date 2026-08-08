@@ -7,6 +7,7 @@ import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import BacktestSummary from '../components/BacktestSummary.jsx'
 
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
 const money = (value) => value == null ? '–' : `$${Number(value).toFixed(2)}`
@@ -122,6 +123,12 @@ export default function StrategyScreen({ id }) {
     </div>
 
     <div className="card prospective-notice" role="note"><strong>Not a trade instruction.</strong> {config.riskNote}</div>
+
+    {config.backtestFile && (config.backtestStrategyKeys
+      ? config.backtestStrategyKeys.map(([key, label]) => (
+        <BacktestSummary key={key} file={config.backtestFile} strategyKey={key} title={label} />
+      ))
+      : <BacktestSummary file={config.backtestFile} showBaseline={config.backtestShowBaseline} />)}
 
     <div className="research-toolbar">
       {strategies.length > 1 && <label><span className="sr-only">Strategy</span><select value={strategyFilter} onChange={(event) => setStrategyFilter(event.target.value)}>

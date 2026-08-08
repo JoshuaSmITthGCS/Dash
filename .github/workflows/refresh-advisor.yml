@@ -179,6 +179,13 @@ jobs:
       - name: Build advanced-strategies screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         run: python pipeline/build_advanced_options_screen.py || echo "::warning::Advanced-strategies screen build failed; keeping previous advanced-strategies.json"
+      - name: Run every options strategy's walk-forward backtest
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Unlike the live scanners above, every backtest here prices its option legs with
+        # Black-Scholes off the price history already cached by fetch_advisor.py - no live
+        # option-chain request, so it costs nothing extra against Yahoo's rate limiter and
+        # runs unconditionally rather than behind an ENABLE_* flag.
+        run: python pipeline/run_strategy_backtests.py || echo "::warning::Strategy backtests failed; keeping previous *-backtest.json files"
       - name: Fetch ETF growth screen
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here

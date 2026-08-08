@@ -346,3 +346,169 @@ def test_run_reports_unavailable_with_no_universe(monkeypatch):
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
     assert saved["screens/vertical-spreads.json"] == result
+
+
+# ---------------------------------------------------------------------------
+# backtest_universe / run_backtest
+# ---------------------------------------------------------------------------
+
+# Non-flat (so realized_volatility_20d isn't 0.0/falsy) noisy trend patterns, one net
+# up and one net down over each 10-session cycle - used to build long walk-forward
+# price histories exercising both the bull-call and bear-put paths.
+BT_UP_PATTERN = [3, -1, 2, -1.5, 2.5, -1, 3, -2, 2, -0.5]
+BT_DOWN_PATTERN = [-3, 1, -2, 1.5, -2.5, 1, -3, 2, -2, 0.5]
+
+
+def build_walk_series(base, pattern, sessions):
+    closes = [base]
+    for index in range(sessions - 1):
+        closes.append(closes[-1] + pattern[index % len(pattern)])
+    return closes
+
+
+# One walk-forward period's worth of entry history: 22 closes (indices 0-21), noisy and
+# trending, so realized_volatility_20d/trend_20d are both defined and non-zero at the
+# entry index (21) - matches walk_periods' lookback=21 default.
+BT_UP_ENTRY_HISTORY = build_walk_series(100, BT_UP_PATTERN, 22)   # price=116.0 at index 21
+BT_DOWN_ENTRY_HISTORY = build_walk_series(100, BT_DOWN_PATTERN, 22)  # price=84.0 at index 21
+
+# Calibrated against synthetic_chain(116.0, realized_volatility_20d(BT_UP_ENTRY_HISTORY), 30)
+# + select_by_target_delta: long call strike=118.32 (mid 2.80), short call strike=125.28
+# (mid 0.935) -> net_debit=1.865, width=6.96, cost=187.8 (incl. 2*CONTRACT_FEE).
+BT_UP_LONG_STRIKE, BT_UP_SHORT_STRIKE = 118.32, 125.28
+BT_UP_COST = 187.8
+BT_UP_MAX_PROFIT_PNL = BT_UP_SHORT_STRIKE * 0 + (BT_UP_SHORT_STRIKE - BT_UP_LONG_STRIKE) * 100 - BT_UP_COST  # 508.2
+BT_UP_MAX_LOSS_PNL = -BT_UP_COST  # -187.8
+
+# Calibrated against synthetic_chain(84.0, realized_volatility_20d(BT_DOWN_ENTRY_HISTORY), 30)
+# + select_by_target_delta: long put strike=84.0 (mid 3.28), short put strike=77.28
+# (mid 0.86) -> net_debit=2.42, width=6.72, cost=243.3.
+BT_DOWN_LONG_STRIKE, BT_DOWN_SHORT_STRIKE = 84.0, 77.28
+BT_DOWN_COST = 243.3
+BT_DOWN_MAX_PROFIT_PNL = (BT_DOWN_LONG_STRIKE - BT_DOWN_SHORT_STRIKE) * 100 - BT_DOWN_COST  # 428.7
+BT_DOWN_MAX_LOSS_PNL = -BT_DOWN_COST  # -243.3
+
+STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
+             "win_rate", "average_pnl_per_trade", "equity_curve"}
+
+
+def single_period_closes(entry_history, settle_price, filler_sessions=20):
+    """entry_history (len 22, price at index 21) + filler (unused by the one period) +
+    one real settle close at the expiry index (42) - exactly 43 closes, so walk_periods
+    yields exactly one (entry=21, expiry=42) period."""
+    return entry_history + [entry_history[-1]] * filler_sessions + [settle_price]
+
+
+def test_backtest_universe_pools_trades_from_up_and_down_trending_tickers(monkeypatch):
+    up_closes = build_walk_series(100, BT_UP_PATTERN, 100)
+    down_closes = build_walk_series(200, BT_DOWN_PATTERN, 100)
+    monkeypatch.setattr(module, "yahoo_history",
+                        make_yahoo_history({"UP": {"closes": up_closes}, "DOWN": {"closes": down_closes}}))
+    universe = [make_universe_entry("UP"), make_universe_entry("DOWN")]
+
+    stats = module.backtest_universe(universe, FakeYf({}))
+
+    assert stats is not None
+    assert set(stats.keys()) == STATS_KEYS
+    assert stats["num_trades"] > 0
+
+
+def test_backtest_universe_call_spread_max_profit_at_or_above_short_strike(monkeypatch):
+    closes = single_period_closes(BT_UP_ENTRY_HISTORY, settle_price=BT_UP_SHORT_STRIKE + 50)
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"X": {"closes": closes}}))
+
+    stats = module.backtest_universe([make_universe_entry("X")], FakeYf({}))
+
+    assert stats["num_trades"] == 1
+    assert abs(stats["average_pnl_per_trade"] - BT_UP_MAX_PROFIT_PNL) < 0.5
+
+
+def test_backtest_universe_call_spread_max_loss_at_or_below_long_strike(monkeypatch):
+    closes = single_period_closes(BT_UP_ENTRY_HISTORY, settle_price=BT_UP_LONG_STRIKE - 50)
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"X": {"closes": closes}}))
+
+    stats = module.backtest_universe([make_universe_entry("X")], FakeYf({}))
+
+    assert stats["num_trades"] == 1
+    assert abs(stats["average_pnl_per_trade"] - BT_UP_MAX_LOSS_PNL) < 0.5
+
+
+def test_backtest_universe_put_spread_max_profit_at_or_below_short_strike(monkeypatch):
+    closes = single_period_closes(BT_DOWN_ENTRY_HISTORY, settle_price=max(0.01, BT_DOWN_SHORT_STRIKE - 50))
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"Y": {"closes": closes}}))
+
+    stats = module.backtest_universe([make_universe_entry("Y")], FakeYf({}))
+
+    assert stats["num_trades"] == 1
+    assert abs(stats["average_pnl_per_trade"] - BT_DOWN_MAX_PROFIT_PNL) < 0.5
+
+
+def test_backtest_universe_put_spread_max_loss_at_or_above_long_strike(monkeypatch):
+    closes = single_period_closes(BT_DOWN_ENTRY_HISTORY, settle_price=BT_DOWN_LONG_STRIKE + 50)
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"Y": {"closes": closes}}))
+
+    stats = module.backtest_universe([make_universe_entry("Y")], FakeYf({}))
+
+    assert stats["num_trades"] == 1
+    assert abs(stats["average_pnl_per_trade"] - BT_DOWN_MAX_LOSS_PNL) < 0.5
+
+
+def test_backtest_universe_returns_none_when_no_ticker_has_enough_history(monkeypatch):
+    universe = [make_universe_entry("SHORT1"), make_universe_entry("SHORT2")]
+    monkeypatch.setattr(module, "yahoo_history",
+                        make_yahoo_history({"SHORT1": fake_history(sessions=30), "SHORT2": fake_history(sessions=10)}))
+
+    assert module.backtest_universe(universe, FakeYf({})) is None
+
+
+def test_run_backtest_publishes_success(monkeypatch):
+    up_closes = build_walk_series(100, BT_UP_PATTERN, 100)
+    down_closes = build_walk_series(200, BT_DOWN_PATTERN, 100)
+    universe = [make_universe_entry("UP"), make_universe_entry("DOWN")]
+    monkeypatch.setattr(module, "yahoo_history",
+                        make_yahoo_history({"UP": {"closes": up_closes}, "DOWN": {"closes": down_closes}}))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    loaded = {"advisor.json": {"research": universe}}
+    saved = {}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "success"
+    assert saved["screens/vertical-spreads-backtest.json"] == result
+    assert set(result["backtest"].keys()) == STATS_KEYS
+    assert result["backtest"]["num_trades"] > 0
+    assert result["window"]["target_days_to_expiration"] == module.TARGET_DAYS_TO_EXPIRATION
+
+
+def test_run_backtest_reports_unavailable_with_no_universe(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "unavailable"
+    assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+    assert saved["screens/vertical-spreads-backtest.json"] == result
+
+
+def test_run_backtest_ignores_enable_flag_env_state(monkeypatch):
+    up_closes = build_walk_series(100, BT_UP_PATTERN, 100)
+    universe = [make_universe_entry("UP")]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"UP": {"closes": up_closes}}))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+    monkeypatch.setattr(module, "load_json", lambda name: {"research": universe})
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+
+    monkeypatch.delenv("ENABLE_VERTICAL_SPREAD_SCREEN", raising=False)
+    result_without_flag = module.run_backtest()
+    assert result_without_flag is not None
+    assert result_without_flag["status"] == "success"
+
+    monkeypatch.setenv("ENABLE_VERTICAL_SPREAD_SCREEN", "0")
+    result_with_flag_off = module.run_backtest()
+    assert result_with_flag_off is not None
+    assert result_with_flag_off["status"] == "success"

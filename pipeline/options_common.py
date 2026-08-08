@@ -93,6 +93,24 @@ def probability_above(price, strike, iv, dte, r=0.0):
     return None if d2 is None else normal_cdf(d2)
 
 
+def call_price(price, strike, iv, dte, r=0.0):
+    """Black-Scholes theoretical call price. Used to price backtests, never a live quote."""
+    d1, d2 = bs_d1_d2(price, strike, iv, dte, r)
+    if d1 is None:
+        return None
+    t = dte / 365
+    return price * normal_cdf(d1) - strike * math.exp(-r * t) * normal_cdf(d2)
+
+
+def put_price(price, strike, iv, dte, r=0.0):
+    """Black-Scholes theoretical put price. Used to price backtests, never a live quote."""
+    d1, d2 = bs_d1_d2(price, strike, iv, dte, r)
+    if d1 is None:
+        return None
+    t = dte / 365
+    return strike * math.exp(-r * t) * normal_cdf(-d2) - price * normal_cdf(-d1)
+
+
 def probability_below(price, strike, iv, dte, r=0.0):
     above = probability_above(price, strike, iv, dte, r)
     return None if above is None else 1 - above

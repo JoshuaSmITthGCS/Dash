@@ -1,3 +1,4 @@
+import math
 import sys
 from datetime import date, timedelta
 
@@ -240,3 +241,126 @@ def test_run_reports_unavailable_with_no_universe(monkeypatch):
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
     assert saved["screens/covered-calls.json"] == result
+
+
+# --- backtest_universe / run_backtest -------------------------------------------------------
+#
+# fake_history()'s flat/linear closes make realized_volatility_20d() return 0.0 (falsy), which
+# silently skips every walk-forward period. These tests need genuinely non-flat price history,
+# with one deliberate large jump so a period settles far above the strike of the call sold at
+# entry (a spot check that the covered-call return gets capped at the strike, not left uncapped
+# like plain stock ownership).
+JUMP_INDEX = 90
+JUMP_MULTIPLIER = 1.6
+
+
+def non_flat_history(sessions=130, jump_index=JUMP_INDEX, jump_multiplier=JUMP_MULTIPLIER):
+    closes = []
+    price = 100.0
+    for index in range(sessions):
+        price = price * (1 + 0.02 * math.sin(index * 0.9) + 0.01 * math.sin(index * 0.37) + 0.0005)
+        if index == jump_index:
+            price *= jump_multiplier
+        closes.append(round(price, 2))
+    dates = [(date(2024, 1, 1) + timedelta(days=index)).isoformat() for index in range(sessions)]
+    return {"dates": dates, "closes": closes, "volumes": [1_000_000] * sessions}
+
+
+def test_backtest_universe_returns_stats_with_capped_gain(monkeypatch):
+    history = non_flat_history()
+    closes = history["closes"]
+    universe = [{"ticker": "AAA"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": history}))
+
+    stats = module.backtest_universe(universe, object(), as_of=TODAY)
+
+    assert stats is not None
+    assert stats["num_trades"] > 0
+    assert set(stats) == {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                          "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
+
+    # The jump at JUMP_INDEX (90) lands inside the walk-forward period entered at index 84 and
+    # settled at index 105 - recompute what backtest_universe would have sold at that entry
+    # (same helpers, same inputs) so we can spot-check the settlement was capped at the strike.
+    periods = module.walk_periods(closes, module.TARGET_DAYS_TO_EXPIRATION)
+    period_index = periods.index((84, 105))
+    entry_index, expiry_index = periods[period_index]
+    price, settle_price = closes[entry_index], closes[expiry_index]
+    iv = module.realized_volatility_20d(closes[:entry_index + 1])
+    calls, _ = module.synthetic_chain(price, iv, module.TARGET_DAYS_TO_EXPIRATION)
+    call = module.select_by_target_delta(calls, price, module.TARGET_DAYS_TO_EXPIRATION,
+                                         side="call", target_delta=module.TARGET_DELTA)
+    assert call is not None
+    uncapped_stock_return = (settle_price - price) / price
+    capped_upper_bound = (call["strike"] - price) / price + 0.05  # + generous premium/fee slack
+
+    equity = stats["equity_curve"]
+    period_return = equity[period_index + 1] / equity[period_index] - 1
+
+    assert settle_price > call["strike"]  # confirms this period actually exercises the cap
+    assert period_return < capped_upper_bound
+    assert period_return < uncapped_stock_return / 2  # nowhere near the uncapped stock move
+
+
+def test_backtest_universe_returns_none_when_history_too_short(monkeypatch):
+    universe = [{"ticker": "SHORT1"}, {"ticker": "SHORT2"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({
+        "SHORT1": fake_history(sessions=15),
+        "SHORT2": fake_history(sessions=10),
+    }))
+
+    assert module.backtest_universe(universe, object(), as_of=TODAY) is None
+
+
+BACKTEST_STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                       "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
+
+
+def test_run_backtest_publishes_success(monkeypatch):
+    loaded = {"advisor.json": {"research": [{"ticker": "AAA"}]}}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": non_flat_history()}))
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    result = module.run_backtest(as_of=TODAY)
+
+    assert result["status"] == "success"
+    assert saved["screens/covered-calls-backtest.json"] == result
+    assert result["backtest"]["num_trades"] > 0
+    assert set(result["backtest"]) == BACKTEST_STATS_KEYS
+    assert result["window"] == {
+        "min_days_to_expiration": module.MIN_DAYS_TO_EXPIRATION,
+        "max_days_to_expiration": module.MAX_DAYS_TO_EXPIRATION,
+        "target_days_to_expiration": module.TARGET_DAYS_TO_EXPIRATION,
+        "target_delta": module.TARGET_DELTA,
+    }
+
+
+def test_run_backtest_reports_unavailable_with_no_universe(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "unavailable"
+    assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+    assert saved["screens/covered-calls-backtest.json"] == result
+
+
+def test_run_backtest_ignores_enable_covered_call_screen_flag(monkeypatch):
+    # Unlike run(), run_backtest() needs no live option-chain data, so it must execute
+    # regardless of whether ENABLE_COVERED_CALL_SCREEN is set at all.
+    monkeypatch.delenv("ENABLE_COVERED_CALL_SCREEN", raising=False)
+    loaded = {"advisor.json": {"research": [{"ticker": "AAA"}]}}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": non_flat_history()}))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    result = module.run_backtest(as_of=TODAY)
+
+    assert result is not None
+    assert result["status"] == "success"

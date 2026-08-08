@@ -16,6 +16,7 @@ posts collateral, or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, probability_above,
@@ -203,6 +204,89 @@ def run(as_of=None):
     save_json("screens/cash-secured-puts.json", result)
     LOG.info(f"Cash-secured put screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
+    return result
+
+
+def backtest_universe(universe, yf, as_of=None):
+    """Walk-forward simulation of continuously rolling a cash-secured put across every ticker
+    in `universe`, pooling all tickers' trades into one aggregate result. See backtest_common
+    for the no-lookahead pricing/settlement mechanics.
+    """
+    period_returns, trade_pnls = [], []
+    for entry in universe:
+        ticker = entry.get("ticker")
+        if not ticker:
+            continue
+        closes = yahoo_history(ticker, yf)["closes"]
+        for entry_index, expiry_index in walk_periods(closes, TARGET_DAYS_TO_EXPIRATION):
+            price, settle_price = closes[entry_index], closes[expiry_index]
+            iv = realized_volatility_20d(closes[:entry_index + 1])
+            if not iv or not price:
+                continue
+            _, puts = synthetic_chain(price, iv, TARGET_DAYS_TO_EXPIRATION)
+            put = select_by_target_delta(puts, price, TARGET_DAYS_TO_EXPIRATION, side="put",
+                                         target_delta=TARGET_DELTA)
+            if put is None:
+                continue
+            strike = put["strike"]
+            premium_per_share = put["mid"]
+            fee_per_share = CONTRACT_FEE / 100
+            # Collect the premium yield on the collateral every period; if assigned
+            # (settle_price below strike), additionally mark the loss down to settle_price -
+            # min(0, ...) is 0 when settle_price >= strike (no assignment, no extra loss).
+            period_return = ((premium_per_share - fee_per_share) / strike
+                             + min(0, (settle_price - strike) / strike))
+            period_returns.append(period_return)
+            trade_pnls.append(period_return * strike * 100)
+    return performance_stats(period_returns, periods_per_year=365 / TARGET_DAYS_TO_EXPIRATION,
+                             trade_pnls=trade_pnls)
+
+
+def run_backtest(as_of=None):
+    """Walk-forward backtest of the cash-secured-put strategy. Needs no live option-chain
+    data (only cached price history), so unlike run() this always attempts to execute -
+    there's no ENABLE_CASH_SECURED_PUT_SCREEN gate to check.
+    """
+    payload = load_json("advisor.json") or {}
+    universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    generated_at = datetime.now(timezone.utc).isoformat()
+    methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
+                   "realized volatility as the implied-volatility input, not quoted historical "
+                   "prices. Real historical bid/ask spreads, open interest, and fill quality are "
+                   "not modeled. Trade settlement uses real historical closing prices.")
+    if not universe:
+        result = {"schema_version": "1.0.0", "model_version": "cash-secured-put-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "NO_PUBLISHED_UNIVERSE", "methodology": methodology}
+        save_json("screens/cash-secured-puts-backtest.json", result)
+        return result
+    try:
+        import yfinance as yf
+    except ImportError:
+        yf = None
+    if yf is None:
+        result = {"schema_version": "1.0.0", "model_version": "cash-secured-put-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "YFINANCE_UNAVAILABLE", "methodology": methodology}
+        save_json("screens/cash-secured-puts-backtest.json", result)
+        return result
+    stats = backtest_universe(universe, yf, as_of)
+    if stats is None:
+        result = {"schema_version": "1.0.0", "model_version": "cash-secured-put-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "INSUFFICIENT_HISTORY", "methodology": methodology}
+        save_json("screens/cash-secured-puts-backtest.json", result)
+        return result
+    result = {"schema_version": "1.0.0", "model_version": "cash-secured-put-backtest-v1.0.0",
+              "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
+              "methodology": methodology, "universe_tickers": len(universe),
+              "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
+                         "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
+                         "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION, "target_delta": TARGET_DELTA},
+              "backtest": stats}
+    save_json("screens/cash-secured-puts-backtest.json", result)
+    LOG.info(f"Cash-secured-put backtest: {stats['num_trades']} trades, "
+             f"{stats['annualized_return']*100:.1f}% annualized, {stats['win_rate']*100:.0f}% win rate")
     return result
 
 

@@ -194,3 +194,90 @@ def test_run_reports_unavailable_with_no_universe(monkeypatch):
 
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+
+
+# --- walk-forward backtest ---------------------------------------------------------
+
+import math
+
+
+def wavy_history(sessions=320, start_price=100, drift=0.05, amplitude=10, period=17):
+    """Non-flat synthetic price history: up/down drift + oscillation, so realized
+    volatility is never 0.0 (flat closes make realized_volatility_20d return 0.0, which
+    is falsy and breaks IV-dependent code paths downstream).
+    """
+    dates = [(date(2023, 1, 1) + timedelta(days=index)).isoformat() for index in range(sessions)]
+    closes = [round(start_price + index * drift + amplitude * math.sin(index / period), 2)
+              for index in range(sessions)]
+    volumes = [1_000_000] * sessions
+    return {"dates": dates, "closes": closes, "volumes": volumes}
+
+
+def test_backtest_universe_produces_trades_with_enough_history(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    per_ticker = {
+        "AAA": wavy_history(sessions=320, start_price=100, drift=0.05),
+        "BBB": wavy_history(sessions=320, start_price=200, drift=-0.03, period=13),
+    }
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+
+    stats = module.backtest_universe(universe, yf=object())
+
+    assert stats is not None
+    assert stats["num_trades"] > 0
+    for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"):
+        assert key in stats
+
+
+def test_backtest_universe_returns_none_when_history_too_short(monkeypatch):
+    universe = [{"ticker": "SHORT"}]
+    per_ticker = {"SHORT": fake_history(sessions=10, drift=1.0)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+
+    assert module.backtest_universe(universe, yf=object()) is None
+
+
+def test_run_backtest_publishes_success(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    per_ticker = {
+        "AAA": wavy_history(sessions=320, start_price=100, drift=0.05),
+        "BBB": wavy_history(sessions=320, start_price=200, drift=-0.03, period=13),
+    }
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    loaded = {"advisor.json": {"research": universe}}
+    saved = {}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest(as_of=TODAY)
+
+    assert result["status"] == "success"
+    assert saved["screens/options-backtest.json"] == result
+    for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"):
+        assert key in result["backtest"]
+
+
+def test_run_backtest_reports_unavailable_with_no_universe(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "unavailable"
+    assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+    assert saved["screens/options-backtest.json"] == result
+
+
+def test_run_backtest_uses_expected_output_filename(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    module.run_backtest()
+
+    assert "screens/options-backtest.json" in saved

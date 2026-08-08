@@ -3,6 +3,8 @@ import sys
 from datetime import date, timedelta
 
 import build_collar_screen as module
+from options_common import realized_volatility_20d, select_by_target_delta, select_by_target_moneyness
+from backtest_common import CONTRACT_FEE, synthetic_chain
 
 
 class FakeFrame:
@@ -312,3 +314,182 @@ def test_run_reports_unavailable_with_no_universe(monkeypatch):
 
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+
+
+# --- backtest ---------------------------------------------------------------
+#
+# Flat closes make realized_volatility_20d() return 0.0, which is falsy and silently
+# skips every period in backtest_universe - so these fixtures use a sine-wobble on top
+# of a linear drift to produce genuine non-zero realized volatility, the same way real
+# daily closes wobble around a trend.
+
+def volatile_closes(sessions=200, start=100, drift=0.05, amplitude=2.5, freq=0.9):
+    return [start + drift * index + amplitude * math.sin(index * freq) for index in range(sessions)]
+
+
+def test_backtest_universe_returns_stats_with_trades(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({
+        "AAA": {"closes": volatile_closes(sessions=200)},
+        "BBB": {"closes": volatile_closes(sessions=150, start=50, drift=-0.02, amplitude=1.5)},
+    }))
+
+    stats = module.backtest_universe(universe, yf=None)
+
+    assert stats is not None
+    assert stats["num_trades"] > 0
+    for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
+                "win_rate", "average_pnl_per_trade", "equity_curve"):
+        assert key in stats
+
+
+def test_backtest_universe_skips_tickers_missing_a_ticker_field(monkeypatch):
+    universe = [{"not_a_ticker": "oops"}, {"ticker": "AAA"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({
+        "AAA": {"closes": volatile_closes(sessions=200)},
+    }))
+
+    stats = module.backtest_universe(universe, yf=None)
+
+    assert stats is not None
+    assert stats["num_trades"] > 0
+
+
+def _single_period_closes(settle_price, sessions=43):
+    """43 sessions is exactly enough for one walk_periods() period at target_dte=30
+    (lookback=21, session_step=21): entry_index=21, expiry_index=42. Only the LAST close
+    (the settlement price) is overridden - everything up to and including the entry index
+    is untouched wobble, so realized_volatility_20d at entry sees no lookahead into the
+    rigged settlement value.
+    """
+    closes = volatile_closes(sessions=sessions)
+    closes[-1] = settle_price
+    return closes
+
+
+def test_backtest_universe_clamps_a_big_rally_near_the_call_cap(monkeypatch):
+    closes = _single_period_closes(settle_price=500)
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": {"closes": closes}}))
+
+    # Compute the expected clamped return the same way build_row/backtest_universe would,
+    # independently of the aggregate stats dict, using the SAME entry-only history.
+    price = closes[21]
+    iv = realized_volatility_20d(closes[:22])
+    calls, puts = synthetic_chain(price, iv, module.TARGET_DAYS_TO_EXPIRATION)
+    put = select_by_target_moneyness(puts, price, module.TARGET_MONEYNESS_PUT, module.MONEYNESS_TOLERANCE)
+    call = select_by_target_delta(calls, price, module.TARGET_DAYS_TO_EXPIRATION, side="call",
+                                  target_delta=module.TARGET_DELTA_CALL)
+    assert put is not None and call is not None
+    cap = call["strike"]
+    net_cost_per_share = put["mid"] - call["mid"]
+    fee_per_share = 2 * CONTRACT_FEE / 100
+    raw_return = (cap - price) / price - (net_cost_per_share + fee_per_share) / price
+    # performance_stats scales each trade's account-level impact by position_weight (5% by
+    # default) rather than compounding pooled, independent tickers' trades at full size -
+    # see its docstring. A single-trade equity curve's total_return equals raw_return*weight.
+    expected_return = round(raw_return * 0.05, 4)
+
+    stats = module.backtest_universe([{"ticker": "AAA"}], yf=None)
+
+    assert stats is not None
+    assert stats["num_trades"] == 1
+    assert stats["total_return"] == expected_return
+    # Confirm the clamp is actually binding: the raw rally is far above the cap.
+    assert closes[-1] > cap * 2
+
+
+def test_backtest_universe_floors_a_big_crash_near_the_put_floor(monkeypatch):
+    closes = _single_period_closes(settle_price=5)
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": {"closes": closes}}))
+
+    price = closes[21]
+    iv = realized_volatility_20d(closes[:22])
+    calls, puts = synthetic_chain(price, iv, module.TARGET_DAYS_TO_EXPIRATION)
+    put = select_by_target_moneyness(puts, price, module.TARGET_MONEYNESS_PUT, module.MONEYNESS_TOLERANCE)
+    call = select_by_target_delta(calls, price, module.TARGET_DAYS_TO_EXPIRATION, side="call",
+                                  target_delta=module.TARGET_DELTA_CALL)
+    assert put is not None and call is not None
+    floor = put["strike"]
+    net_cost_per_share = put["mid"] - call["mid"]
+    fee_per_share = 2 * CONTRACT_FEE / 100
+    raw_return = (floor - price) / price - (net_cost_per_share + fee_per_share) / price
+    expected_return = round(raw_return * 0.05, 4)
+
+    stats = module.backtest_universe([{"ticker": "AAA"}], yf=None)
+
+    assert stats is not None
+    assert stats["num_trades"] == 1
+    assert stats["total_return"] == expected_return
+    # Confirm the clamp is actually binding: the raw crash is far below the floor.
+    assert closes[-1] < floor / 2
+
+
+def test_backtest_universe_returns_none_when_history_too_short_everywhere(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({
+        "AAA": {"closes": volatile_closes(sessions=25)},
+        "BBB": {"closes": volatile_closes(sessions=30)},
+    }))
+
+    assert module.backtest_universe(universe, yf=None) is None
+
+
+def test_run_backtest_publishes_success(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({
+        "AAA": {"closes": volatile_closes(sessions=200)},
+        "BBB": {"closes": volatile_closes(sessions=150, start=50, drift=-0.02, amplitude=1.5)},
+    }))
+    fake_yf = FakeYf({})
+    monkeypatch.setitem(sys.modules, "yfinance", fake_yf)
+
+    loaded = {"advisor.json": {"research": universe}}
+    saved = {}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest(as_of=TODAY)
+
+    assert result["status"] == "success"
+    assert saved["screens/collars-backtest.json"] == result
+    assert result["backtest"]["num_trades"] > 0
+    for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
+                "win_rate", "average_pnl_per_trade", "equity_curve"):
+        assert key in result["backtest"]
+    assert "methodology" in result
+
+
+def test_run_backtest_reports_unavailable_with_no_universe(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "unavailable"
+    assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+    assert saved["screens/collars-backtest.json"] == result
+
+
+def test_run_backtest_ignores_enable_collar_screen_flag(monkeypatch):
+    """Unlike run(), run_backtest() needs no live option chain and so has no opt-in gate -
+    it must execute the same whether the flag is unset, false, or true."""
+    universe = [{"ticker": "AAA"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({
+        "AAA": {"closes": volatile_closes(sessions=200)},
+    }))
+    fake_yf = FakeYf({})
+    monkeypatch.setitem(sys.modules, "yfinance", fake_yf)
+    loaded = {"advisor.json": {"research": universe}}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+
+    monkeypatch.delenv("ENABLE_COLLAR_SCREEN", raising=False)
+    result_unset = module.run_backtest(as_of=TODAY)
+    assert result_unset is not None
+    assert result_unset["status"] == "success"
+
+    monkeypatch.setenv("ENABLE_COLLAR_SCREEN", "false")
+    result_false = module.run_backtest(as_of=TODAY)
+    assert result_false is not None
+    assert result_false["status"] == "success"

@@ -270,3 +270,96 @@ def test_run_reports_unavailable_with_no_universe(monkeypatch):
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
     assert saved["screens/cash-secured-puts.json"] == result
+
+
+# --- backtest -----------------------------------------------------------------------------
+
+def wiggly_history(sessions=200, start_price=100, amplitude=3, drift=0.05):
+    """Non-flat close series: flat closes make realized_volatility_20d return 0.0 (falsy),
+    which silently skips every period in backtest_universe. The alternating +/- amplitude
+    plus a small drift keeps realized volatility non-zero and prices positive throughout.
+    """
+    closes = [start_price + amplitude * ((-1) ** index) + index * drift for index in range(sessions)]
+    dates = [(date(2024, 1, 1) + timedelta(days=index)).isoformat() for index in range(sessions)]
+    return {"dates": dates, "closes": closes, "volumes": [1_000_000] * sessions}
+
+
+def test_backtest_universe_returns_stats_with_trades(monkeypatch):
+    per_ticker = {"AAA": wiggly_history(), "BBB": wiggly_history(start_price=80, amplitude=2)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    universe = [universe_entry("AAA"), universe_entry("BBB")]
+
+    stats = module.backtest_universe(universe, yf=object())
+
+    assert stats is not None
+    assert stats["num_trades"] > 0
+    for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
+                "win_rate", "average_pnl_per_trade", "equity_curve"):
+        assert key in stats
+
+
+def test_backtest_universe_returns_none_when_history_too_short(monkeypatch):
+    per_ticker = {"AAA": fake_history(sessions=10), "BBB": fake_history(sessions=15)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    universe = [universe_entry("AAA"), universe_entry("BBB")]
+
+    assert module.backtest_universe(universe, yf=object()) is None
+
+
+def test_run_backtest_publishes_success(monkeypatch):
+    universe = [universe_entry("AAA"), universe_entry("BBB", market_cap=4e9)]
+    per_ticker = {"AAA": wiggly_history(start_price=100), "BBB": wiggly_history(start_price=80, amplitude=2)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    loaded = {"advisor.json": {"research": universe}}
+    saved = {}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest(as_of=TODAY)
+
+    assert result["status"] == "success"
+    assert saved["screens/cash-secured-puts-backtest.json"] == result
+    backtest = result["backtest"]
+    for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
+                "win_rate", "average_pnl_per_trade", "equity_curve"):
+        assert key in backtest
+    assert backtest["num_trades"] > 0
+    assert result["window"] == {
+        "min_days_to_expiration": module.MIN_DAYS_TO_EXPIRATION,
+        "max_days_to_expiration": module.MAX_DAYS_TO_EXPIRATION,
+        "target_days_to_expiration": module.TARGET_DAYS_TO_EXPIRATION,
+        "target_delta": module.TARGET_DELTA,
+    }
+
+
+def test_run_backtest_reports_unavailable_with_no_universe(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "unavailable"
+    assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+    assert saved["screens/cash-secured-puts-backtest.json"] == result
+
+
+def test_run_backtest_ignores_enable_flag(monkeypatch):
+    # Unlike run(), run_backtest() has no opt-in flag gate - it should still execute (and not
+    # return None) even when ENABLE_CASH_SECURED_PUT_SCREEN is unset/deleted.
+    monkeypatch.delenv("ENABLE_CASH_SECURED_PUT_SCREEN", raising=False)
+    universe = [universe_entry("AAA")]
+    per_ticker = {"AAA": wiggly_history()}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    loaded = {"advisor.json": {"research": universe}}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+
+    result = module.run_backtest()
+
+    assert result is not None
+    assert result["status"] == "success"

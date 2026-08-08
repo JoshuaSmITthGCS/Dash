@@ -16,6 +16,7 @@ orders or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
@@ -205,6 +206,98 @@ def run(as_of=None):
     save_json("screens/protective-puts.json", result)
     LOG.info(f"Protective put screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
+    return result
+
+
+def backtest_universe(universe, yf, as_of=None):
+    """Walk-forward simulate continuously holding shares and buying a fresh protective put
+    every period, pooling ALL tickers' trades into two aggregate results: the hedged
+    strategy (primary "backtest") and the same price paths held unhedged (the "baseline"),
+    so the published result can show the hedge's real cost/benefit - "compute cost of
+    hedge vs. potential decline" per this feature's design.
+
+    No lookahead: at each period's entry index, realized_volatility_20d only sees price
+    history up to and including the entry date. The only forward-looking input is the
+    real historical closing price at the expiry index, used to settle the trade.
+    """
+    hedged_returns, unhedged_returns, trade_pnls = [], [], []
+    for entry in universe:
+        ticker = entry.get("ticker")
+        if not ticker:
+            continue
+        closes = yahoo_history(ticker, yf)["closes"]
+        for entry_index, expiry_index in walk_periods(closes, TARGET_DAYS_TO_EXPIRATION):
+            price, settle_price = closes[entry_index], closes[expiry_index]
+            iv = realized_volatility_20d(closes[:entry_index + 1])
+            if not iv or not price:
+                continue
+            _, puts = synthetic_chain(price, iv, TARGET_DAYS_TO_EXPIRATION)
+            put = select_by_target_moneyness(puts, price, TARGET_MONEYNESS, MONEYNESS_TOLERANCE)
+            if put is None:
+                continue
+            cost_per_share = put["mid"]
+            fee_per_share = CONTRACT_FEE / 100
+            # max(settle_price, strike) floors the value at the strike (the whole point of
+            # the hedge) while passing settle_price through unchanged when it's above the floor.
+            hedged_return = (max(settle_price, put["strike"]) - price) / price - (cost_per_share + fee_per_share) / price
+            unhedged_return = (settle_price - price) / price
+            hedged_returns.append(hedged_return)
+            unhedged_returns.append(unhedged_return)
+            trade_pnls.append(hedged_return * price * 100)
+    periods_per_year = 365 / TARGET_DAYS_TO_EXPIRATION
+    hedged_stats = performance_stats(hedged_returns, periods_per_year, trade_pnls=trade_pnls)
+    unhedged_stats = performance_stats(unhedged_returns, periods_per_year)
+    return hedged_stats, unhedged_stats
+
+
+def run_backtest(as_of=None):
+    """Mirrors run()'s universe-loading/yfinance-import shape, but with no opt-in flag
+    check - the backtest needs no live option-chain data (it only re-reads already-cached
+    price history), so it should always attempt to run when called.
+    """
+    payload = load_json("advisor.json") or {}
+    universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    generated_at = datetime.now(timezone.utc).isoformat()
+    methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
+                   "realized volatility as the implied-volatility input, not quoted historical "
+                   "prices. Real historical bid/ask spreads, open interest, and fill quality are "
+                   "not modeled. Trade settlement uses real historical closing prices. The "
+                   "'baseline' block is the same tickers held unhedged over the same periods, "
+                   "for comparison.")
+    if not universe:
+        result = {"schema_version": "1.0.0", "model_version": "protective-put-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "NO_PUBLISHED_UNIVERSE", "methodology": methodology}
+        save_json("screens/protective-puts-backtest.json", result)
+        return result
+    try:
+        import yfinance as yf
+    except ImportError:
+        yf = None
+    if yf is None:
+        result = {"schema_version": "1.0.0", "model_version": "protective-put-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "YFINANCE_UNAVAILABLE", "methodology": methodology}
+        save_json("screens/protective-puts-backtest.json", result)
+        return result
+    hedged_stats, unhedged_stats = backtest_universe(universe, yf, as_of)
+    if hedged_stats is None:
+        result = {"schema_version": "1.0.0", "model_version": "protective-put-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "INSUFFICIENT_HISTORY", "methodology": methodology}
+        save_json("screens/protective-puts-backtest.json", result)
+        return result
+    result = {"schema_version": "1.0.0", "model_version": "protective-put-backtest-v1.0.0",
+              "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
+              "methodology": methodology, "universe_tickers": len(universe),
+              "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
+                         "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
+                         "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION, "target_moneyness": TARGET_MONEYNESS},
+              "backtest": hedged_stats, "baseline": unhedged_stats}
+    save_json("screens/protective-puts-backtest.json", result)
+    LOG.info(f"Protective-put backtest: {hedged_stats['num_trades']} trades, "
+             f"{hedged_stats['annualized_return']*100:.1f}% annualized (hedged) vs "
+             f"{unhedged_stats['annualized_return']*100:.1f}% (unhedged baseline)")
     return result
 
 

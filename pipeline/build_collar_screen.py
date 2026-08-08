@@ -17,6 +17,7 @@ option orders or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
@@ -216,6 +217,94 @@ def run(as_of=None):
     save_json("screens/collars.json", result)
     LOG.info(f"Collar screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
+    return result
+
+
+def backtest_universe(universe, yf, as_of=None):
+    """Walk-forward simulation of continuously holding a rolling collar, pooled across
+    every ticker in `universe` into one aggregate result.
+
+    Each period buys a fresh protective put and sells a fresh covered call, both priced
+    with Black-Scholes off trailing realized volatility computed ONLY from price history
+    up to and including the entry date (no lookahead) - then settles against the REAL
+    historical closing price at expiry, clamped between the put floor and the call cap.
+    """
+    period_returns, trade_pnls = [], []
+    for entry in universe:
+        ticker = entry.get("ticker")
+        if not ticker:
+            continue
+        closes = yahoo_history(ticker, yf)["closes"]
+        for entry_index, expiry_index in walk_periods(closes, TARGET_DAYS_TO_EXPIRATION):
+            price, settle_price = closes[entry_index], closes[expiry_index]
+            iv = realized_volatility_20d(closes[:entry_index + 1])
+            if not iv or not price:
+                continue
+            calls, puts = synthetic_chain(price, iv, TARGET_DAYS_TO_EXPIRATION)
+            put = select_by_target_moneyness(puts, price, TARGET_MONEYNESS_PUT, MONEYNESS_TOLERANCE)
+            call = select_by_target_delta(calls, price, TARGET_DAYS_TO_EXPIRATION, side="call",
+                                          target_delta=TARGET_DELTA_CALL)
+            if put is None or call is None or call["strike"] <= put["strike"]:
+                continue
+            net_cost_per_share = put["mid"] - call["mid"]
+            fee_per_share = 2 * CONTRACT_FEE / 100
+            floor, cap = put["strike"], call["strike"]
+            # min(max(settle_price, floor), cap) clamps the payoff between the put floor and
+            # the call cap - the whole point of a collar.
+            clamped = min(max(settle_price, floor), cap)
+            period_return = (clamped - price) / price - (net_cost_per_share + fee_per_share) / price
+            period_returns.append(period_return)
+            trade_pnls.append(period_return * price * 100)
+    return performance_stats(period_returns, periods_per_year=365 / TARGET_DAYS_TO_EXPIRATION,
+                             trade_pnls=trade_pnls)
+
+
+def run_backtest(as_of=None):
+    """Publishes the walk-forward collar backtest. Always runs when called - unlike the
+    live screen's run(), there's no ENABLE_COLLAR_SCREEN gate, since this needs no live
+    option-chain network call at all (see backtest_common's module docstring).
+    """
+    payload = load_json("advisor.json") or {}
+    universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    generated_at = datetime.now(timezone.utc).isoformat()
+    methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
+                   "realized volatility as the implied-volatility input, not quoted historical "
+                   "prices. Real historical bid/ask spreads, open interest, and fill quality are "
+                   "not modeled. Trade settlement uses real historical closing prices.")
+    if not universe:
+        result = {"schema_version": "1.0.0", "model_version": "collar-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "NO_PUBLISHED_UNIVERSE", "methodology": methodology}
+        save_json("screens/collars-backtest.json", result)
+        return result
+    try:
+        import yfinance as yf
+    except ImportError:
+        yf = None
+    if yf is None:
+        result = {"schema_version": "1.0.0", "model_version": "collar-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "YFINANCE_UNAVAILABLE", "methodology": methodology}
+        save_json("screens/collars-backtest.json", result)
+        return result
+    stats = backtest_universe(universe, yf, as_of)
+    if stats is None:
+        result = {"schema_version": "1.0.0", "model_version": "collar-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "INSUFFICIENT_HISTORY", "methodology": methodology}
+        save_json("screens/collars-backtest.json", result)
+        return result
+    result = {"schema_version": "1.0.0", "model_version": "collar-backtest-v1.0.0",
+              "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
+              "methodology": methodology, "universe_tickers": len(universe),
+              "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
+                         "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
+                         "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION,
+                         "target_moneyness_put": TARGET_MONEYNESS_PUT, "target_delta_call": TARGET_DELTA_CALL},
+              "backtest": stats}
+    save_json("screens/collars-backtest.json", result)
+    LOG.info(f"Collar backtest: {stats['num_trades']} trades, "
+             f"{stats['annualized_return']*100:.1f}% annualized, {stats['win_rate']*100:.0f}% win rate")
     return result
 
 

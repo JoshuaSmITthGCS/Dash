@@ -17,6 +17,7 @@ places option orders or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
@@ -197,6 +198,92 @@ def run(as_of=None):
     save_json("screens/options.json", result)
     LOG.info(f"Multi-day options screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
+    return result
+
+
+def backtest_universe(universe, yf, as_of=None):
+    """Walk-forward backtest, pooling every ticker's trades into one aggregate result.
+
+    Simulated entry (Black-Scholes priced off trailing realized vol), real settlement
+    (actual historical closing price at expiry) - see this module's and backtest_common's
+    docstrings for the full rationale. Buys the near-the-money contract on the side
+    (call/put) implied by point-in-time trend, matching what the live screen recommends.
+    """
+    period_returns, trade_pnls = [], []
+    for entry in universe:
+        ticker = entry.get("ticker")
+        if not ticker:
+            continue
+        closes = yahoo_history(ticker, yf)["closes"]
+        for entry_index, expiry_index in walk_periods(closes, TARGET_DAYS_TO_EXPIRATION):
+            price, settle_price = closes[entry_index], closes[expiry_index]
+            history_slice = closes[:entry_index + 1]
+            iv = realized_volatility_20d(history_slice)
+            trend = trend_20d(history_slice)
+            if not iv or not price or trend is None:
+                continue
+            option_type = "put" if trend < 0 else "call"
+            calls, puts = synthetic_chain(price, iv, TARGET_DAYS_TO_EXPIRATION)
+            contract = select_contract(puts if option_type == "put" else calls, price)
+            if contract is None:
+                continue
+            cost = contract["mid"] * 100 + CONTRACT_FEE
+            if cost <= 0:
+                continue
+            intrinsic = (max(0, settle_price - contract["strike"]) if option_type == "call"
+                        else max(0, contract["strike"] - settle_price))
+            pnl = intrinsic * 100 - cost
+            period_returns.append(pnl / cost)
+            trade_pnls.append(pnl)
+    return performance_stats(period_returns, periods_per_year=365 / TARGET_DAYS_TO_EXPIRATION, trade_pnls=trade_pnls)
+
+
+def run_backtest(as_of=None):
+    """Walk-forward backtest of the multi-day options screen's strategy against the
+    already-published advisor universe. See this module's top-of-file and
+    backtest_common's docstrings for why this is simulated-entry/real-settlement and why
+    it needs no live option-chain call.
+    """
+    payload = load_json("advisor.json") or {}
+    universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    generated_at = datetime.now(timezone.utc).isoformat()
+    methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
+                   "realized volatility as the implied-volatility input, not quoted historical "
+                   "prices. Real historical bid/ask spreads, open interest, and fill quality are "
+                   "not modeled. Trade settlement uses real historical closing prices.")
+    if not universe:
+        result = {"schema_version": "1.0.0", "model_version": "multiday-options-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "NO_PUBLISHED_UNIVERSE", "methodology": methodology}
+        save_json("screens/options-backtest.json", result)
+        return result
+    try:
+        import yfinance as yf
+    except ImportError:
+        yf = None
+    if yf is None:
+        result = {"schema_version": "1.0.0", "model_version": "multiday-options-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "YFINANCE_UNAVAILABLE", "methodology": methodology}
+        save_json("screens/options-backtest.json", result)
+        return result
+    stats = backtest_universe(universe, yf, as_of)
+    if stats is None:
+        result = {"schema_version": "1.0.0", "model_version": "multiday-options-backtest-v1.0.0",
+                  "config_version": "screens-v1.0.0", "generated_at": generated_at,
+                  "status": "unavailable", "reason_code": "INSUFFICIENT_HISTORY", "methodology": methodology}
+        save_json("screens/options-backtest.json", result)
+        return result
+    result = {"schema_version": "1.0.0", "model_version": "multiday-options-backtest-v1.0.0",
+              "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
+              "methodology": methodology, "universe_tickers": len(universe),
+              "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
+                         "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
+                         "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION},
+              "backtest": stats}
+    save_json("screens/options-backtest.json", result)
+    LOG.info(f"Multi-day options backtest: {stats['num_trades']} trades, "
+             f"{stats['annualized_return']*100:.1f}% annualized, {stats['win_rate']*100:.0f}% win rate")
     return result
 
 

@@ -15,6 +15,7 @@ const GENERIC_RISK_NOTE = 'Research screen, not a trade instruction. Confirm liv
 export const STRATEGY_SCREENS = {
   'covered-call': {
     file: 'screens/covered-calls.json',
+    backtestFile: 'screens/covered-calls-backtest.json',
     eyebrow: 'Income · sell against shares you own',
     title: 'Covered call',
     description: 'Sell a call against a long 100-share position to collect premium. Caps ' +
@@ -35,6 +36,7 @@ export const STRATEGY_SCREENS = {
   },
   'cash-secured-put': {
     file: 'screens/cash-secured-puts.json',
+    backtestFile: 'screens/cash-secured-puts-backtest.json',
     eyebrow: 'Income · get paid to name your price',
     title: 'Cash-secured put',
     description: 'Sell a put backed by cash collateral on a stock you would not mind owning ' +
@@ -55,6 +57,8 @@ export const STRATEGY_SCREENS = {
   },
   'protective-put': {
     file: 'screens/protective-puts.json',
+    backtestFile: 'screens/protective-puts-backtest.json',
+    backtestShowBaseline: true,
     eyebrow: 'Hedge · portfolio insurance',
     title: 'Protective put',
     description: 'Buy a put roughly 5-10% below spot to floor the downside on a long position ' +
@@ -72,6 +76,7 @@ export const STRATEGY_SCREENS = {
   },
   collar: {
     file: 'screens/collars.json',
+    backtestFile: 'screens/collars-backtest.json',
     eyebrow: 'Defined risk · floor and cap',
     title: 'Collar',
     description: 'Buy a protective put and sell a covered call, same expiration — the call ' +
@@ -91,6 +96,7 @@ export const STRATEGY_SCREENS = {
   },
   'vertical-spread': {
     file: 'screens/vertical-spreads.json',
+    backtestFile: 'screens/vertical-spreads-backtest.json',
     eyebrow: 'Defined risk · directional',
     title: 'Vertical spread',
     description: 'A bull call spread on names trending up, a bear put spread on names ' +
@@ -110,6 +116,8 @@ export const STRATEGY_SCREENS = {
   },
   'advanced-strategies': {
     file: 'screens/advanced-strategies.json',
+    backtestFile: 'screens/advanced-strategies-backtest.json',
+    backtestStrategyKeys: [['iron_condor', 'Iron condor'], ['straddle', 'Straddle']],
     eyebrow: 'Advanced · range-bound income or big-move bets',
     title: 'Advanced strategies',
     description: 'Iron condors (sell a call spread and a put spread, profit if price stays in ' +

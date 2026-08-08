@@ -1,3 +1,4 @@
+import math
 import sys
 from datetime import date, timedelta
 
@@ -250,3 +251,143 @@ def test_run_reports_unavailable_with_no_universe(monkeypatch):
 
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+
+
+# ---------------------------------------------------------------------------
+# Walk-forward backtest tests (backtest_universe / run_backtest)
+# ---------------------------------------------------------------------------
+
+def wiggly_history(sessions=90, start_price=100, amplitude=3.0, drift=0.15):
+    """Non-flat close series: sine-wave wiggle plus a slow drift, so
+    realized_volatility_20d is genuinely non-zero (flat closes would make it 0.0, which
+    is falsy and would silently skip every period in backtest_universe).
+    """
+    closes = [round(start_price + index * drift + amplitude * math.sin(index / 2.0), 4)
+              for index in range(sessions)]
+    return {"dates": [], "closes": closes, "volumes": []}
+
+
+def test_backtest_universe_returns_hedged_and_unhedged_stats_with_trades(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    per_ticker = {"AAA": wiggly_history(start_price=100), "BBB": wiggly_history(start_price=60, amplitude=2.0)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+
+    hedged_stats, unhedged_stats = module.backtest_universe(universe, yf=None)
+
+    assert hedged_stats is not None
+    assert unhedged_stats is not None
+    for stats in (hedged_stats, unhedged_stats):
+        assert stats["num_trades"] > 0
+        for key in ("num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                    "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"):
+            assert key in stats
+    # trade_pnls was only supplied for the hedged leg.
+    assert hedged_stats["average_pnl_per_trade"] is not None
+    assert unhedged_stats["average_pnl_per_trade"] is None
+
+
+def test_backtest_universe_hedge_floors_loss_on_a_crash_period(monkeypatch):
+    # Exactly one walk-forward period: entry_index=21, expiry_index=42 (session_step for
+    # TARGET_DAYS_TO_EXPIRATION=30 is round(30*5/7)=21). A mild sine wiggle up to entry
+    # gives non-zero realized vol without lookahead; the settle price then crashes 50%,
+    # far below any ~92.5%-of-spot put strike, so the hedge should floor the loss.
+    entry_index, expiry_index = 21, 42
+    prefix = [round(100 + 3 * math.sin(index / 2.0), 4) for index in range(entry_index + 1)]
+    price = prefix[entry_index]
+    settle_price = round(price * 0.5, 4)
+    closes = prefix + [settle_price] * (expiry_index - entry_index)
+    assert len(closes) == expiry_index + 1
+
+    universe = [{"ticker": "CRASH"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"CRASH": {"closes": closes}}))
+
+    hedged_stats, unhedged_stats = module.backtest_universe(universe, yf=None)
+
+    assert hedged_stats["num_trades"] == 1
+    assert unhedged_stats["num_trades"] == 1
+
+    # Independently reconstruct the strike backtest_universe would have selected, to
+    # check the hedged return landed near the (strike - price) / price floor. performance_stats
+    # scales each trade's account-level impact by position_weight (5% by default) rather than
+    # compounding pooled, independent tickers' trades at full size - see its docstring - so a
+    # single-trade equity curve's total_return equals the raw period return times that weight.
+    iv = module.realized_volatility_20d(closes[:entry_index + 1])
+    assert iv
+    _, puts = module.synthetic_chain(price, iv, module.TARGET_DAYS_TO_EXPIRATION)
+    put = module.select_by_target_moneyness(puts, price, module.TARGET_MONEYNESS, module.MONEYNESS_TOLERANCE)
+    assert put is not None
+    expected_floor_return = (put["strike"] - price) / price * 0.05
+
+    assert abs(hedged_stats["total_return"] - expected_floor_return) <= 0.05 * 0.05
+    # The unhedged path rides the full 50% crash straight through (scaled by the same weight).
+    assert unhedged_stats["total_return"] < -0.4 * 0.05
+    # The hedge unambiguously helped in this simulated crash period.
+    assert hedged_stats["total_return"] > unhedged_stats["total_return"] + 0.2 * 0.05
+
+
+def test_backtest_universe_returns_none_when_history_too_short(monkeypatch):
+    universe = [{"ticker": "THIN"}, {"ticker": "ALSO_THIN"}]
+    per_ticker = {"THIN": fake_history(sessions=10), "ALSO_THIN": fake_history(sessions=5)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+
+    hedged_stats, unhedged_stats = module.backtest_universe(universe, yf=None)
+
+    assert hedged_stats is None
+    assert unhedged_stats is None
+
+
+def test_run_backtest_publishes_success_with_backtest_and_baseline(monkeypatch):
+    universe = [{"ticker": "AAA"}, {"ticker": "BBB"}]
+    per_ticker = {"AAA": wiggly_history(start_price=100), "BBB": wiggly_history(start_price=60, amplitude=2.0)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+
+    loaded = {"advisor.json": {"research": universe}}
+    saved = {}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "success"
+    assert saved["screens/protective-puts-backtest.json"] == result
+    assert "backtest" in result
+    assert "baseline" in result
+    for stats in (result["backtest"], result["baseline"]):
+        assert stats["num_trades"] > 0
+        assert "annualized_return" in stats
+    assert result["universe_tickers"] == len(universe)
+    assert result["window"]["target_days_to_expiration"] == module.TARGET_DAYS_TO_EXPIRATION
+
+
+def test_run_backtest_reports_unavailable_with_no_universe(monkeypatch):
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+
+    result = module.run_backtest()
+
+    assert result["status"] == "unavailable"
+    assert result["reason_code"] == "NO_PUBLISHED_UNIVERSE"
+    assert saved["screens/protective-puts-backtest.json"] == result
+
+
+def test_run_backtest_ignores_the_live_screen_env_flag(monkeypatch):
+    universe = [{"ticker": "AAA"}]
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": wiggly_history(start_price=100)}))
+    monkeypatch.setitem(sys.modules, "yfinance", FakeYf({}))
+    loaded = {"advisor.json": {"research": universe}}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+
+    # No ENABLE_PROTECTIVE_PUT_SCREEN set at all - run_backtest must still execute.
+    monkeypatch.delenv("ENABLE_PROTECTIVE_PUT_SCREEN", raising=False)
+    result_without_flag = module.run_backtest()
+    assert result_without_flag is not None
+    assert result_without_flag["status"] == "success"
+
+    # Explicitly set to a falsy-looking value - still must not gate execution.
+    monkeypatch.setenv("ENABLE_PROTECTIVE_PUT_SCREEN", "0")
+    result_with_flag_off = module.run_backtest()
+    assert result_with_flag_off is not None
+    assert result_with_flag_off["status"] == "success"
