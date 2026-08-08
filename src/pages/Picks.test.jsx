@@ -305,6 +305,27 @@ describe('Picks research page', () => {
     expect(screen.queryByText('Thin evidence')).not.toBeInTheDocument()
   })
 
+  it('never screens a fund as a stock, even when its advisor row omits the ETF flag', () => {
+    // The lightweight screen_universe projection used to drop `is_etf`, so VOO competed in
+    // screens that gate on per-security fundamentals no fund reports - and briefly was the
+    // only name clearing the catalyst screen in the published dataset.
+    const fundWithoutFlag = {
+      ticker: 'VOO', name: 'Vanguard S&P 500 ETF', sector: 'Diversified', score: 70,
+      components: { fundamentals: 60, news_sentiment: 90 },
+      technical_detail: { return_5d: 3, return_20d: 5 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [fundWithoutFlag] }, loading: false }
+      return { data: { etfs: [etf()] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
+
+    expect(document.querySelector('.research-table')).toBeNull()
+    expect(screen.getByText(/No company clears this screen/)).toBeVisible()
+  })
+
   it('shows Set Low Alert and creates a below-price alert rule for a pick currently down from its highs', async () => {
     const createRule = vi.fn().mockResolvedValue({ success: true })
     useAlerts.mockReturnValue({ createRule })

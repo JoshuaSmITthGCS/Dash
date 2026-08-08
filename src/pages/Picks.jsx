@@ -343,9 +343,19 @@ export default function Picks() {
   // isn't a top fundamentals score today, not just re-sort the same 40 names. Deduped by
   // ticker the same way FastGrowthScreen and ThemeExposureScreen already merge these two
   // arrays; the two are mutually exclusive by construction so this never drops a row.
+  // Funds carry their own ticker in the ETF file, so anything appearing there is excluded
+  // from the stock pool even when its advisor row omits `is_etf` (the lightweight
+  // screen_universe projection dropped that flag until recently, which let VOO and VGT
+  // compete in screens that gate on per-security fundamentals a fund does not have).
+  const etfTickers = useMemo(
+    () => new Set((etfData?.etfs || []).map((row) => row.ticker)),
+    [etfData],
+  )
   const stockResearch = useMemo(() => [...new Map(
-    [...(data?.research || []), ...(data?.screen_universe || [])].map((row) => [row.ticker, row]),
-  ).values()], [data])
+    [...(data?.research || []), ...(data?.screen_universe || [])]
+      .filter((row) => !row.is_etf && !etfTickers.has(row.ticker))
+      .map((row) => [row.ticker, row]),
+  ).values()], [data, etfTickers])
   // Momentum and reversal are separate screens (see /screens/momentum, /screens/matrix), each
   // with their own qualifying bar – but a stock that clears one of those bars is worth flagging
   // right here in the single ranked list rather than only inside its own separate page. Ranking

@@ -7,6 +7,7 @@ Without it, the pipeline reports the source as unavailable rather than spoofing 
 
 import json
 import os
+import re
 import time
 import urllib.parse
 import urllib.request
@@ -15,6 +16,11 @@ from datetime import date, datetime, timedelta
 
 SEC_ROOT = "https://www.sec.gov"
 SEC_DATA = "https://data.sec.gov"
+
+# EDGAR reports an ownership form's ``primaryDocument`` as its human-readable rendering -
+# ``xslF345X03/wf-form4_1234.xml`` - which serves HTML, not XML. The raw ownership XML sits
+# at the same path with the XSL rendering directory stripped off.
+XSL_RENDER_DIRECTORY = re.compile(r"^xsl[^/]*/", re.IGNORECASE)
 
 
 def _number(value):
@@ -57,6 +63,26 @@ def parse_owner(root):
     }
 
 
+def form4_document_urls(cik, accession, document):
+    """Candidate URLs for one Form 4's ownership XML, most likely first.
+
+    Fetching ``primaryDocument`` verbatim returns the XSL-rendered HTML for the great
+    majority of ownership filings, so ``parse_form4`` raises and the filing is skipped. That
+    failure is invisible from the outside: the run still reviews thousands of filings, still
+    reports the source healthy, and still scores every symbol as having no insider activity
+    at all - which is exactly what the published dataset showed. Try the de-rendered path
+    first, then the document as filed, then the conventional ``primary_doc.xml``.
+    """
+    base = f"{SEC_ROOT}/Archives/edgar/data/{cik}/{accession}"
+    names = [XSL_RENDER_DIRECTORY.sub("", document or ""), document, "primary_doc.xml"]
+    urls = []
+    for name in names:
+        url = f"{base}/{name}" if name else None
+        if url and url not in urls:
+            urls.append(url)
+    return urls
+
+
 def parse_form4(xml_text):
     """Return open-market purchases/sales from one ownership XML document.
 
@@ -66,6 +92,12 @@ def parse_form4(xml_text):
     calendar-clockwork sale from a genuine opportunistic purchase.
     """
     root = ET.fromstring(xml_text)
+    # An XSL-rendered filing is sometimes well-formed enough to parse, in which case it
+    # yields zero transactions and looks exactly like a filing with nothing in it. Reject
+    # anything that is not an ownership document outright so the caller can fall back to
+    # another URL instead of recording a phantom empty filing.
+    if root.tag.rsplit("}", 1)[-1] != "ownershipDocument":
+        raise ValueError(f"not a Form 4 ownership document (root <{root.tag}>)")
     owner = parse_owner(root)
     transactions = []
     for node in root.findall(".//nonDerivativeTransaction"):
@@ -175,13 +207,23 @@ class SecEdgarClient:
         for filing in filings:
             accession = filing["accession"].replace("-", "")
             cik = str(int(filing["cik"]))
-            url = f"{SEC_ROOT}/Archives/edgar/data/{cik}/{accession}/{filing['document']}"
-            try:
-                parsed = parse_form4(self._get(url))
-            except (ET.ParseError, OSError, ValueError):
+            parsed = None
+            source_url = None
+            for url in form4_document_urls(cik, accession, filing["document"]):
+                try:
+                    parsed = parse_form4(self._get(url))
+                except (ET.ParseError, OSError, ValueError):
+                    continue
+                source_url = url
+                break
+            # Recorded per filing rather than swallowed: a run where every filing is
+            # unreadable must be able to report itself as degraded instead of as a market
+            # in which no insider traded.
+            filing["parsed"] = parsed is not None
+            if parsed is None:
                 continue
             for transaction in parsed:
-                transactions.append({**transaction, "filing_url": url, "filed": filing["filed"]})
+                transactions.append({**transaction, "filing_url": source_url, "filed": filing["filed"]})
         return transactions, filings
 
     def form4_summary(self, ticker, lookback_days=180, max_filings=12):
@@ -192,6 +234,7 @@ class SecEdgarClient:
             "source": "SEC EDGAR Form 4",
             "lookback_days": lookback_days,
             "filings_reviewed": len(filings),
+            "filings_unreadable": sum(1 for filing in filings if not filing.get("parsed")),
             "records_reviewed": len(transactions),
             "recent_acquisitions": len(purchases),
             "recent_disposals": len(sales),

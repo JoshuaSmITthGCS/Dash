@@ -7,9 +7,11 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (_screen_row, _sentiment_summary, build_portfolio_coverage,
-                           carry_forward_rows, compact_news, curate_candidate_news, enrich,
-                           latest_unique_news, previous_rows_by_ticker, previous_top_symbols,
-                           resolve_refresh_symbols, select_enrichment_priority, yahoo_extended)
+                           carry_forward_rows, collect_insider_signals, compact_news,
+                           curate_candidate_news, enrich, latest_unique_news,
+                           previous_rows_by_ticker, previous_top_symbols,
+                           resolve_refresh_symbols, rotation_slice,
+                           select_enrichment_priority, yahoo_extended)
 
 
 class RefreshSymbolTests(unittest.TestCase):
@@ -432,3 +434,116 @@ class YahooExtendedFailureIsolationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class _PassthroughCache:
+    """`cache.fetch` with no persistence - the collection logic is what is under test."""
+
+    def fetch(self, namespace, key, produce, source=None):
+        return produce()
+
+
+class _FakeSec:
+    def __init__(self, by_symbol, available=True):
+        self.available = available
+        self._by_symbol = by_symbol
+
+    def form4_transactions(self, symbol, lookback_days=1100):
+        return self._by_symbol[symbol]
+
+
+class InsiderCollectionDiagnosticsTests(unittest.TestCase):
+    """"Every symbol scored zero insider activity" has two causes that used to be
+    indistinguishable in the published payload: a genuinely quiet market, and a layer that
+    downloaded thousands of filings and could not read one of them."""
+
+    def test_unreadable_filings_are_counted_rather_than_passed_off_as_no_activity(self):
+        unreadable = [{"parsed": False}, {"parsed": False}]
+        sec = _FakeSec({"AAPL": ([], unreadable)})
+
+        signals, failures, diagnostics = collect_insider_signals(
+            sec, ("AAPL",), cache=_PassthroughCache())
+
+        self.assertEqual(failures, [])
+        self.assertFalse(signals["AAPL"]["available"])
+        self.assertEqual(diagnostics["filings_reviewed"], 2)
+        self.assertEqual(diagnostics["filings_unreadable"], 2)
+
+    def test_a_readable_run_reports_no_unreadable_filings(self):
+        transactions = [{
+            "code": "P", "side": "purchase", "shares": 100.0, "price": 25.5, "value": 2550.0,
+            "acquired_disposed": "A", "date": "2026-07-01", "owner_name": "Doe Jane",
+            "owner_cik": "0000012345", "roles": ["officer"], "officer_title": "CFO",
+            "filed": "2026-07-02",
+        }]
+        sec = _FakeSec({"AAPL": (transactions, [{"parsed": True}])})
+
+        signals, _, diagnostics = collect_insider_signals(
+            sec, ("AAPL",), cache=_PassthroughCache())
+
+        self.assertTrue(signals["AAPL"]["available"])
+        self.assertEqual(diagnostics["filings_unreadable"], 0)
+        self.assertEqual(diagnostics["symbols_with_filings"], 1)
+
+    def test_an_unconfigured_client_returns_empty_diagnostics_rather_than_raising(self):
+        signals, failures, diagnostics = collect_insider_signals(
+            _FakeSec({}, available=False), ("AAPL",), cache=_PassthroughCache())
+
+        self.assertEqual((signals, failures), ({}, []))
+        self.assertEqual(diagnostics["filings_reviewed"], 0)
+
+
+class FastRefreshRotationTests(unittest.TestCase):
+    """A fast refresh polls the prior leaders and the portfolio - a fixed set. Anything
+    outside it was never re-fetched, so it carried the same row forward run after run and
+    stopped carrying fields later runs began publishing. That is what left 756 of 837
+    screen rows with no 60-day drawdown, which is the only input the reversal screen gates
+    on: the screen could see 121 names out of a 926-name universe."""
+
+    def test_the_stalest_symbols_outside_the_priority_set_are_rotated_back_in(self):
+        previous_payload = {"research": [], "screen_universe": [
+            {"ticker": "OLD", "score": 10, "last_polled_at": "2026-07-01T00:00:00+00:00"},
+            {"ticker": "NEWER", "score": 10, "last_polled_at": "2026-08-01T00:00:00+00:00"},
+            {"ticker": "MIDDLE", "score": 10, "last_polled_at": "2026-07-15T00:00:00+00:00"},
+        ]}
+
+        rotated = rotation_slice(("LEADER", "OLD", "NEWER", "MIDDLE"), {"LEADER"}, previous_payload, 2)
+
+        self.assertEqual(rotated, ("OLD", "MIDDLE"))
+
+    def test_a_symbol_that_has_never_been_polled_sorts_ahead_of_every_dated_row(self):
+        previous_payload = {"screen_universe": [
+            {"ticker": "DATED", "score": 10, "last_polled_at": "2026-07-01T00:00:00+00:00"},
+        ]}
+
+        rotated = rotation_slice(("DATED", "NEVER"), set(), previous_payload, 1)
+
+        self.assertEqual(rotated, ("NEVER",))
+
+    def test_symbols_already_being_polled_are_never_rotated_in_twice(self):
+        previous_payload = {"screen_universe": [{"ticker": "LEADER", "score": 10}]}
+
+        rotated = rotation_slice(("LEADER", "TAIL"), {"LEADER"}, previous_payload, 5)
+
+        self.assertEqual(rotated, ("TAIL",))
+
+    def test_rotation_can_be_switched_off_with_a_zero_size(self):
+        self.assertEqual(rotation_slice(("A", "B"), set(), {}, 0), ())
+
+
+class ScreenRowAssetTypeTests(unittest.TestCase):
+    def test_a_fund_stays_identifiable_in_the_lightweight_projection(self):
+        # Without this the client-side strategy screens, which all gate on per-security
+        # fundamentals, treat every fund in the universe as an ordinary company.
+        projected = _screen_row({"ticker": "VOO", "score": 70, "is_etf": True})
+
+        self.assertTrue(projected["is_etf"])
+
+    def test_an_ordinary_company_projects_as_not_a_fund(self):
+        self.assertFalse(_screen_row({"ticker": "AAPL", "score": 70})["is_etf"])
+
+    def test_the_poll_timestamp_survives_the_projection(self):
+        projected = _screen_row({"ticker": "AAPL", "score": 70,
+                                 "last_polled_at": "2026-08-08T00:00:00+00:00"})
+
+        self.assertEqual(projected["last_polled_at"], "2026-08-08T00:00:00+00:00")
