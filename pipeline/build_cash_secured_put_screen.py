@@ -25,9 +25,9 @@ from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor,
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
-MIN_DAYS_TO_EXPIRATION = 15
-MAX_DAYS_TO_EXPIRATION = 45
-TARGET_DAYS_TO_EXPIRATION = 30
+MIN_DAYS_TO_EXPIRATION = 1
+MAX_DAYS_TO_EXPIRATION = 14
+TARGET_DAYS_TO_EXPIRATION = 7
 TARGET_DELTA = 0.30
 MINIMUM_HISTORY_SESSIONS = 21
 

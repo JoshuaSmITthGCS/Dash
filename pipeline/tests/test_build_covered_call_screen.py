@@ -62,7 +62,7 @@ def make_yahoo_history(per_ticker):
 
 
 TODAY = date(2024, 3, 1)
-EXPIRATION = "2024-03-31"  # exactly TARGET_DAYS_TO_EXPIRATION (30) out from TODAY
+EXPIRATION = "2024-03-08"  # exactly TARGET_DAYS_TO_EXPIRATION (7) out from TODAY
 
 
 def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
@@ -70,8 +70,8 @@ def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
             "impliedVolatility": iv, "volume": volume}
 
 
-# strike=105, iv=0.3, price=100, dte=30 -> Black-Scholes call delta ~0.30 (see options_common.call_delta)
-TARGET_DELTA_CALL = contract(strike=105, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
+# strike=102, iv=0.3, price=100, dte=7 -> Black-Scholes call delta ~0.32 (see options_common.call_delta)
+TARGET_DELTA_CALL = contract(strike=102, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
 
 
 def test_build_row_selects_call_near_target_delta(monkeypatch):
@@ -86,8 +86,8 @@ def test_build_row_selects_call_near_target_delta(monkeypatch):
 
     assert row is not None
     assert row["expiration"] == EXPIRATION
-    assert row["days_to_expiration"] == 30
-    assert row["call"]["strike"] == 105
+    assert row["days_to_expiration"] == 7
+    assert row["call"]["strike"] == 102
     assert abs(row["call"]["delta"] - module.TARGET_DELTA) < 0.05
     assert row["metrics"]["premium"] == 2.1
     assert row["metrics"]["breakeven"] == 97.9
@@ -116,8 +116,8 @@ def test_build_row_returns_none_when_options_unavailable(monkeypatch):
 def test_build_row_returns_none_without_qualifying_expiration(monkeypatch):
     universe = {"ticker": "TOOSOON", "sector": "Technology", "market_cap": 1e9}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"TOOSOON": fake_history()}))
-    # 5 days out is below MIN_DAYS_TO_EXPIRATION (15)
-    fake_yf = FakeYf({"TOOSOON": FakeTicker(options=["2024-03-06"])})
+    # Same-day expiration (0 days out) is below MIN_DAYS_TO_EXPIRATION (1)
+    fake_yf = FakeYf({"TOOSOON": FakeTicker(options=["2024-03-01"])})
 
     assert module.build_row(universe, fake_yf, as_of=TODAY) is None
 
@@ -196,8 +196,8 @@ def test_run_publishes_scored_results(monkeypatch):
     ]
     per_ticker = {"AAA": fake_history(), "BBB": fake_history(start_price=80)}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
-    aaa_call = contract(strike=105, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
-    bbb_call = contract(strike=84, bid=1.6, ask=1.76, iv=0.3, open_interest=200)
+    aaa_call = contract(strike=102, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
+    bbb_call = contract(strike=82, bid=1.6, ask=1.76, iv=0.3, open_interest=200)
     fake_yf = FakeYf({
         "AAA": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain([aaa_call], [])}),
         "BBB": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain([bbb_call], [])}),
@@ -279,11 +279,11 @@ def test_backtest_universe_returns_stats_with_capped_gain(monkeypatch):
     assert set(stats) == {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
                           "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
 
-    # The jump at JUMP_INDEX (90) lands inside the walk-forward period entered at index 84 and
-    # settled at index 105 - recompute what backtest_universe would have sold at that entry
+    # The jump at JUMP_INDEX (90) lands inside the walk-forward period entered at index 86 and
+    # settled at index 91 - recompute what backtest_universe would have sold at that entry
     # (same helpers, same inputs) so we can spot-check the settlement was capped at the strike.
     periods = module.walk_periods(closes, module.TARGET_DAYS_TO_EXPIRATION)
-    period_index = periods.index((84, 105))
+    period_index = periods.index((86, 91))
     entry_index, expiry_index = periods[period_index]
     price, settle_price = closes[entry_index], closes[expiry_index]
     iv = module.realized_volatility_20d(closes[:entry_index + 1])

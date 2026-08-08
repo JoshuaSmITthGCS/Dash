@@ -141,4 +141,41 @@ export const STRATEGY_SCREENS = {
       ['required_move_pct', 'Required move', 'pct'],
     ],
   },
+  'short-term-trades': {
+    file: 'screens/short-term-trades.json',
+    backtestFile: 'screens/short-term-trades-backtest.json',
+    eyebrow: 'Short-term · 1 day to 2 weeks',
+    title: 'Short-term trades',
+    description: 'One idea per ticker, picking whichever mechanism — buying a call or put, ' +
+      'selling a covered call, or selling a cash-secured put — ranks best today within a ' +
+      '1-day-to-2-week expiration window. Shares one option-chain fetch per ticker with the ' +
+      'Best multi-day options, Covered call, and Cash-secured put screens.',
+    riskNote: GENERIC_RISK_NOTE + ' A 1-14 day window is short-dated by design — premiums are ' +
+      'smaller and rolls more frequent than a monthly convention, so per-contract fees eat a ' +
+      'bigger share of each trade. Buying a call/put can expire worthless; selling a call/put ' +
+      'carries assignment risk (capped upside on a covered call, an obligation to buy shares on ' +
+      'a cash-secured put).',
+    strategyLabel: (row) => ({
+      buy_call: 'Buy call', buy_put: 'Buy put',
+      sell_call: 'Sell call (covered)', sell_put: 'Sell put (cash-secured)',
+    }[row.strategy] || row.strategy),
+    metricsConfig: (row) => (row.strategy === 'buy_call' || row.strategy === 'buy_put') ? [
+      ['implied_volatility', 'Implied volatility', 'pct'],
+      ['realized_volatility_20d', 'Realized volatility (20d)', 'pct'],
+      ['implied_realized_vol_ratio', 'Implied / realized vol', 'ratio'],
+      ['moneyness', 'Moneyness', 'pct'],
+    ] : row.strategy === 'sell_call' ? [
+      ['annualized_yield', 'Annualized yield', 'pct'],
+      ['premium', 'Premium collected', 'money'],
+      ['breakeven', 'Breakeven', 'money'],
+      ['probability_assigned', 'Probability assigned', 'pct'],
+      ['downside_cushion_pct', 'Downside cushion', 'pct'],
+    ] : [
+      ['annualized_yield', 'Annualized yield', 'pct'],
+      ['premium', 'Premium collected', 'money'],
+      ['effective_cost_basis', 'Effective cost basis', 'money'],
+      ['collateral', 'Collateral required', 'money'],
+      ['probability_otm', 'Probability OTM (keep premium)', 'pct'],
+    ],
+  },
 }
