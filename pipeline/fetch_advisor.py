@@ -30,6 +30,7 @@ from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
 from evidence_events import build_evidence
 from news_intelligence import annotate_article, deduplicate_articles
 from yahoo_estimates import collect_estimate_detail
+from yahoo_news import fetch_company_news, new_diagnostics as new_news_diagnostics
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
 from normalization_report import write_normalization_report
@@ -768,7 +769,8 @@ def macro_context(client):
     return result
 
 
-def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
+def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
+            news_diagnostics=None):
     """The cheap first pass: quote snapshot, two years of prices, and any Alpha Vantage extras.
 
     Financial statements are deliberately left out here. They cost several requests per
@@ -778,7 +780,13 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
     fallback = yahoo_snapshot(symbol, yf, ticker_obj)
     history = yahoo_history(symbol, yf, ticker_obj=ticker_obj)
     overview = daily = news_payload = insiders = {}
-    news = []
+    # Yahoo's own per-symbol news, for every polled company rather than the five-symbol
+    # Alpha shortlist. This is what gives the catalyst model a universe to work over: entity
+    # sentiment covered 3 of 877 rows, so the model was complete and had nothing to score.
+    # One cached request per symbol, and a dark feed degrades this company's news leg rather
+    # than the run.
+    news = fetch_company_news(symbol, ticker_obj, EVIDENCE_CONFIG, cache=CACHE,
+                              diagnostics=news_diagnostics)
     marketaux_failed = False
     alpha_failed = False
     if symbol in alpha_symbols:
@@ -786,20 +794,26 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
         time.sleep(delay)
         daily = fetch_optional(client, "TIME_SERIES_DAILY", symbol=symbol, outputsize="compact")
         time.sleep(delay)
+        # Provider-scored articles are merged ahead of the Yahoo baseline rather than
+        # replacing it. They carry real entity sentiment, which outranks the headline lexicon
+        # wherever the same story appears in both; clustering folds the duplicates together
+        # and the provider reading wins the resulting event outright.
+        provider_news = []
         if marketaux_client:
             try:
                 marketaux_payload = marketaux_client.news(
                     symbols=symbol, filter_entities="true", language="en",
                     group_similar="true", limit=10,
                 )
-                news = advisor_articles(marketaux_payload, symbol)
+                provider_news = advisor_articles(marketaux_payload, symbol)
             except (MarketauxError, OSError, ValueError) as exc:
                 marketaux_failed = True
                 LOG.warn(f"{symbol}: Marketaux news unavailable ({type(exc).__name__}: {exc})")
         if not marketaux_client or marketaux_failed:
             news_payload = fetch_optional(client, "NEWS_SENTIMENT", tickers=symbol, sort="LATEST", limit="12")
-            news = compact_news(news_payload, symbol)
+            provider_news = compact_news(news_payload, symbol)
             time.sleep(delay)
+        news = [*provider_news, *news]
         insiders = fetch_optional(client, "INSIDER_TRANSACTIONS", symbol=symbol)
         alpha_history = daily_history(daily)
         # Alpha Vantage only returns 100 sessions; Yahoo's two years wins whenever it exists.
@@ -1109,9 +1123,11 @@ def run():
 
     contexts, all_news = [], []
     alpha_failures, marketaux_failures, research_failures = [], [], []
+    yahoo_news_diagnostics = new_news_diagnostics()
     for symbol in refresh_symbols:
         try:
-            context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client)
+            context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client,
+                              news_diagnostics=yahoo_news_diagnostics)
             contexts.append(context)
             all_news.extend(context["news"])
             if context["alpha_failed"]:
@@ -1565,6 +1581,28 @@ def run():
                         "income_stmt/balance_sheet/cashflow and .info are Yahoo's "
                         "quoteSummary-backed endpoints and fail independently of price data; "
                         "a company still enriches on statement frames alone if only .info fails.",
+            },
+            "yahoo_news": {
+                # `unreadable` is the status that matters here. yfinance passes Yahoo's stream
+                # items through untouched, so this pipeline parses an undocumented shape that
+                # can change without warning; when it does, every item fails to normalize and
+                # the catalyst model quietly loses its only universe-wide input. Publishing
+                # received-versus-readable makes that a visible failure rather than a silent
+                # one, the same lesson the Form 4 layer taught below.
+                "status": (
+                    "unavailable" if yahoo_news_diagnostics["symbols_requested"] == 0 else
+                    "unreadable" if (yahoo_news_diagnostics["items_received"] > 0
+                                     and yahoo_news_diagnostics["items_normalized"] == 0) else
+                    "degraded" if (yahoo_news_diagnostics["feed_failures"]
+                                   or yahoo_news_diagnostics["symbols_with_news"] == 0) else
+                    "healthy"
+                ),
+                **yahoo_news_diagnostics,
+                "note": "Per-symbol company news for the whole polled universe. Yahoo publishes "
+                        "no sentiment score, so event direction is derived from the "
+                        "evidence_events.headline_direction_markers phrase lexicon - a "
+                        "deterministic keyword match, not a sentiment model. A headline that "
+                        "matches no phrase is recorded as coverage and scores nothing.",
             },
             "sec_form4": {
                 # Distinguish "we never asked" from "we asked and SEC EDGAR failed us" -

@@ -206,16 +206,26 @@ its own input coverage on screen. Measured against the 2026-08-08 payload, 875 s
       directory and falls back, a rendered page is rejected rather than read as an empty
       filing, and `source_status.sec_form4` publishes `filings_reviewed` /
       `filings_unreadable` so this cannot go quiet again.
-- [ ] **Per-ticker news reaches almost nothing.** Entity-level sentiment is fetched only for
-      the Alpha-enriched shortlist (five symbols per refresh) plus one discovery batch, so
-      `components.news_sentiment` resolved for 3 of 877 rows and the catalyst screen has
-      essentially no news leg to stand on. Either widen the Marketaux symbol coverage per
-      run or accept that Catalyst is a shortlist-only lens and say so in its description.
-      **This is now the single binding constraint on the catalyst model** — the event layer,
-      clustering, materiality weighting and decay are all in place and tested; they have
-      almost nothing to score. `ticker.get_news()` is free and per-symbol, so routing the
-      event builder at Yahoo's own news feed rather than Marketaux alone is the obvious next
-      move.
+- [x] ~~**Per-ticker news reaches almost nothing.**~~ Entity sentiment covered 3 of 877 rows
+      because it was fetched only for the five Alpha-enriched symbols per refresh.
+      `pipeline/yahoo_news.py` now pulls Yahoo's own per-symbol feed for every polled company,
+      cached under the existing 30-minute `news` namespace and paced by the shared Yahoo
+      limiter. Marketaux/Alpha articles are merged ahead of it rather than replaced: where the
+      same story appears in both, clustering folds them into one event and the provider's
+      entity sentiment wins it outright.
+- [ ] **Validate the headline direction lexicon.** Yahoo publishes no sentiment score, so
+      direction comes from `evidence_events.headline_direction_markers` — 65 signed phrases
+      matched over the headline and summary. It is a keyword match, not a sentiment model, and
+      every event records `direction_source` so the two never get confused; a headline matching
+      no phrase is recorded as coverage and scores nothing. Two things worth measuring once
+      there is history: what share of real headlines match anything at all (if it is low, the
+      catalyst model is running on a thin slice of its own coverage), and whether the matched
+      ones are directionally right often enough to be worth the weight.
+- [ ] **Watch `source_status.yahoo_news.status` for `unreadable`.** yfinance passes Yahoo's
+      stream items through untouched, so this parses an undocumented shape that can change
+      without notice. Received-versus-readable counts are published specifically so a shape
+      change surfaces as "2,400 items received, none readable" instead of silently looking
+      like a quiet news week — the same failure the Form 4 layer had.
 - [ ] **Reversal sees 119 of 875 names** because `drawdown_60d` only ships on freshly polled
       rows. The fast-refresh rotation added in `rotation_slice` re-polls the stalest tail
       every run, which should close this within a handful of refreshes — re-measure after

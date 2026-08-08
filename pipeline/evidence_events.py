@@ -143,18 +143,33 @@ def _best_source(articles, config):
 
 
 def _article_direction(article, ticker):
-    """Signed sentiment in [-1, 1] for this ticker, or None when the provider gave none."""
+    """Signed direction in [-1, 1] for this ticker, with where it came from.
+
+    Returns ``(direction, source)``. Provider entity sentiment is preferred over the
+    whole-article score, and both are preferred over the headline lexicon
+    (``yahoo_news.headline_direction``) - a model over the article body outranks a keyword
+    match on its title, and the two must stay distinguishable in the published event so a
+    keyword match is never mistaken for a measured sentiment reading.
+
+    None when nothing resolved, which is a real outcome: Yahoo's feed carries no sentiment at
+    all, so an article whose headline matches no directional phrase is genuine coverage with
+    no readable direction, not a neutral one.
+    """
     for entity in article.get("ticker_sentiment") or []:
         if str(entity.get("ticker") or "").upper() != str(ticker).upper():
             continue
         try:
-            return max(-1.0, min(1.0, float(entity.get("ticker_sentiment_score"))))
+            return max(-1.0, min(1.0, float(entity.get("ticker_sentiment_score")))), "provider_entity"
         except (TypeError, ValueError):
-            return None
+            break
     try:
-        return max(-1.0, min(1.0, float(article.get("overall_sentiment_score"))))
+        return max(-1.0, min(1.0, float(article.get("overall_sentiment_score")))), "provider_article"
     except (TypeError, ValueError):
-        return None
+        pass
+    try:
+        return max(-1.0, min(1.0, float(article.get("headline_direction")))), "headline_lexicon"
+    except (TypeError, ValueError):
+        return None, None
 
 
 def build_news_events(articles, ticker, config, *, now=None):
@@ -176,8 +191,18 @@ def build_news_events(articles, ticker, config, *, now=None):
         age = trading_days_between(published, now)
         recency = decay_weight(age, half_life)
         tier, quality_weight, source = _best_source(members, config)
-        directions = [d for d in (_article_direction(a, ticker) for a in members) if d is not None]
-        direction = sum(directions) / len(directions) if directions else None
+        readings = [(value, origin) for value, origin in
+                    (_article_direction(article, ticker) for article in members) if value is not None]
+        # Within one cluster the best kind of reading wins outright rather than being averaged
+        # with the weaker kinds. When a Marketaux copy of a story carries real entity sentiment
+        # and a Yahoo copy only matched a headline phrase, averaging the two would dilute a
+        # measured reading with a keyword guess - so the provider reading is used alone.
+        direction = direction_source = None
+        for kind in ("provider_entity", "provider_article", "headline_lexicon"):
+            values = [value for value, origin in readings if origin == kind]
+            if values:
+                direction, direction_source = sum(values) / len(values), kind
+                break
         # Independent corroboration, not repetition: distinct sources carrying the same story
         # is mild evidence it is real, capped so volume cannot substitute for materiality.
         distinct_sources = len({str(a.get("source") or "").lower() for a in members if a.get("source")})
@@ -195,6 +220,7 @@ def build_news_events(articles, ticker, config, *, now=None):
             "half_life_trading_days": half_life,
             "materiality": materiality,
             "direction": round(direction, 3) if direction is not None else None,
+            "direction_source": direction_source,
             "source_quality_tier": tier,
             "best_source": source,
             "article_count": len(members),
@@ -236,6 +262,12 @@ def news_event_score(events, config):
         "event_count": len(events),
         "scored_event_count": len(scorable),
         "net_strength": round(net, 4),
+        # How much of this reading rests on a provider sentiment model versus a keyword match
+        # over the headline. They are not equivalent evidence and the split has to be visible.
+        "lexicon_scored_events": sum(1 for event in scorable
+                                     if event.get("direction_source") == "headline_lexicon"),
+        "provider_scored_events": sum(1 for event in scorable
+                                      if str(event.get("direction_source") or "").startswith("provider")),
         "dominant_event": strongest["title"],
         "dominant_event_types": strongest["event_types"],
         "dominant_age_trading_days": strongest["age_trading_days"],
