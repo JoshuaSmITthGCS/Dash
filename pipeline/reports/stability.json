@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 18,
+  "refreshes_observed": 19,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -2385,6 +2385,70 @@
           ],
           "score_delta": -4.9,
           "confidence_delta": -0.1
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-08T02:03:48.549724+00:00",
+      "current_refresh": "advisor-2026-08-08T02:12:58.669586+00:00",
+      "shared_tickers": 874,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 3,
+      "tickers_with_availability_driven_change_pct": 0.003,
+      "mean_abs_score_delta": 0.05,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CEG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital"
+          ],
+          "score_delta": 20.6,
+          "confidence_delta": 0.41
+        },
+        {
+          "ticker": "DVN",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "ev_to_ebit",
+            "interest_coverage",
+            "return_on_invested_capital"
+          ],
+          "score_delta": 4.9,
+          "confidence_delta": 0.1
+        },
+        {
+          "ticker": "AFL",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.8,
+          "confidence_delta": 0.04
         }
       ]
     }
