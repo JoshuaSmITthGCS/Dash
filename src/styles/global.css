@@ -328,6 +328,7 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .screen-chip-reversal { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--warn); }
 .screen-chip-breakout { border-color: color-mix(in srgb, var(--accent, var(--up)) 45%, var(--border)); color: var(--accent, var(--up)); }
 .screen-chip-prospective { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--warn); }
+.screen-chip-thin-evidence { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--warn); cursor: help; }
 .prospective-notice { padding: 14px 16px; margin-bottom: 16px; border: 1px solid color-mix(in srgb, var(--warn) 36%, var(--border)); background: color-mix(in srgb, var(--warn) 8%, var(--bg-card)); color: var(--text-dim); font-size: 12px; line-height: 1.5; }
 .prospective-notice strong { color: var(--text); }
 .portfolio-move-explanation { margin-bottom: var(--section-gap); }

@@ -72,6 +72,10 @@ SCREEN_TECHNICAL_FIELDS = (
     "return_5d", "return_20d", "momentum_12_1", "momentum_12_1_pct", "risk_adjusted",
     "relative_strength", "relative_strength_20d", "volume_confirmation",
     "pct_above_52w_low", "drawdown_60d", "volume_ratio_60d",
+    # return_60d/return_252d back a multi-horizon breadth check for rankMomentum's
+    # corroboration gate - a 5d/20d pop inside a longer downtrend shouldn't pass as
+    # genuine momentum. Keep in sync with src/lib/researchScreens.js.
+    "return_60d", "return_252d",
 )
 
 # The signed-in Financial Report and Portfolio views need prices, chart history, scoring
@@ -128,6 +132,30 @@ def report_snapshot(payload):
     }
 
 
+# Trust ordering for pipeline/config/settings.json's source_quality tiers (by weight:
+# regulatory_primary 1.5, established_press 1.2, neutral 1.0, aggregator_syndicated 0.65).
+# Used only to pick the single best tier present for the lightweight screen projection
+# below - the full per-article breakdown stays published-leaderboard-only.
+SOURCE_QUALITY_TRUST_ORDER = ("regulatory_primary", "established_press", "neutral", "aggregator_syndicated")
+
+
+def _sentiment_summary(sentiment_detail):
+    """Distill sentiment_detail to the handful of fields rankCatalyst's corroboration
+    check needs (article count, filing count, best source quality) without carrying the
+    full per-article breakdown onto every screen_universe row."""
+    detail = sentiment_detail or {}
+    articles = detail.get("articles") or []
+    tiers_present = {article.get("source_quality_tier") for article in articles if article.get("source_quality_tier")}
+    best_tier = next((tier for tier in SOURCE_QUALITY_TRUST_ORDER if tier in tiers_present), None)
+    if detail.get("article_count") is None and not articles and best_tier is None:
+        return None
+    return {
+        "article_count": detail.get("article_count"),
+        "filing_count": detail.get("filing_count"),
+        "best_source_quality_tier": best_tier,
+    }
+
+
 def _screen_row(row):
     """Project a full or already-lightweight row into the screen_universe shape.
 
@@ -158,6 +186,14 @@ def _screen_row(row):
         "analyst_rating": row.get("analyst_rating"),
         "analyst_target_upside": row.get("analyst_target_upside"),
         "theme_exposure": row.get("theme_exposure"),
+        # Corroboration inputs for the strategy-lens gates (rankReversal,
+        # rankValueTurnarounds, rankAnalystConviction, rankCatalyst) - independent
+        # cross-checks against each lens's primary signal, not part of any score.
+        "earnings_surprise": row.get("earnings_surprise"),
+        "short_percent_of_float": row.get("short_percent_of_float"),
+        "days_to_cover": row.get("days_to_cover"),
+        "sector_valuation_percentile": row.get("sector_valuation_percentile"),
+        "sentiment_summary": _sentiment_summary(row.get("sentiment_detail")),
         "stale_carryforward": row.get("stale_carryforward", False),
     }
 

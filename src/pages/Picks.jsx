@@ -26,6 +26,32 @@ import { useAlerts } from '../lib/useAlerts.js'
 // strong long-term score to surface under a different lens. Each entry is
 // [label, comparator, description] - the description renders in the InfoTag next to the
 // sort control so the methodology is one tap/click away on mobile and desktop alike.
+function finite(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+// Corroborated-first comparator for a strategy lens, matching the ordering each rankX()
+// screen already applies internally (src/lib/researchScreens.js) - without this, Picks'
+// own sort (which re-derives order from the plain strategyScores number) would let an
+// uncorroborated high scorer outrank a corroborated one, silently discarding the
+// corroboration work.
+function strategySortComparator(lens) {
+  return (a, b) => {
+    const aScore = a.strategyScores?.[lens]
+    const bScore = b.strategyScores?.[lens]
+    // Corroboration only tiebreaks between two rows that both actually qualify for this
+    // lens - a row that never qualified (score null, falls back to -1) must still sink
+    // to the bottom, not get promoted above a thin-evidence row just because "no
+    // corroboration data" defaults truthy.
+    if (finite(aScore) && finite(bScore)) {
+      const aCorroborated = a.strategyCorroboration?.[lens]?.corroborated ?? true
+      const bCorroborated = b.strategyCorroboration?.[lens]?.corroborated ?? true
+      if (aCorroborated !== bCorroborated) return aCorroborated ? -1 : 1
+    }
+    return (bScore ?? -1) - (aScore ?? -1)
+  }
+}
+
 const SORTS = {
   score: ['Research score (long-term)', (a, b) => (b.score ?? -1) - (a.score ?? -1),
     'The main fundamentals-first score: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers for insider activity, short interest, analyst expectations, sector valuation, and macro regime. Built for long-term holding decisions. Only computed for fully published companies.'],
@@ -37,16 +63,16 @@ const SORTS = {
     'The fundamentals component of the research score in isolation - valuation, profitability, financial health, growth, capital allocation, and accounting quality, with market behavior and news sentiment stripped out. Available for the full scored universe, not just published companies.'],
   confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
     'How complete the underlying data was for this company, not how attractive it is - a high-confidence score just means more of the inputs actually resolved. Only computed for fully published companies.'],
-  catalyst: ['Short-term catalyst (news + insider)', (a, b) => (b.strategyScores?.catalyst ?? -1) - (a.strategyScores?.catalyst ?? -1),
-    'For a quick-turnaround trade: weighted mostly by fresh news sentiment and opportunistic insider buying/selling (Form 4, routine trades excluded), with recent price/volume as confirmation and fundamentals as a small floor, not a driver. A weak long-term research score does not disqualify a name here - that is the point. Scans the full scored universe, not just the published leaderboard.'],
-  momentum: ['Momentum', (a, b) => (b.strategyScores?.momentum ?? -1) - (a.strategyScores?.momentum ?? -1),
-    '12-month price momentum (skipping the most recent month), relative strength, volume confirmation, and risk-adjusted return. A medium-term trend-following lens, distinct from the very-short-term Catalyst lens. Scans the full scored universe, not just the published leaderboard.'],
-  reversal: ['Reversal', (a, b) => (b.strategyScores?.reversal ?? -1) - (a.strategyScores?.reversal ?? -1),
-    'Names that pulled back over the medium term but have just turned up over the most recent week - a bounce candidate, not a falling knife, gated by a fundamentals floor. Scans the full scored universe, not just the published leaderboard.'],
-  valueTurnaround: ['Value turnaround', (a, b) => (b.strategyScores?.valueTurnaround ?? -1) - (a.strategyScores?.valueTurnaround ?? -1),
-    'Cheap relative to its sector, fundamentally solid, sitting near a 52-week low, and with a positive latest week - value plus an early sign the market is starting to agree. Scans the full scored universe, not just the published leaderboard.'],
-  analystConviction: ['Analyst conviction', (a, b) => (b.strategyScores?.analystConviction ?? -1) - (a.strategyScores?.analystConviction ?? -1),
-    'Bullish average analyst rating and consensus target upside from professional coverage (minimum 3 analysts). A different "market hasn’t fully repriced this yet" signal from Catalyst (news/insider) or Momentum (price trend). Scans the full scored universe, not just the published leaderboard.'],
+  catalyst: ['Short-term catalyst (news + insider)', strategySortComparator('catalyst'),
+    'For a quick-turnaround trade: weighted mostly by fresh news sentiment and opportunistic insider buying/selling (Form 4, routine trades excluded), with recent price/volume as confirmation and fundamentals as a small floor, not a driver. A weak long-term research score does not disqualify a name here - that is the point. Scans the full scored universe, not just the published leaderboard. A row whose insider activity is a single untracked trader or whose news rests on one low-quality source is corroborated-checked and, if thin, sorts below fully-corroborated names - watch for the "Thin evidence" chip.'],
+  momentum: ['Momentum', strategySortComparator('momentum'),
+    '12-month price momentum (skipping the most recent month), relative strength, volume confirmation, and risk-adjusted return. A medium-term trend-following lens, distinct from the very-short-term Catalyst lens. Scans the full scored universe, not just the published leaderboard. Cross-checked against 60/252-day returns - a pop sitting inside a longer downtrend is corroboration-flagged and sorts below fully-corroborated names.'],
+  reversal: ['Reversal', strategySortComparator('reversal'),
+    'Names that pulled back over the medium term but have just turned up over the most recent week - a bounce candidate, not a falling knife, gated by a fundamentals floor. Scans the full scored universe, not just the published leaderboard. Cross-checked against the latest earnings surprise - a bounce following a sharply negative surprise (with no offsetting short-interest squeeze signal) is corroboration-flagged and sorts below fully-corroborated names.'],
+  valueTurnaround: ['Value turnaround', strategySortComparator('valueTurnaround'),
+    'Cheap relative to its sector, fundamentally solid, sitting near a 52-week low, and with a positive latest week - value plus an early sign the market is starting to agree. Scans the full scored universe, not just the published leaderboard. Cross-checked against the latest earnings surprise - cheapness following a sharply negative surprise is corroboration-flagged and sorts below fully-corroborated names.'],
+  analystConviction: ['Analyst conviction', strategySortComparator('analystConviction'),
+    'Bullish average analyst rating and consensus target upside from professional coverage (minimum 3 analysts). A different "market hasn’t fully repriced this yet" signal from Catalyst (news/insider) or Momentum (price trend). Scans the full scored universe, not just the published leaderboard. Cross-checked against sector valuation - a large upside target on a name already in the most expensive decile of its sector is corroboration-flagged and sorts below fully-corroborated names.'],
   tailwind: ['Connected / not yet re-rated', (a, b) => (b.strategyScores?.tailwind ?? -1) - (a.strategyScores?.tailwind ?? -1),
     'Best theme-exposure opportunity score across every structural trend this name is connected to - exposure × business quality × how cheap it still is. Surfaces sector-connected names riding the same wave as a proven leader (see /screens/themes) even when they are not already a top research score. Price momentum contributes nothing to this score by design. Scans the full scored universe, not just the published leaderboard.'],
 }
@@ -95,11 +121,28 @@ function normalizeEtf(row) {
   }
 }
 
-function ScreenChips({ row }) {
-  if (!row.screenTags?.length) return null
-  return row.screenTags.map((tag) => (
-    <span key={tag} className={`chip screen-chip screen-chip-${tag.toLowerCase()}`}>{tag}</span>
-  ))
+// Corroboration is lens-specific (a name can be corroborated under Momentum and thin
+// under Catalyst), so the chip only applies to whichever strategy sort is active - it
+// would be meaningless attached to a row viewed under "Research score." Same visible-
+// chip-plus-native-tooltip pattern EntryTimingAction already uses below for its reason
+// text, kept consistent rather than introducing a second explanatory affordance style.
+function ThinEvidenceChip({ row, sort }) {
+  const corroboration = row.strategyCorroboration?.[sort]
+  if (!corroboration || corroboration.corroborated) return null
+  return (
+    <span className="chip screen-chip screen-chip-thin-evidence" title={corroboration.gaps.join('; ')}>
+      Thin evidence
+    </span>
+  )
+}
+
+function ScreenChips({ row, sort }) {
+  return <>
+    {row.screenTags?.map((tag) => (
+      <span key={tag} className={`chip screen-chip screen-chip-${tag.toLowerCase()}`}>{tag}</span>
+    ))}
+    <ThinEvidenceChip row={row} sort={sort} />
+  </>
 }
 
 /** Every buy-worthy row gets exactly one of Buy Now or Set Low Alert (src/lib/entryTiming.js,
@@ -129,7 +172,7 @@ function EntryTimingAction({ row, alerting, alertStatus, onSetAlert }) {
   )
 }
 
-function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alertingTicker, alertStatuses, onSetAlert }) {
+function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alertingTicker, alertStatuses, onSetAlert, sort }) {
   const [expanded, setExpanded] = useState(false)
   return (
     <article className="research-mobile-card">
@@ -143,7 +186,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
       <div className="research-card-badges">
         <Tier label={row.stance} />
         {row.is_etf ? <span className="chip asset-chip">ETF</span> : <ActionPill recommendation={getRecommendation(row)} />}
-        <ScreenChips row={row} />
+        <ScreenChips row={row} sort={sort} />
         <span className={`holding-chip ${held ? 'held' : ''}`}>{held ? 'Bought' : 'Not bought'}</span>
         <EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
           alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} />
@@ -181,7 +224,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
 }
 
 function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatuses, onBuy,
-                       alertingTicker, alertStatuses, onSetAlert }) {
+                       alertingTicker, alertStatuses, onSetAlert, sort }) {
   if (!rows.length) return null
   return (
     <section className="research-pool" aria-label={label}>
@@ -191,7 +234,7 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
           rank={index + 1} onOpen={onOpen}
           held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
           buyStatus={buyStatuses[row.ticker]} onBuy={onBuy}
-          alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} />} />
+          alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} sort={sort} />} />
       <div className="research-table card">
         <table>
           <thead><tr>
@@ -204,7 +247,7 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
             <tr key={row.ticker}>
               <td className="rank">#{index + 1}</td>
               <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
-              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
+              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} sort={sort} /></td>
               <td><Tier label={row.stance} /></td><td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
               <td className="mono num score-cell">{row.score}</td>
               <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
@@ -267,11 +310,23 @@ export default function Picks() {
     // clear a screen's qualifying bar - unqualified rows fall back to the SORTS ?? -1
     // default and sort last, same as any other sort key with a missing field.
     const scoreMap = (rows) => new Map(rows.map((row) => [row.ticker, row.screen.rankScore]))
+    // Each rankX() screen flags a thin-evidence result rather than dropping it (see
+    // src/lib/researchScreens.js) - carry that flag + reason through so the UI can show
+    // a "Thin evidence" chip instead of silently presenting it as equally trustworthy.
+    const corroborationMap = (rows) => new Map(rows.map((row) => [row.ticker, {
+      corroborated: row.screen.corroborated ?? true,
+      gaps: row.screen.corroborationGaps || [],
+    }]))
     const momentumScores = scoreMap(momentumRows)
     const reversalScores = scoreMap(reversalRows)
     const valueTurnaroundScores = scoreMap(valueTurnaroundRows)
     const catalystScores = scoreMap(catalystRows)
     const analystConvictionScores = scoreMap(analystConvictionRows)
+    const momentumCorroboration = corroborationMap(momentumRows)
+    const reversalCorroboration = corroborationMap(reversalRows)
+    const valueTurnaroundCorroboration = corroborationMap(valueTurnaroundRows)
+    const catalystCorroboration = corroborationMap(catalystRows)
+    const analystConvictionCorroboration = corroborationMap(analystConvictionRows)
     const momentumTickers = new Set(momentumRows.map((row) => row.ticker))
     const reversalTickers = new Set(reversalRows.map((row) => row.ticker))
     return [
@@ -290,6 +345,13 @@ export default function Picks() {
           catalyst: catalystScores.get(row.ticker) ?? null,
           analystConviction: analystConvictionScores.get(row.ticker) ?? null,
           tailwind: bestTailwindScore(row.theme_exposure),
+        },
+        strategyCorroboration: {
+          momentum: momentumCorroboration.get(row.ticker) ?? null,
+          reversal: reversalCorroboration.get(row.ticker) ?? null,
+          valueTurnaround: valueTurnaroundCorroboration.get(row.ticker) ?? null,
+          catalyst: catalystCorroboration.get(row.ticker) ?? null,
+          analystConviction: analystConvictionCorroboration.get(row.ticker) ?? null,
         },
       })),
       ...(etfData?.etfs || []).map(normalizeEtf),
@@ -429,11 +491,11 @@ export default function Picks() {
       {showStocks && <ResearchPool label={showStocks && showEtfs ? 'Stocks' : null} rows={stockRows}
         onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
         buyStatuses={buyStatuses} onBuy={handleQuickBuy}
-        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} />}
+        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
       {showEtfs && <ResearchPool label={showStocks && showEtfs ? 'ETFs' : null} rows={etfRows}
         onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
         buyStatuses={buyStatuses} onBuy={handleQuickBuy}
-        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} />}
+        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
 
       {!rows.length && <Empty note="No companies match those filters." />}
       <div className="disclaimer">Research includes {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. Strategy-lens sorts (Catalyst, Momentum, Reversal, Value turnaround, Analyst conviction, Tailwind) can surface a company from either group; Research score, Sector valuation, and Data confidence are only available for fully published companies. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>

@@ -163,6 +163,57 @@ describe('Picks research page', () => {
       .toBeLessThan(tickers.findIndex((text) => text.includes('AAPL')))
   })
 
+  it('a corroborated catalyst outranks a thin-evidence one even with a lower raw score, and shows the chip', () => {
+    const thinButHighScore = {
+      ticker: 'THIN', name: 'Thin Co', sector: 'Technology', score: 50,
+      components: { fundamentals: 50, news_sentiment: 95 },
+      technical_detail: { return_5d: 5 },
+      insider_activity: { available: false, points: 0 },
+    }
+    const corroboratedButLowerScore = {
+      ticker: 'SOLID', name: 'Solid Co', sector: 'Technology', score: 50,
+      components: { fundamentals: 50, news_sentiment: 60 },
+      technical_detail: { return_5d: 1 },
+      insider_activity: {
+        available: true, points: 4,
+        buy_cluster: { insider_count: 3, pattern_confidence: 0.9 },
+      },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') {
+        return { data: { research: [], screen_universe: [thinButHighScore, corroboratedButLowerScore] }, loading: false }
+      }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
+
+    const tickers = within(document.querySelector('.research-table tbody'))
+      .getAllByRole('row').map((row) => row.textContent)
+    expect(tickers.findIndex((text) => text.includes('SOLID')))
+      .toBeLessThan(tickers.findIndex((text) => text.includes('THIN')))
+    expect(within(document.querySelector('.research-table')).getAllByText('Thin evidence').length)
+      .toBeGreaterThan(0)
+  })
+
+  it('the Thin evidence chip does not appear under a sort where the row was not corroboration-checked', () => {
+    const thin = {
+      ticker: 'THIN', name: 'Thin Co', sector: 'Technology', score: 50,
+      components: { fundamentals: 50, news_sentiment: 95 },
+      technical_detail: { return_5d: 5, return_20d: 2 },
+      insider_activity: { available: false, points: 0 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [thin] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    // Default sort is "score" - catalyst corroboration is irrelevant to this lens.
+    expect(screen.queryByText('Thin evidence')).not.toBeInTheDocument()
+  })
+
   it('shows Set Low Alert and creates a below-price alert rule for a pick currently down from its highs', async () => {
     const createRule = vi.fn().mockResolvedValue({ success: true })
     useAlerts.mockReturnValue({ createRule })

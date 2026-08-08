@@ -6,9 +6,9 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_advisor import (_screen_row, build_portfolio_coverage, carry_forward_rows,
-                           compact_news, curate_candidate_news, enrich, latest_unique_news,
-                           previous_rows_by_ticker, previous_top_symbols,
+from fetch_advisor import (_screen_row, _sentiment_summary, build_portfolio_coverage,
+                           carry_forward_rows, compact_news, curate_candidate_news, enrich,
+                           latest_unique_news, previous_rows_by_ticker, previous_top_symbols,
                            resolve_refresh_symbols, select_enrichment_priority, yahoo_extended)
 
 
@@ -288,6 +288,41 @@ class ScreenRowProjectionTests(unittest.TestCase):
         self.assertEqual(projected["analyst_rating"], 1.8)
         self.assertEqual(projected["analyst_target_upside"], 15.0)
         self.assertEqual(projected["theme_exposure"][0]["opportunity_score"], 62)
+
+    def test_the_screen_only_slice_carries_the_corroboration_cross_checks(self):
+        # Independent, already-published cross-checks the strategy-lens gates read
+        # (rankReversal/rankValueTurnarounds/rankAnalystConviction/rankCatalyst) - none
+        # of these feed any score, they only corroborate or flag a lens's primary signal.
+        full_row = {
+            "ticker": "MU", "name": "Micron", "sector": "Technology", "price": 100.0, "score": 55,
+            "stance": "hold", "components": {}, "fundamental_categories": {},
+            "technical_detail": {"return_60d": 8.0, "return_252d": 22.0},
+            "earnings_surprise": -4.2, "short_percent_of_float": 0.041, "days_to_cover": 2.9,
+            "sector_valuation_percentile": 63.0,
+            "sentiment_detail": {
+                "article_count": 3, "filing_count": 1,
+                "articles": [
+                    {"source_quality_tier": "aggregator_syndicated"},
+                    {"source_quality_tier": "established_press"},
+                ],
+            },
+        }
+
+        projected = _screen_row(full_row)
+
+        self.assertEqual(projected["technical_detail"]["return_60d"], 8.0)
+        self.assertEqual(projected["technical_detail"]["return_252d"], 22.0)
+        self.assertEqual(projected["earnings_surprise"], -4.2)
+        self.assertEqual(projected["short_percent_of_float"], 0.041)
+        self.assertEqual(projected["days_to_cover"], 2.9)
+        self.assertEqual(projected["sector_valuation_percentile"], 63.0)
+        self.assertEqual(projected["sentiment_summary"], {
+            "article_count": 3, "filing_count": 1, "best_source_quality_tier": "established_press",
+        })
+
+    def test_sentiment_summary_is_none_without_any_sentiment_data(self):
+        self.assertIsNone(_sentiment_summary(None))
+        self.assertIsNone(_sentiment_summary({}))
 
     def test_an_already_lightweight_carried_forward_row_projects_without_error(self):
         # What a carried-forward row looks like when it was never published to begin with -
