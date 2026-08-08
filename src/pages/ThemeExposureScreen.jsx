@@ -7,6 +7,7 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import InfoTag from '../components/InfoTag.jsx'
+import MobileVirtualList from '../components/MobileVirtualList.jsx'
 
 const SOURCE_LABEL = {
   published_leader: 'Published leader',
@@ -14,44 +15,42 @@ const SOURCE_LABEL = {
   sector_peer: 'Sector-connected',
 }
 
+// `.research-table` is hidden outright below 900px (see global.css) in favor of this card
+// list - without it, this screen would render nothing at all on a phone.
+function ThemeCard({ row, index, onOpen }) {
+  return <article className="research-mobile-card" key={row.ticker}>
+    <div className="research-card-head">
+      <span className="rank-badge">#{index + 1}</span>
+      <CompanyLogo company={row} size={42} />
+      <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+      <span className="mobile-score">{row.opportunity_score ?? '–'}<small>opportunity</small></span>
+    </div>
+    <div className="research-card-badges">
+      {row.stance && <Tier label={row.stance} />}
+      {row.candidate_source && <span className="chip">{SOURCE_LABEL[row.candidate_source] || row.candidate_source}</span>}
+      {!row.eligible && <span className="chip">Not eligible</span>}
+    </div>
+    <dl className="research-card-metrics">
+      <div><dt>Exposure</dt><dd>{row.theme_exposure_score ?? '–'}</dd></div>
+      <div><dt>Sector</dt><dd>{row.sector || '–'}</dd></div>
+      <div><dt>Leading signals</dt><dd>{(row.leading_signals_fired || []).length || '–'}</dd></div>
+    </dl>
+    <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
+  </article>
+}
+
 function ThemeTable({ rows, onOpen }) {
-  return <div className="research-table card"><table>
+  return <>
+    <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={250}
+      renderItem={(row, index) => <ThemeCard row={row} index={index} onOpen={onOpen} />} />
+    <div className="research-table card"><table>
     <thead><tr>
       <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th>
       <th scope="col">Research rating</th>
-      <th scope="col" className="num">Exposure
-        <InfoTag label="Exposure" align="right">
-          <strong>Exposure</strong>
-          <p>0–100. How exposed this company is to the theme, from filing evidence (segment revenue,
-            keyword density in its own 10-K language, supply-chain ties to confirmed spenders) - never
-            from price action. See /screens/themes' page intro for the full guardrail.</p>
-        </InfoTag>
-      </th>
-      <th scope="col" className="num">Opportunity
-        <InfoTag label="Opportunity" align="right">
-          <strong>Opportunity</strong>
-          <p>Exposure × business quality × how cheap the stock still is. Ranks names that combine real
-            exposure with a business that holds up and a price that has not already run - not just the
-            purest-play, most expensive name in the theme.</p>
-        </InfoTag>
-      </th>
-      <th scope="col">Leading signals
-        <InfoTag label="Leading signals" align="right">
-          <strong>Leading signals</strong>
-          <p>How many "leading" signals fired - evidence of what a company is building (e.g. rising
-            self-description of the theme in its own filings), as opposed to lagging evidence like
-            historical segment revenue. At least one leading signal is required for a name to count as
-            eligible.</p>
-        </InfoTag>
-      </th>
-      <th scope="col">Eligible
-        <InfoTag label="Eligible" align="right">
-          <strong>Eligible</strong>
-          <p>"No" means this name already trades in the top valuation decile of its sector, or no
-            leading signal confirmed the exposure - real exposure, but flagged rather than promoted, per
-            the guardrail against buying whatever has already run.</p>
-        </InfoTag>
-      </th>
+      <th scope="col" className="num">Exposure</th>
+      <th scope="col" className="num">Opportunity</th>
+      <th scope="col">Leading signals</th>
+      <th scope="col">Eligible</th>
       <th scope="col"><span className="sr-only">Open</span></th>
     </tr></thead>
     <tbody>{rows.map((row, index) => <tr key={row.ticker}>
@@ -69,6 +68,7 @@ function ThemeTable({ rows, onOpen }) {
       <td><button className="icon-button" onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
     </tr>)}</tbody>
   </table></div>
+  </>
 }
 
 export default function ThemeExposureScreen() {
@@ -116,7 +116,25 @@ export default function ThemeExposureScreen() {
 
         return <section className="card theme-exposure-panel" key={theme.id}>
           <header>
-            <h2>{theme.display_name}</h2>
+            <h2>{theme.display_name}
+              <InfoTag label="What the columns mean">
+                <strong>Exposure</strong>
+                <p>0–100. How exposed this company is to the theme, from filing evidence (segment
+                  revenue, rising keyword density in its own 10-K language, supply-chain ties to
+                  confirmed spenders) - never from price action.</p>
+                <strong>Opportunity</strong>
+                <p>Exposure × business quality × how cheap the stock still is - a name combining real
+                  exposure with a business that holds up and a price that has not already run, not just
+                  the purest-play, most expensive name in the theme.</p>
+                <strong>Leading signals</strong>
+                <p>How many "leading" signals fired - evidence of what a company is building, as opposed
+                  to lagging evidence like historical segment revenue. At least one is required to be
+                  eligible.</p>
+                <strong>Eligible</strong>
+                <p>"No" means the name already trades in the top valuation decile of its sector, or no
+                  leading signal confirmed the exposure - real exposure, flagged rather than promoted.</p>
+              </InfoTag>
+            </h2>
             <p>{theme.thesis}</p>
           </header>
 
