@@ -156,6 +156,29 @@ jobs:
         # Costs one extra options-chain request per ticker on top of what fetch_advisor.py
         # already pulled; a Yahoo hiccup here shouldn't block the rest of the refresh.
         run: python pipeline/build_options_screen.py || echo "::warning::Options screen build failed; keeping previous options.json"
+      - name: Build covered-call screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Each of these six strategy screens costs its own options-chain request per ticker
+        # on top of the multi-day options screen above - left opt-in (ENABLE_*_SCREEN unset
+        # here) same as ENABLE_OPTIONS_VOLATILITY in fetch_advisor.py, so six more full sweeps
+        # of the universe don't silently multiply this job's Yahoo request volume and runtime.
+        # Set the matching env var below to enable one on the schedule.
+        run: python pipeline/build_covered_call_screen.py || echo "::warning::Covered-call screen build failed; keeping previous covered-calls.json"
+      - name: Build cash-secured-put screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_cash_secured_put_screen.py || echo "::warning::Cash-secured-put screen build failed; keeping previous cash-secured-puts.json"
+      - name: Build protective-put screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_protective_put_screen.py || echo "::warning::Protective-put screen build failed; keeping previous protective-puts.json"
+      - name: Build collar screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_collar_screen.py || echo "::warning::Collar screen build failed; keeping previous collars.json"
+      - name: Build vertical-spread screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_vertical_spread_screen.py || echo "::warning::Vertical-spread screen build failed; keeping previous vertical-spreads.json"
+      - name: Build advanced-strategies screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_advanced_options_screen.py || echo "::warning::Advanced-strategies screen build failed; keeping previous advanced-strategies.json"
       - name: Fetch ETF growth screen
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here

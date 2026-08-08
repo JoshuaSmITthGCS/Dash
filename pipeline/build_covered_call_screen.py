@@ -1,17 +1,21 @@
-"""Publishes the "Best multi-day options" research screen.
+"""Publishes the "Covered call" research screen.
 
-For every ticker in the already-published advisor universe, pulls the nearest option
-expiration inside a multi-day window (2-45 days out - excludes 0DTE/1DTE plays at one
-end and LEAPS at the other), picks the most liquid near-the-money contract on the side
-(call above a falling 20-day trend gets a put bias, calls otherwise) implied by recent
-price trend, and ranks tickers by implied/realized volatility value, contract liquidity,
-and trend strength.
+For every ticker in the already-published advisor universe, assumes a long 100-share
+position and picks the best out-of-the-money call to sell against it (the standard
+"30-delta call" monthly-income convention: high enough premium to be worth selling,
+low enough assignment odds that the position usually isn't called away), then ranks
+tickers by annualized premium yield, contract liquidity, and downside cushion.
 
-Options-chain data is opt-in (ENABLE_MULTIDAY_OPTIONS_SCREEN=1): each ticker costs an
-extra options-chain request on top of what fetch_advisor.py already pulls, the same
-tradeoff fetch_advisor.py's own ENABLE_OPTIONS_VOLATILITY flag makes. This is a research
-screen, not a trade instruction or order-routing feature - nothing in this codebase
-places option orders or talks to a brokerage.
+The expiration window here (15-45 days, targeting 30) is deliberately different from
+build_options_screen.py's 2-45/14 window: that screen picks a near-the-money contract
+for a short directional bet, while this one is picking a monthly income-selling
+expiration against a held position.
+
+Options-chain data is opt-in (ENABLE_COVERED_CALL_SCREEN=1): each ticker costs an extra
+options-chain request on top of what fetch_advisor.py already pulls, the same tradeoff
+fetch_advisor.py's own ENABLE_OPTIONS_VOLATILITY flag makes. This is a research screen,
+not a trade instruction or order-routing feature - nothing in this codebase places
+option orders or talks to a brokerage.
 """
 
 import os
@@ -20,23 +24,17 @@ from datetime import datetime, timezone
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
-                            select_contract, trend_20d)
-from options_common import select_expiration as _select_expiration
+                            select_by_target_delta, select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
-MIN_DAYS_TO_EXPIRATION = 2
+MIN_DAYS_TO_EXPIRATION = 15
 MAX_DAYS_TO_EXPIRATION = 45
-TARGET_DAYS_TO_EXPIRATION = 14
+TARGET_DAYS_TO_EXPIRATION = 30
+TARGET_DELTA = 0.30
 MINIMUM_HISTORY_SESSIONS = 21
 
-WEIGHTS = {"iv_value": .35, "liquidity": .35, "trend_strength": .30}
-
-
-def select_expiration(expirations, as_of=None):
-    """Nearest expiration to TARGET_DAYS_TO_EXPIRATION inside this screen's window."""
-    return _select_expiration(expirations, MIN_DAYS_TO_EXPIRATION, MAX_DAYS_TO_EXPIRATION,
-                              TARGET_DAYS_TO_EXPIRATION, as_of)
+WEIGHTS = {"annualized_yield": .45, "liquidity": .30, "cushion": .25}
 
 
 def build_row(entry, yf, as_of=None):
@@ -49,8 +47,8 @@ def build_row(entry, yf, as_of=None):
     if len(closes) < MINIMUM_HISTORY_SESSIONS:
         return None
     price = closes[-1]
-    trend = trend_20d(closes)
     realized = realized_volatility_20d(closes)
+    trend = trend_20d(closes)
 
     try:
         ticker_obj = yf.Ticker(ticker)
@@ -58,22 +56,27 @@ def build_row(entry, yf, as_of=None):
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{ticker}: options unavailable ({type(exc).__name__})")
         return None
-    expiration, dte = select_expiration(expirations, as_of)
+    expiration, dte = select_expiration(expirations, MIN_DAYS_TO_EXPIRATION, MAX_DAYS_TO_EXPIRATION,
+                                        TARGET_DAYS_TO_EXPIRATION, as_of)
     if expiration is None:
         return None
 
-    option_type = "put" if (trend or 0) < 0 else "call"
     try:
         chain = ticker_obj.option_chain(expiration)
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{ticker}: option chain unavailable ({type(exc).__name__})")
         return None
-    contract = select_contract(chain.puts if option_type == "put" else chain.calls, price)
-    if contract is None:
+    call = select_by_target_delta(chain.calls, price, dte, side="call", target_delta=TARGET_DELTA)
+    if call is None:
         return None
 
-    iv_rv_ratio = (contract["implied_volatility"] / realized
-                   if contract["implied_volatility"] and realized else None)
+    premium = call["mid"]
+    breakeven = price - premium
+    max_return_if_assigned_pct = ((call["strike"] - price) + premium) / price
+    annualized_yield = (premium / price) * (365 / dte)
+    probability_assigned = call.get("delta")
+    downside_cushion_pct = premium / price
+
     group_id, group_label = peer_group(entry)
     return {
         "ticker": ticker, "peer_group": group_id, "peer_group_label": group_label,
@@ -82,13 +85,20 @@ def build_row(entry, yf, as_of=None):
         "confidence": entry.get("confidence"),
         "trend_20d": round(trend, 4) if trend is not None else None,
         "realized_volatility_20d": round(realized, 4) if realized is not None else None,
-        "option_type": option_type, "expiration": expiration, "days_to_expiration": dte,
-        "implied_realized_vol_ratio": round(iv_rv_ratio, 4) if iv_rv_ratio is not None else None,
-        "contract": contract,
+        "expiration": expiration, "days_to_expiration": dte,
+        "capital_required": price * 100,
+        "call": call,
+        "metrics": {
+            "premium": round(premium, 4), "breakeven": round(breakeven, 4),
+            "annualized_yield": round(annualized_yield, 4),
+            "max_return_if_assigned_pct": round(max_return_if_assigned_pct, 4),
+            "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
+            "downside_cushion_pct": round(downside_cushion_pct, 4),
+        },
         "factors": {
-            "iv_value": -iv_rv_ratio if iv_rv_ratio is not None else None,
-            "liquidity": liquidity_factor(contract),
-            "trend_strength": abs(trend) if trend is not None else None,
+            "annualized_yield": annualized_yield,
+            "liquidity": liquidity_factor(call),
+            "cushion": downside_cushion_pct,
         },
     }
 
@@ -127,46 +137,44 @@ def score_rows(rows, config=None):
 
 
 def to_result(rank, row):
-    contract = row.get("contract") or {}
+    call = row.get("call") or {}
     return {
         "rank": rank, "ticker": row["ticker"], "eligibility": row["eligibility"],
         "sector": row.get("sector"), "peer_group": row.get("peer_group_label") or row.get("peer_group"),
         "percentile": row.get("percentile"), "score": row.get("score"),
         "structural_score": row.get("structural_score"), "confidence": row.get("confidence"),
         "price": row.get("price"), "trend_20d": row.get("trend_20d"),
-        "option_type": row.get("option_type"), "expiration": row.get("expiration"),
-        "days_to_expiration": row.get("days_to_expiration"),
-        "strike": contract.get("strike"), "bid": contract.get("bid"), "ask": contract.get("ask"),
-        "mid": contract.get("mid"), "spread_pct": contract.get("spread_pct"),
-        "implied_volatility": contract.get("implied_volatility"),
-        "realized_volatility_20d": row.get("realized_volatility_20d"),
-        "implied_realized_vol_ratio": row.get("implied_realized_vol_ratio"),
-        "open_interest": contract.get("open_interest"), "volume": contract.get("volume"),
-        "moneyness": contract.get("moneyness"),
+        "expiration": row.get("expiration"), "days_to_expiration": row.get("days_to_expiration"),
+        "capital_required": row.get("capital_required"),
+        "legs": [{"action": "sell", "option_type": "call", "strike": call.get("strike"),
+                  "bid": call.get("bid"), "ask": call.get("ask"), "mid": call.get("mid"),
+                  "spread_pct": call.get("spread_pct"), "implied_volatility": call.get("implied_volatility"),
+                  "open_interest": call.get("open_interest"), "delta": call.get("delta")}],
+        "metrics": row.get("metrics", {}),
         "reason_codes": row.get("reason_codes", []),
     }
 
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.0.0",
+        "schema_version": "1.0.0", "model_version": "covered-call-v1.0.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
 
 
 def run(as_of=None):
-    if os.getenv("ENABLE_MULTIDAY_OPTIONS_SCREEN", "").lower() not in {"1", "true", "yes"}:
-        LOG.info("Multi-day options screen: opt-in flag not set, skipping "
-                 "(set ENABLE_MULTIDAY_OPTIONS_SCREEN=1)")
+    if os.getenv("ENABLE_COVERED_CALL_SCREEN", "").lower() not in {"1", "true", "yes"}:
+        LOG.info("Covered call screen: opt-in flag not set, skipping "
+                 "(set ENABLE_COVERED_CALL_SCREEN=1)")
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
-        LOG.warn("Multi-day options screen: no published universe to score, skipping")
+        LOG.warn("Covered call screen: no published universe to score, skipping")
         result = unavailable("NO_PUBLISHED_UNIVERSE", generated_at)
-        save_json("screens/options.json", result)
+        save_json("screens/covered-calls.json", result)
         return result
 
     try:
@@ -175,27 +183,28 @@ def run(as_of=None):
         yf = None
     if yf is None:
         result = unavailable("YFINANCE_UNAVAILABLE", generated_at)
-        save_json("screens/options.json", result)
+        save_json("screens/covered-calls.json", result)
         return result
 
     rows = build_rows(universe, yf, as_of)
     if not rows:
         result = unavailable("NO_QUALIFYING_CONTRACTS", generated_at)
-        save_json("screens/options.json", result)
+        save_json("screens/covered-calls.json", result)
         return result
 
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.0.0",
+        "schema_version": "1.0.0", "model_version": "covered-call-v1.0.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
-                   "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION},
+                   "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION,
+                   "target_delta": TARGET_DELTA},
         "results": results,
     }
-    save_json("screens/options.json", result)
-    LOG.info(f"Multi-day options screen: scored {len(results)} tickers "
+    save_json("screens/covered-calls.json", result)
+    LOG.info(f"Covered call screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
     return result
 

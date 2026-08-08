@@ -2,7 +2,7 @@
 
 Generated from live config and source on 2026-08-08
 
-Source commit: `dcb7ffa`
+Source commit: `7b389e2`
 
 Application model: `3.2.0`
 
@@ -31,6 +31,12 @@ The Home route is eagerly bundled. Other routes and the stock detail sheet load 
 - `/planning`: Retirement and goal probability simulator with live levers, fan chart, and sequence-risk lesson.
 - `/screens/fast-growth`: Application route.
 - `/screens/options`: Application route.
+- `/screens/covered-call`: Application route.
+- `/screens/cash-secured-put`: Application route.
+- `/screens/protective-put`: Application route.
+- `/screens/collar`: Application route.
+- `/screens/vertical-spread`: Application route.
+- `/screens/advanced-strategies`: Application route.
 - `/screens/momentum`: Monthly skip-month momentum research screen.
 - `/screens/quality-value`: Quality at multi-year valuation lows.
 - `/screens/earnings`: Point-in-time earnings timeliness.

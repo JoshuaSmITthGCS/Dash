@@ -1,0 +1,327 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "build_cash_secured_put_screen-fixture",
+  "config_version": "screens-v1.0.0",
+  "generated_at": "2026-08-08T19:31:08.352885+00:00",
+  "status": "success",
+  "window": {
+    "min_days_to_expiration": 15,
+    "max_days_to_expiration": 45,
+    "target_days_to_expiration": 30,
+    "target_delta": 0.3
+  },
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "HIG",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Diversified insurers",
+      "percentile": 100.0,
+      "score": 0.1743,
+      "structural_score": 83.6,
+      "confidence": 0.85,
+      "price": 118.1,
+      "trend_20d": 0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 11338.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 113.38,
+          "bid": 2.8,
+          "ask": 2.97,
+          "mid": 2.885,
+          "spread_pct": 0.0589,
+          "implied_volatility": 0.24,
+          "open_interest": 709,
+          "delta": -0.2653
+        }
+      ],
+      "metrics": {
+        "premium": 2.885,
+        "collateral": 11338.0,
+        "effective_cost_basis": 110.495,
+        "annualized_yield": 0.3096,
+        "probability_otm": 0.7117,
+        "probability_assigned": 0.2883
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 2,
+      "ticker": "DECK",
+      "eligibility": true,
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "percentile": 85.71,
+      "score": 0.1106,
+      "structural_score": 82.8,
+      "confidence": 0.89,
+      "price": 178.6,
+      "trend_20d": -0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 16788.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 167.88,
+          "bid": 6.8,
+          "ask": 7.22,
+          "mid": 7.01,
+          "spread_pct": 0.0599,
+          "implied_volatility": 0.41,
+          "open_interest": 668,
+          "delta": -0.2791
+        }
+      ],
+      "metrics": {
+        "premium": 7.01,
+        "collateral": 16788.0,
+        "effective_cost_basis": 160.87,
+        "annualized_yield": 0.508,
+        "probability_otm": 0.68,
+        "probability_assigned": 0.32
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 3,
+      "ticker": "GMED",
+      "eligibility": true,
+      "sector": "Healthcare",
+      "peer_group": "Healthcare",
+      "percentile": 71.43,
+      "score": 0.0968,
+      "structural_score": 83.5,
+      "confidence": 0.89,
+      "price": 92.75,
+      "trend_20d": 0.0027,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 8718.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 87.18,
+          "bid": 3.27,
+          "ask": 3.48,
+          "mid": 3.375,
+          "spread_pct": 0.0622,
+          "implied_volatility": 0.38,
+          "open_interest": 668,
+          "delta": -0.2667
+        }
+      ],
+      "metrics": {
+        "premium": 3.375,
+        "collateral": 8718.0,
+        "effective_cost_basis": 83.805,
+        "annualized_yield": 0.471,
+        "probability_otm": 0.6964,
+        "probability_assigned": 0.3036
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 4,
+      "ticker": "LOPE",
+      "eligibility": true,
+      "sector": "Consumer Defensive",
+      "peer_group": "Consumer Defensive",
+      "percentile": 57.14,
+      "score": 0.0006,
+      "structural_score": 81.7,
+      "confidence": 0.88,
+      "price": 161.2,
+      "trend_20d": 0.0006,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 15475.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 154.75,
+          "bid": 3.5,
+          "ask": 3.72,
+          "mid": 3.61,
+          "spread_pct": 0.0609,
+          "implied_volatility": 0.22,
+          "open_interest": 709,
+          "delta": -0.2486
+        }
+      ],
+      "metrics": {
+        "premium": 3.61,
+        "collateral": 15475.0,
+        "effective_cost_basis": 151.14,
+        "annualized_yield": 0.2838,
+        "probability_otm": 0.731,
+        "probability_assigned": 0.269
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 5,
+      "ticker": "THG",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 42.86,
+      "score": -0.0268,
+      "structural_score": 86.0,
+      "confidence": 0.88,
+      "price": 245.3,
+      "trend_20d": 0.0022,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 23549.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 235.49,
+          "bid": 6.78,
+          "ask": 7.2,
+          "mid": 6.99,
+          "spread_pct": 0.0601,
+          "implied_volatility": 0.28,
+          "open_interest": 709,
+          "delta": -0.2917
+        }
+      ],
+      "metrics": {
+        "premium": 6.99,
+        "collateral": 23549.0,
+        "effective_cost_basis": 228.5,
+        "annualized_yield": 0.3611,
+        "probability_otm": 0.6802,
+        "probability_assigned": 0.3198
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 6,
+      "ticker": "SIGI",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 28.57,
+      "score": -0.054,
+      "structural_score": 81.0,
+      "confidence": 0.88,
+      "price": 88.9,
+      "trend_20d": -0.0014,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 8534.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 85.34,
+          "bid": 2.63,
+          "ask": 2.79,
+          "mid": 2.71,
+          "spread_pct": 0.059,
+          "implied_volatility": 0.3,
+          "open_interest": 709,
+          "delta": -0.3022
+        }
+      ],
+      "metrics": {
+        "premium": 2.71,
+        "collateral": 8534.0,
+        "effective_cost_basis": 82.63,
+        "annualized_yield": 0.3864,
+        "probability_otm": 0.6672,
+        "probability_assigned": 0.3328
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 7,
+      "ticker": "NEM",
+      "eligibility": true,
+      "sector": "Basic Materials",
+      "peer_group": "Basic Materials",
+      "percentile": 14.29,
+      "score": -0.0956,
+      "structural_score": 84.3,
+      "confidence": 0.89,
+      "price": 68.4,
+      "trend_20d": -0.0017,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 6566.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 65.66,
+          "bid": 2.23,
+          "ask": 2.36,
+          "mid": 2.295,
+          "spread_pct": 0.0566,
+          "implied_volatility": 0.33,
+          "open_interest": 709,
+          "delta": -0.3158
+        }
+      ],
+      "metrics": {
+        "premium": 2.295,
+        "collateral": 6566.0,
+        "effective_cost_basis": 63.365,
+        "annualized_yield": 0.4253,
+        "probability_otm": 0.6498,
+        "probability_assigned": 0.3502
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 8,
+      "ticker": "CRUS",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 0.0,
+      "score": -0.2059,
+      "structural_score": 85.7,
+      "confidence": 0.89,
+      "price": 132.8,
+      "trend_20d": 0.0038,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 12483.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 124.83,
+          "bid": 5.68,
+          "ask": 6.03,
+          "mid": 5.855,
+          "spread_pct": 0.0598,
+          "implied_volatility": 0.46,
+          "open_interest": 668,
+          "delta": -0.2962
+        }
+      ],
+      "metrics": {
+        "premium": 5.855,
+        "collateral": 12483.0,
+        "effective_cost_basis": 118.975,
+        "annualized_yield": 0.5707,
+        "probability_otm": 0.6567,
+        "probability_assigned": 0.3433
+      },
+      "reason_codes": []
+    }
+  ]
+}

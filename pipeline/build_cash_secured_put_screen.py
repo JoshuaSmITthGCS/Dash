@@ -1,17 +1,16 @@
-"""Publishes the "Best multi-day options" research screen.
+"""Publishes the "Cash-secured put" research screen.
 
-For every ticker in the already-published advisor universe, pulls the nearest option
-expiration inside a multi-day window (2-45 days out - excludes 0DTE/1DTE plays at one
-end and LEAPS at the other), picks the most liquid near-the-money contract on the side
-(call above a falling 20-day trend gets a put bias, calls otherwise) implied by recent
-price trend, and ranks tickers by implied/realized volatility value, contract liquidity,
-and trend strength.
+For every ticker in the already-published advisor universe, sells an out-of-the-money put
+collateralized with cash (a "cash-secured put") near a 30-delta strike on a monthly-income
+expiration window (15-45 days out), and ranks tickers by annualized yield on the collateral,
+probability the put expires worthless (premium kept, no assignment), and contract liquidity.
+This is the classic "sell puts on stocks you wouldn't mind owning at a discount" income idea.
 
-Options-chain data is opt-in (ENABLE_MULTIDAY_OPTIONS_SCREEN=1): each ticker costs an
-extra options-chain request on top of what fetch_advisor.py already pulls, the same
-tradeoff fetch_advisor.py's own ENABLE_OPTIONS_VOLATILITY flag makes. This is a research
-screen, not a trade instruction or order-routing feature - nothing in this codebase
-places option orders or talks to a brokerage.
+Options-chain data is opt-in (ENABLE_CASH_SECURED_PUT_SCREEN=1): each ticker costs an extra
+options-chain request on top of what fetch_advisor.py already pulls, the same tradeoff
+fetch_advisor.py's own ENABLE_OPTIONS_VOLATILITY flag makes. This is a research screen, not a
+trade instruction or order-routing feature - nothing in this codebase places option orders,
+posts collateral, or talks to a brokerage.
 """
 
 import os
@@ -19,24 +18,19 @@ from datetime import datetime, timezone
 
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
-                            select_contract, trend_20d)
-from options_common import select_expiration as _select_expiration
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, probability_above,
+                            realized_volatility_20d, select_by_target_delta, select_expiration,
+                            trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
-MIN_DAYS_TO_EXPIRATION = 2
+MIN_DAYS_TO_EXPIRATION = 15
 MAX_DAYS_TO_EXPIRATION = 45
-TARGET_DAYS_TO_EXPIRATION = 14
+TARGET_DAYS_TO_EXPIRATION = 30
+TARGET_DELTA = 0.30
 MINIMUM_HISTORY_SESSIONS = 21
 
-WEIGHTS = {"iv_value": .35, "liquidity": .35, "trend_strength": .30}
-
-
-def select_expiration(expirations, as_of=None):
-    """Nearest expiration to TARGET_DAYS_TO_EXPIRATION inside this screen's window."""
-    return _select_expiration(expirations, MIN_DAYS_TO_EXPIRATION, MAX_DAYS_TO_EXPIRATION,
-                              TARGET_DAYS_TO_EXPIRATION, as_of)
+WEIGHTS = {"annualized_yield": .40, "probability_otm": .30, "liquidity": .30}
 
 
 def build_row(entry, yf, as_of=None):
@@ -49,8 +43,8 @@ def build_row(entry, yf, as_of=None):
     if len(closes) < MINIMUM_HISTORY_SESSIONS:
         return None
     price = closes[-1]
-    trend = trend_20d(closes)
     realized = realized_volatility_20d(closes)
+    trend = trend_20d(closes)
 
     try:
         ticker_obj = yf.Ticker(ticker)
@@ -58,22 +52,28 @@ def build_row(entry, yf, as_of=None):
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{ticker}: options unavailable ({type(exc).__name__})")
         return None
-    expiration, dte = select_expiration(expirations, as_of)
+    expiration, dte = select_expiration(expirations, MIN_DAYS_TO_EXPIRATION, MAX_DAYS_TO_EXPIRATION,
+                                        TARGET_DAYS_TO_EXPIRATION, as_of)
     if expiration is None:
         return None
 
-    option_type = "put" if (trend or 0) < 0 else "call"
     try:
         chain = ticker_obj.option_chain(expiration)
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{ticker}: option chain unavailable ({type(exc).__name__})")
         return None
-    contract = select_contract(chain.puts if option_type == "put" else chain.calls, price)
-    if contract is None:
+    put = select_by_target_delta(chain.puts, price, dte, side="put", target_delta=TARGET_DELTA)
+    if put is None:
         return None
 
-    iv_rv_ratio = (contract["implied_volatility"] / realized
-                   if contract["implied_volatility"] and realized else None)
+    premium = put["mid"]
+    collateral = put["strike"] * 100
+    effective_cost_basis = put["strike"] - premium
+    annualized_yield = (premium / put["strike"]) * (365 / dte)
+    probability_otm = (probability_above(price, put["strike"], put["implied_volatility"], dte)
+                       if put["implied_volatility"] is not None else None)
+    probability_assigned = None if probability_otm is None else (1 - probability_otm)
+
     group_id, group_label = peer_group(entry)
     return {
         "ticker": ticker, "peer_group": group_id, "peer_group_label": group_label,
@@ -82,13 +82,20 @@ def build_row(entry, yf, as_of=None):
         "confidence": entry.get("confidence"),
         "trend_20d": round(trend, 4) if trend is not None else None,
         "realized_volatility_20d": round(realized, 4) if realized is not None else None,
-        "option_type": option_type, "expiration": expiration, "days_to_expiration": dte,
-        "implied_realized_vol_ratio": round(iv_rv_ratio, 4) if iv_rv_ratio is not None else None,
-        "contract": contract,
+        "expiration": expiration, "days_to_expiration": dte,
+        "capital_required": collateral,
+        "put": put,
+        "metrics": {
+            "premium": round(premium, 4), "collateral": round(collateral, 2),
+            "effective_cost_basis": round(effective_cost_basis, 4),
+            "annualized_yield": round(annualized_yield, 4),
+            "probability_otm": round(probability_otm, 4) if probability_otm is not None else None,
+            "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
+        },
         "factors": {
-            "iv_value": -iv_rv_ratio if iv_rv_ratio is not None else None,
-            "liquidity": liquidity_factor(contract),
-            "trend_strength": abs(trend) if trend is not None else None,
+            "annualized_yield": annualized_yield,
+            "probability_otm": probability_otm,
+            "liquidity": liquidity_factor(put),
         },
     }
 
@@ -127,46 +134,44 @@ def score_rows(rows, config=None):
 
 
 def to_result(rank, row):
-    contract = row.get("contract") or {}
+    put = row.get("put") or {}
     return {
         "rank": rank, "ticker": row["ticker"], "eligibility": row["eligibility"],
         "sector": row.get("sector"), "peer_group": row.get("peer_group_label") or row.get("peer_group"),
         "percentile": row.get("percentile"), "score": row.get("score"),
         "structural_score": row.get("structural_score"), "confidence": row.get("confidence"),
         "price": row.get("price"), "trend_20d": row.get("trend_20d"),
-        "option_type": row.get("option_type"), "expiration": row.get("expiration"),
-        "days_to_expiration": row.get("days_to_expiration"),
-        "strike": contract.get("strike"), "bid": contract.get("bid"), "ask": contract.get("ask"),
-        "mid": contract.get("mid"), "spread_pct": contract.get("spread_pct"),
-        "implied_volatility": contract.get("implied_volatility"),
-        "realized_volatility_20d": row.get("realized_volatility_20d"),
-        "implied_realized_vol_ratio": row.get("implied_realized_vol_ratio"),
-        "open_interest": contract.get("open_interest"), "volume": contract.get("volume"),
-        "moneyness": contract.get("moneyness"),
+        "expiration": row.get("expiration"), "days_to_expiration": row.get("days_to_expiration"),
+        "capital_required": row.get("capital_required"),
+        "legs": [{"action": "sell", "option_type": "put", "strike": put.get("strike"),
+                  "bid": put.get("bid"), "ask": put.get("ask"), "mid": put.get("mid"),
+                  "spread_pct": put.get("spread_pct"), "implied_volatility": put.get("implied_volatility"),
+                  "open_interest": put.get("open_interest"), "delta": put.get("delta")}],
+        "metrics": row.get("metrics", {}),
         "reason_codes": row.get("reason_codes", []),
     }
 
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.0.0",
+        "schema_version": "1.0.0", "model_version": "cash-secured-put-v1.0.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
 
 
 def run(as_of=None):
-    if os.getenv("ENABLE_MULTIDAY_OPTIONS_SCREEN", "").lower() not in {"1", "true", "yes"}:
-        LOG.info("Multi-day options screen: opt-in flag not set, skipping "
-                 "(set ENABLE_MULTIDAY_OPTIONS_SCREEN=1)")
+    if os.getenv("ENABLE_CASH_SECURED_PUT_SCREEN", "").lower() not in {"1", "true", "yes"}:
+        LOG.info("Cash-secured put screen: opt-in flag not set, skipping "
+                 "(set ENABLE_CASH_SECURED_PUT_SCREEN=1)")
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
-        LOG.warn("Multi-day options screen: no published universe to score, skipping")
+        LOG.warn("Cash-secured put screen: no published universe to score, skipping")
         result = unavailable("NO_PUBLISHED_UNIVERSE", generated_at)
-        save_json("screens/options.json", result)
+        save_json("screens/cash-secured-puts.json", result)
         return result
 
     try:
@@ -175,27 +180,28 @@ def run(as_of=None):
         yf = None
     if yf is None:
         result = unavailable("YFINANCE_UNAVAILABLE", generated_at)
-        save_json("screens/options.json", result)
+        save_json("screens/cash-secured-puts.json", result)
         return result
 
     rows = build_rows(universe, yf, as_of)
     if not rows:
         result = unavailable("NO_QUALIFYING_CONTRACTS", generated_at)
-        save_json("screens/options.json", result)
+        save_json("screens/cash-secured-puts.json", result)
         return result
 
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.0.0",
+        "schema_version": "1.0.0", "model_version": "cash-secured-put-v1.0.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
-                   "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION},
+                   "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION,
+                   "target_delta": TARGET_DELTA},
         "results": results,
     }
-    save_json("screens/options.json", result)
-    LOG.info(f"Multi-day options screen: scored {len(results)} tickers "
+    save_json("screens/cash-secured-puts.json", result)
+    LOG.info(f"Cash-secured put screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
     return result
 
