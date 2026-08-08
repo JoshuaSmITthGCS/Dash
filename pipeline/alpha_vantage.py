@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import requests
 
-from common import HERE, LOG
+from common import HERE
 
 BASE_URL = "https://www.alphavantage.co/query"
 CACHE_DIR = os.path.join(HERE, "cache", "alpha_vantage")

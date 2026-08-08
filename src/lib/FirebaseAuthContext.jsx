@@ -14,6 +14,34 @@ import { auth, db } from './firebase'
 
 const AuthContext = createContext(null)
 
+// Interactive sign-in/sign-up must not spin forever on a flaky or offline connection - the
+// same principle already applied to the passive auth-state check below (see its comment).
+const AUTH_REQUEST_TIMEOUT_MS = 15000
+
+const AUTH_ERROR_MESSAGES = {
+  'auth/wrong-password': 'That password is incorrect.',
+  'auth/invalid-credential': 'That password is incorrect.',
+  'auth/user-not-found': "We couldn't find that account.",
+  'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+  'auth/network-request-failed': 'Check your connection and try again.',
+  'auth/weak-password': 'Password is too weak (min 6 characters).',
+  'auth/email-already-in-use': 'An account with that email already exists.',
+  'auth/invalid-email': 'That email address looks invalid.',
+}
+
+function describeAuthError(error) {
+  return AUTH_ERROR_MESSAGES[error?.code] || 'Something went wrong. Try again.'
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_resolve, reject) => {
+      window.setTimeout(() => reject({ code: 'auth/network-request-failed' }), ms)
+    }),
+  ])
+}
+
 // Family color themes (auto-assigned by display name)
 export const FAMILY_THEMES = {
   'Dad': {
@@ -99,7 +127,7 @@ export function AuthProvider({ children }) {
   // Sign up new user
   const signup = async (email, password, displayName) => {
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, password)
+      const result = await withTimeout(createUserWithEmailAndPassword(auth, email, password), AUTH_REQUEST_TIMEOUT_MS)
       await updateProfile(result.user, { displayName })
       const profile = await createUserProfile(result.user, displayName)
       setUserProfile(profile)
@@ -107,14 +135,14 @@ export function AuthProvider({ children }) {
       return { success: true, user: result.user }
     } catch (error) {
       console.error('Signup error:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: describeAuthError(error) }
     }
   }
 
   // Sign in existing user
   const login = async (email, password) => {
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password)
+      const result = await withTimeout(signInWithEmailAndPassword(auth, email, password), AUTH_REQUEST_TIMEOUT_MS)
       const profile = await loadUserProfile(result.user)
       if (profile) {
         setUserProfile(profile)
@@ -123,7 +151,7 @@ export function AuthProvider({ children }) {
       return { success: true, user: result.user }
     } catch (error) {
       console.error('Login error:', error)
-      return { success: false, error: error.message }
+      return { success: false, error: describeAuthError(error) }
     }
   }
 

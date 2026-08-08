@@ -11,9 +11,7 @@ Writes:
   politicians.json  (track-record leaderboard, refreshed weekly)
 """
 
-import json
 import os
-import sys
 from datetime import datetime, timezone, timedelta
 
 from common import (DATA_DIR, LOG, data_mode, load_json, load_store_json, save_json,
