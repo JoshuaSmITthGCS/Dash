@@ -18,6 +18,7 @@ import { allocateFunds } from '../lib/fundsAllocation.js'
 import { buildRatingContext, researchRating } from '../lib/researchRating.js'
 import { styleOf, currentStyleTilt, styleBoost } from '../lib/portfolioStyleTilt.js'
 import { currentSectorTilt, sectorOpportunity, sectorBoost } from '../lib/portfolioSectorTilt.js'
+import { buildValueGrowthContext, valueGrowthScore } from '../lib/valueGrowthScore.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 import { entryTiming } from '../lib/entryTiming.js'
 import { useAlerts } from '../lib/useAlerts.js'
@@ -52,6 +53,8 @@ const COLUMN_SORTS = {
     'How complete and reliable the underlying data was, not how attractive the company is. A high number means more inputs resolved. Only computed for fully published companies; each ranking model additionally reports its own mode-specific confidence over the inputs it actually reads.'],
   portfolioPct: ['% of my portfolio', (a, b) => (b.portfolioPct ?? -1) - (a.portfolioPct ?? -1),
     "How much of your current portfolio's value this position represents right now, from your held shares at today's price. Rows you don't hold read as 0% and sort to the bottom; requires a signed-in portfolio with at least one priced position."],
+  undervalued: ['Most undervalued (cheap + growth)', (a, b) => (b.valueGrowthScore ?? -1) - (a.valueGrowthScore ?? -1),
+    "Blends two peer-relative percentiles: how cheap it is against its own peers (sector valuation for stocks, cost score for ETFs) and how much growth the numbers show (published revenue growth where available, otherwise 12-1 price momentum for stocks or trailing 1-year return for ETFs, ranked against its own pool). Cheap alone or growing alone can rank near the top - this rewards having both."],
 }
 
 // Model descriptions are generated from the model registry so the text and the arithmetic
@@ -65,6 +68,42 @@ function modelDescription(key) {
     + 'Components a company cannot legitimately report are dropped and the remaining weights renormalized rather than scored as zero, so a business is never marked down for the shape of its balance sheet. '
     + 'Valuation and quality components are ranked against industry peers where the sample supports it, otherwise sector, otherwise the whole universe. '
     + `The score is then shrunk toward 50 by this model's own confidence, so a high reading resting on one thin input cannot outrank a well-evidenced lower one. Top ${MODEL_LIMIT} shown; the weights are frozen starting priors, not measured optima.`
+}
+
+/**
+ * One line per bucket: what it's ranked against, and - only when the planner actually
+ * nudged the weight for style or sector diversification, or the ticker is already held -
+ * the reason why. Silent when a nudge doesn't apply, rather than restating "not thin here"
+ * for every candidate; the reader only needs to know when something moved the weight.
+ */
+function bucketWhy({
+  bucket, rank, total, sortLabel, held,
+  styleAware, style, styleTilt,
+  sectorAware, sector, sectorTilt, sectorOpportunityMap, sectorCount,
+}) {
+  const parts = [`Ranked #${rank} of ${total} by ${(sortLabel || '').toLowerCase()} · score ${Math.round(bucket.score)}`]
+  if (styleAware && style) {
+    const label = style === 'short_term' ? 'short-term catalyst' : 'long-term'
+    const currentPct = style === 'short_term' ? styleTilt?.short_term : styleTilt?.long_term
+    if (finite(currentPct) && currentPct < 40) {
+      parts.push(`${label} pick – your holdings are only ${Math.round(currentPct)}% ${label}, weighted up here`)
+    } else if (finite(currentPct) && currentPct > 60) {
+      parts.push(`${label} pick – your holdings already lean ${label} (${Math.round(currentPct)}%), weighted down here`)
+    }
+  }
+  if (sectorAware && sector) {
+    const currentPct = sectorTilt?.get(sector) ?? 0
+    const target = 100 / (sectorCount || 1)
+    const opportunity = sectorOpportunityMap?.get(sector)
+    if (currentPct < target) {
+      const setup = finite(opportunity) ? (opportunity >= 55 ? 'a strong' : 'an average') : 'an unscored'
+      parts.push(`${sector} is only ${currentPct.toFixed(1)}% of your holdings with ${setup} growth/risk setup right now, weighted up`)
+    } else {
+      parts.push(`you're already ${currentPct.toFixed(1)}% in ${sector}, not prioritized here`)
+    }
+  }
+  parts.push(held ? 'already in your portfolio – adds to your existing position' : 'a new position for you')
+  return `${parts.join('. ')}.`
 }
 
 const SORTS = {
@@ -409,6 +448,12 @@ export default function Picks() {
   const [availableFunds, setAvailableFunds] = useState('')
   const [alertingTicker, setAlertingTicker] = useState('')
   const [alertStatuses, setAlertStatuses] = useState({})
+  // Bucket-planner-only, separate from the page's own "Bought & not bought" filter above -
+  // that filter also controls what the browsing list shows, and someone should be able to
+  // browse everything while still telling the planner "new positions only" for its split.
+  // Defaults on: double down is the more common ask, and it matches what the planner already
+  // did before this existed.
+  const [includeHeldInAllocation, setIncludeHeldInAllocation] = useState(true)
 
   // The published leaderboard (data.research, the top ~40 by fundamentals-first score) plus
   // the rest of the scored universe (data.screen_universe, lightweight rows with no price
@@ -469,14 +514,17 @@ export default function Picks() {
     () => [...positionValueByTicker.values()].reduce((sum, value) => sum + value, 0),
     [positionValueByTicker],
   )
-  // Percentile-based -5..+5 rating (src/lib/researchRating.js), built once per row set so
-  // every row rates against the same pool it was drawn from.
+  // Percentile-based -5..+5 rating (src/lib/researchRating.js) and the "most undervalued"
+  // cheap+growth blend (src/lib/valueGrowthScore.js), each built once per row set so every
+  // row rates against the same pool it was drawn from.
   const ratingContext = useMemo(() => buildRatingContext(research), [research])
+  const valueGrowthContext = useMemo(() => buildValueGrowthContext(research), [research])
   const researchWithMeta = useMemo(() => research.map((row) => ({
     ...row,
     portfolioPct: totalPortfolioValue > 0 ? ((positionValueByTicker.get(row.ticker) || 0) / totalPortfolioValue) * 100 : null,
     rating: researchRating(row, ratingContext),
-  })), [research, positionValueByTicker, totalPortfolioValue, ratingContext])
+    valueGrowthScore: valueGrowthScore(row, valueGrowthContext),
+  })), [research, positionValueByTicker, totalPortfolioValue, ratingContext, valueGrowthContext])
   const heldTickers = useMemo(() => new Set(positions.map((position) => String(position.ticker || '').toUpperCase())), [positions])
   const sectors = useMemo(() => [...new Set(research.map((row) => row.sector).filter(Boolean))].sort(), [research])
   // What the bucket planner needs to see the current book's long-term/short-term lean: the
@@ -544,6 +592,12 @@ export default function Picks() {
   // numbers dominate the bucket sizes regardless of actual conviction. Default view
   // allocates across stocks; switch the asset-type filter to ETFs to allocate across those.
   const allocationPool = assetType === 'etf' ? etfRows : stockRows
+  // "New stocks only" drops anything already held from the candidates before the split even
+  // runs, rather than after - a held ticker doesn't quietly take a smaller bucket, it isn't
+  // considered at all, so the full amount goes to names that would be new positions.
+  const allocationCandidates = includeHeldInAllocation
+    ? allocationPool
+    : allocationPool.filter((row) => !heldTickers.has(row.ticker))
   // Only nudge toward diversification on the plain, unfiltered stock split: under a strategy
   // lens the user has already picked a lane on purpose (Catalyst, Momentum...), and biasing
   // that choice back toward whatever the current book is thin on would fight the question
@@ -559,7 +613,7 @@ export default function Picks() {
   // multiplying rather than picking one - a candidate that is both the short-term catalyst
   // lane you're thin on AND in a sector you're thin on (with a decent risk/growth setup)
   // should get both nudges, not whichever one "wins".
-  const allocation = allocateFunds(allocationPool, Number(availableFunds), {
+  const allocation = allocateFunds(allocationCandidates, Number(availableFunds), {
     limit: 8,
     scoreOf: modelActive ? ((row) => row.modelScore?.score) : undefined,
     weightBoost: (styleAware || sectorAware)
@@ -567,15 +621,15 @@ export default function Picks() {
           * (sectorAware ? sectorBoost(sectorTilt, sectorOpportunityMap, row.sector, sectorCount) : 1))
       : undefined,
   })
-  const allocationRowByTicker = (styleAware || sectorAware)
-    ? new Map(allocationPool.map((candidate) => [candidate.ticker, candidate]))
-    : null
+  const allocationRowByTicker = new Map(allocationCandidates.map((candidate) => [candidate.ticker, candidate]))
   const allocationStyles = styleAware
     ? new Map(allocation.buckets.map((bucket) => [bucket.ticker, styleOf(stylePeerIndex, allocationRowByTicker.get(bucket.ticker))]))
     : null
   const allocationSectors = sectorAware
     ? new Map(allocation.buckets.map((bucket) => [bucket.ticker, allocationRowByTicker.get(bucket.ticker)?.sector]))
     : null
+  // Per-bucket "why", shown under each row - see the allocation-bucket-why render below.
+  const sortLabelForWhy = modelActive ? RANKING_MODELS[sort].label : SORTS[sort][0]
   // The three sectors carrying the least of the current book's value, for the planner note -
   // display only, the actual weighting also folds in each sector's opportunity score.
   const sectorGaps = sectorAware
@@ -672,10 +726,16 @@ export default function Picks() {
               value={availableFunds} onChange={(event) => setAvailableFunds(event.target.value)} />
           </label>
         </header>
+        <div className="settings-row allocation-planner-toggle">
+          <div><strong>Double down on positions I already own</strong><span>Off restricts the split to tickers you don't hold yet – new positions only. On (default), an already-held name can still win a bucket and add to what you have.</span></div>
+          <label className="switch compact-switch"><input type="checkbox" checked={includeHeldInAllocation}
+            onChange={(event) => setIncludeHeldInAllocation(event.target.checked)} /><span aria-hidden="true" /></label>
+        </div>
         <p className="allocation-planner-note">
           Weighted by {modelActive ? `${RANKING_MODELS[sort].label.toLowerCase()} model score` : 'published score'} against
-          the top {Math.min(allocationPool.length, 8)} {assetType === 'etf' ? 'ETFs' : 'stocks'} in
-          the current sort and filters. This is not an even split. A higher-scored {assetType === 'etf' ? 'fund' : 'company'} gets
+          the top {Math.min(allocationCandidates.length, 8)} {assetType === 'etf' ? 'ETFs' : 'stocks'} in
+          the current sort and filters{includeHeldInAllocation ? '' : ' that you don\'t already own'}. This is not an even split.
+          A higher-scored {assetType === 'etf' ? 'fund' : 'company'} gets
           a disproportionately larger bucket, the way a real allocation would. Stocks and ETFs are never weighted against each
           other here – they come from two different scoring models with different scales, so mixing them would let whichever
           model happens to produce larger numbers dominate the split.
@@ -698,7 +758,7 @@ export default function Picks() {
         )}
         {allocation.available ? (
           <div className="allocation-bucket-list">
-            {allocation.buckets.map((bucket) => (
+            {allocation.buckets.map((bucket, index) => (
               <div className="allocation-bucket-row" key={bucket.ticker}>
                 <div className="allocation-bucket-id">
                   <b>{bucket.ticker}</b>
@@ -715,6 +775,14 @@ export default function Picks() {
                   <strong>${bucket.amount.toFixed(2)}</strong>
                   <span>{bucket.weightPct.toFixed(1)}%{bucket.shares != null ? ` · ${bucket.shares.toFixed(4)} sh` : ''}</span>
                 </div>
+                <p className="allocation-bucket-why">
+                  {bucketWhy({
+                    bucket, rank: index + 1, total: allocationCandidates.length, sortLabel: sortLabelForWhy,
+                    held: heldTickers.has(bucket.ticker),
+                    styleAware, style: allocationStyles?.get(bucket.ticker), styleTilt,
+                    sectorAware, sector: allocationSectors?.get(bucket.ticker), sectorTilt, sectorOpportunityMap, sectorCount,
+                  })}
+                </p>
               </div>
             ))}
           </div>
@@ -737,7 +805,7 @@ export default function Picks() {
           ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
           : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
         : 'No companies match those filters.'} />}
-      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data confidence” and “% of my portfolio” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data confidence – it restates the same score on a smaller scale, not a separate opinion. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score. Rankings do not imply suitability or portfolio allocation.</div>
+      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data confidence”, “% of my portfolio” and “Most undervalued” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data confidence – it restates the same score on a smaller scale, not a separate opinion. “Most undervalued” blends how cheap a row is against its peers with how much growth the numbers show, each ranked against its own pool. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score; each bucket states why underneath it. The “double down” toggle above the split controls whether tickers you already hold can win a bucket at all. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )
