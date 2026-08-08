@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 17,
+  "refreshes_observed": 18,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -2357,6 +2357,34 @@
           ],
           "score_delta": 0.4,
           "confidence_delta": 0.0
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-08T01:22:27.667529+00:00",
+      "current_refresh": "advisor-2026-08-08T02:03:48.549724+00:00",
+      "shared_tickers": 874,
+      "rank_turnover": {
+        "top_40": 0.025,
+        "top_100": 0.025
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.01,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "DVN",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "ev_to_ebit",
+            "interest_coverage",
+            "return_on_invested_capital"
+          ],
+          "score_delta": -4.9,
+          "confidence_delta": -0.1
         }
       ]
     }
