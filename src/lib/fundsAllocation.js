@@ -10,7 +10,7 @@
 
 const finite = (value) => typeof value === 'number' && Number.isFinite(value)
 
-export function allocateFunds(rows, availableFunds, { limit = 8, power = 2, scoreOf } = {}) {
+export function allocateFunds(rows, availableFunds, { limit = 8, power = 2, scoreOf, weightBoost } = {}) {
   if (!finite(availableFunds) || availableFunds <= 0) {
     return { available: false, reason: 'Enter an available funds amount greater than $0.', buckets: [] }
   }
@@ -28,7 +28,11 @@ export function allocateFunds(rows, availableFunds, { limit = 8, power = 2, scor
     return { available: false, reason: 'No scored companies in the current view to allocate across.', buckets: [] }
   }
 
-  const weights = eligible.map((row) => scoreFor(row) ** power)
+  // `weightBoost` multiplies the score-based weight, so a lane the current portfolio is thin
+  // on (see src/lib/portfolioStyleTilt.js) gets a larger share of new money without ever
+  // letting a weak scorer outweigh a strong one in the other lane outright.
+  const boostFor = weightBoost || (() => 1)
+  const weights = eligible.map((row) => (scoreFor(row) ** power) * boostFor(row))
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0)
 
   const buckets = eligible.map((row, index) => {
@@ -44,6 +48,7 @@ export function allocateFunds(rows, availableFunds, { limit = 8, power = 2, scor
       amount,
       price,
       shares: price ? amount / price : null,
+      boost: weightBoost ? boostFor(row) : null,
     }
   })
 

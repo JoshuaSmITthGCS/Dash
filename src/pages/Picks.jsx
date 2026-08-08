@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
-import { Tier, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
+import { Tier, RatingBadge, MetricPills, Move, Loading, Empty } from '../components/Bits.jsx'
 import { ActionPill } from '../components/ActionGuidance.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
@@ -12,9 +12,12 @@ import InfoTag from '../components/InfoTag.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { rankBreakoutInProgress, rankMomentum, rankReversal } from '../lib/researchScreens.js'
 import {
-  RANKING_MODELS, isRankingModel, modelCoverage, modelReason, rankByModel,
+  RANKING_MODELS, isRankingModel, modelCoverage, modelReason, rankByModel, buildPeerIndex,
 } from '../lib/rankingModels.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
+import { buildRatingContext, researchRating } from '../lib/researchRating.js'
+import { styleOf, currentStyleTilt, styleBoost } from '../lib/portfolioStyleTilt.js'
+import { currentSectorTilt, sectorOpportunity, sectorBoost } from '../lib/portfolioSectorTilt.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 import { entryTiming } from '../lib/entryTiming.js'
 import { useAlerts } from '../lib/useAlerts.js'
@@ -47,6 +50,8 @@ const COLUMN_SORTS = {
     'Raw trailing 20-trading-day price return. Not a predictive score and not risk-adjusted - purely "what has the price done lately." Available for the full scored universe.'],
   confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
     'How complete and reliable the underlying data was, not how attractive the company is. A high number means more inputs resolved. Only computed for fully published companies; each ranking model additionally reports its own mode-specific confidence over the inputs it actually reads.'],
+  portfolioPct: ['% of my portfolio', (a, b) => (b.portfolioPct ?? -1) - (a.portfolioPct ?? -1),
+    "How much of your current portfolio's value this position represents right now, from your held shares at today's price. Rows you don't hold read as 0% and sort to the bottom; requires a signed-in portfolio with at least one priced position."],
 }
 
 // Model descriptions are generated from the model registry so the text and the arithmetic
@@ -283,6 +288,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
         <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
         <WatchlistToggleButton stock={row} size={18} />
         <span className="mobile-score">{row.score}<small>score</small></span>
+        <RatingBadge value={row.rating} title="-5 (worst) to +5 (best), a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), pulled toward 0 the less confident the underlying data is." />
       </div>
       <div className="research-card-badges">
         <Tier label={row.stance} />
@@ -297,6 +303,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
         <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</dd></div>
         <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} capsule /></dd></div>
         <div><dt>Data confidence</dt><dd>{finite(row.confidence) ? `${Math.round(row.confidence * 100)}%` : '–'}</dd></div>
+        <div><dt>% of my portfolio</dt><dd>{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</dd></div>
       </dl>
       <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
       <small className="as-of-line">{isLightData(row)
@@ -343,11 +350,12 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
       <div className="research-table card">
         <table>
           <thead><tr>
-            <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Research rating</th><th scope="col">Signal</th>
+            <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Stance</th><th scope="col">Rating</th><th scope="col">Signal</th>
             {modelActive && <th scope="col">Model score</th>}
             {modelActive && <th scope="col">Why it ranks here</th>}
             <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
-            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Timing</th><th scope="col">Portfolio</th>
+            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Timing</th>
+            <th scope="col" className="num">% of my portfolio</th><th scope="col">Portfolio</th>
             <th scope="col"><span className="sr-only">Watchlist</span></th><th scope="col"><span className="sr-only">Open</span></th>
           </tr></thead>
           <tbody>{rows.map((row, index) => (
@@ -355,7 +363,9 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
               <td className="rank">#{index + 1}</td>
               <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
               <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
-              <td><Tier label={row.stance} /></td><td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
+              <td><Tier label={row.stance} /></td>
+              <td><RatingBadge value={row.rating} title="-5 (worst) to +5 (best), a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), pulled toward 0 the less confident the underlying data is." /></td>
+              <td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
               {modelActive && <td className="mono num score-cell">{row.modelScore ? Math.round(row.modelScore.score) : '–'}</td>}
               {modelActive && <td className="lens-reason-cell">{modelReason(row) || '–'}</td>}
               <td className="mono num score-cell">{row.score}</td>
@@ -364,6 +374,7 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
               <td className="mono num">{finite(row.confidence) ? `${Math.round(row.confidence * 100)}%` : '–'}</td>
               <td><EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
                 alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} /></td>
+              <td className="mono num">{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</td>
               <td>{heldTickers.has(row.ticker)
                 ? <span className="holding-chip held">Bought</span>
                 : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => onBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>}</td>
@@ -439,8 +450,64 @@ export default function Picks() {
       ...(etfData?.etfs || []).map(normalizeEtf),
     ]
   }, [stockResearch, etfData])
+  // Each held ticker's current dollar value, from held shares (lots on the same ticker
+  // summed) at today's published/ETF price - the same computation Portfolio.jsx does for
+  // its own "Allocation" column, done here against this page's own row prices rather than
+  // pulling in that page's live-quote refresh.
+  const positionValueByTicker = useMemo(() => {
+    const priceByTicker = new Map(research.map((row) => [row.ticker, row.price]))
+    const totals = new Map()
+    for (const position of positions) {
+      const ticker = String(position.ticker || '').toUpperCase()
+      const price = priceByTicker.get(ticker)
+      if (!finite(price) || !finite(position.shares)) continue
+      totals.set(ticker, (totals.get(ticker) || 0) + position.shares * price)
+    }
+    return totals
+  }, [research, positions])
+  const totalPortfolioValue = useMemo(
+    () => [...positionValueByTicker.values()].reduce((sum, value) => sum + value, 0),
+    [positionValueByTicker],
+  )
+  // Percentile-based -5..+5 rating (src/lib/researchRating.js), built once per row set so
+  // every row rates against the same pool it was drawn from.
+  const ratingContext = useMemo(() => buildRatingContext(research), [research])
+  const researchWithMeta = useMemo(() => research.map((row) => ({
+    ...row,
+    portfolioPct: totalPortfolioValue > 0 ? ((positionValueByTicker.get(row.ticker) || 0) / totalPortfolioValue) * 100 : null,
+    rating: researchRating(row, ratingContext),
+  })), [research, positionValueByTicker, totalPortfolioValue, ratingContext])
   const heldTickers = useMemo(() => new Set(positions.map((position) => String(position.ticker || '').toUpperCase())), [positions])
   const sectors = useMemo(() => [...new Set(research.map((row) => row.sector).filter(Boolean))].sort(), [research])
+  // What the bucket planner needs to see the current book's long-term/short-term lean: the
+  // stock peer index (style classification reads the catalyst ranking model, which is
+  // peer-relative) and each held position's row + current dollar value, decoupled from
+  // whatever sector/search filters are active on screen right now.
+  const stylePeerIndex = useMemo(() => buildPeerIndex(stockResearch), [stockResearch])
+  const holdingsForTilt = useMemo(() => {
+    const rowByTicker = new Map(research.map((row) => [row.ticker, row]))
+    return positions
+      .map((position) => {
+        const ticker = String(position.ticker || '').toUpperCase()
+        const row = rowByTicker.get(ticker)
+        return row ? { row, value: positionValueByTicker.get(ticker) } : null
+      })
+      .filter(Boolean)
+  }, [positions, research, positionValueByTicker])
+  const styleTilt = useMemo(
+    () => currentStyleTilt(stylePeerIndex, holdingsForTilt),
+    [stylePeerIndex, holdingsForTilt],
+  )
+  // Sector half of the same idea (src/lib/portfolioSectorTilt.js): what share of current
+  // value sits in each sector, and - independent of that - how good the risk/growth setup
+  // in each sector looks right now, both read off the full stock universe so neither shifts
+  // under the page's own sector filter.
+  const sectorTilt = useMemo(() => currentSectorTilt(holdingsForTilt), [holdingsForTilt])
+  const sectorOpportunityMap = useMemo(
+    () => sectorOpportunity(stylePeerIndex, stockResearch),
+    [stylePeerIndex, stockResearch],
+  )
+  const sectorCount = useMemo(() => new Set(stockResearch.map((row) => row.sector).filter(Boolean)).size, [stockResearch])
 
   if (loading || etfLoading || portfolioLoading) return <Loading />
   if (!data?.research) return <Empty />
@@ -451,7 +518,7 @@ export default function Picks() {
   // distributions – sorting or bucket-weighting them together as one "score" ranking made
   // whichever model happened to produce higher numbers crowd out the other. Filtering keeps
   // both pools available; ranking never mixes them again after this split.
-  const filtered = research
+  const filtered = researchWithMeta
     .filter((row) => sector === 'all' || row.sector === sector)
     .filter((row) => ownership === 'all' || (ownership === 'bought') === heldTickers.has(row.ticker))
     .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || String(row.name || '').toLowerCase().includes(normalized))
@@ -477,13 +544,46 @@ export default function Picks() {
   // numbers dominate the bucket sizes regardless of actual conviction. Default view
   // allocates across stocks; switch the asset-type filter to ETFs to allocate across those.
   const allocationPool = assetType === 'etf' ? etfRows : stockRows
+  // Only nudge toward diversification on the plain, unfiltered stock split: under a strategy
+  // lens the user has already picked a lane on purpose (Catalyst, Momentum...), and biasing
+  // that choice back toward whatever the current book is thin on would fight the question
+  // they just asked. ETFs aren't classified into a style or scored for sector opportunity at
+  // all (see styleOf / portfolioSectorTilt.js), so neither tilt ever applies there.
+  const styleAware = !modelActive && assetType !== 'etf' && Boolean(styleTilt)
+  const sectorAware = !modelActive && assetType !== 'etf' && Boolean(sectorTilt) && sectorCount > 0
   // Under a strategy lens the bucket split has to weight by that lens's own rank score,
   // not by the long-term research score - otherwise picking "Reversal" would size the
   // buckets by exactly the ranking the user just chose to look past.
+  //
+  // Style and sector are two independent nudges on the same base weight, merged by
+  // multiplying rather than picking one - a candidate that is both the short-term catalyst
+  // lane you're thin on AND in a sector you're thin on (with a decent risk/growth setup)
+  // should get both nudges, not whichever one "wins".
   const allocation = allocateFunds(allocationPool, Number(availableFunds), {
     limit: 8,
     scoreOf: modelActive ? ((row) => row.modelScore?.score) : undefined,
+    weightBoost: (styleAware || sectorAware)
+      ? ((row) => (styleAware ? styleBoost(styleTilt, styleOf(stylePeerIndex, row)) : 1)
+          * (sectorAware ? sectorBoost(sectorTilt, sectorOpportunityMap, row.sector, sectorCount) : 1))
+      : undefined,
   })
+  const allocationRowByTicker = (styleAware || sectorAware)
+    ? new Map(allocationPool.map((candidate) => [candidate.ticker, candidate]))
+    : null
+  const allocationStyles = styleAware
+    ? new Map(allocation.buckets.map((bucket) => [bucket.ticker, styleOf(stylePeerIndex, allocationRowByTicker.get(bucket.ticker))]))
+    : null
+  const allocationSectors = sectorAware
+    ? new Map(allocation.buckets.map((bucket) => [bucket.ticker, allocationRowByTicker.get(bucket.ticker)?.sector]))
+    : null
+  // The three sectors carrying the least of the current book's value, for the planner note -
+  // display only, the actual weighting also folds in each sector's opportunity score.
+  const sectorGaps = sectorAware
+    ? [...new Set(stockResearch.map((row) => row.sector).filter(Boolean))]
+      .map((sector) => ({ sector, currentPct: sectorTilt.get(sector) ?? 0 }))
+      .sort((a, b) => a.currentPct - b.currentPct)
+      .slice(0, 3)
+    : []
 
   const handleQuickBuy = async (row) => {
     const price = Number(row.price)
@@ -580,12 +680,35 @@ export default function Picks() {
           other here – they come from two different scoring models with different scales, so mixing them would let whichever
           model happens to produce larger numbers dominate the split.
         </p>
+        {styleAware && (
+          <p className="allocation-planner-note allocation-planner-tilt">
+            Your current holdings are {Math.round(styleTilt.long_term)}% long-term / {Math.round(styleTilt.short_term)}% short-term
+            (a name counts as short-term here only when it currently clears the catalyst model's own bar for active,
+            evidence-backed news – everything else, ETFs included, reads as long-term). New money below leans extra weight
+            toward whichever lane that split is thin on, without changing which candidate is best within a lane.
+          </p>
+        )}
+        {sectorAware && (
+          <p className="allocation-planner-note allocation-planner-tilt">
+            Lightest sectors in your current holdings: {sectorGaps.map(({ sector, currentPct }, index) => (
+              <span key={sector}>{index > 0 ? ', ' : ''}{sector} ({currentPct.toFixed(1)}%)</span>
+            ))}. New money also leans toward whichever of your thin sectors currently shows the better peer-relative
+            growth and risk-adjusted return – not just whichever sector happens to be emptiest.
+          </p>
+        )}
         {allocation.available ? (
           <div className="allocation-bucket-list">
             {allocation.buckets.map((bucket) => (
               <div className="allocation-bucket-row" key={bucket.ticker}>
                 <div className="allocation-bucket-id">
-                  <b>{bucket.ticker}</b><span>{bucket.isEtf ? 'ETF' : 'Stock'} · score {Math.round(bucket.score)}</span>
+                  <b>{bucket.ticker}</b>
+                  <span>
+                    {bucket.isEtf ? 'ETF' : 'Stock'} · score {Math.round(bucket.score)}
+                    {allocationStyles?.has(bucket.ticker) && (
+                      <> · {allocationStyles.get(bucket.ticker) === 'short_term' ? 'Short-term' : 'Long-term'}</>
+                    )}
+                    {allocationSectors?.get(bucket.ticker) && <> · {allocationSectors.get(bucket.ticker)}</>}
+                  </span>
                 </div>
                 <div className="allocation-bucket-bar" aria-hidden="true"><span style={{ width: `${bucket.weightPct}%` }} /></div>
                 <div className="allocation-bucket-amount">
@@ -614,7 +737,7 @@ export default function Picks() {
           ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
           : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
         : 'No companies match those filters.'} />}
-      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return” and “Data confidence” are plain column sorts over the whole list, not models. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>
+      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data confidence” and “% of my portfolio” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data confidence – it restates the same score on a smaller scale, not a separate opinion. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )
