@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-07T22:29:37.432145+00:00",
+  "generated_at": "2026-08-08T01:23:30.370059+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,7 +29,7 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-07T22:28:44.129121+00:00",
+      "checked_at": "2026-08-08T01:22:31.040212+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 921,
@@ -43,23 +43,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-07T22:28:54.499862+00:00",
+      "checked_at": "2026-08-08T01:22:55.375862+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 252,
-          "misses": 126,
+          "hits": 126,
+          "misses": 252,
           "stale_hits": 0,
-          "hit_rate": 0.667
+          "hit_rate": 0.333
         }
       }
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-07T22:29:37.432119+00:00",
+      "checked_at": "2026-08-08T01:23:30.370041+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -206,8 +206,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "a084a6507ec6426ea5d769dfca94c518ecbe6fdb",
+    "git_commit_sha": "6980c0849577855f80f0daec153af1aa2ce3c015",
     "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
-    "generated_at": "2026-08-07T22:29:37.432145+00:00"
+    "generated_at": "2026-08-08T01:23:30.370059+00:00"
   }
 }
