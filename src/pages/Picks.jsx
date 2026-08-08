@@ -10,10 +10,10 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import InfoTag from '../components/InfoTag.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { rankBreakoutInProgress, rankMomentum, rankReversal } from '../lib/researchScreens.js'
 import {
-  rankBreakoutInProgress, rankMomentum, rankReversal,
-  STRATEGY_LENSES, isStrategyLens, rankByLens, lensCoverage, lensReason,
-} from '../lib/researchScreens.js'
+  RANKING_MODELS, isRankingModel, modelCoverage, modelReason, rankByModel,
+} from '../lib/rankingModels.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 import { entryTiming } from '../lib/entryTiming.js'
@@ -25,46 +25,47 @@ import { useAlerts } from '../lib/useAlerts.js'
 // re-orders the whole research list by one published field. Every row still appears; only
 // the order changes.
 //
-// A STRATEGY LENS (catalyst, momentum, reversal, value turnaround, analyst conviction,
-// tailwind) is a screen, not an ordering. It scans the entire scored universe, keeps only
-// the names that genuinely clear that strategy's bar, and publishes the best LENS_LIMIT of
-// them as their own ranked list. This is the point of the lenses: selecting "Reversal"
-// should hand back the twenty best reversal candidates in the universe, not the same
-// fundamentals leaderboard shuffled. Rows that never qualify are absent rather than padded
-// onto the end, and the list header states how many names cleared the bar and what stopped
-// the rest - see lensCoverage in src/lib/researchScreens.js.
+// A RANKING MODEL (research, fundamentals, sector valuation, catalyst, momentum, reversal,
+// value turnaround, analyst conviction, peer read-through) is a separate scoring model with
+// its own declared composition, not an ordering of one universal score - see
+// src/lib/rankingModels.js. It scans the whole scored universe, keeps only the names that
+// clear its own gate, scores them against sector peers, shrinks each score by that model's
+// own confidence, and publishes the best MODEL_LIMIT. Selecting "Reversal" hands back the
+// twenty best reversal candidates in the universe, ranked by a reversal model - not the
+// fundamentals leaderboard shuffled. The header states how many names cleared the gate and
+// counts the reasons the rest did not.
 function finite(value) {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
-const LENS_LIMIT = 20
+const MODEL_LIMIT = 20
 
 const COLUMN_SORTS = {
-  score: ['Research score (long-term)', (a, b) => (b.score ?? -1) - (a.score ?? -1),
-    'The main fundamentals-first score: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers for insider activity, short interest, analyst expectations, sector valuation, and macro regime. Built for long-term holding decisions. Only computed for fully published companies.'],
+  publishedScore: ['Published research score', (a, b) => (b.score ?? -1) - (a.score ?? -1),
+    'The score the pipeline published for this row, exactly as calibrated: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers. This is the number the point-in-time store and the validation harness are accumulating observations against, so it is shown unchanged rather than recomposed. Only computed for fully published companies.'],
   return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999),
-    'Raw trailing 20-trading-day price return. No quality or valuation filter - purely "what has the price done lately." Available for the full scored universe, not just published companies.'],
-  valuation: ['Sector valuation', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1),
-    'How cheap a stock is relative to its own sector peers (percentile rank), not against the market as a whole - a cheap bank and a cheap chipmaker are judged against different peer groups. Only computed for fully published companies.'],
-  quality: ['Fundamentals', (a, b) => (b.components?.fundamentals ?? -1) - (a.components?.fundamentals ?? -1),
-    'The fundamentals component of the research score in isolation - valuation, profitability, financial health, growth, capital allocation, and accounting quality, with market behavior and news sentiment stripped out. Available for the full scored universe, not just published companies.'],
+    'Raw trailing 20-trading-day price return. Not a predictive score and not risk-adjusted - purely "what has the price done lately." Available for the full scored universe.'],
   confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
-    'How complete the underlying data was for this company, not how attractive it is - a high-confidence score just means more of the inputs actually resolved. Only computed for fully published companies.'],
+    'How complete and reliable the underlying data was, not how attractive the company is. A high number means more inputs resolved. Only computed for fully published companies; each ranking model additionally reports its own mode-specific confidence over the inputs it actually reads.'],
 }
 
-const LENS_DESCRIPTIONS = {
-  catalyst: `A screen, not a re-sort: the top ${LENS_LIMIT} names in the whole scored universe that show a live short-term catalyst. Weighted mostly by fresh news sentiment and opportunistic insider buying/selling (Form 4, routine trades excluded), with recent price/volume as confirmation and fundamentals as a small floor, not a driver. A weak long-term research score does not disqualify a name here - that is the point. A name needs an actual catalyst plus one confirming signal to appear at all, so this list is short (or empty) whenever news and Form 4 coverage is thin for the run - the header says exactly how thin. A row whose insider activity is a single untracked trader or whose news rests on one low-quality source is corroboration-checked and sorts below fully-corroborated names - watch for the "Thin evidence" chip.`,
-  momentum: `A screen, not a re-sort: the top ${LENS_LIMIT} momentum names in the whole scored universe. Ranked on 12-month price momentum (skipping the most recent month), relative strength, volume confirmation, and risk-adjusted return, after gating on a positive 5-day and 20-day return. A medium-term trend-following lens, distinct from the very-short-term Catalyst lens. Cross-checked against 60/252-day returns - a pop sitting inside a longer downtrend is corroboration-flagged and sorts below fully-corroborated names.`,
-  reversal: `A screen, not a re-sort: the top ${LENS_LIMIT} reversal candidates in the whole scored universe - names that pulled back over the medium term but have just turned up over the most recent week, gated by a fundamentals floor so a deteriorating business does not qualify on a bounce alone. Needs a published 60-day drawdown, which only rows polled in a full refresh carry; the header reports how much of the universe that excludes. Cross-checked against the latest earnings surprise - a bounce following a sharply negative surprise (with no offsetting short-interest squeeze signal) is corroboration-flagged.`,
-  valueTurnaround: `A screen, not a re-sort: the top ${LENS_LIMIT} value turnarounds in the whole scored universe - cheap relative to its sector, fundamentally solid, sitting near a 52-week low, and with a positive latest week. Value plus an early sign the market is starting to agree. Cross-checked against the latest earnings surprise - cheapness following a sharply negative surprise is corroboration-flagged and sorts below fully-corroborated names.`,
-  analystConviction: `A screen, not a re-sort: the top ${LENS_LIMIT} names in the whole scored universe by analyst conviction - bullish average rating and consensus target upside from professional coverage, minimum 3 analysts. A different "market hasn’t fully repriced this yet" signal from Catalyst (news/insider) or Momentum (price trend). Cross-checked against sector valuation - a large upside target on a name already in the most expensive decile of its sector is corroboration-flagged.`,
-  tailwind: `A screen, not a re-sort: the top ${LENS_LIMIT} names in the whole scored universe by theme-exposure opportunity - exposure × business quality × how cheap it still is, taken from the best structural trend each name is connected to. Surfaces sector-connected names riding the same wave as a proven leader (see /screens/themes) even when they are not already a top research score. Price momentum contributes nothing to this score by design. A name the theme layer excluded on valuation grounds still appears but is corroboration-flagged.`,
+// Model descriptions are generated from the model registry so the text and the arithmetic
+// cannot drift: the weights quoted here are literally the weights being applied.
+function modelDescription(key) {
+  const model = RANKING_MODELS[key]
+  const composition = model.components
+    .map(([, label, weight]) => `${Math.round(weight * 100)}% ${label.toLowerCase()}`)
+    .join(', ')
+  return `${model.question} A separate ranking model over the whole scored universe, not a re-sort of the published score. Composition: ${composition}. `
+    + 'Components a company cannot legitimately report are dropped and the remaining weights renormalized rather than scored as zero, so a business is never marked down for the shape of its balance sheet. '
+    + 'Valuation and quality components are ranked against industry peers where the sample supports it, otherwise sector, otherwise the whole universe. '
+    + `The score is then shrunk toward 50 by this model's own confidence, so a high reading resting on one thin input cannot outrank a well-evidenced lower one. Top ${MODEL_LIMIT} shown; the weights are frozen starting priors, not measured optima.`
 }
 
 const SORTS = {
   ...COLUMN_SORTS,
-  ...Object.fromEntries(Object.entries(STRATEGY_LENSES).map(([key, lens]) => (
-    [key, [lens.label, null, LENS_DESCRIPTIONS[key]]]
+  ...Object.fromEntries(Object.keys(RANKING_MODELS).map((key) => (
+    [key, [RANKING_MODELS[key].label, null, modelDescription(key)]]
   ))),
 }
 
@@ -109,13 +110,31 @@ function normalizeEtf(row) {
 // already uses below for its reason text, kept consistent rather than introducing a second
 // explanatory affordance style.
 function ThinEvidenceChip({ row }) {
-  const screen = row.screen
-  if (!screen || screen.corroborated !== false) return null
-  return (
-    <span className="chip screen-chip screen-chip-thin-evidence" title={(screen.corroborationGaps || []).join('; ')}>
-      Thin evidence
-    </span>
-  )
+  const result = row.modelScore
+  if (!result) return null
+  // Two separate warnings, both lens-specific. A capped score means the model found a reason
+  // the setup may be price discovery rather than opportunity; low mode confidence means the
+  // model could not read enough of what it needs on this row.
+  if (result.cap) {
+    return (
+      <span className="chip screen-chip screen-chip-thin-evidence" title={result.cap.reason}>
+        Thesis risk
+      </span>
+    )
+  }
+  if (result.confidencePercent < 50) {
+    const weakest = result.confidenceInputs
+      .filter((input) => input.resolved < 1)
+      .map((input) => input.label)
+      .join(', ')
+    return (
+      <span className="chip screen-chip screen-chip-thin-evidence"
+        title={`This model resolved ${result.confidencePercent}% of the inputs it reads. Weak or missing: ${weakest || 'none'}.`}>
+        Thin evidence
+      </span>
+    )
+  }
+  return null
 }
 
 // A row scored on the lightweight universe projection carries no price history, no data
@@ -148,15 +167,44 @@ function ScreenChips({ row }) {
 }
 
 // "Why is this a reversal?" used to have no answer anywhere in the UI - the row carried a
-// bare Reversal chip and nothing else. Every lens already computes the measurements that
-// made a row qualify (src/lib/researchScreens.js); this renders them.
-function LensWhy({ row, sort }) {
-  const reason = isStrategyLens(sort) ? lensReason(row, sort) : ''
-  if (!reason) return null
-  return <p className="lens-reason"><b>Why it ranks here:</b> {reason}</p>
+// bare Reversal chip and nothing else. The model already computes every component that
+// produced the score; this renders them, including the ones it had to drop.
+function ModelWhy({ row }) {
+  const result = row.modelScore
+  if (!result) return null
+  return (
+    <div className="model-why">
+      <p className="lens-reason">
+        <b>{RANKING_MODELS[result.model].label} {Math.round(result.score)}</b>
+        {result.raw !== result.score && (
+          <span className="model-why-shrink" title={`Raw ${result.raw}, shrunk toward neutral because this model resolved ${result.confidencePercent}% of the inputs it reads.`}>
+            {' '}(raw {Math.round(result.raw)} · {result.confidencePercent}% model confidence)
+          </span>
+        )}
+      </p>
+      <ul className="model-why-components">
+        {result.components.map((component) => (
+          <li key={component.key}>
+            <span>{component.label}</span>
+            <b>{Math.round(component.value)}</b>
+            <small>{component.contribution.toFixed(0)}% of score{component.level === 'industry' || component.level === 'sector'
+              ? ` · vs ${component.level} peers (n=${component.sampleSize})` : ''}</small>
+          </li>
+        ))}
+      </ul>
+      {result.droppedComponents.length > 0 && (
+        <p className="model-why-dropped">
+          Not applicable to this company, weight redistributed rather than scored zero:{' '}
+          {result.droppedComponents.map((component) => component.label.toLowerCase()).join(', ')}.
+        </p>
+      )}
+      {result.cap && <p className="model-why-cap">Score capped at {result.cap.limit}: {result.cap.reason}.</p>}
+    </div>
+  )
 }
 
-/** Every buy-worthy row gets exactly one of Buy Now or Set Low Alert (src/lib/entryTiming.js,
+/** Every buy-worthy row with actionable confidence gets one of Buy Now, Review, or Set Low
+ * Alert (src/lib/entryTiming.js,
  * built on the existing dipWatch floor/recovery estimate) surfaced right on the research
  * list, not one click deeper in the stock detail modal.
  */
@@ -165,6 +213,12 @@ function EntryTimingAction({ row, alerting, alertStatus, onSetAlert }) {
   if (!timing) return null
   if (timing.verdict === 'buy_now') {
     return <span className="chip entry-timing-chip buy-now" title={timing.reason}>Buy Now</span>
+  }
+  if (timing.verdict === 'review') {
+    return <span className="chip entry-timing-chip review" title={timing.reason}>Review</span>
+  }
+  if (timing.verdict === 'insufficient_data') {
+    return <span className="chip entry-timing-chip no-call" title={timing.reason}>No timing call</span>
   }
   return (
     <span className="entry-timing-wrap">
@@ -184,40 +238,42 @@ function EntryTimingAction({ row, alerting, alertStatus, onSetAlert }) {
 }
 
 /**
- * What the lens actually saw. A screen that returns four names because only four names
- * cleared its bar and a screen that returns four names because the other 873 rows are
- * missing the field it gates on look identical on screen; this states which one happened,
- * counted from the same rows the lens just ranked.
+ * What the model actually saw. A screen returning four names because only four cleared its
+ * gate and one returning four because the other 871 rows lack a field it reads look identical
+ * on screen; this states which happened, counted from the same rows the model just ranked.
  */
-function LensSummary({ sort, coverage, qualified, shown }) {
+function ModelSummary({ sort, coverage, shown }) {
   if (!coverage) return null
-  const { label } = STRATEGY_LENSES[sort]
+  const model = RANKING_MODELS[sort]
   return (
-    <section className="lens-summary card" aria-label={`${label} screen coverage`}>
-      <p className="lens-summary-head">
-        <b>{label}</b> — a screen over the whole scored universe, not a re-ordering of the research leaderboard.
-      </p>
+    <section className="lens-summary card" aria-label={`${model.label} model coverage`}>
+      <p className="lens-summary-head"><b>{model.label}</b> — {model.question}</p>
       <p>
-        {qualified === 0
-          ? `No company clears this screen under the current filters, out of ${coverage.scanned} scanned.`
-          : `Showing the top ${shown} of ${qualified} ${qualified === 1 ? 'company that clears' : 'companies that clear'} it, ranked against all ${coverage.scanned} scored companies.`}
+        {coverage.qualified === 0
+          ? `No company clears this model's gate under the current filters, out of ${coverage.scanned} scanned.`
+          : `Showing the top ${shown} of ${coverage.qualified} ${coverage.qualified === 1 ? 'company that clears' : 'companies that clear'} it, scored against all ${coverage.scanned} companies in the universe.`}
       </p>
-      {coverage.missingInputs > 0 && (
-        <p className="lens-summary-gap">
-          {coverage.missingInputs} of {coverage.scanned} could not be evaluated at all — the row does not carry an input
-          this screen needs.{coverage.binding && ` The binding one is ${coverage.binding.label}, published for ${coverage.binding.present} of ${coverage.scanned} rows.`}
-        </p>
+      <p className="lens-summary-composition">
+        {model.components.map(([, label, weight]) => `${Math.round(weight * 100)}% ${label.toLowerCase()}`).join(' · ')}
+      </p>
+      {coverage.excluded > 0 && (
+        <>
+          <p className="lens-summary-gap">
+            {coverage.excluded} of {coverage.scanned} did not clear the gate.
+            {coverage.binding && ` Most common reason: ${coverage.binding.reason} (${coverage.binding.count}).`}
+          </p>
+          <ul className="lens-summary-inputs">
+            {coverage.reasons.slice(0, 4).map((entry) => (
+              <li key={entry.reason}><b>{entry.count}</b> {entry.reason}</li>
+            ))}
+          </ul>
+        </>
       )}
-      <ul className="lens-summary-inputs">
-        {coverage.inputs.map((input) => (
-          <li key={input.label}>{input.label}: <b>{input.present}</b> of {coverage.scanned} rows</li>
-        ))}
-      </ul>
     </section>
   )
 }
 
-function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alertingTicker, alertStatuses, onSetAlert, sort }) {
+function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alertingTicker, alertStatuses, onSetAlert }) {
   const [expanded, setExpanded] = useState(false)
   return (
     <article className="research-mobile-card">
@@ -236,7 +292,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
         <EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
           alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} />
       </div>
-      <LensWhy row={row} sort={sort} />
+      <ModelWhy row={row} />
       <dl className="research-card-metrics">
         <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</dd></div>
         <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} capsule /></dd></div>
@@ -274,7 +330,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
 function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatuses, onBuy,
                        alertingTicker, alertStatuses, onSetAlert, sort }) {
   if (!rows.length) return null
-  const lensActive = isStrategyLens(sort)
+  const modelActive = isRankingModel(sort)
   return (
     <section className="research-pool" aria-label={label}>
       {label && <h2 className="research-pool-title">{label} <span className="research-pool-count">{rows.length}</span></h2>}
@@ -283,12 +339,13 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
           rank={index + 1} onOpen={onOpen}
           held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
           buyStatus={buyStatuses[row.ticker]} onBuy={onBuy}
-          alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} sort={sort} />} />
+          alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} />} />
       <div className="research-table card">
         <table>
           <thead><tr>
             <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Research rating</th><th scope="col">Signal</th>
-            {lensActive && <th scope="col">Why it ranks here</th>}
+            {modelActive && <th scope="col">Model score</th>}
+            {modelActive && <th scope="col">Why it ranks here</th>}
             <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
             <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Timing</th><th scope="col">Portfolio</th>
             <th scope="col"><span className="sr-only">Watchlist</span></th><th scope="col"><span className="sr-only">Open</span></th>
@@ -299,7 +356,8 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
               <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
               <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
               <td><Tier label={row.stance} /></td><td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
-              {lensActive && <td className="lens-reason-cell">{lensReason(row, sort) || '–'}</td>}
+              {modelActive && <td className="mono num score-cell">{row.modelScore ? Math.round(row.modelScore.score) : '–'}</td>}
+              {modelActive && <td className="lens-reason-cell">{modelReason(row) || '–'}</td>}
               <td className="mono num score-cell">{row.score}</td>
               <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
               <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
@@ -325,7 +383,11 @@ export default function Picks() {
   const { positions, loading: portfolioLoading, addPosition } = useFirebasePortfolio()
   const { createRule } = useAlerts()
   const [sector, setSector] = useState('all')
-  const [sort, setSort] = useState('score')
+  // Defaults to a plain column sort, not a model: the page's job on arrival is to let
+  // someone browse the whole ranked list. Every model is a screen that can legitimately
+  // hide most of the universe, which is the right behaviour once a question has been
+  // asked and the wrong one before it has.
+  const [sort, setSort] = useState('publishedScore')
   const [query, setQuery] = useState('')
   const [assetType, setAssetType] = useState('all')
   const [ownership, setOwnership] = useState('all')
@@ -395,20 +457,19 @@ export default function Picks() {
     .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || String(row.name || '').toLowerCase().includes(normalized))
   const filteredStocks = filtered.filter((row) => !row.is_etf)
   const filteredEtfs = filtered.filter((row) => row.is_etf)
-  const lensActive = isStrategyLens(sort)
-  // Filters narrow the universe the lens screens over, so "Reversal within Technology"
-  // returns the best reversals in Technology - not the best reversals overall, filtered
-  // afterwards down to whatever happens to be left.
-  const lensQualified = lensActive ? rankByLens(filteredStocks, sort, Infinity) : []
-  const coverage = lensActive ? lensCoverage(filteredStocks, sort) : null
-  // A lens is stocks-only by construction: every one of them reads per-security
-  // fundamentals, news, insider or theme data a diversified fund does not have.
-  const stockRows = lensActive
-    ? lensQualified.slice(0, LENS_LIMIT)
+  const modelActive = isRankingModel(sort)
+  // Filters narrow the universe the model scores over, so "Reversal within Technology"
+  // returns the best reversals in Technology - and peer percentiles are computed within that
+  // same filtered set, not against a universe the user has already excluded.
+  const coverage = modelActive ? modelCoverage(filteredStocks, sort) : null
+  // Every model is stocks-only by construction: each reads per-security fundamentals, news,
+  // insider or theme data a diversified fund does not report.
+  const stockRows = modelActive
+    ? rankByModel(filteredStocks, sort, MODEL_LIMIT)
     : filteredStocks.slice().sort(SORTS[sort][1])
-  const etfRows = lensActive ? [] : filteredEtfs.slice().sort(SORTS[sort][1])
+  const etfRows = modelActive ? [] : filteredEtfs.slice().sort(SORTS[sort][1])
   const showStocks = assetType !== 'etf'
-  const showEtfs = assetType !== 'stock' && !lensActive
+  const showEtfs = assetType !== 'stock' && !modelActive
   const rows = [...(showStocks ? stockRows : []), ...(showEtfs ? etfRows : [])]
 
   // Ranked separately for the same reason: exponentiating an ETF's fund score and a stock's
@@ -421,7 +482,7 @@ export default function Picks() {
   // buckets by exactly the ranking the user just chose to look past.
   const allocation = allocateFunds(allocationPool, Number(availableFunds), {
     limit: 8,
-    scoreOf: lensActive ? ((row) => row.screen?.rankScore) : undefined,
+    scoreOf: modelActive ? ((row) => row.modelScore?.score) : undefined,
   })
 
   const handleQuickBuy = async (row) => {
@@ -473,7 +534,18 @@ export default function Picks() {
         </select></label>
         <span className="sort-with-info">
           <label><span className="sr-only">Sort research</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
-            {Object.entries(SORTS).map(([key, [label]]) => <option key={key} value={key}>Sort: {label}</option>)}
+            {/* Grouped because the two kinds behave differently: a column sort re-orders
+                every row, a model screens the universe and returns only what clears it. */}
+            <optgroup label="Sort the full list">
+              {Object.keys(COLUMN_SORTS).map((key) => (
+                <option key={key} value={key}>Sort: {SORTS[key][0]}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Rank by model (top 20)">
+              {Object.keys(RANKING_MODELS).map((key) => (
+                <option key={key} value={key}>Model: {RANKING_MODELS[key].label}</option>
+              ))}
+            </optgroup>
           </select></label>
           <InfoTag label={SORTS[sort][0]}>
             <strong>{SORTS[sort][0]}</strong>
@@ -488,7 +560,7 @@ export default function Picks() {
         </select></label>
       </div>
       {tradeNotice && <div className={`research-trade-notice ${tradeNotice.error ? 'error' : ''}`} role="status" aria-live="polite">{tradeNotice.message}</div>}
-      {lensActive && <LensSummary sort={sort} coverage={coverage} qualified={lensQualified.length} shown={stockRows.length} />}
+      {modelActive && <ModelSummary sort={sort} coverage={coverage} shown={stockRows.length} />}
 
       <section className="card allocation-planner" aria-labelledby="allocation-planner-title">
         <header className="allocation-planner-head">
@@ -501,7 +573,7 @@ export default function Picks() {
           </label>
         </header>
         <p className="allocation-planner-note">
-          Weighted by {lensActive ? `${STRATEGY_LENSES[sort].label.toLowerCase()} rank score` : 'score'} against
+          Weighted by {modelActive ? `${RANKING_MODELS[sort].label.toLowerCase()} model score` : 'published score'} against
           the top {Math.min(allocationPool.length, 8)} {assetType === 'etf' ? 'ETFs' : 'stocks'} in
           the current sort and filters. This is not an even split. A higher-scored {assetType === 'etf' ? 'fund' : 'company'} gets
           a disproportionately larger bucket, the way a real allocation would. Stocks and ETFs are never weighted against each
@@ -537,12 +609,12 @@ export default function Picks() {
         buyStatuses={buyStatuses} onBuy={handleQuickBuy}
         alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
 
-      {!rows.length && <Empty note={lensActive
+      {!rows.length && <Empty note={modelActive
         ? (assetType === 'etf'
-          ? `${STRATEGY_LENSES[sort].label} is a stock screen – it reads per-security fundamentals, news, insider and theme data a fund does not carry. Switch the asset filter back to stocks, or sort by research score to rank ETFs.`
-          : `No company clears the ${STRATEGY_LENSES[sort].label} screen under these filters. The coverage panel above shows which input the universe is missing.`)
+          ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
+          : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
         : 'No companies match those filters.'} />}
-      <div className="disclaimer">Research includes {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The column sorts (Research score, 20-day return, Sector valuation, Fundamentals, Data confidence) re-order the whole list; Research score, Sector valuation and Data confidence are only computed for fully published companies. The strategy lenses (Catalyst, Momentum, Reversal, Value turnaround, Analyst conviction, Tailwind) are screens instead: each one scans all {stockResearch.length} scored companies, keeps only the names that clear its own bar, and publishes the best {LENS_LIMIT}. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>
+      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return” and “Data confidence” are plain column sorts over the whole list, not models. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )

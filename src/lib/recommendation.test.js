@@ -4,7 +4,7 @@ import { actionHeadline, getRecommendation, positionImpact } from './recommendat
 describe('getRecommendation', () => {
   it('trusts the guidance the pipeline already published', () => {
     const stock = {
-      ticker: 'AAA',
+      ticker: 'AAA', confidence: 0.8,
       recommendation: {
         action: 'TRIM', suggested_trim_pct: 33, agreement_count: 2, confidence: 'moderate',
         reasons: ['profitability score 40/100'], summary: 'Multiple factors disagree.',
@@ -19,7 +19,7 @@ describe('getRecommendation', () => {
 
   it('falls back to the browser engine for rows published before the field existed', () => {
     const stock = {
-      ticker: 'BBB',
+      ticker: 'BBB', confidence: 0.8,
       components: { fundamentals: 28 },
       debt_to_equity: 3.1,
       current_ratio: 0.6,
@@ -33,7 +33,7 @@ describe('getRecommendation', () => {
 
   it('never acts on a broken chart alone', () => {
     const stock = {
-      ticker: 'CCC',
+      ticker: 'CCC', confidence: 0.8,
       components: { fundamentals: 82 },
       technical_detail: { return_5d: -8, return_20d: -22, return_60d: -30 },
     }
@@ -42,6 +42,7 @@ describe('getRecommendation', () => {
 
   it('gates prescriptive company action when canonical confidence is low', () => {
     const result = getRecommendation({
+      confidence: 0.8,
       recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2 },
       analysis_v2: { structural: { confidence: 0.39, coverage: 0.8, missing_metrics: ['forward_eps_revision_30d'] } },
     })
@@ -53,9 +54,44 @@ describe('getRecommendation', () => {
     expect(getRecommendation(null)).toBeNull()
   })
 
+  it('makes no action call at all below the confidence floor', () => {
+    // The screenshot case: "Data confidence 0%" beside a live action label. Confidence
+    // measures how much evidence resolved, so a low band withholds the call rather than
+    // inverting it - "we cannot say" is not the same verdict as "sell".
+    const result = getRecommendation({
+      ticker: 'LOW', confidence: 0.2,
+      recommendation: { action: 'HOLD', agreement_count: 2 },
+    })
+    expect(result.action).toBe('INSUFFICIENT_DATA')
+    expect(result.summary).toMatch(/below the 40% floor/i)
+    expect(result.source).toBe('confidence_gate')
+  })
+
+  it('treats a row with no confidence measurement as insufficient, not as zero', () => {
+    const result = getRecommendation({ ticker: 'LIGHT', recommendation: { action: 'HOLD' } })
+    expect(result.action).toBe('INSUFFICIENT_DATA')
+    expect(result.summary).toMatch(/no data-confidence measurement/i)
+  })
+
+  it('allows monitoring language but no prescriptive action in the watch band', () => {
+    const result = getRecommendation({
+      ticker: 'MID', confidence: 0.5,
+      recommendation: { action: 'SELL', suggested_trim_pct: 100 },
+    })
+    expect(result.action).toBe('WATCH')
+    expect(result.suggestedTrimPct).toBe(0)
+  })
+
+  it('leaves a fund alone - ETFs are scored by a different model with no such measure', () => {
+    const result = getRecommendation({
+      ticker: 'VOO', is_etf: true, recommendation: { action: 'HOLD', agreement_count: 1 },
+    })
+    expect(result.action).toBe('HOLD')
+  })
+
   it('downgrades a published Sell to Trim when there is no evidence the price won’t recover', () => {
     const stock = {
-      ticker: 'DDD',
+      ticker: 'DDD', confidence: 0.8,
       recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2 },
       analyst_target_upside: 18,
     }
@@ -66,7 +102,7 @@ describe('getRecommendation', () => {
 
   it('keeps a published Sell when the consensus target is at or below today’s price', () => {
     const stock = {
-      ticker: 'EEE',
+      ticker: 'EEE', confidence: 0.8,
       recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2, summary: 'Broken thesis.' },
       analyst_target_upside: -6,
     }

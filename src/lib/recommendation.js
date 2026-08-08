@@ -1,4 +1,5 @@
 import { getSellWatchRecommendation } from './sellWatchLogic'
+import { confidenceBand, confidencePercent, gateReason } from './confidenceGate'
 
 /**
  * One source of truth for hold / watch / trim / sell guidance across the app.
@@ -9,6 +10,10 @@ import { getSellWatchRecommendation } from './sellWatchLogic'
  */
 
 export const ACTION_STYLES = {
+  INSUFFICIENT_DATA: {
+    label: 'Insufficient data', color: 'var(--text-faint)', icon: '○',
+    blurb: 'Not enough resolved evidence to make any action call',
+  },
   HOLD: { label: 'Hold', color: 'var(--pos)', icon: '●', blurb: 'Keep the position as it stands' },
   WATCH: { label: 'Watch', color: 'var(--warn)', icon: '◐', blurb: 'One factor slipped – monitor, do not act yet' },
   TRIM: { label: 'Trim', color: 'var(--warn)', icon: '◑', blurb: 'Reduce exposure while the thesis is tested' },
@@ -41,6 +46,27 @@ export function getRecommendation(stock) {
   if (!stock) return null
   const published = stock.recommendation
   const structural = stock.analysis_v2?.structural
+
+  // The row-level confidence gate runs before anything else and applies to every row, not
+  // only rows that happen to carry an analysis_v2 block. Without it a lightweight universe
+  // row - which publishes no confidence at all - inherited whatever action the pipeline
+  // last wrote and displayed it beside "Data confidence 0%".
+  const band = confidenceBand(stock.confidence)
+  if (!stock.is_etf && (band === 'insufficient' || band === 'watch')) {
+    const pct = confidencePercent(stock.confidence)
+    return {
+      action: band === 'insufficient' ? 'INSUFFICIENT_DATA' : 'WATCH',
+      confidence: band === 'insufficient' ? 'none' : 'low',
+      summary: gateReason(stock.confidence),
+      reasons: pct === null
+        ? ['This row was scored on the lighter universe data set, which publishes no confidence measure.']
+        : [`Data confidence ${Math.round(pct)}%.`],
+      agreementCount: 0,
+      suggestedTrimPct: 0,
+      source: 'confidence_gate',
+    }
+  }
+
   if (structural && structural.confidence < 0.4) {
     return {
       action: 'WATCH',
@@ -87,7 +113,9 @@ export function getRecommendation(stock) {
 export function actionHeadline(recommendation) {
   if (!recommendation) return '–'
   const { action, suggestedTrimPct } = recommendation
-  return suggestedTrimPct > 0 ? `${action} ${suggestedTrimPct}%` : action
+  // Underscores are an internal token shape, not something to put in front of a reader.
+  const label = String(action || '').replace(/_/g, ' ')
+  return suggestedTrimPct > 0 ? `${label} ${suggestedTrimPct}%` : label
 }
 
 /** What acting on the guidance would mean for a specific holding, in shares and dollars. */

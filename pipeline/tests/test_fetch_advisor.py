@@ -6,7 +6,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_advisor import (_screen_row, _sentiment_summary, build_portfolio_coverage,
+from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
                            carry_forward_rows, collect_insider_signals, compact_news,
                            curate_candidate_news, enrich, latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols,
@@ -547,3 +547,73 @@ class ScreenRowAssetTypeTests(unittest.TestCase):
                                  "last_polled_at": "2026-08-08T00:00:00+00:00"})
 
         self.assertEqual(projected["last_polled_at"], "2026-08-08T00:00:00+00:00")
+
+
+class EvidenceProjectionTests(unittest.TestCase):
+    """The catalyst and analyst-conviction models exist to surface names that are NOT already
+    top fundamentals scores, so their inputs have to reach the lightweight tail as well as the
+    published leaderboard - otherwise those models can only ever see the leaderboard."""
+
+    EVIDENCE = {
+        "news_events": [{"title": "Raises FY guidance"} for _ in range(12)],
+        "news_score": 88.0,
+        "news_detail": {
+            "available": True, "event_count": 3, "dominant_event": "Raises FY guidance",
+            "dominant_event_types": ["guidance"], "dominant_age_trading_days": 1.4,
+            "dominant_materiality": 1.0,
+        },
+        "insider_score": 72.0,
+        "insider_score_long_term": 78.0,
+        "insider_detail": {"available": True, "freshest_age_trading_days": 6.0},
+        "expectation_score": 66.0,
+        "expectation_detail": {"available": True, "inputs_resolved": 3},
+    }
+
+    def test_the_tail_carries_the_scores_and_the_dominant_event(self):
+        projected = _screen_row({"ticker": "MU", "score": 55, "evidence": self.EVIDENCE})["evidence_summary"]
+
+        self.assertEqual(projected["news_score"], 88.0)
+        self.assertEqual(projected["dominant_event"], "Raises FY guidance")
+        self.assertEqual(projected["dominant_event_types"], ["guidance"])
+        self.assertEqual(projected["insider_freshest_age_trading_days"], 6.0)
+        self.assertEqual(projected["expectation_inputs_resolved"], 3)
+
+    def test_the_tail_does_not_carry_the_full_per_event_breakdown(self):
+        # Twelve fully-detailed events for each of ~900 rows would roughly double the payload
+        # to answer a question nobody asks of the 800th-ranked name.
+        projected = _screen_row({"ticker": "MU", "score": 55, "evidence": self.EVIDENCE})
+
+        self.assertNotIn("news_events", projected["evidence_summary"])
+
+    def test_a_carried_forward_summary_is_not_re_projected_into_nothing(self):
+        # A fast-refresh row arrives already in summary shape; re-projecting it would strip
+        # the dominant-event fields it already holds.
+        already_summarized = _evidence_summary(self.EVIDENCE)
+
+        self.assertEqual(_evidence_summary(already_summarized), already_summarized)
+
+    def test_a_row_with_no_evidence_projects_none_rather_than_an_empty_shell(self):
+        self.assertIsNone(_screen_row({"ticker": "QUIET", "score": 40})["evidence_summary"])
+
+    def test_the_tail_carries_the_estimate_revisions_the_analyst_model_reads(self):
+        detail = {"revision_breadth_30d": 0.6, "eps_revision_30d_pct": 0.08, "inputs_resolved": 2}
+
+        projected = _screen_row({"ticker": "MU", "score": 55, "estimate_detail": detail})
+
+        self.assertEqual(projected["estimate_detail"]["revision_breadth_30d"], 0.6)
+
+
+class PointInTimeExpectationTests(unittest.TestCase):
+    def test_revision_fields_are_archived_because_yahoo_only_serves_today(self):
+        from pit_store import TRACKED_FIELDS, tracked_fields
+
+        row = {
+            "ticker": "MU", "price": 100.0, "analyst_consensus_target": 130.0,
+            "revision_breadth_30d": 0.75, "eps_revision_30d_pct": 0.12, "net_upgrades_90d": 4,
+        }
+
+        archived = tracked_fields(row, TRACKED_FIELDS)
+
+        self.assertEqual(archived["analyst_consensus_target"], 130.0)
+        self.assertEqual(archived["revision_breadth_30d"], 0.75)
+        self.assertEqual(archived["net_upgrades_90d"], 4)

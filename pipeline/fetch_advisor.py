@@ -27,7 +27,10 @@ from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
+from evidence_events import build_evidence
 from news_intelligence import annotate_article, deduplicate_articles
+from yahoo_estimates import collect_estimate_detail
+from yahoo_news import fetch_company_news, new_diagnostics as new_news_diagnostics
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
 from normalization_report import write_normalization_report
@@ -47,6 +50,10 @@ UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
+# The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
+# title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
+# on top, so it reads one merged config rather than two half-configs.
+EVIDENCE_CONFIG = {**NEWS_CONFIG, **SETTINGS["evidence_events"]}
 MIN_ALPHA_PRIMARY_RELEVANCE = NEWS_CONFIG["alpha_vantage_primary_relevance_minimum"]
 # How many shortlisted companies get the multi-request financial-statement treatment.
 EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
@@ -156,6 +163,39 @@ def _sentiment_summary(sentiment_detail):
     }
 
 
+def _evidence_summary(evidence):
+    """The evidence block trimmed to what a client-side screen actually reads.
+
+    The full per-event breakdown is for the published leaderboard, where a reader can open one
+    company and audit it. Shipping twelve fully-detailed events for each of ~900 universe rows
+    would roughly double the payload to answer a question nobody asks of the 800th-ranked
+    name, so the tail carries the scores, the freshness that produced them, and the single
+    dominant event - enough for a screen to rank on and explain itself.
+    """
+    if not evidence:
+        return None
+    # A carried-forward row from a fast refresh arrives already in this shape (it was
+    # projected by an earlier run), so re-projecting it would strip the dominant-event fields
+    # it already holds - same "may already be lightweight" case _screen_row handles.
+    if "news_detail" not in evidence and "event_count" in evidence:
+        return evidence
+    news_detail = evidence.get("news_detail") or {}
+    insider_detail = evidence.get("insider_detail") or {}
+    return {
+        "news_score": evidence.get("news_score"),
+        "insider_score": evidence.get("insider_score"),
+        "insider_score_long_term": evidence.get("insider_score_long_term"),
+        "expectation_score": evidence.get("expectation_score"),
+        "dominant_event": news_detail.get("dominant_event"),
+        "dominant_event_types": news_detail.get("dominant_event_types"),
+        "dominant_age_trading_days": news_detail.get("dominant_age_trading_days"),
+        "dominant_materiality": news_detail.get("dominant_materiality"),
+        "event_count": news_detail.get("event_count", 0),
+        "insider_freshest_age_trading_days": insider_detail.get("freshest_age_trading_days"),
+        "expectation_inputs_resolved": (evidence.get("expectation_detail") or {}).get("inputs_resolved", 0),
+    }
+
+
 def _screen_row(row):
     """Project a full or already-lightweight row into the screen_universe shape.
 
@@ -195,6 +235,10 @@ def _screen_row(row):
         "analyst_count": row.get("analyst_count"),
         "analyst_rating": row.get("analyst_rating"),
         "analyst_target_upside": row.get("analyst_target_upside"),
+        "analyst_consensus_target": row.get("analyst_consensus_target"),
+        # Small enough to carry for the whole universe, and the analyst-conviction model is
+        # specifically meant to surface names outside the published leaderboard.
+        "estimate_detail": row.get("estimate_detail"),
         "theme_exposure": row.get("theme_exposure"),
         # Corroboration inputs for the strategy-lens gates (rankReversal,
         # rankValueTurnarounds, rankAnalystConviction, rankCatalyst) - independent
@@ -204,6 +248,10 @@ def _screen_row(row):
         "days_to_cover": row.get("days_to_cover"),
         "sector_valuation_percentile": row.get("sector_valuation_percentile"),
         "sentiment_summary": _sentiment_summary(row.get("sentiment_detail")),
+        # Dated evidence for the whole universe, not just the leaderboard - the catalyst and
+        # analyst-conviction screens are meant to surface names that are *not* already top
+        # fundamentals scores, so they need this on the tail or they cannot do their job.
+        "evidence_summary": _evidence_summary(row.get("evidence") or row.get("evidence_summary")),
         "stale_carryforward": row.get("stale_carryforward", False),
     }
 
@@ -721,7 +769,8 @@ def macro_context(client):
     return result
 
 
-def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
+def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
+            news_diagnostics=None):
     """The cheap first pass: quote snapshot, two years of prices, and any Alpha Vantage extras.
 
     Financial statements are deliberately left out here. They cost several requests per
@@ -731,7 +780,13 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
     fallback = yahoo_snapshot(symbol, yf, ticker_obj)
     history = yahoo_history(symbol, yf, ticker_obj=ticker_obj)
     overview = daily = news_payload = insiders = {}
-    news = []
+    # Yahoo's own per-symbol news, for every polled company rather than the five-symbol
+    # Alpha shortlist. This is what gives the catalyst model a universe to work over: entity
+    # sentiment covered 3 of 877 rows, so the model was complete and had nothing to score.
+    # One cached request per symbol, and a dark feed degrades this company's news leg rather
+    # than the run.
+    news = fetch_company_news(symbol, ticker_obj, EVIDENCE_CONFIG, cache=CACHE,
+                              diagnostics=news_diagnostics)
     marketaux_failed = False
     alpha_failed = False
     if symbol in alpha_symbols:
@@ -739,20 +794,26 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
         time.sleep(delay)
         daily = fetch_optional(client, "TIME_SERIES_DAILY", symbol=symbol, outputsize="compact")
         time.sleep(delay)
+        # Provider-scored articles are merged ahead of the Yahoo baseline rather than
+        # replacing it. They carry real entity sentiment, which outranks the headline lexicon
+        # wherever the same story appears in both; clustering folds the duplicates together
+        # and the provider reading wins the resulting event outright.
+        provider_news = []
         if marketaux_client:
             try:
                 marketaux_payload = marketaux_client.news(
                     symbols=symbol, filter_entities="true", language="en",
                     group_similar="true", limit=10,
                 )
-                news = advisor_articles(marketaux_payload, symbol)
+                provider_news = advisor_articles(marketaux_payload, symbol)
             except (MarketauxError, OSError, ValueError) as exc:
                 marketaux_failed = True
                 LOG.warn(f"{symbol}: Marketaux news unavailable ({type(exc).__name__}: {exc})")
         if not marketaux_client or marketaux_failed:
             news_payload = fetch_optional(client, "NEWS_SENTIMENT", tickers=symbol, sort="LATEST", limit="12")
-            news = compact_news(news_payload, symbol)
+            provider_news = compact_news(news_payload, symbol)
             time.sleep(delay)
+        news = [*provider_news, *news]
         insiders = fetch_optional(client, "INSIDER_TRANSACTIONS", symbol=symbol)
         alpha_history = daily_history(daily)
         # Alpha Vantage only returns 100 sessions; Yahoo's two years wins whenever it exists.
@@ -1062,9 +1123,11 @@ def run():
 
     contexts, all_news = [], []
     alpha_failures, marketaux_failures, research_failures = [], [], []
+    yahoo_news_diagnostics = new_news_diagnostics()
     for symbol in refresh_symbols:
         try:
-            context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client)
+            context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client,
+                              news_diagnostics=yahoo_news_diagnostics)
             contexts.append(context)
             all_news.extend(context["news"])
             if context["alpha_failed"]:
@@ -1212,6 +1275,7 @@ def run():
 
     research = []
     polled_at = datetime.now(timezone.utc).isoformat()
+    previous_rows = previous_rows_by_ticker(previous_payload)
     for context in contexts:
         symbol = context["symbol"]
         row = build_research(
@@ -1224,6 +1288,24 @@ def run():
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
+        # Expectation change - the leg the catalyst and analyst-conviction models were missing.
+        # The previous run's consensus target is the only comparison point that exists for
+        # target drift: Yahoo serves today's view and nothing else, which is precisely why
+        # the snapshot archive has to be written from day one.
+        estimate_detail = collect_estimate_detail(
+            symbol, context.get("ticker_obj"),
+            previous_target=(previous_rows.get(symbol) or {}).get("analyst_consensus_target"),
+        )
+        row["estimate_detail"] = estimate_detail
+        # Lifted flat alongside analyst_rating/analyst_target_upside, which already live at
+        # row level, so the point-in-time store archives them without having to learn about
+        # nested blocks. The consensus target only fills a gap - it never overwrites a value
+        # another source already resolved.
+        for field in ("revision_breadth_30d", "eps_revision_30d_pct", "net_upgrades_90d"):
+            if estimate_detail.get(field) is not None:
+                row[field] = estimate_detail[field]
+        if row.get("analyst_consensus_target") is None and estimate_detail.get("consensus_target") is not None:
+            row["analyst_consensus_target"] = estimate_detail["consensus_target"]
         row["alpha_enriched"] = context["alpha_enriched"]
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
         champion_variant = {
@@ -1259,6 +1341,10 @@ def run():
         # rows join `screen_universe` later and keep their older stamp), so the poll time is
         # simply now. The next fast refresh reads it to decide what has waited longest.
         row["last_polled_at"] = polled_at
+        # Dated evidence with per-event decay, published alongside the static component
+        # scores rather than replacing them: the screens read the events, the long-term
+        # score keeps reading the blended components it was calibrated on.
+        row["evidence"] = build_evidence(row, context["news"], EVIDENCE_CONFIG)
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
@@ -1495,6 +1581,28 @@ def run():
                         "income_stmt/balance_sheet/cashflow and .info are Yahoo's "
                         "quoteSummary-backed endpoints and fail independently of price data; "
                         "a company still enriches on statement frames alone if only .info fails.",
+            },
+            "yahoo_news": {
+                # `unreadable` is the status that matters here. yfinance passes Yahoo's stream
+                # items through untouched, so this pipeline parses an undocumented shape that
+                # can change without warning; when it does, every item fails to normalize and
+                # the catalyst model quietly loses its only universe-wide input. Publishing
+                # received-versus-readable makes that a visible failure rather than a silent
+                # one, the same lesson the Form 4 layer taught below.
+                "status": (
+                    "unavailable" if yahoo_news_diagnostics["symbols_requested"] == 0 else
+                    "unreadable" if (yahoo_news_diagnostics["items_received"] > 0
+                                     and yahoo_news_diagnostics["items_normalized"] == 0) else
+                    "degraded" if (yahoo_news_diagnostics["feed_failures"]
+                                   or yahoo_news_diagnostics["symbols_with_news"] == 0) else
+                    "healthy"
+                ),
+                **yahoo_news_diagnostics,
+                "note": "Per-symbol company news for the whole polled universe. Yahoo publishes "
+                        "no sentiment score, so event direction is derived from the "
+                        "evidence_events.headline_direction_markers phrase lexicon - a "
+                        "deterministic keyword match, not a sentiment model. A headline that "
+                        "matches no phrase is recorded as coverage and scores nothing.",
             },
             "sec_form4": {
                 # Distinguish "we never asked" from "we asked and SEC EDGAR failed us" -

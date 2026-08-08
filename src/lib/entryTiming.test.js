@@ -11,6 +11,9 @@ function stock(price, overrides = {}) {
     ticker: 'TEST',
     stance: 'ATTRACTIVE',
     price,
+    // A real published row always carries a confidence measurement; entry timing is gated
+    // on it, so a fixture without one is not a row the pipeline could ever produce.
+    confidence: 0.82,
     recommendation: { action: 'HOLD' },
     technical_detail: {
       pct_from_52w_high: (price / WEEK_HIGH - 1) * 100,
@@ -65,5 +68,56 @@ describe('entryTiming', () => {
 
   it('is null for a missing stock', () => {
     expect(entryTiming(null)).toBeNull()
+  })
+
+  it('withholds Buy Now when confidence is below the actionable floor', () => {
+    // The screenshot case: a row showing "Data confidence 0%" also showed "BUY NOW".
+    const result = entryTiming(stock(98, {
+      confidence: 0.2,
+      technical_detail: { pct_from_52w_high: -2, pct_above_52w_low: 78, return_60d: 5 },
+    }))
+
+    expect(result.verdict).toBe('insufficient_data')
+    expect(result.reason).toMatch(/below the 40% floor/i)
+  })
+
+  it('withholds Buy Now when the row publishes no confidence at all', () => {
+    // A lightweight universe row: absent evidence, not measured-and-fine.
+    const lightweight = stock(98, {
+      technical_detail: { pct_from_52w_high: -2, pct_above_52w_low: 78, return_60d: 5 },
+    })
+    delete lightweight.confidence
+
+    const result = entryTiming(lightweight)
+
+    expect(result.verdict).toBe('insufficient_data')
+    expect(result.reason).toMatch(/no data-confidence measurement/i)
+  })
+
+  it('says why it is withholding rather than rendering an empty timing cell', () => {
+    // The row is buy-worthy by stance, so a blank cell reads as an oversight and invites the
+    // reader to fill the gap themselves.
+    const result = entryTiming(stock(98, {
+      confidence: 0.2,
+      technical_detail: { pct_from_52w_high: -2, pct_above_52w_low: 78, return_60d: 5 },
+    }))
+
+    expect(result.label).toBe('No timing call')
+    expect(result.reason).toMatch(/not enough resolved evidence/i)
+  })
+
+  it('still says nothing at all for a name the platform is telling you to sell', () => {
+    // Different case entirely: this is not "we cannot tell", it is "not a buy candidate".
+    expect(entryTiming(stock(81, { confidence: 0.2, recommendation: { action: 'SELL' } }))).toBeNull()
+    expect(entryTiming(stock(81, { confidence: 0.2, stance: 'MIXED' }))).toBeNull()
+  })
+
+  it('downgrades Buy Now to Review at moderate confidence', () => {
+    const result = entryTiming(stock(98, {
+      confidence: 0.65,
+      technical_detail: { pct_from_52w_high: -2, pct_above_52w_low: 78, return_60d: 5 },
+    }))
+    expect(result.verdict).toBe('review')
+    expect(result.reason).toMatch(/moderate/i)
   })
 })
