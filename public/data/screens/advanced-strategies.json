@@ -1,0 +1,928 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "advanced-options-v1.0.0",
+  "config_version": "screens-v1.0.0",
+  "generated_at": "2026-08-08T19:32:01.045800+00:00",
+  "status": "success",
+  "window": {
+    "min_days_to_expiration": 15,
+    "max_days_to_expiration": 45,
+    "target_days_to_expiration": 30,
+    "short_wing_target_delta": 0.18,
+    "long_wing_target_delta": 0.08
+  },
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "NEM",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Basic Materials",
+      "peer_group": "Basic Materials",
+      "percentile": 100.0,
+      "score": 0.7577,
+      "structural_score": 84.3,
+      "confidence": 0.89,
+      "price": 68.4,
+      "trend_20d": -0.0017,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 228.5000000000009,
+      "metrics": {
+        "net_credit": 0.455,
+        "max_profit": 0.455,
+        "max_loss": 2.285,
+        "probability_in_range": 0.652
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 60.19,
+          "mid": 1.805,
+          "bid": 1.75,
+          "ask": 1.86,
+          "implied_volatility": 0.33,
+          "open_interest": 558
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 62.93,
+          "mid": 2.04,
+          "bid": 1.98,
+          "ask": 2.1,
+          "implied_volatility": 0.33,
+          "open_interest": 629
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 75.24,
+          "mid": 1.92,
+          "bid": 1.86,
+          "ask": 1.98,
+          "implied_volatility": 0.33,
+          "open_interest": 592
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 77.98,
+          "mid": 1.7,
+          "bid": 1.65,
+          "ask": 1.75,
+          "implied_volatility": 0.33,
+          "open_interest": 525
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "ticker": "DECK",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "percentile": 85.71,
+      "score": 0.2023,
+      "structural_score": 82.8,
+      "confidence": 0.89,
+      "price": 178.6,
+      "trend_20d": -0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 905.4999999999998,
+      "metrics": {
+        "net_credit": 1.665,
+        "max_profit": 1.665,
+        "max_loss": 9.055,
+        "probability_in_range": 0.6457
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 153.6,
+          "mid": 5.515,
+          "bid": 5.35,
+          "ask": 5.68,
+          "implied_volatility": 0.41,
+          "open_interest": 525
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 160.74,
+          "mid": 6.22,
+          "bid": 6.03,
+          "ask": 6.41,
+          "implied_volatility": 0.41,
+          "open_interest": 592
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 200.03,
+          "mid": 5.855,
+          "bid": 5.68,
+          "ask": 6.03,
+          "implied_volatility": 0.41,
+          "open_interest": 558
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 210.75,
+          "mid": 4.895,
+          "bid": 4.75,
+          "ask": 5.04,
+          "implied_volatility": 0.41,
+          "open_interest": 466
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "ticker": "SIGI",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 71.43,
+      "score": 0.0422,
+      "structural_score": 81.0,
+      "confidence": 0.88,
+      "price": 88.9,
+      "trend_20d": -0.0014,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 467.4999999999989,
+      "metrics": {
+        "net_credit": 0.665,
+        "max_profit": 0.665,
+        "max_loss": 4.675,
+        "probability_in_range": 0.6486
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 78.23,
+          "mid": 2.135,
+          "bid": 2.07,
+          "ask": 2.2,
+          "implied_volatility": 0.3,
+          "open_interest": 558
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 81.79,
+          "mid": 2.405,
+          "bid": 2.33,
+          "ask": 2.48,
+          "implied_volatility": 0.3,
+          "open_interest": 629
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 96.01,
+          "mid": 2.405,
+          "bid": 2.33,
+          "ask": 2.48,
+          "implied_volatility": 0.3,
+          "open_interest": 629
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 101.35,
+          "mid": 2.01,
+          "bid": 1.95,
+          "ask": 2.07,
+          "implied_volatility": 0.3,
+          "open_interest": 525
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "ticker": "GMED",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Healthcare",
+      "peer_group": "Healthcare",
+      "percentile": 57.14,
+      "score": 0.0124,
+      "structural_score": 83.5,
+      "confidence": 0.89,
+      "price": 92.75,
+      "trend_20d": 0.0027,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 458.0000000000003,
+      "metrics": {
+        "net_credit": 0.98,
+        "max_profit": 0.98,
+        "max_loss": 4.58,
+        "probability_in_range": 0.6246
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 79.77,
+          "mid": 2.66,
+          "bid": 2.58,
+          "ask": 2.74,
+          "implied_volatility": 0.38,
+          "open_interest": 525
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 85.33,
+          "mid": 3.175,
+          "bid": 3.08,
+          "ask": 3.27,
+          "implied_volatility": 0.38,
+          "open_interest": 629
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 103.88,
+          "mid": 2.82,
+          "bid": 2.74,
+          "ask": 2.9,
+          "implied_volatility": 0.38,
+          "open_interest": 558
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 109.44,
+          "mid": 2.355,
+          "bid": 2.28,
+          "ask": 2.43,
+          "implied_volatility": 0.38,
+          "open_interest": 466
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "ticker": "LOPE",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Consumer Defensive",
+      "peer_group": "Consumer Defensive",
+      "percentile": 42.86,
+      "score": -0.1029,
+      "structural_score": 81.7,
+      "confidence": 0.88,
+      "price": 161.2,
+      "trend_20d": 0.0006,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 585.9999999999989,
+      "metrics": {
+        "net_credit": 0.59,
+        "max_profit": 0.59,
+        "max_loss": 5.86,
+        "probability_in_range": 0.659
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 148.3,
+          "mid": 3.2,
+          "bid": 3.1,
+          "ask": 3.3,
+          "implied_volatility": 0.22,
+          "open_interest": 629
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 151.53,
+          "mid": 3.4,
+          "bid": 3.3,
+          "ask": 3.5,
+          "implied_volatility": 0.22,
+          "open_interest": 668
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 170.87,
+          "mid": 3.4,
+          "bid": 3.3,
+          "ask": 3.5,
+          "implied_volatility": 0.22,
+          "open_interest": 668
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 177.32,
+          "mid": 3.01,
+          "bid": 2.92,
+          "ask": 3.1,
+          "implied_volatility": 0.22,
+          "open_interest": 592
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "ticker": "CRUS",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 28.57,
+      "score": -0.2469,
+      "structural_score": 85.7,
+      "confidence": 0.89,
+      "price": 132.8,
+      "trend_20d": 0.0038,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 879.0000000000024,
+      "metrics": {
+        "net_credit": 1.84,
+        "max_profit": 1.84,
+        "max_loss": 8.79,
+        "probability_in_range": 0.6235
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 111.55,
+          "mid": 4.33,
+          "bid": 4.2,
+          "ask": 4.46,
+          "implied_volatility": 0.46,
+          "open_interest": 495
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 119.52,
+          "mid": 5.19,
+          "bid": 5.03,
+          "ask": 5.35,
+          "implied_volatility": 0.46,
+          "open_interest": 592
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 151.39,
+          "mid": 4.6,
+          "bid": 4.46,
+          "ask": 4.74,
+          "implied_volatility": 0.46,
+          "open_interest": 525
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 162.02,
+          "mid": 3.62,
+          "bid": 3.51,
+          "ask": 3.73,
+          "implied_volatility": 0.46,
+          "open_interest": 413
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "ticker": "HIG",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Diversified insurers",
+      "percentile": 14.29,
+      "score": -0.3083,
+      "structural_score": 83.6,
+      "confidence": 0.85,
+      "price": 118.1,
+      "trend_20d": 0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 410.99999999999994,
+      "metrics": {
+        "net_credit": 0.61,
+        "max_profit": 0.61,
+        "max_loss": 4.11,
+        "probability_in_range": 0.6176
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 106.29,
+          "mid": 2.41,
+          "bid": 2.34,
+          "ask": 2.48,
+          "implied_volatility": 0.24,
+          "open_interest": 592
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 111.01,
+          "mid": 2.715,
+          "bid": 2.63,
+          "ask": 2.8,
+          "implied_volatility": 0.24,
+          "open_interest": 668
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 125.19,
+          "mid": 2.715,
+          "bid": 2.63,
+          "ask": 2.8,
+          "implied_volatility": 0.24,
+          "open_interest": 668
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 129.91,
+          "mid": 2.41,
+          "bid": 2.34,
+          "ask": 2.48,
+          "implied_volatility": 0.24,
+          "open_interest": 592
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "ticker": "THG",
+      "strategy": "iron_condor",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 0.0,
+      "score": -0.3566,
+      "structural_score": 86.0,
+      "confidence": 0.88,
+      "price": 245.3,
+      "trend_20d": 0.0022,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 837.4999999999993,
+      "metrics": {
+        "net_credit": 1.445,
+        "max_profit": 1.445,
+        "max_loss": 8.375,
+        "probability_in_range": 0.6086
+      },
+      "reason_codes": [],
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 220.77,
+          "mid": 5.835,
+          "bid": 5.66,
+          "ask": 6.01,
+          "implied_volatility": 0.28,
+          "open_interest": 592
+        },
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 230.58,
+          "mid": 6.58,
+          "bid": 6.38,
+          "ask": 6.78,
+          "implied_volatility": 0.28,
+          "open_interest": 668
+        },
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 264.92,
+          "mid": 6.195,
+          "bid": 6.01,
+          "ask": 6.38,
+          "implied_volatility": 0.28,
+          "open_interest": 629
+        },
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 274.74,
+          "mid": 5.495,
+          "bid": 5.33,
+          "ask": 5.66,
+          "implied_volatility": 0.28,
+          "open_interest": 558
+        }
+      ]
+    },
+    {
+      "rank": 1,
+      "ticker": "THG",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 100.0,
+      "score": 0.355,
+      "structural_score": 86.0,
+      "confidence": 0.88,
+      "price": 245.3,
+      "trend_20d": 0.0022,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 1484.0,
+      "metrics": {
+        "cost": 14.84,
+        "breakeven_up": 255.23,
+        "breakeven_down": 225.55,
+        "required_move_pct": 0.0605,
+        "probability_of_profit": 0.4538
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 1.9652,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 240.39,
+          "mid": 7.42,
+          "bid": 7.2,
+          "ask": 7.64,
+          "implied_volatility": 0.28,
+          "open_interest": 753
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 240.39,
+          "mid": 7.42,
+          "bid": 7.2,
+          "ask": 7.64,
+          "implied_volatility": 0.28,
+          "open_interest": 753
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "ticker": "GMED",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Healthcare",
+      "peer_group": "Healthcare",
+      "percentile": 85.71,
+      "score": 0.233,
+      "structural_score": 83.5,
+      "confidence": 0.89,
+      "price": 92.75,
+      "trend_20d": 0.0027,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 717.0,
+      "metrics": {
+        "cost": 7.17,
+        "breakeven_up": 96.21,
+        "breakeven_down": 81.87,
+        "required_move_pct": 0.0773,
+        "probability_of_profit": 0.4857
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 2.1057,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 89.04,
+          "mid": 3.585,
+          "bid": 3.48,
+          "ask": 3.69,
+          "implied_volatility": 0.38,
+          "open_interest": 709
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 89.04,
+          "mid": 3.585,
+          "bid": 3.48,
+          "ask": 3.69,
+          "implied_volatility": 0.38,
+          "open_interest": 709
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "ticker": "CRUS",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 71.43,
+      "score": 0.2271,
+      "structural_score": 85.7,
+      "confidence": 0.89,
+      "price": 132.8,
+      "trend_20d": 0.0038,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 1243.0,
+      "metrics": {
+        "cost": 12.43,
+        "breakeven_up": 139.92,
+        "breakeven_down": 115.06,
+        "required_move_pct": 0.0936,
+        "probability_of_profit": 0.4756
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 1.881,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 127.49,
+          "mid": 6.215,
+          "bid": 6.03,
+          "ask": 6.4,
+          "implied_volatility": 0.46,
+          "open_interest": 709
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 127.49,
+          "mid": 6.215,
+          "bid": 6.03,
+          "ask": 6.4,
+          "implied_volatility": 0.46,
+          "open_interest": 709
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "ticker": "SIGI",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 57.14,
+      "score": 0.2017,
+      "structural_score": 81.0,
+      "confidence": 0.88,
+      "price": 88.9,
+      "trend_20d": -0.0014,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 453.0,
+      "metrics": {
+        "cost": 4.53,
+        "breakeven_up": 84.54,
+        "breakeven_down": 75.48,
+        "required_move_pct": 0.051,
+        "probability_of_profit": 0.7374
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 3.1659,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 80.01,
+          "mid": 2.265,
+          "bid": 2.2,
+          "ask": 2.33,
+          "implied_volatility": 0.3,
+          "open_interest": 592
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 80.01,
+          "mid": 2.265,
+          "bid": 2.2,
+          "ask": 2.33,
+          "implied_volatility": 0.3,
+          "open_interest": 592
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "ticker": "HIG",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Diversified insurers",
+      "percentile": 42.86,
+      "score": 0.1216,
+      "structural_score": 83.6,
+      "confidence": 0.85,
+      "price": 118.1,
+      "trend_20d": 0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 482.0,
+      "metrics": {
+        "cost": 4.82,
+        "breakeven_up": 111.11,
+        "breakeven_down": 101.47,
+        "required_move_pct": 0.0408,
+        "probability_of_profit": 0.8179
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 3.4921,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 106.29,
+          "mid": 2.41,
+          "bid": 2.34,
+          "ask": 2.48,
+          "implied_volatility": 0.24,
+          "open_interest": 592
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 106.29,
+          "mid": 2.41,
+          "bid": 2.34,
+          "ask": 2.48,
+          "implied_volatility": 0.24,
+          "open_interest": 592
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "ticker": "NEM",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Basic Materials",
+      "peer_group": "Basic Materials",
+      "percentile": 28.57,
+      "score": 0.0935,
+      "structural_score": 84.3,
+      "confidence": 0.89,
+      "price": 68.4,
+      "trend_20d": -0.0017,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 459.0,
+      "metrics": {
+        "cost": 4.59,
+        "breakeven_up": 70.25,
+        "breakeven_down": 61.07,
+        "required_move_pct": 0.0671,
+        "probability_of_profit": 0.4958
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 2.9161,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 65.66,
+          "mid": 2.295,
+          "bid": 2.23,
+          "ask": 2.36,
+          "implied_volatility": 0.33,
+          "open_interest": 709
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 65.66,
+          "mid": 2.295,
+          "bid": 2.23,
+          "ask": 2.36,
+          "implied_volatility": 0.33,
+          "open_interest": 709
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "ticker": "LOPE",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Consumer Defensive",
+      "peer_group": "Consumer Defensive",
+      "percentile": 14.29,
+      "score": -0.4356,
+      "structural_score": 81.7,
+      "confidence": 0.88,
+      "price": 161.2,
+      "trend_20d": 0.0006,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 766.0,
+      "metrics": {
+        "cost": 7.66,
+        "breakeven_up": 165.64,
+        "breakeven_down": 150.32,
+        "required_move_pct": 0.0475,
+        "probability_of_profit": 0.4628
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 5.5311,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 157.98,
+          "mid": 3.83,
+          "bid": 3.72,
+          "ask": 3.94,
+          "implied_volatility": 0.22,
+          "open_interest": 753
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 157.98,
+          "mid": 3.83,
+          "bid": 3.72,
+          "ask": 3.94,
+          "implied_volatility": 0.22,
+          "open_interest": 753
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "ticker": "DECK",
+      "strategy": "straddle",
+      "eligibility": true,
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "percentile": 0.0,
+      "score": -0.7965,
+      "structural_score": 82.8,
+      "confidence": 0.89,
+      "price": 178.6,
+      "trend_20d": -0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 1321.0,
+      "metrics": {
+        "cost": 13.21,
+        "breakeven_up": 177.52,
+        "breakeven_down": 151.1,
+        "required_move_pct": 0.074,
+        "probability_of_profit": 0.5835
+      },
+      "reason_codes": [],
+      "implied_realized_vol_ratio": 6.2228,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 164.31,
+          "mid": 6.605,
+          "bid": 6.41,
+          "ask": 6.8,
+          "implied_volatility": 0.41,
+          "open_interest": 629
+        },
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 164.31,
+          "mid": 6.605,
+          "bid": 6.41,
+          "ask": 6.8,
+          "implied_volatility": 0.41,
+          "open_interest": 629
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "build_protective_put_screen-fixture",
+  "config_version": "screens-v1.0.0",
+  "generated_at": "2026-08-08T19:31:08.352885+00:00",
+  "status": "success",
+  "window": {
+    "min_days_to_expiration": 15,
+    "max_days_to_expiration": 60,
+    "target_days_to_expiration": 30,
+    "target_moneyness": -0.075
+  },
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "THG",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 100.0,
+      "score": 0.6657,
+      "structural_score": 86.0,
+      "confidence": 0.88,
+      "price": 245.3,
+      "trend_20d": 0.0022,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 25149.5,
+      "implied_realized_vol_ratio": 1.9652,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 225.68,
+          "bid": 6.01,
+          "ask": 6.38,
+          "mid": 6.195,
+          "spread_pct": 0.0597,
+          "implied_volatility": 0.28,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 6.195,
+        "cost_pct": 0.0253,
+        "floor_price": 225.68,
+        "max_loss_with_hedge_pct": 0.1052
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 2,
+      "ticker": "HIG",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Diversified insurers",
+      "percentile": 85.71,
+      "score": 0.6158,
+      "structural_score": 83.6,
+      "confidence": 0.85,
+      "price": 118.1,
+      "trend_20d": 0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 12065.5,
+      "implied_realized_vol_ratio": 3.4921,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 108.65,
+          "bid": 2.48,
+          "ask": 2.63,
+          "mid": 2.555,
+          "spread_pct": 0.0587,
+          "implied_volatility": 0.24,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 2.555,
+        "cost_pct": 0.0216,
+        "floor_price": 108.65,
+        "max_loss_with_hedge_pct": 0.1017
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 3,
+      "ticker": "NEM",
+      "eligibility": true,
+      "sector": "Basic Materials",
+      "peer_group": "Basic Materials",
+      "percentile": 71.43,
+      "score": 0.4058,
+      "structural_score": 84.3,
+      "confidence": 0.89,
+      "price": 68.4,
+      "trend_20d": -0.0017,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 7044.000000000001,
+      "implied_realized_vol_ratio": 2.9161,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 62.93,
+          "bid": 1.98,
+          "ask": 2.1,
+          "mid": 2.04,
+          "spread_pct": 0.0588,
+          "implied_volatility": 0.33,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 2.04,
+        "cost_pct": 0.0298,
+        "floor_price": 62.93,
+        "max_loss_with_hedge_pct": 0.1098
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 4,
+      "ticker": "GMED",
+      "eligibility": true,
+      "sector": "Healthcare",
+      "peer_group": "Healthcare",
+      "percentile": 57.14,
+      "score": 0.2118,
+      "structural_score": 83.5,
+      "confidence": 0.89,
+      "price": 92.75,
+      "trend_20d": 0.0027,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 9592.5,
+      "implied_realized_vol_ratio": 2.1057,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 85.33,
+          "bid": 3.08,
+          "ask": 3.27,
+          "mid": 3.175,
+          "spread_pct": 0.0598,
+          "implied_volatility": 0.38,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 3.175,
+        "cost_pct": 0.0342,
+        "floor_price": 85.33,
+        "max_loss_with_hedge_pct": 0.1142
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 5,
+      "ticker": "CRUS",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 42.86,
+      "score": -0.0731,
+      "structural_score": 85.7,
+      "confidence": 0.89,
+      "price": 132.8,
+      "trend_20d": 0.0038,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 13831.500000000002,
+      "implied_realized_vol_ratio": 1.881,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 122.18,
+          "bid": 5.35,
+          "ask": 5.68,
+          "mid": 5.515,
+          "spread_pct": 0.0598,
+          "implied_volatility": 0.46,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 5.515,
+        "cost_pct": 0.0415,
+        "floor_price": 122.18,
+        "max_loss_with_hedge_pct": 0.1215
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 6,
+      "ticker": "SIGI",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Financial Services",
+      "percentile": 28.57,
+      "score": -0.3017,
+      "structural_score": 81.0,
+      "confidence": 0.88,
+      "price": 88.9,
+      "trend_20d": -0.0014,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 9130.5,
+      "implied_realized_vol_ratio": 3.1659,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 81.79,
+          "bid": 2.33,
+          "ask": 2.48,
+          "mid": 2.405,
+          "spread_pct": 0.0624,
+          "implied_volatility": 0.3,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 2.405,
+        "cost_pct": 0.0271,
+        "floor_price": 81.79,
+        "max_loss_with_hedge_pct": 0.107
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 7,
+      "ticker": "LOPE",
+      "eligibility": true,
+      "sector": "Consumer Defensive",
+      "peer_group": "Consumer Defensive",
+      "percentile": 14.29,
+      "score": -0.7045,
+      "structural_score": 81.7,
+      "confidence": 0.88,
+      "price": 161.2,
+      "trend_20d": 0.0006,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 16440.0,
+      "implied_realized_vol_ratio": 5.5311,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 148.3,
+          "bid": 3.1,
+          "ask": 3.3,
+          "mid": 3.2,
+          "spread_pct": 0.0625,
+          "implied_volatility": 0.22,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 3.2,
+        "cost_pct": 0.0199,
+        "floor_price": 148.3,
+        "max_loss_with_hedge_pct": 0.0999
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 8,
+      "ticker": "DECK",
+      "eligibility": true,
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "percentile": 0.0,
+      "score": -0.8198,
+      "structural_score": 82.8,
+      "confidence": 0.89,
+      "price": 178.6,
+      "trend_20d": -0.001,
+      "expiration": "2026-09-07",
+      "days_to_expiration": 30,
+      "capital_required": 18520.5,
+      "implied_realized_vol_ratio": 6.2228,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 164.31,
+          "bid": 6.41,
+          "ask": 6.8,
+          "mid": 6.605,
+          "spread_pct": 0.059,
+          "implied_volatility": 0.41,
+          "open_interest": 629
+        }
+      ],
+      "metrics": {
+        "cost": 6.605,
+        "cost_pct": 0.037,
+        "floor_price": 164.31,
+        "max_loss_with_hedge_pct": 0.117
+      },
+      "reason_codes": []
+    }
+  ]
+}
