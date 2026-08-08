@@ -23,6 +23,7 @@ const Finances = lazy(() => import('./pages/Finances.jsx'))
 const Planning = lazy(() => import('./pages/Planning.jsx'))
 const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
 const FastGrowthScreen = lazy(() => import('./pages/FastGrowthScreen.jsx'))
+const ThemeExposureScreen = lazy(() => import('./pages/ThemeExposureScreen.jsx'))
 const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
@@ -150,6 +151,7 @@ function AppContent() {
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
           <Route path="/screens/politics" element={<CongressTrades />} />
+          <Route path="/screens/themes" element={<ThemeExposureScreen />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
           <Route path="/screens/validation" element={<LiveValidation />} />
           <Route path="/watchlist" element={<Watchlist />} />

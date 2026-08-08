@@ -9,18 +9,42 @@ import { getRecommendation } from '../lib/recommendation'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
-import { rankBreakoutInProgress, rankMomentum, rankReversal } from '../lib/researchScreens.js'
+import {
+  rankBreakoutInProgress, rankMomentum, rankReversal, rankValueTurnarounds,
+  rankCatalyst, rankAnalystConviction,
+} from '../lib/researchScreens.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 import { entryTiming } from '../lib/entryTiming.js'
 import { useAlerts } from '../lib/useAlerts.js'
 
+// Each sort is its own investing lens over the same underlying research, not a single
+// score trying to serve every strategy at once. "Research score" stays fundamentals-
+// first and long-term; the strategy lenses below reuse the rankScore each rankX()
+// screen already computes (src/lib/researchScreens.js) so a name doesn't have to be a
+// strong long-term score to surface under a different lens.
 const SORTS = {
-  score: ['Research score', (a, b) => (b.score ?? -1) - (a.score ?? -1)],
+  score: ['Research score (long-term)', (a, b) => (b.score ?? -1) - (a.score ?? -1)],
   return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999)],
   valuation: ['Sector valuation', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1)],
   quality: ['Fundamentals', (a, b) => (b.components?.fundamentals ?? -1) - (a.components?.fundamentals ?? -1)],
   confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1)],
+  catalyst: ['Short-term catalyst (news + insider)', (a, b) => (b.strategyScores?.catalyst ?? -1) - (a.strategyScores?.catalyst ?? -1)],
+  momentum: ['Momentum', (a, b) => (b.strategyScores?.momentum ?? -1) - (a.strategyScores?.momentum ?? -1)],
+  reversal: ['Reversal', (a, b) => (b.strategyScores?.reversal ?? -1) - (a.strategyScores?.reversal ?? -1)],
+  valueTurnaround: ['Value turnaround', (a, b) => (b.strategyScores?.valueTurnaround ?? -1) - (a.strategyScores?.valueTurnaround ?? -1)],
+  analystConviction: ['Analyst conviction', (a, b) => (b.strategyScores?.analystConviction ?? -1) - (a.strategyScores?.analystConviction ?? -1)],
+  tailwind: ['Connected / not yet re-rated', (a, b) => (b.strategyScores?.tailwind ?? -1) - (a.strategyScores?.tailwind ?? -1)],
+}
+
+// Best opportunity_score across every theme a ticker has exposure to (a name can be
+// eligible on one theme and excluded on another) - see /screens/themes for the full
+// leaderboard and the leader-vs-connected breakdown this number is a shortcut into.
+function bestTailwindScore(themeExposure) {
+  const scores = (themeExposure || [])
+    .map((exposure) => exposure.opportunity_score)
+    .filter((value) => typeof value === 'number' && Number.isFinite(value))
+  return scores.length ? Math.max(...scores) : null
 }
 
 const etfStance = (score) => score >= 80 ? 'Attractive' : score >= 70 ? 'Promising' : score >= 55 ? 'Neutral' : 'Caution'
@@ -211,9 +235,23 @@ export default function Picks() {
   // right here in the single ranked list rather than only inside its own separate page. Ranking
   // itself is untouched: these are stickers on top of the existing sort, not a second ordering.
   const research = useMemo(() => {
-    const momentumTickers = new Set(rankMomentum(stockResearch, stockResearch.length).map((row) => row.ticker))
-    const reversalTickers = new Set(rankReversal(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const momentumRows = rankMomentum(stockResearch, stockResearch.length)
+    const reversalRows = rankReversal(stockResearch, stockResearch.length)
     const breakoutTickers = new Set(rankBreakoutInProgress(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const valueTurnaroundRows = rankValueTurnarounds(stockResearch, stockResearch.length)
+    const catalystRows = rankCatalyst(stockResearch, stockResearch.length)
+    const analystConvictionRows = rankAnalystConviction(stockResearch, stockResearch.length)
+    // Sort-by-strategy needs a total ordering over every row, not just the ones that
+    // clear a screen's qualifying bar - unqualified rows fall back to the SORTS ?? -1
+    // default and sort last, same as any other sort key with a missing field.
+    const scoreMap = (rows) => new Map(rows.map((row) => [row.ticker, row.screen.rankScore]))
+    const momentumScores = scoreMap(momentumRows)
+    const reversalScores = scoreMap(reversalRows)
+    const valueTurnaroundScores = scoreMap(valueTurnaroundRows)
+    const catalystScores = scoreMap(catalystRows)
+    const analystConvictionScores = scoreMap(analystConvictionRows)
+    const momentumTickers = new Set(momentumRows.map((row) => row.ticker))
+    const reversalTickers = new Set(reversalRows.map((row) => row.ticker))
     return [
       ...stockResearch.map((row) => ({
         ...row,
@@ -223,6 +261,14 @@ export default function Picks() {
           momentumTickers.has(row.ticker) ? 'Momentum' : null,
           reversalTickers.has(row.ticker) ? 'Reversal' : null,
         ].filter(Boolean),
+        strategyScores: {
+          momentum: momentumScores.get(row.ticker) ?? null,
+          reversal: reversalScores.get(row.ticker) ?? null,
+          valueTurnaround: valueTurnaroundScores.get(row.ticker) ?? null,
+          catalyst: catalystScores.get(row.ticker) ?? null,
+          analystConviction: analystConvictionScores.get(row.ticker) ?? null,
+          tailwind: bestTailwindScore(row.theme_exposure),
+        },
       })),
       ...(etfData?.etfs || []).map(normalizeEtf),
     ]

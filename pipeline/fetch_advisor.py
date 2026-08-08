@@ -37,7 +37,7 @@ from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals
-from themes import build_theme_screen, empty_screen, load_themes
+from themes import build_theme_screen, empty_screen, expand_theme_candidates, load_themes
 from validation.ic_harness import (append_refresh as append_ic_refresh,
                                    read_snapshots,
                                    rows_from_advisor as ic_rows_from_advisor,
@@ -1189,12 +1189,12 @@ def run():
     # with time depth, so it starts accumulating now, well before any backtest needs it -
     # there is no way to reconstruct it retroactively from a provider that only serves today.
     # The trend-exposure layer runs as its own screen, deliberately outside the score. It
-    # is scored on the published leaders plus every configured holding, because the SEC
-    # requests are per-company and the whole universe would be wasteful for a screen most
-    # names will not clear anyway.
-    theme_candidates = [*ranked, *(
-        row for row in research
-        if row["ticker"] in set(portfolio_symbols) and row["ticker"] not in ranked_tickers)]
+    # is scored on the published leaders, every configured holding, and a bounded set of
+    # sector/peer-group neighbours of each theme's seed tickers - drawn only from names
+    # already scored this run, so a name that isn't a top fundamentals score today (the
+    # kind of name a sector-tailwind thesis is trying to catch before it re-rates) still
+    # gets evaluated. See themes.expand_theme_candidates for the full rationale.
+    theme_candidates = expand_theme_candidates(load_themes(), research, ranked, portfolio_symbols)
     theme_screen = build_theme_layer(sec, theme_candidates)
     theme_by_ticker = theme_screen.get("by_ticker") or {}
     for row in research:
