@@ -16,20 +16,51 @@ const dateLabel = (value) => {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+function reasonsFor(row) {
+  const reasons = []
+  if (row.implied_realized_vol_ratio != null) {
+    reasons.push(row.implied_realized_vol_ratio <= 1.15
+      ? `Priced close to, or below, realized volatility (${number(row.implied_realized_vol_ratio, 2)}× RV) — you're not paying a big premium for the expected move.`
+      : `Priced at ${number(row.implied_realized_vol_ratio, 2)}× the stock's realized volatility — a real premium for expected movement, factored into the score.`)
+  }
+  if (row.open_interest != null && row.spread_pct != null) {
+    reasons.push(`${row.open_interest} contracts of open interest and a ${pct(row.spread_pct)} bid/ask spread — liquid enough to fill near mid.`)
+  }
+  if (row.trend_20d != null) {
+    reasons.push(`Underlying ${row.trend_20d >= 0 ? 'up' : 'down'} ${pct(Math.abs(row.trend_20d))} over 20 days — why this is a ${row.option_type === 'put' ? 'put' : 'call'} idea, not a prediction of what happens next.`)
+  }
+  return reasons
+}
+
 function OptionIdeaCard({ row, onOpen }) {
+  const confidencePct = row.confidence != null ? Math.round(row.confidence * 100) : null
   return <article className="research-mobile-card" key={row.ticker}>
     <div className="research-card-head">
       <span className="rank-badge">#{row.rank}</span>
       <div><h2>{row.ticker}</h2><p>{row.sector || row.peer_group || 'Unclassified'}</p></div>
       <span className="mobile-score">{number(row.score, 2)}<small>score</small></span>
     </div>
-    <div className="research-card-badges">
+
+    <div className="option-action-line">
       <span className={`chip screen-chip screen-chip-${row.option_type}`}>{row.option_type === 'put' ? 'Put' : 'Call'}</span>
-      <span className="chip">{row.days_to_expiration}d to exp · {dateLabel(row.expiration)}</span>
+      <strong>Buy to open · {money(row.strike)} {row.option_type} · exp {dateLabel(row.expiration)} ({row.days_to_expiration}d)</strong>
+    </div>
+
+    <div className="bar-row">
+      <span className="bar-lab">Confidence</span>
+      <span className="bar-track"><span className="bar-fill" style={{ width: `${confidencePct ?? 0}%` }} /></span>
+      <span className="bar-val">{confidencePct != null ? `${confidencePct}%` : '–'}</span>
+    </div>
+
+    <ul className="method-list option-reasons">
+      {reasonsFor(row).map((reason, index) => <li key={index}>{reason}</li>)}
+    </ul>
+
+    <div className="research-card-badges">
       <WatchlistToggleButton stock={row} size={18} />
     </div>
+
     <dl className="research-card-metrics">
-      <div><dt>Strike</dt><dd>{money(row.strike)}</dd></div>
       <div><dt>Underlying</dt><dd>{money(row.price)}</dd></div>
       <div><dt>Moneyness</dt><dd><Move pct={row.moneyness} /></dd></div>
       <div><dt>Mid price</dt><dd>{money(row.mid)}</dd></div>
