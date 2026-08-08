@@ -110,6 +110,59 @@ describe('Picks research page', () => {
     expect(screen.queryByText(/Set Low Alert/)).not.toBeInTheDocument()
   })
 
+  it('includes a screen-only company (not on the published leaderboard) in the stock pool', () => {
+    // The whole point of the strategy lenses: a name that is not a top-40 fundamentals
+    // score should still be reachable, not silently dropped because it never made
+    // data.research.
+    const screenOnly = {
+      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+      components: { fundamentals: 50, news_sentiment: 90 },
+      technical_detail: { return_5d: 3, return_20d: 5 },
+      insider_activity: { available: true, points: 4 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') {
+        return { data: { research: [stock({ score: 90 })], screen_universe: [screenOnly] }, loading: false }
+      }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+
+    const stocksSection = screen.getByRole('region', { name: 'Stocks' })
+    expect(within(stocksSection).getAllByText('AAPL').length).toBeGreaterThan(0)
+    expect(within(stocksSection).getAllByText('MU').length).toBeGreaterThan(0)
+  })
+
+  it('the Short-term catalyst sort can rank a screen-only company above a published leader', () => {
+    const strongCatalyst = {
+      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+      components: { fundamentals: 50, news_sentiment: 92 },
+      technical_detail: { return_5d: 4, return_20d: 5 },
+      insider_activity: { available: true, points: 4 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') {
+        return {
+          data: {
+            research: [stock({ score: 90, components: { fundamentals: 90, news_sentiment: 50 } })],
+            screen_universe: [strongCatalyst],
+          },
+          loading: false,
+        }
+      }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
+
+    const tickers = within(document.querySelector('.research-table tbody'))
+      .getAllByRole('row').map((row) => row.textContent)
+    expect(tickers.findIndex((text) => text.includes('MU')))
+      .toBeLessThan(tickers.findIndex((text) => text.includes('AAPL')))
+  })
+
   it('shows Set Low Alert and creates a below-price alert rule for a pick currently down from its highs', async () => {
     const createRule = vi.fn().mockResolvedValue({ success: true })
     useAlerts.mockReturnValue({ createRule })

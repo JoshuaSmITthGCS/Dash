@@ -28,27 +28,27 @@ import { useAlerts } from '../lib/useAlerts.js'
 // sort control so the methodology is one tap/click away on mobile and desktop alike.
 const SORTS = {
   score: ['Research score (long-term)', (a, b) => (b.score ?? -1) - (a.score ?? -1),
-    'The main fundamentals-first score: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers for insider activity, short interest, analyst expectations, sector valuation, and macro regime. Built for long-term holding decisions.'],
+    'The main fundamentals-first score: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers for insider activity, short interest, analyst expectations, sector valuation, and macro regime. Built for long-term holding decisions. Only computed for fully published companies.'],
   return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999),
-    'Raw trailing 20-trading-day price return. No quality or valuation filter - purely "what has the price done lately."'],
+    'Raw trailing 20-trading-day price return. No quality or valuation filter - purely "what has the price done lately." Available for the full scored universe, not just published companies.'],
   valuation: ['Sector valuation', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1),
-    'How cheap a stock is relative to its own sector peers (percentile rank), not against the market as a whole - a cheap bank and a cheap chipmaker are judged against different peer groups.'],
+    'How cheap a stock is relative to its own sector peers (percentile rank), not against the market as a whole - a cheap bank and a cheap chipmaker are judged against different peer groups. Only computed for fully published companies.'],
   quality: ['Fundamentals', (a, b) => (b.components?.fundamentals ?? -1) - (a.components?.fundamentals ?? -1),
-    'The fundamentals component of the research score in isolation - valuation, profitability, financial health, growth, capital allocation, and accounting quality, with market behavior and news sentiment stripped out.'],
+    'The fundamentals component of the research score in isolation - valuation, profitability, financial health, growth, capital allocation, and accounting quality, with market behavior and news sentiment stripped out. Available for the full scored universe, not just published companies.'],
   confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
-    'How complete the underlying data was for this company, not how attractive it is - a high-confidence score just means more of the inputs actually resolved.'],
+    'How complete the underlying data was for this company, not how attractive it is - a high-confidence score just means more of the inputs actually resolved. Only computed for fully published companies.'],
   catalyst: ['Short-term catalyst (news + insider)', (a, b) => (b.strategyScores?.catalyst ?? -1) - (a.strategyScores?.catalyst ?? -1),
-    'For a quick-turnaround trade: weighted mostly by fresh news sentiment and opportunistic insider buying/selling (Form 4, routine trades excluded), with recent price/volume as confirmation and fundamentals as a small floor, not a driver. A weak long-term research score does not disqualify a name here - that is the point.'],
+    'For a quick-turnaround trade: weighted mostly by fresh news sentiment and opportunistic insider buying/selling (Form 4, routine trades excluded), with recent price/volume as confirmation and fundamentals as a small floor, not a driver. A weak long-term research score does not disqualify a name here - that is the point. Scans the full scored universe, not just the published leaderboard.'],
   momentum: ['Momentum', (a, b) => (b.strategyScores?.momentum ?? -1) - (a.strategyScores?.momentum ?? -1),
-    '12-month price momentum (skipping the most recent month), relative strength, volume confirmation, and risk-adjusted return. A medium-term trend-following lens, distinct from the very-short-term Catalyst lens.'],
+    '12-month price momentum (skipping the most recent month), relative strength, volume confirmation, and risk-adjusted return. A medium-term trend-following lens, distinct from the very-short-term Catalyst lens. Scans the full scored universe, not just the published leaderboard.'],
   reversal: ['Reversal', (a, b) => (b.strategyScores?.reversal ?? -1) - (a.strategyScores?.reversal ?? -1),
-    'Names that pulled back over the medium term but have just turned up over the most recent week - a bounce candidate, not a falling knife, gated by a fundamentals floor.'],
+    'Names that pulled back over the medium term but have just turned up over the most recent week - a bounce candidate, not a falling knife, gated by a fundamentals floor. Scans the full scored universe, not just the published leaderboard.'],
   valueTurnaround: ['Value turnaround', (a, b) => (b.strategyScores?.valueTurnaround ?? -1) - (a.strategyScores?.valueTurnaround ?? -1),
-    'Cheap relative to its sector, fundamentally solid, sitting near a 52-week low, and with a positive latest week - value plus an early sign the market is starting to agree.'],
+    'Cheap relative to its sector, fundamentally solid, sitting near a 52-week low, and with a positive latest week - value plus an early sign the market is starting to agree. Scans the full scored universe, not just the published leaderboard.'],
   analystConviction: ['Analyst conviction', (a, b) => (b.strategyScores?.analystConviction ?? -1) - (a.strategyScores?.analystConviction ?? -1),
-    'Bullish average analyst rating and consensus target upside from professional coverage (minimum 3 analysts). A different "market hasn’t fully repriced this yet" signal from Catalyst (news/insider) or Momentum (price trend).'],
+    'Bullish average analyst rating and consensus target upside from professional coverage (minimum 3 analysts). A different "market hasn’t fully repriced this yet" signal from Catalyst (news/insider) or Momentum (price trend). Scans the full scored universe, not just the published leaderboard.'],
   tailwind: ['Connected / not yet re-rated', (a, b) => (b.strategyScores?.tailwind ?? -1) - (a.strategyScores?.tailwind ?? -1),
-    'Best theme-exposure opportunity score across every structural trend this name is connected to - exposure × business quality × how cheap it still is. Surfaces sector-connected names riding the same wave as a proven leader (see /screens/themes) even when they are not already a top research score. Price momentum contributes nothing to this score by design.'],
+    'Best theme-exposure opportunity score across every structural trend this name is connected to - exposure × business quality × how cheap it still is. Surfaces sector-connected names riding the same wave as a proven leader (see /screens/themes) even when they are not already a top research score. Price momentum contributes nothing to this score by design. Scans the full scored universe, not just the published leaderboard.'],
 }
 
 // Best opportunity_score across every theme a ticker has exposure to (a name can be
@@ -243,7 +243,15 @@ export default function Picks() {
   const [alertingTicker, setAlertingTicker] = useState('')
   const [alertStatuses, setAlertStatuses] = useState({})
 
-  const stockResearch = data?.research || []
+  // The published leaderboard (data.research, the top ~40 by fundamentals-first score) plus
+  // the rest of the scored universe (data.screen_universe, lightweight rows with no price
+  // history) - merged so a strategy lens like Catalyst or Tailwind can surface a name that
+  // isn't a top fundamentals score today, not just re-sort the same 40 names. Deduped by
+  // ticker the same way FastGrowthScreen and ThemeExposureScreen already merge these two
+  // arrays; the two are mutually exclusive by construction so this never drops a row.
+  const stockResearch = useMemo(() => [...new Map(
+    [...(data?.research || []), ...(data?.screen_universe || [])].map((row) => [row.ticker, row]),
+  ).values()], [data])
   // Momentum and reversal are separate screens (see /screens/momentum, /screens/matrix), each
   // with their own qualifying bar – but a stock that clears one of those bars is worth flagging
   // right here in the single ranked list rather than only inside its own separate page. Ranking
@@ -428,7 +436,7 @@ export default function Picks() {
         alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} />}
 
       {!rows.length && <Empty note="No companies match those filters." />}
-      <div className="disclaimer">Research includes {stockResearch.length} ranked companies and {etfData?.etfs?.length || 0} ETFs. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>
+      <div className="disclaimer">Research includes {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. Strategy-lens sorts (Catalyst, Momentum, Reversal, Value turnaround, Analyst conviction, Tailwind) can surface a company from either group; Research score, Sector valuation, and Data confidence are only available for fully published companies. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )

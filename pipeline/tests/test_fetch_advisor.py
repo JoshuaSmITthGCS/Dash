@@ -265,6 +265,30 @@ class ScreenRowProjectionTests(unittest.TestCase):
         self.assertNotIn("history", projected)
         self.assertFalse(projected["stale_carryforward"])
 
+    def test_the_screen_only_slice_still_carries_what_the_strategy_lenses_need(self):
+        # The client-side sort lenses (rankCatalyst, rankAnalystConviction, the theme
+        # "tailwind" opportunity score) need to read these fields for a name outside the
+        # published leaderboard, or those lenses silently stay scoped to the top 40.
+        full_row = {
+            "ticker": "MU", "name": "Micron", "sector": "Technology", "price": 100.0, "score": 55,
+            "stance": "hold", "components": {"fundamentals": 55, "news_sentiment": 70},
+            "fundamental_categories": {}, "technical_detail": {"drawdown_60d": -12, "volume_ratio_60d": 1.4},
+            "insider_activity": {"available": True, "points": 3.0},
+            "analyst_count": 12, "analyst_rating": 1.8, "analyst_target_upside": 15.0,
+            "theme_exposure": [{"theme_id": "ai_infrastructure", "theme_exposure_score": 70,
+                                "opportunity_score": 62, "eligible": True}],
+        }
+
+        projected = _screen_row(full_row)
+
+        self.assertEqual(projected["technical_detail"]["drawdown_60d"], -12)
+        self.assertEqual(projected["technical_detail"]["volume_ratio_60d"], 1.4)
+        self.assertEqual(projected["insider_activity"], {"available": True, "points": 3.0})
+        self.assertEqual(projected["analyst_count"], 12)
+        self.assertEqual(projected["analyst_rating"], 1.8)
+        self.assertEqual(projected["analyst_target_upside"], 15.0)
+        self.assertEqual(projected["theme_exposure"][0]["opportunity_score"], 62)
+
     def test_an_already_lightweight_carried_forward_row_projects_without_error(self):
         # What a carried-forward row looks like when it was never published to begin with -
         # i.e. it came from a prior screen_universe entry, not a prior research entry.

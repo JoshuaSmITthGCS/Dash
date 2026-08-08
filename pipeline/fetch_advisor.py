@@ -71,7 +71,7 @@ FULL_UNIVERSE_RESEARCH = os.getenv("FULL_UNIVERSE_RESEARCH", "").strip().lower()
 SCREEN_TECHNICAL_FIELDS = (
     "return_5d", "return_20d", "momentum_12_1", "momentum_12_1_pct", "risk_adjusted",
     "relative_strength", "relative_strength_20d", "volume_confirmation",
-    "pct_above_52w_low",
+    "pct_above_52w_low", "drawdown_60d", "volume_ratio_60d",
 )
 
 # The signed-in Financial Report and Portfolio views need prices, chart history, scoring
@@ -149,6 +149,15 @@ def _screen_row(row):
         "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
                              if detail.get(key) is not None},
+        # Needed by the client-side strategy-lens sorts (rankCatalyst, rankAnalystConviction,
+        # tailwind/theme opportunity) so those lenses can scan beyond the published
+        # leaderboard - the same "scan more than the leaderboard" rationale as the
+        # technical fields above, not the full nested SEC filing/estimate detail.
+        "insider_activity": row.get("insider_activity"),
+        "analyst_count": row.get("analyst_count"),
+        "analyst_rating": row.get("analyst_rating"),
+        "analyst_target_upside": row.get("analyst_target_upside"),
+        "theme_exposure": row.get("theme_exposure"),
         "stale_carryforward": row.get("stale_carryforward", False),
     }
 
@@ -1151,6 +1160,21 @@ def run():
     research.sort(key=lambda row: row["score"], reverse=True)
     ranked = research[:publish_limit]
     ranked_tickers = {row["ticker"] for row in ranked}
+
+    # The trend-exposure layer runs as its own screen, deliberately outside the score. It
+    # is scored on the published leaders, every configured holding, and a bounded set of
+    # sector/peer-group neighbours of each theme's seed tickers - drawn only from names
+    # already scored this run, so a name that isn't a top fundamentals score today (the
+    # kind of name a sector-tailwind thesis is trying to catch before it re-rates) still
+    # gets evaluated. See themes.expand_theme_candidates for the full rationale. This runs
+    # before `screen_universe` is projected below so the lightweight rows it ships to the
+    # browser carry `theme_exposure` too, not just the published leaderboard.
+    theme_candidates = expand_theme_candidates(load_themes(), research, ranked, portfolio_symbols)
+    theme_screen = build_theme_layer(sec, theme_candidates)
+    theme_by_ticker = theme_screen.get("by_ticker") or {}
+    for row in research:
+        row["theme_exposure"] = theme_by_ticker.get(row["ticker"], [])
+
     # The momentum and 52-week-low screens rank on price behavior, not the fundamentals-led
     # composite score, so a strong screen candidate can rank outside the published leaderboard.
     # technical_detail and fundamental_categories are populated for the whole scored universe
@@ -1188,18 +1212,6 @@ def run():
     # Append this run's observations to the point-in-time store. It only becomes valuable
     # with time depth, so it starts accumulating now, well before any backtest needs it -
     # there is no way to reconstruct it retroactively from a provider that only serves today.
-    # The trend-exposure layer runs as its own screen, deliberately outside the score. It
-    # is scored on the published leaders, every configured holding, and a bounded set of
-    # sector/peer-group neighbours of each theme's seed tickers - drawn only from names
-    # already scored this run, so a name that isn't a top fundamentals score today (the
-    # kind of name a sector-tailwind thesis is trying to catch before it re-rates) still
-    # gets evaluated. See themes.expand_theme_candidates for the full rationale.
-    theme_candidates = expand_theme_candidates(load_themes(), research, ranked, portfolio_symbols)
-    theme_screen = build_theme_layer(sec, theme_candidates)
-    theme_by_ticker = theme_screen.get("by_ticker") or {}
-    for row in research:
-        row["theme_exposure"] = theme_by_ticker.get(row["ticker"], [])
-
     # Rows carry the raw metric values merged from their snapshot, which is what a later
     # backtest needs - the derived 0-100 scores can always be recomputed from them.
     # `research` only ever holds freshly polled rows now - carried-forward rows join
