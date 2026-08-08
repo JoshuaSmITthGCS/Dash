@@ -83,6 +83,13 @@ class Form4ParserTests(unittest.TestCase):
         self.assertIsNone(row["owner_name"])
         self.assertEqual(row["roles"], [])
 
+    def test_a_rendered_html_page_is_rejected_rather_than_read_as_an_empty_filing(self):
+        # A well-formed HTML rendering parses cleanly and simply contains no
+        # nonDerivativeTransaction nodes, which is indistinguishable from a filing that
+        # genuinely reported nothing. Rejecting it lets the caller try another URL.
+        with self.assertRaises(ValueError):
+            parse_form4("<html><body><table><tr><td>Form 4</td></tr></table></body></html>")
+
     def test_parse_owner_reads_relationship_flags(self):
         owner = parse_owner(ET.fromstring(FORM4))
         self.assertEqual(owner["owner_name"], "Doe Jane")
@@ -150,6 +157,63 @@ class FairAccessTests(unittest.TestCase):
         # urllib title-cases header names on the way in.
         self.assertEqual(captured["headers"]["User-agent"], "Test Harness test@example.com")
         self.assertEqual(captured["headers"]["Host"], "data.sec.gov")
+
+
+class Form4DocumentUrlTests(unittest.TestCase):
+    """The bug these lock: EDGAR's ``primaryDocument`` for an ownership form is its
+    XSL-rendered HTML. Requesting it verbatim and parsing the result as XML fails on almost
+    every filing, and the failure was swallowed - so the layer reported itself healthy while
+    scoring every symbol in the universe as having no insider activity whatsoever."""
+
+    def test_the_xsl_rendering_directory_is_stripped_before_the_document_is_fetched(self):
+        urls = sec_edgar.form4_document_urls("320193", "000032019326000058",
+                                             "xslF345X03/wf-form4_175.xml")
+        self.assertEqual(
+            urls[0],
+            "https://www.sec.gov/Archives/edgar/data/320193/000032019326000058/wf-form4_175.xml",
+        )
+
+    def test_the_document_as_filed_and_primary_doc_remain_as_fallbacks(self):
+        urls = sec_edgar.form4_document_urls("320193", "000032019326000058",
+                                             "xslF345X03/wf-form4_175.xml")
+        self.assertTrue(urls[1].endswith("/xslF345X03/wf-form4_175.xml"))
+        self.assertTrue(urls[-1].endswith("/primary_doc.xml"))
+
+    def test_an_unprefixed_document_is_not_duplicated(self):
+        urls = sec_edgar.form4_document_urls("320193", "000032019326000058", "form4.xml")
+        self.assertEqual(len(urls), 2)
+        self.assertTrue(urls[0].endswith("/form4.xml"))
+
+    def test_transactions_are_parsed_from_the_de_rendered_url(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        requested = []
+
+        def fake_get(url, as_json=False):
+            requested.append(url)
+            if url.endswith("/xslF345X03/doc4.xml"):
+                return "<html><body>rendered, not parseable as ownership XML</body></html>"
+            return FORM4
+
+        filings = [{"cik": "0000320193", "accession": "0000320193-26-000058",
+                    "document": "xslF345X03/doc4.xml", "filed": "2026-07-02"}]
+        with mock.patch.object(client, "recent_form4_filings", return_value=filings), \
+                mock.patch.object(client, "_get", fake_get):
+            transactions, reviewed = client.form4_transactions("AAPL")
+
+        self.assertEqual([row["code"] for row in transactions], ["P"])
+        self.assertTrue(reviewed[0]["parsed"])
+        self.assertTrue(requested[0].endswith("/doc4.xml"))
+
+    def test_a_filing_no_candidate_url_can_parse_is_reported_not_silently_dropped(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        filings = [{"cik": "0000320193", "accession": "0000320193-26-000058",
+                    "document": "xslF345X03/doc4.xml", "filed": "2026-07-02"}]
+        with mock.patch.object(client, "recent_form4_filings", return_value=filings), \
+                mock.patch.object(client, "_get", lambda url, as_json=False: "<html></html>"):
+            transactions, reviewed = client.form4_transactions("AAPL")
+
+        self.assertEqual(transactions, [])
+        self.assertFalse(reviewed[0]["parsed"])
 
 
 class _FakeResponse:

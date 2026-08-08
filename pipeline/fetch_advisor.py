@@ -173,6 +173,16 @@ def _screen_row(row):
     return {
         "ticker": row["ticker"], "name": row.get("name"), "sector": row.get("sector"),
         "price": row.get("price"), "score": row["score"], "stance": row.get("stance"),
+        # Without this flag every fund in the universe reads as an ordinary company to the
+        # client-side strategy screens, which gate on per-security fundamentals a fund does
+        # not have - VOO ranked as a stock and, at one point, was the single name clearing
+        # the catalyst screen.
+        "is_etf": row.get("is_etf", False),
+        # When this row's inputs were last actually fetched, as opposed to carried forward
+        # from an earlier run. It is what lets a fast refresh rotate the stalest part of the
+        # tail back into the poll (see rotation_slice) instead of re-polling the same
+        # leaders every time and leaving the rest to age indefinitely.
+        "last_polled_at": row.get("last_polled_at"),
         "score_variants": variants or None,
         "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
@@ -636,37 +646,55 @@ def collect_insider_signals(sec, symbols, *, lookback_days=1100, cache=None):
     runs ahead of scoring so ``insider_modifier`` can act on it. Results are cached for a
     day - Form 4 filings are not intraday data - and the whole thing is skipped silently
     when ``SEC_USER_AGENT`` is unset, since SEC fair-access policy requires it.
+
+    Returns ``(signals, failures, diagnostics)``. The diagnostics exist because "every
+    symbol scored zero insider activity" has two very different causes - a quiet market and
+    a layer that cannot read a single filing - and the published payload could not tell them
+    apart. ``filings_reviewed`` versus ``filings_unreadable`` separates them.
     """
+    empty_diagnostics = {"filings_reviewed": 0, "filings_unreadable": 0, "symbols_with_filings": 0}
     if not sec.available or not symbols:
-        return {}, []
+        return {}, [], empty_diagnostics
     cache = cache or CACHE
     failures = []
 
     def collect_one(symbol):
         def produce():
-            transactions, _ = sec.form4_transactions(symbol, lookback_days=lookback_days)
-            return transactions
+            transactions, filings = sec.form4_transactions(symbol, lookback_days=lookback_days)
+            return {
+                "transactions": transactions,
+                "filings_reviewed": len(filings),
+                "filings_unreadable": sum(1 for filing in filings if not filing.get("parsed")),
+            }
         try:
-            transactions = cache.fetch("sec_submissions", f"form4:{symbol}:{lookback_days}",
-                                       produce, source="sec_edgar")
+            # `v2` in the key retires entries cached by the build that fetched EDGAR's
+            # XSL-rendered HTML and parsed nothing out of it; those cached empties would
+            # otherwise keep the layer dark for a day after the fix.
+            collected = cache.fetch("sec_submissions", f"form4:v2:{symbol}:{lookback_days}",
+                                    produce, source="sec_edgar")
         except Exception as exc:  # noqa: BLE001
             LOG.warn(f"{symbol}: SEC Form 4 unavailable ({type(exc).__name__})")
-            return symbol, None
-        return symbol, summarize_insiders(transactions or [])
+            return symbol, None, None
+        return symbol, summarize_insiders(collected.get("transactions") or []), collected
 
     # SEC fair access allows 10 requests/second, so a small pool is safely inside the limit
     # while still overlapping the latency of dozens of filing downloads.
     results = parallel_map(collect_one, list(symbols), provider="sec_edgar", max_workers=4)
     signals = {}
+    diagnostics = dict(empty_diagnostics)
     for entry in results:
         if not entry:
             continue
-        symbol, summary = entry
+        symbol, summary, collected = entry
         if summary is None:
             failures.append(symbol)
-        else:
-            signals[symbol] = summary
-    return signals, failures
+            continue
+        signals[symbol] = summary
+        reviewed = collected.get("filings_reviewed", 0)
+        diagnostics["filings_reviewed"] += reviewed
+        diagnostics["filings_unreadable"] += collected.get("filings_unreadable", 0)
+        diagnostics["symbols_with_filings"] += 1 if reviewed else 0
+    return signals, failures, diagnostics
 
 
 def fetch_optional(client, function, **params):
@@ -870,6 +898,32 @@ def carry_forward_rows(research, symbols, previous_payload):
     ]
 
 
+def rotation_slice(symbols, already_polling, previous_payload, size):
+    """The stalest symbols outside this refresh's priority set, oldest poll first.
+
+    A fast refresh polls the previous leaders plus the portfolio, which is a fixed set: a
+    name that is not a prior leader is never re-fetched by a fast run, so it carries the
+    same row forward indefinitely and quietly falls behind whatever fields later runs
+    started publishing. That is not a display problem - it decides which names a screen can
+    evaluate at all. The published dataset showed the result plainly: 756 of 837 screen rows
+    had no 60-day drawdown, so the reversal screen could only ever see the 121 names polled
+    that day, out of a 926-name universe.
+
+    Rotating the oldest rows back in bounds that staleness: with the default sizes the whole
+    universe is re-polled within a handful of fast refreshes, and a symbol that has never
+    been polled at all sorts first because it has no timestamp to compare.
+    """
+    if size <= 0:
+        return ()
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    candidates = [symbol for symbol in symbols if symbol not in already_polling]
+    candidates.sort(key=lambda symbol: (
+        str((previous_rows.get(symbol) or {}).get("last_polled_at") or ""),
+        symbol,
+    ))
+    return tuple(candidates[:size])
+
+
 def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
                                full_universe_research=False):
     """Choose prior leaders, five best outsiders, then any explicit portfolio coverage.
@@ -960,6 +1014,9 @@ def run():
     # published dataset (see the carry-forward merge below `research.sort`).
     universe_mode = os.getenv("ADVISOR_UNIVERSE_MODE", "full").strip().lower()
     fast_universe_size = max(1, int(os.getenv("ADVISOR_FAST_UNIVERSE_SIZE", "100")))
+    # Sized so a ~900-name universe is fully re-polled within roughly seven fast refreshes
+    # rather than only when a full sweep happens to run.
+    fast_rotation_size = max(0, int(os.getenv("ADVISOR_FAST_ROTATION_SIZE", "120")))
     alpha_enabled = os.getenv("ALPHA_DISABLE", "").lower() not in {"1", "true", "yes"}
     alpha_limit = max(0, min(5, int(os.getenv("ALPHA_ENRICH_LIMIT", "5")))) if alpha_enabled else 0
     previous_top = previous_ranked_symbols()
@@ -980,10 +1037,13 @@ def run():
 
     if universe_mode == "fast":
         fast_priority = set(previous_top_symbols(previous_payload, fast_universe_size)) | set(portfolio_symbols)
-        refresh_symbols = tuple(symbol for symbol in symbols if symbol in fast_priority) or symbols
+        rotation = set(rotation_slice(symbols, fast_priority, previous_payload, fast_rotation_size))
+        refresh_symbols = tuple(
+            symbol for symbol in symbols if symbol in fast_priority or symbol in rotation
+        ) or symbols
         LOG.info(f"Fast refresh: polling {len(refresh_symbols)}/{len(symbols)} symbols "
-                 f"(prior top {fast_universe_size} plus portfolio holdings); the rest carry "
-                 "forward from the last full refresh")
+                 f"(prior top {fast_universe_size}, portfolio holdings, and the {len(rotation)} "
+                 "stalest names in the tail); the rest carry forward until their turn")
     else:
         refresh_symbols = symbols
 
@@ -1130,7 +1190,10 @@ def run():
     insider_candidates = tuple(dict.fromkeys(
         (*preliminary_symbols[:sec_limit], *portfolio_symbols)
     )) if sec.available else ()
-    insider_signals, sec_failures = collect_insider_signals(sec, insider_candidates)
+    insider_signals, sec_failures, sec_diagnostics = collect_insider_signals(sec, insider_candidates)
+    if sec_diagnostics["filings_unreadable"]:
+        LOG.warn(f"SEC Form 4: {sec_diagnostics['filings_unreadable']} of "
+                 f"{sec_diagnostics['filings_reviewed']} filings could not be parsed")
 
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
@@ -1148,6 +1211,7 @@ def run():
     })
 
     research = []
+    polled_at = datetime.now(timezone.utc).isoformat()
     for context in contexts:
         symbol = context["symbol"]
         row = build_research(
@@ -1191,6 +1255,10 @@ def run():
         row["confidence_detail"] = confidence_components(
             row, source_reliability=source_reliability_this_run,
         )
+        # Every row in `research` was polled during this run by construction (carried-forward
+        # rows join `screen_universe` later and keep their older stamp), so the poll time is
+        # simply now. The next fast refresh reads it to decide what has waited longest.
+        row["last_polled_at"] = polled_at
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
@@ -1360,9 +1428,15 @@ def run():
         "cache": CACHE.stats(),
         "capability_status": {
             "form4_insider_transactions": {
-                "status": "available" if sec.available else "configuration_required",
+                "status": (
+                    "configuration_required" if not sec.available else
+                    "degraded" if sec_diagnostics["filings_unreadable"] else
+                    "available"
+                ),
                 "source": "SEC EDGAR",
                 "scored_symbols": len(insider_signals),
+                "filings_reviewed": sec_diagnostics["filings_reviewed"],
+                "filings_unreadable": sec_diagnostics["filings_unreadable"],
                 "note": "Open-market purchase/sale codes only, split routine vs opportunistic "
                         "and scored as a bounded decaying modifier; set SEC_USER_AGENT.",
             },
@@ -1430,11 +1504,17 @@ def run():
                 "status": (
                     "unavailable_not_configured" if not sec.available else
                     "unavailable_provider_error" if sec_failures and not insider_signals else
-                    "degraded" if sec_failures else
+                    # Filings that download but cannot be parsed are a defect in this
+                    # client, not a quiet insider market, and they must not be published as
+                    # a healthy layer that simply found nothing.
+                    "degraded" if sec_failures or sec_diagnostics["filings_unreadable"] else
                     "healthy"
                 ),
                 "failed_symbols": sec_failures,
                 "scored_symbols": len(insider_signals),
+                "filings_reviewed": sec_diagnostics["filings_reviewed"],
+                "filings_unreadable": sec_diagnostics["filings_unreadable"],
+                "symbols_with_filings": sec_diagnostics["symbols_with_filings"],
                 "note": "Set SEC_USER_AGENT to enable free source-of-record insider transactions" if not sec.available else
                         "Open-market Form 4 codes P/S only; routine calendar trades score zero, "
                         "opportunistic cluster activity is a bounded decaying modifier",

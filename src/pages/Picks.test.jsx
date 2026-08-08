@@ -134,7 +134,11 @@ describe('Picks research page', () => {
     expect(within(stocksSection).getAllByText('MU').length).toBeGreaterThan(0)
   })
 
-  it('the Short-term catalyst sort can rank a screen-only company above a published leader', () => {
+  it('a strategy lens returns its own screened list, not the research leaderboard re-sorted', () => {
+    // The bug this guards: selecting a lens used to re-sort the same rows, so a published
+    // leader with no catalyst at all still sat in the list (just lower down), and the top
+    // of the page still looked like the fundamentals leaderboard. A lens is a screen - a
+    // name that does not clear its bar is absent, not ranked last.
     const strongCatalyst = {
       ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
       components: { fundamentals: 50, news_sentiment: 92 },
@@ -157,10 +161,97 @@ describe('Picks research page', () => {
     render(<MemoryRouter><Picks /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
 
-    const tickers = within(document.querySelector('.research-table tbody'))
-      .getAllByRole('row').map((row) => row.textContent)
-    expect(tickers.findIndex((text) => text.includes('MU')))
-      .toBeLessThan(tickers.findIndex((text) => text.includes('AAPL')))
+    const table = within(document.querySelector('.research-table tbody'))
+    const tickers = table.getAllByRole('row').map((row) => row.textContent)
+    expect(tickers.some((text) => text.includes('MU'))).toBe(true)
+    expect(tickers.some((text) => text.includes('AAPL'))).toBe(false)
+  })
+
+  it('a lens list is capped at the top 20 even when far more names clear the bar', () => {
+    const qualifier = (index) => ({
+      ticker: `T${index}`, name: `Ticker ${index}`, sector: 'Technology', score: 50,
+      components: { fundamentals: 60 },
+      technical_detail: { return_5d: 1 + index / 100, return_20d: 5, momentum_12_1: 60 },
+    })
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') {
+        return {
+          data: { research: [], screen_universe: Array.from({ length: 40 }, (_, index) => qualifier(index)) },
+          loading: false,
+        }
+      }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'momentum' } })
+
+    expect(within(document.querySelector('.research-table tbody')).getAllByRole('row')).toHaveLength(20)
+    expect(screen.getByText(/Showing the top 20 of 40 companies that clear it/)).toBeVisible()
+  })
+
+  it('states why a row qualified under the active lens', () => {
+    // "Some of these are not even showing why they are reversals" - the Reversal chip used
+    // to be the whole explanation.
+    const bouncing = {
+      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+      components: { fundamentals: 63 },
+      technical_detail: { return_5d: 6.6, return_20d: -10.4, drawdown_60d: -27.7 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [bouncing] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'reversal' } })
+
+    expect(screen.getAllByText(/down 10.4% over 20 days.*27.7% below its 60-day high.*\+6.6% this week.*fundamentals 63/).length)
+      .toBeGreaterThan(0)
+  })
+
+  it('reports which missing input kept most of the universe out of a lens', () => {
+    // A short list because the data is dark and a short list because few names are
+    // attractive look identical otherwise.
+    const scorable = {
+      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+      components: { fundamentals: 63 },
+      technical_detail: { return_5d: 6.6, return_20d: -10.4, drawdown_60d: -27.7 },
+    }
+    const noDrawdown = {
+      ticker: 'NDD', name: 'No Drawdown Co', sector: 'Technology', score: 50,
+      components: { fundamentals: 70 },
+      technical_detail: { return_5d: 4, return_20d: -8 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [scorable, noDrawdown] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'reversal' } })
+
+    expect(screen.getByText(/1 of 2 could not be evaluated/)).toBeVisible()
+    expect(screen.getByText(/binding one is 60-day drawdown, published for 1 of 2 rows/)).toBeVisible()
+  })
+
+  it('shows a missing data confidence as – rather than a measured 0%', () => {
+    // A lightweight universe row has no confidence at all; rendering it as 0% reads as
+    // "we measured this and it is terrible."
+    const lightweight = {
+      ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+      components: { fundamentals: 63 }, technical_detail: { return_20d: -10.4 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+
+    const table = document.querySelector('.research-table')
+    expect(within(table).queryByText('0%')).not.toBeInTheDocument()
+    expect(within(table).getAllByText('Lighter data').length).toBeGreaterThan(0)
   })
 
   it('a corroborated catalyst outranks a thin-evidence one even with a lower raw score, and shows the chip', () => {
@@ -212,6 +303,27 @@ describe('Picks research page', () => {
     render(<MemoryRouter><Picks /></MemoryRouter>)
     // Default sort is "score" - catalyst corroboration is irrelevant to this lens.
     expect(screen.queryByText('Thin evidence')).not.toBeInTheDocument()
+  })
+
+  it('never screens a fund as a stock, even when its advisor row omits the ETF flag', () => {
+    // The lightweight screen_universe projection used to drop `is_etf`, so VOO competed in
+    // screens that gate on per-security fundamentals no fund reports - and briefly was the
+    // only name clearing the catalyst screen in the published dataset.
+    const fundWithoutFlag = {
+      ticker: 'VOO', name: 'Vanguard S&P 500 ETF', sector: 'Diversified', score: 70,
+      components: { fundamentals: 60, news_sentiment: 90 },
+      technical_detail: { return_5d: 3, return_20d: 5 },
+    }
+    useData.mockImplementation((file) => {
+      if (file === 'advisor.json') return { data: { research: [], screen_universe: [fundWithoutFlag] }, loading: false }
+      return { data: { etfs: [etf()] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
+
+    expect(document.querySelector('.research-table')).toBeNull()
+    expect(screen.getByText(/No company clears this screen/)).toBeVisible()
   })
 
   it('shows Set Low Alert and creates a below-price alert rule for a pick currently down from its highs', async () => {

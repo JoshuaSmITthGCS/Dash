@@ -3,6 +3,7 @@ import { bullBearScore } from './bullBearScore'
 import {
   activeThemes, rankAnalystConviction, rankBreakoutInProgress, rankCatalyst, rankEmergingGrowth,
   rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
+  STRATEGY_LENSES, isStrategyLens, lensCoverage, lensReason, rankByLens, rankTailwind,
 } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
@@ -526,5 +527,104 @@ describe('invariant: no stock screen ever includes an ETF', () => {
 
     expect(results.some((item) => item.is_etf)).toBe(false)
     expect(results.map((item) => item.ticker)).toEqual(['REALCO'])
+  })
+})
+
+describe('strategy lens registry', () => {
+  const catalystRow = (ticker, overrides = {}) => row(ticker, {
+    components: { fundamentals: 60, news_sentiment: 80 },
+    technical_detail: { return_5d: 3, return_20d: 6 },
+    ...overrides,
+  })
+
+  it('ranks tailwind on the best theme opportunity and drops names with no scored exposure', () => {
+    const connected = row('CONNECTED', {
+      theme_exposure: [
+        { theme_id: 'ai', display_name: 'AI Infrastructure', theme_exposure_score: 90, opportunity_score: 70, eligible: true },
+        { theme_id: 'grid', display_name: 'Grid', theme_exposure_score: 40, opportunity_score: 88, eligible: true },
+      ],
+    })
+    const unconnected = row('PLAIN', { theme_exposure: [] })
+
+    const ranked = rankTailwind([connected, unconnected], 5)
+
+    expect(ranked.map((item) => item.ticker)).toEqual(['CONNECTED'])
+    expect(ranked[0].screen.rankScore).toBe(88)
+    expect(ranked[0].screen.themeName).toBe('Grid')
+  })
+
+  it('flags a theme name the exposure layer excluded on valuation grounds rather than hiding it', () => {
+    const euphoric = row('RICH', {
+      theme_exposure: [{ display_name: 'AI', theme_exposure_score: 100, opportunity_score: 60, eligible: false }],
+    })
+
+    const [ranked] = rankTailwind([euphoric], 5)
+
+    expect(ranked.screen.corroborated).toBe(false)
+    expect(ranked.screen.corroborationGaps.join(' ')).toMatch(/valuation/)
+  })
+
+  it('lensCoverage names the single input that excludes the most rows', () => {
+    // Reversal needs a 60-day drawdown, which only fully polled rows carry. Reporting
+    // that is the difference between "few good candidates" and "most of the universe was
+    // never evaluated".
+    const complete = row('FULL', {
+      components: { fundamentals: 70 },
+      technical_detail: { return_5d: 4, return_20d: -8, drawdown_60d: -20 },
+    })
+    const noDrawdown = row('PARTIAL', {
+      components: { fundamentals: 70 },
+      technical_detail: { return_5d: 4, return_20d: -8 },
+    })
+
+    const coverage = lensCoverage([complete, noDrawdown, { ...noDrawdown, ticker: 'PARTIAL2' }], 'reversal')
+
+    expect(coverage.scanned).toBe(3)
+    expect(coverage.evaluable).toBe(1)
+    expect(coverage.missingInputs).toBe(2)
+    expect(coverage.binding.label).toBe('60-day drawdown')
+    expect(coverage.binding.present).toBe(1)
+  })
+
+  it('lensCoverage counts a row as evaluable under an any-of lens when one input resolves', () => {
+    const newsOnly = catalystRow('NEWS', { insider_activity: { available: false } })
+    const dark = catalystRow('DARK', {
+      components: { fundamentals: 60 }, insider_activity: { available: false },
+    })
+
+    const coverage = lensCoverage([newsOnly, dark], 'catalyst')
+
+    expect(coverage.evaluable).toBe(1)
+    expect(coverage.inputs.find((input) => input.label === 'Form 4 insider activity').present).toBe(0)
+  })
+
+  it('lensReason states the measurements that made a row qualify', () => {
+    const bouncing = row('BOUNCE', {
+      components: { fundamentals: 63 },
+      technical_detail: { return_5d: 6.6, return_20d: -10.4, drawdown_60d: -27.7 },
+    })
+
+    const [ranked] = rankByLens([bouncing], 'reversal', 20)
+
+    expect(lensReason(ranked, 'reversal')).toBe(
+      'down 10.4% over 20 days · 27.7% below its 60-day high · but +6.6% this week · fundamentals 63',
+    )
+  })
+
+  it('rankByLens returns only rows that clear the bar, never a padded ordering', () => {
+    const qualifies = row('UP', { technical_detail: { return_5d: 3, return_20d: 8, momentum_12_1: 70 } })
+    const falls = row('DOWN', { technical_detail: { return_5d: -3, return_20d: -8 } })
+
+    expect(rankByLens([qualifies, falls], 'momentum', 20).map((item) => item.ticker)).toEqual(['UP'])
+  })
+
+  it('every lens is selectable, ranks, and can explain a row it returned', () => {
+    expect(Object.keys(STRATEGY_LENSES).every((key) => isStrategyLens(key))).toBe(true)
+    expect(isStrategyLens('score')).toBe(false)
+    for (const [key, lens] of Object.entries(STRATEGY_LENSES)) {
+      expect(typeof lens.rank, key).toBe('function')
+      expect(lens.inputs.length, key).toBeGreaterThan(0)
+      expect(lensCoverage([row('ANY')], key).scanned, key).toBe(1)
+    }
   })
 })

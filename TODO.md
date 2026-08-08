@@ -183,6 +183,44 @@ change.
 
 ---
 
+## 6. Strategy-lens input coverage — the screens work, the inputs are thin
+
+The research page's strategy lenses are now genuine screens over the whole scored universe
+(they publish their own top 20 rather than re-sorting the leaderboard), and each one reports
+its own input coverage on screen. Measured against the 2026-08-08 payload, 875 stocks:
+
+| Lens | Qualifying | Evaluable | Binding input |
+|---|---|---|---|
+| Momentum | 460 | 875 | – |
+| Value turnaround | 29 | 874 | – |
+| Analyst conviction | 114 | 114 | analyst coverage, 114/875 |
+| Tailwind | 45 | 45 | scored theme exposure, 45/875 |
+| Reversal | 19 | 119 | 60-day drawdown, 119/875 |
+| Catalyst | 0 | 2 | Form 4 insider activity, 0/875 |
+
+- [x] ~~Form 4 filings downloaded but never parsed.~~ `primaryDocument` in EDGAR's
+      submissions feed is the XSL-rendered HTML of an ownership form, not its XML. Fetching
+      it verbatim raised in `parse_form4`, the exception was swallowed per filing, and the
+      layer reported itself healthy while scoring 0 open-market transactions for all 82
+      symbols it reviewed. `sec_edgar.form4_document_urls` now strips the rendering
+      directory and falls back, a rendered page is rejected rather than read as an empty
+      filing, and `source_status.sec_form4` publishes `filings_reviewed` /
+      `filings_unreadable` so this cannot go quiet again.
+- [ ] **Per-ticker news reaches almost nothing.** Entity-level sentiment is fetched only for
+      the Alpha-enriched shortlist (five symbols per refresh) plus one discovery batch, so
+      `components.news_sentiment` resolved for 3 of 877 rows and the catalyst screen has
+      essentially no news leg to stand on. Either widen the Marketaux symbol coverage per
+      run or accept that Catalyst is a shortlist-only lens and say so in its description.
+- [ ] **Reversal sees 119 of 875 names** because `drawdown_60d` only ships on freshly polled
+      rows. The fast-refresh rotation added in `rotation_slice` re-polls the stalest tail
+      every run, which should close this within a handful of refreshes — re-measure after
+      about a week of scheduled runs and drop this item if the table above has moved.
+- [ ] Analyst coverage resolves for 114 of 875 rows. Worth checking whether that is a Yahoo
+      coverage limit or an enrichment-budget artifact before treating the lens as narrow by
+      nature.
+
+---
+
 ## Standing caveats — not tasks, but do not let them drift
 
 These are properties of the domain, not bugs to be fixed. They are listed so nobody later
