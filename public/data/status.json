@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T04:42:05.568271+00:00",
+  "generated_at": "2026-08-08T06:34:51.903315+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-08T04:41:22.737166+00:00",
+      "checked_at": "2026-08-08T06:33:58.539413+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 926,
-        "scored": 237,
+        "scored": 239,
         "ranked": 40,
         "failed": [
           "ANSS",
@@ -41,14 +41,18 @@
           "BLD",
           "CFLT",
           "CIVI",
+          "CMA",
+          "CTRA",
+          "DAY",
           "DECJ",
+          "EXAS",
           "TTM"
         ]
       }
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-08T04:41:32.399885+00:00",
+      "checked_at": "2026-08-08T06:34:09.004785+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
@@ -64,7 +68,7 @@
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-08T04:42:05.568251+00:00",
+      "checked_at": "2026-08-08T06:34:51.903290+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -211,8 +215,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "1ea55c65f4a6c4f41c2355a389b6cfc6016b79c7",
-    "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
-    "generated_at": "2026-08-08T04:42:05.568271+00:00"
+    "git_commit_sha": "833c675b88328648c47106c90b95eaa1068f9f7a",
+    "config_hash": "63cd889bfa70be07ac7834bd386dd809375026e974a7f15bf766c15c3088be9d",
+    "generated_at": "2026-08-08T06:34:51.903315+00:00"
   }
 }
