@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
 import {
-  activeThemes, rankBreakoutInProgress, rankEmergingGrowth, rankGrowingEtfs, rankMomentum,
-  rankReversal, rankThemeExposure, rankValueTurnarounds,
+  activeThemes, rankAnalystConviction, rankBreakoutInProgress, rankCatalyst, rankEmergingGrowth,
+  rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
 } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
@@ -200,6 +200,79 @@ describe('emerging growth screen (prospective, unvalidated)', () => {
   })
 })
 
+describe('short-term catalyst screen', () => {
+  const catalystRow = (ticker, overrides = {}) => row(ticker, {
+    components: { fundamentals: 40, market_behavior: 60, news_sentiment: 50 },
+    insider_activity: { available: false, points: 0 },
+    technical_detail: { return_5d: 0 },
+    ...overrides,
+  })
+
+  it('a weak long-term research score can still clear this screen on a real catalyst', () => {
+    // The whole point: fundamentals are deliberately a small weight, not a gate.
+    const buying = catalystRow('BUY', {
+      components: { fundamentals: 35, market_behavior: 55, news_sentiment: 78 },
+      insider_activity: { available: true, points: 4 },
+      technical_detail: { return_5d: 3 },
+    })
+    expect(rankCatalyst([buying]).map((item) => item.ticker)).toEqual(['BUY'])
+  })
+
+  it('excludes a quiet stock with only neutral news and no insider activity', () => {
+    const quiet = catalystRow('QUIET')
+    expect(rankCatalyst([quiet])).toEqual([])
+  })
+
+  it('opportunistic insider selling is a catalyst too, and it ranks below buying', () => {
+    const buying = catalystRow('BUY', {
+      insider_activity: { available: true, points: 4 },
+      technical_detail: { return_5d: 2 },
+    })
+    const selling = catalystRow('SELL', {
+      insider_activity: { available: true, points: -3 },
+      technical_detail: { return_5d: -1 },
+    })
+    expect(rankCatalyst([selling, buying]).map((item) => item.ticker)).toEqual(['BUY', 'SELL'])
+  })
+
+  it('fresh bullish news alone is enough of a catalyst without insider data', () => {
+    const news = catalystRow('NEWS', {
+      components: { fundamentals: 50, market_behavior: 50, news_sentiment: 85 },
+      technical_detail: { return_5d: 2 },
+    })
+    expect(rankCatalyst([news]).map((item) => item.ticker)).toEqual(['NEWS'])
+  })
+})
+
+describe('analyst conviction screen', () => {
+  const convictionRow = (ticker, overrides = {}) => row(ticker, {
+    analyst_count: 8,
+    analyst_rating: 3,
+    analyst_target_upside: 0,
+    ...overrides,
+  })
+
+  it('requires at least three analysts, matching the backend expectations-modifier floor', () => {
+    const thin = convictionRow('THIN', { analyst_count: 2, analyst_rating: 1.2, analyst_target_upside: 30 })
+    expect(rankAnalystConviction([thin])).toEqual([])
+  })
+
+  it('ranks a bullish rating and strong consensus upside above a cautious, low-upside name', () => {
+    const bullish = convictionRow('BULL', { analyst_rating: 1.4, analyst_target_upside: 25 })
+    const cautious = convictionRow('BEAR', { analyst_rating: 4.2, analyst_target_upside: -8 })
+    expect(rankAnalystConviction([cautious, bullish]).map((item) => item.ticker)).toEqual(['BULL', 'BEAR'])
+  })
+
+  it('a weak fundamentals score does not disqualify a name with strong analyst conviction', () => {
+    const weakFundamentalsStrongConviction = convictionRow('WEAK', {
+      components: { fundamentals: 25, market_behavior: 50, news_sentiment: 50 },
+      analyst_rating: 1.3, analyst_target_upside: 22,
+    })
+    expect(rankAnalystConviction([weakFundamentalsStrongConviction]).map((item) => item.ticker))
+      .toEqual(['WEAK'])
+  })
+})
+
 describe('theme exposure screen', () => {
   const themeRow = (ticker, overrides = {}) => ({
     ticker,
@@ -296,14 +369,30 @@ describe('invariant: no stock screen ever includes an ETF', () => {
   const genuineStock = row('AAPL', {
     technical_detail: { return_5d: 3, return_20d: 3, relative_strength_20d: 1 },
   })
+  const strongEtfWithCatalystInputs = row('ETF_CATALYST', {
+    ...strongEtfShapedAsAStock,
+    insider_activity: { available: true, points: 5 },
+    analyst_count: 10, analyst_rating: 1.1, analyst_target_upside: 40,
+  })
+  const genuineCatalystStock = row('MSFT', {
+    components: { fundamentals: 50, market_behavior: 50, news_sentiment: 80 },
+    insider_activity: { available: true, points: 3 },
+    technical_detail: { return_5d: 2 },
+    analyst_count: 8, analyst_rating: 1.5, analyst_target_upside: 15,
+  })
 
   it.each([
     ['rankValueTurnarounds', rankValueTurnarounds],
     ['rankMomentum', rankMomentum],
     ['rankReversal', rankReversal],
     ['rankBreakoutInProgress', rankBreakoutInProgress],
-  ])('%s excludes ETF rows even when the ETF would otherwise dominate the ranking', (_, screenFn) => {
-    const results = screenFn([strongEtfShapedAsAStock, genuineStock], 5)
+    ['rankCatalyst', rankCatalyst],
+    ['rankAnalystConviction', rankAnalystConviction],
+  ])('%s excludes ETF rows even when the ETF would otherwise dominate the ranking', (name, screenFn) => {
+    const pool = name === 'rankCatalyst' || name === 'rankAnalystConviction'
+      ? [strongEtfWithCatalystInputs, genuineCatalystStock]
+      : [strongEtfShapedAsAStock, genuineStock]
+    const results = screenFn(pool, 5)
 
     expect(results.some((item) => item.is_etf)).toBe(false)
   })

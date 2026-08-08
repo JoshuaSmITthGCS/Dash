@@ -277,6 +277,101 @@ export function rankEmergingGrowth(rows, limit = 5) {
     .slice(0, limit)
 }
 
+// Short-term catalyst: for a quick-turnaround trade, fresh news flow and insider buying/
+// selling matter far more than fundamentals - the inverse weighting of the long-term
+// research score. Fundamentals stay in at a small weight, as a floor rather than a
+// driver: a name that is not a strong long-term research score can still clear this
+// screen, which is the point - a real catalyst on an otherwise-unremarkable business is
+// exactly what this is meant to surface.
+export function rankCatalyst(rows, limit = 5) {
+  return stocksOnly(rows)
+    .map((row) => {
+      const technical = row.technical_detail || {}
+      const insider = row.insider_activity || {}
+      const newsSentiment = row.components?.news_sentiment
+      const insiderPoints = finite(insider.points) ? insider.points
+        : finite(insider.score_points) ? insider.score_points : null
+      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
+      const volumeRatio = technical.volume_ratio_60d
+      const fundamentals = row.components?.fundamentals
+
+      const signals = []
+      if (finite(newsSentiment)) signals.push([newsSentiment, 0.30])
+      if (insider.available && finite(insiderPoints)) signals.push([clamp(50 + insiderPoints * 10), 0.30])
+      if (finite(weekReturn)) signals.push([clamp(50 + weekReturn * 4), 0.25])
+      if (finite(volumeRatio)) signals.push([clamp(50 + (volumeRatio - 1) * 40), 0.05])
+      if (finite(fundamentals)) signals.push([clamp(fundamentals), 0.10])
+
+      // Needs an actual catalyst (fresh, non-neutral news or opportunistic insider
+      // activity) plus at least one other confirming signal - a quiet stock with only
+      // stale/neutral inputs is not a "something is happening right now" candidate.
+      const hasCatalyst = (finite(newsSentiment) && Math.abs(newsSentiment - 50) > 5) ||
+        (insider.available && finite(insiderPoints) && insiderPoints !== 0)
+      if (!hasCatalyst || signals.length < 2) return null
+
+      const totalWeight = signals.reduce((sum, [, weight]) => sum + weight, 0)
+      const rankScore = signals.reduce((sum, [value, weight]) => sum + value * weight, 0) / totalWeight
+
+      return {
+        ...row,
+        screen: {
+          newsSentiment: newsSentiment ?? null,
+          insiderPoints,
+          weekReturn,
+          rankScore,
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
+// Analyst conviction: rising consensus target and bullish average rating from
+// professional coverage - a different "the market hasn't fully repriced this yet"
+// signal from Catalyst (news/insider) or Momentum (price trend). Point-in-time estimate
+// *revision* history (rate of change in forward EPS estimates) is fetched by
+// pipeline/collect_estimates.py but not yet published on individual research rows (see
+// TODO.md); this screen uses what is actually published today - the level of consensus
+// rating and target upside, not its trend - and should absorb revision data once that
+// pipeline gap closes rather than staying a separate screen. Requires >=3 analysts,
+// matching the coverage floor the backend's own expectations modifier uses
+// (advisor_engine.py:315).
+export function rankAnalystConviction(rows, limit = 5) {
+  return stocksOnly(rows)
+    .map((row) => {
+      const count = row.analyst_count
+      const rating = row.analyst_rating // Yahoo convention: 1 = strong buy, 5 = strong sell
+      const upside = row.analyst_target_upside // percent, consensus target vs. current price
+      const fundamentals = row.components?.fundamentals
+      if (!finite(count) || count < 3) return null
+      if (!finite(rating) && !finite(upside)) return null
+
+      const ratingScore = finite(rating) ? clamp(50 + (3 - rating) * 25) : null
+      const upsideScore = finite(upside) ? clamp(50 + upside * 1.5) : null
+      const signals = [
+        ...(ratingScore !== null ? [[ratingScore, 0.5]] : []),
+        ...(upsideScore !== null ? [[upsideScore, 0.4]] : []),
+        ...(finite(fundamentals) ? [[clamp(fundamentals), 0.1]] : []),
+      ]
+      const totalWeight = signals.reduce((sum, [, weight]) => sum + weight, 0)
+      const rankScore = signals.reduce((sum, [value, weight]) => sum + value * weight, 0) / totalWeight
+
+      return {
+        ...row,
+        screen: {
+          analystCount: count,
+          analystRating: rating ?? null,
+          targetUpside: upside ?? null,
+          rankScore,
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
 // Structural-trend exposure is deliberately its own screen rather than a component of the
 // research score. Blending a forward-looking thematic bet into the fundamentals score would
 // make that score unreadable – you could no longer tell whether a stock ranked well because

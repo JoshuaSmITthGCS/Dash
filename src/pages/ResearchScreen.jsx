@@ -13,6 +13,7 @@ export const SCREEN_NAV = [
   ['/screens/early-session', 'Early session'],
   ['/screens/shadow', 'Shadow portfolios'], ['/screens/validation', 'Live validation'],
   ['/screens/politics', 'Politics trade alert'],
+  ['/screens/themes', 'Theme exposure'],
 ]
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'

@@ -8,19 +8,57 @@ import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import { getRecommendation } from '../lib/recommendation'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
+import InfoTag from '../components/InfoTag.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
-import { rankBreakoutInProgress, rankMomentum, rankReversal } from '../lib/researchScreens.js'
+import {
+  rankBreakoutInProgress, rankMomentum, rankReversal, rankValueTurnarounds,
+  rankCatalyst, rankAnalystConviction,
+} from '../lib/researchScreens.js'
 import { allocateFunds } from '../lib/fundsAllocation.js'
 import MobileVirtualList from '../components/MobileVirtualList.jsx'
 import { entryTiming } from '../lib/entryTiming.js'
 import { useAlerts } from '../lib/useAlerts.js'
 
+// Each sort is its own investing lens over the same underlying research, not a single
+// score trying to serve every strategy at once. "Research score" stays fundamentals-
+// first and long-term; the strategy lenses below reuse the rankScore each rankX()
+// screen already computes (src/lib/researchScreens.js) so a name doesn't have to be a
+// strong long-term score to surface under a different lens. Each entry is
+// [label, comparator, description] - the description renders in the InfoTag next to the
+// sort control so the methodology is one tap/click away on mobile and desktop alike.
 const SORTS = {
-  score: ['Research score', (a, b) => (b.score ?? -1) - (a.score ?? -1)],
-  return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999)],
-  valuation: ['Sector valuation', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1)],
-  quality: ['Fundamentals', (a, b) => (b.components?.fundamentals ?? -1) - (a.components?.fundamentals ?? -1)],
-  confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1)],
+  score: ['Research score (long-term)', (a, b) => (b.score ?? -1) - (a.score ?? -1),
+    'The main fundamentals-first score: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers for insider activity, short interest, analyst expectations, sector valuation, and macro regime. Built for long-term holding decisions.'],
+  return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999),
+    'Raw trailing 20-trading-day price return. No quality or valuation filter - purely "what has the price done lately."'],
+  valuation: ['Sector valuation', (a, b) => (b.sector_valuation_percentile ?? -1) - (a.sector_valuation_percentile ?? -1),
+    'How cheap a stock is relative to its own sector peers (percentile rank), not against the market as a whole - a cheap bank and a cheap chipmaker are judged against different peer groups.'],
+  quality: ['Fundamentals', (a, b) => (b.components?.fundamentals ?? -1) - (a.components?.fundamentals ?? -1),
+    'The fundamentals component of the research score in isolation - valuation, profitability, financial health, growth, capital allocation, and accounting quality, with market behavior and news sentiment stripped out.'],
+  confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
+    'How complete the underlying data was for this company, not how attractive it is - a high-confidence score just means more of the inputs actually resolved.'],
+  catalyst: ['Short-term catalyst (news + insider)', (a, b) => (b.strategyScores?.catalyst ?? -1) - (a.strategyScores?.catalyst ?? -1),
+    'For a quick-turnaround trade: weighted mostly by fresh news sentiment and opportunistic insider buying/selling (Form 4, routine trades excluded), with recent price/volume as confirmation and fundamentals as a small floor, not a driver. A weak long-term research score does not disqualify a name here - that is the point.'],
+  momentum: ['Momentum', (a, b) => (b.strategyScores?.momentum ?? -1) - (a.strategyScores?.momentum ?? -1),
+    '12-month price momentum (skipping the most recent month), relative strength, volume confirmation, and risk-adjusted return. A medium-term trend-following lens, distinct from the very-short-term Catalyst lens.'],
+  reversal: ['Reversal', (a, b) => (b.strategyScores?.reversal ?? -1) - (a.strategyScores?.reversal ?? -1),
+    'Names that pulled back over the medium term but have just turned up over the most recent week - a bounce candidate, not a falling knife, gated by a fundamentals floor.'],
+  valueTurnaround: ['Value turnaround', (a, b) => (b.strategyScores?.valueTurnaround ?? -1) - (a.strategyScores?.valueTurnaround ?? -1),
+    'Cheap relative to its sector, fundamentally solid, sitting near a 52-week low, and with a positive latest week - value plus an early sign the market is starting to agree.'],
+  analystConviction: ['Analyst conviction', (a, b) => (b.strategyScores?.analystConviction ?? -1) - (a.strategyScores?.analystConviction ?? -1),
+    'Bullish average analyst rating and consensus target upside from professional coverage (minimum 3 analysts). A different "market hasn’t fully repriced this yet" signal from Catalyst (news/insider) or Momentum (price trend).'],
+  tailwind: ['Connected / not yet re-rated', (a, b) => (b.strategyScores?.tailwind ?? -1) - (a.strategyScores?.tailwind ?? -1),
+    'Best theme-exposure opportunity score across every structural trend this name is connected to - exposure × business quality × how cheap it still is. Surfaces sector-connected names riding the same wave as a proven leader (see /screens/themes) even when they are not already a top research score. Price momentum contributes nothing to this score by design.'],
+}
+
+// Best opportunity_score across every theme a ticker has exposure to (a name can be
+// eligible on one theme and excluded on another) - see /screens/themes for the full
+// leaderboard and the leader-vs-connected breakdown this number is a shortcut into.
+function bestTailwindScore(themeExposure) {
+  const scores = (themeExposure || [])
+    .map((exposure) => exposure.opportunity_score)
+    .filter((value) => typeof value === 'number' && Number.isFinite(value))
+  return scores.length ? Math.max(...scores) : null
 }
 
 const etfStance = (score) => score >= 80 ? 'Attractive' : score >= 70 ? 'Promising' : score >= 55 ? 'Neutral' : 'Caution'
@@ -211,9 +249,23 @@ export default function Picks() {
   // right here in the single ranked list rather than only inside its own separate page. Ranking
   // itself is untouched: these are stickers on top of the existing sort, not a second ordering.
   const research = useMemo(() => {
-    const momentumTickers = new Set(rankMomentum(stockResearch, stockResearch.length).map((row) => row.ticker))
-    const reversalTickers = new Set(rankReversal(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const momentumRows = rankMomentum(stockResearch, stockResearch.length)
+    const reversalRows = rankReversal(stockResearch, stockResearch.length)
     const breakoutTickers = new Set(rankBreakoutInProgress(stockResearch, stockResearch.length).map((row) => row.ticker))
+    const valueTurnaroundRows = rankValueTurnarounds(stockResearch, stockResearch.length)
+    const catalystRows = rankCatalyst(stockResearch, stockResearch.length)
+    const analystConvictionRows = rankAnalystConviction(stockResearch, stockResearch.length)
+    // Sort-by-strategy needs a total ordering over every row, not just the ones that
+    // clear a screen's qualifying bar - unqualified rows fall back to the SORTS ?? -1
+    // default and sort last, same as any other sort key with a missing field.
+    const scoreMap = (rows) => new Map(rows.map((row) => [row.ticker, row.screen.rankScore]))
+    const momentumScores = scoreMap(momentumRows)
+    const reversalScores = scoreMap(reversalRows)
+    const valueTurnaroundScores = scoreMap(valueTurnaroundRows)
+    const catalystScores = scoreMap(catalystRows)
+    const analystConvictionScores = scoreMap(analystConvictionRows)
+    const momentumTickers = new Set(momentumRows.map((row) => row.ticker))
+    const reversalTickers = new Set(reversalRows.map((row) => row.ticker))
     return [
       ...stockResearch.map((row) => ({
         ...row,
@@ -223,6 +275,14 @@ export default function Picks() {
           momentumTickers.has(row.ticker) ? 'Momentum' : null,
           reversalTickers.has(row.ticker) ? 'Reversal' : null,
         ].filter(Boolean),
+        strategyScores: {
+          momentum: momentumScores.get(row.ticker) ?? null,
+          reversal: reversalScores.get(row.ticker) ?? null,
+          valueTurnaround: valueTurnaroundScores.get(row.ticker) ?? null,
+          catalyst: catalystScores.get(row.ticker) ?? null,
+          analystConviction: analystConvictionScores.get(row.ticker) ?? null,
+          tailwind: bestTailwindScore(row.theme_exposure),
+        },
       })),
       ...(etfData?.etfs || []).map(normalizeEtf),
     ]
@@ -303,9 +363,15 @@ export default function Picks() {
         <label><span className="sr-only">Filter by sector</span><select value={sector} onChange={(event) => setSector(event.target.value)}>
           <option value="all">All sectors</option>{sectors.map((item) => <option key={item}>{item}</option>)}
         </select></label>
-        <label><span className="sr-only">Sort research</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
-          {Object.entries(SORTS).map(([key, [label]]) => <option key={key} value={key}>Sort: {label}</option>)}
-        </select></label>
+        <span className="sort-with-info">
+          <label><span className="sr-only">Sort research</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
+            {Object.entries(SORTS).map(([key, [label]]) => <option key={key} value={key}>Sort: {label}</option>)}
+          </select></label>
+          <InfoTag label={SORTS[sort][0]}>
+            <strong>{SORTS[sort][0]}</strong>
+            <p>{SORTS[sort][2]}</p>
+          </InfoTag>
+        </span>
         <label><span className="sr-only">Filter by asset type</span><select value={assetType} onChange={(event) => setAssetType(event.target.value)}>
           <option value="all">Stocks &amp; ETFs</option><option value="stock">Stocks</option><option value="etf">ETFs</option>
         </select></label>

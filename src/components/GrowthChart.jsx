@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import InfoTag from './InfoTag.jsx'
 
 /**
  * Dollar-value comparison line chart, drawn as inline SVG.
@@ -90,6 +91,7 @@ export default function GrowthChart({
   width = 720,
   title,
   caption,
+  description,
   zoomable = false,
   minimal = false,
   mobileHeight = null,
@@ -176,7 +178,9 @@ export default function GrowthChart({
   return (
     <figure className={className} style={{ margin: 0 }}>
       {(title || (zoomable && availableRanges.length > 1)) && <div className="chart-heading">
-        {title && <figcaption>{title}</figcaption>}
+        {title && <figcaption>{title}
+          {description && <InfoTag label={title}><strong>{title}</strong><p>{description}</p></InfoTag>}
+        </figcaption>}
         {zoomable && availableRanges.length > 1 && (
           <div className="chart-zoom" aria-label="Chart time range">
             {availableRanges.map((range) => (

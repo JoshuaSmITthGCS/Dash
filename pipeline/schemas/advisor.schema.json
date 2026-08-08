@@ -622,6 +622,15 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "candidate_source": {
+                      "_comment": "How this row entered theme scoring: already a published leader, a portfolio holding, or a sector/peer-group neighbour of the theme's seed tickers surfaced before it clears the published leaderboard.",
+                      "enum": [
+                        "published_leader",
+                        "portfolio",
+                        "sector_peer",
+                        null
+                      ]
                     }
                   },
                   "additionalProperties": true
