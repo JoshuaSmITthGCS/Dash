@@ -32,7 +32,7 @@ write through... just make it better"), so Phases 1 and 3 were executed without 
 |---|---|---|
 | 0 | Reverse-engineer the system | **COMPLETE** |
 | 1 | Integrity fixes | **COMPLETE** (1.1, 1.2, 1.3 + two extras) |
-| 2 | Point-in-time data integrity | **NOT STARTED — blocked on network** |
+| 2 | Point-in-time data integrity | **2.4 done; 2.1/2.2/2.3/2.5 blocked on network** |
 | 3 | Industry conditioning | **COMPLETE** (3.1, 3.2 partial, 3.3 partial) |
 | 4–10 | Research program | **BLOCKED on Phase 2** |
 | 11 | Deliverables | blocked |
@@ -46,6 +46,8 @@ cb3cc53  fix(peers): publish valuation tiers over a sufficient sample, or nothin
 cd581b5  refactor(contract): rename the completeness scalar from confidence to data_coverage
 790d0da  fix(guidance): stop the deterioration rule failing open, drop a duplicated factor
 0e0a9ad  fix(conditioning): make the applicability registry authoritative on the live path
+149fc3f  Merge the ValueSignal integrity audit and Phase 1/3 remediation  (merged to main)
+31335a4  feat(integrity): screen implausible provider values and break the enrichment loop
 ```
 
 ## What changed, by defect
@@ -58,9 +60,10 @@ cd581b5  refactor(contract): rename the completeness scalar from confidence to d
 | Inconsistent industry conditioning | **fixed** | `scorer.py` reads `applicability_matrix.json`; required-for-score gate added |
 | Deterioration engine fails open | **fixed** (found in Phase 0, not in the brief) | `advisor_engine.action_for` is None-safe; `unmeasured_inputs` published |
 | `relative_strength_20d` duplicates `return_20d` | **fixed** (not in the brief) | champion `short_horizon_treatment: neutral` |
-| Enrichment feedback loop | **open** | `select_enrichment_priority` still seeds from the prior top 20 |
+| Enrichment feedback loop | **fixed** | `enrichment_rotation` admits 15 statement-starved names per refresh |
 | 17% coverage cliff on two categories | **open** | needs `FULL_UNIVERSE_RESEARCH=1` run |
-| No point-in-time history | **open, critical** | Phase 2 |
+| Implausible provider values accepted unscreened | **fixed** | `plausibility.py` + `derive_margins` source guard |
+| No point-in-time history | **open, critical** | Phase 2.2 — blocked, see B-2 |
 
 ## Decisions made, with justification
 
@@ -114,6 +117,18 @@ problem, solved by separating "filing read, nothing disclosed" from "no filing r
 *correctness* problem (tagged geography often means shipping destination, not end demand) and
 is not solved by the same move.
 
+**D-2.4 — Plausibility violations drop the field; they never correct it.** The module can
+establish that a number is wrong and cannot establish what the right number was. Guards live
+at the source where the source holds the inputs (`derive_margins` owns both revenue figures,
+so it owns the incremental-margin denominator test) and downstream as a backstop over
+whatever the row carries.
+
+**D-2.5 — The plausibility screen is deliberately narrow.** Rules encode arithmetic and
+accounting impossibilities, not opinions about companies. A margin above 100% is impossible;
+a P/E of 3 is merely unusual and the module does not touch it. Measured rejection rate on the
+committed universe: 0.8% of rows, one field each. A test asserts it stays under half the
+universe — a screen that fires everywhere is not a screen.
+
 **D-3.4 — NEM's small fall is reported as a small fall.** The gate expected a material fall.
 Suppressing its cycle-contaminated metrics removed a maxed margin trend and FCF growth but
 also removed gross-profits-to-assets, which was a drag. A material fall requires valuation
@@ -124,21 +139,38 @@ pipeline does not ingest. Not faked. See "Next" below.
 
 - **B-1 (critical).** No usable point-in-time fundamental history — 8 days. Blocks Phases
   4–10 entirely. Resolution: Phase 2.2, SEC EDGAR XBRL `companyfacts` keyed on `filed` dates.
-- **B-2.** No network access has been used in this session. Everything is from committed code
-  and artifacts. Phase 2 requires live EDGAR; without it the engagement stops here.
+- **B-2 (confirmed by probe, not assumption).** Outbound egress policy blocks every market
+  data host this pipeline needs. Measured on 2026-08-09:
+
+  | Host | Result |
+  |---|---|
+  | `www.sec.gov` | 403 on CONNECT (policy denial) |
+  | `data.sec.gov` | blocked |
+  | `query1.finance.yahoo.com` | blocked |
+  | `api.stlouisfed.org` | blocked |
+  | `www.alphavantage.co` | blocked |
+  | `api.github.com` | 200 |
+
+  The proxy status endpoint records the SEC denial explicitly as
+  `connect_rejected / gateway answered 403 to CONNECT (policy denial or upstream failure)`.
+  Per `/root/.ccr/README.md` a policy denial must be reported rather than routed around.
+  **Phases 2.1, 2.2, 2.3 and 2.5 cannot be executed until these hosts are allowed**, and
+  Phases 4–10 depend on 2.2. Ask the user to enable egress for `sec.gov`, `data.sec.gov`,
+  `api.stlouisfed.org` and a price source before any further Phase 2 work is scheduled.
 
 ## Next, in order
 
-1. **Phase 2.2 — EDGAR XBRL backfill.** The critical path. Needs network. Key by CIK
-   (Phase 2.1) before anything else downstream.
+1. **Phase 2.2 — EDGAR XBRL backfill.** The critical path, and **blocked by B-2**. Key by CIK
+   (Phase 2.1) before anything else downstream. Nothing in Phases 4–10 can start until this
+   lands; do not be tempted to start them on `pipeline/data/backtest_cache/`, which is
+   restated Yahoo statements over today's survivors.
 2. **Commodity mid-cycle valuation.** Candidate source: FRED PPI series (e.g. `PCU2122`,
    `WPU10`) plus LBMA/COMEX settle prices. Completes Phase 3.3 and makes D-3.4 resolvable.
-3. **Run `FULL_UNIVERSE_RESEARCH=1` once.** Statement metrics currently exist only for the
-   previous run's top 20 + 5 challengers, so quality-metric redundancy is measurable on 40
-   rows instead of 877, and the leaderboard cannot discover names a weaker model missed.
-4. **Break the enrichment feedback loop** (`select_enrichment_priority`). No scoring work
-   fixes a ranking that can only ever re-examine what it already liked.
-5. **Sector profiles still unbuilt** (Phase 3.2): REIT AFFO/NAV, bank NIM/efficiency/ROTCE,
+3. **Run `FULL_UNIVERSE_RESEARCH=1` once** (needs a price/statement provider, so blocked by
+   B-2). Quality-metric redundancy is currently measurable on 40 rows instead of 877. The
+   ordinary path no longer starves outsiders — `enrichment_rotation` rotates 15 in per
+   refresh — but one full sweep is still the fastest way to make Phase 5 possible.
+4. **Sector profiles still unbuilt** (Phase 3.2): REIT AFFO/NAV, bank NIM/efficiency/ROTCE,
    insurer combined ratio and reserve development. All need inputs the pipeline does not yet
    derive; the registry declares them as `replacement_metrics` already.
 
@@ -146,7 +178,7 @@ pipeline does not ingest. Not faked. See "Next" below.
 
 ```
 pip install --ignore-installed PyJWT -r pipeline/requirements.txt
-PYTHONPATH=pipeline python -m pytest pipeline/tests -q     # 1458 passed
+PYTHONPATH=pipeline python -m pytest pipeline/tests -q     # 1489 passed
 npm ci && npm test                                          # 508 passed
 npm run lint && npm run build
 python pipeline/check_ui_weights.py

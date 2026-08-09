@@ -26,6 +26,7 @@ from congress_signal import score_congressional_buying
 import pit_store
 from fred import FredClient, FredError, fetch_regime
 from layer_health import assert_layers_vary
+from plausibility import screen as screen_plausibility
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload)
 from peer_groups import canonical_percentiles
@@ -65,6 +66,10 @@ EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
 PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
+# Statement-starved names admitted to enrichment each refresh regardless of rank. Without
+# this the enrichment queue is a closed loop over the previous run's leaders and the model
+# can only rediscover names it already liked - see enrichment_rotation.
+ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "15")))
 NEWS_DISCOVERY_LIMIT = 75
 # Research-mode override (A3): the production enrichment queue seeds itself with the prior
 # refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
@@ -1015,6 +1020,19 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
 
     primary = overview_snapshot(symbol, overview, history["closes"]) if overview else {"ticker": symbol}
     snapshot = merge_snapshots(primary, fallback)
+    # Fail loud before anything ranks on it. merge_snapshots takes the first non-null value
+    # across providers with no arbitration, so this is also where a cross-provider
+    # disagreement is visible for the last time -- see plausibility.screen.
+    snapshot, plausibility_violations = screen_plausibility(snapshot, cross_source={
+        "market_cap": {source: payload.get("market_cap")
+                       for source, payload in (("alpha_vantage", primary), ("yahoo", fallback or {}))},
+        "price": {source: payload.get("price")
+                  for source, payload in (("alpha_vantage", primary), ("yahoo", fallback or {}))},
+    })
+    if plausibility_violations:
+        LOG.warn(f"{symbol}: dropped {len(plausibility_violations)} implausible field(s): "
+                 + ", ".join(f"{item['field']}={item['value']!r} ({item['rule']})"
+                             for item in plausibility_violations))
     if not snapshot.get("name") or len(history["closes"]) < 21:
         raise ValueError("insufficient company snapshot or price history")
     closes = history["closes"]
@@ -1022,6 +1040,7 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
     return {
         "symbol": symbol, "snapshot": snapshot, "extended": {}, "ticker_obj": ticker_obj,
         "history": history, "news": news,
+        "plausibility_violations": plausibility_violations,
         "insider_activity": insider_summary(insiders),
         "alpha_enriched": symbol in alpha_symbols and bool(overview),
         "alpha_failed": alpha_failed,
@@ -1050,7 +1069,8 @@ def enrich(contexts, limit, delay, priority=()):
     ranked = [by_symbol[symbol] for symbol in priority if symbol in by_symbol]
     ranked.extend(context for context in ranked_by_score if context["symbol"] not in set(priority))
     diagnostics = {"attempted": 0, "info_fetch_failed": 0, "statement_fetch_failed": 0,
-                   "derivation_failed": 0, "no_statement_data": 0}
+                   "derivation_failed": 0, "no_statement_data": 0,
+                   "implausible_fields_dropped": 0}
     enriched = 0
     for context in ranked[:limit]:
         diagnostics["attempted"] += 1
@@ -1064,7 +1084,18 @@ def enrich(contexts, limit, delay, priority=()):
             observations = dict(context["snapshot"].get("observations") or {})
             for metric_id, rows in extended_observations(extended).items():
                 observations.setdefault(metric_id, []).extend(rows)
-            context["snapshot"] = {**context["snapshot"], **extended, "observations": observations}
+            merged = {**context["snapshot"], **extended, "observations": observations}
+            # Statement enrichment is where the derived ratios arrive -- ROIC, accruals and
+            # incremental margin among them -- so it needs its own screening pass.
+            merged, violations = screen_plausibility(merged)
+            if violations:
+                context["plausibility_violations"] = [*(context.get("plausibility_violations") or []),
+                                                      *violations]
+                diagnostics["implausible_fields_dropped"] += len(violations)
+                LOG.warn(f"{context['symbol']}: dropped {len(violations)} implausible derived "
+                         "field(s): " + ", ".join(f"{item['field']}={item['value']!r} "
+                                                  f"({item['rule']})" for item in violations))
+            context["snapshot"] = merged
             enriched += 1
         elif extended:
             diagnostics["no_statement_data"] += 1
@@ -1177,14 +1208,49 @@ def rotation_slice(symbols, already_polling, previous_payload, size):
     return tuple(candidates[:size])
 
 
+def enrichment_rotation(preliminary_symbols, already_selected, previous_payload, size):
+    """The statement-starved names that have waited longest, oldest first.
+
+    Statement-derived metrics -- ROIC, EV/EBITDA, Piotroski, Altman, accruals -- only ever
+    existed for the previous run's top 20 plus five challengers, because that is who
+    ``select_enrichment_priority`` sent to ``enrich``. A name outside that set could never
+    acquire the metrics that would let it out-rank an incumbent, so the leaderboard could
+    only ever rediscover what a weaker version of the model already liked. That is a
+    self-reinforcing ranking bias, and no amount of scoring-methodology work touches it.
+
+    This is the same fix ``rotation_slice`` applies to price polling, one layer up: a
+    bounded slice of the never-enriched and longest-unenriched names joins every refresh,
+    so the whole universe passes through statement enrichment over a predictable number of
+    runs instead of never. A symbol that has never been enriched sorts first because it has
+    no timestamp to compare.
+    """
+    if size <= 0:
+        return ()
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    candidates = [symbol for symbol in preliminary_symbols if symbol not in already_selected]
+    def last_enriched(symbol):
+        row = previous_rows.get(symbol) or {}
+        # A row that never enriched has no statement coverage; sort it ahead of every row
+        # that did, regardless of when either was last polled.
+        if not (row.get("fundamental_detail") or {}).get("raw_score"):
+            return ("", symbol)
+        return (str(row.get("last_polled_at") or ""), symbol)
+    candidates.sort(key=last_enriched)
+    return tuple(candidates[:size])
+
+
 def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
-                               full_universe_research=False):
-    """Choose prior leaders, five best outsiders, then any explicit portfolio coverage.
+                               full_universe_research=False, previous_payload=None,
+                               rotation_size=ENRICHMENT_ROTATION_SIZE):
+    """Prior leaders, the best outsiders, a rotation of statement-starved names, then holdings.
 
     ``full_universe_research=True`` is the A3 research-mode override: ``previous_top`` is
     ignored completely (not truncated, not consulted - the parameter is simply never read
     in this branch) and every preliminary candidate becomes a challenger, so the resulting
     priority ordering cannot depend on what a prior, weaker model happened to rank highly.
+
+    Outside that override, the rotation slice is what stops the ordinary path from being
+    a closed loop -- see ``enrichment_rotation``.
     """
     if full_universe_research:
         priority = tuple(dict.fromkeys((*preliminary_symbols, *portfolio_symbols)))
@@ -1200,7 +1266,10 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
         symbol for symbol in preliminary_symbols
         if symbol not in incumbent_set
     )[:CHALLENGER_ENRICH_LIMIT]
-    priority = tuple(dict.fromkeys((*incumbents, *challengers, *portfolio_symbols)))
+    selected = incumbent_set | set(challengers) | set(portfolio_symbols)
+    rotation = enrichment_rotation(preliminary_symbols, selected, previous_payload or {},
+                                   rotation_size)
+    priority = tuple(dict.fromkeys((*incumbents, *challengers, *rotation, *portfolio_symbols)))
     return incumbents, challengers, priority
 
 
@@ -1390,6 +1459,7 @@ def run():
     incumbents, challengers, statement_priority = select_enrichment_priority(
         previous_top, preliminary_symbols, available, portfolio_symbols,
         full_universe_research=FULL_UNIVERSE_RESEARCH,
+        previous_payload=previous_payload,
     )
     effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
     enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)
@@ -1538,6 +1608,8 @@ def run():
         if row.get("analyst_consensus_target") is None and estimate_detail.get("consensus_target") is not None:
             row["analyst_consensus_target"] = estimate_detail["consensus_target"]
         row["alpha_enriched"] = context["alpha_enriched"]
+        # Every provider value this run refused to score, with the rule that refused it.
+        row["data_quality_violations"] = context.get("plausibility_violations") or []
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
         champion_variant = {
             "variant": "bands_champion",
@@ -1695,7 +1767,12 @@ def run():
         "enrichment_selection": {
             "previous_top": list(incumbents),
             "challengers": list(challengers),
-            "priority_count": len(incumbents) + len(challengers),
+            "rotation_size": ENRICHMENT_ROTATION_SIZE,
+            "priority_count": len(statement_priority),
+            "note": "Statement enrichment previously covered only the prior run's top 20 "
+                    "plus five challengers, so a name outside that set could never acquire "
+                    "the metrics that would let it out-rank an incumbent. A rotation of "
+                    "statement-starved names now joins every refresh.",
         },
         "enrichment_diagnostics": enrichment_diagnostics,
         "normalization_distributions": {
