@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+from datetime import date
 from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -377,6 +378,65 @@ class RunSkipsGracefullyTests(unittest.TestCase):
         self.assertIn("no configured manager", payload["degraded_reason"].lower())
         self.assertEqual(payload["manager_coverage"][0]["manager"], "TROW")
         self.assertTrue(payload["manager_coverage"][0]["notes"])
+
+
+class SubmissionsWithoutANameTests(unittest.TestCase):
+    def test_a_searched_filer_survives_a_submissions_payload_with_no_name(self):
+        # EDGAR's search already matched this filer by name; a submissions payload that
+        # omits "name" used to turn that into "name does not match" and drop a real filer.
+        sec = _ResolvingSec(
+            {"JHG": [{"cik": "0001274173", "form": "13F-HR", "accession": "a",
+                      "document": "d.xml", "filed": "2026-05-14", "period": "2026-03-31"}]},
+            {}, tickers={},
+            names={},  # submissions answers with no name at all
+            search={"Janus Henderson": [("0001274173", "JANUS HENDERSON GROUP PLC")]})
+
+        ciks, notes = screen.resolve_filer_ciks(sec, {"ticker": "JHG", "name": "Janus Henderson"})
+
+        self.assertEqual(ciks, ["0001274173"])
+        self.assertNotIn("name does not match", " ".join(notes))
+
+
+class TickerCacheTests(unittest.TestCase):
+    """The CUSIP->ticker cache. Without it, an anonymous OpenFIGI run re-asks thousands of
+    settled questions at 10 per request every month and never finishes inside its timeout."""
+
+    def test_a_cached_cusip_is_not_asked_about_again(self):
+        cache = {"tickers": {"000000001": "ACME"}, "unmapped": {}}
+        wanted = screen.cusips_to_map({"000000001": {"TROW": 5.0}, "000000002": {"TROW": 5.0}},
+                                      {}, cache)
+        self.assertEqual(wanted, ["000000002"])
+
+    def test_a_recently_unmapped_cusip_is_skipped_until_its_retry_window_passes(self):
+        cache = {"tickers": {}, "unmapped": {"000000001": "2026-08-01",
+                                             "000000002": "2020-01-01"}}
+        wanted = screen.cusips_to_map({"000000001": {"TROW": 5.0}, "000000002": {"TROW": 5.0}},
+                                      {}, cache, today=date(2026, 8, 9))
+        self.assertEqual(wanted, ["000000002"])
+
+    def test_cusips_a_manager_actually_moved_are_asked_about_first(self):
+        # With a request ceiling, order decides what gets published. A CUSIP nobody opened
+        # or exited cannot produce a flag, so it must not crowd out one that can.
+        current = {"MOVED": {"TROW": 5.0}, "HELD": {"TROW": 5.0, "BEN": 3.0}}
+        prior = {"HELD": {"TROW": 5.0, "BEN": 3.0}}
+        self.assertEqual(screen.cusips_to_map(current, prior, {"tickers": {}, "unmapped": {}}),
+                         ["MOVED", "HELD"])
+
+    def test_the_cache_round_trips_through_disk(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "cusip_tickers.json")
+            screen.write_ticker_cache({"tickers": {"000000001": "ACME"},
+                                       "unmapped": {"000000002": "2026-08-09"}}, path=path)
+            self.assertEqual(screen.read_ticker_cache(path),
+                             {"tickers": {"000000001": "ACME"},
+                              "unmapped": {"000000002": "2026-08-09"}})
+
+    def test_a_corrupt_cache_file_reads_as_empty_rather_than_raising(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, "cusip_tickers.json")
+            with open(path, "w") as handle:
+                handle.write("{not json")
+            self.assertEqual(screen.read_ticker_cache(path), {"tickers": {}, "unmapped": {}})
 
 
 if __name__ == "__main__":
