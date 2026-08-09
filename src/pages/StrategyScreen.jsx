@@ -33,6 +33,41 @@ function legsSummary(legs) {
   return (legs || []).map((leg) => `${leg.action === 'buy' ? 'Buy' : 'Sell'} ${leg.option_type} ${money(leg.strike)}`).join(' · ')
 }
 
+const actionLabel = (leg) => `${leg.action === 'buy' ? 'Buy' : 'Sell'} to open`
+
+function TradeTicketLeg({ leg, expiration, index, total }) {
+  return <div className="trade-ticket-leg">
+    {total > 1 && <p className="trade-ticket-leg-label">Leg {index + 1} of {total}</p>}
+    <div className="trade-ticket-fields">
+      <label><span>Action</span><output>{actionLabel(leg)}</output></label>
+      <label><span>Quantity</span><output>1</output></label>
+      <label><span>Expiration</span><output>{dateLabel(expiration)}</output></label>
+      <label><span>Strike</span><output>{money(leg.strike)}</output></label>
+      <label><span>Option type</span><output className="cap">{leg.option_type}</output></label>
+    </div>
+    <div className="trade-ticket-quote">
+      <span>Bid <b>{money(leg.bid)}</b></span>
+      <span>Mid <b>{money(leg.mid)}</b></span>
+      <span>Ask <b>{money(leg.ask)}</b></span>
+    </div>
+  </div>
+}
+
+function TradeTicketReference({ row }) {
+  const legs = row.legs || []
+  if (!legs.length) return null
+  const suggestedPrice = legs.length === 1 ? money(legs[0].mid) : null
+  return <div className="trade-ticket-reference">
+    <p className="trade-ticket-note">How to enter this in your broker's ticket — reference only, nothing here places an order.</p>
+    {legs.map((leg, index) => <TradeTicketLeg key={index} leg={leg} expiration={row.expiration} index={index} total={legs.length} />)}
+    <div className="trade-ticket-fields">
+      <label><span>Order type</span><output>Limit</output></label>
+      <label><span>Price</span><output>{suggestedPrice || 'Net of leg mids'}</output></label>
+      <label><span>Time in force</span><output>Day</output></label>
+    </div>
+  </div>
+}
+
 function reasonsFor(row) {
   const m = row.metrics || {}
   const reasons = []
@@ -50,6 +85,7 @@ function reasonsFor(row) {
 }
 
 function StrategyCard({ row, config, onOpen }) {
+  const [showTicket, setShowTicket] = useState(false)
   const confidencePct = row.confidence != null ? Math.round(row.confidence * 100) : null
   const metrics = config.metricsConfig(row)
   return <article className="research-mobile-card" key={`${row.ticker}-${row.strategy || ''}-${row.rank}`}>
@@ -77,6 +113,12 @@ function StrategyCard({ row, config, onOpen }) {
     <ul className="method-list option-reasons">
       {reasonsFor(row).map((reason, index) => <li key={index}>{reason}</li>)}
     </ul>
+
+    <button className="expand-button" aria-expanded={showTicket} onClick={() => setShowTicket((value) => !value)}>
+      {showTicket ? 'Hide broker ticket reference' : 'How to enter this in your broker'}
+      <Icon name="chevron" size={17} className={showTicket ? 'rotated' : ''} />
+    </button>
+    {showTicket && <div className="research-expanded"><TradeTicketReference row={row} /></div>}
 
     <div className="research-card-badges">
       <WatchlistToggleButton stock={row} size={18} />

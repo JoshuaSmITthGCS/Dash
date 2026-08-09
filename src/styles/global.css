@@ -342,6 +342,16 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .option-action-line { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 14px 0 12px; padding: 11px 13px; border-radius: 13px; background: var(--bg-elev); }
 .option-action-line strong { color: var(--text); font-size: 12.5px; line-height: 1.4; }
 .option-reasons { margin: 10px 0 15px; color: var(--text-dim); font-size: 11px; line-height: 1.5; }
+.trade-ticket-reference { display: flex; flex-direction: column; gap: 14px; }
+.trade-ticket-note { margin: 0; color: var(--text-faint); font-size: 10.5px; line-height: 1.5; }
+.trade-ticket-leg { display: flex; flex-direction: column; gap: 8px; }
+.trade-ticket-leg-label { margin: 0; color: var(--text-faint); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.trade-ticket-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.trade-ticket-fields label > span { display: block; margin-bottom: 5px; color: var(--text-faint); font-size: 9px; }
+.trade-ticket-fields output { width: 100%; min-height: 40px; padding: 0 10px; display: flex; align-items: center; border: 1px solid var(--border-lit); border-radius: 12px; background: var(--bg-elev); color: var(--text); font-size: 12px; }
+.trade-ticket-fields output.cap { text-transform: capitalize; }
+.trade-ticket-quote { display: flex; gap: 14px; padding: 9px 13px; border-radius: 12px; background: var(--bg-elev); color: var(--text-dim); font-size: 11px; }
+.trade-ticket-quote b { color: var(--text); }
 .backtest-summary { margin-bottom: 16px; padding: 0; overflow: hidden; }
 .backtest-summary .expand-button { padding: 14px 18px; }
 .backtest-detail { padding: 0 18px 18px; }
