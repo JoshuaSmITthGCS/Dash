@@ -137,9 +137,9 @@ def test_build_row_returns_none_when_no_contract_clears_target_delta(monkeypatch
 def test_score_rows_gates_small_cap_and_ranks_better_row_first():
     rows = [
         {"ticker": "BIG", "price": 50, "market_cap": 5e9, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
+         "factors": {"expected_value_pct": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
         {"ticker": "SMALL", "price": 50, "market_cap": 1e8, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.10, "liquidity": 0.5, "cushion": 0.01}, "call": {}},
+         "factors": {"expected_value_pct": 0.10, "liquidity": 0.5, "cushion": 0.01}, "call": {}},
     ]
     scored = module.score_rows(rows)
     by_ticker = {row["ticker"]: row for row in scored}
@@ -153,7 +153,7 @@ def test_score_rows_gates_small_cap_and_ranks_better_row_first():
 def test_score_rows_flags_insufficient_history():
     rows = [
         {"ticker": "NOHIST", "price": 50, "market_cap": 5e9, "realized_volatility_20d": None,
-         "factors": {"annualized_yield": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
+         "factors": {"expected_value_pct": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
     ]
     scored = module.score_rows(rows)
     assert "INSUFFICIENT_HISTORY" in scored[0]["reason_codes"]

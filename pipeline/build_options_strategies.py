@@ -36,10 +36,10 @@ import build_options_screen as buy_screen
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
-                            next_earnings_date, probability_above, realized_volatility_20d,
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
+                            liquidity_factor, next_earnings_date, probability_above, realized_volatility_20d,
                             research_universe_factors, select_by_target_delta, select_contract,
-                            select_expiration, trend_20d)
+                            select_expiration, transaction_cost_pct, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -142,6 +142,9 @@ def build_sell_call_row(setup):
     annualized_yield = (premium / price) * (365 / setup["dte"])
     probability_assigned = call.get("delta")
     downside_cushion_pct = premium / price
+    cost_pct = transaction_cost_pct(call, price)
+    expected_value = expected_value_pct(probability_assigned, max_return_if_assigned_pct,
+                                        downside_cushion_pct, cost_pct)
     entry = setup["entry"]
     research_factors = research_universe_factors(entry, setup["generated_at"], setup["as_of"],
                                                   direction=1, sentiment_mode="inverse")
@@ -159,6 +162,7 @@ def build_sell_call_row(setup):
         "metrics": {
             "premium": round(premium, 4), "breakeven": round(breakeven, 4),
             "annualized_yield": round(annualized_yield, 4),
+            "expected_value_pct": round(expected_value, 4) if expected_value is not None else None,
             "max_return_if_assigned_pct": round(max_return_if_assigned_pct, 4),
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "downside_cushion_pct": round(downside_cushion_pct, 4),
@@ -166,7 +170,7 @@ def build_sell_call_row(setup):
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
-            "annualized_yield": annualized_yield,
+            "expected_value_pct": expected_value,
             "liquidity": liquidity_factor(call),
             "cushion": downside_cushion_pct,
             **research_factors,
@@ -187,6 +191,10 @@ def build_sell_put_row(setup):
     annualized_yield = (premium / strike) * (365 / setup["dte"])
     probability_otm = probability_above(price, strike, put["implied_volatility"], setup["dte"])
     probability_assigned = None if probability_otm is None else (1 - probability_otm)
+    cost_pct = transaction_cost_pct(put, strike)
+    favorable_return = premium / strike
+    unfavorable_return = (price - effective_cost_basis) / strike
+    expected_value = expected_value_pct(probability_otm, favorable_return, unfavorable_return, cost_pct)
     entry = setup["entry"]
     research_factors = research_universe_factors(entry, setup["generated_at"], setup["as_of"],
                                                   direction=1, sentiment_mode="signed")
@@ -205,13 +213,14 @@ def build_sell_put_row(setup):
             "premium": round(premium, 4), "collateral": round(collateral, 2),
             "effective_cost_basis": round(effective_cost_basis, 4),
             "annualized_yield": round(annualized_yield, 4),
+            "expected_value_pct": round(expected_value, 4) if expected_value is not None else None,
             "probability_otm": round(probability_otm, 4) if probability_otm is not None else None,
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
-            "annualized_yield": annualized_yield,
+            "expected_value_pct": expected_value,
             "probability_otm": probability_otm,
             "liquidity": liquidity_factor(put),
             **research_factors,

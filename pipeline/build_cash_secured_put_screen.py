@@ -19,9 +19,10 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
-                            next_earnings_date, probability_above, realized_volatility_20d,
-                            research_universe_factors, select_by_target_delta, select_expiration, trend_20d)
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
+                            liquidity_factor, next_earnings_date, probability_above, realized_volatility_20d,
+                            research_universe_factors, select_by_target_delta, select_expiration,
+                            transaction_cost_pct, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -36,7 +37,11 @@ MINIMUM_HISTORY_SESSIONS = 21
 # into a name with active bad news (the falling-knife problem - risking assignment right
 # as the stock is falling). research_confidence is a quality gate (only sell puts on names
 # worth owning). Existing factors shrunk proportionally to still sum to 1.0.
-WEIGHTS = {"annualized_yield": .33, "probability_otm": .25, "liquidity": .25,
+#
+# Ranks on expected_value_pct, not raw annualized_yield - see build_covered_call_screen's
+# identical rationale. annualized_yield/probability_otm/probability_assigned stay published
+# in `metrics` as display-only, clearly risk-neutral, figures.
+WEIGHTS = {"expected_value_pct": .33, "probability_otm": .25, "liquidity": .25,
           "news_sentiment": .07, "research_confidence": .10}
 
 
@@ -84,6 +89,14 @@ def build_row(entry, yf, as_of=None, generated_at=None):
     probability_otm = (probability_above(price, put["strike"], put["implied_volatility"], dte)
                        if put["implied_volatility"] is not None else None)
     probability_assigned = None if probability_otm is None else (1 - probability_otm)
+    cost_pct = transaction_cost_pct(put, put["strike"])
+    # If OTM (favorable, no assignment): keep the full premium yield. If assigned: the
+    # mark-to-market outcome if the stock simply sits at today's price rather than
+    # dropping further from here - the same "flat from here" simplification
+    # build_covered_call_screen's EV treatment uses for its own unfavorable-outcome return.
+    favorable_return = premium / put["strike"]
+    unfavorable_return = (price - effective_cost_basis) / put["strike"]
+    expected_value = expected_value_pct(probability_otm, favorable_return, unfavorable_return, cost_pct)
     research_factors = research_universe_factors(entry, generated_at, as_of, direction=1, sentiment_mode="signed")
 
     group_id, group_label = peer_group(entry)
@@ -101,13 +114,14 @@ def build_row(entry, yf, as_of=None, generated_at=None):
             "premium": round(premium, 4), "collateral": round(collateral, 2),
             "effective_cost_basis": round(effective_cost_basis, 4),
             "annualized_yield": round(annualized_yield, 4),
+            "expected_value_pct": round(expected_value, 4) if expected_value is not None else None,
             "probability_otm": round(probability_otm, 4) if probability_otm is not None else None,
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
-            "annualized_yield": annualized_yield,
+            "expected_value_pct": expected_value,
             "probability_otm": probability_otm,
             "liquidity": liquidity_factor(put),
             **research_factors,

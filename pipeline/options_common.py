@@ -337,6 +337,42 @@ def expiration_spans_earnings(expiration, earnings_date, as_of=None):
     return as_of < earnings_date <= expiration_date
 
 
+def transaction_cost_pct(contract, price_basis):
+    """Estimated execution-cost drag, as a fraction of `price_basis` (the underlying price
+    for a share-denominated screen, or the strike for a collateral-denominated one): a
+    quarter of the contract's own quoted spread - the same slippage contract_liquidity's
+    fill_price already assumes, just expressed as a rate rather than a price - plus the
+    flat per-contract fee spread over 100 shares.
+
+    A screen-level ranking estimate, not a fill guarantee: real execution quality depends
+    on order type, time of day, and market conditions this pipeline has no visibility into.
+    """
+    if not contract or not price_basis:
+        return 0.0
+    spread_cost_per_share = (contract.get("spread_pct") or 0) * (contract.get("mid") or 0) / 4
+    fee_per_share = CONTRACT_FEE / 100
+    return (spread_cost_per_share + fee_per_share) / price_basis
+
+
+def expected_value_pct(probability_favorable, favorable_return_pct, unfavorable_return_pct, cost_pct=0.0):
+    """Probability-weighted expected return (as a fraction of capital), net of an
+    estimated transaction-cost drag.
+
+    Ranking by a single best-case return (e.g. "premium annualized to 113.8%") is
+    statistically misleading for a fat-tailed, non-normal payoff: it extrapolates one
+    realization as if it compounds smoothly, and it silently prefers whichever contract
+    happens to have the highest headline number without weighing how likely that outcome
+    actually is. This is the two-outcome expected value instead - probability times the
+    favorable-scenario return, plus the complementary probability times the
+    unfavorable-scenario return, minus the modeled cost of putting the trade on. Returns
+    None if `probability_favorable` is unknown (never fabricates a 50/50 guess).
+    """
+    if probability_favorable is None or favorable_return_pct is None or unfavorable_return_pct is None:
+        return None
+    return (probability_favorable * favorable_return_pct
+            + (1 - probability_favorable) * unfavorable_return_pct - cost_pct)
+
+
 def research_universe_factors(entry, generated_at, as_of=None, *, direction=1, sentiment_mode="signed"):
     """News-sentiment and research-confidence scoring factors sourced from the ticker's
     already-published advisor.json row, discounted by how stale that snapshot is.

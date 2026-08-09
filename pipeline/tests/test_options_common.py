@@ -191,6 +191,29 @@ def test_research_universe_factors_missing_score_or_confidence_is_none():
     assert only_confidence["research_confidence"] is None
 
 
+def test_transaction_cost_pct_charges_a_quarter_spread_plus_flat_fee():
+    contract_row = {"spread_pct": 0.04, "mid": 2.0}
+    # quarter-spread per share = 0.04 * 2.0 / 4 = 0.02; fee per share = 0.65 / 100 = 0.0065
+    cost = module.transaction_cost_pct(contract_row, price_basis=100)
+    assert abs(cost - (0.02 + 0.0065) / 100) < 1e-9
+
+
+def test_transaction_cost_pct_zero_without_contract_or_price():
+    assert module.transaction_cost_pct(None, 100) == 0.0
+    assert module.transaction_cost_pct({"spread_pct": 0.04, "mid": 2.0}, 0) == 0.0
+
+
+def test_expected_value_pct_weights_outcomes_by_probability_net_of_cost():
+    ev = module.expected_value_pct(probability_favorable=0.7, favorable_return_pct=0.05,
+                                    unfavorable_return_pct=-0.20, cost_pct=0.01)
+    assert abs(ev - (0.7 * 0.05 + 0.3 * -0.20 - 0.01)) < 1e-9
+
+
+def test_expected_value_pct_none_when_probability_unknown():
+    assert module.expected_value_pct(None, 0.05, -0.20) is None
+    assert module.expected_value_pct(0.5, None, -0.20) is None
+
+
 class DirectCache:
     """Bypasses disk persistence entirely so earnings-calendar tests stay hermetic."""
 

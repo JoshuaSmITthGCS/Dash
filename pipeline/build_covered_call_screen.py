@@ -24,9 +24,10 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
-                            next_earnings_date, realized_volatility_20d, research_universe_factors,
-                            select_by_target_delta, select_expiration, trend_20d)
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
+                            liquidity_factor, next_earnings_date, realized_volatility_20d,
+                            research_universe_factors, select_by_target_delta, select_expiration,
+                            transaction_cost_pct, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -41,7 +42,17 @@ MINIMUM_HISTORY_SESSIONS = 21
 # research_confidence stays a quality gate (direction=1, unsigned) - sell calls against
 # businesses the rest of this app's research already likes. Existing factors shrunk
 # proportionally to make room, still summing to 1.0.
-WEIGHTS = {"annualized_yield": .38, "liquidity": .25, "cushion": .21,
+#
+# Ranks on expected_value_pct, not raw annualized_yield: an evidence review of this
+# pipeline found ranking by the headline annualized number is statistically misleading
+# for a fat-tailed payoff and mechanically prefers the shortest-dated, highest-IV,
+# most-dangerous contracts - it extrapolates the best case as if it compounds smoothly,
+# with no weight on how likely it actually is. expected_value_pct is the
+# probability-weighted return across both outcomes (assigned vs. not), net of an
+# estimated transaction cost - see options_common.expected_value_pct/transaction_cost_pct.
+# annualized_yield/probability_assigned stay published in `metrics` as display-only,
+# clearly risk-neutral, figures.
+WEIGHTS = {"expected_value_pct": .38, "liquidity": .25, "cushion": .21,
           "news_sentiment": .06, "research_confidence": .10}
 
 
@@ -88,6 +99,14 @@ def build_row(entry, yf, as_of=None, generated_at=None):
     annualized_yield = (premium / price) * (365 / dte)
     probability_assigned = call.get("delta")
     downside_cushion_pct = premium / price
+    cost_pct = transaction_cost_pct(call, price)
+    # If assigned: capped gain to the strike, net of cost. If not assigned: keep the
+    # premium (downside_cushion_pct), net of cost - the same simplification
+    # options_common.expected_value_pct's docstring flags: this treats the underlying as
+    # flat in the unassigned case rather than forecasting its own further move, since this
+    # screen has no directional return model to draw on.
+    expected_value = expected_value_pct(probability_assigned, max_return_if_assigned_pct,
+                                        downside_cushion_pct, cost_pct)
     research_factors = research_universe_factors(entry, generated_at, as_of, direction=1, sentiment_mode="inverse")
 
     group_id, group_label = peer_group(entry)
@@ -104,6 +123,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
         "metrics": {
             "premium": round(premium, 4), "breakeven": round(breakeven, 4),
             "annualized_yield": round(annualized_yield, 4),
+            "expected_value_pct": round(expected_value, 4) if expected_value is not None else None,
             "max_return_if_assigned_pct": round(max_return_if_assigned_pct, 4),
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "downside_cushion_pct": round(downside_cushion_pct, 4),
@@ -111,7 +131,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
-            "annualized_yield": annualized_yield,
+            "expected_value_pct": expected_value,
             "liquidity": liquidity_factor(call),
             "cushion": downside_cushion_pct,
             **research_factors,

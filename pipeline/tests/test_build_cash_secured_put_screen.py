@@ -160,9 +160,9 @@ def test_probability_otm_and_assigned_sum_to_one(monkeypatch):
 def test_score_rows_gates_small_caps():
     rows = [
         {"ticker": "BIG", "price": 50, "market_cap": 5e9, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.30, "probability_otm": 0.8, "liquidity": 2.0}},
+         "factors": {"expected_value_pct": 0.30, "probability_otm": 0.8, "liquidity": 2.0}},
         {"ticker": "SMALL", "price": 50, "market_cap": 1e8, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.10, "probability_otm": 0.6, "liquidity": 0.5}},
+         "factors": {"expected_value_pct": 0.10, "probability_otm": 0.6, "liquidity": 0.5}},
     ]
     scored = module.score_rows(rows)
     by_ticker = {row["ticker"]: row for row in scored}
@@ -178,7 +178,7 @@ def test_score_rows_ranks_higher_yield_and_liquidity_above_worse():
     tickers = ["WORST", "LOW", "MID", "HIGH", "BEST"]
     rows = [
         {"ticker": ticker, "price": 50, "market_cap": 5e9, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.05 + 0.05 * index,
+         "factors": {"expected_value_pct": 0.05 + 0.05 * index,
                      "probability_otm": 0.5 + 0.05 * index,
                      "liquidity": 0.5 + 0.5 * index}}
         for index, ticker in enumerate(tickers)
