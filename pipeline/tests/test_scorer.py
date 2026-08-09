@@ -103,12 +103,31 @@ class ScorerTests(unittest.TestCase):
         healthy, _ = scorer.valuation_score({"is_etf": False, "sector": "Technology", "forward_pe": 20})
         self.assertGreater(healthy, suspicious)
 
-    def test_bank_leverage_is_displayed_but_not_scored_with_industrial_cutoffs(self):
+    def test_bank_liquidity_is_displayed_but_not_scored_with_industrial_cutoffs(self):
+        """Suppression follows the business profile, not the sector string.
+
+        current_ratio is meaningless for a deposit-funded balance sheet and the registry
+        suppresses it. debt_to_equity is not suppressed: financial leverage is a canonical
+        bank and insurer input, and forcing it to null was the defect, not the feature.
+        """
         _, parts = scorer.valuation_score({"is_etf": False, "sector": "Financial Services",
-                                           "price_to_book": 1.2, "debt_to_equity": 2.5,
+                                           "industry": "Banks - Regional",
+                                           "price_to_tangible_book": 1.2, "debt_to_equity": 2.5,
                                            "current_ratio": 0.6})
-        self.assertIsNone(parts["debt_to_equity"])
         self.assertIsNone(parts["current_ratio"])
+        self.assertIsNotNone(parts["debt_to_equity"])
+        self.assertEqual(parts["applicability_profile"], "bank")
+        self.assertIn("current_ratio", parts["suppressed_metrics"])
+
+    def test_a_generic_financial_is_not_given_bank_exemptions(self):
+        """"Financial Services" covers exchanges and asset managers too; only a profile the
+        registry recognises earns a profile's suppressions."""
+        _, parts = scorer.valuation_score({"is_etf": False, "sector": "Financial Services",
+                                           "industry": "Capital Markets",
+                                           "price_to_book": 1.2, "debt_to_equity": 0.4,
+                                           "current_ratio": 1.8})
+        self.assertEqual(parts["applicability_profile"], "general")
+        self.assertIsNotNone(parts["current_ratio"])
 
     def test_label_thresholds(self):
         self.assertEqual(scorer.label_for(90), "HIGH CONVICTION")
@@ -306,3 +325,81 @@ class CrossSectionalNormalizationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegistryDrivenApplicabilityTests(unittest.TestCase):
+    """The live scorer and the v2 layer read one applicability authority.
+
+    Previously scorer.py decided suppression from a hardcoded financial-sector tuple while
+    pipeline/config/applicability_matrix.json governed only the shadow path, so the correct
+    insurer rules existed and controlled nothing a user saw. See
+    research/audit/CURRENT_MODEL_AUDIT.md section 5.
+    """
+
+    def insurer(self, **updates):
+        base = {"is_etf": False, "sector": "Financial Services",
+                "industry": "Insurance - Property & Casualty",
+                "price_to_book": 2.18, "price_to_tangible_book": 2.48, "forward_pe": 11.76,
+                "peg": 0.34, "debt_to_equity": 0.23, "return_on_equity": 0.22,
+                "profit_margin": 0.11, "days_sales_outstanding_trend": -0.03,
+                "revenue_growth": 0.05, "interest_coverage": 12.0}
+        base.update(updates)
+        return base
+
+    def test_an_insurer_scores_price_to_book_and_financial_leverage(self):
+        """The two canonical insurer inputs were forced to null for every financial."""
+        _, parts = scorer.valuation_score(self.insurer())
+        self.assertEqual(parts["applicability_profile"], "property_casualty_insurer")
+        self.assertIsNotNone(parts["price_to_book"])
+        self.assertIsNotNone(parts["debt_to_equity"])
+
+    def test_an_insurer_does_not_score_receivable_days_or_peg(self):
+        """THG published days_sales_outstanding 215.2 with its trend scored 80/100, and PEG
+        carried 31% of an insurer's effective valuation weight while the registry declared
+        PEG not comparable for insurers."""
+        _, parts = scorer.valuation_score(self.insurer())
+        self.assertIsNone(parts["days_sales_outstanding_trend"])
+        self.assertIsNone(parts["peg"])
+        for metric in ("ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "sales_multiple",
+                       "gross_profits_to_assets", "inventory_days_trend", "current_ratio"):
+            self.assertIn(metric, parts["suppressed_metrics"])
+
+    def test_an_insurer_without_price_to_book_publishes_no_valuation_score(self):
+        """125 of 125 financial rows published a Value score with price-to-book nulled."""
+        _, parts = scorer.valuation_score(self.insurer(price_to_book=None))
+        self.assertIsNone(parts["categories"]["valuation"])
+        self.assertEqual(parts["categories_withheld"]["valuation"], ["price_to_book"])
+
+    def test_an_insurer_without_financial_leverage_publishes_no_health_score(self):
+        _, parts = scorer.valuation_score(self.insurer(debt_to_equity=None))
+        self.assertIsNone(parts["categories"]["financial_health"])
+        self.assertEqual(parts["categories_withheld"]["financial_health"], ["debt_to_equity"])
+
+    def test_suppressed_metrics_leave_the_coverage_denominator_but_missing_ones_do_not(self):
+        suppressed = scorer.valuation_score(self.insurer())[1]
+        missing = scorer.valuation_score(self.insurer(return_on_equity=None,
+                                                      profit_margin=None))[1]
+        self.assertGreater(suppressed["coverage"], missing["coverage"])
+
+    def test_a_semiconductor_is_not_penalised_for_outsourced_fabrication(self):
+        """Cirrus Logic's 0.28x capex/depreciation scored 25/100 as "starving the business"."""
+        fabless = {"is_etf": False, "sector": "Technology", "industry": "Semiconductors",
+                   "capex_to_depreciation": 0.28, "forward_pe": 14.0, "price_to_book": 2.9,
+                   "return_on_equity": 0.21}
+        _, parts = scorer.valuation_score(fabless)
+        self.assertEqual(parts["applicability_profile"], "semiconductor")
+        self.assertIsNone(parts["capex_to_depreciation"])
+        self.assertIn("capex_to_depreciation", parts["suppressed_metrics"])
+
+    def test_a_producers_commodity_driven_margin_trend_is_not_scored_as_quality(self):
+        """NEM's 17% trailing margin expansion and 128.2% incremental margin are the gold
+        price, not structural improvement."""
+        miner = {"is_etf": False, "sector": "Basic Materials", "industry": "Gold",
+                 "operating_margin_trend": 0.17, "fcf_growth_3y": 0.9,
+                 "gross_profits_to_assets": 0.2, "forward_pe": 10.7, "price_to_book": 3.4,
+                 "return_on_equity": 0.26}
+        _, parts = scorer.valuation_score(miner)
+        self.assertEqual(parts["applicability_profile"], "commodity_producer")
+        for metric in ("operating_margin_trend", "fcf_growth_3y", "gross_profits_to_assets"):
+            self.assertIsNone(parts[metric])
+            self.assertIn(metric, parts["suppressed_metrics"])

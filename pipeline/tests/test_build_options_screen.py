@@ -117,8 +117,8 @@ def test_select_contract_picks_tightest_spread_within_atm_band():
 
 
 def test_build_row_selects_call_on_positive_trend_and_put_on_negative(monkeypatch):
-    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9, "score": 70, "confidence": 0.8}
-    universe_down = {"ticker": "DOWN", "sector": "Technology", "market_cap": 5e9, "score": 40, "confidence": 0.6}
+    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9, "score": 70, "data_coverage": 0.8}
+    universe_down = {"ticker": "DOWN", "sector": "Technology", "market_cap": 5e9, "score": 40, "data_coverage": 0.6}
     per_ticker = {
         "UP": fake_history(drift=1.0),
         "DOWN": fake_history(drift=-1.0, start_price=200),
@@ -141,7 +141,7 @@ def test_build_row_selects_call_on_positive_trend_and_put_on_negative(monkeypatc
 
 
 def test_build_row_populates_sentiment_and_research_confidence_from_the_entry(monkeypatch):
-    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9, "score": 70, "confidence": 0.8,
+    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9, "score": 70, "data_coverage": 0.8,
                   "sentiment_detail": {"average": 0.5, "coverage": 0.6, "article_count": 4}}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"UP": fake_history(drift=1.0)}))
     expiration = "2024-03-15"
@@ -227,8 +227,8 @@ def test_score_rows_ranks_by_composite_and_gates_small_caps():
 
 def test_run_publishes_scored_results(monkeypatch):
     universe = [
-        {"ticker": "AAA", "sector": "Technology", "market_cap": 5e9, "score": 70, "confidence": 0.8},
-        {"ticker": "BBB", "sector": "Technology", "market_cap": 4e9, "score": 60, "confidence": 0.7},
+        {"ticker": "AAA", "sector": "Technology", "market_cap": 5e9, "score": 70, "data_coverage": 0.8},
+        {"ticker": "BBB", "sector": "Technology", "market_cap": 4e9, "score": 60, "data_coverage": 0.7},
     ]
     per_ticker = {"AAA": fake_history(drift=1.0), "BBB": fake_history(drift=0.5, start_price=80)}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))

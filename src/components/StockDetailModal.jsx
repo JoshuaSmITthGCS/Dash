@@ -41,21 +41,26 @@ const signed = (value, digits = 1, suffix = '%') =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
-function ConfidenceScoreDial({ score, confidence }) {
+/**
+ * The arc lightens and breaks as data coverage falls. The quantity is completeness, not
+ * reliability -- see src/lib/confidenceGate.js and
+ * research/audit/CURRENT_MODEL_AUDIT.md section 4.
+ */
+function CoverageScoreDial({ score, dataCoverage }) {
   const dial = modelSettings.interface.score_dial
   const maskId = `score-mask-${useId().replaceAll(':', '')}`
   const safeScore = Math.max(0, Math.min(100, Number(score) || 0))
-  const safeConfidence = Math.max(0, Math.min(1, Number(confidence) || 0))
-  const dash = dial.minimum_dash + safeConfidence * (dial.maximum_dash - dial.minimum_dash)
-  const gap = dial.maximum_gap - safeConfidence * (dial.maximum_gap - dial.minimum_gap)
-  const opacity = dial.minimum_opacity + safeConfidence * (1 - dial.minimum_opacity)
+  const safeCoverage = Math.max(0, Math.min(1, Number(dataCoverage) || 0))
+  const dash = dial.minimum_dash + safeCoverage * (dial.maximum_dash - dial.minimum_dash)
+  const gap = dial.maximum_gap - safeCoverage * (dial.maximum_gap - dial.minimum_gap)
+  const opacity = dial.minimum_opacity + safeCoverage * (1 - dial.minimum_opacity)
   return <div className="confidence-score-dial" style={{ width: dial.size }}>
-    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeConfidence * 100)} percent confidence`}>
+    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeCoverage * 100)} percent data coverage`}>
       <circle className="score-dial-track" cx={dial.center} cy={dial.center} r={dial.radius} strokeWidth={dial.stroke_width} />
       <defs><mask id={maskId}><circle cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" stroke="white" strokeWidth={dial.stroke_width} fill="none" strokeDasharray={`${safeScore} ${100 - safeScore}`} /></mask></defs>
       <circle className="score-dial-arc" cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" strokeWidth={dial.stroke_width} mask={`url(#${maskId})`} style={{ opacity, strokeDasharray: `${dash} ${gap}` }} />
     </svg>
-    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{Math.round(safeConfidence * 100)}% evidence confidence</small></div>
+    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{Math.round(safeCoverage * 100)}% data coverage</small></div>
   </div>
 }
 
@@ -127,7 +132,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const percentile = stock.valuation_percentile
   const setupGuidance = watchlistGuidance(stock, null, null, { sizingMode: preferences.watchlistSizingMode })
   const score = stock.score ?? structural?.effective_score
-  const confidence = stock.confidence ?? structural?.confidence ?? 0
+  const dataCoverage = stock.data_coverage ?? structural?.coverage ?? 0
   const theme = primaryTheme(stock)
   const themeName = theme?.theme || theme?.name || 'No material theme identified'
   const themeScore = theme?.exposure_score ?? theme?.score
@@ -178,9 +183,9 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         </header>
 
         <section className="stock-concept-hero" aria-label="Research summary">
-          <ConfidenceScoreDial score={score} confidence={confidence} />
+          <CoverageScoreDial score={score} dataCoverage={dataCoverage} />
           <div className="stock-concept-list">
-            <article><span>2 · Confidence</span><strong>{Math.round(confidence * 100)}%</strong><p>How complete and reliable the evidence is. The score arc becomes lighter and more broken when certainty falls.</p></article>
+            <article><span>2 · Data coverage</span><strong>{Math.round(dataCoverage * 100)}%</strong><p>How much of the evidence this model intends to use actually resolved. Not a reliability score and not a probability of a price move; the arc lightens as coverage falls.</p></article>
             <article><span>3 · Guidance</span><strong>{recommendation?.action || 'Watch'}</strong><p>{recommendation?.summary || 'Review the evidence before acting.'}</p></article>
             <article><span>4 · Theme exposure</span><strong>{themeName}</strong><p>{themeScore == null ? 'No material long-term theme exposure is published for this company.' : `${Number(themeScore).toFixed(0)} out of 100. Theme exposure stays independent from the research score.`}</p></article>
           </div>
@@ -240,7 +245,18 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
             <AnalysisLayers analysis={analysis} />
           </div>
-          {percentile?.display_value != null && <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}`}>Cheaper than approximately {percentile.display_value.toFixed(0)}% of {percentile.peer_group_label}, based on {percentile.peer_count_with_valid_data} valid peers.</p>}
+          {/* Tiers, never a percentage. The old sentence read "Cheaper than approximately
+              85% of Property & casualty insurers, based on 14 valid peers" for a name in the
+              expensive half of its group on both book and tangible book -- the ranked
+              quantity is a composite of discrete bands, and with n=14 the resolution was
+              7.7 points anyway. Groups under the minimum publish nothing at all now. */}
+          {percentile?.peer_context
+            ? <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}. ${percentile.peer_context.ranked_quantity_note}`}>
+                Valuation score {percentile.peer_context.tier_phrase} {percentile.peer_group_label} ({percentile.peer_context.tier_count} of {percentile.peer_context.peer_count_with_valid_data} names). Ranks this model&rsquo;s valuation composite, not a price multiple.
+              </p>
+            : percentile && <p className="stock-peer-context">
+                No peer comparison published: {percentile.peer_count_with_valid_data} valid {percentile.peer_group_label} peers, below the {percentile.minimum_peer_count} needed to rank against.
+              </p>}
         </div>}
 
         <div className="tabs">

@@ -476,9 +476,9 @@ def research_universe_factors(entry, generated_at, as_of=None, *, direction=1, s
         elif sentiment_mode == "calm":
             sentiment = -abs(average) * coverage * discount
 
-    score, confidence = entry.get("score"), entry.get("confidence")
+    score, data_coverage = entry.get("score"), entry.get("data_coverage")
     research_confidence = None
-    if score is not None and confidence is not None:
-        research_confidence = (score - 50) * confidence * direction * discount
+    if score is not None and data_coverage is not None:
+        research_confidence = (score - 50) * data_coverage * direction * discount
 
     return {"news_sentiment": sentiment, "research_confidence": research_confidence}

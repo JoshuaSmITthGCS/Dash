@@ -45,6 +45,6 @@ export function researchRating(row, context) {
   if (pool.length < MIN_POOL) return null
   const percentile = percentileRank(pool, row.score)
   let rating = ((percentile - 50) / 50) * 5
-  rating *= finite(row.confidence) ? Math.max(MIN_CONFIDENCE_SHRINK, row.confidence) : LIGHT_DATA_SHRINK
+  rating *= finite(row.data_coverage) ? Math.max(MIN_CONFIDENCE_SHRINK, row.data_coverage) : LIGHT_DATA_SHRINK
   return Math.max(-5, Math.min(5, Math.round(rating)))
 }

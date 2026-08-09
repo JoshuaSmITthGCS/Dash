@@ -73,9 +73,9 @@ def diagnostics_payload(payload):
             "metric_applicability": analysis.get("metric_status", {}),
             "scoring_contributions": analysis.get("structural", {}),
             "modifiers": row.get("modifiers", {}),
-            "confidence": {
-                "structural": analysis.get("structural", {}).get("confidence"),
-                "timeliness": analysis.get("timeliness", {}).get("confidence"),
+            "evidence_weight_resolved": {
+                "structural": analysis.get("structural", {}).get("evidence_weight_resolved"),
+                "timeliness": analysis.get("timeliness", {}).get("evidence_weight_resolved"),
             },
             "peer_ranking": row.get("valuation_percentile"),
             "final_classification": analysis.get("company_classification"),

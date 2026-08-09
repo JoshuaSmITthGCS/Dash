@@ -5,7 +5,7 @@ const coveredStock = {
   ticker: 'CALM',
   price: 100,
   score: 72,
-  confidence: 0.8,
+  data_coverage: 0.8,
   components: { fundamentals: 80, market_behavior: 70, news_sentiment: 60 },
   sentiment_detail: { coverage: 1 },
   technical_detail: { return_20d: 8, risk: 70, annualized_volatility: 20 },
@@ -26,14 +26,14 @@ describe('watchlist guidance', () => {
       hardBlocked: false,
     })
     expect(result.setupScore).toBeGreaterThan(75)
-    expect(result.subscores.map((item) => item.key)).toEqual(['thesis', 'research', 'confidence', 'guidance'])
+    expect(result.subscores.map((item) => item.key)).toEqual(['thesis', 'research', 'coverage', 'guidance'])
   })
 
   it('does not allocate zero when a signal is just below its former threshold', () => {
     const result = watchlistGuidance({
       ...coveredStock,
       score: 64,
-      confidence: 0.49,
+      data_coverage: 0.49,
       components: { fundamentals: 54, market_behavior: 54, news_sentiment: 54 },
       technical_detail: { ...coveredStock.technical_detail, return_20d: -8 },
     }, 10_000, 5)
@@ -47,7 +47,7 @@ describe('watchlist guidance', () => {
       ...coveredStock,
       recommendation: { action: 'TRIM' },
     }, 10_000, 5)).toMatchObject({ allocation: 500, hardBlocked: false })
-    expect(watchlistGuidance({ ...coveredStock, confidence: 0.44 }, 10_000, 5)).toMatchObject({
+    expect(watchlistGuidance({ ...coveredStock, data_coverage: 0.44 }, 10_000, 5)).toMatchObject({
       allocation: 0,
       hardBlocked: true,
     })

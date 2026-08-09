@@ -144,7 +144,7 @@ def build_iron_condor_row(setup):
     return {
         "strategy": "iron_condor", "ticker": ticker, "peer_group": group_id, "peer_group_label": group_label,
         "sector": entry.get("sector"), "price": price, "market_cap": entry.get("market_cap"),
-        "history_sessions": history_sessions, "structural_score": entry.get("score"), "confidence": entry.get("confidence"),
+        "history_sessions": history_sessions, "structural_score": entry.get("score"), "data_coverage": entry.get("data_coverage"),
         "trend_20d": round(trend, 4) if trend is not None else None,
         "realized_volatility_20d": round(realized, 4) if realized is not None else None,
         "expiration": expiration, "days_to_expiration": dte,
@@ -216,7 +216,7 @@ def build_straddle_row(setup):
     return {
         "strategy": "straddle", "ticker": ticker, "peer_group": group_id, "peer_group_label": group_label,
         "sector": entry.get("sector"), "price": price, "market_cap": entry.get("market_cap"),
-        "history_sessions": history_sessions, "structural_score": entry.get("score"), "confidence": entry.get("confidence"),
+        "history_sessions": history_sessions, "structural_score": entry.get("score"), "data_coverage": entry.get("data_coverage"),
         "trend_20d": round(trend, 4) if trend is not None else None,
         "realized_volatility_20d": round(realized, 4) if realized is not None else None,
         "expiration": expiration, "days_to_expiration": dte,
@@ -294,7 +294,7 @@ def to_result(rank, row):
         "rank": rank, "ticker": row["ticker"], "strategy": row["strategy"], "eligibility": row["eligibility"],
         "sector": row.get("sector"), "peer_group": row.get("peer_group_label") or row.get("peer_group"),
         "percentile": row.get("percentile"), "score": row.get("score"),
-        "structural_score": row.get("structural_score"), "confidence": row.get("confidence"),
+        "structural_score": row.get("structural_score"), "data_coverage": row.get("data_coverage"),
         "price": row.get("price"), "trend_20d": row.get("trend_20d"),
         "expiration": row.get("expiration"), "days_to_expiration": row.get("days_to_expiration"),
         "capital_required": row.get("capital_required"),

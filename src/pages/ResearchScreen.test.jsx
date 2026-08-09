@@ -11,7 +11,7 @@ beforeEach(() => usePreferences.mockReturnValue({ preferences: { mobileResearchV
 
 const row = (overrides = {}) => ({
   rank: 1, ticker: 'AAA', classification: 'actionable value', percentile: 98.3,
-  structural_score: 72.4, tactical_score: null, confidence: 0.81, peer_group: 'Technology',
+  structural_score: 72.4, tactical_score: null, data_coverage: 0.81, peer_group: 'Technology',
   reason_codes: [], ...overrides,
 })
 

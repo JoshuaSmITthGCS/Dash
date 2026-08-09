@@ -12,7 +12,7 @@ from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_cha
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
-from confidence import confidence_components, run_source_reliability
+from data_coverage import data_coverage_components, run_source_reliability
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
@@ -25,6 +25,7 @@ from institutional_ownership import decay as institutional_decay
 from congress_signal import score_congressional_buying
 import pit_store
 from fred import FredClient, FredError, fetch_regime
+from layer_health import assert_layers_vary
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload)
 from peer_groups import canonical_percentiles
@@ -103,6 +104,39 @@ REPORT_ROW_FIELDS = (
 RETIRED_REPORT_SYMBOLS = {"DECJ"}
 
 
+def _layer(*path):
+    """Extractor that walks a nested payload path, returning None at the first gap."""
+    def read(row):
+        node = row
+        for key in path:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key)
+        return node
+    return read
+
+
+# Every number this pipeline publishes as a scored "layer", checked for cross-sectional
+# variance before the payload is written (see layer_health.assert_layers_vary). Adding a
+# scored layer without adding it here means nothing verifies it is a layer at all.
+PUBLISHED_LAYERS = {
+    "score": _layer("score"),
+    "base_score": _layer("base_score"),
+    "raw_score": _layer("raw_score"),
+    "components.fundamentals": _layer("components", "fundamentals"),
+    "components.market_behavior": _layer("components", "market_behavior"),
+    "components.news_sentiment": _layer("components", "news_sentiment"),
+    "fundamental_categories.valuation": _layer("fundamental_categories", "valuation"),
+    "fundamental_categories.profitability": _layer("fundamental_categories", "profitability"),
+    "fundamental_categories.financial_health": _layer("fundamental_categories", "financial_health"),
+    "fundamental_categories.growth": _layer("fundamental_categories", "growth"),
+    "fundamental_categories.capital_allocation": _layer("fundamental_categories", "capital_allocation"),
+    "fundamental_categories.accounting_quality": _layer("fundamental_categories", "accounting_quality"),
+    "analysis_v2.structural.effective_score": _layer("analysis_v2", "structural", "effective_score"),
+    "analysis_v2.timeliness.effective_score": _layer("analysis_v2", "timeliness", "effective_score"),
+}
+
+
 def report_row(row):
     history = row.get("history") or {}
     projected = {key: row.get(key) for key in REPORT_ROW_FIELDS if row.get(key) is not None}
@@ -113,7 +147,7 @@ def report_row(row):
     if variants:
         projected["score_variants"] = {
             key: {field: variant.get(field) for field in (
-                "variant", "normalization_mode", "score", "base_score", "confidence",
+                "variant", "normalization_mode", "score", "base_score", "data_coverage",
                 "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
             ) if variant.get(field) is not None}
             for key, variant in variants.items()
@@ -209,7 +243,7 @@ def _screen_row(row):
     detail = row.get("technical_detail") or {}
     variants = {
         key: {field: variant.get(field) for field in (
-            "variant", "normalization_mode", "score", "base_score", "confidence",
+            "variant", "normalization_mode", "score", "base_score", "data_coverage",
             "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
         ) if variant.get(field) is not None}
         for key, variant in (row.get("score_variants") or {}).items()
@@ -783,7 +817,10 @@ def collect_filing_risk_signals(sec, symbols, *, cache=None):
                     filing["cik"], filing["accession"], filing["document"]),
                 source="sec_edgar")
         except Exception:  # noqa: BLE001
-            return symbol, None, None, {"filings_reviewed": 1, "filings_unreadable": 1}
+            # The filing exists but could not be read. That is a measurement failure, not
+            # evidence of diversified revenue, and must not be scored as either.
+            return (symbol, summarize_concentration("", filing_read=False), None,
+                    {"filings_reviewed": 1, "filings_unreadable": 1})
         return (symbol, summarize_concentration(text), summarize_geography(text),
                 {"filings_reviewed": 1, "filings_unreadable": 0})
 
@@ -1322,7 +1359,7 @@ def run():
         row = build_research(
             context["symbol"], context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended={},
-            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("ordinal"),
             macro_regime=fred_regime,
         )
         preliminary.append(row)
@@ -1415,9 +1452,9 @@ def run():
 
     # Customer-concentration and geographic-concentration risk, from the same shortlist of
     # candidates and the same rate-limited SEC client - see collect_filing_risk_signals for
-    # why this shares its cache keys with the theme layer's filing fetches. Shadow mode
-    # only (challenger score_variants) until tagging coverage is measured - see
-    # advisor_engine.apply_modifiers's docstring.
+    # why this shares its cache keys with the theme layer's filing fetches. Customer
+    # concentration feeds the champion score as of Phase 3.3; geographic exposure stays
+    # challenger-only. See advisor_engine.apply_modifiers's docstring.
     concentration_signals, geographic_signals, filing_risk_diagnostics = (
         collect_filing_risk_signals(sec, insider_candidates)
     )
@@ -1465,20 +1502,21 @@ def run():
         row = build_research(
             symbol, context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended=context["extended"],
-            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("ordinal"),
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
             institutional_ownership=institutional_signals.get(symbol),
             congressional_activity=congressional_signals.get(symbol),
+            concentration_risk=concentration_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["institutional_ownership"] = institutional_signals.get(symbol)
         row["congressional_activity"] = congressional_signals.get(symbol)
-        # concentration_risk/geographic_exposure are display fields and challenger-only
-        # (score_variants) inputs here - shadow mode until their tagging coverage is
-        # measured. See advisor_engine.apply_modifiers's docstring.
+        # concentration_risk is now a champion-path input (Phase 3.3, see
+        # advisor_engine.concentration_risk_modifier). geographic_exposure remains a display
+        # field and a challenger-only input - see geographic_concentration_modifier.
         row["concentration_risk"] = concentration_signals.get(symbol)
         row["geographic_exposure"] = geographic_signals.get(symbol)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
@@ -1507,7 +1545,7 @@ def run():
             "score": row["score"],
             "base_score": row["base_score"],
             "raw_score": row["raw_score"],
-            "confidence": row["confidence"],
+            "data_coverage": row["data_coverage"],
             "components": row["components"],
             "fundamental_categories": row["fundamental_categories"],
             "normalized_metric_scores": normalized_metric_scores(row["fundamental_detail"]),
@@ -1531,7 +1569,7 @@ def run():
             row["score_variants"]["challenger"] = cross_sectional_challenger(
                 row, context["snapshot"], cross_normalizer,
             )
-        row["confidence_detail"] = confidence_components(
+        row["data_coverage_detail"] = data_coverage_components(
             row, source_reliability=source_reliability_this_run,
         )
         # Every row in `research` was polled during this run by construction (carried-forward
@@ -1545,6 +1583,13 @@ def run():
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
+
+    # A layer that resolves to the same number for every company in the universe carries no
+    # information and must not be published as evidence. This failed loudly is the difference
+    # between catching the degenerate timeliness layer on its first run and shipping it for a
+    # year -- see research/audit/CURRENT_MODEL_AUDIT.md section 3.
+    assert_layers_vary(research, PUBLISHED_LAYERS)
+
     ranked = research[:publish_limit]
     ranked_tickers = {row["ticker"] for row in ranked}
 
@@ -1824,7 +1869,7 @@ def run():
                         "coverage above needs measuring, before it penalizes a live score.",
             },
             "customer_concentration_risk": {
-                "status": "shadow_only",
+                "status": "scored",
                 "source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
                 "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
                 "filings_unreadable": filing_risk_diagnostics["filings_unreadable"],
@@ -1834,12 +1879,15 @@ def run():
                     if filing_risk_diagnostics["filings_reviewed"] else None
                 ),
                 "note": "ASC 280 customer-concentration percentage read from dimensional XBRL "
-                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier but "
-                        "kept out of the live score ('shadow_only', challenger score_variants "
-                        "only) until concentration_tag_coverage above is measured on a real run "
-                        "- a penalty-only modifier that only fires on tagged filers systematically "
-                        "favors whichever companies happen not to have tagged the concept, which "
-                        "is worse than not scoring it at all. Distinct from the theme layer's "
+                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier in "
+                        "the champion path as of Phase 3.3. The objection that kept it in shadow "
+                        "mode - that a penalty-only modifier firing only on tagged filers favors "
+                        "whichever companies never tagged the concept - is answered by separating "
+                        "'filing read, nothing disclosed' from 'no filing read': ASC 280-10-50-42 "
+                        "requires naming any customer at or above 10% of consolidated revenue, so "
+                        "a read filing with no such tag is affirmative evidence of diversified "
+                        "revenue, while an unreadable filing is scored nothing at all. Distinct "
+                        "from the theme layer's "
                         "customer_concentration_to_spenders: the percentage gives magnitude, not "
                         "the customer's identity, so it cannot replace that signal's name-matching "
                         "against confirmed theme spenders.",

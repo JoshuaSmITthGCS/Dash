@@ -51,7 +51,7 @@ def build_rows(universe, yf):
             "price": closes[-1], "market_cap": entry.get("market_cap"),
             "median_dollar_volume_60d": median_dollar_volume(closes, volumes),
             "history_sessions": len(closes), "sector": entry.get("sector"),
-            "structural_score": entry.get("score"), "confidence": entry.get("confidence"),
+            "structural_score": entry.get("score"), "data_coverage": entry.get("data_coverage"),
             # industry_relative_returns() (below) reads momentum_12_1 off the row directly,
             # not from factors - a different row shape than momentum_scores() expects.
             "momentum_12_1": factors.get("momentum_12_1"),
@@ -79,7 +79,7 @@ def to_result(rank, row):
         # so the shared screen table has a like-for-like quality reference beside momentum.
         "structural_score": row.get("structural_score"),
         "tactical_score": None,
-        "confidence": row.get("confidence"),
+        "data_coverage": row.get("data_coverage"),
         "current_membership": bool(row.get("current_membership")),
         "reason_codes": row.get("reason_codes", []),
     }

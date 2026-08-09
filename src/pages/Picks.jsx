@@ -25,7 +25,7 @@ import { useAlerts } from '../lib/useAlerts.js'
 
 // Two different kinds of sort share one control, and the difference matters.
 //
-// A COLUMN SORT (score, 20-day return, sector valuation, fundamentals, data confidence)
+// A COLUMN SORT (score, 20-day return, sector valuation, fundamentals, data coverage)
 // re-orders the whole research list by one published field. Every row still appears; only
 // the order changes.
 //
@@ -49,7 +49,7 @@ const COLUMN_SORTS = {
     'The score the pipeline published for this row, exactly as calibrated: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers. This is the number the point-in-time store and the validation harness are accumulating observations against, so it is shown unchanged rather than recomposed. Only computed for fully published companies.'],
   return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999),
     'Raw trailing 20-trading-day price return. Not a predictive score and not risk-adjusted - purely "what has the price done lately." Available for the full scored universe.'],
-  confidence: ['Data confidence', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
+  confidence: ['Data coverage', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
     'How complete and reliable the underlying data was, not how attractive the company is. A high number means more inputs resolved. Only computed for fully published companies; each ranking model additionally reports its own mode-specific confidence over the inputs it actually reads.'],
   portfolioPct: ['% of my portfolio', (a, b) => (b.portfolioPct ?? -1) - (a.portfolioPct ?? -1),
     "How much of your current portfolio's value this position represents right now, from your held shares at today's price. Rows you don't hold read as 0% and sort to the bottom; requires a signed-in portfolio with at least one priced position."],
@@ -194,7 +194,7 @@ function LightDataChip({ row }) {
   if (!isLightData(row)) return null
   return (
     <span className="chip screen-chip screen-chip-light-data"
-      title="Scored on the lighter universe data set: price/valuation/analyst inputs only. Price history, data confidence and statement-level metrics are published for the top-ranked companies, so they read as – on this row until it next lands in the published leaderboard.">
+      title="Scored on the lighter universe data set: price/valuation/analyst inputs only. Price history, data coverage and statement-level metrics are published for the top-ranked companies, so they read as – on this row until it next lands in the published leaderboard.">
       Lighter data
     </span>
   )
@@ -341,7 +341,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
       <dl className="research-card-metrics">
         <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</dd></div>
         <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} capsule /></dd></div>
-        <div><dt>Data confidence</dt><dd>{finite(row.confidence) ? `${Math.round(row.confidence * 100)}%` : '–'}</dd></div>
+        <div><dt>Data coverage</dt><dd>{finite(row.confidence) ? `${Math.round(row.confidence * 100)}%` : '–'}</dd></div>
         <div><dt>% of my portfolio</dt><dd>{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</dd></div>
       </dl>
       <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
@@ -805,7 +805,7 @@ export default function Picks() {
           ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
           : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
         : 'No companies match those filters.'} />}
-      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data confidence”, “% of my portfolio” and “Most undervalued” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data confidence – it restates the same score on a smaller scale, not a separate opinion. “Most undervalued” blends how cheap a row is against its peers with how much growth the numbers show, each ranked against its own pool. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score; each bucket states why underneath it. The “double down” toggle above the split controls whether tickers you already hold can win a bucket at all. Rankings do not imply suitability or portfolio allocation.</div>
+      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data coverage”, “% of my portfolio” and “Most undervalued” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data coverage – it restates the same score on a smaller scale, not a separate opinion. “Most undervalued” blends how cheap a row is against its peers with how much growth the numbers show, each ranked against its own pool. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score; each bucket states why underneath it. The “double down” toggle above the split controls whether tickers you already hold can win a bucket at all. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )

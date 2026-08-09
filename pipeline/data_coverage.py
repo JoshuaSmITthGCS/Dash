@@ -1,15 +1,22 @@
-"""Confidence-component decomposition (docs/RESEARCH-CONTRACT.md).
+"""Data-coverage decomposition (docs/RESEARCH-CONTRACT.md).
 
-The champion's single ``confidence`` scalar (``advisor_engine.blend_research_components``)
-mixes several distinct kinds of uncertainty into one number: how much data resolved, how
-stale it is, how many peers a company was ranked against, and how much the challenger
-variants agree with the champion. Collapsing all of that into one number means a low
-confidence score cannot be explained, only observed -- exactly the complaint that motivated
-this module (see docs/BASELINE-2026-08-06.md).
+The champion's single scalar (``advisor_engine.data_coverage_scalar``) mixes several
+distinct kinds of incompleteness into one number: how much data resolved, how stale it is,
+how many peers a company was ranked against, and how much the challenger variants agree
+with the champion. Collapsing all of that into one number means a low value cannot be
+explained, only observed -- exactly the complaint that motivated this module (see
+docs/BASELINE-2026-08-06.md).
 
-This is additive. It does not change ``row["confidence"]``, the champion formula, or how
-confidence feeds the score. It publishes a ``confidence_detail`` breakdown alongside the
-existing scalar so *why* confidence is low becomes visible.
+**Naming.** Every component here is a completeness or provenance measure. None is a
+statistical property of the signal. The scalar and this breakdown were published as
+"confidence", which is a claim about reliability that nothing here establishes -- and the
+frontend went on to gate position sizing on it. They are named for what they measure.
+A real confidence metric, validated against realised prediction error, is Phase 8 work and
+does not exist yet. See ``research/audit/CURRENT_MODEL_AUDIT.md`` section 4.
+
+This module is additive: it does not change ``row["data_coverage"]``, the champion formula,
+or how coverage feeds the score. It publishes a ``data_coverage_detail`` breakdown alongside
+the scalar so *why* coverage is low becomes visible.
 """
 
 import statistics
@@ -17,7 +24,7 @@ from datetime import datetime, timezone
 
 from scorer import SETTINGS
 
-CFG = SETTINGS.get("confidence", {})
+CFG = SETTINGS.get("confidence", {})  # config key unchanged; the published field name is not
 
 # Providers that are intentionally not attempted this run (opt-in features, quota-gated
 # intraday refreshes, or a secret like SEC_USER_AGENT that was never set) must not drag
@@ -34,9 +41,9 @@ def _clamp01(value):
 
 
 def completeness_component(row):
-    """Identical to the blend the champion's confidence scalar already computes (see
-    advisor_engine.blend_research_components/shrink_research_components) -- reused, not
-    rewritten, so this component and the scalar can never silently disagree.
+    """Identical to the blend the champion's scalar already computes (see
+    advisor_engine.data_coverage_scalar) -- reused, not rewritten, so this component and the
+    scalar can never silently disagree.
     """
     fundamentals = (row.get("fundamental_detail") or {}).get("coverage") or 0.0
     technical = (row.get("technical_detail") or {}).get("coverage") or 0.0
@@ -141,12 +148,13 @@ def historical_calibration_component(row, calibration=None):
     return None
 
 
-def confidence_components(row, *, source_reliability=None, now=None, calibration=None):
-    """Full confidence breakdown for one published row:
-      {"confidence": <existing scalar>, "components": {...}, "limitations": [...]}
+def data_coverage_components(row, *, source_reliability=None, now=None, calibration=None):
+    """Full data-coverage breakdown for one published row:
+      {"data_coverage": <scalar>, "components": {...}, "limitations": [...]}
 
-    ``confidence`` is exactly ``row["confidence"]`` -- unchanged, and a measure of how
-    reliable the evidence behind the rank is, never a probability that the stock rises.
+    ``data_coverage`` is exactly ``row["data_coverage"]`` -- the share of the evidence this
+    model intended to use that actually resolved. It is not a probability that the stock
+    rises, and it is not a measure of how reliable the rank is.
 
     ``historical_calibration`` stays null until the IC harness has enough prospective periods.
     Pass ``calibration`` (a ``score_calibration.build_report()`` payload) to populate it once
@@ -170,9 +178,10 @@ def confidence_components(row, *, source_reliability=None, now=None, calibration
         if value is None and name != "historical_calibration":
             limitations.append(f"{name} unavailable for this row")
     return {
-        "confidence": row.get("confidence"),
+        "data_coverage": row.get("data_coverage"),
         "components": components,
         "limitations": limitations,
-        "interpretation": ("confidence measures how reliable the evidence behind this rank is, "
-                           "not the probability that the stock rises"),
+        "interpretation": ("data coverage measures how much of the intended evidence resolved. "
+                           "It is not a reliability score and not a probability that the stock "
+                           "rises. No validated confidence metric exists yet."),
     }

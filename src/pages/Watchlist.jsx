@@ -28,7 +28,7 @@ const LENS_KEYS = Object.keys(STRATEGY_LENSES)
 const SORTS = {
   recent: ['Recently added', null, 'The order you added names to this watchlist, newest first.'],
   setup: ['Best buy for the price (setup quality)', (a, b) => (b.guidance?.setupScore ?? -1) - (a.guidance?.setupScore ?? -1),
-    'The same Setup quality score shown on each card: thesis, published research score, data confidence, and current guidance action, combined. A name with no published research sorts to the bottom.'],
+    'The same Setup quality score shown on each card: thesis, published research score, data coverage, and current guidance action, combined. A name with no published research sorts to the bottom.'],
   upside: ['Highest upside to price target', (a, b) => (b.guidance?.targetUpside ?? -Infinity) - (a.guidance?.targetUpside ?? -Infinity),
     'Analyst consensus target price versus the current price, as a percent. A name with no usable target sorts to the bottom.'],
 }

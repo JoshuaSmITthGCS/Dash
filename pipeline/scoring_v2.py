@@ -1,11 +1,21 @@
-"""Versioned structural/timeliness scoring without replacing the legacy model."""
+"""Versioned structural/timeliness scoring without replacing the legacy model.
+
+The timeliness layer publishes ``None`` when none of its inputs resolve. It used to publish
+``effective_score 50.0`` in that case, which was a constant for every company in the universe
+and which the shadow policy's two-axis matrix then branched on -- see
+``research/audit/CURRENT_MODEL_AUDIT.md`` section 3. There is no free source of broad forward
+consensus estimates or revisions, so the honest state of this layer today is *absent*, not
+*neutral*. ``pipeline/layer_health.assert_layers_vary`` fails the publish path if it ever
+becomes a constant again.
+"""
 
 from datetime import datetime, timezone
 
 from canonical_metrics import (BUSINESS_PROFILES, METRIC_REGISTRY, applicability_for, calculate_peg,
                                classify_profile, reconcile)
+from layer_health import renormalize
 
-MODEL_VERSION = "structural-timeliness-2.0.0"
+MODEL_VERSION = "structural-timeliness-2.1.0"
 CONFIG_VERSION = "canonical-metrics-2.0.0"
 
 
@@ -17,6 +27,8 @@ def _weighted(values):
 
 
 def _classification(score, confidence):
+    if score is None:
+        return "unavailable"
     if confidence < 0.40:
         return "insufficient_evidence"
     if confidence < 0.60:
@@ -31,6 +43,8 @@ def _classification(score, confidence):
 
 
 def _timeliness_classification(score, confidence):
+    if score is None or confidence <= 0.0:
+        return "unavailable"
     if confidence < 0.40:
         return "insufficient_evidence"
     if score >= 60:
@@ -139,7 +153,9 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
         value = _weighted(contributions)
         categories[category] = round(value, 1) if value is not None else None
 
-    raw = _weighted((categories.get(name), weight) for name, weight in cfg["category_weights"].items())
+    raw, structural_weights = renormalize({
+        name: (categories.get(name), weight) for name, weight in cfg["category_weights"].items()
+    })
     coverage = available_weight / applicable_weight if applicable_weight else 0.0
     # Reliability is distinct from availability. Legacy scalar fields lack dates/periods,
     # so they cannot receive full confidence even when present.
@@ -147,27 +163,32 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
     conflict_penalty = min(0.35, conflicted_weight / applicable_weight if applicable_weight else 0)
     stale_penalty = min(0.35, stale_weight / applicable_weight if applicable_weight else 0)
     confidence = max(0.0, min(1.0, coverage * provenance_reliability - conflict_penalty - stale_penalty))
-    raw = 50.0 if raw is None else raw
-    effective = 50 + confidence * (raw - 50)
+    # No category resolved means there is no structural reading, not an average one.
+    effective = None if raw is None else 50 + confidence * (raw - 50)
 
     revision = snapshot.get("forward_eps_revision_30d")
     revision_score = None if revision is None else max(0.0, min(100.0, 50 + revision * 5))
     surprise = snapshot.get("earnings_surprise")
     surprise_score = None if surprise is None else max(0.0, min(100.0, 50 + surprise * 2))
-    timing_values = [(revision_score, 0.7), (surprise_score, 0.3)]
-    timing_raw = _weighted(timing_values)
-    timing_coverage = sum(weight for value, weight in timing_values if value is not None)
+    # Weight redistributes across whichever timing inputs resolved; a missing input is never
+    # replaced by a neutral. When neither resolves the layer publishes nothing at all.
+    timing_raw, timing_weights = renormalize({
+        "forward_eps_revision_30d": (revision_score, 0.7),
+        "earnings_surprise": (surprise_score, 0.3),
+    })
+    timing_coverage = timing_weights["covered_weight_fraction"]
     timing_confidence = timing_coverage * (0.85 if observations else 0.55)
-    timing_raw_for_effective = 50 if timing_raw is None else timing_raw
-    timing_effective = 50 + timing_confidence * (timing_raw_for_effective - 50)
+    timing_effective = (None if timing_raw is None
+                        else 50 + timing_confidence * (timing_raw - 50))
 
     structural = {
-        "raw_score": round(raw, 1),
-        "effective_score": round(effective, 1),
-        "confidence": round(confidence, 2),
+        "raw_score": None if raw is None else round(raw, 1),
+        "effective_score": None if effective is None else round(effective, 1),
+        "weight_renormalization": structural_weights,
+        "evidence_weight_resolved": round(confidence, 2),
         "coverage": round(coverage, 2),
         "coverage_basis": "answered_applicable_weight",
-        "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+        "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
         "available_weight": round(available_weight, 4),
         "applicable_weight": round(applicable_weight, 4),
         "stale_weight": round(stale_weight, 4),
@@ -181,13 +202,19 @@ def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_membersh
     }
     timeliness = {
         "raw_score": None if timing_raw is None else round(timing_raw, 1),
-        "effective_score": round(timing_effective, 1),
-        "confidence": round(timing_confidence, 2),
+        "effective_score": None if timing_effective is None else round(timing_effective, 1),
+        "evidence_weight_resolved": round(timing_confidence, 2),
         "coverage": round(timing_coverage, 2),
         "available_weight": round(timing_coverage, 2),
         "applicable_weight": 1.0,
         "stale_weight": 0.0,
         "conflicted_weight": 0.0,
+        "weight_renormalization": timing_weights,
+        "unavailable_reason": (None if timing_raw is not None else
+                               "No free provider supplies broad forward consensus estimates or "
+                               "revisions, and earnings-surprise collection is opt-in "
+                               "(ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a "
+                               "neutral placeholder."),
         "missing_metrics": [name for name, value in (("forward_eps_revision_30d", revision), ("earnings_surprise", surprise)) if value is None],
         "suppressed_metrics": [],
         "stale_metrics": [],

@@ -5,11 +5,11 @@ from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
-                            build_research, concentration_risk_modifier,
-                            congressional_buying_modifier, geographic_concentration_modifier,
-                            insider_modifier, institutional_ownership_modifier,
-                            macro_regime_modifier, sentiment_score, shrink_research_components,
+from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challenger_modifiers, 
+                            build_research, concentration_risk_modifier, 
+                            congressional_buying_modifier, geographic_concentration_modifier, 
+                            insider_modifier, institutional_ownership_modifier, 
+                            macro_regime_modifier, sentiment_score, shrink_research_components, 
                             technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
@@ -81,7 +81,7 @@ class AdvisorEngineTests(unittest.TestCase):
         self.assertGreater(row["components"]["fundamentals"], 75)
         self.assertIn(row["stance"], ("ATTRACTIVE", "PROMISING"))
         self.assertTrue(any("valuation" in item.lower() for item in row["strengths"]))
-        self.assertGreater(row["confidence"], 0.8)
+        self.assertGreater(row["data_coverage"], 0.8)
         self.assertEqual(row["recommendation"]["action"], "HOLD")
 
     def test_two_factors_are_required_before_any_trim(self):
@@ -122,7 +122,7 @@ class AdvisorEngineTests(unittest.TestCase):
     def test_missing_evidence_lowers_confidence(self):
         sparse = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False, "forward_pe": 20}
         row = build_research("TEST", sparse, [100 + i for i in range(100)], None, [])
-        self.assertLess(row["confidence"], 0.5)
+        self.assertLess(row["data_coverage"], 0.5)
 
     def test_macro_is_sector_sensitive_and_capped(self):
         regime = {
@@ -442,12 +442,18 @@ class GeographicConcentrationModifierTests(unittest.TestCase):
         self.assertEqual(geographic_concentration_modifier({"shares": {}}), (0.0, None))
 
 
-class BuildResearchDoesNotYetUseConcentrationOrGeographicRiskTests(unittest.TestCase):
-    """Champion ``row["score"]`` must be identical regardless of concentration/geographic
-    data - both are shadow-mode only (challenger score_variants) until their XBRL tagging
-    coverage across the scored universe has actually been measured on a live run. A
-    penalty-only modifier that only fires on tagged filers would otherwise systematically
-    favor whichever companies happen not to have tagged the concept."""
+class CustomerConcentrationEntersTheLiveScoreTests(unittest.TestCase):
+    """Phase 3.3: a disclosed single-customer revenue share moves the champion score.
+
+    It was shadow-only because a penalty-only modifier that fires only on tagged filers
+    rewards companies that never tagged the concept. That objection is answered by
+    separating "filing read, nothing disclosed" from "no filing read" -- ASC 280-10-50-42
+    requires naming any customer at or above 10% of consolidated revenue, so a read filing
+    with no such tag is affirmative evidence of diversified revenue.
+
+    Geographic concentration stays challenger-only for a different reason: revenue tagged
+    against a geography often reflects shipping destination rather than end demand.
+    """
 
     def setUp(self):
         self.snapshot = {
@@ -459,12 +465,35 @@ class BuildResearchDoesNotYetUseConcentrationOrGeographicRiskTests(unittest.Test
         }
         self.closes = [100 + index * 0.1 for index in range(100)]
 
-    def test_build_research_has_no_parameter_for_either_signal(self):
-        row = build_research("TEST", self.snapshot, self.closes, self.closes, [])
+    def row(self, **kwargs):
+        return build_research("TEST", self.snapshot, self.closes, self.closes, [], **kwargs)
+
+    def test_a_disclosed_severe_concentration_lowers_the_published_score(self):
+        baseline = self.row()
+        concentrated = self.row(concentration_risk={"measured": True, "percentages": [0.91]})
+        self.assertLess(concentrated["score"], baseline["score"])
+        self.assertIn("customer_concentration_risk", concentrated["modifiers"]["applied"])
+
+    def test_a_read_filing_with_no_disclosure_is_not_penalised(self):
+        baseline = self.row()
+        diversified = self.row(concentration_risk={"measured": True, "percentages": []})
+        self.assertEqual(diversified["score"], baseline["score"])
+
+    def test_an_unread_filing_scores_nothing_rather_than_crediting_safety(self):
+        baseline = self.row()
+        unknown = self.row(concentration_risk={"measured": False, "percentages": []})
+        self.assertEqual(unknown["score"], baseline["score"])
+        self.assertNotIn("customer_concentration_risk", unknown["modifiers"]["applied"])
+
+    def test_the_penalty_scales_with_the_disclosed_share(self):
+        warning = self.row(concentration_risk={"measured": True, "percentages": [0.18]})
+        severe = self.row(concentration_risk={"measured": True, "percentages": [0.91]})
+        self.assertLess(severe["score"], warning["score"])
+
+    def test_geographic_concentration_remains_outside_the_champion_path(self):
         with self.assertRaises(TypeError):
             build_research("TEST", self.snapshot, self.closes, self.closes, [],
-                           concentration_risk={"percentages": [0.40]})
-        self.assertIn("score", row)
+                           geographic_exposure={"shares": {"China": 0.8}})
 
 
 class ChallengerOnlyShadowModeTests(unittest.TestCase):
@@ -588,3 +617,77 @@ class BuildResearchWiresCongressionalBuyingIntoTheChampionScoreTests(unittest.Te
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DeteriorationFailsClosedTest(unittest.TestCase):
+    """Missing data must never read as "no concern".
+
+    Every test in action_for used `(source.get(key) or fallback)`, so an absent interest
+    coverage became 99x and an absent drawdown became 0%. The guidance engine failed open:
+    a company with no data could not be told to TRIM or SELL. See
+    research/audit/CURRENT_MODEL_AUDIT.md section 7a.
+    """
+
+    def guidance(self, *, technical=None, extended=None, sentiment=None, categories=None):
+        return action_for(
+            70, "PROMISING",
+            {"categories": categories if categories is not None else {}},
+            technical or {}, extended or {}, sentiment or {},
+        )
+
+    def test_absent_metrics_raise_no_concern_and_are_reported_as_unmeasured(self):
+        result = self.guidance()
+        self.assertEqual(result["agreement_count"], 0)
+        self.assertIn("fundamentals.interest_coverage", result["unmeasured_inputs"])
+        self.assertIn("market_behavior.max_drawdown_252d", result["unmeasured_inputs"])
+        self.assertIn("positioning.short_percent_of_float", result["unmeasured_inputs"])
+
+    def test_a_measured_zero_is_not_treated_as_missing(self):
+        """`or` triggers on falsiness: a real 0.0 was indistinguishable from absent."""
+        result = self.guidance(extended={"accruals_ratio": 0.0, "interest_coverage": 0.0})
+        self.assertNotIn("fundamentals.accruals_ratio", result["unmeasured_inputs"])
+        self.assertNotIn("fundamentals.interest_coverage", result["unmeasured_inputs"])
+        # 0.0x interest coverage is a real, severe reading and must flag.
+        self.assertIn("fundamentals", result["factors"])
+
+    def test_measured_deterioration_still_triggers(self):
+        result = self.guidance(
+            categories={"profitability": 20.0, "financial_health": 30.0,
+                        "accounting_quality": 40.0, "growth": 35.0},
+            technical={"max_drawdown_252d": -45.0, "relative_strength_20d": -22.0,
+                       "return_60d": -3.0, "return_20d": -1.0},
+            extended={"interest_coverage": 1.1, "accruals_ratio": 0.2,
+                      "short_percent_of_float": 0.2},
+            sentiment={"average": -0.4, "article_count": 6},
+        )
+        self.assertEqual(result["agreement_count"], 3)
+        self.assertEqual(result["action"], "TRIM")
+        self.assertEqual(result["unmeasured_inputs"], [])
+
+    def test_an_unmeasured_input_cannot_suppress_a_measured_one(self):
+        """Absent 60d return used to coerce to 0 and pass the < -15 test silently."""
+        result = self.guidance(technical={"return_20d": -5.0})
+        self.assertIn("market_behavior.sustained_decline", result["unmeasured_inputs"])
+        self.assertNotIn("market_behavior", result["factors"])
+
+
+class ShortHorizonRelativeStrengthTest(unittest.TestCase):
+    """relative_strength_20d is ret_20d minus a benchmark return identical for every row,
+    so it cannot change a cross-sectional ranking. The champion no longer weights it."""
+
+    PARTS = {"momentum_12_1": 60.0, "risk_adjusted": 55.0, "relative_strength": 90.0,
+             "drawdown_resilience": 70.0, "volume_confirmation": 50.0, "low_beta": 40.0,
+             "technical_extended": 45.0}
+
+    def test_the_champion_treatment_excludes_it(self):
+        self.assertEqual(SETTINGS.get("short_horizon_treatment"), "neutral")
+
+    def test_neutral_drops_the_term_and_renormalizes(self):
+        score, detail = technical_score_from_parts(self.PARTS, "neutral")
+        self.assertNotIn("relative_strength", detail["weights"])
+        # The configured sub-weights sum to 1.06, not 1.0; the blend normalizes by the
+        # weights that answered, so the absolute total is not load-bearing. What matters is
+        # that relative_strength's 0.16 is gone.
+        self.assertAlmostEqual(sum(detail["weights"].values()), 0.90, places=6)
+        legacy, _ = technical_score_from_parts(self.PARTS, "legacy_momentum")
+        self.assertNotEqual(score, legacy)

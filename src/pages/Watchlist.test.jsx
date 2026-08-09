@@ -16,7 +16,7 @@ vi.mock('../lib/PreferencesContext.jsx', () => ({ usePreferences: vi.fn() }))
 // Clears rankMomentum's gate: positive 5-day and 20-day return, plus the technical fields
 // its rankScore reads.
 const momentumStock = {
-  ticker: 'MOM', name: 'Momentum Co', price: 100, score: 72, confidence: 0.8,
+  ticker: 'MOM', name: 'Momentum Co', price: 100, score: 72, data_coverage: 0.8,
   components: { fundamentals: 80, market_behavior: 70, news_sentiment: 60 },
   technical_detail: {
     return_20d: 12, return_5d: 4, momentum_12_1: 65, relative_strength: 60,
@@ -30,7 +30,7 @@ const momentumStock = {
 // Clears rankReversal's gate: positive 5-day bounce inside a negative 20-day drawdown, with
 // a fundamentals score at or above the 50 floor.
 const reversalStock = {
-  ticker: 'REV', name: 'Reversal Co', price: 50, score: 55, confidence: 0.6,
+  ticker: 'REV', name: 'Reversal Co', price: 50, score: 55, data_coverage: 0.6,
   components: { fundamentals: 60, market_behavior: 40, news_sentiment: 50 },
   technical_detail: { return_20d: -10, return_5d: 3, drawdown_60d: -20, annualized_volatility: 25 },
   recommendation: { action: 'HOLD' },
@@ -41,7 +41,7 @@ const reversalStock = {
 // Flat technicals clear neither screen's gate, but a high score/confidence/BUY guidance
 // gives it the best setup-quality score of the three - used to prove the value sort.
 const neutralStock = {
-  ticker: 'NEU', name: 'Neutral Co', price: 200, score: 90, confidence: 0.9,
+  ticker: 'NEU', name: 'Neutral Co', price: 200, score: 90, data_coverage: 0.9,
   components: { fundamentals: 90, market_behavior: 50, news_sentiment: 50 },
   technical_detail: { return_20d: 0, return_5d: 0, annualized_volatility: 15 },
   recommendation: { action: 'BUY' },

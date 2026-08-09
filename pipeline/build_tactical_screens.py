@@ -116,7 +116,7 @@ def build_rows(universe, as_of, entry_for=backtest_entry, estimates_root=None, o
             "ticker": ticker, "sector": row.get("sector"),
             "peer_group": group_id, "peer_group_label": group_label,
             "structural_score": row.get("score"),
-            "structural_confidence": ((row.get("score_variants") or {}).get("champion") or {}).get("confidence"),
+            "structural_data_coverage": ((row.get("score_variants") or {}).get("champion") or {}).get("data_coverage"),
             "market_cap": row.get("market_cap") or observed.get("market_cap"),
             "median_dollar_volume_60d": median_dollar_volume(closes, entry.get("volumes") or []),
             "realized_volatility": volatility,
@@ -221,7 +221,7 @@ def _base_result(rank, row, classification):
         # Coverage is the share of the model's weight the row's factors actually filled. It is
         # published as confidence because that is exactly what it is: how much of the score is
         # measurement rather than absence.
-        "confidence": row.get("coverage"),
+        "data_coverage": row.get("coverage"),
         "coverage": row.get("coverage"),
         "market_cap": row.get("market_cap"),
         "median_dollar_volume_60d": row.get("median_dollar_volume_60d"),

@@ -73,16 +73,16 @@ export function watchlistGuidance(stock, budget = null, maxPositionPct = null, o
   if (!stock) return null
   const thesis = bullBearScore(stock)
   const action = String(stock.recommendation?.action || '').toUpperCase()
-  const confidence = finite(stock.confidence) ? stock.confidence : null
+  const dataCoverage = finite(stock.data_coverage) ? stock.data_coverage : null
   const subscoreValues = {
     thesis: centeredSubscore(thesis?.score, config.thesis_center, config.thesis_transition_width),
     research: centeredSubscore(stock.score, config.research_center, config.research_transition_width),
-    confidence: centeredSubscore(confidence, config.confidence_center, config.confidence_transition_width),
+    coverage: centeredSubscore(dataCoverage, config.coverage_center, config.coverage_transition_width),
     guidance: config.guidance_scores[action] ?? config.neutral_subscore,
   }
   const rawSetupScore = clamp(weightedGeometricMean(subscoreValues) * 100, 0, 100)
   const hardBlockReasons = []
-  if (confidence != null && confidence < config.hard_confidence_floor) hardBlockReasons.push('Confidence is below the published evidence floor')
+  if (dataCoverage != null && dataCoverage < config.hard_coverage_floor) hardBlockReasons.push('Data coverage is below the published evidence floor')
   if (action === 'SELL') hardBlockReasons.push('Published guidance is Sell')
   const hardBlocked = hardBlockReasons.length > 0
 
@@ -117,7 +117,7 @@ export function watchlistGuidance(stock, budget = null, maxPositionPct = null, o
     subscores: [
       { key: 'thesis', label: 'Thesis', value: subscoreValues.thesis, raw: thesis?.score ?? null },
       { key: 'research', label: 'Research', value: subscoreValues.research, raw: finite(stock.score) ? stock.score : null },
-      { key: 'confidence', label: 'Confidence', value: subscoreValues.confidence, raw: confidence },
+      { key: 'coverage', label: 'Data coverage', value: subscoreValues.coverage, raw: dataCoverage },
       { key: 'guidance', label: 'Guidance', value: subscoreValues.guidance, raw: action || null },
     ],
     target,

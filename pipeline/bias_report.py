@@ -54,7 +54,7 @@ def build_bias_report(rows, generated_at=None):
     exposures = {
         "log_market_cap": lambda row: math.log(row["market_cap"])
         if (row.get("market_cap") or 0) > 0 else None,
-        "confidence": lambda row: row.get("confidence"),
+        "data_coverage": lambda row: row.get("data_coverage"),
         "analyst_coverage_count": lambda row: row.get("analyst_count"),
     }
     correlations = {

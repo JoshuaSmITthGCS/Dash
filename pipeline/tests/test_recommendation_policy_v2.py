@@ -10,14 +10,14 @@ from recommendation_policy_v2 import build_recommendation_v2, effective_score
 def analysis(structural=80, timeliness=80, confidence=0.9, profile="general", categories=None):
     base = {
         "raw_score": structural, "effective_score": structural,
-        "confidence": confidence, "coverage": confidence,
+        "evidence_weight_resolved": confidence, "coverage": confidence,
         "available_weight": confidence, "applicable_weight": 1.0,
         "missing_metrics": [], "stale_metrics": [], "provider_conflicts": [],
         "categories": categories or {},
     }
     timely = {
         "raw_score": timeliness, "effective_score": timeliness,
-        "confidence": confidence, "coverage": confidence,
+        "evidence_weight_resolved": confidence, "coverage": confidence,
         "available_weight": confidence, "applicable_weight": 1.0,
         "missing_metrics": [], "stale_metrics": [], "provider_conflicts": [],
     }
@@ -170,3 +170,59 @@ class RecommendationPolicyV2Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def analysis_without_timeliness(structural=80, confidence=0.9, profile="general"):
+    """What build_v2_analysis actually emits when no forward estimate resolves."""
+    payload = analysis(structural=structural, confidence=confidence, profile=profile)
+    payload["timeliness"] = {
+        "raw_score": None, "effective_score": None, "evidence_weight_resolved": 0.0, "coverage": 0.0,
+        "available_weight": 0.0, "applicable_weight": 1.0,
+        "missing_metrics": ["earnings_surprise", "forward_eps_revision_30d"],
+        "stale_metrics": [], "provider_conflicts": [],
+        "unavailable_reason": "no free forward-estimate provider",
+    }
+    return payload
+
+
+class UnresolvedTimelinessTest(unittest.TestCase):
+    """An unresolved axis must be reported as unresolved, never scored as neutral.
+
+    Before this, timeliness published a constant 50.0, which sat below the configured
+    timeliness_acceptable of 55, so buy_candidate was unreachable and every published
+    company resolved to insufficient_evidence.
+    """
+
+    def test_matrix_names_the_missing_axis_instead_of_scoring_it(self):
+        result = build_recommendation_v2("TEST", analysis_without_timeliness(structural=90))
+        self.assertEqual(result["company"]["matrix_classification"],
+                         "quality_watch_timeliness_unavailable")
+
+    def test_strong_structural_alone_never_becomes_a_buy(self):
+        result = build_recommendation_v2("TEST", analysis_without_timeliness(structural=99))
+        self.assertNotEqual(result["company_action"]["label"], "buy")
+
+    def test_confidence_reflects_the_assessed_layer_not_the_missing_one(self):
+        result = build_recommendation_v2("TEST", analysis_without_timeliness(confidence=0.9))
+        self.assertAlmostEqual(result["company_action"]["confidence"], 0.9)
+        self.assertNotEqual(result["company_action"]["label"], "insufficient_evidence")
+
+    def test_the_missing_layer_is_named_in_the_payload(self):
+        result = build_recommendation_v2("TEST", analysis_without_timeliness())
+        self.assertEqual(result["company"]["timeliness"]["effective_score"], None)
+
+    def test_averaging_down_is_blocked_when_timing_is_unknown(self):
+        """Unknown timing is not acceptable timing."""
+        result = build_recommendation_v2(
+            "TEST", analysis_without_timeliness(structural=90),
+            position=position(current_price=80, weighted_cost_basis=100,
+                              valuation_meaningfully_improved=True),
+            portfolio=portfolio())
+        entry = result["entry_action"] if "entry_action" in result else result.get("entry")
+        self.assertEqual(entry["type"], "average_down")
+        self.assertFalse(entry["allowed"])
+        self.assertIn("timeliness_unavailable_or_deteriorating", entry["reason_codes"])
+
+    def test_a_resolved_timeliness_axis_still_reaches_buy(self):
+        result = build_recommendation_v2("TEST", analysis(structural=90, timeliness=90))
+        self.assertEqual(result["company"]["matrix_classification"], "buy_candidate")

@@ -162,7 +162,7 @@ def test_snapshot_jsonl_contains_required_reproducibility_fields(tmp_path):
     path = next(tmp_path.glob("*.jsonl"))
     row = json.loads(path.read_text().splitlines()[0])
     for field in (
-        "raw_metric_inputs", "normalized_metric_scores", "category_scores", "confidence",
+        "raw_metric_inputs", "normalized_metric_scores", "category_scores", "data_coverage",
         "modifiers", "scores", "model_version", "config_hash", "universe_membership",
     ):
         assert field in row

@@ -1,7 +1,7 @@
 /**
  * Confidence, per mode, from the inputs each mode actually reads.
  *
- * One global "Data confidence" number cannot describe a row honestly. A company can have two
+ * One global "Data coverage" number cannot describe a row honestly. A company can have two
  * flawless years of daily price and volume history and no resolved accounting statements at
  * all - which makes it a perfectly measurable momentum candidate and an unmeasurable
  * long-term one. Collapsing that into a single 42% understates the momentum reading and
