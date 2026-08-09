@@ -262,7 +262,11 @@ class MigrationTests(unittest.TestCase):
         }
         migrated = migrate(payload)
         self.assertEqual(migrated["schema_version"], SETTINGS["model"]["advisor_schema_version"])
+        # No raw metric inputs on this row, so it cannot be rescored. Its published score
+        # survives untouched and the row says it was not recomputed -- zeroing a row because
+        # its inputs were projected away is worse than leaving it stale.
         self.assertEqual(migrated["research"][0]["score"], 77)
+        self.assertIs(migrated["research"][0]["rescored"], False)
         self.assertIn("analysis_v2", migrated["research"][0])
         self.assertIn("run_manifest", migrated)
 
