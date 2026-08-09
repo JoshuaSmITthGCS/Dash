@@ -2,8 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import CongressTrades from './CongressTrades'
 import { useData } from '../lib/useData'
+import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
+vi.mock('../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn() }))
 
 const trade = (overrides = {}) => ({
   chamber: 'senate', representative: 'Jane Doe', district: null, symbol: 'AAPL',
@@ -14,6 +16,10 @@ const trade = (overrides = {}) => ({
 })
 
 describe('CongressTrades page', () => {
+  beforeEach(() => {
+    useAuth.mockReturnValue({ currentUser: null })
+  })
+
   it('renders disclosures with their flags', () => {
     useData.mockReturnValue({
       data: {
@@ -141,5 +147,38 @@ describe('CongressTrades page', () => {
     render(<MemoryRouter><CongressTrades /></MemoryRouter>)
 
     expect(screen.getByText(/No disclosures collected yet/)).toBeVisible()
+  })
+  it('flags a run that reached only some sources, rather than presenting it as complete', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'partial', reason_code: 'SOME_SOURCES_UNAVAILABLE',
+        collection: { failures: ['fmp-senate: FMP senate-latest request failed with HTTP 402'] },
+        results: [trade({ representative: 'Jane Doe' })],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/HTTP 402/)
+    expect(screen.getByText('Collected from some sources only')).toBeVisible()
+    expect(screen.getAllByText(/Jane Doe/).length).toBeGreaterThan(0)
+  })
+
+  it('offers a re-run control to a signed-in user, since no other refresh collects this screen', () => {
+    useAuth.mockReturnValue({ currentUser: { uid: 'u1' } })
+    useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByRole('button', { name: /Re-run collection/ })).toBeEnabled()
+  })
+
+  it('hides the re-run control when nobody is signed in', () => {
+    useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.queryByRole('button', { name: /Re-run collection/ })).toBeNull()
   })
 })

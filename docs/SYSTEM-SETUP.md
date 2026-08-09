@@ -69,7 +69,8 @@ and the root files as archaeology.
 | **Marketaux** | Entity-level news sentiment | Scoped to the Alpha-enrich shortlist plus a discovery feed |
 | **FRED** | Six macro series → a sector-sensitive regime modifier | Raw observations never published or cached |
 | **SEC EDGAR** | Form 4 insider transactions, theme signals from filings | Requires `SEC_USER_AGENT`; **currently unset, so this layer is dark** |
-| **Financial Modeling Prep** | Congressional disclosures | Weekly, separate workflow |
+| **Financial Modeling Prep** | Congressional disclosures (optional: needs a plan covering the Congressional endpoints, and adds the price-performance column) | Weekly, separate workflow |
+| **House/Senate stock-watcher datasets** | Congressional disclosures, keyless | Weekly, same workflow |
 | **Marketstack** | Pre-market screens | Separate workflow |
 
 The client enforces 1.1s between uncached Alpha Vantage requests. Raw provider responses are cached

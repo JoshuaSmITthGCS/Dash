@@ -40,7 +40,8 @@ refreshes on trading days (07:00, 12:00, 15:00 ET). Signal timestamp is the refr
 Yahoo Finance (price/quote/statements — restated only, no as-reported history), Alpha
 Vantage (max 5 symbols/refresh, overview/earnings/macro), Marketaux (news sentiment,
 opt-in), FRED (macro regime, opt-in), SEC EDGAR (Form 4 insider, theme signals — needs
-`SEC_USER_AGENT`), Financial Modeling Prep (congressional disclosures, weekly). Statement
+`SEC_USER_AGENT`), Financial Modeling Prep and the keyless public House/Senate disclosure
+datasets (congressional disclosures, weekly). Statement
 data typically lags 1-3 months after fiscal period end. See `docs/DATA-LINEAGE.md`.
 
 ## Confidence

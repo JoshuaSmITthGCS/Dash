@@ -140,7 +140,8 @@ and `docs/DESKTOP-BREAKDOWN-AUDIT.md` for the full split.
 Yahoo Finance (price/quote/statements, restated only — no as-reported history), Alpha Vantage
 (rate-limited to 5 symbols/refresh; overview, earnings, macro), Marketaux (news sentiment,
 opt-in), FRED (macro regime, opt-in), SEC EDGAR (Form 4 insider activity, theme signals —
-requires `SEC_USER_AGENT`), Financial Modeling Prep (congressional disclosures, weekly).
+requires `SEC_USER_AGENT`), Financial Modeling Prep and the keyless public House/Senate
+disclosure datasets (congressional disclosures, weekly).
 Statement data typically lags 1–3 months after fiscal period end. Full lineage:
 `docs/DATA-LINEAGE.md`.
 

@@ -2,8 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import InstitutionalActivity from './InstitutionalActivity'
 import { useData } from '../lib/useData'
+import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
+vi.mock('../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn() }))
 
 const result = (overrides = {}) => ({
   ticker: 'ACME', cusip: '000000001', managers_added: 2, managers_dropped: 0,
@@ -13,6 +15,10 @@ const result = (overrides = {}) => ({
 })
 
 describe('InstitutionalActivity page', () => {
+  beforeEach(() => {
+    useAuth.mockReturnValue({ currentUser: null })
+  })
+
   it('renders flagged tickers', () => {
     useData.mockReturnValue({
       data: {
@@ -68,5 +74,52 @@ describe('InstitutionalActivity page', () => {
 
     expect(screen.getByText('3')).toBeVisible()
     expect(screen.getByText(/of 9 configured/)).toBeVisible()
+  })
+
+  it('says the collection failed rather than claiming no manager moved a position', () => {
+    // A degraded run and a genuinely quiet quarter both publish zero results. Only the
+    // second is a finding about institutions, so the page must not render them alike.
+    useData.mockReturnValue({
+      data: {
+        status: 'degraded', results: [],
+        degraded_reason: 'No configured manager resolved to a readable 13F-HR filer.',
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><InstitutionalActivity /></MemoryRouter>)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/No configured manager resolved/)
+    expect(screen.getByText('Collection did not complete')).toBeVisible()
+    expect(screen.getByText(/not a statement that no manager moved a position/)).toBeVisible()
+    expect(screen.queryByText(/No flagged activity yet/)).toBeNull()
+  })
+
+  it('hides the KPI tiles on a degraded run so zeroes are not read as measurements', () => {
+    useData.mockReturnValue({
+      data: { status: 'degraded', managers_reviewed: 0, managers_configured: 9, results: [] },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><InstitutionalActivity /></MemoryRouter>)
+
+    expect(screen.queryByText(/of 9 configured/)).toBeNull()
+  })
+
+  it('offers a re-run control to a signed-in user, since no other refresh collects this screen', () => {
+    useAuth.mockReturnValue({ currentUser: { uid: 'u1' } })
+    useData.mockReturnValue({ data: { status: 'success', results: [result()] }, loading: false, error: null })
+
+    render(<MemoryRouter><InstitutionalActivity /></MemoryRouter>)
+
+    expect(screen.getByRole('button', { name: /Re-run collection/ })).toBeEnabled()
+  })
+
+  it('hides the re-run control when nobody is signed in', () => {
+    useData.mockReturnValue({ data: { status: 'success', results: [result()] }, loading: false, error: null })
+
+    render(<MemoryRouter><InstitutionalActivity /></MemoryRouter>)
+
+    expect(screen.queryByRole('button', { name: /Re-run collection/ })).toBeNull()
   })
 })

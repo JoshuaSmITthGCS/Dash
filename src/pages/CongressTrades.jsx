@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
-import { Empty, Loading, Move } from '../components/Bits'
+import { Empty, Loading, Move, RefreshProgress } from '../components/Bits'
+import Icon from '../components/Icons.jsx'
+import { useScreenRefresh } from '../lib/useScreenRefresh'
 import { ScreenNavigation } from './ResearchScreen'
 import ResultCards from '../components/ResultCards.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
@@ -48,7 +50,8 @@ function FlagChips({ flags }) {
 }
 
 export default function CongressTrades() {
-  const { data, loading, error } = useData('screens/congress-trades.json')
+  const { data, loading, error, reload } = useData('screens/congress-trades.json')
+  const refresh = useScreenRefresh('congress', reload)
   const [filters, setFilters] = useState({ chamber: 'all', flag: 'all', sort: 'disclosed' })
   const rows = data?.results || []
   const summary = data?.summary
@@ -76,18 +79,48 @@ export default function CongressTrades() {
         <span className="eyebrow">STOCK Act disclosures</span>
         <h1 className="page-title">Politics <span className="accent">trade alert</span></h1>
         <p className="page-sub">
-          Senate and House trade disclosures from Financial Modeling Prep, collected weekly. Flags are computed
+          Senate and House trade disclosures, collected weekly from Financial Modeling Prep and the public
+          House/Senate disclosure datasets – both mirrors of the same Clerk and eFD filings. Flags are computed
           directly from the disclosure data – a late filing, an options trade, an unusually large or clustered
           position, a repeat pattern – not a claim that any trade was improper. Where a plain stock purchase has
           enough price history, "since purchase" shows how the stock has actually performed – a price fact, not a
           claim about why it moved or a recommendation to trade.
         </p>
       </div>
+      {refresh.available && (
+        <div className="page-actions">
+          {/* This screen is on a weekly cron and the main research refresh does not
+              collect it, so without this the only way to re-run it is to wait. */}
+          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}
+            title="Re-run the disclosure collection now – it reads every configured source and takes a few minutes">
+            <Icon name="sync" size={17} className={refresh.refreshing ? 'refresh-spin' : ''} />
+            {refresh.refreshing ? 'Collecting…' : 'Re-run collection'}
+          </button>
+        </div>
+      )}
     </div>
+
+    <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+      percent={refresh.progress} stage={refresh.stage} />
+    {refresh.message && (
+      <div className={`card etf-state${refresh.status === 'error' ? '' : ' subtle'}`}
+        role={refresh.status === 'error' ? 'alert' : 'status'}>
+        <span>{refresh.message}</span>
+      </div>
+    )}
 
     {loading ? <Loading /> : error ? (
       <div className="card etf-state" role="alert"><strong>Congress trades screen unavailable</strong><span>{error.message}</span></div>
     ) : <>
+      {data && data.status === 'partial' && (
+        // Rows are real but incomplete: at least one source answered and at least one did
+        // not, so what follows understates the week rather than describing it.
+        <div className="card etf-state" role="alert">
+          <strong>Collected from some sources only</strong>
+          <span>{`Some disclosures below may be missing – ${(data.collection?.failures || []).join('; ')}`}</span>
+        </div>
+      )}
+
       {summary && (
         <div className="grid congress-kpi-grid">
           <div className="card kpi">

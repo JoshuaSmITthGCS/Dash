@@ -7,6 +7,7 @@ from unittest import mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import build_institutional_screen as screen
+from institutional_ownership import aggregate_by_cusip
 
 MANAGERS = [
     {"ticker": "BLK", "name": "BlackRock", "style": "passive"},
@@ -49,6 +50,12 @@ class _FakeSec:
     def recent_forms(self, ticker, forms, limit=2):
         return self._filings.get(ticker, [])[:limit]
 
+    def filings_for_cik(self, cik, forms, limit=2):
+        # The fixtures are keyed by ticker because that is how a manager is configured; the
+        # single fake CIK the tests pass stands in for whichever filer resolution returned.
+        filings = next(iter(self._filings.values()), [])
+        return [filing for filing in filings if filing.get("cik") == str(cik)][:limit]
+
     def filing_document(self, cik, accession, document):
         return self._documents[(accession, document)] if (accession, document) in self._documents \
             else self._documents[accession]
@@ -69,7 +76,7 @@ class ManagerQuartersTests(unittest.TestCase):
                      "pri": INFO_TABLE_TEMPLATE.format(shares=1000)}
         sec = _FakeSec(filings, documents)
 
-        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"}, ["1"])
 
         self.assertEqual(len(quarters), 2)
         self.assertEqual(quarters[0]["period"], "2026-03-31")
@@ -92,7 +99,7 @@ class ManagerQuartersTests(unittest.TestCase):
                      "pri": INFO_TABLE_TEMPLATE.format(shares=1000)}
         sec = _FakeSec(filings, documents)
 
-        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"}, ["1"])
 
         self.assertEqual(len(quarters), 2)
         self.assertEqual(quarters[0]["period"], "2026-03-31")
@@ -104,7 +111,7 @@ class ManagerQuartersTests(unittest.TestCase):
                              "filed": "2026-05-01", "period": "2026-03-31"}]}
         sec = _FakeSec(filings, {})  # accession missing -> KeyError inside filing_document
 
-        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"}, ["1"])
 
         self.assertEqual(quarters, [{"period": "2026-03-31", "filed": "2026-05-01",
                                      "holdings": [], "unreadable": True, "is_amendment": False}])
@@ -124,7 +131,7 @@ class ManagerQuartersTests(unittest.TestCase):
             "acc-1": ["primary_doc.xml", "InfoTable.xml"],
         })
 
-        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"}, ["1"])
 
         self.assertEqual(quarters[0]["holdings"][0]["shares"], 2000.0)
         self.assertFalse(quarters[0]["unreadable"])
@@ -133,12 +140,13 @@ class ManagerQuartersTests(unittest.TestCase):
         filings = {"TROW": [{"cik": "1", "form": "13F-HR", "accession": "acc-1",
                              "document": "primary_doc.xml", "filed": "2026-05-14",
                              "period": "2026-03-31"}]}
-        documents = {("acc-1", "primary_doc.xml"): "<edgarSubmission><coverPage/></edgarSubmission>"}
+        documents = {("acc-1", "primary_doc.xml"): "<edgarSubmission><coverPage/></edgarSubmission>",
+                     ("acc-1", "exhibit99.xml"): "<exhibit><nothingHere/></exhibit>"}
         sec = _FakeSec(filings, documents, index_by_accession={
             "acc-1": ["primary_doc.xml", "exhibit99.xml"],
         })
 
-        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"}, ["1"])
 
         self.assertEqual(quarters[0]["holdings"], [])
         self.assertFalse(quarters[0]["unreadable"])
@@ -220,6 +228,127 @@ class AppendNewPositionsTests(unittest.TestCase):
         self.assertEqual(revisions[0]["current_shares"], 2500)
 
 
+class _ResolvingSec(_FakeSec):
+    """A fake that can also answer the filer-resolution questions: which CIK a ticker maps
+    to, what a CIK is called, and which CIKs a company-name search turns up."""
+
+    def __init__(self, *args, tickers=None, names=None, search=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._tickers = tickers or {}
+        self._names = names or {}
+        self._search = search or {}
+
+    def ticker_map(self):
+        return self._tickers
+
+    def entity_name(self, cik):
+        return self._names.get(cik)
+
+    def company_search(self, name, form_type=None, limit=40):
+        return self._search.get(name, [])
+
+
+class ResolveFilerCiksTests(unittest.TestCase):
+    """The bug that made this screen publish successful, empty runs: an asset manager's
+    *listed* CIK is not the CIK that files its 13F."""
+
+    def test_the_ticker_cik_is_used_when_that_entity_files_its_own_13f(self):
+        sec = _ResolvingSec(
+            {"BRK-B": [{"cik": "0001067983", "form": "13F-HR", "accession": "a",
+                        "document": "d.xml", "filed": "2026-05-14", "period": "2026-03-31"}]},
+            {}, tickers={"BRK-B": "0001067983"},
+            names={"0001067983": "BERKSHIRE HATHAWAY INC"})
+
+        ciks, notes = screen.resolve_filer_ciks(sec, {"ticker": "BRK-B", "name": "Berkshire Hathaway"})
+
+        self.assertEqual(ciks, ["0001067983"])
+        self.assertEqual(notes, [])
+
+    def test_a_listed_parent_that_files_no_13f_falls_through_to_its_adviser_subsidiary(self):
+        # T. Rowe Price Group files the 10-K; the adviser files the 13F, under its own CIK
+        # and under a name the colloquial spelling does not prefix.
+        sec = _ResolvingSec(
+            {"TROW": [{"cik": "0000080255", "form": "13F-HR", "accession": "a",
+                       "document": "d.xml", "filed": "2026-05-14", "period": "2026-03-31"}]},
+            {}, tickers={"TROW": "0001113169"},
+            names={"0001113169": "T. Rowe Price Group, Inc.",
+                   "0000080255": "PRICE T ROWE ASSOCIATES INC /MD/"},
+            search={"PRICE T ROWE": [("0000080255", "PRICE T ROWE ASSOCIATES INC /MD/")]})
+
+        ciks, notes = screen.resolve_filer_ciks(
+            sec, {"ticker": "TROW", "name": "T. Rowe Price", "filer_aliases": ["PRICE T ROWE"]})
+
+        self.assertEqual(ciks, ["0000080255"])
+        self.assertIn("files no 13F-HR", " ".join(notes))
+
+    def test_a_name_mismatch_is_rejected_rather_than_attributed_to_this_manager(self):
+        # A prefix search returns alphabetical neighbours. Reading a neighbour's holdings
+        # under this manager's label is the exact failure the name guard exists to stop.
+        sec = _ResolvingSec(
+            {"APAM": [{"cik": "0009999999", "form": "13F-HR", "accession": "a",
+                       "document": "d.xml", "filed": "2026-05-14", "period": "2026-03-31"}]},
+            {}, tickers={},
+            names={"0009999999": "ARTISAN CONSUMER GOODS INC"},
+            search={"Artisan Partners": [("0009999999", "ARTISAN CONSUMER GOODS INC")]})
+
+        ciks, notes = screen.resolve_filer_ciks(sec, {"ticker": "APAM", "name": "Artisan Partners"})
+
+        self.assertEqual(ciks, [])
+        self.assertIn("name does not match", " ".join(notes))
+
+
+class MultiFilerManagerTests(unittest.TestCase):
+    def test_two_adviser_subsidiaries_are_unioned_into_one_managers_position(self):
+        # One manager family, one economic position, split across two filings. Counting them
+        # as two managers would inflate the breadth count the whole screen rests on.
+        filings = {"TROW": [
+            {"cik": "1", "form": "13F-HR", "accession": "a1", "document": "d.xml",
+             "filed": "2026-05-14", "period": "2026-03-31"},
+            {"cik": "2", "form": "13F-HR", "accession": "a2", "document": "d.xml",
+             "filed": "2026-05-15", "period": "2026-03-31"},
+        ]}
+        documents = {"a1": INFO_TABLE_TEMPLATE.format(shares=1000),
+                     "a2": INFO_TABLE_TEMPLATE.format(shares=1500)}
+        sec = _FakeSec(filings, documents)
+
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"}, ["1", "2"])
+
+        self.assertEqual(len(quarters), 1)
+        positions = aggregate_by_cusip(quarters[0]["holdings"])
+        self.assertEqual(positions["000000001"], {"TROW": 2500.0})
+        self.assertEqual(quarters[0]["filed"], "2026-05-15")
+
+
+class InfoTableDiscoveryTests(unittest.TestCase):
+    def test_an_exhibit_named_information_table_is_found(self):
+        # The literal name that broke the live screen: "informationTable.xml" does not
+        # contain the substring "infotable", so a filter on that one spelling skipped it.
+        filings = {"X": [{"cik": "1", "form": "13F-HR", "accession": "acc",
+                          "document": "primary_doc.xml", "filed": "2026-05-14",
+                          "period": "2026-03-31"}]}
+        documents = {("acc", "primary_doc.xml"): "<edgarSubmission><coverPage/></edgarSubmission>",
+                     ("acc", "informationTable.xml"): INFO_TABLE_TEMPLATE.format(shares=700)}
+        sec = _FakeSec(filings, documents, index_by_accession={
+            "acc": ["primary_doc.xml", "informationTable.xml"]})
+
+        quarters = screen.manager_quarters(sec, {"ticker": "X"}, ["1"])
+
+        self.assertEqual(quarters[0]["holdings"][0]["shares"], 700.0)
+
+    def test_an_exhibit_with_no_naming_hint_at_all_is_still_tried(self):
+        filings = {"X": [{"cik": "1", "form": "13F-HR", "accession": "acc",
+                          "document": "primary_doc.xml", "filed": "2026-05-14",
+                          "period": "2026-03-31"}]}
+        documents = {("acc", "primary_doc.xml"): "<edgarSubmission><coverPage/></edgarSubmission>",
+                     ("acc", "q1-2026.xml"): INFO_TABLE_TEMPLATE.format(shares=42)}
+        sec = _FakeSec(filings, documents, index_by_accession={
+            "acc": ["primary_doc.xml", "q1-2026.xml"]})
+
+        quarters = screen.manager_quarters(sec, {"ticker": "X"}, ["1"])
+
+        self.assertEqual(quarters[0]["holdings"][0]["shares"], 42.0)
+
+
 class RunSkipsGracefullyTests(unittest.TestCase):
     def test_an_unconfigured_client_skips_rather_than_raises(self):
         with mock.patch.object(screen, "SecEdgarClient") as fake_client_cls, \
@@ -230,6 +359,24 @@ class RunSkipsGracefullyTests(unittest.TestCase):
         self.assertEqual(payload["status"], "skipped")
         self.assertEqual(payload["results"], [])
         fake_save_json.assert_called_once()
+
+    def test_a_run_that_resolves_no_filer_is_degraded_not_successful(self):
+        # The regression this whole change exists for: zero results because collection
+        # failed must not publish as "success", which reads downstream and on the page as
+        # "no manager moved a position".
+        sec = _ResolvingSec({}, {}, tickers={}, names={}, search={})
+        with mock.patch.object(screen, "SecEdgarClient", return_value=sec), \
+                mock.patch.object(screen, "active_managers",
+                                  return_value=[{"ticker": "TROW", "name": "T. Rowe Price"}]), \
+                mock.patch.object(screen, "append_new_positions", return_value=0), \
+                mock.patch.object(screen, "OpenFigiClient"), \
+                mock.patch.object(screen, "save_json"):
+            payload = screen.run()
+
+        self.assertEqual(payload["status"], "degraded")
+        self.assertIn("no configured manager", payload["degraded_reason"].lower())
+        self.assertEqual(payload["manager_coverage"][0]["manager"], "TROW")
+        self.assertTrue(payload["manager_coverage"][0]["notes"])
 
 
 if __name__ == "__main__":

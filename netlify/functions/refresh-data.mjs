@@ -26,6 +26,31 @@ function githubHeaders(token) {
   }
 }
 
+// The workflows this endpoint is allowed to start, as an allowlist keyed by the name the
+// client sends. A client-supplied workflow *file name* would let any signed-in allowed user
+// dispatch anything in .github/workflows; mapping through a fixed table means an unknown
+// screen falls back to the advisor refresh rather than reaching a workflow nobody intended.
+//
+// The two screen collectors are here because they are on their own slow schedules - monthly
+// for 13F, weekly for Congress - and are not touched by the main research refresh, so
+// without this there is no way to re-run them from the app at all.
+export const SCREEN_WORKFLOWS = {
+  research: { workflow: 'refresh-advisor.yml', acceptsInputs: true, label: 'research refresh' },
+  congress: { workflow: 'congress-trades.yml', acceptsInputs: false, label: 'Congressional disclosure collection' },
+  institutional: { workflow: 'institutional-13f.yml', acceptsInputs: false, label: 'institutional 13F collection' },
+}
+
+// Step weights per workflow, used to turn a job's completed steps into a percentage. The
+// screen collectors are short and linear, so their steps are near-evenly weighted.
+const SCREEN_PROGRESS_STEPS = [
+  ['actions/checkout', 15],
+  ['actions/setup-python', 10],
+  ['pip install', 15],
+  ['Collect', 45],
+  ['Summarise what was collected', 5],
+  ['Commit collected data with retry', 10],
+]
+
 export function parseRequestBody(body) {
   let payload = {}
   try {
@@ -33,6 +58,7 @@ export function parseRequestBody(body) {
   } catch {
     payload = {}
   }
+  const screen = Object.hasOwn(SCREEN_WORKFLOWS, payload.screen) ? payload.screen : 'research'
   const symbols = Array.isArray(payload.symbols)
     ? [...new Set(
         payload.symbols
@@ -44,7 +70,7 @@ export function parseRequestBody(body) {
   // pipeline/rescore.py. Anything else falls back to a real data refresh.
   const mode = payload.mode === 'rescore' ? 'rescore' : 'data'
   const universeScope = payload.universe_scope === 'full' ? 'full' : 'fast'
-  return { symbols, mode, universeScope }
+  return { symbols, mode, universeScope, screen }
 }
 
 const PROGRESS_STEPS = [
@@ -61,12 +87,12 @@ const PROGRESS_STEPS = [
   ['Commit refreshed data with retry', 10],
 ]
 
-export function workflowProgress(jobs = []) {
+export function workflowProgress(jobs = [], screen = 'research') {
   const steps = jobs.flatMap((job) => job.steps || [])
   let completed = 0
   let stage = 'Waiting for a runner'
 
-  for (const [label, weight] of PROGRESS_STEPS) {
+  for (const [label, weight] of (screen === 'research' ? PROGRESS_STEPS : SCREEN_PROGRESS_STEPS)) {
     const step = steps.find((candidate) => candidate.name?.includes(label))
     if (step?.status === 'completed' && step.conclusion === 'success') completed += weight
     if (step?.status === 'in_progress') stage = step.name
@@ -95,7 +121,7 @@ export async function locateDispatchedRun(workflowUrl, headers, priorRunIds, {
   return null
 }
 
-async function refreshStatus(event, workflowUrl, headers) {
+async function refreshStatus(event, workflowUrl, headers, screen) {
   const requestedRunId = event.queryStringParameters?.run_id
   let run
 
@@ -114,7 +140,7 @@ async function refreshStatus(event, workflowUrl, headers) {
   const jobsResponse = await fetch(`https://api.github.com/repos/${process.env.REFRESH_GITHUB_REPOSITORY}/actions/runs/${run.id}/jobs?per_page=100`, { headers })
   if (!jobsResponse.ok) throw new Error(`GitHub jobs lookup failed (${jobsResponse.status})`)
   const jobs = await jobsResponse.json()
-  const progress = workflowProgress(jobs.jobs)
+  const progress = workflowProgress(jobs.jobs, screen)
   if (run.status === 'completed' && run.conclusion === 'success') {
     progress.percent = 100
     progress.stage = 'Publishing the website update'
@@ -157,13 +183,21 @@ export async function handler(event) {
     if (!user.email || !allowedEmails.has(user.email.toLowerCase())) {
       return json(403, { error: 'Your account is not allowed to start data refreshes.' })
     }
-    const { symbols, mode, universeScope } = parseRequestBody(event.body)
+    const { symbols, mode, universeScope, screen } = parseRequestBody(event.body)
     const refreshMode = mode === 'rescore' ? 'rescore-only' : 'data-only'
 
-    const workflowUrl = `https://api.github.com/repos/${repository}/actions/workflows/refresh-advisor.yml`
+    // A GET carries no body, so the screen it is asking about rides in the query string.
+    // Without it every status poll would be scored against the research workflow's step
+    // list and a collector run would sit at 0% until it finished.
+    const statusScreen = Object.hasOwn(SCREEN_WORKFLOWS, event.queryStringParameters?.screen)
+      ? event.queryStringParameters.screen
+      : screen
+    const selected = SCREEN_WORKFLOWS[event.httpMethod === 'GET' ? statusScreen : screen]
+
+    const workflowUrl = `https://api.github.com/repos/${repository}/actions/workflows/${selected.workflow}`
     const headers = githubHeaders(githubToken)
     if (event.httpMethod === 'GET') {
-      return await refreshStatus(event, workflowUrl, headers)
+      return await refreshStatus(event, workflowUrl, headers, statusScreen)
     }
     const runsResponse = await fetch(`${workflowUrl}/runs?branch=main&per_page=10`, { headers })
     if (!runsResponse.ok) {
@@ -172,7 +206,7 @@ export async function handler(event) {
     const runs = await runsResponse.json()
     const active = runs.workflow_runs?.find((run) => ['queued', 'in_progress'].includes(run.status))
     if (active) {
-      return json(409, { error: 'A refresh or reanalysis is already running. Please wait for it to finish.', run_id: active.id })
+      return json(409, { error: `A ${selected.label} is already running. Please wait for it to finish.`, run_id: active.id })
     }
     const priorRunIds = new Set((runs.workflow_runs || []).map((run) => run.id))
 
@@ -181,14 +215,19 @@ export async function handler(event) {
       headers,
       body: JSON.stringify({
         ref: 'main',
-        inputs: {
-          refresh_mode: refreshMode,
-          // Portfolio and watchlist controls use the fast prior-top-100 sweep. The home
-          // control may explicitly request a complete ~900-name rebuild. Rescoring skips
-          // provider requests, so the scope is harmless for that mode.
-          universe_scope: universeScope,
-          portfolio_symbols: symbols.join(','),
-        },
+        // The collectors declare `workflow_dispatch: {}` and accept no inputs; GitHub
+        // rejects a dispatch that supplies any, so the research workflow's inputs are only
+        // sent to the workflow that actually declares them.
+        ...(selected.acceptsInputs ? {
+          inputs: {
+            refresh_mode: refreshMode,
+            // Portfolio and watchlist controls use the fast prior-top-100 sweep. The home
+            // control may explicitly request a complete ~900-name rebuild. Rescoring skips
+            // provider requests, so the scope is harmless for that mode.
+            universe_scope: universeScope,
+            portfolio_symbols: symbols.join(','),
+          },
+        } : {}),
       }),
     })
     if (!dispatchResponse.ok) {
@@ -203,7 +242,7 @@ export async function handler(event) {
     // removes that race entirely: every later status check targets that exact run by ID,
     // which works whether it's still running or already done.
     const runId = await locateDispatchedRun(workflowUrl, headers, priorRunIds)
-    return json(202, { ok: true, mode: refreshMode, universe_scope: universeScope, symbols, run_id: runId })
+    return json(202, { ok: true, mode: refreshMode, universe_scope: universeScope, symbols, screen, run_id: runId })
   } catch (error) {
     console.error('Manual refresh failed:', error)
     return json(500, { error: 'The refresh could not be started. Check the server configuration.' })
