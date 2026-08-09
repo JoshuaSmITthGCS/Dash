@@ -18,6 +18,17 @@ describe('portfolio sorting', () => {
       .toEqual(['BBB', 'AAA', 'ZZZ'])
   })
 
+  it('sorts holdings by rating and keeps unrated positions last', () => {
+    const rated = [
+      { ticker: 'FLAT', rating: 0 },
+      { ticker: 'WORST', rating: -5 },
+      { ticker: 'BEST', rating: 5 },
+      { ticker: 'UNRATED', rating: null },
+    ]
+    expect(sortPortfolioPositions(rated, 'rating', 'desc').map((row) => row.ticker))
+      .toEqual(['BEST', 'FLAT', 'WORST', 'UNRATED'])
+  })
+
   it('sorts position signals by action severity', () => {
     const signals = [
       { ticker: 'HOLD', recommendation: { action: 'HOLD' } },

@@ -436,6 +436,10 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .sort-arrow.up { border-bottom: 4px solid currentColor; }.sort-arrow.down { border-top: 4px solid currentColor; }
 .sort-arrow.selected { color: var(--accent); opacity: 1; }
 .portfolio-trend-cell { width: 112px; min-width: 112px; }
+.news-sort-toolbar { display: flex; align-items: end; justify-content: flex-end; gap: 10px; margin: 0 0 16px; }
+.news-sort-toolbar label > span { display: block; margin-bottom: 5px; color: var(--text-faint); font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: .1em; }
+.news-sort-toolbar select { min-width: 190px; min-height: 44px; padding: 0 36px 0 13px; border: 1px solid var(--border-lit); border-radius: 14px; background: var(--bg-elev); color: var(--text); }
+.news-sort-direction { min-width: 132px; }
 .portfolio-trend-cell .sparkline { width: 76px; margin: 0 0 3px auto; }
 .portfolio-trend-cell .mono { display: block; font-size: 10px; }
 .action-panel { display: grid; gap: 10px; padding: 16px; border: 1px solid; border-radius: 18px; }.action-panel ul { padding-left: 18px; color: var(--text-dim); }.action-impact { display: flex; gap: 16px; flex-wrap: wrap; color: var(--text-dim); font: 11px var(--font-mono); }
@@ -608,6 +612,7 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
   .portfolio-comparison > summary { min-height: 106px; padding: 16px; }.portfolio-comparison > summary strong { font-size: 16px; }.portfolio-comparison-chart { padding: 2px 14px 18px; }
   .comparison-summary-side { align-self: center; }.comparison-edge { display: none; }.chart-heading { align-items: stretch; flex-direction: column; }.chart-zoom { align-self: flex-start; max-width: 100%; overflow-x: auto; }
   .portfolio-sort-toolbar { align-items: stretch; flex-direction: column; }.portfolio-sort-direction { width: 100%; }
+  .news-sort-toolbar { align-items: stretch; flex-direction: column; }.news-sort-toolbar select { width: 100%; min-width: 0; }.news-sort-direction { width: 100%; }
   .watchlist-toolbar { align-items: stretch; flex-direction: column; }.watchlist-toolbar .sort-with-info select { width: 100%; }
   .watchlist-grid { grid-template-columns: 1fr; }.watchlist-add { align-items: stretch; flex-direction: column; }.watchlist-add .primary-button { align-self: flex-start; }.watchlist-sizing { grid-template-columns: 1fr; }.watchlist-sizing > div { grid-column: auto; }
   .research-toolbar { grid-template-columns: 1fr; }.research-toolbar .search-field { grid-column: auto; }
@@ -1046,7 +1051,7 @@ body { background: var(--app-background); background-image: none; }
 .portfolio-value-card { border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); color: var(--text-primary); box-shadow: var(--surface-shadow); }
 .portfolio-value-card::after { display: none; }
 .portfolio-actions-menu { margin: -4px 0 20px; overflow: hidden; }.portfolio-actions-menu > summary { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px var(--card-padding); list-style: none; cursor: pointer; }.portfolio-actions-menu > summary::-webkit-details-marker { display: none; }.portfolio-actions-menu > summary .eyebrow { margin-bottom: 3px; }.portfolio-actions-menu > summary strong { font-size: 14px; }.portfolio-actions-menu[open] .comparison-toggle { transform: rotate(90deg); }.portfolio-toolbar { flex-wrap: wrap; padding: 14px var(--card-padding); border-top: 1px solid var(--border-subtle); }.portfolio-primary-refresh { display: grid; gap: 3px; }.portfolio-primary-refresh time { color: var(--text-tertiary); font: 9px var(--font-mono); }
-.research-toolbar input, .research-toolbar select, .filters input, .filters select, form input, .watchlist-add input, .watchlist-sizing input, .portfolio-sort-toolbar select { border-color: var(--border-default); background: var(--surface-primary); }
+.research-toolbar input, .research-toolbar select, .filters input, .filters select, form input, .watchlist-add input, .watchlist-sizing input, .portfolio-sort-toolbar select, .news-sort-toolbar select { border-color: var(--border-default); background: var(--surface-primary); }
 .research-table, .portfolio-table, .watch-preview, .capability-list { border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); }
 
 /* Unified overview grid */
