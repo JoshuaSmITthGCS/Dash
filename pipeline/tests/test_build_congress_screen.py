@@ -95,6 +95,49 @@ def test_classify_flags_concentrated_size_by_the_range_floor():
     assert "CONCENTRATED_SIZE" not in small["flags"]
 
 
+def test_classify_flags_extraordinary_buy_for_a_novel_sub_ceiling_purchase():
+    relational = {module._trade_key(trade()): ["NOVEL_TICKER"]}
+    row = module.classify(
+        trade(), trade_counts={"Jane Doe": 5}, history_days=200, relational=relational,
+        market_cap_lookup={"AAPL": 500_000_000},
+    )
+    assert "EXTRAORDINARY_BUY" in row["flags"]
+
+
+def test_classify_does_not_flag_extraordinary_buy_above_the_market_cap_ceiling():
+    relational = {module._trade_key(trade()): ["NOVEL_TICKER"]}
+    row = module.classify(
+        trade(), trade_counts={"Jane Doe": 5}, history_days=200, relational=relational,
+        market_cap_lookup={"AAPL": 3_000_000_000_000},
+    )
+    assert "EXTRAORDINARY_BUY" not in row["flags"]
+
+
+def test_classify_does_not_flag_extraordinary_buy_without_novelty():
+    row = module.classify(
+        trade(), trade_counts={"Jane Doe": 5}, history_days=200,
+        market_cap_lookup={"AAPL": 500_000_000},
+    )
+    assert "EXTRAORDINARY_BUY" not in row["flags"]
+
+
+def test_classify_does_not_flag_a_sale_as_extraordinary_buy_even_if_novel_and_small():
+    relational = {module._trade_key(trade(transaction_type="Sale")): ["NOVEL_TICKER"]}
+    row = module.classify(
+        trade(transaction_type="Sale"), trade_counts={"Jane Doe": 5}, history_days=200,
+        relational=relational, market_cap_lookup={"AAPL": 500_000_000},
+    )
+    assert "EXTRAORDINARY_BUY" not in row["flags"]
+
+
+def test_classify_without_a_market_cap_lookup_never_flags_extraordinary_buy():
+    relational = {module._trade_key(trade()): ["NOVEL_TICKER"]}
+    row = module.classify(
+        trade(), trade_counts={"Jane Doe": 5}, history_days=200, relational=relational,
+    )
+    assert "EXTRAORDINARY_BUY" not in row["flags"]
+
+
 def test_cluster_trade_keys_requires_three_distinct_representatives_within_the_window():
     rows = [
         trade(representative="A", transaction_date="2026-06-01"),

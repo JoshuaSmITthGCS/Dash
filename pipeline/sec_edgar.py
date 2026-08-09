@@ -195,6 +195,45 @@ class SecEdgarClient:
                 break
         return filings
 
+    def filings_for_cik(self, cik, forms, limit=2):
+        """Most recent filings of the given form type(s) for an already-known CIK.
+
+        Kept separate from ``recent_forms`` because some callers - institutional 13F
+        managers, chiefly - are identified by CIK directly rather than by a covered
+        ticker, so there is nothing for ``ticker_map`` to resolve.
+
+        Carries ``form`` (so a caller can tell a 13F-HR from its own 13F-HR/A amendment)
+        and ``period`` (EDGAR's ``reportDate`` - the quarter or period the filing actually
+        covers, as opposed to ``filed``, when it became public). The two diverge exactly
+        when an amendment matters: an amendment's ``filed`` date is recent, but its
+        ``period`` is the same quarter the original filing already covered, and a caller
+        that groups by ``filed`` alone will mistake the amendment for a new quarter.
+        """
+        payload = self._get(f"{SEC_DATA}/submissions/CIK{cik}.json", as_json=True)
+        recent = payload.get("filings", {}).get("recent", {})
+        filings = []
+        for index, form in enumerate(recent.get("form", [])):
+            if form not in forms:
+                continue
+            filings.append({
+                "cik": cik,
+                "form": form,
+                "accession": recent["accessionNumber"][index],
+                "document": recent["primaryDocument"][index],
+                "filed": recent.get("filingDate", [""])[index],
+                "period": recent.get("reportDate", [""])[index],
+            })
+            if len(filings) >= limit:
+                break
+        return filings
+
+    def recent_forms(self, ticker, forms, limit=2):
+        """Most recent filings of the given form type(s) for a covered ticker."""
+        cik = self.ticker_map().get(ticker.upper())
+        if not cik:
+            return []
+        return self.filings_for_cik(cik, forms, limit=limit)
+
     def form4_transactions(self, ticker, lookback_days=1100, max_filings=80):
         """Every open-market Form 4 transaction in the window, newest filing first.
 

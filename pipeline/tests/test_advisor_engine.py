@@ -6,9 +6,11 @@ from datetime import date, datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
-                            build_research, insider_modifier, macro_regime_modifier,
-                            sentiment_score, shrink_research_components, technical_factors,
-                            technical_score_from_parts)
+                            build_research, concentration_risk_modifier,
+                            congressional_buying_modifier, geographic_concentration_modifier,
+                            insider_modifier, institutional_ownership_modifier,
+                            macro_regime_modifier, sentiment_score, shrink_research_components,
+                            technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -400,6 +402,188 @@ class InsiderModifierTests(unittest.TestCase):
         ]
         points, _ = insider_modifier({"transactions": transactions})
         self.assertLessEqual(points, MODIFIERS.get("insider_activity", {}).get("max_points", 5.0))
+
+
+class ConcentrationRiskModifierTests(unittest.TestCase):
+    def test_a_severe_disclosed_customer_share_penalizes_the_score(self):
+        points, note = concentration_risk_modifier({"percentages": [0.35]})
+        self.assertLess(points, 0.0)
+        self.assertIn("customer", note.lower())
+
+    def test_a_precomputed_summary_is_read_directly(self):
+        points, note = concentration_risk_modifier(
+            {"score_points": -2.0, "notes": ["largest named customer is 35% of revenue"]})
+        self.assertEqual(points, -2.0)
+        self.assertIn("35%", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(concentration_risk_modifier(None), (0.0, None))
+        self.assertEqual(concentration_risk_modifier({"percentages": []}), (0.0, None))
+
+    def test_points_never_exceed_the_configured_penalty(self):
+        points, _ = concentration_risk_modifier({"percentages": [0.99]})
+        self.assertGreaterEqual(
+            points, -MODIFIERS.get("customer_concentration_risk", {}).get("max_penalty", 3.0))
+
+
+class GeographicConcentrationModifierTests(unittest.TestCase):
+    def test_a_severe_single_country_share_penalizes_the_score(self):
+        points, note = geographic_concentration_modifier({"shares": {"us": 0.4, "cn": 0.6}})
+        self.assertLess(points, 0.0)
+        self.assertIn("geograph", note.lower())
+
+    def test_diversified_international_revenue_with_no_single_country_dominant_is_neutral(self):
+        points, note = geographic_concentration_modifier(
+            {"shares": {"us": 0.4, "cn": 0.2, "de": 0.2, "jp": 0.2}})
+        self.assertEqual(points, 0.0)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(geographic_concentration_modifier(None), (0.0, None))
+        self.assertEqual(geographic_concentration_modifier({"shares": {}}), (0.0, None))
+
+
+class BuildResearchDoesNotYetUseConcentrationOrGeographicRiskTests(unittest.TestCase):
+    """Champion ``row["score"]`` must be identical regardless of concentration/geographic
+    data - both are shadow-mode only (challenger score_variants) until their XBRL tagging
+    coverage across the scored universe has actually been measured on a live run. A
+    penalty-only modifier that only fires on tagged filers would otherwise systematically
+    favor whichever companies happen not to have tagged the concept."""
+
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_build_research_has_no_parameter_for_either_signal(self):
+        row = build_research("TEST", self.snapshot, self.closes, self.closes, [])
+        with self.assertRaises(TypeError):
+            build_research("TEST", self.snapshot, self.closes, self.closes, [],
+                           concentration_risk={"percentages": [0.40]})
+        self.assertIn("score", row)
+
+
+class ChallengerOnlyShadowModeTests(unittest.TestCase):
+    """The two concentration modifiers DO move the challenger score - that is the whole
+    point of shadow mode: measurable, but not yet risking the live champion score."""
+
+    def setUp(self):
+        self.config = SETTINGS["challengers"]["signal_corrections"]
+
+    def test_severe_customer_concentration_lowers_the_challenger_score_only(self):
+        baseline, _ = apply_challenger_modifiers(70.0, {}, {}, self.config)
+        concentrated, _ = apply_challenger_modifiers(
+            70.0, {}, {}, self.config, concentration_risk={"percentages": [0.40]})
+        self.assertLess(concentrated, baseline)
+
+    def test_severe_geographic_concentration_lowers_the_challenger_score_only(self):
+        baseline, _ = apply_challenger_modifiers(70.0, {}, {}, self.config)
+        concentrated, _ = apply_challenger_modifiers(
+            70.0, {}, {}, self.config,
+            geographic_exposure={"shares": {"us": 0.3, "cn": 0.7}})
+        self.assertLess(concentrated, baseline)
+
+
+class InstitutionalOwnershipModifierTests(unittest.TestCase):
+    def test_a_precomputed_positive_summary_lifts_the_score(self):
+        points, note = institutional_ownership_modifier(
+            {"score_points": 1.5, "notes": ["3 curated institutional manager(s) added a position"]})
+        self.assertEqual(points, 1.5)
+        self.assertIn("added", note)
+
+    def test_a_precomputed_negative_summary_penalizes_the_score(self):
+        points, _ = institutional_ownership_modifier({"score_points": -1.0, "notes": []})
+        self.assertEqual(points, -1.0)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(institutional_ownership_modifier(None), (0.0, None))
+        self.assertEqual(institutional_ownership_modifier({}), (0.0, None))
+
+    def test_points_respect_the_configured_caps(self):
+        points, _ = institutional_ownership_modifier({"score_points": 999.0, "notes": []})
+        self.assertLessEqual(points, MODIFIERS.get("institutional_13f", {}).get("max_points", 3.0))
+
+
+class BuildResearchWiresInstitutionalOwnershipIntoTheChampionScoreTests(unittest.TestCase):
+    """Unlike concentration_risk/geographic_exposure, institutional_ownership IS back in
+    the champion path (with lag decay baked into its input upstream) - this is the
+    end-to-end proof it actually moves row["score"], not just a display field."""
+
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_corroborated_accumulation_raises_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        accumulating = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            institutional_ownership={"score_points": 2.0, "notes": []},
+        )["score"]
+        self.assertGreater(accumulating, baseline)
+
+    def test_a_stale_filing_moves_the_score_less_than_a_fresh_one(self):
+        # The decay itself lives in institutional_ownership.score_institutional_ownership,
+        # applied before this reaches build_research - this just confirms a smaller
+        # score_points input (as a decayed one would be) produces a smaller effect.
+        fresh = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            institutional_ownership={"score_points": 2.0, "notes": []},
+        )["score"]
+        stale = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            institutional_ownership={"score_points": 0.2, "notes": []},
+        )["score"]
+        self.assertGreater(fresh, stale)
+
+
+class CongressionalBuyingModifierTests(unittest.TestCase):
+    def test_a_precomputed_positive_summary_lifts_the_score(self):
+        points, note = congressional_buying_modifier(
+            {"score_points": 1.5, "notes": ["2 member(s) disclosed a purchase"]})
+        self.assertEqual(points, 1.5)
+        self.assertIn("purchase", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(congressional_buying_modifier(None), (0.0, None))
+        self.assertEqual(congressional_buying_modifier({}), (0.0, None))
+
+    def test_points_are_never_negative_even_if_the_input_somehow_is(self):
+        points, _ = congressional_buying_modifier({"score_points": -5.0, "notes": []})
+        self.assertGreaterEqual(points, 0.0)
+
+    def test_points_respect_the_configured_cap(self):
+        points, _ = congressional_buying_modifier({"score_points": 999.0, "notes": []})
+        self.assertLessEqual(points, MODIFIERS.get("congressional_buying", {}).get("max_points", 4.0))
+
+
+class BuildResearchWiresCongressionalBuyingIntoTheChampionScoreTests(unittest.TestCase):
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_disclosed_congressional_buying_raises_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        bought = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            congressional_activity={"score_points": 2.0, "notes": []},
+        )["score"]
+        self.assertGreater(bought, baseline)
 
 
 if __name__ == "__main__":

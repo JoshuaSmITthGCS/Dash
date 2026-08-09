@@ -168,7 +168,8 @@ def test_snapshot_jsonl_contains_required_reproducibility_fields(tmp_path):
         assert field in row
     assert set(row["modifiers"]["champion"]["all_points"]) == {
         "sector_valuation", "short_interest", "liquidity", "expectations",
-        "macro_regime", "insider_activity",
+        "macro_regime", "insider_activity", "customer_concentration_risk",
+        "geographic_concentration", "institutional_13f", "congressional_buying",
     }
 
 

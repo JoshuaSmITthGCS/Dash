@@ -5,7 +5,7 @@ import os
 import re
 import statistics
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_challenger,
                             normalized_metric_scores, signal_correction_variants)
@@ -19,6 +19,10 @@ from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
+from concentration_risk import summarize as summarize_concentration
+from geographic_exposure import summarize as summarize_geography
+from institutional_ownership import decay as institutional_decay
+from congress_signal import score_congressional_buying
 import pit_store
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
@@ -39,7 +43,7 @@ from bias_report import write_bias_report
 from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
 from sec_edgar import SecEdgarClient
-from theme_signals import EdgarThemeSignals
+from theme_signals import EdgarThemeSignals, recent_10k_filings
 from themes import build_theme_screen, empty_screen, expand_theme_candidates, load_themes
 from validation.ic_harness import (append_refresh as append_ic_refresh,
                                    read_snapshots,
@@ -745,6 +749,157 @@ def collect_insider_signals(sec, symbols, *, lookback_days=1100, cache=None):
     return signals, failures, diagnostics
 
 
+def collect_filing_risk_signals(sec, symbols, *, cache=None):
+    """Customer-concentration and geographic-concentration risk from each symbol's latest 10-K.
+
+    Reads the raw filing document through the identical ``("sec_submissions", "10k:{ticker}")``
+    / ``("sec_document", url)`` cache keys ``theme_signals.EdgarThemeSignals`` uses for
+    ``backlog_growth`` and ``filing_keyword_density_trend`` - see ``recent_10k_filings``'s
+    docstring. Whichever of this collector or the theme layer runs first in a given refresh
+    warms the cache for the other, so the two risk modifiers below cost no extra filing
+    fetches beyond what the theme screen was already going to make.
+    """
+    empty_diagnostics = {"filings_reviewed": 0, "filings_unreadable": 0,
+                         "concentration_tagged": 0, "geographic_tagged": 0}
+    if not sec.available or not symbols:
+        return {}, {}, empty_diagnostics
+    cache = cache or CACHE
+
+    def collect_one(symbol):
+        try:
+            filings = cache.fetch(
+                "sec_submissions", f"10k:{symbol}",
+                lambda: recent_10k_filings(sec, symbol), source="sec_edgar")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"{symbol}: 10-K lookup failed ({type(exc).__name__})")
+            return symbol, None, None, {"filings_reviewed": 0, "filings_unreadable": 0}
+        if not filings:
+            return symbol, None, None, {"filings_reviewed": 0, "filings_unreadable": 0}
+        filing = filings[0]
+        try:
+            text = cache.fetch(
+                "sec_document", filing["url"],
+                lambda filing=filing: sec.filing_document(
+                    filing["cik"], filing["accession"], filing["document"]),
+                source="sec_edgar")
+        except Exception:  # noqa: BLE001
+            return symbol, None, None, {"filings_reviewed": 1, "filings_unreadable": 1}
+        return (symbol, summarize_concentration(text), summarize_geography(text),
+                {"filings_reviewed": 1, "filings_unreadable": 0})
+
+    results = parallel_map(collect_one, list(symbols), provider="sec_edgar", max_workers=4)
+    concentration_signals, geographic_signals = {}, {}
+    diagnostics = dict(empty_diagnostics)
+    for entry in results:
+        if not entry:
+            continue
+        symbol, concentration, geography, counted = entry
+        diagnostics["filings_reviewed"] += counted.get("filings_reviewed", 0)
+        diagnostics["filings_unreadable"] += counted.get("filings_unreadable", 0)
+        if concentration is not None:
+            concentration_signals[symbol] = concentration
+            if concentration.get("available"):
+                diagnostics["concentration_tagged"] += 1
+        if geography is not None:
+            geographic_signals[symbol] = geography
+            if geography.get("available") and geography.get("shares"):
+                diagnostics["geographic_tagged"] += 1
+    return concentration_signals, geographic_signals, diagnostics
+
+
+def collect_institutional_signals(symbols, *, as_of=None, screen_payload=None):
+    """Fold the monthly-published institutional 13F screen into a lag-decayed score input.
+
+    No live SEC/OpenFIGI calls here: ``build_institutional_screen.py`` runs on its own
+    monthly schedule and is the source of record. This just reads what it last published
+    (``public/data/screens/institutional-13f.json``) and computes how stale each ticker's
+    underlying filing now is relative to ``as_of`` (defaults to today, the day this
+    advisor refresh is actually running) - decay happens here, at read time, precisely so
+    a screen that has not refreshed in three weeks scores less each day without needing a
+    new fetch. ``undecayed_magnitude`` is the screen's raw breadth score at full weight;
+    multiplying it by ``institutional_ownership.decay`` here reproduces exactly what
+    ``institutional_ownership.score_institutional_ownership`` would have returned had it
+    been called with today's ``days_since_filed`` directly.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/institutional-13f.json") or {}))
+    diagnostics = {"requested": len(symbols), "screen_available": payload.get("status") == "success",
+                   "screen_generated_at": payload.get("generated_at"), "tickers_matched": 0}
+    if not diagnostics["screen_available"]:
+        return {}, diagnostics
+    as_of_date = as_of or date.today()
+    universe = {str(symbol).upper() for symbol in symbols}
+    cfg = SETTINGS.get("modifiers", {}).get("institutional_13f", {})
+    signals = {}
+    for row in payload.get("results") or []:
+        ticker = str(row.get("ticker") or "").upper()
+        if ticker not in universe:
+            continue
+        magnitude, filed = row.get("undecayed_magnitude"), row.get("as_of")
+        if magnitude is None or not filed:
+            continue
+        try:
+            days_since_filed = (as_of_date - datetime.strptime(filed[:10], "%Y-%m-%d").date()).days
+        except ValueError:
+            continue
+        freshness = institutional_decay(days_since_filed, cfg.get("half_life_days", 45),
+                                        cfg.get("max_age_days", 135))
+        points = round(magnitude * freshness, 2)
+        if not points:
+            continue
+        diagnostics["tickers_matched"] += 1
+        signals[ticker] = {
+            "source": "SEC EDGAR Form 13F-HR (curated active managers, monthly screen)",
+            "score_points": points,
+            "days_since_filed": days_since_filed,
+            "notes": [*(row.get("notes") or []), f"{days_since_filed}d since 13F filed"],
+        }
+    return signals, diagnostics
+
+
+def collect_congressional_signals(symbols, *, as_of=None, screen_payload=None):
+    """Fold the weekly-published congress screen into a reward-only score input.
+
+    No live FMP calls here: ``build_congress_screen.py`` runs on its own weekly schedule
+    and is the source of record. Reads ``public/data/screens/congress-trades.json``
+    (already-classified rows carrying ``flags`` from ``build_congress_screen.classify``,
+    including the ``EXTRAORDINARY_BUY`` tier) and scores each requested ticker with
+    ``congress_signal.score_congressional_buying`` - see that module and
+    ``advisor_engine.py``'s module docstring for why this is scored at all.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/congress-trades.json") or {}))
+    results = payload.get("results") or []
+    diagnostics = {"requested": len(symbols), "screen_available": bool(results),
+                   "tickers_matched": 0}
+    if not results:
+        return {}, diagnostics
+    as_of_date = as_of or date.today()
+    cfg = SETTINGS.get("modifiers", {}).get("congressional_buying", {})
+    by_ticker = {}
+    for row in results:
+        symbol = str(row.get("symbol") or "").upper()
+        if symbol:
+            by_ticker.setdefault(symbol, []).append(row)
+
+    signals = {}
+    for symbol in symbols:
+        ticker = str(symbol).upper()
+        rows = by_ticker.get(ticker)
+        if not rows:
+            continue
+        points, detail = score_congressional_buying(rows, ticker, as_of=as_of_date, config=cfg)
+        if not points:
+            continue
+        diagnostics["tickers_matched"] += 1
+        signals[ticker] = {
+            "source": "Congressional STOCK Act disclosures (weekly screen)",
+            "score_points": points,
+            "notes": detail.get("notes") or [],
+        }
+    return signals, diagnostics
+
+
 def fetch_optional(client, function, **params):
     try:
         return client.query(function, **params)
@@ -1258,6 +1413,28 @@ def run():
         LOG.warn(f"SEC Form 4: {sec_diagnostics['filings_unreadable']} of "
                  f"{sec_diagnostics['filings_reviewed']} filings could not be parsed")
 
+    # Customer-concentration and geographic-concentration risk, from the same shortlist of
+    # candidates and the same rate-limited SEC client - see collect_filing_risk_signals for
+    # why this shares its cache keys with the theme layer's filing fetches. Shadow mode
+    # only (challenger score_variants) until tagging coverage is measured - see
+    # advisor_engine.apply_modifiers's docstring.
+    concentration_signals, geographic_signals, filing_risk_diagnostics = (
+        collect_filing_risk_signals(sec, insider_candidates)
+    )
+
+    # Institutional 13F, decayed by filing lag - reads build_institutional_screen.py's
+    # last monthly publish, no live SEC/OpenFIGI calls in this per-refresh path. Back in
+    # the champion score (see advisor_engine.apply_modifiers); the sampling-bias caveat
+    # (publicly traded, style=active managers only) is unchanged by the decay and is
+    # documented on the modifier itself, not fixed by it.
+    institutional_signals, institutional_diagnostics = collect_institutional_signals(insider_candidates)
+
+    # Congressional buying, reward-only - reads build_congress_screen.py's last weekly
+    # publish, no live FMP calls in this per-refresh path. This is advisor_engine.py's one
+    # scoped exception to "no political inputs" - see that module's docstring and
+    # congress_signal.py for what is and is not claimed.
+    congressional_signals, congressional_diagnostics = collect_congressional_signals(insider_candidates)
+
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
     # reliability signal to attach -- only a run-wide one.
@@ -1270,6 +1447,13 @@ def run():
         ),
         "sec_form4": ("unavailable" if not sec.available else
                      "degraded" if sec_failures else "healthy"),
+        "sec_filing_risk": ("unavailable" if not sec.available else
+                            "degraded" if filing_risk_diagnostics["filings_unreadable"] else
+                            "healthy"),
+        "institutional_13f_screen": ("unavailable" if not institutional_diagnostics["screen_available"]
+                                     else "healthy"),
+        "congress_screen": ("unavailable" if not congressional_diagnostics["screen_available"]
+                            else "healthy"),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
@@ -1284,10 +1468,19 @@ def run():
             sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
+            institutional_ownership=institutional_signals.get(symbol),
+            congressional_activity=congressional_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
+        row["institutional_ownership"] = institutional_signals.get(symbol)
+        row["congressional_activity"] = congressional_signals.get(symbol)
+        # concentration_risk/geographic_exposure are display fields and challenger-only
+        # (score_variants) inputs here - shadow mode until their tagging coverage is
+        # measured. See advisor_engine.apply_modifiers's docstring.
+        row["concentration_risk"] = concentration_signals.get(symbol)
+        row["geographic_exposure"] = geographic_signals.get(symbol)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
         # The previous run's consensus target is the only comparison point that exists for
         # target drift: Yahoo serves today's view and nothing else, which is precisely why
@@ -1329,6 +1522,10 @@ def run():
                 short_interest_ranks.get(symbol),
                 fred_regime,
                 insider_signals.get(symbol),
+                concentration_signals.get(symbol),
+                geographic_signals.get(symbol),
+                institutional_signals.get(symbol),
+                congressional_signals.get(symbol),
             ))
         elif cross_normalizer:
             row["score_variants"]["challenger"] = cross_sectional_challenger(
@@ -1542,9 +1739,111 @@ def run():
             },
             "analyst_revision_trends": {"status": "provider_required", "note": "Point-in-time estimate history is not supplied by current providers."},
             "guidance_beat_miss_history": {"status": "provider_required", "note": "Needs normalized company guidance and contemporaneous consensus snapshots."},
-            "backlog_growth": {"status": "filing_parser_required", "note": "Backlog is non-GAAP and must be extracted company-by-company from filings."},
-            "institutional_13f_changes": {"status": "mapping_required", "source": "SEC EDGAR", "note": "Filings are free; reliable CUSIP-to-ticker mapping is not."},
-            "fx_exposure": {"status": "filing_parser_required", "source": "SEC 10-K/10-Q", "note": "Needs filing-text extraction and issuer-specific normalization."},
+            "backlog_growth": {
+                "status": "available",
+                "source": "SEC EDGAR XBRL (dimensional contexts read from the raw filing)",
+                "note": "RevenueRemainingPerformanceObligation is XBRL-tagged, not free text - the "
+                        "prior 'filing_parser_required' status was wrong. The blocker was that "
+                        "company_concept/companyfacts return default (non-dimensional) facts only, "
+                        "and filers routinely tag this concept solely in SatisfactionPeriodAxis "
+                        "bands with no undimensioned total for those APIs to see. "
+                        "pipeline.xbrl_dimensions reads contexts out of the filing document "
+                        "directly instead, and EdgarThemeSignals.backlog_values sums the bands "
+                        "when no total exists. Wired into ai_infrastructure.yaml. Per-symbol "
+                        "coverage has not yet been measured on a live production run.",
+            },
+            "institutional_13f_changes": {
+                "status": ("unavailable" if not institutional_diagnostics["screen_available"] else
+                          "available"),
+                "source": "SEC EDGAR Form 13F-HR (curated, publicly traded, style=active "
+                         "managers, via pipeline/build_institutional_screen.py's monthly "
+                         "publish) + OpenFIGI CUSIP mapping",
+                "screen_generated_at": institutional_diagnostics["screen_generated_at"],
+                "tickers_matched": institutional_diagnostics["tickers_matched"],
+                "note": "Back in the champion score as a bounded, two-sided modifier "
+                        "('institutional_13f'), decayed by filing lag rather than treated "
+                        "as current - a 13F position is disclosed up to 45 days after "
+                        "quarter-end, and this reads the monthly screen's own publish "
+                        "date, not today, to compute that lag. Residual bias, not fixed "
+                        "by decay: restricting to publicly traded managers oversamples "
+                        "the largest passive indexers, mitigated (not eliminated) by "
+                        "defaulting to style=active-only managers - see "
+                        "pipeline/config/institutional_managers.json and "
+                        "pipeline/institutional_ownership.py's module docstring. "
+                        "Retroactive amendments (13F-HR/A) are handled explicitly: "
+                        "build_institutional_screen.manager_quarters groups by the "
+                        "period a filing covers rather than filing order, so an "
+                        "amendment supersedes the original it revises instead of being "
+                        "mistaken for a new quarter, and a value change is logged to "
+                        "pipeline/data/institutional_13f/revisions.jsonl rather than "
+                        "silently overwritten. Has never run against the live OpenFIGI "
+                        "endpoint or live 13F filings (no network access existed while "
+                        "this was written); verify CUSIP resolution rate and manager "
+                        "coverage on the first real run.",
+            },
+            "congressional_buying": {
+                "status": ("unavailable" if not congressional_diagnostics["screen_available"] else
+                          "available"),
+                "source": "STOCK Act disclosures via pipeline/build_congress_screen.py's "
+                         "weekly publish (Financial Modeling Prep)",
+                "tickers_matched": congressional_diagnostics["tickers_matched"],
+                "note": "Explicit, scoped exception to advisor_engine.py's 'no political "
+                        "inputs' principle - see that module's docstring. Reward-only "
+                        "modifier ('congressional_buying'): breadth x freshness of "
+                        "disclosed purchases, with a bonus for EXTRAORDINARY_BUY (a "
+                        "member's first-ever trade in a sub-$2B company, "
+                        "build_congress_screen.classify). A request to instead score "
+                        "whether Congress 'wouldn't let a stock/sector fail' was raised "
+                        "and declined - not implemented, see TODO.md. Evidentiary basis "
+                        "(Ziobrowski et al., JFQA 2004) predates the STOCK Act's 2012 "
+                        "disclosure regime; untested against the post-2012 world this "
+                        "reads. Has never run against live FMP data or a live congress "
+                        "screen publish (no network access existed while this was "
+                        "written); verify EXTRAORDINARY_BUY hit rate on the first real run.",
+            },
+            "fx_exposure": {
+                "status": "shadow_only",
+                "source": "SEC EDGAR XBRL (Revenues x StatementGeographicalAxis)",
+                "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
+                "geographic_tag_coverage": (
+                    round(filing_risk_diagnostics["geographic_tagged"] /
+                         filing_risk_diagnostics["filings_reviewed"], 3)
+                    if filing_risk_diagnostics["filings_reviewed"] else None
+                ),
+                "note": "Geographic revenue is XBRL-tagged, not free text - the prior "
+                        "'filing_parser_required' status was wrong for the same reason "
+                        "backlog_growth's was: company_concept/companyfacts return default "
+                        "(non-dimensional) facts only. Scored as single-country revenue "
+                        "concentration (pipeline/geographic_exposure.py) on the same "
+                        "risk-not-direction principle as customer_concentration_risk below, but "
+                        "kept out of the live score ('shadow_only', challenger score_variants "
+                        "only): revenue tagged by geography often reflects shipping destination "
+                        "or contracting entity rather than end demand (a contract manufacturer "
+                        "can book enormous 'China' revenue that is really an assembly step), so "
+                        "this needs spot-checking against real filings, and geographic_tag_"
+                        "coverage above needs measuring, before it penalizes a live score.",
+            },
+            "customer_concentration_risk": {
+                "status": "shadow_only",
+                "source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
+                "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
+                "filings_unreadable": filing_risk_diagnostics["filings_unreadable"],
+                "concentration_tag_coverage": (
+                    round(filing_risk_diagnostics["concentration_tagged"] /
+                         filing_risk_diagnostics["filings_reviewed"], 3)
+                    if filing_risk_diagnostics["filings_reviewed"] else None
+                ),
+                "note": "ASC 280 customer-concentration percentage read from dimensional XBRL "
+                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier but "
+                        "kept out of the live score ('shadow_only', challenger score_variants "
+                        "only) until concentration_tag_coverage above is measured on a real run "
+                        "- a penalty-only modifier that only fires on tagged filers systematically "
+                        "favors whichever companies happen not to have tagged the concept, which "
+                        "is worse than not scoring it at all. Distinct from the theme layer's "
+                        "customer_concentration_to_spenders: the percentage gives magnitude, not "
+                        "the customer's identity, so it cannot replace that signal's name-matching "
+                        "against confirmed theme spenders.",
+            },
         },
         "source_status": {
             "alpha_vantage": {"status": "disabled_for_intraday_refresh" if not client else

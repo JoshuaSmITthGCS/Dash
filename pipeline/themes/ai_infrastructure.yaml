@@ -47,11 +47,11 @@ theme:
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.30
+      weight: 0.25
     - name: filing_keyword_density_trend      # rising self-description over time
       source: edgar_fulltext
       leading: true
-      weight: 0.25
+      weight: 0.20
     - name: transcript_theme_salience
       source: transcripts_api
       leading: true
@@ -65,6 +65,10 @@ theme:
       universe: [MSFT, GOOGL, AMZN, META]
       leading: true
       weight: 0.15
+    - name: backlog_growth                       # order backlog, e.g. equipment/power makers
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.10
 
   # ---- Guardrails against performance-chasing ----
   guardrails:

@@ -216,6 +216,50 @@ class Form4DocumentUrlTests(unittest.TestCase):
         self.assertFalse(reviewed[0]["parsed"])
 
 
+class FilingsForCikTests(unittest.TestCase):
+    """``form`` and ``period`` (EDGAR's reportDate) matter specifically for 13F: an
+    amendment's ``filed`` date is recent, but its ``period`` is the same quarter the
+    original already covered - a caller has to be able to tell the two apart."""
+
+    def _client_with_payload(self, recent):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        client._get = lambda url, as_json=False: {"filings": {"recent": recent}}
+        return client
+
+    def test_form_and_period_are_carried_alongside_filed(self):
+        recent = {
+            "form": ["13F-HR", "13F-HR/A", "4"],
+            "accessionNumber": ["acc-1", "acc-2", "acc-3"],
+            "primaryDocument": ["doc1.xml", "doc2.xml", "doc3.xml"],
+            "filingDate": ["2026-05-14", "2026-06-01", "2026-01-01"],
+            "reportDate": ["2026-03-31", "2026-03-31", "2026-01-01"],
+        }
+        client = self._client_with_payload(recent)
+
+        filings = client.filings_for_cik("0000000001", ("13F-HR", "13F-HR/A"), limit=5)
+
+        self.assertEqual([f["form"] for f in filings], ["13F-HR", "13F-HR/A"])
+        self.assertEqual([f["period"] for f in filings], ["2026-03-31", "2026-03-31"])
+        self.assertEqual(filings[1]["filed"], "2026-06-01")
+
+    def test_recent_forms_resolves_the_ticker_before_delegating(self):
+        recent = {
+            "form": ["13F-HR"], "accessionNumber": ["acc-1"], "primaryDocument": ["doc1.xml"],
+            "filingDate": ["2026-05-14"], "reportDate": ["2026-03-31"],
+        }
+        client = self._client_with_payload(recent)
+        client._tickers = {"TROW": "0000001113169"}
+
+        filings = client.recent_forms("trow", ("13F-HR",), limit=2)
+
+        self.assertEqual(filings[0]["cik"], "0000001113169")
+
+    def test_an_unknown_ticker_returns_no_filings(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        client._tickers = {}
+        self.assertEqual(client.recent_forms("NOPE", ("13F-HR",)), [])
+
+
 class _FakeResponse:
     def __init__(self, payload):
         self._payload = payload

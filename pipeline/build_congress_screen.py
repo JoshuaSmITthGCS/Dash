@@ -55,6 +55,10 @@ CLUSTER_WINDOW_DAYS = 14
 SAME_SECTOR_WINDOW_DAYS = 90
 SAME_SECTOR_MINIMUM_COUNT = 3
 BUY_SELL_FLIP_WINDOW_DAYS = 60
+# Small-cap boundary. A member's first-ever trade in a name (NOVEL_TICKER) is a much
+# stronger tell when the name is a small, unfamiliar company than when it's a mega-cap
+# most portfolios already hold - EXTRAORDINARY_BUY requires both, not either alone.
+OBSCURE_MARKET_CAP_CEILING = 2_000_000_000
 
 
 def _path():
@@ -124,12 +128,12 @@ def _date_gap_days(a, b):
         return None
 
 
-def _is_buy(transaction_type):
+def is_buy(transaction_type):
     lowered = str(transaction_type or "").lower()
     return "purchase" in lowered or "buy" in lowered
 
 
-def _is_sell(transaction_type):
+def is_sell(transaction_type):
     lowered = str(transaction_type or "").lower()
     return "sale" in lowered or "sell" in lowered
 
@@ -145,6 +149,18 @@ def sector_by_ticker():
         ticker, sector = row.get("ticker"), row.get("sector")
         if ticker and sector:
             lookup[ticker] = sector
+    return lookup
+
+
+def market_cap_by_ticker():
+    """Market cap, reused as-is from the main research pipeline - same coverage caveat
+    as ``sector_by_ticker``: only tickers inside the actively-scored stock universe."""
+    payload = load_json("advisor.json") or {}
+    lookup = {}
+    for row in (*payload.get("research", []), *payload.get("portfolio_coverage", [])):
+        ticker, market_cap = row.get("ticker"), row.get("market_cap")
+        if ticker and market_cap is not None:
+            lookup[ticker] = market_cap
     return lookup
 
 
@@ -200,13 +216,13 @@ def buy_sell_flip_keys(rows):
     flagged = set()
     for trades in by_rep_symbol.values():
         for row in trades:
-            row_buy, row_sell = _is_buy(row.get("transaction_type")), _is_sell(row.get("transaction_type"))
+            row_buy, row_sell = is_buy(row.get("transaction_type")), is_sell(row.get("transaction_type"))
             if not (row_buy or row_sell):
                 continue
             for other in trades:
                 if other is row:
                     continue
-                other_buy, other_sell = _is_buy(other.get("transaction_type")), _is_sell(other.get("transaction_type"))
+                other_buy, other_sell = is_buy(other.get("transaction_type")), is_sell(other.get("transaction_type"))
                 opposite = (row_buy and other_sell) or (row_sell and other_buy)
                 gap = _date_gap_days(row["transaction_date"], other["transaction_date"])
                 if opposite and gap is not None and gap <= BUY_SELL_FLIP_WINDOW_DAYS:
@@ -247,7 +263,7 @@ def relational_flags(rows):
     return by_key
 
 
-def classify(trade, *, trade_counts, history_days, relational=None):
+def classify(trade, *, trade_counts, history_days, relational=None, market_cap_lookup=None):
     flags = list((relational or {}).get(_trade_key(trade), []))
     filing_delay = _days_between(trade.get("transaction_date"), trade.get("disclosure_date"))
     if filing_delay is not None and filing_delay > LATE_FILING_DAYS:
@@ -260,6 +276,14 @@ def classify(trade, *, trade_counts, history_days, relational=None):
     amount_lower, amount_upper = parse_amount_bounds(trade.get("amount"))
     if amount_lower is not None and amount_lower >= CONCENTRATED_SIZE_FLOOR:
         flags.append("CONCENTRATED_SIZE")
+    # A member's first-ever trade in a small, unfamiliar company - not just a large
+    # dollar figure, and not just novelty in isolation (a first-ever trade in a mega-cap
+    # everyone already holds is not unusual). Buys only: a rare sell of an obscure name
+    # carries none of the "how would they know about this" signal a buy does.
+    market_cap = (market_cap_lookup or {}).get(trade.get("symbol"))
+    if ("NOVEL_TICKER" in flags and is_buy(trade.get("transaction_type"))
+            and market_cap is not None and market_cap < OBSCURE_MARKET_CAP_CEILING):
+        flags.append("EXTRAORDINARY_BUY")
     return {
         **trade,
         "amount_lower": amount_lower, "amount_upper": amount_upper,
@@ -273,7 +297,7 @@ def is_equity_purchase(row):
     """A plain stock buy - excludes options (already their own flag) and bonds/munis,
     which have no meaningful daily price series to measure against."""
     asset_type = str(row.get("asset_type") or "").lower()
-    return bool(row.get("symbol")) and _is_buy(row.get("transaction_type")) \
+    return bool(row.get("symbol")) and is_buy(row.get("transaction_type")) \
         and "stock" in asset_type and "option" not in asset_type
 
 
@@ -346,8 +370,10 @@ def build_results(rows, *, as_of=None):
             trade_counts[representative] = trade_counts.get(representative, 0) + 1
 
     relational = relational_flags(rows)
+    market_cap_lookup = market_cap_by_ticker()
     window = [row for row in rows if (row.get("disclosure_date") or "") >= cutoff]
-    classified = [classify(row, trade_counts=trade_counts, history_days=history_days, relational=relational)
+    classified = [classify(row, trade_counts=trade_counts, history_days=history_days,
+                          relational=relational, market_cap_lookup=market_cap_lookup)
                  for row in window]
     classified.sort(key=lambda row: row.get("disclosure_date") or "", reverse=True)
     return classified, history_days
