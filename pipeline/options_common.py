@@ -21,11 +21,21 @@ from datetime import date, datetime
 
 ATM_TOLERANCE = 0.10
 MINIMUM_OPEN_INTEREST = 50
-MAXIMUM_SPREAD_PCT = 0.35
+# Was 0.35 (35%). A retail evidence review (see docs on this pipeline's options screens)
+# found open-interest-only gating leaves contracts with wide double-digit spreads through,
+# and that realistic effective spreads are what actually erode published options-strategy
+# edges (Muravyev & Pearson 2020). Tightened to the review's own recommended ceiling and
+# paired with MINIMUM_VOLUME below, since open interest alone measures accumulated
+# positions, not current two-sided depth - a contract can carry heavy OI and still show no
+# size at the mid.
+MAXIMUM_SPREAD_PCT = 0.05
+MAXIMUM_ABSOLUTE_SPREAD = 0.10  # dollars - see contract_liquidity's use for why this exists
+MINIMUM_VOLUME = 100
 MINIMUM_HISTORY_SESSIONS = 21
 MINIMUM_PRICE = 5
 MINIMUM_MARKET_CAP = 300_000_000
 RESEARCH_SNAPSHOT_MAX_AGE_DAYS = 5
+CONTRACT_FEE = 0.65  # dollars per contract - matches Fidelity's disclosed per-contract options fee
 
 
 def realized_volatility_20d(closes):
@@ -118,26 +128,46 @@ def probability_below(price, strike, iv, dte, r=0.0):
 
 
 def contract_liquidity(contract, price):
-    """Bid/ask/OI/spread fields for one contract row, or None if it fails basic gates."""
+    """Bid/ask/OI/spread/volume fields for one contract row, or None if it fails basic gates.
+
+    Open interest alone measures accumulated positions, not current two-sided depth, so
+    MINIMUM_VOLUME is gated separately and on top of it - a contract can carry heavy OI and
+    still show no fills today.
+    """
     strike = contract.get("strike")
     bid, ask = contract.get("bid"), contract.get("ask")
     open_interest = contract.get("openInterest") or 0
+    volume = contract.get("volume") or 0
     if not strike or not price:
         return None
     if not bid or not ask or bid <= 0 or ask <= 0 or ask < bid:
         return None
-    if open_interest < MINIMUM_OPEN_INTEREST:
+    if open_interest < MINIMUM_OPEN_INTEREST or volume < MINIMUM_VOLUME:
         return None
     mid = (bid + ask) / 2
     spread_pct = (ask - bid) / mid if mid else None
-    if spread_pct is None or spread_pct > MAXIMUM_SPREAD_PCT:
+    if spread_pct is None:
+        return None
+    # A far-OTM/cheap contract's relative spread is inflated by the minimum tick size
+    # regardless of how "liquid" it really is - a one-cent-wide $0.02 spread on a $0.15
+    # contract prices out at 13%+ relative, but it's a trivial two-dollar-per-contract
+    # cost. Gate on whichever bound the contract actually clears: the percentage ceiling
+    # for contracts where relative cost is the real risk, or the absolute-dollar ceiling
+    # for cheap legs where a percentage figure overstates the real execution cost.
+    if spread_pct > MAXIMUM_SPREAD_PCT and (ask - bid) > MAXIMUM_ABSOLUTE_SPREAD:
         return None
     implied_volatility = contract.get("impliedVolatility")
+    # Fill assumption for anything downstream that prices an entry off this contract: mid
+    # plus a quarter of the spread, not mid itself - a screen is not a fill guarantee, and
+    # modeling perfect mid execution is exactly the optimism the transaction-cost review
+    # flagged. fill_price is the buyer's side (ask-leaning); a seller nets mid minus the
+    # same quarter-spread, i.e. 2*mid - fill_price.
+    fill_price = mid + spread_pct * mid / 4
     return {
         "strike": float(strike), "bid": float(bid), "ask": float(ask), "mid": round(mid, 4),
-        "spread_pct": round(spread_pct, 4),
+        "spread_pct": round(spread_pct, 4), "fill_price": round(fill_price, 4),
         "implied_volatility": float(implied_volatility) if implied_volatility else None,
-        "open_interest": int(open_interest), "volume": int(contract.get("volume") or 0),
+        "open_interest": int(open_interest), "volume": int(volume),
         "moneyness": round(strike / price - 1, 4),
     }
 
@@ -228,6 +258,83 @@ def snapshot_staleness_discount(generated_at, as_of=None):
     if age_days < 0:
         return 1.0
     return max(0.0, 1 - age_days / RESEARCH_SNAPSHOT_MAX_AGE_DAYS)
+
+
+def next_earnings_date(ticker_obj, symbol, as_of=None, cache=None):
+    """Nearest known upcoming earnings date for `symbol`, or None if unavailable/none known.
+
+    Selling into (or buying) an expiration that spans an earnings date is a mechanical
+    trap, not an edge: implied volatility inflates ahead of the print and collapses after
+    ("IV crush"), so anything ranked by raw premium/annualized yield gravitates straight to
+    event-contaminated contracts. Every screen in this pipeline hard-excludes a candidate
+    whose chosen expiration spans a known earnings date rather than trying to price the
+    event component in - see expiration_spans_earnings().
+
+    Reuses yfinance's `earnings_dates` frame - the same endpoint
+    fundamentals_extended.earnings_surprise_rows() already reads - but keeps the opposite
+    subset: that function keeps only reported quarters (a real surprise value); this keeps
+    only not-yet-reported ones (NaN surprise), since a future row in that scraped calendar
+    is what a blackout gate needs. yfinance exposes no "confirmed vs. estimated" flag the
+    way institutional calendar providers (Wall Street Horizon, FactSet) do, so every date
+    returned here is treated as if confirmed - the conservative reading for a screen that
+    is trying to AVOID the event, not trade it (unconfirmed dates should still blackout).
+
+    Cached on disk (7-day TTL via the "statements" namespace, same policy as the sibling
+    earnings-surprise fetch) so that when more than one options screen runs against the
+    same ticker on the same day, only the first pays for the network request.
+    """
+    from cache import CACHE as _default_cache
+    cache = cache or _default_cache
+    as_of = as_of or date.today()
+
+    def produce():
+        try:
+            frame = ticker_obj.earnings_dates
+        except Exception:  # noqa: BLE001 - a missing/broken calendar must not sink the ticker
+            return None
+        if frame is None or getattr(frame, "empty", True):
+            return None
+        column = next((name for name in frame.columns if "surprise" in str(name).lower()), None)
+        if column is None:
+            return None
+        upcoming = []
+        for index, value in zip(frame.index, frame[column].tolist()):
+            try:
+                reported = float(value) == float(value)  # not NaN
+            except (TypeError, ValueError):
+                reported = False
+            if reported:
+                continue
+            try:
+                upcoming.append(datetime.strptime(str(index)[:10], "%Y-%m-%d").date().isoformat())
+            except ValueError:
+                continue
+        return min(upcoming) if upcoming else None
+
+    try:
+        value = cache.fetch("statements", f"earnings_calendar:{symbol}", produce, source="yahoo")
+    except Exception:  # noqa: BLE001 - same non-fatal contract as every other per-ticker lookup here
+        return None
+    if not value:
+        return None
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed >= as_of else None
+
+
+def expiration_spans_earnings(expiration, earnings_date, as_of=None):
+    """True if a contract entered at `as_of` and held to `expiration` would sit through
+    `earnings_date` - i.e. as_of < earnings_date <= expiration."""
+    if earnings_date is None or not expiration:
+        return False
+    as_of = as_of or date.today()
+    try:
+        expiration_date = datetime.strptime(expiration, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return False
+    return as_of < earnings_date <= expiration_date
 
 
 def research_universe_factors(entry, generated_at, as_of=None, *, direction=1, sentiment_mode="signed"):

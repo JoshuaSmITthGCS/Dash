@@ -13,7 +13,7 @@ class FakeFrame:
         return enumerate(self.rows)
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -80,7 +80,7 @@ def test_contract_liquidity_rejects_illiquid_or_wide_spread_rows():
 
 def test_liquidity_factor_rewards_open_interest_and_penalizes_spread():
     tight = module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.05, open_interest=1000), price=100)
-    wide = module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.3, open_interest=1000), price=100)
+    wide = module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.09, open_interest=1000), price=100)
     thin = module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.05, open_interest=60), price=100)
     assert module.liquidity_factor(tight) > module.liquidity_factor(wide)
     assert module.liquidity_factor(tight) > module.liquidity_factor(thin)
@@ -89,9 +89,9 @@ def test_liquidity_factor_rewards_open_interest_and_penalizes_spread():
 
 def test_select_by_target_delta_picks_contract_nearest_target():
     frame = FakeFrame([
-        contract(strike=100, bid=4.0, ask=4.2, iv=0.35),   # ~ATM, delta near .5-.6
-        contract(strike=110, bid=1.2, ask=1.4, iv=0.32),   # further OTM, lower delta
-        contract(strike=120, bid=0.3, ask=0.4, iv=0.30),   # far OTM, low delta
+        contract(strike=100, bid=4.0, ask=4.2, iv=0.35),    # ~ATM, delta near .5-.6
+        contract(strike=110, bid=1.2, ask=1.26, iv=0.32),   # further OTM, lower delta
+        contract(strike=120, bid=0.3, ask=0.4, iv=0.30),    # far OTM, low delta
     ])
     best = module.select_by_target_delta(frame, price=100, dte=30, side="call", target_delta=0.30)
     assert best is not None
@@ -105,7 +105,7 @@ def test_select_by_target_delta_respects_moneyness_bounds():
 
 
 def test_select_by_target_moneyness_picks_nearest_signed_target():
-    puts = FakeFrame([contract(strike=90, bid=1.0, ask=1.1), contract(strike=93, bid=1.5, ask=1.6),
+    puts = FakeFrame([contract(strike=90, bid=1.0, ask=1.1), contract(strike=93, bid=1.55, ask=1.60),
                       contract(strike=95, bid=2.0, ask=2.1)])
     best = module.select_by_target_moneyness(puts, price=100, target_moneyness=-0.075)
     assert best["strike"] == 93.0
@@ -189,6 +189,83 @@ def test_research_universe_factors_missing_score_or_confidence_is_none():
     only_confidence = module.research_universe_factors({"confidence": 0.5}, None, TODAY)
     assert only_score["research_confidence"] is None
     assert only_confidence["research_confidence"] is None
+
+
+class DirectCache:
+    """Bypasses disk persistence entirely so earnings-calendar tests stay hermetic."""
+
+    def fetch(self, namespace, key, producer, source=None):
+        return producer()
+
+
+class FakeColumn:
+    def __init__(self, values):
+        self._values = values
+
+    def tolist(self):
+        return self._values
+
+
+class FakeEarningsFrame:
+    def __init__(self, rows):
+        # rows: list of (date_str, surprise_value_or_nan)
+        self.index = [row[0] for row in rows]
+        self.columns = ["Surprise(%)"]
+        self.empty = not rows
+        self._surprises = [row[1] for row in rows]
+
+    def __getitem__(self, column):
+        return FakeColumn(self._surprises)
+
+
+class FakeEarningsTicker:
+    def __init__(self, frame=None, raise_on_access=False):
+        self._frame = frame
+        self._raise_on_access = raise_on_access
+
+    @property
+    def earnings_dates(self):
+        if self._raise_on_access:
+            raise RuntimeError("boom")
+        return self._frame
+
+
+NAN = float("nan")
+
+
+def test_next_earnings_date_returns_nearest_unreported_row_on_or_after_as_of():
+    ticker = FakeEarningsTicker(FakeEarningsFrame([
+        ("2024-02-15", 3.2),   # reported quarter, excluded
+        ("2024-05-10", NAN),   # upcoming
+        ("2024-08-09", NAN),   # further upcoming
+    ]))
+    result = module.next_earnings_date(ticker, "AAA", as_of=TODAY, cache=DirectCache())
+    assert result == date(2024, 5, 10)
+
+
+def test_next_earnings_date_ignores_upcoming_rows_before_as_of():
+    ticker = FakeEarningsTicker(FakeEarningsFrame([("2024-01-01", NAN)]))
+    assert module.next_earnings_date(ticker, "AAA", as_of=TODAY, cache=DirectCache()) is None
+
+
+def test_next_earnings_date_none_when_frame_missing_or_empty():
+    assert module.next_earnings_date(FakeEarningsTicker(None), "AAA", as_of=TODAY, cache=DirectCache()) is None
+    assert module.next_earnings_date(FakeEarningsTicker(FakeEarningsFrame([])), "AAA", as_of=TODAY,
+                                     cache=DirectCache()) is None
+
+
+def test_next_earnings_date_none_when_calendar_raises():
+    ticker = FakeEarningsTicker(raise_on_access=True)
+    assert module.next_earnings_date(ticker, "AAA", as_of=TODAY, cache=DirectCache()) is None
+
+
+def test_expiration_spans_earnings_true_only_strictly_between_as_of_and_expiration():
+    assert module.expiration_spans_earnings("2024-03-15", date(2024, 3, 12), TODAY) is True
+    assert module.expiration_spans_earnings("2024-03-15", date(2024, 3, 15), TODAY) is True  # on expiration day
+    assert module.expiration_spans_earnings("2024-03-15", date(2024, 3, 16), TODAY) is False  # after expiration
+    assert module.expiration_spans_earnings("2024-03-15", TODAY, TODAY) is False  # on as_of itself, already past
+    assert module.expiration_spans_earnings("2024-03-15", None, TODAY) is False
+    assert module.expiration_spans_earnings(None, date(2024, 3, 10), TODAY) is False
 
 
 def test_research_universe_factors_applies_staleness_discount():

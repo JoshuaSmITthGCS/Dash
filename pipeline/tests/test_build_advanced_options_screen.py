@@ -65,7 +65,7 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-31"  # 30 days out from TODAY
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -77,33 +77,33 @@ def condor_chain(price=100):
     put 93 -> delta ~-0.188 (short put), put 89 -> delta ~-0.081 (long put).
     """
     calls = [
-        contract(strike=108, bid=2.00, ask=2.20, iv=0.30),   # short call
-        contract(strike=113, bid=0.55, ask=0.75, iv=0.30),   # long call
+        contract(strike=108, bid=2.08, ask=2.12, iv=0.30),   # short call
+        contract(strike=113, bid=0.63, ask=0.67, iv=0.30),   # long call
     ]
     puts = [
-        contract(strike=93, bid=1.95, ask=2.15, iv=0.30),    # short put
-        contract(strike=89, bid=0.55, ask=0.75, iv=0.30),    # long put
+        contract(strike=93, bid=2.03, ask=2.07, iv=0.30),    # short put
+        contract(strike=89, bid=0.63, ask=0.67, iv=0.30),    # long put
     ]
     return FakeChain(calls, puts)
 
 
 def straddle_chain(price=100):
-    calls = [contract(strike=100, bid=3.00, ask=3.20, iv=0.35)]
-    puts = [contract(strike=100, bid=2.90, ask=3.10, iv=0.35)]
+    calls = [contract(strike=100, bid=3.08, ask=3.12, iv=0.35)]
+    puts = [contract(strike=100, bid=2.98, ask=3.02, iv=0.35)]
     return FakeChain(calls, puts)
 
 
 def combined_chain(price=100):
     """Everything condor_chain() and straddle_chain() need, from one chain fetch."""
     calls = [
-        contract(strike=100, bid=3.00, ask=3.20, iv=0.35),   # ATM, straddle leg
-        contract(strike=108, bid=2.00, ask=2.20, iv=0.30),   # short call
-        contract(strike=113, bid=0.55, ask=0.75, iv=0.30),   # long call
+        contract(strike=100, bid=3.08, ask=3.12, iv=0.35),   # ATM, straddle leg
+        contract(strike=108, bid=2.08, ask=2.12, iv=0.30),   # short call
+        contract(strike=113, bid=0.63, ask=0.67, iv=0.30),   # long call
     ]
     puts = [
-        contract(strike=100, bid=2.90, ask=3.10, iv=0.35),   # ATM, straddle leg
-        contract(strike=93, bid=1.95, ask=2.15, iv=0.30),    # short put
-        contract(strike=89, bid=0.55, ask=0.75, iv=0.30),    # long put
+        contract(strike=100, bid=2.98, ask=3.02, iv=0.35),   # ATM, straddle leg
+        contract(strike=93, bid=2.03, ask=2.07, iv=0.30),    # short put
+        contract(strike=89, bid=0.63, ask=0.67, iv=0.30),    # long put
     ]
     return FakeChain(calls, puts)
 

@@ -20,8 +20,9 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
-                            research_universe_factors, select_by_target_delta, select_expiration, trend_20d)
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
+                            next_earnings_date, realized_volatility_20d, research_universe_factors,
+                            select_by_target_delta, select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -62,6 +63,10 @@ def build_row(entry, yf, as_of=None, generated_at=None):
     expiration, dte = select_expiration(expirations, MIN_DAYS_TO_EXPIRATION, MAX_DAYS_TO_EXPIRATION,
                                         TARGET_DAYS_TO_EXPIRATION, as_of)
     if expiration is None:
+        return None
+    earnings_date = next_earnings_date(ticker_obj, ticker, as_of)
+    if expiration_spans_earnings(expiration, earnings_date, as_of):
+        LOG.info(f"{ticker}: excluded, {expiration} spans earnings on {earnings_date}")
         return None
 
     side = "put" if (trend or 0) < 0 else "call"

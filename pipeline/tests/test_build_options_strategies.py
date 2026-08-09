@@ -68,15 +68,15 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-08"  # 7 days out, matches TARGET_DAYS_TO_EXPIRATION
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.3, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.3, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
 
 # price=100, iv=0.3, dte=7: call_delta(102)~0.32 (sell_call target), put_delta(98)~-0.31 (sell_put
 # target); strike=100 is ATM on either side (buy mechanism, whichever side trend picks).
-RICH_CALLS = [contract(100, 3.00, 3.20), contract(102, 2.00, 2.20)]
-RICH_PUTS = [contract(98, 1.90, 2.10), contract(100, 3.00, 3.20)]
+RICH_CALLS = [contract(100, 3.08, 3.12), contract(102, 2.08, 2.12)]
+RICH_PUTS = [contract(98, 1.98, 2.02), contract(100, 3.08, 3.12)]
 
 
 def universe_entry(ticker, market_cap=5e9, sector="Technology", score=70, confidence=0.8):
@@ -221,8 +221,8 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     per_ticker = {"AAA": fake_history(drift=0.05), "BBB": fake_history(start_price=90, drift=0.05)}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
     aaa_ticker = FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain(RICH_CALLS, RICH_PUTS)})
-    bbb_calls = [contract(90, 2.7, 2.9), contract(92, 1.8, 2.0)]
-    bbb_puts = [contract(88, 1.7, 1.9), contract(90, 2.7, 2.9)]
+    bbb_calls = [contract(90, 2.78, 2.82), contract(92, 1.88, 1.92)]
+    bbb_puts = [contract(88, 1.78, 1.82), contract(90, 2.78, 2.82)]
     bbb_ticker = FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain(bbb_calls, bbb_puts)})
     fake_yf = FakeYf({"AAA": aaa_ticker, "BBB": bbb_ticker})
     monkeypatch.setitem(sys.modules, "yfinance", fake_yf)

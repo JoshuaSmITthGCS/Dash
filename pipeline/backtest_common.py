@@ -22,9 +22,7 @@ limiter.
 import math
 import statistics
 
-from options_common import call_price, put_price
-
-CONTRACT_FEE = 0.65  # dollars per contract - matches Fidelity's disclosed per-contract options fee
+from options_common import CONTRACT_FEE, call_price, put_price  # noqa: F401 - re-exported for callers
 
 
 class SyntheticFrame:
@@ -37,11 +35,19 @@ class SyntheticFrame:
         return enumerate(self.rows)
 
 
-def synthetic_chain(price, iv, dte, spread_pct=0.05, strike_step_pct=2, strike_range_pct=40):
+def synthetic_chain(price, iv, dte, spread_pct=0.03, strike_step_pct=2, strike_range_pct=40):
     """Calls/puts frames priced with Black-Scholes at `iv`, shaped like a real yfinance chain
     (strike/bid/ask/openInterest/impliedVolatility/volume) so the SAME select_by_target_delta,
     select_by_target_moneyness, and select_contract helpers the live screens use can select
     from these exactly as they would a real chain.
+
+    openInterest/volume are constant placeholders solely so options_common.contract_liquidity's
+    liquidity gate passes - they carry no real information. Must stay >=
+    options_common.MINIMUM_OPEN_INTEREST/MINIMUM_VOLUME respectively, and `spread_pct` must
+    stay comfortably under options_common.MAXIMUM_SPREAD_PCT (not merely under it - the
+    resulting bid/ask are each independently rounded to a cent, so a spread_pct target equal
+    to the live ceiling can round up past it for some strikes and silently drop contracts a
+    backtest needs).
     """
     if not price or not iv or iv <= 0 or not dte or dte <= 0:
         return SyntheticFrame([]), SyntheticFrame([])
@@ -55,13 +61,13 @@ def synthetic_chain(price, iv, dte, spread_pct=0.05, strike_step_pct=2, strike_r
             half_spread = max(0.01, call_mid * spread_pct / 2)
             calls.append({"strike": strike, "bid": round(max(0.01, call_mid - half_spread), 2),
                           "ask": round(call_mid + half_spread, 2), "openInterest": 1000,
-                          "impliedVolatility": iv, "volume": 100})
+                          "impliedVolatility": iv, "volume": 500})
         put_mid = put_price(price, strike, iv, dte)
         if put_mid is not None and put_mid > 0.01:
             half_spread = max(0.01, put_mid * spread_pct / 2)
             puts.append({"strike": strike, "bid": round(max(0.01, put_mid - half_spread), 2),
                         "ask": round(put_mid + half_spread, 2), "openInterest": 1000,
-                        "impliedVolatility": iv, "volume": 100})
+                        "impliedVolatility": iv, "volume": 500})
     return SyntheticFrame(calls), SyntheticFrame(puts)
 
 

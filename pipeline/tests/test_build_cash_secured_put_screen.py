@@ -64,7 +64,7 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-08"  # 7 days out from TODAY, matches TARGET_DAYS_TO_EXPIRATION
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -72,8 +72,8 @@ def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
 # Puts at price=100, dte=7: delta(strike=97) ~ -0.282, the closest of these to -0.30.
 PUTS_AT_100 = [
     contract(strike=92, bid=0.60, ask=0.70),
-    contract(strike=97, bid=1.90, ask=2.10),
-    contract(strike=100, bid=4.60, ask=4.90),
+    contract(strike=97, bid=1.90, ask=1.95),
+    contract(strike=100, bid=4.60, ask=4.68),
 ]
 
 # Puts at price=80, dte=7: delta(strike=78) ~ -0.314, closest of these to -0.30.

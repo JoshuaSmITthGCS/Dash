@@ -65,13 +65,13 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-08"  # exactly TARGET_DAYS_TO_EXPIRATION (7) out from TODAY
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
 
 # strike=102, iv=0.3, price=100, dte=7 -> Black-Scholes call delta ~0.32 (see options_common.call_delta)
-TARGET_DELTA_CALL = contract(strike=102, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
+TARGET_DELTA_CALL = contract(strike=102, bid=2.0, ask=2.08, iv=0.3, open_interest=200)
 
 
 def test_build_row_selects_call_near_target_delta(monkeypatch):
@@ -89,10 +89,10 @@ def test_build_row_selects_call_near_target_delta(monkeypatch):
     assert row["days_to_expiration"] == 7
     assert row["call"]["strike"] == 102
     assert abs(row["call"]["delta"] - module.TARGET_DELTA) < 0.05
-    assert row["metrics"]["premium"] == 2.1
-    assert row["metrics"]["breakeven"] == 97.9
+    assert row["metrics"]["premium"] == 2.04
+    assert row["metrics"]["breakeven"] == 97.96
     assert row["capital_required"] == 10000
-    assert row["metrics"]["downside_cushion_pct"] == 0.021
+    assert row["metrics"]["downside_cushion_pct"] == 0.0204
 
 
 def test_build_row_returns_none_when_history_too_thin(monkeypatch):
@@ -196,8 +196,8 @@ def test_run_publishes_scored_results(monkeypatch):
     ]
     per_ticker = {"AAA": fake_history(), "BBB": fake_history(start_price=80)}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
-    aaa_call = contract(strike=102, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
-    bbb_call = contract(strike=82, bid=1.6, ask=1.76, iv=0.3, open_interest=200)
+    aaa_call = contract(strike=102, bid=2.0, ask=2.08, iv=0.3, open_interest=200)
+    bbb_call = contract(strike=82, bid=1.6, ask=1.66, iv=0.3, open_interest=200)
     fake_yf = FakeYf({
         "AAA": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain([aaa_call], [])}),
         "BBB": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain([bbb_call], [])}),
