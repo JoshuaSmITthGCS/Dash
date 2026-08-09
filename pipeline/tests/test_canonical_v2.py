@@ -226,3 +226,42 @@ class MigrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TimelinessLayerAbsenceTest(unittest.TestCase):
+    """The timeliness layer must publish nothing when no timing input resolves.
+
+    It used to publish effective_score 50.0 with confidence 0.0 for every company in the
+    universe -- a constant that the shadow policy then branched on. See
+    research/audit/CURRENT_MODEL_AUDIT.md section 3.
+    """
+
+    def snapshot(self, **updates):
+        base = {"ticker": "TEST", "sector": "Technology", "industry": "Software",
+                "forward_pe": 20.0, "return_on_equity": 0.2}
+        base.update(updates)
+        return base
+
+    def test_no_timing_input_publishes_no_score(self):
+        analysis = build_v2_analysis(self.snapshot(), {"forward_pe": 80.0})
+        timeliness = analysis["timeliness"]
+        self.assertIsNone(timeliness["raw_score"])
+        self.assertIsNone(timeliness["effective_score"])
+        self.assertEqual(timeliness["classification"], "unavailable")
+        self.assertIsNotNone(timeliness["unavailable_reason"])
+
+    def test_a_resolved_timing_input_produces_a_score(self):
+        analysis = build_v2_analysis(
+            self.snapshot(earnings_surprise=5.0), {"forward_pe": 80.0})
+        timeliness = analysis["timeliness"]
+        self.assertIsNotNone(timeliness["raw_score"])
+        self.assertIsNotNone(timeliness["effective_score"])
+        self.assertNotEqual(timeliness["classification"], "unavailable")
+
+    def test_dropped_timing_weight_is_recorded_not_imputed(self):
+        analysis = build_v2_analysis(
+            self.snapshot(earnings_surprise=5.0), {"forward_pe": 80.0})
+        record = analysis["timeliness"]["weight_renormalization"]
+        self.assertEqual(record["inputs_dropped"], ["forward_eps_revision_30d"])
+        self.assertEqual(record["weights_effective"], {"earnings_surprise": 1.0})
+        self.assertAlmostEqual(record["covered_weight_fraction"], 0.3)

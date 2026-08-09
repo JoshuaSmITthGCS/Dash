@@ -14,7 +14,7 @@ from fetch_prices import fetch_snapshot
 from recommendation_policy_v2 import build_recommendation_v2
 from research_screens_v2 import momentum_boundary_diagnostics, momentum_factors
 from scorer import valuation_score
-from scoring_v2 import build_v2_analysis
+from scoring_v2 import MODEL_VERSION, build_v2_analysis
 
 REPRESENTATIVE_UNIVERSE = ("HIG", "JPM", "O", "NEE", "BSX", "MSFT", "XOM", "MRNA", "VTI", "TLT")
 ETF_TICKERS = {"VTI", "TLT"}
@@ -59,8 +59,18 @@ def _invariants(ticker, analysis, recommendation, observations):
         "critical_gaps_reduce_profile_confidence": (not analysis["applicability"]["critical_data_gaps"]
                                                     or analysis["applicability"]["profile_confidence"] < 1),
         "invalid_peer_sample_no_percentile": True,
-        "low_confidence_action_gate": (min(analysis["structural"]["confidence"], analysis["timeliness"]["confidence"]) >= .60
-                                       or recommendation["company_action"]["label"] not in {"buy", "accumulate", "sell_thesis"}),
+        # Minimum over the layers that actually produced a score. A layer that resolved
+        # nothing has no opinion to be confident or unconfident about; folding its zero in
+        # here forced every company below the gate regardless of the evidence behind it.
+        "low_confidence_action_gate": (
+            min((layer["confidence"] for layer in (analysis["structural"], analysis["timeliness"])
+                 if layer.get("effective_score") is not None), default=0.0) >= .60
+            or recommendation["company_action"]["label"] not in {"buy", "accumulate", "sell_thesis"}),
+        # A layer that resolved nothing must publish no score at all, on every row.
+        "unresolved_layer_publishes_no_score": all(
+            layer.get("effective_score") is None
+            for layer in (analysis["structural"], analysis["timeliness"])
+            if layer.get("raw_score") is None),
         "company_and_position_actions_separate": recommendation["company_action"] is not recommendation["position_action"],
         "timestamps_explicit": all(row.get("fetched_at") and row.get("observed_at")
                                    for rows in observations.values() for row in rows),
@@ -111,7 +121,7 @@ def validate_live(output_path, raw_root, tickers=REPRESENTATIVE_UNIVERSE):
         except Exception as error:  # provider failures are explicit, not imputed
             results.append({"ticker": ticker, "status": "fail", "provider_status": "error",
                             "reason_code": type(error).__name__, "message": str(error)[:500], "invariants": {}})
-    payload = {"schema_version": "1.0.0", "model_version": "structural-timeliness-2.0.0",
+    payload = {"schema_version": "1.0.0", "model_version": MODEL_VERSION,
                "config_version": "live-validation-v1.0.0", "universe_version": "representative-v1",
                "data_cutoff": fetched_at, "run_id": hashlib.sha256(fetched_at.encode()).hexdigest()[:16],
                "production_outputs_replaced": False, "raw_response_publication": "not_published",

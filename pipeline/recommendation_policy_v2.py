@@ -44,21 +44,42 @@ def effective_score(raw_score, confidence):
 
 
 def _score_layer(layer):
+    """Normalize a layer, preserving ``None`` for a layer that did not resolve.
+
+    A layer with no raw score has no effective score. Substituting a neutral here is what
+    made the timeliness axis a universe-wide constant that the matrix below then branched
+    on -- see ``research/audit/CURRENT_MODEL_AUDIT.md`` section 3.
+    """
     layer = layer or {}
     confidence = _clamp(_number(layer.get("confidence"), 0.0))
     raw = _number(layer.get("raw_score"))
-    score = effective_score(raw, confidence)
     return {
         **layer,
         "raw_score": raw,
-        "effective_score": score,
+        "effective_score": None if raw is None else effective_score(raw, confidence),
         "confidence": round(confidence, 3),
         "coverage": round(_clamp(_number(layer.get("coverage"), 0.0)), 3),
     }
 
 
 def two_axis_classification(structural_score, timeliness_score, cfg):
+    """Classify on both axes, or on structural alone when timeliness did not resolve.
+
+    ``timeliness_score is None`` is a distinct state from a low timeliness score: it means
+    the timing evidence was never obtained, not that timing looks poor. The
+    ``*_timeliness_unavailable`` classifications say exactly that, and deliberately never
+    reach ``buy_candidate`` -- a structural score alone cannot establish that now is a
+    favourable time to enter.
+    """
     matrix = cfg["score_matrix"]
+    if structural_score is None:
+        return "insufficient_structural_evidence"
+    if timeliness_score is None:
+        if structural_score >= matrix["structural_strong"]:
+            return "quality_watch_timeliness_unavailable"
+        if structural_score >= matrix["structural_acceptable"]:
+            return "hold_or_watch_timeliness_unavailable"
+        return "avoid_or_sell_thesis"
     if structural_score >= matrix["structural_strong"]:
         if timeliness_score >= matrix["timeliness_buy"]:
             return "buy_candidate"
@@ -77,14 +98,29 @@ def two_axis_classification(structural_score, timeliness_score, cfg):
 
 
 def _quality(analysis):
+    """Data-quality summary across the layers that actually resolved.
+
+    ``score_confidence`` and ``data_coverage`` are minima over *assessed* layers only. Taking
+    the minimum across an unresolved layer as well pinned both to zero for every company in
+    the universe, which is what drove ``insufficient_evidence`` on 40 of 40 published rows
+    while structural coverage sat at 92%. An unresolved layer is reported through
+    ``unassessed_layers`` and the matrix classification, not by zeroing a number that is about
+    something else.
+    """
     structural = analysis.get("structural") or {}
     timeliness = analysis.get("timeliness") or {}
+    layers = {"structural": structural, "timeliness": timeliness}
+    assessed = {name: layer for name, layer in layers.items()
+                if layer.get("effective_score") is not None}
     missing = sorted(set((structural.get("missing_metrics") or []) + (timeliness.get("missing_metrics") or [])))
     stale = sorted(set((structural.get("stale_metrics") or []) + (timeliness.get("stale_metrics") or [])))
     conflicts = sorted(set((structural.get("provider_conflicts") or []) + (timeliness.get("provider_conflicts") or [])))
     return {
-        "score_confidence": round(min(_number(structural.get("confidence"), 0), _number(timeliness.get("confidence"), 0)), 3),
-        "data_coverage": round(min(_number(structural.get("coverage"), 0), _number(timeliness.get("coverage"), 0)), 3),
+        "unassessed_layers": sorted(set(layers) - set(assessed)),
+        "score_confidence": round(min((_number(layer.get("confidence"), 0) for layer in assessed.values()),
+                                      default=0.0), 3),
+        "data_coverage": round(min((_number(layer.get("coverage"), 0) for layer in assessed.values()),
+                                   default=0.0), 3),
         "data_freshness": "stale" if stale else "current_or_unknown",
         "provider_conflicts": conflicts,
         "applicable_metrics_available": round(_number(structural.get("available_weight"), 0) + _number(timeliness.get("available_weight"), 0), 4),
@@ -234,6 +270,12 @@ def _company_action(matrix_class, quality, position_exists, thesis_break, config
         "avoid_new_entry_or_trim": "hold_existing_position" if position_exists else "avoid",
         "speculative_tactical_only": "tactical_candidate",
         "avoid_or_sell_thesis": "avoid",
+        # Timeliness never resolved. A strong business with no timing evidence is a
+        # watch-list entry, never a buy -- structural quality alone does not establish
+        # that now is a favourable moment to enter.
+        "quality_watch_timeliness_unavailable": "hold_existing_position" if position_exists else "quality_watch",
+        "hold_or_watch_timeliness_unavailable": "hold_existing_position" if position_exists else "watch",
+        "insufficient_structural_evidence": "insufficient_evidence",
     }
     action = mapping[matrix_class]
     if quality["severe_unresolved"] and action in ("buy", "accumulate"):
@@ -444,14 +486,21 @@ def evaluate_entry_rules(company_label, structural, timeliness, portfolio_fit, p
     interval_ok = days_since_add is None or days_since_add >= entry["average_down_minimum_interval_days"]
     additions_ok = int(_number(position.get("addition_count"), 0)) < entry["average_down_maximum_additions"]
     if losing:
+        # Averaging down into a loss requires positive timing evidence. Unknown timing is not
+        # positive timing, so an unresolved timeliness layer blocks the add rather than
+        # passing it through on a fabricated neutral.
+        timing_score = timeliness.get("effective_score")
+        timing_ok = timing_score is not None and timing_score >= config["score_matrix"]["timeliness_weak"]
+        structural_score = structural.get("effective_score")
         allowed = (
-            structural["effective_score"] >= config["score_matrix"]["structural_strong"]
-            and timeliness["effective_score"] >= config["score_matrix"]["timeliness_weak"]
+            structural_score is not None
+            and structural_score >= config["score_matrix"]["structural_strong"]
+            and timing_ok
             and bool(position.get("valuation_meaningfully_improved", False))
             and interval_ok and additions_ok and not blocked and not blackout
         )
         return {"type": "average_down", "allowed": allowed, "reason_codes": reasons
-                + ([] if timeliness["effective_score"] >= config["score_matrix"]["timeliness_weak"] else ["severe_revision_or_timing_deterioration"])
+                + ([] if timing_ok else ["timeliness_unavailable_or_deteriorating"])
                 + ([] if position.get("valuation_meaningfully_improved") else ["valuation_improvement_not_confirmed"])
                 + ([] if interval_ok else ["minimum_add_interval_not_met"])
                 + ([] if additions_ok else ["maximum_additions_reached"])}
@@ -474,7 +523,14 @@ def build_recommendation_v2(ticker, analysis, technical=None, sentiment=None, ex
     matrix_class = two_axis_classification(structural["effective_score"], timeliness["effective_score"], config)
     thesis_break = _thesis_break(thesis_events, config)
     company_label, namespace, company_reasons = _company_action(matrix_class, quality, position_exists, thesis_break, config)
-    company_confidence = min(structural["confidence"], timeliness["confidence"])
+    # Confidence in what was actually assessed. A layer that never resolved contributes no
+    # opinion and must not drag the company's confidence to zero -- that is what made every
+    # published company read "insufficient evidence" while structural coverage was 92%.
+    # The unresolved axis is reported through matrix_class and quality.missing_critical_metrics
+    # instead, where a reader can see which axis is missing rather than only that something is.
+    assessed_confidence = [layer["confidence"] for layer in (structural, timeliness)
+                           if layer.get("effective_score") is not None]
+    company_confidence = min(assessed_confidence) if assessed_confidence else 0.0
     groups = derive_deterioration_groups(analysis, technical, sentiment, extended, deterioration_overrides, config)
     flagged = [group for group in groups if group["flagged"]]
     portfolio_fit = classify_portfolio_fit(portfolio, config)

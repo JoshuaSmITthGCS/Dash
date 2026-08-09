@@ -25,6 +25,7 @@ from institutional_ownership import decay as institutional_decay
 from congress_signal import score_congressional_buying
 import pit_store
 from fred import FredClient, FredError, fetch_regime
+from layer_health import assert_layers_vary
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload)
 from peer_groups import canonical_percentiles
@@ -101,6 +102,39 @@ REPORT_ROW_FIELDS = (
     "theme_exposure",
 )
 RETIRED_REPORT_SYMBOLS = {"DECJ"}
+
+
+def _layer(*path):
+    """Extractor that walks a nested payload path, returning None at the first gap."""
+    def read(row):
+        node = row
+        for key in path:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key)
+        return node
+    return read
+
+
+# Every number this pipeline publishes as a scored "layer", checked for cross-sectional
+# variance before the payload is written (see layer_health.assert_layers_vary). Adding a
+# scored layer without adding it here means nothing verifies it is a layer at all.
+PUBLISHED_LAYERS = {
+    "score": _layer("score"),
+    "base_score": _layer("base_score"),
+    "raw_score": _layer("raw_score"),
+    "components.fundamentals": _layer("components", "fundamentals"),
+    "components.market_behavior": _layer("components", "market_behavior"),
+    "components.news_sentiment": _layer("components", "news_sentiment"),
+    "fundamental_categories.valuation": _layer("fundamental_categories", "valuation"),
+    "fundamental_categories.profitability": _layer("fundamental_categories", "profitability"),
+    "fundamental_categories.financial_health": _layer("fundamental_categories", "financial_health"),
+    "fundamental_categories.growth": _layer("fundamental_categories", "growth"),
+    "fundamental_categories.capital_allocation": _layer("fundamental_categories", "capital_allocation"),
+    "fundamental_categories.accounting_quality": _layer("fundamental_categories", "accounting_quality"),
+    "analysis_v2.structural.effective_score": _layer("analysis_v2", "structural", "effective_score"),
+    "analysis_v2.timeliness.effective_score": _layer("analysis_v2", "timeliness", "effective_score"),
+}
 
 
 def report_row(row):
@@ -1545,6 +1579,13 @@ def run():
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
+
+    # A layer that resolves to the same number for every company in the universe carries no
+    # information and must not be published as evidence. This failed loudly is the difference
+    # between catching the degenerate timeliness layer on its first run and shipping it for a
+    # year -- see research/audit/CURRENT_MODEL_AUDIT.md section 3.
+    assert_layers_vary(research, PUBLISHED_LAYERS)
+
     ranked = research[:publish_limit]
     ranked_tickers = {row["ticker"] for row in ranked}
 

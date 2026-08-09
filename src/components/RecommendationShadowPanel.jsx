@@ -11,6 +11,8 @@ function companyCopy(label) {
     accumulate: 'Business quality is strong. Timing supports gradual additions.',
     hold_existing_position: 'Current evidence supports maintaining an existing position. This is not an entry signal.',
     quality_watch: 'Business quality is strong, but timing is weak.',
+    quality_watch_timeliness_unavailable: 'Business quality is strong. No timing evidence was obtained, so this cannot be called an entry.',
+    hold_or_watch_timeliness_unavailable: 'Business quality is acceptable. No timing evidence was obtained.',
     watch: 'Evidence is incomplete or mixed. No position change is implied.',
     tactical_candidate: 'Timing is favorable, but structural quality does not qualify as a long-term buy.',
     avoid: 'Do not initiate new exposure under the current company evidence.',
@@ -31,6 +33,18 @@ function positionCopy(action) {
   if (action?.label === 'review') return 'The calculated trade is economically immaterial and needs review.'
   if (action?.label === 'hold') return 'No position-level rule requires a change.'
   return 'No user position was supplied to the shadow backend, so position rules were not assessed.'
+}
+
+/**
+ * A layer with no effective score gets its stated reason, not a number. Rendering
+ * "50 effective · 0% confidence" for a layer that resolved nothing presented a placeholder
+ * as a measurement.
+ */
+function layerDetail(layer) {
+  if (!layer || layer.effective_score == null) {
+    return layer?.unavailable_reason || 'No inputs resolved, so no score is published'
+  }
+  return `${score(layer.effective_score)} effective · ${pct(layer.confidence)} of evidence weight resolved`
 }
 
 function Layer({ label, value, detail }) {
@@ -86,15 +100,25 @@ export default function RecommendationShadowPanel({ legacy, shadow }) {
       </div>
 
       <div className="shadow-layers">
-        <Layer label="Structural" value={structural.classification} detail={`${score(structural.effective_score)} effective · ${pct(structural.confidence)} confidence`} />
-        <Layer label="Timeliness" value={timeliness.classification} detail={`${score(timeliness.effective_score)} effective · ${pct(timeliness.confidence)} confidence`} />
-        <Layer label="Portfolio fit" value={portfolio.classification} detail={(portfolio.reason_codes || []).map(title).join(' · ') || 'No portfolio constraint supplied'} />
+        <Layer label="Structural" value={structural.classification} detail={layerDetail(structural)} />
+        <Layer label="Timeliness" value={timeliness.classification} detail={layerDetail(timeliness)} />
+        {/* "Below target" against a default 3% target is what this reads for every company
+            when no portfolio is supplied, which is not an assessment. Say so instead. */}
+        <Layer
+          label="Portfolio fit"
+          value={portfolio.current_weight ? portfolio.classification : 'not assessed'}
+          detail={(portfolio.reason_codes || []).map(title).join(' · ')
+            || (portfolio.current_weight ? '' : 'No portfolio supplied, so fit was not assessed')}
+        />
         <Layer label="Position rules" value={ruleState.classification} detail={ruleState.profile ? `Profile: ${title(ruleState.profile)}` : 'Requires user position inputs'} />
       </div>
 
       <div className="shadow-evidence">
         <span>
-          Company evidence: <b>{pct(dataQuality.score_confidence)} confidence</b> · <b>{pct(dataQuality.data_coverage)} coverage</b>
+          Company evidence: <b>{pct(dataQuality.score_confidence)} of evidence weight resolved</b> · <b>{pct(dataQuality.data_coverage)} data coverage</b>
+          {(dataQuality.unassessed_layers || []).length > 0 && (
+            <> · <b>not assessed: {dataQuality.unassessed_layers.map(title).join(', ')}</b></>
+          )}
         </span>
         <span>{flagged.length} of 3 independent deterioration groups flagged</span>
       </div>
