@@ -388,8 +388,10 @@ BT_DOWN_COST = 243.3
 BT_DOWN_MAX_PROFIT_PNL = (BT_DOWN_LONG_STRIKE - BT_DOWN_SHORT_STRIKE) * 100 - BT_DOWN_COST  # 428.7
 BT_DOWN_MAX_LOSS_PNL = -BT_DOWN_COST  # -243.3
 
-STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
-             "win_rate", "average_pnl_per_trade", "equity_curve"}
+STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                          "skewness", "kurtosis", "probabilistic_sharpe_ratio", "deflated_sharpe_ratio",
+                          "deflated_sharpe_trials", "max_drawdown", "win_rate", "average_pnl_per_trade",
+                          "equity_curve"}
 
 
 def single_period_closes(entry_history, settle_price, filler_sessions=20):

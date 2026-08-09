@@ -36,7 +36,12 @@ MINIMUM_HISTORY_SESSIONS = 21
 # insurance, kept smallest of any screen since it's the factor most likely to overlap with
 # iv_value (both reflect market-implied risk). research_confidence is a quality gate -
 # "worth protecting". Existing factors shrunk proportionally to still sum to 1.0.
-WEIGHTS = {"iv_value": .35, "cost_efficiency": .26, "liquidity": .26,
+#
+# iv_value trimmed further (was .35): the single-name IV-vs-RV signal it's built on is
+# weaker and noisier than the same signal at the index level (Driessen, Maenhout & Vilkov
+# 2009 - individual variance risk was not reliably priced in their sample). liquidity
+# picked up the difference.
+WEIGHTS = {"iv_value": .28, "cost_efficiency": .26, "liquidity": .33,
           "news_sentiment": .05, "research_confidence": .08}
 
 

@@ -55,7 +55,10 @@ MINIMUM_HISTORY_SESSIONS = 21
 # strategy picks a directional side). Existing factors shrunk proportionally.
 IRON_CONDOR_WEIGHTS = {"credit_efficiency": .34, "probability_in_range": .30, "liquidity": .21,
                        "news_sentiment": .08, "research_confidence": .07}
-STRADDLE_WEIGHTS = {"iv_value": .30, "probability_of_profit": .31, "liquidity": .26,
+# straddle's iv_value trimmed further (was .30): same single-name-VRP-is-weaker-than-index
+# reasoning as build_options_screen.py's and build_protective_put_screen.py's identical
+# trims (Driessen, Maenhout & Vilkov 2009). liquidity picked up the difference.
+STRADDLE_WEIGHTS = {"iv_value": .25, "probability_of_profit": .31, "liquidity": .31,
                     "news_sentiment": .08, "research_confidence": .05}
 
 

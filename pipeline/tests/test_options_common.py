@@ -214,6 +214,42 @@ def test_expected_value_pct_none_when_probability_unknown():
     assert module.expected_value_pct(0.5, None, -0.20) is None
 
 
+def test_kelly_fraction_positive_for_a_genuine_edge():
+    fraction = module.kelly_fraction(probability_favorable=0.7, favorable_return_pct=0.10,
+                                      unfavorable_return_pct=-0.05)
+    assert fraction is not None and fraction > 0
+
+
+def test_kelly_fraction_none_when_inputs_missing_or_no_variance():
+    assert module.kelly_fraction(None, 0.1, -0.05) is None
+    assert module.kelly_fraction(0.7, 0.1, 0.1) is None  # identical outcomes -> no variance
+
+
+def test_suggested_position_pct_is_quarter_kelly_capped_at_two_percent():
+    # A very large edge should still be capped, not scaled up without bound.
+    capped = module.suggested_position_pct(probability_favorable=0.95, favorable_return_pct=1.0,
+                                           unfavorable_return_pct=-0.5)
+    assert capped == 0.02
+
+
+def test_suggested_position_pct_scales_down_a_modest_edge():
+    modest = module.suggested_position_pct(probability_favorable=0.51, favorable_return_pct=0.5,
+                                           unfavorable_return_pct=-0.5)
+    full = module.kelly_fraction(0.51, 0.5, -0.5)
+    assert modest == max(0.0, min(full * 0.25, 0.02))
+    assert modest < 0.02
+
+
+def test_suggested_position_pct_never_negative_for_a_losing_bet():
+    result = module.suggested_position_pct(probability_favorable=0.2, favorable_return_pct=0.05,
+                                           unfavorable_return_pct=-0.20)
+    assert result == 0.0
+
+
+def test_suggested_position_pct_none_when_kelly_fraction_is_none():
+    assert module.suggested_position_pct(None, 0.05, -0.05) is None
+
+
 class DirectCache:
     """Bypasses disk persistence entirely so earnings-calendar tests stay hermetic."""
 

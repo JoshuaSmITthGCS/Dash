@@ -277,7 +277,9 @@ def test_backtest_universe_returns_stats_with_capped_gain(monkeypatch):
     assert stats is not None
     assert stats["num_trades"] > 0
     assert set(stats) == {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
-                          "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
+                          "skewness", "kurtosis", "probabilistic_sharpe_ratio", "deflated_sharpe_ratio",
+                          "deflated_sharpe_trials", "max_drawdown", "win_rate", "average_pnl_per_trade",
+                          "equity_curve"}
 
     # The jump at JUMP_INDEX (90) lands inside the walk-forward period entered at index 86 and
     # settled at index 91 - recompute what backtest_universe would have sold at that entry
@@ -313,7 +315,9 @@ def test_backtest_universe_returns_none_when_history_too_short(monkeypatch):
 
 
 BACKTEST_STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
-                       "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
+                          "skewness", "kurtosis", "probabilistic_sharpe_ratio", "deflated_sharpe_ratio",
+                          "deflated_sharpe_trials", "max_drawdown", "win_rate", "average_pnl_per_trade",
+                          "equity_curve"}
 
 
 def test_run_backtest_publishes_success(monkeypatch):

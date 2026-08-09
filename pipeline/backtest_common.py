@@ -91,7 +91,67 @@ def walk_periods(closes, target_dte, lookback=21):
     return periods
 
 
-def performance_stats(period_returns, periods_per_year, trade_pnls=None, position_weight=0.05):
+def _skew_kurtosis(values, mean, stdev):
+    """Sample skewness and (non-excess) kurtosis, or (None, None) if undefined."""
+    n = len(values)
+    if n < 3 or not stdev:
+        return None, None
+    skew = sum(((value - mean) / stdev) ** 3 for value in values) / n
+    kurtosis = sum(((value - mean) / stdev) ** 4 for value in values) / n
+    return skew, kurtosis
+
+
+def probabilistic_sharpe_ratio(sharpe_hat, n, skew, kurtosis, benchmark_sharpe=0.0):
+    """Probability the TRUE (per-period) Sharpe ratio exceeds `benchmark_sharpe`, correcting
+    for sample length and the return series' own skew/kurtosis (Bailey & Lopez de Prado,
+    "The Sharpe Ratio Efficient Frontier", 2012).
+
+    A naive Sharpe ratio assumes Gaussian returns; a short-volatility options return series
+    is typically negatively skewed and fat-tailed (frequent small wins, rare large losses),
+    which inflates the naive number relative to what the same mean/variance would produce
+    under a normal distribution. This discounts for exactly that, using the return series'
+    own measured skew/kurtosis rather than assuming normality.
+    """
+    if sharpe_hat is None or n < 2 or skew is None or kurtosis is None:
+        return None
+    denominator = math.sqrt(max(1e-12, 1 - skew * sharpe_hat + ((kurtosis - 1) / 4) * sharpe_hat ** 2))
+    z = (sharpe_hat - benchmark_sharpe) * math.sqrt(n - 1) / denominator
+    return statistics.NormalDist().cdf(z)
+
+
+def deflated_sharpe_ratio(sharpe_hat, n, skew, kurtosis, num_trials=1):
+    """Probabilistic Sharpe Ratio evaluated against the expected maximum Sharpe ratio that
+    `num_trials` independent, genuinely random strategies would produce by chance alone
+    (Bailey & Lopez de Prado, "The Deflated Sharpe Ratio", 2014) - the multiple-testing
+    correction a single backtest's headline Sharpe ratio never accounts for on its own.
+    With 7+ screens and many implicit parameter choices (lookback windows, DTE ranges,
+    strike-selection deltas, factor weights) behind this pipeline's design, the honest
+    number of "trials" tried while building it is not 1.
+
+    Caveat, stated plainly: the textbook formula needs the cross-trial VARIANCE of Sharpe
+    ratios, which would require actually running num_trials independent backtests to
+    observe - this pipeline has exactly one backtest per screen, not many variants of it.
+    This substitutes the analytical standard error of THIS backtest's own Sharpe ratio
+    estimate (Mertens, "Comments on variance of the IID estimator...", 2002) as a stand-in
+    for that cross-trial spread. That is a real approximation, not a measured quantity -
+    read deflated_sharpe_ratio as a directional multiple-testing haircut on the headline
+    Sharpe ratio, not an exact probability.
+    """
+    if sharpe_hat is None or n < 2 or skew is None or kurtosis is None or num_trials < 1:
+        return None
+    se_sharpe = math.sqrt(max(1e-12, (1 + 0.5 * sharpe_hat ** 2 - skew * sharpe_hat
+                                      + ((kurtosis - 3) / 4) * sharpe_hat ** 2)) / n)
+    if num_trials <= 1:
+        benchmark_sharpe = 0.0
+    else:
+        euler_mascheroni = 0.5772156649
+        inv_cdf = statistics.NormalDist().inv_cdf
+        benchmark_sharpe = se_sharpe * ((1 - euler_mascheroni) * inv_cdf(1 - 1 / num_trials)
+                                        + euler_mascheroni * inv_cdf(1 - 1 / (num_trials * math.e)))
+    return probabilistic_sharpe_ratio(sharpe_hat, n, skew, kurtosis, benchmark_sharpe)
+
+
+def performance_stats(period_returns, periods_per_year, trade_pnls=None, position_weight=0.05, num_trials=8):
     """period_returns: fractional return per period (.02 = +2%) ON THE CAPITAL RISKED IN
     THAT SPECIFIC TRADE, not the whole account.
 
@@ -107,6 +167,12 @@ def performance_stats(period_returns, periods_per_year, trade_pnls=None, positio
     per-trade risk-budget range this feature's own design doc calls for. win_rate and
     average_pnl_per_trade describe individual trades and are intentionally NOT scaled by
     this - they're about the trade, not the account.
+
+    `num_trials` feeds deflated_sharpe_ratio's multiple-testing correction - see that
+    function's docstring for what it does and does not account for. Default 8 reflects the
+    number of options-strategy screens (and their many shared implicit parameter choices)
+    behind this pipeline's design; pass a different value if you have a more specific trial
+    count for the comparison you're making.
     """
     if not period_returns:
         return None
@@ -119,7 +185,11 @@ def performance_stats(period_returns, periods_per_year, trade_pnls=None, positio
     annualized_return = equity[-1] ** (periods_per_year / n) - 1 if equity[-1] > 0 else -1.0
     mean_return = statistics.mean(scaled_returns)
     stdev_return = statistics.stdev(scaled_returns) if n > 1 else 0
-    sharpe_ratio = (mean_return / stdev_return) * math.sqrt(periods_per_year) if stdev_return else None
+    per_period_sharpe = (mean_return / stdev_return) if stdev_return else None
+    sharpe_ratio = per_period_sharpe * math.sqrt(periods_per_year) if per_period_sharpe is not None else None
+    skew, kurtosis = _skew_kurtosis(scaled_returns, mean_return, stdev_return)
+    psr = probabilistic_sharpe_ratio(per_period_sharpe, n, skew, kurtosis)
+    dsr = deflated_sharpe_ratio(per_period_sharpe, n, skew, kurtosis, num_trials=num_trials)
     peak = equity[0]
     max_drawdown = 0.0
     for value in equity:
@@ -133,6 +203,11 @@ def performance_stats(period_returns, periods_per_year, trade_pnls=None, positio
         "total_return": round(total_return, 4),
         "annualized_return": round(annualized_return, 4),
         "sharpe_ratio": round(sharpe_ratio, 3) if sharpe_ratio is not None else None,
+        "skewness": round(skew, 3) if skew is not None else None,
+        "kurtosis": round(kurtosis, 3) if kurtosis is not None else None,
+        "probabilistic_sharpe_ratio": round(psr, 4) if psr is not None else None,
+        "deflated_sharpe_ratio": round(dsr, 4) if dsr is not None else None,
+        "deflated_sharpe_trials": num_trials,
         "max_drawdown": round(max_drawdown, 4),
         "win_rate": round(win_rate, 4),
         "average_pnl_per_trade": round(average_pnl_per_trade, 2) if average_pnl_per_trade is not None else None,

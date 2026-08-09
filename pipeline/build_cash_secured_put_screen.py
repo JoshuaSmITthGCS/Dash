@@ -22,7 +22,7 @@ from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
                             liquidity_factor, next_earnings_date, probability_above, realized_volatility_20d,
                             research_universe_factors, select_by_target_delta, select_expiration,
-                            transaction_cost_pct, trend_20d)
+                            suggested_position_pct, transaction_cost_pct, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -97,6 +97,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
     favorable_return = premium / put["strike"]
     unfavorable_return = (price - effective_cost_basis) / put["strike"]
     expected_value = expected_value_pct(probability_otm, favorable_return, unfavorable_return, cost_pct)
+    position_pct = suggested_position_pct(probability_otm, favorable_return, unfavorable_return)
     research_factors = research_universe_factors(entry, generated_at, as_of, direction=1, sentiment_mode="signed")
 
     group_id, group_label = peer_group(entry)
@@ -117,6 +118,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
             "expected_value_pct": round(expected_value, 4) if expected_value is not None else None,
             "probability_otm": round(probability_otm, 4) if probability_otm is not None else None,
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
+            "suggested_position_pct": round(position_pct, 4) if position_pct is not None else None,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },

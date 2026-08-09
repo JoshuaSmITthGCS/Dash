@@ -337,6 +337,28 @@ def expiration_spans_earnings(expiration, earnings_date, as_of=None):
     return as_of < earnings_date <= expiration_date
 
 
+# On NOT implementing Dubinsky/Johannes/Kaeck/Seeger-style earnings-jump-vol decomposition:
+#
+# A rigorous treatment of an event-spanning expiration would decompose its total implied
+# variance into a diffusive component and an earnings-jump component (DJKS 2019, "Option
+# Pricing of Earnings Announcement Risk"), calibrated by differencing two expirations that
+# bracket the event. That is the right tool if this pipeline wanted to KEEP event-spanning
+# contracts and price the event component explicitly - e.g. a dedicated earnings-play
+# screen ranking straddles by how cheap the jump component is relative to the historical
+# earnings-day move.
+#
+# This pipeline doesn't have that screen. Every current screen either isn't meant to be a
+# catalyst-timed trade (the Advanced-strategies straddle explicitly says so in its own
+# module docstring) or is an income/directional idea for which an earnings-inflated premium
+# is a distortion to avoid, not a component to price. Given that, expiration_spans_earnings'
+# hard exclusion is the correct tool here, not an incomplete stand-in for one: it removes
+# the contamination at the source, at the cost of a second live option-chain fetch per
+# ticker (bracketing expirations) that a full decomposition would require and this design
+# doesn't need to pay for. If a genuinely catalyst-timed earnings screen gets built later,
+# implement DJKS decomposition then, against that screen specifically - don't retrofit it
+# onto screens that were never trying to price the event in the first place.
+
+
 def transaction_cost_pct(contract, price_basis):
     """Estimated execution-cost drag, as a fraction of `price_basis` (the underlying price
     for a share-denominated screen, or the strike for a collateral-denominated one): a
@@ -371,6 +393,41 @@ def expected_value_pct(probability_favorable, favorable_return_pct, unfavorable_
         return None
     return (probability_favorable * favorable_return_pct
             + (1 - probability_favorable) * unfavorable_return_pct - cost_pct)
+
+
+def kelly_fraction(probability_favorable, favorable_return_pct, unfavorable_return_pct):
+    """Continuous-approximation Kelly fraction (mean over variance) for a two-outcome bet -
+    NOT scaled down for real use. Full Kelly assumes the probability/payoff inputs are
+    exactly right, which a modeled estimate like this one never is, and betting past the
+    true Kelly fraction can make the long-run geometric growth rate negative even with a
+    genuine edge - see suggested_position_pct for the actually-recommended, discounted
+    number. None if either outcome is unknown or the two outcomes are identical (no
+    variance to size against).
+    """
+    if probability_favorable is None or favorable_return_pct is None or unfavorable_return_pct is None:
+        return None
+    spread = favorable_return_pct - unfavorable_return_pct
+    variance = probability_favorable * (1 - probability_favorable) * spread ** 2
+    if variance <= 0:
+        return None
+    mean = probability_favorable * favorable_return_pct + (1 - probability_favorable) * unfavorable_return_pct
+    return mean / variance
+
+
+def suggested_position_pct(probability_favorable, favorable_return_pct, unfavorable_return_pct,
+                           kelly_multiplier=0.25, max_position_pct=0.02):
+    """Quarter-Kelly (by default) position size as a fraction of capital, hard-capped at
+    max_position_pct - the 0.5%-5% per-trade risk budget this pipeline's own risk notes
+    already describe in words, expressed here as an actual number instead of left to the
+    reader. Full Kelly is inappropriate for a modeled, fat-tailed options bet; practitioners
+    commonly use quarter- to half-Kelly plus a hard cap regardless of what the formula says,
+    which is what this applies. Never negative - a negative-EV candidate suggests 0%, not a
+    short position this app doesn't support or recommend.
+    """
+    full_kelly = kelly_fraction(probability_favorable, favorable_return_pct, unfavorable_return_pct)
+    if full_kelly is None:
+        return None
+    return max(0.0, min(full_kelly * kelly_multiplier, max_position_pct))
 
 
 def research_universe_factors(entry, generated_at, as_of=None, *, direction=1, sentiment_mode="signed"):

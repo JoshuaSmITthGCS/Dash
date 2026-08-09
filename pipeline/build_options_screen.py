@@ -37,7 +37,15 @@ MINIMUM_HISTORY_SESSIONS = 21
 # sentiment/research agreeing with that direction is a conviction-confirmation signal,
 # not an independent one. Existing factors were shrunk proportionally (not just appended)
 # to make room, so the composite still sums to 1.0.
-WEIGHTS = {"iv_value": .30, "liquidity": .30, "trend_strength": .25,
+#
+# iv_value trimmed further (was .30) than a pure "make room for the new factors" split
+# would give it: Driessen, Maenhout & Vilkov (2009, JF) found the variance risk premium
+# that makes index-level short-vol reliable is largely a correlation-risk premium, and
+# that individual-stock variance risk was NOT reliably priced in their sample - the
+# IV-vs-RV signal this factor is built on is weaker and noisier for a single name than it
+# is for an index. liquidity picked up the difference, since it's a harder signal to
+# arbitrage away than a volatility mispricing.
+WEIGHTS = {"iv_value": .25, "liquidity": .35, "trend_strength": .25,
           "news_sentiment": .08, "research_confidence": .07}
 
 

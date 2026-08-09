@@ -27,6 +27,7 @@ export const STRATEGY_SCREENS = {
     strategyLabel: () => 'Covered call',
     metricsConfig: () => [
       ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
       ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['breakeven', 'Breakeven', 'money'],
@@ -47,10 +48,15 @@ export const STRATEGY_SCREENS = {
       'expiring worthless, and liquidity.',
     riskNote: GENERIC_RISK_NOTE + ' Selling puts obligates you to buy 100 shares at the ' +
       'strike if assigned, even if the stock keeps falling below it. This screen assumes the ' +
-      'put is fully cash-secured, not leveraged — set aside the full collateral shown.',
+      'put is fully cash-secured, not leveraged — set aside the full collateral shown. On a ' +
+      'smaller account, that collateral requirement (shown as "Collateral required" above) can ' +
+      'be more capital than you have — a defined-risk put credit spread caps both the collateral ' +
+      'and the loss, at the cost of paying commissions and a bid/ask spread on two legs instead ' +
+      'of one, which eats a bigger share of a small trade’s edge. See the Vertical spread screen.',
     strategyLabel: () => 'Cash-secured put',
     metricsConfig: () => [
       ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
       ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['effective_cost_basis', 'Effective cost basis', 'money'],
@@ -184,6 +190,7 @@ export const STRATEGY_SCREENS = {
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : row.strategy === 'sell_call' ? [
       ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
       ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['breakeven', 'Breakeven', 'money'],
@@ -193,6 +200,7 @@ export const STRATEGY_SCREENS = {
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
       ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
       ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['effective_cost_basis', 'Effective cost basis', 'money'],
