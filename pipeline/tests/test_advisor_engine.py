@@ -81,7 +81,7 @@ class AdvisorEngineTests(unittest.TestCase):
         self.assertGreater(row["components"]["fundamentals"], 75)
         self.assertIn(row["stance"], ("ATTRACTIVE", "PROMISING"))
         self.assertTrue(any("valuation" in item.lower() for item in row["strengths"]))
-        self.assertGreater(row["confidence"], 0.8)
+        self.assertGreater(row["data_coverage"], 0.8)
         self.assertEqual(row["recommendation"]["action"], "HOLD")
 
     def test_two_factors_are_required_before_any_trim(self):
@@ -122,7 +122,7 @@ class AdvisorEngineTests(unittest.TestCase):
     def test_missing_evidence_lowers_confidence(self):
         sparse = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False, "forward_pe": 20}
         row = build_research("TEST", sparse, [100 + i for i in range(100)], None, [])
-        self.assertLess(row["confidence"], 0.5)
+        self.assertLess(row["data_coverage"], 0.5)
 
     def test_macro_is_sector_sensitive_and_capped(self):
         regime = {

@@ -13,7 +13,7 @@ from stability_report import (compute_stability_report, decompose_score_delta,
 def _row(ticker, refresh_id, score, confidence, metrics, published=True):
     return {
         "ticker": ticker, "refresh_id": refresh_id, "published_research": published,
-        "scores": {"champion": score}, "confidence": {"champion": confidence},
+        "scores": {"champion": score}, "data_coverage": {"champion": confidence},
         "normalized_metric_scores": {"champion": metrics},
     }
 

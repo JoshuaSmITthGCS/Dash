@@ -51,13 +51,13 @@ def _score_layer(layer):
     on -- see ``research/audit/CURRENT_MODEL_AUDIT.md`` section 3.
     """
     layer = layer or {}
-    confidence = _clamp(_number(layer.get("confidence"), 0.0))
+    confidence = _clamp(_number(layer.get("evidence_weight_resolved"), 0.0))
     raw = _number(layer.get("raw_score"))
     return {
         **layer,
         "raw_score": raw,
         "effective_score": None if raw is None else effective_score(raw, confidence),
-        "confidence": round(confidence, 3),
+        "evidence_weight_resolved": round(confidence, 3),
         "coverage": round(_clamp(_number(layer.get("coverage"), 0.0)), 3),
     }
 
@@ -117,8 +117,8 @@ def _quality(analysis):
     conflicts = sorted(set((structural.get("provider_conflicts") or []) + (timeliness.get("provider_conflicts") or [])))
     return {
         "unassessed_layers": sorted(set(layers) - set(assessed)),
-        "score_confidence": round(min((_number(layer.get("confidence"), 0) for layer in assessed.values()),
-                                      default=0.0), 3),
+        "evidence_weight_resolved": round(min((_number(layer.get("evidence_weight_resolved"), 0) for layer in assessed.values()),
+                                              default=0.0), 3),
         "data_coverage": round(min((_number(layer.get("coverage"), 0) for layer in assessed.values()),
                                    default=0.0), 3),
         "data_freshness": "stale" if stale else "current_or_unknown",
@@ -254,7 +254,7 @@ def _thesis_break(events, config):
 
 def _company_action(matrix_class, quality, position_exists, thesis_break, config):
     gates = config["confidence_gates"]
-    confidence = quality["score_confidence"]
+    confidence = quality["evidence_weight_resolved"]
     if thesis_break:
         return "sell_thesis", "sell_thesis_" + thesis_break["code"], [thesis_break["code"]]
     if confidence < gates["insufficient"]:
@@ -528,7 +528,7 @@ def build_recommendation_v2(ticker, analysis, technical=None, sentiment=None, ex
     # published company read "insufficient evidence" while structural coverage was 92%.
     # The unresolved axis is reported through matrix_class and quality.missing_critical_metrics
     # instead, where a reader can see which axis is missing rather than only that something is.
-    assessed_confidence = [layer["confidence"] for layer in (structural, timeliness)
+    assessed_confidence = [layer["evidence_weight_resolved"] for layer in (structural, timeliness)
                            if layer.get("effective_score") is not None]
     company_confidence = min(assessed_confidence) if assessed_confidence else 0.0
     groups = derive_deterioration_groups(analysis, technical, sentiment, extended, deterioration_overrides, config)

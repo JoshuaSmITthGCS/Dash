@@ -47,9 +47,9 @@ function ScoreLayer({ title, layer, description }) {
         <div><dt>Data coverage</dt><dd>{Math.round(layer.coverage * 100)}%</dd></div>
         <div><dt>Evidence weight resolved</dt>
           <dd title="Share of this layer's intended evidence that actually resolved, discounted for provenance, staleness and provider disagreement. Not a probability of a price move.">
-            {Math.round(layer.confidence * 100)}%</dd></div>
+            {Math.round(layer.evidence_weight_resolved * 100)}%</dd></div>
       </dl>
-      {layer.confidence < 0.4 && (
+      {layer.evidence_weight_resolved < 0.4 && (
         <small className="analysis-warning">Insufficient evidence: this layer cannot issue prescriptive company guidance.</small>
       )}
     </section>

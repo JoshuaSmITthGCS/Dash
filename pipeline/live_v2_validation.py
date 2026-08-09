@@ -63,7 +63,7 @@ def _invariants(ticker, analysis, recommendation, observations):
         # nothing has no opinion to be confident or unconfident about; folding its zero in
         # here forced every company below the gate regardless of the evidence behind it.
         "low_confidence_action_gate": (
-            min((layer["confidence"] for layer in (analysis["structural"], analysis["timeliness"])
+            min((layer["evidence_weight_resolved"] for layer in (analysis["structural"], analysis["timeliness"])
                  if layer.get("effective_score") is not None), default=0.0) >= .60
             or recommendation["company_action"]["label"] not in {"buy", "accumulate", "sell_thesis"}),
         # A layer that resolved nothing must publish no score at all, on every row.

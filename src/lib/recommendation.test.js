@@ -4,9 +4,9 @@ import { actionHeadline, getRecommendation, positionImpact } from './recommendat
 describe('getRecommendation', () => {
   it('trusts the guidance the pipeline already published', () => {
     const stock = {
-      ticker: 'AAA', confidence: 0.8,
+      ticker: 'AAA', data_coverage: 0.8,
       recommendation: {
-        action: 'TRIM', suggested_trim_pct: 33, agreement_count: 2, confidence: 'moderate',
+        action: 'TRIM', suggested_trim_pct: 33, agreement_count: 2, data_coverage: 'moderate',
         reasons: ['profitability score 40/100'], summary: 'Multiple factors disagree.',
       },
     }
@@ -19,7 +19,7 @@ describe('getRecommendation', () => {
 
   it('falls back to the browser engine for rows published before the field existed', () => {
     const stock = {
-      ticker: 'BBB', confidence: 0.8,
+      ticker: 'BBB', data_coverage: 0.8,
       components: { fundamentals: 28 },
       debt_to_equity: 3.1,
       current_ratio: 0.6,
@@ -33,18 +33,18 @@ describe('getRecommendation', () => {
 
   it('never acts on a broken chart alone', () => {
     const stock = {
-      ticker: 'CCC', confidence: 0.8,
+      ticker: 'CCC', data_coverage: 0.8,
       components: { fundamentals: 82 },
       technical_detail: { return_5d: -8, return_20d: -22, return_60d: -30 },
     }
     expect(getRecommendation(stock).action).toBe('HOLD')
   })
 
-  it('gates prescriptive company action when canonical confidence is low', () => {
+  it('gates prescriptive company action when canonical evidence weight is low', () => {
     const result = getRecommendation({
-      confidence: 0.8,
+      data_coverage: 0.8,
       recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2 },
-      analysis_v2: { structural: { confidence: 0.39, coverage: 0.8, missing_metrics: ['forward_eps_revision_30d'] } },
+      analysis_v2: { structural: { evidence_weight_resolved: 0.39, coverage: 0.8, missing_metrics: ['forward_eps_revision_30d'] } },
     })
     expect(result.action).toBe('WATCH')
     expect(result.summary).toMatch(/insufficient evidence/i)
@@ -55,11 +55,11 @@ describe('getRecommendation', () => {
   })
 
   it('makes no action call at all below the confidence floor', () => {
-    // The screenshot case: "Data confidence 0%" beside a live action label. Confidence
+    // The screenshot case: "Data coverage 0%" beside a live action label. Confidence
     // measures how much evidence resolved, so a low band withholds the call rather than
     // inverting it - "we cannot say" is not the same verdict as "sell".
     const result = getRecommendation({
-      ticker: 'LOW', confidence: 0.2,
+      ticker: 'LOW', data_coverage: 0.2,
       recommendation: { action: 'HOLD', agreement_count: 2 },
     })
     expect(result.action).toBe('INSUFFICIENT_DATA')
@@ -70,12 +70,12 @@ describe('getRecommendation', () => {
   it('treats a row with no confidence measurement as insufficient, not as zero', () => {
     const result = getRecommendation({ ticker: 'LIGHT', recommendation: { action: 'HOLD' } })
     expect(result.action).toBe('INSUFFICIENT_DATA')
-    expect(result.summary).toMatch(/no data-confidence measurement/i)
+    expect(result.summary).toMatch(/no data-coverage measurement/i)
   })
 
   it('allows monitoring language but no prescriptive action in the watch band', () => {
     const result = getRecommendation({
-      ticker: 'MID', confidence: 0.5,
+      ticker: 'MID', data_coverage: 0.5,
       recommendation: { action: 'SELL', suggested_trim_pct: 100 },
     })
     expect(result.action).toBe('WATCH')
@@ -91,7 +91,7 @@ describe('getRecommendation', () => {
 
   it('downgrades a published Sell to Trim when there is no evidence the price won’t recover', () => {
     const stock = {
-      ticker: 'DDD', confidence: 0.8,
+      ticker: 'DDD', data_coverage: 0.8,
       recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2 },
       analyst_target_upside: 18,
     }
@@ -102,7 +102,7 @@ describe('getRecommendation', () => {
 
   it('keeps a published Sell when the consensus target is at or below today’s price', () => {
     const stock = {
-      ticker: 'EEE', confidence: 0.8,
+      ticker: 'EEE', data_coverage: 0.8,
       recommendation: { action: 'SELL', suggested_trim_pct: 100, agreement_count: 2, summary: 'Broken thesis.' },
       analyst_target_upside: -6,
     }

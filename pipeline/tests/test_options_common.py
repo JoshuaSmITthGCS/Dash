@@ -140,7 +140,7 @@ def test_snapshot_staleness_discount_full_for_a_future_dated_snapshot():
 
 
 def test_research_universe_factors_signed_mode_rewards_agreeing_sentiment():
-    entry = {"score": 70, "confidence": 0.8,
+    entry = {"score": 70, "data_coverage": 0.8,
             "sentiment_detail": {"average": 0.5, "coverage": 0.6, "article_count": 4}}
     bullish = module.research_universe_factors(entry, None, TODAY, direction=1, sentiment_mode="signed")
     bearish = module.research_universe_factors(entry, None, TODAY, direction=-1, sentiment_mode="signed")
@@ -151,7 +151,7 @@ def test_research_universe_factors_signed_mode_rewards_agreeing_sentiment():
 
 
 def test_research_universe_factors_inverse_mode_flips_sentiment_sign_only():
-    entry = {"score": 40, "confidence": 0.5,
+    entry = {"score": 40, "data_coverage": 0.5,
             "sentiment_detail": {"average": 0.4, "coverage": 0.5, "article_count": 3}}
     result = module.research_universe_factors(entry, None, TODAY, direction=1, sentiment_mode="inverse")
     assert result["news_sentiment"] == -0.4 * 0.5
@@ -186,7 +186,7 @@ def test_research_universe_factors_missing_sentiment_detail_is_none():
 
 def test_research_universe_factors_missing_score_or_confidence_is_none():
     only_score = module.research_universe_factors({"score": 60}, None, TODAY)
-    only_confidence = module.research_universe_factors({"confidence": 0.5}, None, TODAY)
+    only_confidence = module.research_universe_factors({"data_coverage": 0.5}, None, TODAY)
     assert only_score["research_confidence"] is None
     assert only_confidence["research_confidence"] is None
 
@@ -328,7 +328,7 @@ def test_expiration_spans_earnings_true_only_strictly_between_as_of_and_expirati
 
 
 def test_research_universe_factors_applies_staleness_discount():
-    entry = {"score": 80, "confidence": 1.0,
+    entry = {"score": 80, "data_coverage": 1.0,
             "sentiment_detail": {"average": 1.0, "coverage": 1.0, "article_count": 10}}
     stale_generated_at = datetime(2024, 3, 8, tzinfo=timezone.utc).isoformat()  # 2 days old -> 0.6 discount
     result = module.research_universe_factors(entry, stale_generated_at, TODAY, direction=1, sentiment_mode="signed")

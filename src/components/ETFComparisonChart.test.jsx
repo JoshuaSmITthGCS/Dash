@@ -13,7 +13,7 @@ const range = (series = points) => ({ status: series.length > 1 ? 'success' : 'u
   observation_count: series.length, actual_start: series[0]?.date, end: series.at(-1)?.date,
   reason_code: series.length > 1 ? null : 'INSUFFICIENT_OBSERVATIONS', quality_flags: [] })
 const payload = (overrides = {}) => ({ schema_version: '4.0.0', ticker: 'VTI', status: 'success',
-  benchmark: { display_name: 'Total Market proxy', ticker: 'ITOT', type: 'investable_proxy', quality_label: 'Investable proxy', confidence: .8 },
+  benchmark: { display_name: 'Total Market proxy', ticker: 'ITOT', type: 'investable_proxy', quality_label: 'Investable proxy', data_coverage: .8 },
   chart_ranges: { '1M': range(), '1Y': range() }, ...overrides })
 
 describe('ETFComparisonChart', () => {

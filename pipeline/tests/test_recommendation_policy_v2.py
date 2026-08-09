@@ -10,14 +10,14 @@ from recommendation_policy_v2 import build_recommendation_v2, effective_score
 def analysis(structural=80, timeliness=80, confidence=0.9, profile="general", categories=None):
     base = {
         "raw_score": structural, "effective_score": structural,
-        "confidence": confidence, "coverage": confidence,
+        "evidence_weight_resolved": confidence, "coverage": confidence,
         "available_weight": confidence, "applicable_weight": 1.0,
         "missing_metrics": [], "stale_metrics": [], "provider_conflicts": [],
         "categories": categories or {},
     }
     timely = {
         "raw_score": timeliness, "effective_score": timeliness,
-        "confidence": confidence, "coverage": confidence,
+        "evidence_weight_resolved": confidence, "coverage": confidence,
         "available_weight": confidence, "applicable_weight": 1.0,
         "missing_metrics": [], "stale_metrics": [], "provider_conflicts": [],
     }
@@ -176,7 +176,7 @@ def analysis_without_timeliness(structural=80, confidence=0.9, profile="general"
     """What build_v2_analysis actually emits when no forward estimate resolves."""
     payload = analysis(structural=structural, confidence=confidence, profile=profile)
     payload["timeliness"] = {
-        "raw_score": None, "effective_score": None, "confidence": 0.0, "coverage": 0.0,
+        "raw_score": None, "effective_score": None, "evidence_weight_resolved": 0.0, "coverage": 0.0,
         "available_weight": 0.0, "applicable_weight": 1.0,
         "missing_metrics": ["earnings_surprise", "forward_eps_revision_30d"],
         "stale_metrics": [], "provider_conflicts": [],

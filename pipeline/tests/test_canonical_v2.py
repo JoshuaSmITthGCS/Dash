@@ -181,11 +181,11 @@ class DecisionLayerTests(unittest.TestCase):
         self.assertLess(result["timeliness"]["effective_score"], 45)
         self.assertNotEqual(result["timeliness"]["classification"], "improving")
 
-    def test_coverage_and_confidence_are_distinct(self):
+    def test_coverage_and_evidence_weight_are_distinct(self):
         result = build_v2_analysis({"sector": "Technology", "forward_pe": 20}, {"forward_pe": 80})
         self.assertEqual(result["structural"]["coverage"], 0)
-        self.assertEqual(result["structural"]["confidence"], 0)
-        self.assertNotEqual(result["structural"]["coverage_basis"], result["structural"]["confidence_basis"])
+        self.assertEqual(result["structural"]["evidence_weight_resolved"], 0)
+        self.assertNotEqual(result["structural"]["coverage_basis"], result["structural"]["evidence_weight_basis"])
 
     def test_stale_fundamental_is_disclosed_and_reduces_confidence(self):
         observation = Observation(20, "multiple", "yahoo", "forwardPE", fetched_at="2020-01-01T00:00:00+00:00", is_forward=True).to_dict()
@@ -216,7 +216,7 @@ class DecisionLayerTests(unittest.TestCase):
         self.assertIsNone(reconcile("price_to_book", rows)["canonical"])
 
     def test_statement_derived_metrics_are_no_longer_discarded_for_missing_lineage(self):
-        # Regression for the gap that left most companies at ~7% v2 confidence despite
+        # Regression for the gap that left most companies at ~7% v2 evidence weight despite
         # derive_extended() having computed real values: those values never got a canonical
         # observation, so build_v2_analysis treated them as unlineaged legacy scalars and
         # dropped them. extended_observations() is the fix - wired into fetch_advisor.py's
@@ -237,7 +237,7 @@ class DecisionLayerTests(unittest.TestCase):
                 self.assertNotIn("legacy_value_missing_lineage",
                                  result["metric_status"][metric_id]["quality_flags"])
         self.assertNotIn("altman_z", result["structural"]["missing_metrics"])
-        self.assertGreater(result["structural"]["confidence"], 0)
+        self.assertGreater(result["structural"]["evidence_weight_resolved"], 0)
 
     def test_sales_multiple_aliases_to_the_registered_price_to_sales_metric(self):
         # settings.json's valuation weights key this "sales_multiple"; the canonical metric

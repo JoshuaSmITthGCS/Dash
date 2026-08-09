@@ -119,8 +119,8 @@ def decompose_score_delta(previous_row, current_row, variant):
             value_changes.append(metric)
     previous_score = (previous_row.get("scores") or {}).get(variant)
     current_score = (current_row.get("scores") or {}).get(variant)
-    previous_confidence = (previous_row.get("confidence") or {}).get(variant)
-    current_confidence = (current_row.get("confidence") or {}).get(variant)
+    previous_confidence = (previous_row.get("data_coverage") or {}).get(variant)
+    current_confidence = (current_row.get("data_coverage") or {}).get(variant)
     return {
         "metrics_with_value_change": value_changes,
         "metrics_with_availability_change": availability_changes,

@@ -50,35 +50,35 @@ export function getRecommendation(stock) {
   // The row-level confidence gate runs before anything else and applies to every row, not
   // only rows that happen to carry an analysis_v2 block. Without it a lightweight universe
   // row - which publishes no confidence at all - inherited whatever action the pipeline
-  // last wrote and displayed it beside "Data confidence 0%".
-  const band = confidenceBand(stock.confidence)
+  // last wrote and displayed it beside "Data coverage 0%".
+  const band = confidenceBand(stock.data_coverage)
   if (!stock.is_etf && (band === 'insufficient' || band === 'watch')) {
-    const pct = confidencePercent(stock.confidence)
+    const pct = confidencePercent(stock.data_coverage)
     return {
       action: band === 'insufficient' ? 'INSUFFICIENT_DATA' : 'WATCH',
       confidence: band === 'insufficient' ? 'none' : 'low',
-      summary: gateReason(stock.confidence),
+      summary: gateReason(stock.data_coverage),
       reasons: pct === null
         ? ['This row was scored on the lighter universe data set, which publishes no confidence measure.']
-        : [`Data confidence ${Math.round(pct)}%.`],
+        : [`Data coverage ${Math.round(pct)}%.`],
       agreementCount: 0,
       suggestedTrimPct: 0,
       source: 'confidence_gate',
     }
   }
 
-  if (structural && structural.confidence < 0.4) {
+  if (structural && structural.evidence_weight_resolved < 0.4) {
     return {
       action: 'WATCH',
       confidence: 'low',
-      summary: `Insufficient evidence: ${Math.round(structural.coverage * 100)}% coverage and ${Math.round(structural.confidence * 100)}% confidence.`,
+      summary: `Insufficient evidence: ${Math.round(structural.coverage * 100)}% data coverage, ${Math.round(structural.evidence_weight_resolved * 100)}% of evidence weight resolved.`,
       reasons: [...(structural.missing_metrics || []).slice(0, 3).map((metric) => `Missing ${metric.replace(/_/g, ' ')}`)],
       agreementCount: 0,
       suggestedTrimPct: 0,
       source: 'canonical_confidence_gate',
     }
   }
-  if (structural && structural.confidence < 0.6 && ['TRIM', 'SELL'].includes(published?.action)) {
+  if (structural && structural.evidence_weight_resolved < 0.6 && ['TRIM', 'SELL'].includes(published?.action)) {
     return {
       action: 'WATCH', confidence: 'limited',
       summary: 'Review only: evidence confidence is below the threshold for prescriptive company action.',

@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import AnalysisLayers from './AnalysisLayers'
 
 describe('AnalysisLayers', () => {
-  it('explains coverage and confidence independently', () => {
+  it('separates data coverage from resolved evidence weight', () => {
     render(<AnalysisLayers analysis={{
-      structural: { raw_score: 80, effective_score: 62, coverage: 0.8, confidence: 0.39, classification: 'insufficient_evidence' },
-      timeliness: { raw_score: 35, effective_score: 44, coverage: 0.5, confidence: 0.45, classification: 'weakening' },
+      structural: { raw_score: 80, effective_score: 62, coverage: 0.8, evidence_weight_resolved: 0.39, classification: 'insufficient_evidence' },
+      timeliness: { raw_score: 35, effective_score: 44, coverage: 0.5, evidence_weight_resolved: 0.45, classification: 'weakening' },
     }} />)
     expect(screen.getByText('80%')).toBeInTheDocument()
     expect(screen.getByText('39%')).toBeInTheDocument()
@@ -18,9 +18,9 @@ describe('AnalysisLayers', () => {
     // The exact defect: timeliness published effective_score 50 with 0% coverage for every
     // company in the universe, and the UI rendered it as evidence.
     render(<AnalysisLayers analysis={{
-      structural: { raw_score: 91, effective_score: 68, coverage: 0.59, confidence: 0.42, classification: 'quality_watch' },
+      structural: { raw_score: 91, effective_score: 68, coverage: 0.59, evidence_weight_resolved: 0.42, classification: 'quality_watch' },
       timeliness: {
-        raw_score: null, effective_score: null, coverage: 0, confidence: 0,
+        raw_score: null, effective_score: null, coverage: 0, evidence_weight_resolved: 0,
         classification: 'unavailable', unavailable_reason: 'No free forward-estimate provider',
       },
     }} />)
@@ -31,7 +31,7 @@ describe('AnalysisLayers', () => {
 
   it('never labels a completeness ratio as confidence', () => {
     render(<AnalysisLayers analysis={{
-      structural: { raw_score: 80, effective_score: 62, coverage: 0.8, confidence: 0.7, classification: 'quality_watch' },
+      structural: { raw_score: 80, effective_score: 62, coverage: 0.8, evidence_weight_resolved: 0.7, classification: 'quality_watch' },
     }} />)
     expect(screen.queryByText(/evidence confidence/i)).not.toBeInTheDocument()
     expect(screen.getByText('Data coverage')).toBeInTheDocument()

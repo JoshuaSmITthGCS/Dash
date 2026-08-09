@@ -127,6 +127,63 @@ function advisorV4ToV5(payload) {
   }
 }
 
+// v5 -> v6: the completeness-derived scalar published as `confidence` is renamed
+// `data_coverage`, and the v2 layers' `confidence` becomes `evidence_weight_resolved`.
+// Neither number was ever a statistical property of the signal -- both are completeness and
+// provenance measures -- and calling them confidence had them read as trustworthiness, up to
+// and including gating position sizing on one. The rename is mechanical here: old snapshots
+// carry the same values under the new names so a new reader works against old data. Peer
+// percentiles are dropped rather than translated: `value`/`display_value` were a continuous
+// rank over a composite of discrete bands, and no honest tier can be reconstructed from a
+// number that should not have existed.
+function advisorV5ToV6(payload) {
+  const migrateRow = (row) => {
+    const migrated = { ...row }
+    if (migrated.data_coverage == null && row.confidence != null) migrated.data_coverage = row.confidence
+    delete migrated.confidence
+    if (row.confidence_detail && !migrated.data_coverage_detail) {
+      const { confidence, ...rest } = row.confidence_detail
+      migrated.data_coverage_detail = { ...rest, data_coverage: confidence }
+      delete migrated.confidence_detail
+    }
+    if (row.recommendation?.confidence && !row.recommendation.agreement_strength) {
+      migrated.recommendation = { ...row.recommendation, agreement_strength: row.recommendation.confidence }
+      delete migrated.recommendation.confidence
+    }
+    if (row.valuation_percentile) {
+      const rest = { ...row.valuation_percentile }
+      delete rest.value
+      delete rest.display_value
+      migrated.valuation_percentile = { ...rest, peer_context: rest.peer_context ?? null, tier: rest.tier ?? null, ordinal: rest.ordinal ?? null }
+    }
+    if (row.sector_valuation_percentile != null && row.valuation_percentile?.ordinal == null) {
+      migrated.sector_valuation_percentile = null
+    }
+    const analysis = row.analysis_v2
+    if (analysis) {
+      const migrateLayer = (layer) => {
+        if (!layer) return layer
+        const next = { ...layer, evidence_weight_resolved: layer.evidence_weight_resolved ?? layer.confidence }
+        delete next.confidence
+        return next
+      }
+      migrated.analysis_v2 = {
+        ...analysis,
+        structural: migrateLayer(analysis.structural),
+        timeliness: migrateLayer(analysis.timeliness),
+      }
+    }
+    return migrated
+  }
+  return {
+    ...payload,
+    schema_version: 6,
+    research: (payload.research || []).map(migrateRow),
+    screen_universe: (payload.screen_universe || []).map(migrateRow),
+    portfolio_coverage: (payload.portfolio_coverage || []).map(migrateRow),
+  }
+}
+
 // v2 -> v3: peer-group ranking. Older ETF snapshots ranked every fund against one mixed
 // batch, so their ranks are cross-asset-class whether they said so or not. Labelling them
 // is more honest than leaving the field blank and letting the UI imply a like-for-like rank.
@@ -172,7 +229,7 @@ function etfV4ToV5(payload) {
 }
 
 const MIGRATIONS = {
-  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3, 3: advisorV3ToV4, 4: advisorV4ToV5 },
+  advisor: { 1: advisorV1ToV2, 2: advisorV2ToV3, 3: advisorV3ToV4, 4: advisorV4ToV5, 5: advisorV5ToV6 },
   etfs: { 2: etfV2ToV3, 3: etfV3ToV4, 4: etfV4ToV5 },
 }
 

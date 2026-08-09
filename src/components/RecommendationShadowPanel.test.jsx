@@ -8,8 +8,8 @@ describe('RecommendationShadowPanel', () => {
       legacy={{ action: 'SELL', suggestedTrimPct: 100 }}
       shadow={{
         model_version: 'decision-v2.0.0',
-        company_structural_state: { classification: 'strong', effective_score: 81, confidence: 0.84 },
-        company_timeliness_state: { classification: 'weakening', effective_score: 43, confidence: 0.71 },
+        company_structural_state: { classification: 'strong', effective_score: 81, data_coverage: 0.84 },
+        company_timeliness_state: { classification: 'weakening', effective_score: 43, data_coverage: 0.71 },
         portfolio_fit_state: { classification: 'near_target', reason_codes: [] },
         position_rule_state: { classification: 'hard_cost_basis_stop_breached', profile: 'default' },
         company: {

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from confidence import (completeness_component, confidence_components,
+from data_coverage import (completeness_component, data_coverage_components,
                         freshness_component, model_agreement_component,
                         peer_sample_component, run_source_reliability)
 
@@ -119,7 +119,7 @@ class SourceReliabilityTests(unittest.TestCase):
 class ConfidenceComponentsIntegrationTests(unittest.TestCase):
     def test_full_breakdown_reuses_the_existing_confidence_scalar_unchanged(self):
         row = {
-            "confidence": 0.44,
+            "data_coverage": 0.44,
             "fundamental_detail": {"coverage": 0.29},
             "technical_detail": {"coverage": 0.7},
             "sentiment_detail": {"coverage": 0.5},
@@ -127,16 +127,16 @@ class ConfidenceComponentsIntegrationTests(unittest.TestCase):
             "score_variants": {"champion": {"score": 62.3}, "challenger": {"score": 61.8}},
         }
 
-        detail = confidence_components(row, source_reliability=0.5)
+        detail = data_coverage_components(row, source_reliability=0.5)
 
-        self.assertEqual(detail["confidence"], 0.44)
+        self.assertEqual(detail["data_coverage"], 0.44)
         self.assertEqual(detail["components"]["completeness"], completeness_component(row))
         self.assertEqual(detail["components"]["source_reliability"], 0.5)
         self.assertIsNone(detail["components"]["historical_calibration"])
         self.assertTrue(any("calibration" in limitation for limitation in detail["limitations"]))
 
     def test_missing_components_are_listed_as_limitations(self):
-        detail = confidence_components({"confidence": 0.4}, source_reliability=None)
+        detail = data_coverage_components({"data_coverage": 0.4}, source_reliability=None)
 
         limitation_text = " ".join(detail["limitations"])
         self.assertIn("source_reliability unavailable", limitation_text)

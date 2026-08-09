@@ -2,7 +2,7 @@
   "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
   "model": {
     "semantic_version": "3.2.0",
-    "advisor_schema_version": 5,
+    "advisor_schema_version": 6,
     "etf_schema_version": 5,
     "finance_schema_version": 3,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
@@ -117,15 +117,12 @@
     "thesis_transition_width": 2.0,
     "research_center": 65.0,
     "research_transition_width": 20.0,
-    "confidence_center": 0.5,
-    "confidence_transition_width": 0.3,
     "transition_slope": 4.0,
     "neutral_subscore": 0.5,
-    "hard_confidence_floor": 0.45,
     "weights": {
       "thesis": 0.3,
       "research": 0.3,
-      "confidence": 0.2,
+      "coverage": 0.2,
       "guidance": 0.2
     },
     "guidance_scores": {
@@ -141,7 +138,10 @@
     },
     "default_sizing_mode": "capped",
     "minimum_annualized_volatility_pct": 5.0,
-    "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, confidence, and published-guidance subscores. Only confidence below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap."
+    "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, data coverage, and published-guidance subscores. Only data coverage below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap.",
+    "coverage_center": 0.5,
+    "coverage_transition_width": 0.3,
+    "hard_coverage_floor": 0.45
   },
   "watchlist_price_targets": {
     "_comment": "Suggested entry levels for a watchlist name the user does not yet own -- both are explicit heuristics, not predictions, and every result states its own derivation so the number is never presented as more certain than it is. dip_buy is a volatility-scaled distance below the current price (the same ATR/sigma-scaling philosophy as position_risk's stop-loss levels, but anchored to current price since a watchlist name has no purchase high-water-mark). good_buy is a valuation-percentile-based discount: only applies a discount when the name is priced richer than its own configured fair percentile against sector/industry peers (peer_groups.py desirability_percentile, where higher = cheaper) -- a name already cheap relative to peers gets good_buy == current price rather than an invented discount.",
@@ -1035,13 +1035,13 @@
     "customer_concentration_risk": {
       "_comment": "ASC 280 customer concentration read from dimensional XBRL (pipeline/concentration_risk.py) - a known, penalty-only risk, not a bet on direction. Below warning_share scores zero; at or above it, half the max penalty; at or above severe_share, the full penalty. SHADOW MODE ONLY (apply_challenger_modifiers, not apply_modifiers) until ConcentrationRiskPercentage1 tagging coverage across the scored universe is measured on a live run - see capability_status.customer_concentration_risk.",
       "warning_share": 0.15,
-      "severe_share": 0.30,
+      "severe_share": 0.3,
       "max_penalty": 3.0
     },
     "geographic_concentration": {
       "_comment": "Single-country revenue concentration read from dimensional XBRL (pipeline/geographic_exposure.py), same shape as customer_concentration_risk. Only fires on concentration in one non-domestic geography, not on international revenue in general. SHADOW MODE ONLY (apply_challenger_modifiers, not apply_modifiers): geographic revenue tags often reflect shipping destination or contracting entity rather than end demand and need spot-checking - see capability_status.fx_exposure.",
-      "warning_share": 0.30,
-      "severe_share": 0.50,
+      "warning_share": 0.3,
+      "severe_share": 0.5,
       "max_penalty": 2.0
     },
     "institutional_13f": {

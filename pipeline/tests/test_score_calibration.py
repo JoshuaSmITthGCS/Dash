@@ -5,7 +5,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import score_calibration as sc
-from confidence import confidence_components, historical_calibration_component
+from data_coverage import data_coverage_components, historical_calibration_component
 
 
 def rows(count, score, outcome=0.02):
@@ -81,19 +81,19 @@ class MeasurementTests(unittest.TestCase):
 
 class ConfidenceWiringTests(unittest.TestCase):
     def test_calibration_stays_null_without_a_qualified_report(self):
-        detail = confidence_components({"score": 82.0, "confidence": 0.9})
+        detail = data_coverage_components({"score": 82.0, "data_coverage": 0.9})
         self.assertIsNone(detail["components"]["historical_calibration"])
         self.assertTrue(any("insufficient prospective calibration" in item
                             for item in detail["limitations"]))
 
     def test_an_unqualified_calibration_report_changes_nothing(self):
-        detail = confidence_components({"score": 82.0, "confidence": 0.9},
+        detail = data_coverage_components({"score": 82.0, "data_coverage": 0.9},
                                        calibration=sc.build_report([]))
         self.assertIsNone(detail["components"]["historical_calibration"])
 
     def test_a_qualified_report_populates_the_matching_band(self):
         calibration = sc.build_report(mixed(60, 82.0, positive_share=0.65))
-        detail = confidence_components({"score": 82.0, "confidence": 0.9},
+        detail = data_coverage_components({"score": 82.0, "data_coverage": 0.9},
                                        calibration=calibration)
         self.assertAlmostEqual(detail["components"]["historical_calibration"], 0.65, places=2)
         self.assertFalse(any("insufficient prospective calibration" in item
@@ -107,10 +107,17 @@ class ConfidenceWiringTests(unittest.TestCase):
         calibration = sc.build_report(mixed(60, 82.0))
         self.assertIsNone(historical_calibration_component({"score": None}, calibration))
 
-    def test_confidence_states_it_is_not_a_probability_of_rising(self):
+    def test_coverage_states_it_is_not_a_probability_of_rising(self):
         """The single most important label in the product."""
-        detail = confidence_components({"score": 82.0, "confidence": 0.9})
-        self.assertIn("not the probability that the stock rises", detail["interpretation"])
+        detail = data_coverage_components({"score": 82.0, "data_coverage": 0.9})
+        self.assertIn("not a probability that the stock rises", detail["interpretation"])
+
+    def test_coverage_never_calls_itself_a_reliability_measure(self):
+        """It is a completeness ratio. Naming it confidence is the defect this fixes."""
+        detail = data_coverage_components({"score": 82.0, "data_coverage": 0.9})
+        self.assertIn("not a reliability score", detail["interpretation"])
+        self.assertIn("data_coverage", detail)
+        self.assertNotIn("confidence", detail)
 
 
 class LiveHarnessTests(unittest.TestCase):

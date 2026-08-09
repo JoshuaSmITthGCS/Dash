@@ -109,7 +109,7 @@ def build_rows(universe, observations, entry_for=backtest_entry):
             "market_cap": row.get("market_cap") or observed.get("market_cap"),
             "median_dollar_volume_60d": median_dollar_volume(closes, volumes),
             "structural_score": row.get("score"),
-            "confidence": ((row.get("score_variants") or {}).get("champion") or {}).get("confidence"),
+            "data_coverage": ((row.get("score_variants") or {}).get("champion") or {}).get("data_coverage"),
             "own_history_score": own_history, "own_history_sessions": sessions,
             "own_history_steps": max((series[name]["fundamental_steps"] for name in applicable),
                                      default=0),
@@ -180,7 +180,7 @@ def to_result(rank, row):
         # This screen scores the durable axis only. The tactical column stays empty here on
         # purpose; earnings-timeliness and the matrix are where the near-term axis is scored.
         "tactical_score": None,
-        "confidence": row.get("confidence"),
+        "data_coverage": row.get("data_coverage"),
         "market_cap": row.get("market_cap"),
         "median_dollar_volume_60d": row.get("median_dollar_volume_60d"),
         "own_history_score": None if row["own_history_score"] is None else round(row["own_history_score"], 2),

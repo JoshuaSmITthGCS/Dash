@@ -24,8 +24,8 @@ function TickerValidation({ row }) {
     </header>
     {row.provider_status === 'error' ? <div role="alert"><b>{row.reason_code}</b><p>{row.message}</p></div> : <>
       <div className="shadow-layers">
-        <div className="shadow-layer"><span>Structural</span><strong>{score(structural.effective_score)}</strong><small>{pct(structural.confidence)} confidence · {pct(structural.coverage)} coverage</small></div>
-        <div className="shadow-layer"><span>Timeliness</span><strong>{score(timeliness.effective_score)}</strong><small>{timeliness.effective_score == null ? 'not measured' : `${pct(timeliness.confidence)} of evidence weight resolved`} · {title(timeliness.classification)}</small></div>
+        <div className="shadow-layer"><span>Structural</span><strong>{score(structural.effective_score)}</strong><small>{pct(structural.evidence_weight_resolved)} of evidence weight resolved · {pct(structural.coverage)} data coverage</small></div>
+        <div className="shadow-layer"><span>Timeliness</span><strong>{score(timeliness.effective_score)}</strong><small>{timeliness.effective_score == null ? 'not measured' : `${pct(timeliness.evidence_weight_resolved)} of evidence weight resolved`} · {title(timeliness.classification)}</small></div>
         <div className="shadow-layer"><span>Company evidence</span><strong>{row.company_action?.display_label || title(row.company_action?.label)}</strong><small>{(row.company_action?.reason_codes || []).map(title).join(' · ')}</small></div>
         <div className="shadow-layer"><span>Position rule</span><strong>{row.position_action?.display_label || title(row.position_action?.label)}</strong><small>{(row.position_action?.reason_codes || []).map(title).join(' · ') || 'No position supplied'}</small></div>
       </div>

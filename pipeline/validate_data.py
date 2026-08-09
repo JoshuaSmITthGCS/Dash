@@ -155,6 +155,9 @@ def validate(production=False):
         expected = min(publish_limit, advisor.get("universe_count", publish_limit))
         if advisor.get("count") != expected:
             errors.append(f"advisor.json: expected {expected} published rankings, found {advisor.get('count')}")
+    # Schema at which peer tiers replaced continuous percentiles (see peer_groups.py).
+    PEER_TIER_SCHEMA = 6
+    peer_contract_applies = int(advisor.get("schema_version") or 0) >= PEER_TIER_SCHEMA
     for index, row in enumerate(advisor.get("research", [])):
         if row.get("components", {}).get("fundamentals") is None:
             errors.append(f"advisor.json:research.{index}: ranked company lacks a fundamental score")
@@ -168,9 +171,13 @@ def validate(production=False):
         if recommendation and recommendation.get("action") in ("TRIM", "SELL") and recommendation.get("agreement_count", 0) < 2:
             errors.append(f"advisor.json:research.{index}: sell guidance requires two agreeing factors")
         percentile = row.get("valuation_percentile")
-        if percentile and row.get("sector_valuation_percentile") != percentile.get("ordinal"):
-            errors.append(f"advisor.json:research.{index}: legacy and canonical peer ordinals disagree")
-        if percentile:
+        # A payload is validated against the contract it was written under. The peer rules
+        # below arrived with schema 6 (tiers replacing continuous percentiles); an older
+        # committed artifact predates them and is migrated at read time by
+        # src/lib/schemaMigrations.js advisorV5ToV6, which strips the fields this rejects.
+        if percentile and peer_contract_applies:
+            if row.get("sector_valuation_percentile") != percentile.get("ordinal"):
+                errors.append(f"advisor.json:research.{index}: legacy and canonical peer ordinals disagree")
             # A peer claim below the minimum sample must be absent, not degraded, and no
             # continuous percentile may be published at all -- the ranked quantity is a
             # composite of discrete bands and cannot support one. See peer_groups.py.
@@ -187,8 +194,10 @@ def validate(production=False):
                                   f"percentile ('{banned}'), which the sample cannot support")
         analysis = row.get("analysis_v2", {})
         structural = analysis.get("structural", {})
-        if structural.get("confidence", 1) < 0.4 and analysis.get("company_classification") != "insufficient_evidence":
-            errors.append(f"advisor.json:research.{index}: low confidence must classify as insufficient evidence")
+        evidence_weight = structural.get("evidence_weight_resolved", structural.get("confidence", 1))
+        if evidence_weight < 0.4 and analysis.get("company_classification") != "insufficient_evidence":
+            errors.append(f"advisor.json:research.{index}: low resolved evidence weight must classify as "
+                          "insufficient evidence")
     errors.extend(enrichment_coverage_errors(advisor))
 
     benchmark_history = advisor.get("benchmark_history", {})

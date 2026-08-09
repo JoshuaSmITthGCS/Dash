@@ -10,10 +10,10 @@ can be measured and applied to the committed ``advisor.json`` without any networ
 same principle ``rescore.py`` uses for the v2 shadow layer.
 
 What gets recomputed, and why each is safe to trust from stored fields alone:
-  * ``raw_score`` / ``base_score`` / ``confidence`` / ``score`` -- pure functions of
+  * ``raw_score`` / ``base_score`` / ``data_coverage`` / ``score`` -- pure functions of
     ``components``, coverage (read from ``fundamental_detail``/``technical_detail``/
     ``sentiment_detail``), and ``modifiers.total`` (already computed and capped).
-  * ``stance`` -- pure function of the new score and confidence.
+  * ``stance`` -- pure function of the new score and data coverage.
   * ``recommendation`` -- ``action_for`` takes ``fundamental_detail``, ``technical_detail``,
     ``sentiment_detail`` verbatim, plus an ``extended`` dict it only ``.get()``s from; the row
     itself is a superset of the extended fields ``build_research`` originally merged in, so
@@ -56,7 +56,7 @@ def _news_was_unavailable(row):
 
 
 def reconstruct_score(row):
-    """Recompute raw_score/base_score/confidence/score exactly as build_research does under
+    """Recompute raw_score/base_score/data_coverage/score exactly as build_research does under
     the A1 fix (news_sentiment excluded, not neutral, when coverage is zero), from fields
     already on the row.
     """
@@ -70,7 +70,7 @@ def reconstruct_score(row):
     score = round(clamp(blend["base_score"] + total), 1)
     return {
         "raw_score": blend["raw_score"], "base_score": blend["base_score"],
-        "confidence": blend["confidence"], "score": score,
+        "data_coverage": blend["data_coverage"], "score": score,
         "components": components, "news_available": not unavailable,
     }
 
@@ -90,14 +90,14 @@ def recompute_row(row):
     blend_pre = blend_research_components(components_pre, coverage)
     before = {
         "raw_score": blend_pre["raw_score"], "base_score": blend_pre["base_score"],
-        "confidence": blend_pre["confidence"],
+        "data_coverage": blend_pre["data_coverage"],
         "score": round(clamp(blend_pre["base_score"] + total), 1),
         "components": components_pre, "news_available": not _news_was_unavailable(row),
     }
     after = reconstruct_score(row)
 
     for state in (before, after):
-        state["stance"] = stance_for(state["score"], state["confidence"])
+        state["stance"] = stance_for(state["score"], state["data_coverage"])
         state["recommendation"] = action_for(
             state["score"], state["stance"], row.get("fundamental_detail") or {},
             row.get("technical_detail") or {}, row, row.get("sentiment_detail") or {},
@@ -149,7 +149,7 @@ def build_delta_report(payload):
         )
     return {
         "method": (
-            "raw_score/base_score/confidence/score reconstructed via "
+            "raw_score/base_score/data_coverage/score reconstructed via "
             "advisor_engine.blend_research_components from each row's own stored components, "
             "coverage, and modifiers.total; stance via stance_for; recommendation via "
             "action_for. strengths/risks/recommendation_v2/analysis_v2 are unaffected by the "
@@ -176,7 +176,7 @@ def apply_news_fix(payload):
             _, after = recompute_row(row)
             row["raw_score"] = after["raw_score"]
             row["base_score"] = after["base_score"]
-            row["confidence"] = after["confidence"]
+            row["data_coverage"] = after["data_coverage"]
             row["score"] = after["score"]
             row["stance"] = after["stance"]
             row["recommendation"] = after["recommendation"]

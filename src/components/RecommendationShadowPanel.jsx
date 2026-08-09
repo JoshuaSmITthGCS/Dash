@@ -44,7 +44,7 @@ function layerDetail(layer) {
   if (!layer || layer.effective_score == null) {
     return layer?.unavailable_reason || 'No inputs resolved, so no score is published'
   }
-  return `${score(layer.effective_score)} effective · ${pct(layer.confidence)} of evidence weight resolved`
+  return `${score(layer.effective_score)} effective · ${pct(layer.evidence_weight_resolved)} of evidence weight resolved`
 }
 
 function Layer({ label, value, detail }) {
@@ -115,7 +115,7 @@ export default function RecommendationShadowPanel({ legacy, shadow }) {
 
       <div className="shadow-evidence">
         <span>
-          Company evidence: <b>{pct(dataQuality.score_confidence)} of evidence weight resolved</b> · <b>{pct(dataQuality.data_coverage)} data coverage</b>
+          Company evidence: <b>{pct(dataQuality.evidence_weight_resolved)} of evidence weight resolved</b> · <b>{pct(dataQuality.data_coverage)} data coverage</b>
           {(dataQuality.unassessed_layers || []).length > 0 && (
             <> · <b>not assessed: {dataQuality.unassessed_layers.map(title).join(', ')}</b></>
           )}

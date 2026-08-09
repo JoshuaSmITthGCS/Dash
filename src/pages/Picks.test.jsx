@@ -15,7 +15,7 @@ const stock = (overrides = {}) => ({
   ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology', is_etf: false,
   // Above the 0.75 conviction band: entry-timing verdicts and action labels are gated on
   // confidence, so a fixture below it would never carry either.
-  score: 62, confidence: 0.82, stance: 'PROMISING', price: 200,
+  score: 62, data_coverage: 0.82, stance: 'PROMISING', price: 200,
   components: { fundamentals: 65 }, technical_detail: { return_20d: 3 },
   history: { closes: [200, 201] },
   ...overrides,
@@ -245,8 +245,8 @@ describe('Picks research page', () => {
     expect(screen.getAllByText(/no 60-day drawdown published for this row/).length).toBeGreaterThan(0)
   })
 
-  it('never shows an action label beside a row with no data confidence', () => {
-    // Straight from the screenshot: VRT displayed "Data confidence 0%", "HOLD" and "BUY NOW"
+  it('never shows an action label beside a row with no data coverage', () => {
+    // Straight from the screenshot: VRT displayed "Data coverage 0%", "HOLD" and "BUY NOW"
     // at the same time.
     const lightweight = {
       ticker: 'VRT', name: 'Vertiv Holdings', sector: 'Industrials', score: 63,
@@ -268,7 +268,7 @@ describe('Picks research page', () => {
     expect(screen.getAllByText('No timing call').length).toBeGreaterThan(0)
   })
 
-  it('shows a missing data confidence as – rather than a measured 0%', () => {
+  it('shows a missing data coverage as – rather than a measured 0%', () => {
     // A lightweight universe row has no confidence at all; rendering it as 0% reads as
     // "we measured this and it is terrible."
     const lightweight = {

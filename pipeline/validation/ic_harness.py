@@ -141,9 +141,9 @@ def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, publishe
             "champion": champion.get("fundamental_categories") or row.get("fundamental_categories") or {},
             "challenger": challenger.get("fundamental_categories") or {},
         },
-        "confidence": {
-            "champion": champion.get("confidence", row.get("confidence")),
-            "challenger": challenger.get("confidence"),
+        "data_coverage": {
+            "champion": champion.get("data_coverage", row.get("data_coverage")),
+            "challenger": challenger.get("data_coverage"),
         },
         "modifiers": {
             "champion": _modifier_contract(row.get("modifiers"), dark_modifiers),

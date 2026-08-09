@@ -12,7 +12,7 @@ from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_cha
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
-from confidence import confidence_components, run_source_reliability
+from data_coverage import data_coverage_components, run_source_reliability
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
@@ -147,7 +147,7 @@ def report_row(row):
     if variants:
         projected["score_variants"] = {
             key: {field: variant.get(field) for field in (
-                "variant", "normalization_mode", "score", "base_score", "confidence",
+                "variant", "normalization_mode", "score", "base_score", "data_coverage",
                 "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
             ) if variant.get(field) is not None}
             for key, variant in variants.items()
@@ -243,7 +243,7 @@ def _screen_row(row):
     detail = row.get("technical_detail") or {}
     variants = {
         key: {field: variant.get(field) for field in (
-            "variant", "normalization_mode", "score", "base_score", "confidence",
+            "variant", "normalization_mode", "score", "base_score", "data_coverage",
             "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
         ) if variant.get(field) is not None}
         for key, variant in (row.get("score_variants") or {}).items()
@@ -1541,7 +1541,7 @@ def run():
             "score": row["score"],
             "base_score": row["base_score"],
             "raw_score": row["raw_score"],
-            "confidence": row["confidence"],
+            "data_coverage": row["data_coverage"],
             "components": row["components"],
             "fundamental_categories": row["fundamental_categories"],
             "normalized_metric_scores": normalized_metric_scores(row["fundamental_detail"]),
@@ -1565,7 +1565,7 @@ def run():
             row["score_variants"]["challenger"] = cross_sectional_challenger(
                 row, context["snapshot"], cross_normalizer,
             )
-        row["confidence_detail"] = confidence_components(
+        row["data_coverage_detail"] = data_coverage_components(
             row, source_reliability=source_reliability_this_run,
         )
         # Every row in `research` was polled during this run by construction (carried-forward

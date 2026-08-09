@@ -732,15 +732,15 @@ def action_for(score, stance, fundamental_parts, technical_parts, extended, sent
     agreement = len(concerns)
     reasons = [reason for group in concerns.values() for reason in group]
     if agreement >= 2 and score < 45:
-        action, trim, confidence = "SELL", 100, "high"
+        action, trim, strength = "SELL", 100, "high"
     elif agreement >= 2:
-        action, trim, confidence = "TRIM", 33 if agreement == 2 else 50, "moderate"
+        action, trim, strength = "TRIM", 33 if agreement == 2 else 50, "moderate"
     elif agreement == 1:
-        action, trim, confidence = "WATCH", 0, "moderate"
+        action, trim, strength = "WATCH", 0, "moderate"
     elif stance in ("ATTRACTIVE", "PROMISING"):
-        action, trim, confidence = "HOLD", 0, "high"
+        action, trim, strength = "HOLD", 0, "high"
     else:
-        action, trim, confidence = "HOLD", 0, "moderate"
+        action, trim, strength = "HOLD", 0, "moderate"
 
     summary = {
         "SELL": "Two or more independent factors have broken down. Exiting and redeploying is the disciplined response.",
@@ -748,13 +748,13 @@ def action_for(score, stance, fundamental_parts, technical_parts, extended, sent
         "WATCH": "One factor has deteriorated. Not enough to act on alone - monitor for a second confirmation.",
         "HOLD": "No multi-factor deterioration. Position stands on its current evidence.",
     }[action]
-    return {"action": action, "suggested_trim_pct": trim, "confidence": confidence,
+    return {"action": action, "suggested_trim_pct": trim, "agreement_strength": strength,
             "agreement_count": agreement, "reasons": reasons[:5], "summary": summary,
             "factors": {name: group for name, group in concerns.items()}}
 
 
-def stance_for(score, confidence):
-    if confidence < 0.45:
+def stance_for(score, data_coverage):
+    if data_coverage < 0.45:
         return "INSUFFICIENT DATA"
     if score >= 75:
         return "ATTRACTIVE"
@@ -765,11 +765,30 @@ def stance_for(score, confidence):
     return "CAUTION"
 
 
+def data_coverage_scalar(coverage):
+    """Weighted share of the three components' evidence that actually resolved.
+
+    This is a completeness ratio and nothing more. It carries no statistical property of the
+    signal -- no dispersion, no realised error, no out-of-sample hit rate -- so it is named
+    for what it measures. It was previously published as ``confidence``, which invited every
+    consumer to read it as reliability and, in the frontend, to gate position sizing on it.
+    A real confidence metric, validated against realised prediction error, is Phase 8 work
+    and does not exist yet; its absence is the correct state until then. See
+    ``research/audit/CURRENT_MODEL_AUDIT.md`` section 4.
+    """
+    return round(
+        0.65 * coverage.get("fundamentals", 0.0)
+        + 0.25 * coverage.get("market_behavior", 0.0)
+        + 0.10 * coverage.get("news_sentiment", 0.0),
+        2,
+    )
+
+
 def blend_research_components(components, coverage, modifier_points=0.0, weights=None):
-    """Return the legacy evidence blend, confidence pull, and bounded final score.
+    """Return the legacy evidence blend, the coverage pull, and the bounded final score.
 
     Formula for the current champion is ``raw = sum(score_i * weight_i) / sum(weight_i)``
-    over available components, then ``base = raw * (0.8 + 0.2 * confidence)`` and
+    over available components, then ``base = raw * (0.8 + 0.2 * data_coverage)`` and
     ``final = clamp(base + modifier_points)``. Keeping this in one function lets a
     challenger replace one component without changing any other part of the comparison.
     """
@@ -779,28 +798,23 @@ def blend_research_components(components, coverage, modifier_points=0.0, weights
     raw = sum(value * weight for value, weight in available) / sum(
         weight for _, weight in available
     ) if available else 0.0
-    confidence = round(
-        0.65 * coverage.get("fundamentals", 0.0)
-        + 0.25 * coverage.get("market_behavior", 0.0)
-        + 0.10 * coverage.get("news_sentiment", 0.0),
-        2,
-    )
-    base = round(raw * (0.8 + confidence * 0.2), 1)
+    data_coverage = data_coverage_scalar(coverage)
+    base = round(raw * (0.8 + data_coverage * 0.2), 1)
     return {
         "raw_score": round(raw, 1),
         "base_score": base,
         "score": round(clamp(base + modifier_points), 1),
-        "confidence": confidence,
+        "data_coverage": data_coverage,
     }
 
 
 def shrink_research_components(components, coverage, config, modifier_points=0.0,
                                weights=None):
-    """Apply one confidence shrinkage toward a configurable neutral prior.
+    """Apply one data-coverage shrinkage toward a configurable neutral prior.
 
     Formula: ``effective = target + strength * (raw - target)``, where
-    ``strength = 1 - max_pull * (1 - confidence)``. At the default maximum pull of one,
-    strength equals confidence exactly and missing evidence moves a score toward neutral.
+    ``strength = 1 - max_pull * (1 - data_coverage)``. At the default maximum pull of one,
+    strength equals data coverage exactly and missing evidence moves a score toward neutral.
     """
     weights = weights or RANKING_WEIGHTS
     available = [(components[key], weights[key]) for key in weights
@@ -808,20 +822,15 @@ def shrink_research_components(components, coverage, config, modifier_points=0.0
     raw = sum(value * weight for value, weight in available) / sum(
         weight for _, weight in available
     ) if available else config["shrinkage_target"]
-    confidence = round(
-        0.65 * coverage.get("fundamentals", 0.0)
-        + 0.25 * coverage.get("market_behavior", 0.0)
-        + 0.10 * coverage.get("news_sentiment", 0.0),
-        2,
-    )
-    strength = clamp(1 - config["shrinkage_max_pull"] * (1 - confidence), 0.0, 1.0)
+    data_coverage = data_coverage_scalar(coverage)
+    strength = clamp(1 - config["shrinkage_max_pull"] * (1 - data_coverage), 0.0, 1.0)
     target = config["shrinkage_target"]
     base = round(target + strength * (raw - target), 1)
     return {
         "raw_score": round(raw, 1),
         "base_score": base,
         "score": round(clamp(base + modifier_points), 1),
-        "confidence": confidence,
+        "data_coverage": data_coverage,
         "shrinkage_strength": round(strength, 3),
         "shrinkage_target": target,
     }
@@ -924,7 +933,7 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "variant": "fractional_modifier_cap",
         "score": modifier_score,
         "base_score": row.get("base_score"),
-        "confidence": row.get("confidence"),
+        "data_coverage": row.get("data_coverage"),
         "modifiers": modifier_detail,
     }
 
@@ -1032,12 +1041,12 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
         "market_behavior": technical_parts.get("coverage", 0),
         "news_sentiment": sentiment_parts.get("coverage", 0),
     })
-    confidence, base, raw_score = blended["confidence"], blended["base_score"], blended["raw_score"]
+    data_coverage, base, raw_score = blended["data_coverage"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
                                        insider_activity, institutional_ownership,
                                        congressional_activity)
     categories = fundamental_parts.get("categories", {})
-    stance = stance_for(score, confidence)
+    stance = stance_for(score, data_coverage)
     strengths, risks = build_evidence(categories, technical_parts, extended)
     analysis_v2 = build_v2_analysis(snapshot, fundamental_parts)
     recommendation_v2 = build_recommendation_v2(
@@ -1049,7 +1058,7 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     )
     return {
         **snapshot, "score": score, "base_score": base, "raw_score": raw_score, "stance": stance,
-        "confidence": confidence,
+        "data_coverage": data_coverage,
         "components": components, "fundamental_categories": categories,
         "fundamental_detail": fundamental_parts, "technical_detail": technical_parts,
         "sentiment_detail": sentiment_parts, "modifiers": modifiers,
