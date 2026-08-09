@@ -30,6 +30,7 @@ const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
+const InstitutionalActivity = lazy(() => import('./pages/InstitutionalActivity.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
@@ -162,6 +163,7 @@ function AppContent() {
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
           <Route path="/screens/politics" element={<CongressTrades />} />
+          <Route path="/screens/institutional" element={<InstitutionalActivity />} />
           <Route path="/screens/themes" element={<ThemeExposureScreen />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
           <Route path="/screens/validation" element={<LiveValidation />} />
