@@ -25,7 +25,7 @@ from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, wa
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
-                            select_by_target_delta, select_expiration, trend_20d)
+                            research_universe_factors, select_by_target_delta, select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -35,10 +35,16 @@ TARGET_DAYS_TO_EXPIRATION = 7
 TARGET_DELTA = 0.30
 MINIMUM_HISTORY_SESSIONS = 21
 
-WEIGHTS = {"annualized_yield": .45, "liquidity": .30, "cushion": .25}
+# news_sentiment uses research_universe_factors' "inverse" mode: strong positive sentiment
+# argues AGAINST a covered call (don't cap upside into a live catalyst), not for one.
+# research_confidence stays a quality gate (direction=1, unsigned) - sell calls against
+# businesses the rest of this app's research already likes. Existing factors shrunk
+# proportionally to make room, still summing to 1.0.
+WEIGHTS = {"annualized_yield": .38, "liquidity": .25, "cushion": .21,
+          "news_sentiment": .06, "research_confidence": .10}
 
 
-def build_row(entry, yf, as_of=None):
+def build_row(entry, yf, as_of=None, generated_at=None):
     """One candidate row per ticker, or None if it doesn't clear a qualifying contract."""
     ticker = entry.get("ticker")
     if not ticker or yf is None:
@@ -77,6 +83,7 @@ def build_row(entry, yf, as_of=None):
     annualized_yield = (premium / price) * (365 / dte)
     probability_assigned = call.get("delta")
     downside_cushion_pct = premium / price
+    research_factors = research_universe_factors(entry, generated_at, as_of, direction=1, sentiment_mode="inverse")
 
     group_id, group_label = peer_group(entry)
     return {
@@ -95,17 +102,20 @@ def build_row(entry, yf, as_of=None):
             "max_return_if_assigned_pct": round(max_return_if_assigned_pct, 4),
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "downside_cushion_pct": round(downside_cushion_pct, 4),
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "annualized_yield": annualized_yield,
             "liquidity": liquidity_factor(call),
             "cushion": downside_cushion_pct,
+            **research_factors,
         },
     }
 
 
-def build_rows(universe, yf, as_of=None):
-    return [row for row in (build_row(entry, yf, as_of) for entry in universe) if row is not None]
+def build_rows(universe, yf, as_of=None, generated_at=None):
+    return [row for row in (build_row(entry, yf, as_of, generated_at) for entry in universe) if row is not None]
 
 
 def score_rows(rows, config=None):
@@ -171,6 +181,7 @@ def run(as_of=None):
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    snapshot_generated_at = payload.get("generated_at")
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
         LOG.warn("Covered call screen: no published universe to score, skipping")
@@ -187,7 +198,7 @@ def run(as_of=None):
         save_json("screens/covered-calls.json", result)
         return result
 
-    rows = build_rows(universe, yf, as_of)
+    rows = build_rows(universe, yf, as_of, snapshot_generated_at)
     if not rows:
         result = unavailable("NO_QUALIFYING_CONTRACTS", generated_at)
         save_json("screens/covered-calls.json", result)
@@ -258,7 +269,11 @@ def run_backtest(as_of=None):
     methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
                    "realized volatility as the implied-volatility input, not quoted historical "
                    "prices. Real historical bid/ask spreads, open interest, and fill quality are "
-                   "not modeled. Trade settlement uses real historical closing prices.")
+                   "not modeled. Trade settlement uses real historical closing prices. The live "
+                   "screen's ranking also factors in news sentiment and the ticker's broader "
+                   "research-universe score/confidence; this backtest does not, since no "
+                   "point-in-time history of those signals exists yet to backtest against "
+                   "without look-ahead risk.")
     if not universe:
         result = {"schema_version": "1.0.0", "model_version": "covered-call-backtest-v1.0.0",
                   "config_version": "screens-v1.0.0", "generated_at": generated_at,

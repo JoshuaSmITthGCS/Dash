@@ -32,6 +32,8 @@ export const STRATEGY_SCREENS = {
       ['max_return_if_assigned_pct', 'Max return if assigned', 'pct'],
       ['probability_assigned', 'Probability assigned', 'pct'],
       ['downside_cushion_pct', 'Downside cushion', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'cash-secured-put': {
@@ -53,6 +55,8 @@ export const STRATEGY_SCREENS = {
       ['collateral', 'Collateral required', 'money'],
       ['probability_otm', 'Probability OTM (keep premium)', 'pct'],
       ['probability_assigned', 'Probability assigned', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'protective-put': {
@@ -72,6 +76,8 @@ export const STRATEGY_SCREENS = {
       ['cost', 'Cost per share', 'money'],
       ['floor_price', 'Floor price', 'money'],
       ['max_loss_with_hedge_pct', 'Max loss, hedged', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   collar: {
@@ -92,6 +98,8 @@ export const STRATEGY_SCREENS = {
       ['range_width_pct', 'Range width', 'pct'],
       ['max_loss_pct', 'Max loss', 'pct'],
       ['max_gain_pct', 'Max gain', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'vertical-spread': {
@@ -112,6 +120,8 @@ export const STRATEGY_SCREENS = {
       ['max_profit', 'Max profit', 'money'],
       ['max_loss', 'Max loss', 'money'],
       ['width', 'Spread width', 'money'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'advanced-strategies': {
@@ -133,12 +143,16 @@ export const STRATEGY_SCREENS = {
       ['net_credit', 'Net credit', 'money'],
       ['max_profit', 'Max profit', 'money'],
       ['max_loss', 'Max loss', 'money'],
+      ['news_sentiment', 'News calm tilt (low = controversial)', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
       ['probability_of_profit', 'Probability of profit', 'pct'],
       ['cost', 'Cost (both legs)', 'money'],
       ['breakeven_up', 'Breakeven, upside', 'money'],
       ['breakeven_down', 'Breakeven, downside', 'money'],
       ['required_move_pct', 'Required move', 'pct'],
+      ['news_sentiment', 'News attention tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'short-term-trades': {
@@ -164,18 +178,24 @@ export const STRATEGY_SCREENS = {
       ['realized_volatility_20d', 'Realized volatility (20d)', 'pct'],
       ['implied_realized_vol_ratio', 'Implied / realized vol', 'ratio'],
       ['moneyness', 'Moneyness', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : row.strategy === 'sell_call' ? [
       ['annualized_yield', 'Annualized yield', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['breakeven', 'Breakeven', 'money'],
       ['probability_assigned', 'Probability assigned', 'pct'],
       ['downside_cushion_pct', 'Downside cushion', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
       ['annualized_yield', 'Annualized yield', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['effective_cost_basis', 'Effective cost basis', 'money'],
       ['collateral', 'Collateral required', 'money'],
       ['probability_otm', 'Probability OTM (keep premium)', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
 }

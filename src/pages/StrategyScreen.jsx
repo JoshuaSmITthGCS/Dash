@@ -24,6 +24,7 @@ function formatMetric(value, format) {
     case 'pct': return `${(value * 100).toFixed(1)}%`
     case 'money': return money(value)
     case 'ratio': return `${Number(value).toFixed(2)}×`
+    case 'signed': return `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}`
     default: return String(value)
   }
 }

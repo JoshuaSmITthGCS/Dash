@@ -112,8 +112,10 @@ def make_entry(ticker="AAA", market_cap=5e9, sector="Technology", score=70, conf
     return {"ticker": ticker, "sector": sector, "market_cap": market_cap, "score": score, "confidence": confidence}
 
 
-def make_setup(entry, chain, price=100, dte=30, trend=0.05, realized=0.25, history_sessions=40):
-    return (entry["ticker"], price, dte, EXPIRATION, trend, realized, chain, entry, history_sessions)
+def make_setup(entry, chain, price=100, dte=30, trend=0.05, realized=0.25, history_sessions=40,
+               generated_at=None, as_of=None):
+    return (entry["ticker"], price, dte, EXPIRATION, trend, realized, chain, entry, history_sessions,
+            generated_at, as_of)
 
 
 def wobble_history():

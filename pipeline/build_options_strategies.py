@@ -37,8 +37,8 @@ from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, wa
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, probability_above,
-                            realized_volatility_20d, select_by_target_delta, select_contract,
-                            select_expiration, trend_20d)
+                            realized_volatility_20d, research_universe_factors, select_by_target_delta,
+                            select_contract, select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -59,7 +59,7 @@ FILE_MODEL_VERSIONS = {
 }
 
 
-def fetch_chain(entry, yf, as_of=None):
+def fetch_chain(entry, yf, as_of=None, generated_at=None):
     """One shared per-ticker fetch: history, trend/realized vol, one expiration, one chain."""
     ticker = entry.get("ticker")
     if not ticker or yf is None:
@@ -88,7 +88,7 @@ def fetch_chain(entry, yf, as_of=None):
         return None
     return {"ticker": ticker, "entry": entry, "price": price, "trend": trend, "realized": realized,
             "expiration": expiration, "dte": dte, "calls": chain.calls, "puts": chain.puts,
-            "history_sessions": len(closes)}
+            "history_sessions": len(closes), "generated_at": generated_at, "as_of": as_of}
 
 
 def build_buy_row(setup):
@@ -101,6 +101,9 @@ def build_buy_row(setup):
     iv_rv_ratio = (contract["implied_volatility"] / realized
                    if contract["implied_volatility"] and realized else None)
     entry = setup["entry"]
+    direction = -1 if option_type == "put" else 1
+    research_factors = research_universe_factors(entry, setup["generated_at"], setup["as_of"],
+                                                  direction=direction, sentiment_mode="signed")
     group_id, group_label = peer_group(entry)
     return {
         "ticker": setup["ticker"], "peer_group": group_id, "peer_group_label": group_label,
@@ -112,10 +115,12 @@ def build_buy_row(setup):
         "option_type": option_type, "expiration": setup["expiration"], "days_to_expiration": setup["dte"],
         "implied_realized_vol_ratio": round(iv_rv_ratio, 4) if iv_rv_ratio is not None else None,
         "contract": contract,
+        "news_sentiment": research_factors["news_sentiment"], "research_confidence": research_factors["research_confidence"],
         "factors": {
             "iv_value": -iv_rv_ratio if iv_rv_ratio is not None else None,
             "liquidity": liquidity_factor(contract),
             "trend_strength": abs(trend) if trend is not None else None,
+            **research_factors,
         },
     }
 
@@ -133,6 +138,8 @@ def build_sell_call_row(setup):
     probability_assigned = call.get("delta")
     downside_cushion_pct = premium / price
     entry = setup["entry"]
+    research_factors = research_universe_factors(entry, setup["generated_at"], setup["as_of"],
+                                                  direction=1, sentiment_mode="inverse")
     group_id, group_label = peer_group(entry)
     return {
         "ticker": setup["ticker"], "peer_group": group_id, "peer_group_label": group_label,
@@ -150,11 +157,14 @@ def build_sell_call_row(setup):
             "max_return_if_assigned_pct": round(max_return_if_assigned_pct, 4),
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "downside_cushion_pct": round(downside_cushion_pct, 4),
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "annualized_yield": annualized_yield,
             "liquidity": liquidity_factor(call),
             "cushion": downside_cushion_pct,
+            **research_factors,
         },
     }
 
@@ -173,6 +183,8 @@ def build_sell_put_row(setup):
     probability_otm = probability_above(price, strike, put["implied_volatility"], setup["dte"])
     probability_assigned = None if probability_otm is None else (1 - probability_otm)
     entry = setup["entry"]
+    research_factors = research_universe_factors(entry, setup["generated_at"], setup["as_of"],
+                                                  direction=1, sentiment_mode="signed")
     group_id, group_label = peer_group(entry)
     return {
         "ticker": setup["ticker"], "peer_group": group_id, "peer_group_label": group_label,
@@ -190,20 +202,23 @@ def build_sell_put_row(setup):
             "annualized_yield": round(annualized_yield, 4),
             "probability_otm": round(probability_otm, 4) if probability_otm is not None else None,
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "annualized_yield": annualized_yield,
             "probability_otm": probability_otm,
             "liquidity": liquidity_factor(put),
+            **research_factors,
         },
     }
 
 
-def build_rows(universe, yf, as_of=None):
+def build_rows(universe, yf, as_of=None, generated_at=None):
     """One shared fetch per ticker, fanned out to all three mechanisms."""
     buy_rows, sell_call_rows, sell_put_rows = [], [], []
     for entry in universe:
-        setup = fetch_chain(entry, yf, as_of)
+        setup = fetch_chain(entry, yf, as_of, generated_at)
         if setup is None:
             continue
         buy_row = build_buy_row(setup)
@@ -284,6 +299,8 @@ def to_result_short_term(rank, strategy, row):
             "realized_volatility_20d": row.get("realized_volatility_20d"),
             "implied_realized_vol_ratio": row.get("implied_realized_vol_ratio"),
             "moneyness": contract.get("moneyness"),
+            "news_sentiment": round(row["news_sentiment"], 4) if row.get("news_sentiment") is not None else None,
+            "research_confidence": round(row["research_confidence"], 4) if row.get("research_confidence") is not None else None,
         }
         capital_required = round((contract.get("mid") or 0) * 100, 2)
         strategy_tag = f"buy_{row['option_type']}"
@@ -328,6 +345,7 @@ def run(as_of=None):
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    snapshot_generated_at = payload.get("generated_at")
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
         LOG.warn("Options strategies: no published universe to score, skipping")
@@ -343,7 +361,7 @@ def run(as_of=None):
             save_json(name, unavailable(model_version, "YFINANCE_UNAVAILABLE", generated_at))
         return None
 
-    grouped = build_rows(universe, yf, as_of)
+    grouped = build_rows(universe, yf, as_of, snapshot_generated_at)
     scored_buy = score_group(grouped["buy"], buy_screen.WEIGHTS)
     scored_sell_call = score_group(grouped["sell_call"], sell_call_screen.WEIGHTS)
     scored_sell_put = score_group(grouped["sell_put"], sell_put_screen.WEIGHTS)
@@ -455,7 +473,11 @@ def run_backtest(as_of=None):
                    "combined backtest pools all three mechanisms' (buy, sell call, sell put) "
                    "period returns together as an approximation of the screen's opportunity set "
                    "over time - it does not replay the live screen's exact per-ticker "
-                   "best-mechanism selection at each historical date.")
+                   "best-mechanism selection at each historical date. The live screen's "
+                   "ranking also factors in news sentiment and the ticker's broader "
+                   "research-universe score/confidence; this backtest does not, since no "
+                   "point-in-time history of those signals exists yet to backtest against "
+                   "without look-ahead risk.")
     model_version = "short-term-trades-backtest-v1.0.0"
     if not universe:
         result = {"schema_version": "1.0.0", "model_version": model_version, "config_version": "screens-v1.0.0",

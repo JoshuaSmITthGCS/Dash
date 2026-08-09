@@ -118,6 +118,36 @@ def test_build_row_selects_call_on_positive_trend_and_put_on_negative(monkeypatc
     assert up_row["days_to_expiration"] == 14
 
 
+def test_build_row_populates_sentiment_and_research_confidence_from_the_entry(monkeypatch):
+    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9, "score": 70, "confidence": 0.8,
+                  "sentiment_detail": {"average": 0.5, "coverage": 0.6, "article_count": 4}}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"UP": fake_history(drift=1.0)}))
+    expiration = "2024-03-15"
+    fake_yf = FakeYf({"UP": FakeTicker(options=[expiration],
+                                       chains={expiration: FakeChain([contract(strike=138, bid=2.0, ask=2.2)], [])})})
+
+    row = module.build_row(universe_up, fake_yf, as_of=TODAY, generated_at="2024-03-01T00:00:00+00:00")
+
+    assert row["option_type"] == "call"
+    assert row["news_sentiment"] == 0.5 * 0.6  # signed mode, call side -> direction=1
+    assert row["research_confidence"] == (70 - 50) * 0.8
+    assert row["factors"]["news_sentiment"] == row["news_sentiment"]
+    assert row["factors"]["research_confidence"] == row["research_confidence"]
+
+
+def test_build_row_leaves_sentiment_and_research_confidence_none_without_source_data(monkeypatch):
+    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"UP": fake_history(drift=1.0)}))
+    expiration = "2024-03-15"
+    fake_yf = FakeYf({"UP": FakeTicker(options=[expiration],
+                                       chains={expiration: FakeChain([contract(strike=138, bid=2.0, ask=2.2)], [])})})
+
+    row = module.build_row(universe_up, fake_yf, as_of=TODAY)
+
+    assert row["news_sentiment"] is None
+    assert row["research_confidence"] is None
+
+
 def test_build_row_returns_none_without_qualifying_expiration(monkeypatch):
     universe = {"ticker": "THIN", "sector": "Technology", "market_cap": 1e9}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"THIN": fake_history()}))

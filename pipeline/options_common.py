@@ -25,6 +25,7 @@ MAXIMUM_SPREAD_PCT = 0.35
 MINIMUM_HISTORY_SESSIONS = 21
 MINIMUM_PRICE = 5
 MINIMUM_MARKET_CAP = 300_000_000
+RESEARCH_SNAPSHOT_MAX_AGE_DAYS = 5
 
 
 def realized_volatility_20d(closes):
@@ -202,3 +203,82 @@ def select_by_target_delta(frame, price, dte, side, target_delta, moneyness_floo
         if best is None or distance < best[0]:
             best = (distance, candidate)
     return best[1] if best else None
+
+
+def snapshot_staleness_discount(generated_at, as_of=None):
+    """1.0 for an advisor.json snapshot published today, decaying linearly to 0.0 by
+    RESEARCH_SNAPSHOT_MAX_AGE_DAYS. None if `generated_at` is missing/unparseable.
+
+    The research-universe score/confidence and news-sentiment factors below come from
+    advisor.json, a separately-scheduled publish - not the live option-chain fetch these
+    screens otherwise use. A screen run against a days-old snapshot should trust that
+    snapshot's tilt less, not treat it as equally fresh as one run minutes after
+    advisor.json republished. Day-granularity (not an hourly half-life) deliberately
+    matches the precision `as_of` already carries everywhere else in this module - a date,
+    not a datetime.
+    """
+    if not generated_at:
+        return None
+    try:
+        published = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00")).date()
+    except (TypeError, ValueError):
+        return None
+    today = as_of or date.today()
+    age_days = (today - published).days
+    if age_days < 0:
+        return 1.0
+    return max(0.0, 1 - age_days / RESEARCH_SNAPSHOT_MAX_AGE_DAYS)
+
+
+def research_universe_factors(entry, generated_at, as_of=None, *, direction=1, sentiment_mode="signed"):
+    """News-sentiment and research-confidence scoring factors sourced from the ticker's
+    already-published advisor.json row, discounted by how stale that snapshot is.
+
+    Returns {"news_sentiment": float|None, "research_confidence": float|None} - matching
+    the factors dict shape every screen already builds, so a caller just does
+    ``row["factors"].update(research_universe_factors(...))``.
+
+    `direction`: +1 when this screen's chosen leg/mechanism is bullish-aligned, -1 when
+    bearish-aligned (ignored by the "calm"/"attention" sentiment modes, since those don't
+    pick a side). `research_confidence` is always signed by `direction` too, so on
+    directional screens it reads as conviction-confirmation, not an independent factor.
+
+    `sentiment_mode`:
+      - "signed": average*coverage*direction - rewards sentiment agreeing with the trade
+        direction already chosen (multi-day options, vertical spread, cash-secured put -
+        see this function's callers for the per-screen rationale on each).
+      - "inverse": -average*coverage*direction - rewards calm/opposite sentiment (covered
+        call, collar, protective put: don't cap upside into a hot catalyst; a bearish tilt
+        modestly raises the case for insurance).
+      - "calm": -abs(average)*coverage - rewards low-controversy names regardless of sign
+        (iron condor: the risk is an unexpected large move either direction).
+      - "attention": coverage alone, unsigned - rewards active news volume regardless of
+        polarity (straddle: the strategy needs a real move, not a direction).
+
+    A ticker with zero article coverage contributes None (excluded from that row's
+    z-score), never a fabricated neutral value - see news_intelligence.py's identical
+    reasoning for why "no coverage" and "coverage confirming neutral" must stay distinct.
+    """
+    discount = snapshot_staleness_discount(generated_at, as_of)
+    discount = 1.0 if discount is None else discount
+    detail = entry.get("sentiment_detail") or {}
+    average, coverage, article_count = detail.get("average"), detail.get("coverage"), detail.get("article_count")
+
+    sentiment = None
+    if sentiment_mode == "attention":
+        if coverage is not None:
+            sentiment = coverage * discount
+    elif article_count and average is not None and coverage is not None:
+        if sentiment_mode == "signed":
+            sentiment = average * coverage * direction * discount
+        elif sentiment_mode == "inverse":
+            sentiment = -average * coverage * direction * discount
+        elif sentiment_mode == "calm":
+            sentiment = -abs(average) * coverage * discount
+
+    score, confidence = entry.get("score"), entry.get("confidence")
+    research_confidence = None
+    if score is not None and confidence is not None:
+        research_confidence = (score - 50) * confidence * direction * discount
+
+    return {"news_sentiment": sentiment, "research_confidence": research_confidence}
