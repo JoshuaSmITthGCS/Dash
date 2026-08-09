@@ -9,7 +9,8 @@
 | Marketaux | Entity-level news sentiment | `MARKETAUX_API_TOKEN` | Optional |
 | FRED | Macro regime (6 series) | `FRED_API_KEY` | Optional |
 | SEC EDGAR | Form 4 insider, theme signals | `SEC_USER_AGENT` | Free, needs fair-access header |
-| Financial Modeling Prep | Congressional STOCK Act disclosures | (see `congress_trades.py`) | Weekly |
+| Financial Modeling Prep | Congressional STOCK Act disclosures (needs a plan covering the Congressional endpoints; answers HTTP 402 otherwise) | (see `congress_trades.py`) | Weekly |
+| House/Senate stock-watcher datasets | Congressional STOCK Act disclosures, keyless mirror of the same Clerk and eFD filings | (see `congress_trades.py`) | Weekly |
 
 ## Point-in-time stores
 

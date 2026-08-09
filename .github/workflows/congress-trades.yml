@@ -22,7 +22,9 @@ jobs:
     # so a branch run publishes nothing.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The public mirrors serve full disclosure history in one file each, tens of MB, so the
+    # collection step is dominated by two large downloads rather than by many small requests.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

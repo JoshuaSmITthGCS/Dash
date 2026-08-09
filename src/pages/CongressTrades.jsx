@@ -65,7 +65,8 @@ export default function CongressTrades() {
         <span className="eyebrow">STOCK Act disclosures</span>
         <h1 className="page-title">Politics <span className="accent">trade alert</span></h1>
         <p className="page-sub">
-          Senate and House trade disclosures from Financial Modeling Prep, collected weekly. Flags are computed
+          Senate and House trade disclosures, collected weekly from Financial Modeling Prep and the public
+          House/Senate disclosure datasets – both mirrors of the same Clerk and eFD filings. Flags are computed
           directly from the disclosure data – a late filing, an options trade, an unusually large or clustered
           position, a repeat pattern – not a claim that any trade was improper. Where a plain stock purchase has
           enough price history, "since purchase" shows how the stock has actually performed – a price fact, not a
