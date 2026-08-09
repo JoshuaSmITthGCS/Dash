@@ -5,7 +5,7 @@ import os
 import re
 import statistics
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_challenger,
                             normalized_metric_scores, signal_correction_variants)
@@ -21,6 +21,7 @@ from fundamentals_extended import (derive_extended, earnings_surprise_rows, exte
 from insider_signal import summarize as summarize_insiders
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
+from institutional_ownership import decay as institutional_decay
 import pit_store
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
@@ -805,6 +806,56 @@ def collect_filing_risk_signals(sec, symbols, *, cache=None):
     return concentration_signals, geographic_signals, diagnostics
 
 
+def collect_institutional_signals(symbols, *, as_of=None, screen_payload=None):
+    """Fold the monthly-published institutional 13F screen into a lag-decayed score input.
+
+    No live SEC/OpenFIGI calls here: ``build_institutional_screen.py`` runs on its own
+    monthly schedule and is the source of record. This just reads what it last published
+    (``public/data/screens/institutional-13f.json``) and computes how stale each ticker's
+    underlying filing now is relative to ``as_of`` (defaults to today, the day this
+    advisor refresh is actually running) - decay happens here, at read time, precisely so
+    a screen that has not refreshed in three weeks scores less each day without needing a
+    new fetch. ``undecayed_magnitude`` is the screen's raw breadth score at full weight;
+    multiplying it by ``institutional_ownership.decay`` here reproduces exactly what
+    ``institutional_ownership.score_institutional_ownership`` would have returned had it
+    been called with today's ``days_since_filed`` directly.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/institutional-13f.json") or {}))
+    diagnostics = {"requested": len(symbols), "screen_available": payload.get("status") == "success",
+                   "screen_generated_at": payload.get("generated_at"), "tickers_matched": 0}
+    if not diagnostics["screen_available"]:
+        return {}, diagnostics
+    as_of_date = as_of or date.today()
+    universe = {str(symbol).upper() for symbol in symbols}
+    cfg = SETTINGS.get("modifiers", {}).get("institutional_13f", {})
+    signals = {}
+    for row in payload.get("results") or []:
+        ticker = str(row.get("ticker") or "").upper()
+        if ticker not in universe:
+            continue
+        magnitude, filed = row.get("undecayed_magnitude"), row.get("as_of")
+        if magnitude is None or not filed:
+            continue
+        try:
+            days_since_filed = (as_of_date - datetime.strptime(filed[:10], "%Y-%m-%d").date()).days
+        except ValueError:
+            continue
+        freshness = institutional_decay(days_since_filed, cfg.get("half_life_days", 45),
+                                        cfg.get("max_age_days", 135))
+        points = round(magnitude * freshness, 2)
+        if not points:
+            continue
+        diagnostics["tickers_matched"] += 1
+        signals[ticker] = {
+            "source": "SEC EDGAR Form 13F-HR (curated active managers, monthly screen)",
+            "score_points": points,
+            "days_since_filed": days_since_filed,
+            "notes": [*(row.get("notes") or []), f"{days_since_filed}d since 13F filed"],
+        }
+    return signals, diagnostics
+
+
 def fetch_optional(client, function, **params):
     try:
         return client.query(function, **params)
@@ -1327,6 +1378,13 @@ def run():
         collect_filing_risk_signals(sec, insider_candidates)
     )
 
+    # Institutional 13F, decayed by filing lag - reads build_institutional_screen.py's
+    # last monthly publish, no live SEC/OpenFIGI calls in this per-refresh path. Back in
+    # the champion score (see advisor_engine.apply_modifiers); the sampling-bias caveat
+    # (publicly traded, style=active managers only) is unchanged by the decay and is
+    # documented on the modifier itself, not fixed by it.
+    institutional_signals, institutional_diagnostics = collect_institutional_signals(insider_candidates)
+
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
     # reliability signal to attach -- only a run-wide one.
@@ -1342,6 +1400,8 @@ def run():
         "sec_filing_risk": ("unavailable" if not sec.available else
                             "degraded" if filing_risk_diagnostics["filings_unreadable"] else
                             "healthy"),
+        "institutional_13f_screen": ("unavailable" if not institutional_diagnostics["screen_available"]
+                                     else "healthy"),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
@@ -1356,10 +1416,12 @@ def run():
             sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
+            institutional_ownership=institutional_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
+        row["institutional_ownership"] = institutional_signals.get(symbol)
         # concentration_risk/geographic_exposure are display fields and challenger-only
         # (score_variants) inputs here - shadow mode until their tagging coverage is
         # measured. See advisor_engine.apply_modifiers's docstring.
@@ -1408,6 +1470,7 @@ def run():
                 insider_signals.get(symbol),
                 concentration_signals.get(symbol),
                 geographic_signals.get(symbol),
+                institutional_signals.get(symbol),
             ))
         elif cross_normalizer:
             row["score_variants"]["challenger"] = cross_sectional_challenger(
@@ -1635,23 +1698,33 @@ def run():
                         "coverage has not yet been measured on a live production run.",
             },
             "institutional_13f_changes": {
-                "status": "separate_screen",
-                "source": "SEC EDGAR Form 13F-HR (curated public managers) + OpenFIGI CUSIP mapping",
-                "note": "Pulled out of the research score entirely, not just shadowed: "
-                        "restricting 13F coverage to publicly traded managers "
-                        "(pipeline/config/institutional_managers.json - there is no per-company "
-                        "'who holds this ticker' EDGAR endpoint, so full-universe coverage needs "
-                        "SEC's bulk quarterly data sets instead) oversamples the largest passive "
-                        "indexers, whose position changes are close to mechanically determined "
-                        "by index membership rather than conviction - feeding that into a score "
-                        "that already has size/valuation inputs would double-count market cap "
-                        "under a 'smart money' label. Published as its own factual, unscored "
-                        "screen instead, the same way pipeline/build_congress_screen.py handles "
-                        "STOCK Act disclosures: pipeline/build_institutional_screen.py, its own "
-                        "schedule (13F data is inherently quarterly), its own point-in-time "
-                        "store under pipeline/data/institutional_13f/. Has never run against the "
-                        "live OpenFIGI endpoint or live 13F filings (no network access existed "
-                        "while it was written); verify CUSIP resolution rate on the first real run.",
+                "status": ("unavailable" if not institutional_diagnostics["screen_available"] else
+                          "available"),
+                "source": "SEC EDGAR Form 13F-HR (curated, publicly traded, style=active "
+                         "managers, via pipeline/build_institutional_screen.py's monthly "
+                         "publish) + OpenFIGI CUSIP mapping",
+                "screen_generated_at": institutional_diagnostics["screen_generated_at"],
+                "tickers_matched": institutional_diagnostics["tickers_matched"],
+                "note": "Back in the champion score as a bounded, two-sided modifier "
+                        "('institutional_13f'), decayed by filing lag rather than treated "
+                        "as current - a 13F position is disclosed up to 45 days after "
+                        "quarter-end, and this reads the monthly screen's own publish "
+                        "date, not today, to compute that lag. Residual bias, not fixed "
+                        "by decay: restricting to publicly traded managers oversamples "
+                        "the largest passive indexers, mitigated (not eliminated) by "
+                        "defaulting to style=active-only managers - see "
+                        "pipeline/config/institutional_managers.json and "
+                        "pipeline/institutional_ownership.py's module docstring. "
+                        "Retroactive amendments (13F-HR/A) are handled explicitly: "
+                        "build_institutional_screen.manager_quarters groups by the "
+                        "period a filing covers rather than filing order, so an "
+                        "amendment supersedes the original it revises instead of being "
+                        "mistaken for a new quarter, and a value change is logged to "
+                        "pipeline/data/institutional_13f/revisions.jsonl rather than "
+                        "silently overwritten. Has never run against the live OpenFIGI "
+                        "endpoint or live 13F filings (no network access existed while "
+                        "this was written); verify CUSIP resolution rate and manager "
+                        "coverage on the first real run.",
             },
             "fx_exposure": {
                 "status": "shadow_only",

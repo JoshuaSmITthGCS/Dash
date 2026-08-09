@@ -1,16 +1,22 @@
 """Classify institutional 13F accumulation/distribution: pure logic, fully testable
 without the network.
 
-Consumed by ``build_institutional_screen.py``, not the research score. It was originally
-wired into ``advisor_engine.py`` as a bounded modifier and pulled back out on review: the
-curated manager list this module reads (see below) oversamples the largest passive
-indexers, whose position changes track index membership and fund flows more than
-conviction, so scoring it into a composite that already carries valuation and
-sector-percentile inputs would partly reintroduce market cap as a second, hidden input
-under a "smart money" label. ``build_institutional_screen.py`` instead publishes it as a
-factual, disclaimed screen - descriptive flags, not points - the same way
-``build_congress_screen.py`` handles STOCK Act disclosures, and defaults to reading only
-``style: active`` managers from the curated list for the same reason.
+Two consumers, deliberately different treatments of the same underlying computation.
+``build_institutional_screen.py`` runs monthly, fetches the curated managers' filings
+directly, and publishes the result as a factual, disclaimed screen - descriptive flags,
+not points - the same way ``build_congress_screen.py`` handles STOCK Act disclosures.
+``advisor_engine.py`` (via ``fetch_advisor.py``) reads *that already-published screen*,
+not the network, and folds a lag-decayed version of the same magnitude into the research
+score as a bounded modifier - see ``decay`` below and ``institutional_ownership_modifier``
+in ``advisor_engine.py``.
+
+The residual bias from restricting reads to publicly traded managers is not eliminated by
+scoring it, only mitigated: this module and the screen both default to ``style: active``
+managers only (excluding the largest passive indexers, whose position changes track index
+membership and fund flows more than conviction, and excluding private-equity/alternative
+managers, whose public 13F stakes are typically residual take-private holdings) - see
+``pipeline/config/institutional_managers.json``. That mitigates, but does not remove, the
+sampling bias; it is still not a random subset of institutional flow.
 
 The structural problem 13F has that Form 4 does not: a Form 4 is filed by the *company*
 being traded, so ``SecEdgarClient.recent_form4_filings(ticker)`` finds it directly. A 13F
@@ -47,7 +53,26 @@ DEFAULTS = {
     "max_points": 3.0,
     "max_penalty": 2.0,
     "min_managers": 2,   # one curated manager moving is not corroboration
+    "half_life_days": 45,   # matches the STOCK Act / 13F filing deadline, not a guess
+    "max_age_days": 135,    # one quarter (90d) plus one filing deadline (45d): by then a
+                            # fresher filing should exist, and this one is presumptively stale
 }
+
+
+def decay(days_since_filed, half_life=DEFAULTS["half_life_days"], max_age=DEFAULTS["max_age_days"]):
+    """Exponential decay of a 13F position's scoring weight by filing lag.
+
+    A 13F reports a position as of quarter-end but is not required to be filed until 45
+    days later, so "current" is always already stale by construction - the only question
+    is by how much. Fresh (just filed) scores near full weight; a filing sitting at the
+    edge of ``max_age`` - roughly the point a fresher one should have landed - scores
+    near zero rather than being read as still-current information.
+    """
+    if days_since_filed is None or days_since_filed < 0:
+        return 0.0
+    if days_since_filed > max_age:
+        return 0.0
+    return round(0.5 ** (days_since_filed / half_life), 4)
 
 
 def parse_13f_info_table(xml_text, manager_id):
@@ -134,13 +159,19 @@ def holdings_change(current, prior):
     }
 
 
-def score_institutional_ownership(change, config=None):
+def score_institutional_ownership(change, *, days_since_filed=None, config=None):
     """A bounded modifier from one CUSIP's quarter-over-quarter curated-manager breadth.
 
     Returns ``(points, detail)``. Positive when a plurality of curated managers with a
     position added to it this quarter; negative when a plurality cut. Requires
     ``min_managers`` net movers on the winning side before scoring anything, since one
     manager's flows are not corroboration.
+
+    ``days_since_filed`` - age of the *current* quarter's filing, not the prior one being
+    compared against - scales the result by ``decay``. Passing ``None`` skips the decay
+    (full weight), which matters for the screen's own factual publish, where the flag
+    should describe what happened regardless of how stale it now is; the score modifier
+    always passes a real value.
     """
     settings = {**DEFAULTS, **(config or {})}
     if not change:
@@ -152,21 +183,33 @@ def score_institutional_ownership(change, config=None):
         return 0.0, {"available": True, "managers_added": added, "managers_dropped": dropped,
                      "points": 0.0, "notes": [],
                      "reason": "fewer than min_managers net movers; not corroborated"}
+    freshness = (1.0 if days_since_filed is None else
+                decay(days_since_filed, settings["half_life_days"], settings["max_age_days"]))
     if net > 0:
         cap = settings["max_points"]
-        points = min(cap, cap * net / (added + dropped or 1) * 2)
+        points = min(cap, cap * net / (added + dropped or 1) * 2) * freshness
         note = f"{added} curated institutional manager(s) added a position, {dropped} cut"
     else:
         cap = settings["max_penalty"]
-        points = -min(cap, cap * -net / (added + dropped or 1) * 2)
+        points = -min(cap, cap * -net / (added + dropped or 1) * 2) * freshness
         note = f"{dropped} curated institutional manager(s) cut their position, {added} added"
+    if days_since_filed is not None:
+        note += f", {days_since_filed}d since filed"
+    if freshness <= 0:
+        return 0.0, {"available": True, "managers_added": added, "managers_dropped": dropped,
+                     "points": 0.0, "notes": [],
+                     "reason": f"filing is {days_since_filed}d old, past max_age_days "
+                              f"({settings['max_age_days']}d); presumptively stale"}
     return round(points, 2), {
         "available": True,
         "managers_added": added,
         "managers_dropped": dropped,
         "share_change_pct": change.get("share_change_pct"),
+        "days_since_filed": days_since_filed,
+        "freshness": freshness,
         "points": round(points, 2),
         "notes": [note],
         "method": "Breadth of curated public asset managers' quarter-over-quarter 13F "
-                  "position change; requires a net-mover plurality to score",
+                  "position change, decayed by filing lag; requires a net-mover plurality "
+                  "to score",
     }

@@ -201,6 +201,13 @@ class SecEdgarClient:
         Kept separate from ``recent_forms`` because some callers - institutional 13F
         managers, chiefly - are identified by CIK directly rather than by a covered
         ticker, so there is nothing for ``ticker_map`` to resolve.
+
+        Carries ``form`` (so a caller can tell a 13F-HR from its own 13F-HR/A amendment)
+        and ``period`` (EDGAR's ``reportDate`` - the quarter or period the filing actually
+        covers, as opposed to ``filed``, when it became public). The two diverge exactly
+        when an amendment matters: an amendment's ``filed`` date is recent, but its
+        ``period`` is the same quarter the original filing already covered, and a caller
+        that groups by ``filed`` alone will mistake the amendment for a new quarter.
         """
         payload = self._get(f"{SEC_DATA}/submissions/CIK{cik}.json", as_json=True)
         recent = payload.get("filings", {}).get("recent", {})
@@ -210,9 +217,11 @@ class SecEdgarClient:
                 continue
             filings.append({
                 "cik": cik,
+                "form": form,
                 "accession": recent["accessionNumber"][index],
                 "document": recent["primaryDocument"][index],
                 "filed": recent.get("filingDate", [""])[index],
+                "period": recent.get("reportDate", [""])[index],
             })
             if len(filings) >= limit:
                 break

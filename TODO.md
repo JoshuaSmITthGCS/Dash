@@ -1,10 +1,11 @@
 # TODO
 
-_Last updated: 2026-08-09, revised same day after review (backlog_growth wired via
-dimensional XBRL, §2; customer-concentration and geographic-concentration modifiers moved
-to shadow mode pending coverage measurement, institutional 13F pulled out of the score
-entirely and rebuilt as its own congress-style screen with active/passive manager
-classification, §2a; point-in-time capture for all of the above confirmed, §2c)_
+_Last updated: 2026-08-09, revised twice same day (backlog_growth wired via dimensional
+XBRL, §2; customer-concentration and geographic-concentration modifiers moved to shadow
+mode pending coverage measurement, §2a; institutional 13F pulled out of the score into a
+congress-style screen with active/passive manager classification, then put back into the
+champion score with filing-lag decay and amendment/revision handling per explicit
+instruction, §2a; point-in-time capture for all of the above confirmed, §2c)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
@@ -162,81 +163,107 @@ by mechanical index rebalancing. Both are fixed below, not patched over.
       layer's own concentration signal is held to (§2 above) — below that, it stays a
       confidence input at most, never a hard modifier.
 
-- [x] ~~**`institutional_13f_changes`**~~ **Rebuilt, not just moved to shadow mode.** The
-      original design scored curated-manager 13F breadth as a bounded modifier feeding
-      the same score as valuation and sector percentiles. That is a subtler problem than
-      unmeasured coverage: restricting 13F reads to *publicly traded* managers (there is
-      still no per-company "who holds this ticker" EDGAR endpoint, so full-universe
-      coverage still needs SEC's bulk quarterly data sets — that half of the original
-      diagnosis was right) is not a random sample of institutional flow. It oversamples
-      the largest passive indexers — BlackRock, State Street, Invesco — whose
-      quarter-over-quarter position changes are close to mechanically determined by index
-      membership and fund flows, not conviction. Scoring that into a composite that
-      already has size/valuation inputs would partly reintroduce market cap as a second,
-      hidden input labeled "smart money."
+- [x] ~~**`institutional_13f_changes`**~~ **Back in the champion score, third revision of
+      this capability in one day.** First pass: bounded modifier, straight into
+      `apply_modifiers`, no lag treatment. Second pass: pulled out of scoring entirely
+      into `pipeline/build_institutional_screen.py`, a standalone factual screen (same
+      architecture as `pipeline/build_congress_screen.py`), on the reasoning that
+      restricting 13F reads to *publicly traded* managers (there is still no per-company
+      "who holds this ticker" EDGAR endpoint, so full-universe coverage still needs SEC's
+      bulk quarterly data sets) oversamples the largest passive indexers — BlackRock,
+      State Street, Invesco — whose position changes are close to mechanically determined
+      by index membership, not conviction. Third pass, per an explicit instruction to put
+      it back with staleness priced in: restored to `apply_modifiers`, keeping everything
+      the second pass built rather than discarding it.
 
-      **What shipped instead**: pulled out of the research score entirely (not shadow
-      mode — genuinely unscored), published as its own factual screen,
-      `pipeline/build_institutional_screen.py`, the same architecture as
-      `pipeline/build_congress_screen.py` for STOCK Act disclosures — descriptive flags
-      (`ACCUMULATION`/`CLUSTER_ACCUMULATION`/`DISTRIBUTION`/`CLUSTER_DISTRIBUTION`), an
-      explicit disclaimer, its own append-only point-in-time store
-      (`pipeline/data/institutional_13f/positions.jsonl`, keyed by manager/CUSIP/**filing
-      date** — never quarter-end, since a 13F position is disclosed up to 45 days after
-      the period it describes and timestamping by period-end would be a point-in-time
-      violation baked into the one part of this system built specifically to avoid that),
-      and its own monthly schedule (`.github/workflows/institutional-13f.yml` — 13F data
-      is inherently quarterly, so anything more frequent than monthly buys nothing).
-      `pipeline/config/institutional_managers.json` now classifies every curated manager
-      `active`/`passive`/`alternative`, and the screen defaults to `active` only —
-      Blackstone/KKR/Apollo/Ares (`alternative`) are excluded too, since a private-equity
-      manager's public 13F stakes are usually residual take-private holdings, not a
-      portfolio-flow signal comparable to a mutual-fund manager's.
+      **What "priced in" means concretely**: the screen (still monthly, still the source
+      of record — nothing in the hourly/daily advisor refresh re-fetches SEC or OpenFIGI
+      for this) now publishes `undecayed_magnitude` and `as_of` per ticker.
+      `fetch_advisor.collect_institutional_signals` reads that publish, computes
+      `days_since_filed` against *today* (the day the score is actually being computed,
+      not the screen's own generation time), and applies
+      `institutional_ownership.decay` — a 45-day half-life, zero past 135 days — before
+      it ever reaches `advisor_engine.institutional_ownership_modifier`. A filing sitting
+      near the next quarter's deadline contributes close to nothing; a fresh one scores
+      near full weight. Config in `settings.json`'s `modifiers.institutional_13f`
+      (`half_life_days`/`max_age_days`).
 
-      Everything below the CIK-resolution layer is unchanged and still real: managers are
-      resolved through the live `ticker_map()` every other CIK lookup in this codebase
-      uses (never a hand-typed CIK, which could silently attribute one manager's holdings
-      to another), and CUSIP→ticker still goes through OpenFIGI
-      (`pipeline/openfigi_client.py`). **Not yet done, because there was no network access
-      while any of this was written**: none of it has executed against the live OpenFIGI
-      endpoint or a live 13F filing. Verify the CUSIP resolution rate and manager coverage
-      on the first real run — the logic is tested end-to-end against synthetic fixtures
+      **What "retroactive" amendments needed, concretely**: a 13F-HR/A revises a quarter
+      already filed, and grouping by filing order alone would mistake the amendment for a
+      new quarter or silently prefer whichever filing happened to be fetched last.
+      `build_institutional_screen.manager_quarters` now groups by the *period* a filing
+      covers (`sec_edgar.SecEdgarClient.filings_for_cik`/`recent_forms` carry EDGAR's
+      `reportDate` and `form` fields for exactly this) and keeps the most recently *filed*
+      record per period, so an amendment supersedes the original it revises. A value
+      change between the two is logged to
+      `pipeline/data/institutional_13f/revisions.jsonl` (mirroring
+      `pit_store.diff_revisions`) rather than silently overwritten — the original
+      observation stays in history either way.
+
+      **Kept from the second pass, unchanged**: coverage still defaults to `style: active`
+      managers only (`pipeline/config/institutional_managers.json`) — passive and
+      private-equity/`alternative` managers are still excluded, since decay addresses
+      staleness, not the sampling-bias problem the second pass identified. That bias is
+      *mitigated*, not eliminated, and is documented on the modifier itself
+      (`advisor_engine.institutional_ownership_modifier`'s docstring), not silently
+      assumed fixed by being back in the score. CIK resolution is still always through the
+      live `ticker_map()`, never a hand-typed CIK; CUSIP→ticker still goes through
+      OpenFIGI (`pipeline/openfigi_client.py`).
+
+      **Not yet done, because there was no network access while any of this was
+      written**: none of it has executed against the live OpenFIGI endpoint or a live 13F
+      filing. Verify the CUSIP resolution rate and manager coverage on the first real
+      run — the logic is tested end-to-end against synthetic fixtures
       (`tests/test_institutional_ownership.py`, `tests/test_openfigi_client.py`,
-      `tests/test_build_institutional_screen.py`), but a fixture cannot tell you
-      OpenFIGI's real resolution rate or whether the curated managers' tickers still route
-      to the CIKs this list assumes.
+      `tests/test_build_institutional_screen.py`, `tests/test_collect_institutional_
+      signals.py`, `tests/test_sec_edgar.py`), but a fixture cannot tell you OpenFIGI's
+      real resolution rate, whether the curated managers' tickers still route to the CIKs
+      this list assumes, or how often a real amendment actually revises a real filing.
+
+      **Declined, not built**: a request to also weight this by whether Congressional
+      trade disclosures (the separate `build_congress_screen.py` screen) show the same
+      stock or sector as one politicians wouldn't "let fail." Not implemented —
+      `advisor_engine.py`'s own governing line is "No political inputs," and
+      `build_congress_screen.py`'s docstring is explicit that it publishes facts with no
+      conflict-of-interest interpretation layered on. Treating congressional holdings as
+      evidence of political protection and scoring that would reverse both decisions
+      rather than extend them. Open to a non-scored, disclaimed correlation flag shown
+      alongside both screens if there's a concrete request for it; not open to it moving
+      `row["score"]`.
 
 ---
 
-## 2c. The point-in-time record for these five signals — confirmed, not assumed
+## 2c. The point-in-time record for these signals — confirmed, not assumed
 
 Every one of `backlog_growth`, `customer_concentration_risk`, `geographic_concentration`,
-`insider_activity`, and the (now-removed-from-scoring) institutional 13F work has a
-specific, checkable answer for "does today's run get recorded before it's gone forever" —
-`pit_store.py`'s own governing claim is that a day not captured **cannot be
-reconstructed retroactively**.
+`insider_activity`, and `institutional_13f` has a specific, checkable answer for "does
+today's run get recorded before it's gone forever" — `pit_store.py`'s own governing claim
+is that a day not captured **cannot be reconstructed retroactively**.
 
-- **The three score modifiers** (`insider_activity`, `customer_concentration_risk`,
-  `geographic_concentration`) are captured through `validation/ic_harness.py`, not
-  `pit_store.TRACKED_FIELDS` — that list is fundamentals inputs (P/E, ROE, ...), and no
-  modifier has ever lived there, insider activity included. `ic_harness.append_refresh`
-  runs on every `fetch_advisor.run()` (`fetch_advisor.py`'s `append_ic_refresh` call) and
-  snapshots `row["modifiers"]` through `_modifier_contract`, keyed off
-  `settings.json`'s `validation.modifier_fields` — which now lists both new modifier
-  names alongside `insider_activity`. Confirmed by
+- **The four score modifiers** (`insider_activity`, `customer_concentration_risk`,
+  `geographic_concentration`, `institutional_13f`) are captured through
+  `validation/ic_harness.py`, not `pit_store.TRACKED_FIELDS` — that list is fundamentals
+  inputs (P/E, ROE, ...), and no modifier has ever lived there, insider activity included.
+  `ic_harness.append_refresh` runs on every `fetch_advisor.run()`
+  (`fetch_advisor.py`'s `append_ic_refresh` call) and snapshots `row["modifiers"]` through
+  `_modifier_contract`, keyed off `settings.json`'s `validation.modifier_fields` — which
+  now lists all three new modifier names alongside `insider_activity`. Confirmed by
   `tests/test_ic_harness.py::test_snapshot_jsonl_contains_required_reproducibility_fields`
-  and `tests/test_explainability.py`, both asserting the full modifier key set including
-  the two new ones. Champion `all_points` will correctly show `0.0` for both (shadow mode
-  means the champion path genuinely doesn't use them); challenger `all_points` carries the
-  real value. Nothing here is late — it shipped in the same commit as the signals
-  themselves.
+  and `tests/test_explainability.py`, both asserting the full modifier key set. Champion
+  `all_points` shows `0.0` for `customer_concentration_risk`/`geographic_concentration`
+  (shadow mode) and the real, lag-decayed value for `institutional_13f`; challenger
+  `all_points` carries the undecayed-cap comparison for all three.
 - **`backlog_growth`** is a theme-layer signal, evaluated through the theme screen's own
   scoring history, not `pit_store`/`ic_harness` at all — same treatment every other theme
   signal (`segment_revenue_share`, `hyperscaler_capex_growth`, ...) already gets.
-- **Institutional 13F** no longer needs any of this: it isn't part of the score, so there
-  is no "did the modifier's point value get archived" question to ask. Its own
-  point-in-time record is `pipeline/data/institutional_13f/positions.jsonl`, append-only,
-  keyed by filing date, exactly like `pipeline/data/congress/trades.jsonl`.
+- **Institutional 13F has two separate point-in-time records now, not one.**
+  `pipeline/data/institutional_13f/positions.jsonl` (append-only, keyed by manager/CUSIP/
+  **period**, timestamped by **filing** date, with amendments logged to
+  `revisions.jsonl` rather than silently overwriting) is the record of what the screen
+  itself observed, independent of scoring. `ic_harness`'s own snapshot separately records
+  what the *score* used that day, including the decayed `score_points` the modifier
+  actually applied — two different questions ("what did the screen see" vs. "what did the
+  score do with it"), both answered, neither conflated with the other.
 - **Known real gap, pre-existing and not introduced here**: `payload["research"]` (what
   `ic_harness` snapshots with full modifier detail) is only the published top-`N` rows;
   the rest of the scored universe is slimmed via `_screen_row` before reaching

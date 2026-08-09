@@ -41,7 +41,9 @@
         "insider_positive": 0.25,
         "insider_negative": 0.15,
         "customer_concentration_risk": 0.15,
-        "geographic_concentration": 0.1
+        "geographic_concentration": 0.1,
+        "institutional_13f_positive": 0.15,
+        "institutional_13f_negative": 0.1
       },
       "_comment": "The cumulative challenger neutralizes short-horizon relative strength, applies confidence shrinkage once, and expresses every modifier allocation as a fraction of the combined cap."
     }
@@ -91,7 +93,8 @@
       "macro_regime",
       "insider_activity",
       "customer_concentration_risk",
-      "geographic_concentration"
+      "geographic_concentration",
+      "institutional_13f"
     ],
     "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
   },
@@ -1038,6 +1041,14 @@
       "warning_share": 0.30,
       "severe_share": 0.50,
       "max_penalty": 2.0
+    },
+    "institutional_13f": {
+      "_comment": "Breadth of curated, publicly traded, style=active-only asset managers' quarter-over-quarter 13F position change (pipeline/institutional_ownership.py, pipeline/build_institutional_screen.py). Two-sided like insider_activity: requires min_managers net movers on one side before it scores anything. half_life_days/max_age_days decay the magnitude by how stale the underlying filing already is - a 13F position is disclosed up to 45 days after quarter-end, so it is never fully current; a filing older than max_age_days scores zero rather than being read as still-current. Read from the monthly-refreshed published screen, not fetched live per advisor run.",
+      "max_points": 3.0,
+      "max_penalty": 2.0,
+      "min_managers": 2,
+      "half_life_days": 45,
+      "max_age_days": 135
     }
   },
   "bucket_weights": {

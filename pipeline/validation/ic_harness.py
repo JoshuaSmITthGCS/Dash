@@ -60,6 +60,7 @@ MODIFIER_SOURCE = {
     "macro_regime": "fred",
     "customer_concentration_risk": "sec_filing_risk",
     "geographic_concentration": "sec_filing_risk",
+    "institutional_13f": "institutional_13f_screen",
 }
 
 # Provider statuses that mean "we never got to look", as distinct from "we looked and saw

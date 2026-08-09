@@ -4,7 +4,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from institutional_ownership import (aggregate_by_cusip, holdings_change,
+from institutional_ownership import (aggregate_by_cusip, decay, holdings_change,
                                      parse_13f_info_table, score_institutional_ownership)
 
 INFO_TABLE = """<?xml version="1.0"?>
@@ -108,6 +108,44 @@ class ScoreInstitutionalOwnershipTests(unittest.TestCase):
             change, config={"min_managers": 2, "max_points": 3.0, "max_penalty": 2.0})
         self.assertLessEqual(points, 3.0)
         self.assertGreaterEqual(points, -2.0)
+
+
+class DecayTests(unittest.TestCase):
+    def test_a_fresh_filing_scores_near_full_weight(self):
+        self.assertGreater(decay(0), 0.95)
+
+    def test_decay_is_monotonically_decreasing_with_age(self):
+        self.assertGreater(decay(10), decay(45))
+        self.assertGreater(decay(45), decay(90))
+
+    def test_a_filing_past_max_age_scores_zero(self):
+        self.assertEqual(decay(136, max_age=135), 0.0)
+
+    def test_a_missing_or_negative_age_scores_zero_rather_than_guessing(self):
+        self.assertEqual(decay(None), 0.0)
+        self.assertEqual(decay(-1), 0.0)
+
+
+class ScoreInstitutionalOwnershipDecayTests(unittest.TestCase):
+    def test_a_stale_filing_scores_less_than_a_fresh_one(self):
+        change = holdings_change({"a": 200, "b": 200}, {"a": 100, "b": 100})
+        fresh, _ = score_institutional_ownership(change, days_since_filed=1, config={"min_managers": 2})
+        stale, _ = score_institutional_ownership(change, days_since_filed=90, config={"min_managers": 2})
+        self.assertGreater(fresh, stale)
+        self.assertGreater(stale, 0.0)
+
+    def test_a_filing_past_max_age_scores_zero_and_says_why(self):
+        change = holdings_change({"a": 200, "b": 200}, {"a": 100, "b": 100})
+        points, detail = score_institutional_ownership(
+            change, days_since_filed=200, config={"min_managers": 2, "max_age_days": 135})
+        self.assertEqual(points, 0.0)
+        self.assertIn("stale", detail["reason"])
+
+    def test_no_days_since_filed_means_full_weight_not_zero(self):
+        change = holdings_change({"a": 200, "b": 200}, {"a": 100, "b": 100})
+        undecayed, _ = score_institutional_ownership(change, config={"min_managers": 2})
+        fresh, _ = score_institutional_ownership(change, days_since_filed=0, config={"min_managers": 2})
+        self.assertAlmostEqual(undecayed, fresh, places=1)
 
 
 if __name__ == "__main__":
