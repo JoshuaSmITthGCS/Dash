@@ -2,8 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import CongressTrades from './CongressTrades'
 import { useData } from '../lib/useData'
+import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
+vi.mock('../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn() }))
 
 const trade = (overrides = {}) => ({
   chamber: 'senate', representative: 'Jane Doe', district: null, symbol: 'AAPL',
@@ -14,6 +16,10 @@ const trade = (overrides = {}) => ({
 })
 
 describe('CongressTrades page', () => {
+  beforeEach(() => {
+    useAuth.mockReturnValue({ currentUser: null })
+  })
+
   it('renders disclosures with their flags', () => {
     useData.mockReturnValue({
       data: {
@@ -133,5 +139,22 @@ describe('CongressTrades page', () => {
 
     expect(screen.getByText('Collection incomplete')).toBeVisible()
     expect(screen.getAllByText(/Jane Doe/).length).toBeGreaterThan(0)
+  })
+
+  it('offers a re-run control to a signed-in user, since no other refresh collects this screen', () => {
+    useAuth.mockReturnValue({ currentUser: { uid: 'u1' } })
+    useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByRole('button', { name: /Re-run collection/ })).toBeEnabled()
+  })
+
+  it('hides the re-run control when nobody is signed in', () => {
+    useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.queryByRole('button', { name: /Re-run collection/ })).toBeNull()
   })
 })

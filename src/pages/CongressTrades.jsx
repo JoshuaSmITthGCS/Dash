@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
-import { Empty, Loading, Move } from '../components/Bits'
+import { Empty, Loading, Move, RefreshProgress } from '../components/Bits'
+import Icon from '../components/Icons.jsx'
+import { useScreenRefresh } from '../lib/useScreenRefresh'
 import { ScreenNavigation } from './ResearchScreen'
 import ResultCards from '../components/ResultCards.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
@@ -34,7 +36,8 @@ function FlagChips({ flags }) {
 }
 
 export default function CongressTrades() {
-  const { data, loading, error } = useData('screens/congress-trades.json')
+  const { data, loading, error, reload } = useData('screens/congress-trades.json')
+  const refresh = useScreenRefresh('congress', reload)
   const [filters, setFilters] = useState({ chamber: 'all', flag: 'all', sort: 'disclosed' })
   const rows = data?.results || []
   const summary = data?.summary
@@ -69,7 +72,27 @@ export default function CongressTrades() {
           claim about why it moved or a recommendation to trade.
         </p>
       </div>
+      {refresh.available && (
+        <div className="page-actions">
+          {/* This screen is on a weekly cron and the main research refresh does not
+              collect it, so without this the only way to re-run it is to wait. */}
+          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}
+            title="Re-run the disclosure collection now – it reads every configured source and takes a few minutes">
+            <Icon name="sync" size={17} className={refresh.refreshing ? 'refresh-spin' : ''} />
+            {refresh.refreshing ? 'Collecting…' : 'Re-run collection'}
+          </button>
+        </div>
+      )}
     </div>
+
+    <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+      percent={refresh.progress} stage={refresh.stage} />
+    {refresh.message && (
+      <div className={`card etf-state${refresh.status === 'error' ? '' : ' subtle'}`}
+        role={refresh.status === 'error' ? 'alert' : 'status'}>
+        <span>{refresh.message}</span>
+      </div>
+    )}
 
     {loading ? <Loading /> : error ? (
       <div className="card etf-state" role="alert"><strong>Congress trades screen unavailable</strong><span>{error.message}</span></div>

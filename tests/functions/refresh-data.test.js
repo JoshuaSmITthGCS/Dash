@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { locateDispatchedRun, parseRequestBody, workflowProgress } from '../../netlify/functions/refresh-data.mjs'
+import { SCREEN_WORKFLOWS, locateDispatchedRun, parseRequestBody, workflowProgress } from '../../netlify/functions/refresh-data.mjs'
 
 describe('parseRequestBody', () => {
   it('allows an explicit full-universe refresh request', () => {
@@ -7,7 +7,7 @@ describe('parseRequestBody', () => {
       mode: 'data',
       universe_scope: 'full',
       symbols: ['aapl', 'BRK.B'],
-    }))).toEqual({ symbols: ['AAPL', 'BRK.B'], mode: 'data', universeScope: 'full' })
+    }))).toEqual({ symbols: ['AAPL', 'BRK.B'], mode: 'data', universeScope: 'full', screen: 'research' })
   })
 
   it('keeps fast refresh as the safe default for existing controls', () => {
@@ -15,7 +15,45 @@ describe('parseRequestBody', () => {
       symbols: [],
       mode: 'data',
       universeScope: 'fast',
+      screen: 'research',
     })
+  })
+
+  it('selects a screen collector by name', () => {
+    expect(parseRequestBody(JSON.stringify({ screen: 'congress' })).screen).toBe('congress')
+    expect(parseRequestBody(JSON.stringify({ screen: 'institutional' })).screen).toBe('institutional')
+  })
+
+  it('falls back to the research refresh rather than dispatching an unknown workflow', () => {
+    // The client sends a screen *name*, never a workflow file, so an unrecognised value
+    // can only land on the default - it can never reach a workflow nobody intended.
+    expect(parseRequestBody(JSON.stringify({ screen: '../../evil' })).screen).toBe('research')
+    expect(parseRequestBody(JSON.stringify({ screen: 'constructor' })).screen).toBe('research')
+  })
+
+  it('maps every selectable screen to a real workflow file', () => {
+    expect(Object.values(SCREEN_WORKFLOWS).map((entry) => entry.workflow)).toEqual([
+      'refresh-advisor.yml', 'congress-trades.yml', 'institutional-13f.yml',
+    ])
+    // The collectors declare no dispatch inputs; sending any would make GitHub reject it.
+    expect(SCREEN_WORKFLOWS.congress.acceptsInputs).toBe(false)
+    expect(SCREEN_WORKFLOWS.institutional.acceptsInputs).toBe(false)
+  })
+})
+
+describe('workflowProgress for a screen collector', () => {
+  it('scores the collector steps rather than the research workflow ones', () => {
+    const jobs = [{ steps: [
+      { name: 'Run actions/checkout@v4', status: 'completed', conclusion: 'success' },
+      { name: 'Run actions/setup-python@v5', status: 'completed', conclusion: 'success' },
+      { name: 'Run pip install -r pipeline/requirements.txt', status: 'completed', conclusion: 'success' },
+      { name: 'Collect curated-manager 13F positions and map CUSIPs via OpenFIGI', status: 'in_progress' },
+    ] }]
+
+    const progress = workflowProgress(jobs, 'institutional')
+
+    expect(progress.percent).toBe(40)
+    expect(progress.stage).toMatch(/Collect curated-manager/)
   })
 })
 

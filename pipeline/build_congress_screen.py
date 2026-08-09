@@ -39,7 +39,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 
 from common import LOG, STORE_DIR, load_json, save_json
-from congress_trades import CongressTradesClient, CongressTradesError
+from congress_trades import CongressTradesClient, CongressTradesError, StockWatcherClient
 
 CONGRESS_DIR = os.path.join(STORE_DIR, "congress")
 TRADES = "trades.jsonl"
@@ -379,20 +379,64 @@ def build_results(rows, *, as_of=None):
     return classified, history_days
 
 
-def run():
-    try:
-        client = CongressTradesClient()
-    except CongressTradesError as exc:
-        LOG.warn(f"Congress trades collection skipped: {exc}")
-        return None
+def collect_from_sources(fmp_client=None, mirror_client=None):
+    """Every disclosure any configured source will give up, merged.
 
-    fetched, source_errors = [], []
-    for name, fetch in (("senate", client.senate_latest), ("house", client.house_latest)):
-        try:
-            fetched.extend(fetch())
-        except CongressTradesError as exc:
-            source_errors.append(f"{name}: {exc}")
-            LOG.warn(f"Congress trades fetch failed ({type(exc).__name__}: {exc})")
+    Sources are attempted independently and their results pooled rather than tried in
+    priority order, because they do not cover the same rows: FMP's ``*-latest`` endpoints
+    return a recent page, while the public mirrors carry full history. Deduplication happens
+    downstream in ``append_new_trades``, which already keys on the disclosure identity, so an
+    overlapping row arriving from both sources is recorded once.
+
+    A source that fails costs its own coverage and nothing else - the point of running more
+    than one. ``(rows, errors, counts)``; ``counts`` carries how many usable rows each source
+    produced so a mirror that silently changes column names reads as zero from that source
+    rather than as a quiet Congress.
+    """
+    rows, errors, counts = [], [], {}
+
+    if fmp_client is not None:
+        for name, fetch in (("fmp-senate", fmp_client.senate_latest),
+                            ("fmp-house", fmp_client.house_latest)):
+            try:
+                fetched = fetch()
+            except CongressTradesError as exc:
+                errors.append(f"{name}: {exc}")
+                LOG.warn(f"Congress trades fetch failed ({type(exc).__name__}: {exc})")
+                continue
+            rows.extend(fetched)
+            counts[name] = len(fetched)
+
+    if mirror_client is not None:
+        for name, fetch in (("mirror-senate", mirror_client.senate_latest),
+                            ("mirror-house", mirror_client.house_latest)):
+            try:
+                fetched, seen = fetch()
+            except CongressTradesError as exc:
+                errors.append(f"{name}: {exc}")
+                LOG.warn(f"Congress trades fetch failed ({type(exc).__name__}: {exc})")
+                continue
+            rows.extend(fetched)
+            counts[name] = len(fetched)
+            if seen and not fetched:
+                # Rows arrived and none survived normalization: the dataset is reachable but
+                # no longer shaped the way this reads it. That is a different problem from an
+                # unreachable source and has to be said out loud, not averaged into a total.
+                errors.append(f"{name}: read {seen} row(s), none usable - the dataset's "
+                              "columns may have changed")
+    return rows, errors, counts
+
+
+def run():
+    fmp_client = None
+    try:
+        fmp_client = CongressTradesClient()
+    except CongressTradesError as exc:
+        # Not fatal any more: the keyless mirrors are a complete source on their own, so a
+        # missing or unentitled FMP key costs the price-performance column, not the screen.
+        LOG.warn(f"Congress trades: FMP unavailable ({exc})")
+
+    fetched, source_errors, source_counts = collect_from_sources(fmp_client, StockWatcherClient())
 
     added = append_new_trades(fetched)
     LOG.info(f"Congress trades: +{added} new disclosure(s) recorded")
@@ -400,32 +444,34 @@ def run():
     generated_at = datetime.now(timezone.utc)
     results, history_days = build_results(_read_all(), as_of=generated_at)
 
-    performance = compute_price_performance(results, client)
-    for row in results:
-        row.update(performance.get(_trade_key(row), {}))
+    # Price performance is FMP-only, and unlike the disclosures themselves it has no keyless
+    # substitute here - so a run without an entitled key still publishes every disclosure,
+    # just without the "since purchase" column.
+    if fmp_client is not None:
+        performance = compute_price_performance(results, fmp_client)
+        for row in results:
+            row.update(performance.get(_trade_key(row), {}))
 
     # An empty screen because no member of Congress disclosed a trade and an empty screen
-    # because the provider refused every request are indistinguishable in the results list,
-    # and only the first is a fact about Congress. HTTP 402 in particular means the API key
-    # is valid but the plan does not cover these endpoints - a run that reports that as
-    # "success" leaves the page saying "no disclosures collected yet" indefinitely.
+    # because every source refused is indistinguishable in the results list, and only the
+    # first is a fact about Congress. A run that reports the second as "success" leaves the
+    # page saying "no disclosures collected yet" indefinitely.
     status, degraded_reason = "success", None
-    if source_errors and not results:
+    if not results and source_errors:
         status = "degraded"
-        degraded_reason = ("No disclosures could be collected: " + "; ".join(source_errors) +
-                           ". HTTP 402 means the FMP plan for this key does not include the "
-                           "Congressional trading endpoints.")
+        degraded_reason = "No disclosures could be collected: " + "; ".join(source_errors)
     elif source_errors:
         status = "partial"
-        degraded_reason = ("Published from previously collected disclosures; this run could "
-                           "not reach " + "; ".join(source_errors) + ".")
+        degraded_reason = ("Published from the sources that answered; this run could not "
+                           "reach " + "; ".join(source_errors) + ".")
     if degraded_reason:
         LOG.warn(f"Congress trades screen {status}: {degraded_reason}")
 
     payload = {
-        "schema_version": "1.1.0", "model_version": "congress-trades-v1.2.0",
+        "schema_version": "1.2.0", "model_version": "congress-trades-v1.3.0",
         "generated_at": generated_at.isoformat(), "status": status,
         "degraded_reason": degraded_reason, "source_errors": source_errors,
+        "source_counts": source_counts,
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
         "late_filing_threshold_days": LATE_FILING_DAYS,
         "rare_trader_minimum_history_days": RARE_TRADER_MINIMUM_HISTORY_DAYS,

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
-import { Empty, Loading } from '../components/Bits'
+import { useScreenRefresh } from '../lib/useScreenRefresh'
+import { Empty, Loading, RefreshProgress } from '../components/Bits'
+import Icon from '../components/Icons.jsx'
 import { ScreenNavigation } from './ResearchScreen'
 import ResultCards from '../components/ResultCards.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
@@ -22,7 +24,8 @@ function FlagChip({ flag }) {
 }
 
 export default function InstitutionalActivity() {
-  const { data, loading, error } = useData('screens/institutional-13f.json')
+  const { data, loading, error, reload } = useData('screens/institutional-13f.json')
+  const refresh = useScreenRefresh('institutional', reload)
   const [filters, setFilters] = useState({ flag: 'all', sort: 'recent' })
   const rows = data?.results || []
 
@@ -55,7 +58,27 @@ export default function InstitutionalActivity() {
           many of those curated managers added or cut a position; it is not a prediction and not investment advice.
         </p>
       </div>
+      {refresh.available && (
+        <div className="page-actions">
+          {/* This screen is on a monthly cron and the main research refresh does not
+              collect it, so without this the only way to re-run it is to wait. */}
+          <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}
+            title="Re-run the 13F collection now – it reads SEC EDGAR directly and takes a few minutes">
+            <Icon name="sync" size={17} className={refresh.refreshing ? 'refresh-spin' : ''} />
+            {refresh.refreshing ? 'Collecting…' : 'Re-run collection'}
+          </button>
+        </div>
+      )}
     </div>
+
+    <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+      percent={refresh.progress} stage={refresh.stage} />
+    {refresh.message && (
+      <div className={`card etf-state${refresh.status === 'error' ? '' : ' subtle'}`}
+        role={refresh.status === 'error' ? 'alert' : 'status'}>
+        <span>{refresh.message}</span>
+      </div>
+    )}
 
     {loading ? <Loading /> : error ? (
       <div className="card etf-state" role="alert"><strong>Institutional 13F screen unavailable</strong><span>{error.message}</span></div>
