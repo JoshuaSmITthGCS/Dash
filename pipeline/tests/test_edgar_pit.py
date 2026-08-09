@@ -229,3 +229,95 @@ class BackfillJobTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class JobArtifactTests(unittest.TestCase):
+    """The files a run commits, produced end to end against a stub client.
+
+    Every run commits its report -- audit-only included -- because an audit whose only
+    record is a log that scrolls away cannot be read afterwards.
+    """
+
+    def setUp(self):
+        import tempfile
+        import build_pit_fundamentals as job
+        self.job = job
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        root = self.directory.name
+        for name, filename in (("FUNDAMENTALS", "fundamentals.jsonl"),
+                               ("MANIFEST", "fundamentals_manifest.json"),
+                               ("ENTITY_AUDIT", "entity_audit.json"),
+                               ("RESTATEMENTS", "fundamental_restatements.jsonl")):
+            original = getattr(job, name)
+            setattr(job, name, os.path.join(root, filename))
+            self.addCleanup(setattr, job, name, original)
+
+    def resolver(self):
+        return EntityResolver(EntityResolverTests.ROWS, fetched_at="2026-08-09T00:00:00+00:00")
+
+    def client(self):
+        class Stub:
+            available = True
+
+            def company_facts(self, cik):
+                return COMPANYFACTS
+        return Stub()
+
+    def read(self, path):
+        import json
+        with open(path, encoding="utf-8") as handle:
+            return json.load(handle)
+
+    def test_audit_only_commits_a_readable_resolution_report(self):
+        code = self.job.run(["THG", "AAPL", "NOTREAL"], audit_only=True,
+                            client=self.client(), resolver=self.resolver())
+        self.assertEqual(code, 0)
+        audit = self.read(self.job.ENTITY_AUDIT)
+        self.assertEqual(audit["mode"], "audit_only")
+        self.assertEqual(audit["resolved"], 2)
+        self.assertEqual(audit["resolved_map"]["THG"], "0000944695")
+        self.assertIn("NOTREAL", audit["unresolved_reasons"])
+        # Nothing was fetched, so no observation store exists yet.
+        self.assertFalse(os.path.exists(self.job.FUNDAMENTALS))
+
+    def test_a_backfill_writes_observations_a_manifest_and_the_audit(self):
+        code = self.job.run(["THG"], client=self.client(), resolver=self.resolver())
+        self.assertEqual(code, 0)
+        self.assertTrue(os.path.exists(self.job.FUNDAMENTALS))
+        manifest = self.read(self.job.MANIFEST)
+        self.assertEqual(manifest["companies_ok"], 1)
+        self.assertGreater(manifest["observations_written"], 0)
+        self.assertEqual(manifest["companies"][0]["ticker"], "THG")
+        self.assertIn("revenue", manifest["companies"][0]["resolved_tags"])
+        # The entity audit is written on a backfill too: resolution is part of provenance.
+        self.assertEqual(self.read(self.job.ENTITY_AUDIT)["mode"], "backfill")
+
+    def test_the_restatement_in_the_fixture_is_recorded(self):
+        self.job.run(["THG"], client=self.client(), resolver=self.resolver())
+        with open(self.job.RESTATEMENTS, encoding="utf-8") as handle:
+            rows = [line for line in handle if line.strip()]
+        self.assertEqual(len(rows), 1)
+
+    def test_rerunning_adds_nothing_and_is_therefore_resumable(self):
+        self.job.run(["THG"], client=self.client(), resolver=self.resolver())
+        first = self.read(self.job.MANIFEST)["observations_written"]
+        self.job.run(["THG"], client=self.client(), resolver=self.resolver())
+        second = self.read(self.job.MANIFEST)
+        self.assertGreater(first, 0)
+        self.assertEqual(second["observations_written"], 0)
+        self.assertEqual(second["observations_total"], first)
+
+    def test_a_company_that_fails_to_fetch_is_recorded_not_fatal(self):
+        class Failing:
+            available = True
+
+            def company_facts(self, cik):
+                raise TimeoutError("SEC did not respond")
+
+        code = self.job.run(["THG", "AAPL"], client=Failing(), resolver=self.resolver())
+        self.assertEqual(code, 0)
+        manifest = self.read(self.job.MANIFEST)
+        self.assertEqual(manifest["companies_failed"], 2)
+        self.assertEqual(manifest["companies"][0]["status"], "fetch_failed")
+        self.assertIn("TimeoutError", manifest["companies"][0]["reason"])

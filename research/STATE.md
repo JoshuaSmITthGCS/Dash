@@ -180,11 +180,22 @@ pipeline does not ingest. Not faked. See "Next" below.
 ## Next, in order
 
 1. **Run the backfill.** `.github/workflows/backfill-pit-fundamentals.yml`, in this order:
-   `audit-only` (no fetching — reports how many of the ~910 tickers resolve to a CIK and
-   which are ambiguous), then `sample` (25 companies), then `full`. Append-only and
-   resumable. The code is written and unit-tested against fixtures; it has never touched the
-   live SEC endpoint, so **the first `audit-only` run is the real test** and its resolution
-   rate is the number to check before trusting anything downstream.
+   `audit-only` (no fetching), then `sample` (25 companies), then `full`. Append-only and
+   resumable. **Every run commits its report to `main`**, so a later session reads the
+   outcome from the repo rather than from a run log:
+
+   | File | Written by | What to read first |
+   |---|---|---|
+   | `pipeline/data/pit/entity_audit.json` | every run | `resolved` / `unresolved` counts, `ambiguous_tickers`, `shared_cik` |
+   | `pipeline/data/pit/entity_map.json` | every run | the SEC ticker map this run resolved against, for reproducibility |
+   | `pipeline/data/pit/fundamentals_manifest.json` | sample, full | per-company `resolved_tags`, `missing_concepts`, `earliest_period`, failures |
+   | `pipeline/data/pit/fundamentals.jsonl` | sample, full | the observations |
+   | `pipeline/data/pit/fundamental_restatements.jsonl` | sample, full | periods reported more than once |
+
+   The code is unit-tested against fixtures but **has never touched the live SEC endpoint**,
+   so the first `audit-only` run is the real test. Check the resolution rate before trusting
+   anything downstream; a long `missing_concepts` list in the sample manifest means
+   `edgar_facts.CONCEPT_TAGS` needs widening for tags real filers actually use.
    Do not start Phases 4–10 on `pipeline/data/backtest_cache/` in the meantime — that is
    restated Yahoo statements over today's survivors.
 2. **Commodity mid-cycle valuation.** Candidate source: FRED PPI series (e.g. `PCU2122`,

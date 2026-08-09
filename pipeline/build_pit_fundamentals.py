@@ -44,6 +44,10 @@ from sec_edgar import SecEdgarClient
 PIT_DIR = os.path.join(STORE_DIR, "pit")
 FUNDAMENTALS = os.path.join(PIT_DIR, "fundamentals.jsonl")
 MANIFEST = os.path.join(PIT_DIR, "fundamentals_manifest.json")
+# Separate file so an audit-only run and a later backfill do not overwrite each other's
+# report. The entity audit is the thing to read before trusting any fetched history, so it
+# has to survive the run that comes after it.
+ENTITY_AUDIT = os.path.join(PIT_DIR, "entity_audit.json")
 RESTATEMENTS = os.path.join(PIT_DIR, "fundamental_restatements.jsonl")
 
 
@@ -53,7 +57,11 @@ def observation_key(row):
             row.get("period_end"), row.get("unit"), row.get("accession"))
 
 
-def existing_keys(path=FUNDAMENTALS):
+def existing_keys(path=None):
+    # Resolved at call time, not bound at import. A default argument captures the module
+    # constant once, which makes the resumability check read whatever path existed when this
+    # module was first imported rather than the one actually in use.
+    path = path or FUNDAMENTALS
     keys = set()
     if not os.path.exists(path):
         return keys
@@ -144,9 +152,15 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
         LOG.warn("Ambiguous tickers, excluded rather than guessed: "
                  + ", ".join(audit["ambiguous_tickers"]))
 
+    # Written on every run, not just audit-only: the resolution behind a backfill is part of
+    # its provenance, and a reader needs it to interpret coverage.
+    _write_json(ENTITY_AUDIT, {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "mode": "audit_only" if audit_only else "backfill",
+        "universe_size": len(symbols),
+        **audit,
+    })
     if audit_only:
-        _write_manifest({"generated_at": datetime.now(timezone.utc).isoformat(),
-                         "mode": "audit_only", "entity_audit": audit})
         print(json.dumps({k: v for k, v in audit.items()
                           if k not in ("resolved_map", "unresolved_reasons")}, indent=2))
         return 0
@@ -202,11 +216,15 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
     return 0
 
 
-def _write_manifest(payload):
-    os.makedirs(PIT_DIR, exist_ok=True)
-    with open(MANIFEST, "w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2, default=str)
+def _write_json(path, payload):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, default=str, sort_keys=True)
         handle.write("\n")
+
+
+def _write_manifest(payload):
+    _write_json(MANIFEST, payload)
 
 
 def main(argv=None):

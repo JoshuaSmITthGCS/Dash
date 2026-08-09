@@ -10,6 +10,15 @@ name: Backfill point-in-time fundamentals
 # which are ambiguous. Then run `sample` (25 companies) to confirm the shape of what lands.
 # Then run `full`. The job is append-only and resumable: re-running skips observations it
 # already holds, so an interrupted or rate-limited run picks up where it stopped.
+#
+# Every run commits its report to main, audit-only included, so the outcome is reviewable
+# afterwards rather than only in a log that scrolls away:
+#
+#   pipeline/data/pit/entity_audit.json            ticker -> CIK resolution, every run
+#   pipeline/data/pit/entity_map.json              the SEC ticker map this run resolved against
+#   pipeline/data/pit/fundamentals_manifest.json   per-company coverage, sample and full runs
+#   pipeline/data/pit/fundamentals.jsonl           the observations themselves
+#   pipeline/data/pit/fundamental_restatements.jsonl  periods reported more than once
 
 on:
   workflow_dispatch:
@@ -98,19 +107,30 @@ jobs:
             if [ -f pipeline/data/pit/fundamental_restatements.jsonl ]; then
               echo "Restatements recorded: $(wc -l < pipeline/data/pit/fundamental_restatements.jsonl)"
             fi
+            echo ""
+            echo "Committed to main for review: pipeline/data/pit/entity_audit.json" \
+                 "and, for a sample or full run, fundamentals_manifest.json."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # Committed on every run, audit-only included. An audit whose only record is a log
+      # that scrolls away cannot be read afterwards, and the resolution report is the thing
+      # to check before trusting any fetched history.
       - name: Commit the store
-        if: inputs.scope != 'audit-only'
+        if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A pipeline/data/pit
           if git diff --cached --quiet; then
-            echo "No new observations; nothing to commit."
+            echo "Nothing changed; nothing to commit."
             exit 0
           fi
-          git commit -m "chore(data): backfill point-in-time fundamentals from SEC EDGAR XBRL"
+          case "${{ inputs.scope || 'full' }}" in
+            audit-only) MESSAGE="chore(data): audit ticker-to-CIK resolution for the universe" ;;
+            sample)     MESSAGE="chore(data): sample point-in-time fundamentals from SEC EDGAR XBRL" ;;
+            *)          MESSAGE="chore(data): backfill point-in-time fundamentals from SEC EDGAR XBRL" ;;
+          esac
+          git commit -m "${MESSAGE}"
           # The advisor refresh writes to main on its own schedule, so rebase rather than
           # fail when the two land close together.
           for attempt in 1 2 3 4; do
