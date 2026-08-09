@@ -6,12 +6,12 @@ import ResultCards from '../components/ResultCards.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
+// Every options screen collapses into the single "Options" tab below; the individual
+// strategies live on the sub-nav that page renders (OPTIONS_NAV), so the top-level row
+// stays short enough to scan on a phone.
 export const SCREEN_NAV = [
   ['/screens/fast-growth', 'Fast growth'],
-  ['/screens/options', 'Best multi-day options'],
-  ['/screens/covered-call', 'Covered call'], ['/screens/cash-secured-put', 'Cash-secured put'],
-  ['/screens/protective-put', 'Protective put'], ['/screens/collar', 'Collar'],
-  ['/screens/vertical-spread', 'Vertical spread'], ['/screens/advanced-strategies', 'Advanced strategies'],
+  ['/screens/options', 'Options'],
   ['/screens/momentum', 'Momentum'], ['/screens/quality-value', 'Quality at valuation lows'],
   ['/screens/earnings', 'Earnings timeliness'], ['/screens/matrix', 'Structural vs tactical'],
   ['/screens/early-session', 'Early session'],
@@ -19,7 +19,19 @@ export const SCREEN_NAV = [
   ['/screens/politics', 'Politics trade alert'],
   ['/screens/institutional', 'Institutional accumulation'],
   ['/screens/themes', 'Theme exposure'],
-  ['/screens/short-term-trades', 'Short-term trades'],
+]
+
+// Sub-tabs shown once you are inside Options. `strategyId` keys into STRATEGY_SCREENS;
+// the index entry (no id) is the multi-day call/put screen at /screens/options itself.
+export const OPTIONS_NAV = [
+  { to: '/screens/options', label: 'Multi-day', end: true },
+  { to: '/screens/options/short-term-trades', label: 'Short-term', strategyId: 'short-term-trades' },
+  { to: '/screens/options/covered-call', label: 'Covered call', strategyId: 'covered-call' },
+  { to: '/screens/options/cash-secured-put', label: 'Cash-secured put', strategyId: 'cash-secured-put' },
+  { to: '/screens/options/protective-put', label: 'Protective put', strategyId: 'protective-put' },
+  { to: '/screens/options/collar', label: 'Collar', strategyId: 'collar' },
+  { to: '/screens/options/vertical-spread', label: 'Vertical spread', strategyId: 'vertical-spread' },
+  { to: '/screens/options/advanced-strategies', label: 'Advanced', strategyId: 'advanced-strategies' },
 ]
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'
@@ -28,6 +40,14 @@ const number = (value) => value == null ? '–' : Number(value).toFixed(1)
 export function ScreenNavigation() {
   return <nav className="screen-nav" aria-label="Research screens">{SCREEN_NAV.map(([to, label]) =>
     <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'active' : ''}>{label}</NavLink>)}</nav>
+}
+
+// Rendered by every page under /screens/options so the strategies read as one tab with
+// sub-tabs rather than eight peers competing for space in the top-level row.
+export function OptionsNavigation() {
+  return <nav className="screen-nav screen-subnav" aria-label="Options strategies">{OPTIONS_NAV.map((item) =>
+    <NavLink key={item.to} to={item.to} end={item.end}
+      className={({ isActive }) => isActive ? 'active' : ''}>{item.label}</NavLink>)}</nav>
 }
 
 export default function ResearchScreen({ file, eyebrow, title, description }) {
