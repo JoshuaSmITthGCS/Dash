@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
 import {
-  activeThemes, rankAnalystConviction, rankBreakoutInProgress, rankCatalyst, rankEmergingGrowth,
+  activeThemes, rankAnalystConviction, rankBreakoutInProgress, rankBuyingTheDip, rankCatalyst, rankEmergingGrowth,
   rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
   STRATEGY_LENSES, isStrategyLens, lensCoverage, lensReason, rankByLens, rankTailwind,
 } from './researchScreens'
@@ -49,6 +49,64 @@ describe('value turnaround screen', () => {
     const flagged = results.find((item) => item.ticker === 'BADEPS')
     expect(flagged.screen.corroborated).toBe(false)
     expect(flagged.screen.corroborationGaps[0]).toMatch(/deteriorating business/)
+  })
+})
+
+describe('buying the dip screen', () => {
+  // Same fixed 52-week high/low used in dipWatch.test.js, with no `dates` on the default
+  // row() history so dipWatch's recent-60-day blend never activates - the long-term-only
+  // math is what this suite's numbers are computed against.
+  const WEEK_HIGH = 100
+  const WEEK_LOW = 55
+  const MAX_DRAWDOWN_252D = -22
+  // With those fixed inputs, dipWatch's long-term floor/max resolve to 66.5 / 79.8 - see
+  // dipWatch.js. 70 sits inside that band without also clearing the value-turnaround
+  // screen's own gates, keeping the two suites independent.
+  const IN_RANGE_PRICE = 70
+
+  const dipRow = (ticker, price, overrides = {}) => row(ticker, {
+    score: 82,
+    stance: 'ATTRACTIVE',
+    price,
+    recommendation: { action: 'HOLD' },
+    technical_detail: {
+      pct_from_52w_high: (price / WEEK_HIGH - 1) * 100,
+      pct_above_52w_low: (price / WEEK_LOW - 1) * 100,
+      max_drawdown_252d: MAX_DRAWDOWN_252D,
+      return_60d: -12,
+    },
+    ...overrides,
+  })
+
+  it('only keeps ATTRACTIVE/PROMISING names that are genuinely down from their highs', () => {
+    const eligible = dipRow('DIP', IN_RANGE_PRICE)
+    const wrongStance = dipRow('MIXED', IN_RANGE_PRICE, { stance: 'MIXED' })
+    const notDown = dipRow('FLAT', 98, {
+      technical_detail: { pct_from_52w_high: -2, pct_above_52w_low: 78, return_60d: 5 },
+    })
+    expect(rankBuyingTheDip([eligible, wrongStance, notDown]).map((item) => item.ticker)).toEqual(['DIP'])
+  })
+
+  it('excludes rows without a published score, even if otherwise eligible', () => {
+    expect(rankBuyingTheDip([dipRow('NOSCORE', IN_RANGE_PRICE, { score: undefined })])).toEqual([])
+  })
+
+  it('excludes rows that have already cleared the recovery level - the dip is over', () => {
+    const recovered = dipRow('BOUNCED', 85)
+    expect(rankBuyingTheDip([recovered])).toEqual([])
+  })
+
+  it('ranks higher-scoring names ahead of lower-scoring ones at the same proximity to the floor', () => {
+    const strong = dipRow('STRONG', IN_RANGE_PRICE, { score: 90 })
+    const weak = dipRow('WEAK', IN_RANGE_PRICE, { score: 60 })
+    expect(rankBuyingTheDip([weak, strong]).map((item) => item.ticker)).toEqual(['STRONG', 'WEAK'])
+  })
+
+  it('attaches the dipWatch floor/max/status onto screen for the chart to render', () => {
+    const [result] = rankBuyingTheDip([dipRow('DIP', IN_RANGE_PRICE)])
+    expect(result.screen.status).toBe('in_range')
+    expect(result.screen.floor).toBeCloseTo(66.5, 1)
+    expect(result.screen.max).toBeCloseTo(79.8, 1)
   })
 })
 
