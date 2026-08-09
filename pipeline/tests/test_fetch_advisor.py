@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
                            carry_forward_rows, collect_insider_signals, compact_news,
-                           curate_candidate_news, enrich, latest_unique_news,
+                           curate_candidate_news, enrich, enrichment_rotation,
+                           latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols,
                            resolve_refresh_symbols, rotation_slice,
                            select_enrichment_priority, yahoo_extended)
@@ -53,12 +54,46 @@ class EnrichmentPriorityTests(unittest.TestCase):
         available = set(preliminary)
 
         incumbents, challengers, priority = select_enrichment_priority(
-            previous, preliminary, available, ("PORT",)
+            previous, preliminary, available, ("PORT",), rotation_size=0
         )
 
         self.assertEqual(previous, incumbents)
         self.assertEqual(tuple(f"C{i:02d}" for i in range(5)), challengers)
         self.assertEqual((*incumbents, *challengers, "PORT"), priority)
+
+    def test_statement_starved_names_are_rotated_in_beyond_the_top_twenty_five(self):
+        """Enrichment used to be a closed loop over the previous run's leaders, so a name
+        outside it could never acquire the metrics that would let it out-rank an incumbent."""
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        outsiders = tuple(f"C{i:02d}" for i in range(30))
+        preliminary = (*previous, *outsiders)
+
+        _, challengers, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (), rotation_size=15
+        )
+
+        rotated = [symbol for symbol in priority
+                   if symbol not in previous and symbol not in challengers]
+        self.assertEqual(len(rotated), 15)
+        # Names the previous run never enriched come first, in universe order.
+        self.assertEqual(rotated, list(outsiders[5:20]))
+
+    def test_a_never_enriched_name_outranks_one_that_was_enriched_recently(self):
+        preliminary = ("ENRICHED", "NEVER")
+        previous_payload = {"research": [
+            {"ticker": "ENRICHED", "last_polled_at": "2026-08-09T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 88.0}},
+            {"ticker": "NEVER", "last_polled_at": "2026-01-01T00:00:00+00:00",
+             "fundamental_detail": {}},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(rotated[0], "NEVER")
+
+    def test_rotation_can_be_switched_off(self):
+        preliminary = tuple(f"S{i:02d}" for i in range(30))
+        _, _, priority = select_enrichment_priority(
+            (), preliminary, set(preliminary), (), rotation_size=0)
+        self.assertEqual(len(priority), 25)
 
     def test_first_run_uses_preliminary_top_twenty_and_following_five(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))
