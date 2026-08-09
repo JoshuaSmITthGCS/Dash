@@ -151,6 +151,15 @@ jobs:
         # Reads the same on-disk Yahoo price cache the previous step just warmed - no new
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
+      - name: Build structural + tactical screen from the estimate revisions and price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Shares the momentum builder's factor pass over the same warmed price cache, so
+        # this adds no network calls either.
+        run: python pipeline/build_structural_tactical_screen.py || echo "::warning::Structural + tactical screen build failed; keeping previous structural-tactical.json"
+      - name: Build quality-value screen from collected point-in-time valuations
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Reads pit_store, which the scoring step above has already appended to this run.
+        run: python pipeline/build_quality_value_screen.py || echo "::warning::Quality-value screen build failed; keeping previous quality-value.json"
       - name: Build multi-day options, covered-call, cash-secured-put, and short-term-trades screens from one shared chain fetch per ticker
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # build_options_strategies.py fetches ONE option chain per ticker (both mechanisms

@@ -2,8 +2,1791 @@
   "schema_version": "1.0.0",
   "model_version": "quality-value-v2.0.0",
   "config_version": "screens-v2.0.0",
-  "generated_at": "2026-08-02T00:00:00Z",
+  "generated_at": "2026-08-09T18:48:05.652700+00:00",
+  "minimum_history_observations": 12,
   "status": "unavailable",
-  "reason_code": "POINT_IN_TIME_VALUATION_HISTORY_NOT_COLLECTED",
-  "results": []
+  "reason_code": "POINT_IN_TIME_VALUATION_HISTORY_TOO_SHORT",
+  "observations_collected": 8,
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "DINO",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 71.1843,
+      "own_history_score": 71.42857142857143,
+      "peer_value_score": 75.0,
+      "quality_score": 69.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_ebitda": 71.42857142857143,
+        "ev_to_sales": 71.42857142857143,
+        "price_to_book": 62.5,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 2,
+      "ticker": "EOG",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 69.93,
+      "own_history_score": 75.0,
+      "peer_value_score": 47.5,
+      "quality_score": 72.3,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_ebitda": 75.0,
+        "ev_to_sales": 75.0,
+        "price_to_book": 62.5,
+        "free_cash_flow_yield": 87.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 3,
+      "ticker": "CRUS",
+      "peer_group": "Technology",
+      "quality_value_score": 68.0104,
+      "own_history_score": 57.142857142857146,
+      "peer_value_score": 77.4265,
+      "quality_score": 79.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 12.5,
+        "ev_to_ebitda": 57.142857142857146,
+        "ev_to_sales": 57.142857142857146,
+        "price_to_book": 87.5,
+        "free_cash_flow_yield": 25.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 4,
+      "ticker": "ALL",
+      "peer_group": "Property & casualty insurers",
+      "quality_value_score": 67.67,
+      "own_history_score": 75.0,
+      "peer_value_score": 46.6667,
+      "quality_score": 66.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 75.0,
+        "ev_to_sales": 75.0,
+        "price_to_book": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 5,
+      "ticker": "APA",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 67.375,
+      "own_history_score": 62.5,
+      "peer_value_score": 77.5,
+      "quality_score": 70.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.87,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 62.5,
+        "ev_to_sales": 62.5,
+        "price_to_book": 75.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 6,
+      "ticker": "FISV",
+      "peer_group": "Unclassified",
+      "quality_value_score": 66.1353,
+      "own_history_score": 68.75,
+      "peer_value_score": null,
+      "quality_score": 62.4,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.76,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 75.0,
+        "ev_to_sales": 75.0,
+        "price_to_book": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 7,
+      "ticker": "OXY",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 65.45,
+      "own_history_score": 75.0,
+      "peer_value_score": 47.5,
+      "quality_score": 59.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.87,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_ebitda": 75.0,
+        "ev_to_sales": 62.5,
+        "price_to_book": 75.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 8,
+      "ticker": "PGY",
+      "peer_group": "Technology",
+      "quality_value_score": 63.2872,
+      "own_history_score": 50.0,
+      "peer_value_score": 90.5147,
+      "quality_score": 70.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.86,
+      "metric_percentiles": {
+        "forward_pe": 50.0,
+        "ev_to_ebitda": 50.0,
+        "ev_to_sales": 50.0,
+        "price_to_book": 50.0,
+        "free_cash_flow_yield": 87.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 9,
+      "ticker": "COP",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 62.935,
+      "own_history_score": 62.5,
+      "peer_value_score": 50.0,
+      "quality_score": 69.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.87,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_ebitda": 62.5,
+        "ev_to_sales": 62.5,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 10,
+      "ticker": "AGO",
+      "peer_group": "Specialty insurers",
+      "quality_value_score": 62.5,
+      "own_history_score": 62.5,
+      "peer_value_score": null,
+      "quality_score": 62.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.78,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_sales": 75.0,
+        "price_to_book": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 11,
+      "ticker": "AFL",
+      "peer_group": "Life insurers",
+      "quality_value_score": 62.2883,
+      "own_history_score": 75.0,
+      "peer_value_score": 22.2222,
+      "quality_score": 61.3,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.81,
+      "metric_percentiles": {
+        "forward_pe": 75.0,
+        "ev_to_sales": 75.0,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 12,
+      "ticker": "CNA",
+      "peer_group": "Property & casualty insurers",
+      "quality_value_score": 61.635,
+      "own_history_score": 62.5,
+      "peer_value_score": 60.0,
+      "quality_score": 61.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_sales": 71.42857142857143,
+        "price_to_book": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 13,
+      "ticker": "CMG",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 60.36,
+      "own_history_score": 75.0,
+      "peer_value_score": 7.5,
+      "quality_score": 62.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_ebitda": 75.0,
+        "ev_to_sales": 75.0,
+        "price_to_book": 62.5,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 14,
+      "ticker": "ACGL",
+      "peer_group": "Diversified insurers",
+      "quality_value_score": 60.26,
+      "own_history_score": 62.5,
+      "peer_value_score": 33.3333,
+      "quality_score": 68.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_sales": 71.42857142857143,
+        "price_to_book": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 15,
+      "ticker": "BMY",
+      "peer_group": "Healthcare",
+      "quality_value_score": 59.945,
+      "own_history_score": 62.5,
+      "peer_value_score": 33.3333,
+      "quality_score": 67.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_ebitda": 62.5,
+        "ev_to_sales": 62.5,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 16,
+      "ticker": "DECK",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 59.59,
+      "own_history_score": 50.0,
+      "peer_value_score": 50.0,
+      "quality_score": 77.4,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 50.0,
+        "ev_to_ebitda": 50.0,
+        "ev_to_sales": 50.0,
+        "price_to_book": 50.0,
+        "free_cash_flow_yield": 87.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 17,
+      "ticker": "EXEL",
+      "peer_group": "Profitable Biotechnology",
+      "quality_value_score": 57.616,
+      "own_history_score": 42.85714285714286,
+      "peer_value_score": null,
+      "quality_score": 78.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 7,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "ev_to_ebitda": 42.85714285714286,
+        "ev_to_sales": 42.85714285714286
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 18,
+      "ticker": "CCK",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 52.7836,
+      "own_history_score": 42.85714285714286,
+      "peer_value_score": 45.0,
+      "quality_score": 70.3,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.87,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_ebitda": 42.85714285714286,
+        "ev_to_sales": 42.85714285714286,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 19,
+      "ticker": "UPS",
+      "peer_group": "Industrials",
+      "quality_value_score": 52.085,
+      "own_history_score": 37.5,
+      "peer_value_score": 68.0,
+      "quality_score": 66.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_ebitda": 37.5,
+        "ev_to_sales": 37.5,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 20,
+      "ticker": "GNTX",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 50.8507,
+      "own_history_score": 28.57142857142857,
+      "peer_value_score": 72.5,
+      "quality_score": 73.4,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_ebitda": 28.57142857142857,
+        "ev_to_sales": 28.57142857142857,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 50.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 21,
+      "ticker": "EME",
+      "peer_group": "Industrials",
+      "quality_value_score": 50.1736,
+      "own_history_score": 42.85714285714286,
+      "peer_value_score": 36.0,
+      "quality_score": 66.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_ebitda": 42.85714285714286,
+        "ev_to_sales": 28.57142857142857,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 22,
+      "ticker": "VOO",
+      "peer_group": "Etf",
+      "quality_value_score": 50.0,
+      "own_history_score": null,
+      "peer_value_score": null,
+      "quality_score": 50.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 0,
+      "minimum_observations": 12,
+      "confidence": 0.25,
+      "metric_percentiles": {},
+      "eligibility": false
+    },
+    {
+      "rank": 23,
+      "ticker": "GL",
+      "peer_group": "Life insurers",
+      "quality_value_score": 49.3083,
+      "own_history_score": 37.5,
+      "peer_value_score": 55.5556,
+      "quality_score": 63.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_sales": 28.57142857142857,
+        "price_to_book": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 24,
+      "ticker": "JKHY",
+      "peer_group": "Technology",
+      "quality_value_score": 48.7628,
+      "own_history_score": 33.33333333333334,
+      "peer_value_score": 42.9412,
+      "quality_score": 73.3,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 33.33333333333334,
+        "ev_to_sales": 33.33333333333334,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 25,
+      "ticker": "BR",
+      "peer_group": "Technology",
+      "quality_value_score": 46.8913,
+      "own_history_score": 25.0,
+      "peer_value_score": 60.8088,
+      "quality_score": 72.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 6,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 50.0,
+        "ev_to_ebitda": 25.0,
+        "ev_to_sales": 25.0,
+        "price_to_book": 16.666666666666657,
+        "free_cash_flow_yield": 60.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 26,
+      "ticker": "PYPL",
+      "peer_group": "Financial Services",
+      "quality_value_score": 46.71,
+      "own_history_score": 25.0,
+      "peer_value_score": 75.0,
+      "quality_score": 65.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 25.0,
+        "ev_to_sales": 25.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 50.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 27,
+      "ticker": "AMP",
+      "peer_group": "Financial Services",
+      "quality_value_score": 45.91,
+      "own_history_score": 37.5,
+      "peer_value_score": 29.1667,
+      "quality_score": 65.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_sales": 37.5,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 28,
+      "ticker": "FTI",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 45.64,
+      "own_history_score": 37.5,
+      "peer_value_score": 15.0,
+      "quality_score": 70.4,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.86,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_ebitda": 28.57142857142857,
+        "ev_to_sales": 28.57142857142857,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 29,
+      "ticker": "ALGN",
+      "peer_group": "Medical device companies",
+      "quality_value_score": 45.255,
+      "own_history_score": 20.0,
+      "peer_value_score": 73.3333,
+      "quality_score": 69.3,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 6,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 20.0,
+        "ev_to_sales": 20.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 33.33333333333333
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 30,
+      "ticker": "PRI",
+      "peer_group": "Life insurers",
+      "quality_value_score": 43.17,
+      "own_history_score": 33.33333333333334,
+      "peer_value_score": 22.2222,
+      "quality_score": 66.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 3,
+      "minimum_observations": 12,
+      "confidence": 0.84,
+      "metric_percentiles": {
+        "forward_pe": 33.33333333333334,
+        "ev_to_sales": 33.33333333333334,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 31,
+      "ticker": "EXPD",
+      "peer_group": "Industrials",
+      "quality_value_score": 43.0957,
+      "own_history_score": 28.57142857142857,
+      "peer_value_score": 32.0,
+      "quality_score": 68.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 87.5,
+        "ev_to_ebitda": 28.57142857142857,
+        "ev_to_sales": 28.57142857142857,
+        "price_to_book": 12.5,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 32,
+      "ticker": "JLL",
+      "peer_group": "Real Estate",
+      "quality_value_score": 43.0353,
+      "own_history_score": 25.0,
+      "peer_value_score": null,
+      "quality_score": 68.8,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.83,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 33.33333333333334,
+        "ev_to_sales": 0.0,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 33,
+      "ticker": "MU",
+      "peer_group": "Technology",
+      "quality_value_score": 42.7699,
+      "own_history_score": 37.5,
+      "peer_value_score": 27.1324,
+      "quality_score": 57.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 37.5,
+        "ev_to_ebitda": 37.5,
+        "ev_to_sales": 37.5,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 50.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 34,
+      "ticker": "EXPE",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 42.59,
+      "own_history_score": 25.0,
+      "peer_value_score": 37.5,
+      "quality_score": 69.9,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 62.5,
+        "ev_to_ebitda": 25.0,
+        "ev_to_sales": 25.0,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 35,
+      "ticker": "DELL",
+      "peer_group": "Technology",
+      "quality_value_score": 40.6788,
+      "own_history_score": 25.0,
+      "peer_value_score": 52.0588,
+      "quality_score": 58.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_ebitda": 25.0,
+        "ev_to_sales": 25.0,
+        "price_to_book": 37.5,
+        "free_cash_flow_yield": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 36,
+      "ticker": "META",
+      "peer_group": "Communication Services",
+      "quality_value_score": 40.6,
+      "own_history_score": 25.0,
+      "peer_value_score": 33.3333,
+      "quality_score": 66.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 37,
+      "ticker": "BWA",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 39.065,
+      "own_history_score": 12.5,
+      "peer_value_score": 65.0,
+      "quality_score": 65.9,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 12.5,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 12.5,
+        "free_cash_flow_yield": 60.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 38,
+      "ticker": "DXCM",
+      "peer_group": "Medical device companies",
+      "quality_value_score": 38.075,
+      "own_history_score": 25.0,
+      "peer_value_score": 20.0,
+      "quality_score": 64.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_ebitda": 25.0,
+        "ev_to_sales": 25.0,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 39,
+      "ticker": "ACN",
+      "peer_group": "Technology",
+      "quality_value_score": 37.5994,
+      "own_history_score": 0.0,
+      "peer_value_score": 81.0294,
+      "quality_score": 72.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 40,
+      "ticker": "LULU",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 37.42,
+      "own_history_score": 0.0,
+      "peer_value_score": 77.5,
+      "quality_score": 73.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 41,
+      "ticker": "DEO",
+      "peer_group": "Consumer Defensive",
+      "quality_value_score": 36.805,
+      "own_history_score": 37.5,
+      "peer_value_score": 10.0,
+      "quality_score": 47.3,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.58,
+      "metric_percentiles": {
+        "forward_pe": 75.0,
+        "ev_to_ebitda": 37.5,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 42,
+      "ticker": "HIG",
+      "peer_group": "Diversified insurers",
+      "quality_value_score": 36.7833,
+      "own_history_score": 20.0,
+      "peer_value_score": 22.2222,
+      "quality_score": 67.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 5,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 20.0,
+        "ev_to_sales": 20.0,
+        "price_to_book": 20.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 43,
+      "ticker": "AMAT",
+      "peer_group": "Technology",
+      "quality_value_score": 35.9853,
+      "own_history_score": 25.0,
+      "peer_value_score": 10.7353,
+      "quality_score": 62.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 50.0,
+        "ev_to_ebitda": 12.5,
+        "ev_to_sales": 12.5,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 62.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 44,
+      "ticker": "FTDR",
+      "peer_group": "Consumer Cyclical",
+      "quality_value_score": 35.6783,
+      "own_history_score": 16.666666666666657,
+      "peer_value_score": 15.0,
+      "quality_score": 71.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 6,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 16.666666666666657,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 66.66666666666667,
+        "free_cash_flow_yield": 66.66666666666666
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 45,
+      "ticker": "ADBE",
+      "peer_group": "Technology",
+      "quality_value_score": 35.5953,
+      "own_history_score": 0.0,
+      "peer_value_score": 63.2353,
+      "quality_score": 74.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 46,
+      "ticker": "LOPE",
+      "peer_group": "Consumer Defensive",
+      "quality_value_score": 35.04,
+      "own_history_score": 0.0,
+      "peer_value_score": 60.0,
+      "quality_score": 74.4,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 47,
+      "ticker": "CI",
+      "peer_group": "Healthcare",
+      "quality_value_score": 34.695,
+      "own_history_score": 0.0,
+      "peer_value_score": 73.3333,
+      "quality_score": 67.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.87,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 12.5,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 48,
+      "ticker": "AAOI",
+      "peer_group": "Other Pre Profit",
+      "quality_value_score": 34.1412,
+      "own_history_score": 25.0,
+      "peer_value_score": null,
+      "quality_score": 47.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.7,
+      "metric_percentiles": {
+        "ev_to_sales": 0.0,
+        "free_cash_flow_yield": 50.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 49,
+      "ticker": "MTCH",
+      "peer_group": "Communication Services",
+      "quality_value_score": 34.115,
+      "own_history_score": 0.0,
+      "peer_value_score": 66.6667,
+      "quality_score": 68.9,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 3,
+      "minimum_observations": 12,
+      "confidence": 0.84,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 33.33333333333334,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 50,
+      "ticker": "VRT",
+      "peer_group": "Industrials",
+      "quality_value_score": 33.995,
+      "own_history_score": 25.0,
+      "peer_value_score": 4.0,
+      "quality_score": 59.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.87,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_ebitda": 25.0,
+        "ev_to_sales": 25.0,
+        "price_to_book": 25.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 51,
+      "ticker": "INTU",
+      "peer_group": "Technology",
+      "quality_value_score": 33.6428,
+      "own_history_score": 0.0,
+      "peer_value_score": 56.9853,
+      "quality_score": 71.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 50.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 52,
+      "ticker": "QCOM",
+      "peer_group": "Technology",
+      "quality_value_score": 33.3229,
+      "own_history_score": 0.0,
+      "peer_value_score": 54.8529,
+      "quality_score": 71.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 53,
+      "ticker": "NEM",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 32.725,
+      "own_history_score": 0.0,
+      "peer_value_score": 35.0,
+      "quality_score": 78.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 54,
+      "ticker": "AMTM",
+      "peer_group": "Industrials",
+      "quality_value_score": 32.545,
+      "own_history_score": 0.0,
+      "peer_value_score": 80.0,
+      "quality_score": 58.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 2,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 55,
+      "ticker": "TEL",
+      "peer_group": "Technology",
+      "quality_value_score": 31.8044,
+      "own_history_score": 0.0,
+      "peer_value_score": 51.0294,
+      "quality_score": 69.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 56,
+      "ticker": "IDCC",
+      "peer_group": "Technology",
+      "quality_value_score": 31.7907,
+      "own_history_score": 0.0,
+      "peer_value_score": 41.8382,
+      "quality_score": 72.9,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 57,
+      "ticker": "BSX",
+      "peer_group": "Medical device companies",
+      "quality_value_score": 31.67,
+      "own_history_score": 0.0,
+      "peer_value_score": 56.6667,
+      "quality_score": 66.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 80.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 58,
+      "ticker": "MCY",
+      "peer_group": "Property & casualty insurers",
+      "quality_value_score": 30.785,
+      "own_history_score": 0.0,
+      "peer_value_score": 53.3333,
+      "quality_score": 65.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 3,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 59,
+      "ticker": "MTG",
+      "peer_group": "Diversified insurers",
+      "quality_value_score": 29.4867,
+      "own_history_score": 0.0,
+      "peer_value_score": 44.4444,
+      "quality_score": 65.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 3,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 60,
+      "ticker": "RIGL",
+      "peer_group": "Biopharmaceutical companies",
+      "quality_value_score": 29.2353,
+      "own_history_score": 0.0,
+      "peer_value_score": null,
+      "quality_score": 71.0,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 61,
+      "ticker": "AXGN",
+      "peer_group": "Medical device companies",
+      "quality_value_score": 28.26,
+      "own_history_score": 18.75,
+      "peer_value_score": 12.5,
+      "quality_score": 48.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.72,
+      "metric_percentiles": {
+        "ev_to_sales": 0.0,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 62,
+      "ticker": "SIGI",
+      "peer_group": "Property & casualty insurers",
+      "quality_value_score": 27.645,
+      "own_history_score": 0.0,
+      "peer_value_score": 33.3333,
+      "quality_score": 64.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 3,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_sales": 33.33333333333334,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 63,
+      "ticker": "GMED",
+      "peer_group": "Healthcare",
+      "quality_value_score": 26.92,
+      "own_history_score": 0.0,
+      "peer_value_score": 13.3333,
+      "quality_score": 71.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.9,
+      "metric_percentiles": {
+        "forward_pe": 75.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 64,
+      "ticker": "NTNX",
+      "peer_group": "Technology",
+      "quality_value_score": 26.5435,
+      "own_history_score": 0.0,
+      "peer_value_score": 38.8235,
+      "quality_score": 59.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.84,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 62.5,
+        "free_cash_flow_yield": 37.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 65,
+      "ticker": "ASTS",
+      "peer_group": "Technology",
+      "quality_value_score": 25.1762,
+      "own_history_score": 12.5,
+      "peer_value_score": 27.9412,
+      "quality_score": 42.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.67,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 66,
+      "ticker": "MSFT",
+      "peer_group": "Technology",
+      "quality_value_score": 25.0046,
+      "own_history_score": 0.0,
+      "peer_value_score": 23.8971,
+      "quality_score": 61.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 87.5
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 67,
+      "ticker": "THG",
+      "peer_group": "Property & casualty insurers",
+      "quality_value_score": 24.66,
+      "own_history_score": 0.0,
+      "peer_value_score": 6.6667,
+      "quality_score": 67.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 3,
+      "minimum_observations": 12,
+      "confidence": 0.88,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_sales": 33.33333333333334,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 68,
+      "ticker": "NUE",
+      "peer_group": "Commodity producers",
+      "quality_value_score": 24.34,
+      "own_history_score": 0.0,
+      "peer_value_score": 22.5,
+      "quality_score": 59.9,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 4,
+      "minimum_observations": 12,
+      "confidence": 0.84,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 75.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 69,
+      "ticker": "UEC",
+      "peer_group": "Energy",
+      "quality_value_score": 24.125,
+      "own_history_score": 0.0,
+      "peer_value_score": 50.0,
+      "quality_score": 47.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 2,
+      "minimum_observations": 12,
+      "confidence": 0.69,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 70,
+      "ticker": "AAPL",
+      "peer_group": "Technology",
+      "quality_value_score": 24.0622,
+      "own_history_score": 0.0,
+      "peer_value_score": 15.5147,
+      "quality_score": 62.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 50.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 71,
+      "ticker": "BAC",
+      "peer_group": "Large banks",
+      "quality_value_score": 23.9647,
+      "own_history_score": 0.0,
+      "peer_value_score": null,
+      "quality_score": 58.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.67,
+      "metric_percentiles": {
+        "forward_pe": 12.5,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 72,
+      "ticker": "CEG",
+      "peer_group": "Utilities",
+      "quality_value_score": 22.5235,
+      "own_history_score": 0.0,
+      "peer_value_score": null,
+      "quality_score": 54.7,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 6,
+      "minimum_observations": 12,
+      "confidence": 0.85,
+      "metric_percentiles": {
+        "forward_pe": 16.666666666666657,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 33.33333333333333
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 73,
+      "ticker": "SCHW",
+      "peer_group": "Financial Services",
+      "quality_value_score": 22.3867,
+      "own_history_score": 0.0,
+      "peer_value_score": 11.1111,
+      "quality_score": 59.2,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 8,
+      "minimum_observations": 12,
+      "confidence": 0.7,
+      "metric_percentiles": {
+        "forward_pe": 25.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 74,
+      "ticker": "SOLS",
+      "peer_group": "Basic Materials",
+      "quality_value_score": 22.0294,
+      "own_history_score": 0.0,
+      "peer_value_score": null,
+      "quality_score": 53.5,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 2,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 75,
+      "ticker": "LEU",
+      "peer_group": "Energy",
+      "quality_value_score": 20.935,
+      "own_history_score": 0.0,
+      "peer_value_score": 25.0,
+      "quality_score": 49.1,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 2,
+      "minimum_observations": 12,
+      "confidence": 0.89,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    },
+    {
+      "rank": 76,
+      "ticker": "NBIS",
+      "peer_group": "Communication Services",
+      "quality_value_score": 18.26,
+      "own_history_score": 0.0,
+      "peer_value_score": 20.0,
+      "quality_score": 43.6,
+      "classification": "insufficient historical data",
+      "reason_codes": [
+        "INSUFFICIENT_HISTORICAL_DATA"
+      ],
+      "observations": 2,
+      "minimum_observations": 12,
+      "confidence": 0.79,
+      "metric_percentiles": {
+        "forward_pe": 0.0,
+        "ev_to_ebitda": 0.0,
+        "ev_to_sales": 0.0,
+        "price_to_book": 0.0,
+        "free_cash_flow_yield": 100.0
+      },
+      "eligibility": false
+    }
+  ],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "2913e18870c53957e4a7523e074f11cb9e00531c",
+    "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
+    "generated_at": "2026-08-09T18:48:05.652700+00:00"
+  }
 }

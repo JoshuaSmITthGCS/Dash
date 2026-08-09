@@ -13,12 +13,18 @@ arithmetic (which would silently count market holidays as open sessions).
 """
 
 import os
-from bisect import bisect_left
+from bisect import bisect_left, bisect_right
 from datetime import date, datetime
 
 from common import load_json
 
 DEFAULT_SOURCE = os.path.join("etf", "SPY.json")
+# ``etf/SPY.json`` is the longest history when it is committed, but it is an optional
+# artifact. ``benchmark-report.json`` carries the same real SPY session dates and is
+# always published, so it is the fallback rather than weekday arithmetic - a calendar
+# guessed from weekdays would silently count market holidays as open sessions, which is
+# the exact failure this module exists to prevent.
+FALLBACK_SOURCES = ("benchmark-report.json",)
 
 
 def _parse_date(value):
@@ -27,17 +33,29 @@ def _parse_date(value):
     return datetime.strptime(str(value)[:10], "%Y-%m-%d").date()
 
 
-def load_sessions(source=DEFAULT_SOURCE, *, loader=load_json):
-    """Sorted, deduplicated trading-session dates from a committed daily price series."""
-    payload = loader(source)
-    if not payload:
-        raise FileNotFoundError(f"{source} is not committed; cannot derive a trading calendar")
+def _session_dates(payload):
+    """Session dates from either committed layout, or ``[]`` if neither is present."""
     series = payload.get("price_series") or {}
     rows = series.get("fund") or series.get("benchmark") or []
-    sessions = sorted({_parse_date(row["date"]) for row in rows if row.get("date")})
-    if not sessions:
-        raise ValueError(f"{source} has no usable price_series dates")
-    return sessions
+    if rows:
+        return [row["date"] for row in rows if row.get("date")]
+    history = (payload.get("histories") or {}).get("SPY") or {}
+    return list(history.get("dates") or [])
+
+
+def load_sessions(source=DEFAULT_SOURCE, *, loader=load_json, fallbacks=FALLBACK_SOURCES):
+    """Sorted, deduplicated trading-session dates from a committed daily price series."""
+    attempted = []
+    for candidate in (source, *(fallbacks or ())):
+        attempted.append(candidate)
+        payload = loader(candidate)
+        if not payload:
+            continue
+        sessions = sorted({_parse_date(value) for value in _session_dates(payload) if value})
+        if sessions:
+            return sessions
+    raise FileNotFoundError(
+        f"no committed daily price series among {attempted}; cannot derive a trading calendar")
 
 
 class TradingCalendar:
@@ -56,6 +74,21 @@ class TradingCalendar:
         target = _parse_date(when)
         position = bisect_left(self.sessions, target)
         return position if position < len(self.sessions) else None
+
+    def is_session(self, when):
+        """True when ``when`` is itself a trading session in this calendar."""
+        target = _parse_date(when)
+        position = bisect_left(self.sessions, target)
+        return position < len(self.sessions) and self.sessions[position] == target
+
+    def latest_session_on_or_before(self, when):
+        """The most recent trading session at or before ``when``.
+
+        This is the session a price tape fetched on ``when`` can actually reflect. Returns
+        ``None`` before the calendar starts rather than extrapolating backwards.
+        """
+        position = bisect_right(self.sessions, _parse_date(when))
+        return self.sessions[position - 1] if position else None
 
     def add_sessions(self, when, count):
         """The date ``count`` trading sessions after the session on/after ``when``.

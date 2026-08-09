@@ -1,9 +1,1055 @@
 {
   "schema_version": "1.0.0",
-  "model_version": "matrix-v1.0.0",
+  "model_version": "tactical-v1.0.0",
   "config_version": "screens-v2.0.0",
-  "generated_at": "2026-08-02T00:00:00Z",
-  "status": "unavailable",
-  "reason_code": "TACTICAL_SNAPSHOTS_NOT_YET_AVAILABLE",
-  "results": []
+  "generated_at": "2026-08-09T18:46:38.843787+00:00",
+  "status": "success",
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "EME",
+      "eligibility": false,
+      "peer_group": "Industrials",
+      "tactical_score": 79.8397,
+      "structural_score": 66.7,
+      "classification": "high-conviction candidate",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 2,
+      "ticker": "EXPD",
+      "eligibility": true,
+      "peer_group": "Industrials",
+      "tactical_score": 79.1204,
+      "structural_score": 68.6,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 3,
+      "ticker": "AMP",
+      "eligibility": false,
+      "peer_group": "Financial Services",
+      "tactical_score": 75.5948,
+      "structural_score": 65.1,
+      "classification": "high-conviction candidate",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 4,
+      "ticker": "BMY",
+      "eligibility": true,
+      "peer_group": "Healthcare",
+      "tactical_score": 75.2978,
+      "structural_score": 67.7,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 5,
+      "ticker": "CNA",
+      "eligibility": false,
+      "peer_group": "Property & casualty insurers",
+      "tactical_score": 75.0923,
+      "structural_score": 61.1,
+      "classification": "tactical-only candidate",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 6,
+      "ticker": "GMED",
+      "eligibility": false,
+      "peer_group": "Healthcare",
+      "tactical_score": 72.5157,
+      "structural_score": 71.2,
+      "classification": "high-conviction candidate",
+      "coverage": 0.47,
+      "confidence": 0.9,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 7,
+      "ticker": "SCHW",
+      "eligibility": true,
+      "peer_group": "Financial Services",
+      "tactical_score": 72.07,
+      "structural_score": 59.2,
+      "classification": "tactical-only candidate",
+      "coverage": 0.55,
+      "confidence": 0.7,
+      "reason_codes": []
+    },
+    {
+      "rank": 8,
+      "ticker": "BAC",
+      "eligibility": true,
+      "peer_group": "Large banks",
+      "tactical_score": 71.858,
+      "structural_score": 58.2,
+      "classification": "tactical-only candidate",
+      "coverage": 0.55,
+      "confidence": 0.67,
+      "reason_codes": []
+    },
+    {
+      "rank": 9,
+      "ticker": "VRT",
+      "eligibility": true,
+      "peer_group": "Industrials",
+      "tactical_score": 67.7257,
+      "structural_score": 59.7,
+      "classification": "tactical-only candidate",
+      "coverage": 0.55,
+      "confidence": 0.87,
+      "reason_codes": []
+    },
+    {
+      "rank": 10,
+      "ticker": "ALL",
+      "eligibility": true,
+      "peer_group": "Property & casualty insurers",
+      "tactical_score": 66.4921,
+      "structural_score": 66.2,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.85,
+      "reason_codes": []
+    },
+    {
+      "rank": 11,
+      "ticker": "CEG",
+      "eligibility": false,
+      "peer_group": "Utilities",
+      "tactical_score": 65.3778,
+      "structural_score": 54.7,
+      "classification": "tactical-only candidate",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 12,
+      "ticker": "PYPL",
+      "eligibility": true,
+      "peer_group": "Financial Services",
+      "tactical_score": 65.1987,
+      "structural_score": 65.6,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 13,
+      "ticker": "GNTX",
+      "eligibility": false,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 65.1014,
+      "structural_score": 73.4,
+      "classification": "high-conviction candidate",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 14,
+      "ticker": "BR",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 64.6799,
+      "structural_score": 72.2,
+      "classification": "high-conviction candidate",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 15,
+      "ticker": "AGO",
+      "eligibility": true,
+      "peer_group": "Specialty insurers",
+      "tactical_score": 62.9034,
+      "structural_score": 62.5,
+      "classification": "tactical-only candidate",
+      "coverage": 0.55,
+      "confidence": 0.78,
+      "reason_codes": []
+    },
+    {
+      "rank": 16,
+      "ticker": "JKHY",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 62.5936,
+      "structural_score": 73.3,
+      "classification": "high-conviction candidate",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 17,
+      "ticker": "TEL",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 61.6632,
+      "structural_score": 69.0,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 18,
+      "ticker": "DELL",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 61.4686,
+      "structural_score": 58.2,
+      "classification": "tactical-only candidate",
+      "coverage": 0.55,
+      "confidence": 0.85,
+      "reason_codes": []
+    },
+    {
+      "rank": 19,
+      "ticker": "CCK",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 61.3054,
+      "structural_score": 70.3,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.87,
+      "reason_codes": []
+    },
+    {
+      "rank": 20,
+      "ticker": "SIGI",
+      "eligibility": true,
+      "peer_group": "Property & casualty insurers",
+      "tactical_score": 61.1444,
+      "structural_score": 64.7,
+      "classification": "tactical-only candidate",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 21,
+      "ticker": "DINO",
+      "eligibility": true,
+      "peer_group": "Commodity producers",
+      "tactical_score": 60.0136,
+      "structural_score": 69.2,
+      "classification": "high-conviction candidate",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 22,
+      "ticker": "NTNX",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 59.9547,
+      "structural_score": 59.2,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.84,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 23,
+      "ticker": "SOLS",
+      "eligibility": true,
+      "peer_group": "Basic Materials",
+      "tactical_score": 59.6371,
+      "structural_score": 53.5,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 24,
+      "ticker": "UPS",
+      "eligibility": false,
+      "peer_group": "Industrials",
+      "tactical_score": 59.5457,
+      "structural_score": 66.1,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 25,
+      "ticker": "CI",
+      "eligibility": true,
+      "peer_group": "Healthcare",
+      "tactical_score": 59.314,
+      "structural_score": 67.7,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.87,
+      "reason_codes": []
+    },
+    {
+      "rank": 26,
+      "ticker": "NUE",
+      "eligibility": true,
+      "peer_group": "Commodity producers",
+      "tactical_score": 58.6208,
+      "structural_score": 59.9,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.84,
+      "reason_codes": []
+    },
+    {
+      "rank": 27,
+      "ticker": "MSFT",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 58.0576,
+      "structural_score": 61.2,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 28,
+      "ticker": "COP",
+      "eligibility": true,
+      "peer_group": "Commodity producers",
+      "tactical_score": 57.042,
+      "structural_score": 69.1,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.87,
+      "reason_codes": []
+    },
+    {
+      "rank": 29,
+      "ticker": "JLL",
+      "eligibility": false,
+      "peer_group": "Real Estate",
+      "tactical_score": 56.9425,
+      "structural_score": 68.8,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.83,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 30,
+      "ticker": "MCY",
+      "eligibility": false,
+      "peer_group": "Property & casualty insurers",
+      "tactical_score": 56.8654,
+      "structural_score": 65.1,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 31,
+      "ticker": "IDCC",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 56.7984,
+      "structural_score": 72.9,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 32,
+      "ticker": "FTDR",
+      "eligibility": false,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 55.7781,
+      "structural_score": 71.7,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 33,
+      "ticker": "FTI",
+      "eligibility": false,
+      "peer_group": "Commodity producers",
+      "tactical_score": 55.4454,
+      "structural_score": 70.4,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.86,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 34,
+      "ticker": "DECK",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 55.2235,
+      "structural_score": 77.4,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 35,
+      "ticker": "THG",
+      "eligibility": true,
+      "peer_group": "Property & casualty insurers",
+      "tactical_score": 54.9088,
+      "structural_score": 67.6,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 36,
+      "ticker": "AMAT",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 54.1147,
+      "structural_score": 62.5,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 37,
+      "ticker": "GL",
+      "eligibility": false,
+      "peer_group": "Life insurers",
+      "tactical_score": 53.042,
+      "structural_score": 63.5,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 38,
+      "ticker": "MTG",
+      "eligibility": false,
+      "peer_group": "Diversified insurers",
+      "tactical_score": 52.0577,
+      "structural_score": 65.2,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 39,
+      "ticker": "PGY",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 51.8353,
+      "structural_score": 70.6,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.86,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 40,
+      "ticker": "ASTS",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 51.3487,
+      "structural_score": 42.1,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.67,
+      "reason_codes": []
+    },
+    {
+      "rank": 41,
+      "ticker": "MTCH",
+      "eligibility": false,
+      "peer_group": "Communication Services",
+      "tactical_score": 51.0415,
+      "structural_score": 68.9,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.84,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 42,
+      "ticker": "AAPL",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 50.3577,
+      "structural_score": 62.1,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 43,
+      "ticker": "MU",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 50.0286,
+      "structural_score": 57.0,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 44,
+      "ticker": "CMG",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 49.8835,
+      "structural_score": 62.1,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 45,
+      "ticker": "PRI",
+      "eligibility": false,
+      "peer_group": "Life insurers",
+      "tactical_score": 49.6501,
+      "structural_score": 66.2,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.84,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 46,
+      "ticker": "QCOM",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 49.2739,
+      "structural_score": 71.7,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 47,
+      "ticker": "NBIS",
+      "eligibility": true,
+      "peer_group": "Communication Services",
+      "tactical_score": 46.2986,
+      "structural_score": 43.6,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.79,
+      "reason_codes": []
+    },
+    {
+      "rank": 48,
+      "ticker": "ACN",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 45.9687,
+      "structural_score": 72.7,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 49,
+      "ticker": "AMTM",
+      "eligibility": false,
+      "peer_group": "Industrials",
+      "tactical_score": 45.6876,
+      "structural_score": 58.7,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 50,
+      "ticker": "ACGL",
+      "eligibility": false,
+      "peer_group": "Diversified insurers",
+      "tactical_score": 44.1587,
+      "structural_score": 68.6,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 51,
+      "ticker": "EXPE",
+      "eligibility": false,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 44.0033,
+      "structural_score": 69.9,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 52,
+      "ticker": "DXCM",
+      "eligibility": false,
+      "peer_group": "Medical device companies",
+      "tactical_score": 42.2605,
+      "structural_score": 64.5,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 53,
+      "ticker": "AAOI",
+      "eligibility": false,
+      "peer_group": "Other Pre Profit",
+      "tactical_score": 41.4623,
+      "structural_score": 47.2,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.7,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 54,
+      "ticker": "RIGL",
+      "eligibility": false,
+      "peer_group": "Biopharmaceutical companies",
+      "tactical_score": 41.1252,
+      "structural_score": 71.0,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.85,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 55,
+      "ticker": "OXY",
+      "eligibility": true,
+      "peer_group": "Commodity producers",
+      "tactical_score": 40.546,
+      "structural_score": 59.5,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.87,
+      "reason_codes": []
+    },
+    {
+      "rank": 56,
+      "ticker": "HIG",
+      "eligibility": true,
+      "peer_group": "Diversified insurers",
+      "tactical_score": 40.5254,
+      "structural_score": 67.0,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.85,
+      "reason_codes": []
+    },
+    {
+      "rank": 57,
+      "ticker": "ADBE",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 38.1654,
+      "structural_score": 74.6,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 58,
+      "ticker": "NEM",
+      "eligibility": true,
+      "peer_group": "Commodity producers",
+      "tactical_score": 37.5374,
+      "structural_score": 78.5,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 59,
+      "ticker": "AFL",
+      "eligibility": false,
+      "peer_group": "Life insurers",
+      "tactical_score": 37.4356,
+      "structural_score": 61.3,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.81,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 60,
+      "ticker": "BWA",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 36.4291,
+      "structural_score": 65.9,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 61,
+      "ticker": "EXEL",
+      "eligibility": true,
+      "peer_group": "Profitable Biotechnology",
+      "tactical_score": 35.1728,
+      "structural_score": 78.7,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 62,
+      "ticker": "EOG",
+      "eligibility": false,
+      "peer_group": "Commodity producers",
+      "tactical_score": 32.0151,
+      "structural_score": 72.3,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 63,
+      "ticker": "INTU",
+      "eligibility": true,
+      "peer_group": "Technology",
+      "tactical_score": 31.4341,
+      "structural_score": 71.7,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.88,
+      "reason_codes": []
+    },
+    {
+      "rank": 64,
+      "ticker": "LOPE",
+      "eligibility": false,
+      "peer_group": "Consumer Defensive",
+      "tactical_score": 30.8903,
+      "structural_score": 74.4,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 65,
+      "ticker": "LULU",
+      "eligibility": true,
+      "peer_group": "Consumer Cyclical",
+      "tactical_score": 30.3375,
+      "structural_score": 73.7,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 66,
+      "ticker": "META",
+      "eligibility": false,
+      "peer_group": "Communication Services",
+      "tactical_score": 28.8036,
+      "structural_score": 66.0,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.88,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 67,
+      "ticker": "CRUS",
+      "eligibility": false,
+      "peer_group": "Technology",
+      "tactical_score": 26.723,
+      "structural_score": 79.5,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 68,
+      "ticker": "DEO",
+      "eligibility": true,
+      "peer_group": "Consumer Defensive",
+      "tactical_score": 25.6254,
+      "structural_score": 47.3,
+      "classification": "avoid",
+      "coverage": 0.55,
+      "confidence": 0.58,
+      "reason_codes": []
+    },
+    {
+      "rank": 69,
+      "ticker": "APA",
+      "eligibility": true,
+      "peer_group": "Commodity producers",
+      "tactical_score": 25.1354,
+      "structural_score": 70.0,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.87,
+      "reason_codes": []
+    },
+    {
+      "rank": 70,
+      "ticker": "ALGN",
+      "eligibility": false,
+      "peer_group": "Medical device companies",
+      "tactical_score": 22.6514,
+      "structural_score": 69.3,
+      "classification": "quality company, wait",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 71,
+      "ticker": "FISV",
+      "eligibility": false,
+      "peer_group": "Unclassified",
+      "tactical_score": 22.0361,
+      "structural_score": 62.4,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.76,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 72,
+      "ticker": "BSX",
+      "eligibility": true,
+      "peer_group": "Medical device companies",
+      "tactical_score": 21.2565,
+      "structural_score": 66.2,
+      "classification": "quality company, wait",
+      "coverage": 0.55,
+      "confidence": 0.89,
+      "reason_codes": []
+    },
+    {
+      "rank": 73,
+      "ticker": "LEU",
+      "eligibility": false,
+      "peer_group": "Energy",
+      "tactical_score": 19.7043,
+      "structural_score": 49.1,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.89,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 74,
+      "ticker": "AXGN",
+      "eligibility": false,
+      "peer_group": "Medical device companies",
+      "tactical_score": 16.8072,
+      "structural_score": 48.6,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.72,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 75,
+      "ticker": "DECJ",
+      "eligibility": false,
+      "peer_group": "Unclassified",
+      "tactical_score": 13.6364,
+      "structural_score": 50.0,
+      "classification": "avoid",
+      "coverage": 0.1,
+      "confidence": 0.0,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY",
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 76,
+      "ticker": "TTM",
+      "eligibility": false,
+      "peer_group": "Unclassified",
+      "tactical_score": 13.6364,
+      "structural_score": 50.0,
+      "classification": "avoid",
+      "coverage": 0.1,
+      "confidence": null,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY",
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 77,
+      "ticker": "UEC",
+      "eligibility": false,
+      "peer_group": "Energy",
+      "tactical_score": 6.6298,
+      "structural_score": 47.5,
+      "classification": "avoid",
+      "coverage": 0.47,
+      "confidence": 0.69,
+      "reason_codes": [
+        "INSUFFICIENT_FACTOR_COVERAGE"
+      ]
+    },
+    {
+      "rank": 78,
+      "ticker": "VOO",
+      "eligibility": false,
+      "peer_group": "Etf",
+      "tactical_score": null,
+      "structural_score": 50.0,
+      "classification": "avoid",
+      "coverage": 0,
+      "confidence": 0.25,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY",
+        "NO_TACTICAL_FACTORS_AVAILABLE"
+      ]
+    },
+    {
+      "rank": 79,
+      "ticker": "VGT",
+      "eligibility": false,
+      "peer_group": "Etf",
+      "tactical_score": null,
+      "structural_score": 50.0,
+      "classification": "avoid",
+      "coverage": 0,
+      "confidence": 0.25,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY",
+        "NO_TACTICAL_FACTORS_AVAILABLE"
+      ]
+    }
+  ],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "2913e18870c53957e4a7523e074f11cb9e00531c",
+    "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
+    "generated_at": "2026-08-09T18:46:38.843787+00:00"
+  }
 }
