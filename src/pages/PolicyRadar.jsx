@@ -72,7 +72,7 @@ function NewsCard({ item, index }) {
     </div>
     <strong>{item.title}</strong>
     <p>{item.summary}</p>
-    {item.research_rank && <small className="news-context">
+    {item.research_rank != null && <small className="news-context">
       {item.published_research
         ? `Published research rank #${item.research_rank}`
         : `Broader-universe research rank #${item.research_rank}`}

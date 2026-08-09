@@ -66,6 +66,13 @@ body { overscroll-behavior-y: contain; }
 .route-loading { min-height: 50vh; display: grid; place-content: center; }
 .loading-mark { width: 34px; height: 34px; justify-self: center; border: 3px solid var(--border-lit); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.route-error {
+  min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; text-align: center; padding: 24px;
+}
+.route-error p { color: var(--text-faint); font-size: 13px; margin: 0 0 8px; }
+.route-error-actions { display: flex; gap: 10px; }
+.route-error-actions a { text-decoration: none; }
 
 /* Shared status and page furniture */
 .data-status {
