@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.1.0",
+  "model_version": "institutional-13f-v1.1.0",
+  "generated_at": "2026-08-09T08:33:37.894654+00:00",
+  "status": "success",
+  "manager_universe": "publicly traded, style=active only - see pipeline/config/institutional_managers.json",
+  "managers_reviewed": 3,
+  "managers_configured": 9,
+  "filings_unreadable": 0,
+  "amendments_seen": 0,
+  "cusips_seen": 0,
+  "cusips_mapped": 0,
+  "disclaimer": "Which curated, publicly traded active managers added or cut a position between their two most recent distinct 13F reporting periods. Not a claim about why, and coverage is necessarily partial - large privately held managers (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no ticker and are not reachable this way. Each result's `as_of` is the SEC filing date, which trails the quarter it describes by up to 45 days - advisor_engine.institutional_ownership_modifier decays its score contribution by that lag rather than treating it as current.",
+  "results": [],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "d343865661a510bfa692f1d68c3e43e65badfa92",
+    "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
+    "generated_at": "2026-08-09T08:33:37.894654+00:00"
+  }
+}
