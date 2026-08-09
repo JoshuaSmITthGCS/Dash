@@ -809,7 +809,11 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
 }
 .screen-nav { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 20px; }
 .screen-nav a { min-height: 44px; display: inline-flex; align-items: center; flex: 0 0 auto; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); text-decoration: none; }
-.screen-nav a.active { color: var(--text); border-color: var(--accent); background: var(--surface-raised); }
+.screen-nav a.active { color: var(--text); border-color: var(--accent); background: var(--bg-elev); }
+/* Options sub-tabs: same scroller, visually subordinate to the screen row above it. */
+.screen-nav.screen-subnav { gap: 4px; margin-top: -12px; padding: 0 0 20px; }
+.screen-subnav a { min-height: 38px; padding: 0 12px; border-color: transparent; border-radius: 12px; font-size: 13px; }
+.screen-subnav a.active { border-color: transparent; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-weight: 600; }
 .screen-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .screen-filters label { color: var(--text-dim); font-size: 12px; display: grid; gap: 6px; }
 .screen-filters select, .screen-filters input { min-height: 44px; width: 100%; }

@@ -38,6 +38,12 @@ const Diversification = lazy(() => import('./pages/Diversification.jsx'))
 const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 
+// Flat strategy paths that predate the Options tab, kept alive as redirects into it.
+const OPTIONS_STRATEGY_IDS = [
+  'short-term-trades', 'covered-call', 'cash-secured-put', 'protective-put',
+  'collar', 'vertical-spread', 'advanced-strategies',
+]
+
 const NAV = [
   { to: '/', label: 'Financial Report', icon: 'overview', end: true },
   { to: '/research', label: 'Research', icon: 'research' },
@@ -152,14 +158,20 @@ function AppContent() {
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
           <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
           <Route path="/screens/fast-growth" element={<FastGrowthScreen />} />
+          {/* Options is one tab in the screens rail; each strategy is a sub-tab beneath it. */}
           <Route path="/screens/options" element={<OptionsScreen />} />
-          <Route path="/screens/covered-call" element={<StrategyScreen id="covered-call" />} />
-          <Route path="/screens/cash-secured-put" element={<StrategyScreen id="cash-secured-put" />} />
-          <Route path="/screens/protective-put" element={<StrategyScreen id="protective-put" />} />
-          <Route path="/screens/collar" element={<StrategyScreen id="collar" />} />
-          <Route path="/screens/vertical-spread" element={<StrategyScreen id="vertical-spread" />} />
-          <Route path="/screens/advanced-strategies" element={<StrategyScreen id="advanced-strategies" />} />
-          <Route path="/screens/short-term-trades" element={<StrategyScreen id="short-term-trades" />} />
+          <Route path="/screens/options/short-term-trades" element={<StrategyScreen id="short-term-trades" />} />
+          <Route path="/screens/options/covered-call" element={<StrategyScreen id="covered-call" />} />
+          <Route path="/screens/options/cash-secured-put" element={<StrategyScreen id="cash-secured-put" />} />
+          <Route path="/screens/options/protective-put" element={<StrategyScreen id="protective-put" />} />
+          <Route path="/screens/options/collar" element={<StrategyScreen id="collar" />} />
+          <Route path="/screens/options/vertical-spread" element={<StrategyScreen id="vertical-spread" />} />
+          <Route path="/screens/options/advanced-strategies" element={<StrategyScreen id="advanced-strategies" />} />
+          {/* Bookmarks and older links to the flat strategy paths still resolve. */}
+          {OPTIONS_STRATEGY_IDS.map((id) => (
+            <Route key={id} path={`/screens/${id}`}
+              element={<Navigate to={`/screens/options/${id}`} replace />} />
+          ))}
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates. The own-history window is only as deep as the collected point-in-time record, and every row publishes the window it was measured over." />} />
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability–kept separate from structural quality." />} />

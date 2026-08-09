@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { Empty, Loading, Move, Tier } from '../components/Bits.jsx'
-import { ScreenNavigation } from './ResearchScreen.jsx'
+import { OptionsNavigation, ScreenNavigation } from './ResearchScreen.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
@@ -100,6 +100,7 @@ export default function OptionsScreen() {
 
   return <>
     <ScreenNavigation />
+    <OptionsNavigation />
     <div className="page-head">
       <div>
         <span className="eyebrow">Multi-day horizon · your universe</span>

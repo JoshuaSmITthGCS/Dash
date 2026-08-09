@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { Empty, Loading } from '../components/Bits.jsx'
-import { ScreenNavigation } from './ResearchScreen.jsx'
+import { OptionsNavigation, ScreenNavigation } from './ResearchScreen.jsx'
 import { STRATEGY_SCREENS } from '../lib/strategyScreenConfigs.js'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
@@ -156,6 +156,7 @@ export default function StrategyScreen({ id }) {
 
   return <>
     <ScreenNavigation />
+    <OptionsNavigation />
     <div className="page-head">
       <div>
         <span className="eyebrow">{config.eyebrow}</span>
