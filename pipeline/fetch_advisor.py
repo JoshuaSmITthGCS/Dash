@@ -1356,7 +1356,7 @@ def run():
         row = build_research(
             context["symbol"], context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended={},
-            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("ordinal"),
             macro_regime=fred_regime,
         )
         preliminary.append(row)
@@ -1499,7 +1499,7 @@ def run():
         row = build_research(
             symbol, context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended=context["extended"],
-            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("ordinal"),
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
             institutional_ownership=institutional_signals.get(symbol),

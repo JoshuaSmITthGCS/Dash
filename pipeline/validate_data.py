@@ -168,13 +168,23 @@ def validate(production=False):
         if recommendation and recommendation.get("action") in ("TRIM", "SELL") and recommendation.get("agreement_count", 0) < 2:
             errors.append(f"advisor.json:research.{index}: sell guidance requires two agreeing factors")
         percentile = row.get("valuation_percentile")
-        if percentile and row.get("sector_valuation_percentile") != percentile.get("value"):
-            errors.append(f"advisor.json:research.{index}: legacy and canonical percentile values disagree")
-        if percentile and percentile.get("value") is not None:
-            if percentile.get("peer_count_with_valid_data", 0) < percentile.get("minimum_peer_count", 4):
-                errors.append(f"advisor.json:research.{index}: percentile published below minimum peer count")
-            if percentile.get("value") == 100 and percentile.get("display_value", 100) > 99:
-                errors.append(f"advisor.json:research.{index}: user-facing percentile must cap at approximately 99")
+        if percentile and row.get("sector_valuation_percentile") != percentile.get("ordinal"):
+            errors.append(f"advisor.json:research.{index}: legacy and canonical peer ordinals disagree")
+        if percentile:
+            # A peer claim below the minimum sample must be absent, not degraded, and no
+            # continuous percentile may be published at all -- the ranked quantity is a
+            # composite of discrete bands and cannot support one. See peer_groups.py.
+            context = percentile.get("peer_context")
+            valid_peers = percentile.get("peer_count_with_valid_data", 0)
+            minimum = percentile.get("minimum_peer_count", 30)
+            if context is not None and valid_peers < minimum:
+                errors.append(f"advisor.json:research.{index}: peer context published below minimum peer count")
+            if context is None and percentile.get("tier") is not None:
+                errors.append(f"advisor.json:research.{index}: suppressed peer group still published a tier")
+            for banned in ("value", "display_value"):
+                if percentile.get(banned) is not None:
+                    errors.append(f"advisor.json:research.{index}: peer payload published a continuous "
+                                  f"percentile ('{banned}'), which the sample cannot support")
         analysis = row.get("analysis_v2", {})
         structural = analysis.get("structural", {})
         if structural.get("confidence", 1) < 0.4 and analysis.get("company_classification") != "insufficient_evidence":

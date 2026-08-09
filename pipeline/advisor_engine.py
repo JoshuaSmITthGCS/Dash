@@ -460,17 +460,27 @@ def expectations_modifier(extended):
 
 
 def sector_percentile_modifier(percentile):
-    """Reward being cheap *for its own sector*, which absolute multiples cannot express."""
+    """Reward being cheap *for its own peer group*, at the resolution the sample supports.
+
+    The input is a peer tier midpoint from ``peer_groups.TIER_MIDPOINTS``, not a measured
+    percentile, so this awards three discrete outcomes: the full cap for the cheapest third,
+    the full penalty for the most expensive third, nothing for the middle. Scaling
+    continuously off the old spurious percentile produced points like ``+2.08`` from a
+    ranking whose real resolution was one third -- see
+    ``research/audit/CURRENT_MODEL_AUDIT.md`` section 2. Coarse evidence, coarse effect.
+
+    Peer groups below ``peer_groups.MINIMUM_VALID_PEERS`` publish no tier at all, so they
+    arrive here as ``None`` and earn nothing rather than a degraded estimate.
+    """
     cfg = MODIFIERS.get("sector_valuation_percentile", {})
     cap = cfg.get("max_points", 3.0)
     if percentile is None:
         return 0.0, None
-    points = round((percentile - 50) / 50 * cap, 2)
-    if abs(points) < 0.5:
-        return 0.0, None
-    if points > 0:
-        return points, f"Valuation cheaper than {percentile:.0f}% of its canonical peers"
-    return points, f"Valuation richer than {100 - percentile:.0f}% of its canonical peers"
+    if percentile >= 66.7:
+        return round(cap, 2), "Valuation in the cheapest third of its canonical peer group"
+    if percentile <= 33.3:
+        return round(-cap, 2), "Valuation in the most expensive third of its canonical peer group"
+    return 0.0, None
 
 
 def macro_regime_modifier(snapshot, macro_regime):

@@ -240,7 +240,18 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
             <AnalysisLayers analysis={analysis} />
           </div>
-          {percentile?.display_value != null && <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}`}>Cheaper than approximately {percentile.display_value.toFixed(0)}% of {percentile.peer_group_label}, based on {percentile.peer_count_with_valid_data} valid peers.</p>}
+          {/* Tiers, never a percentage. The old sentence read "Cheaper than approximately
+              85% of Property & casualty insurers, based on 14 valid peers" for a name in the
+              expensive half of its group on both book and tangible book -- the ranked
+              quantity is a composite of discrete bands, and with n=14 the resolution was
+              7.7 points anyway. Groups under the minimum publish nothing at all now. */}
+          {percentile?.peer_context
+            ? <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}. ${percentile.peer_context.ranked_quantity_note}`}>
+                Valuation score {percentile.peer_context.tier_phrase} {percentile.peer_group_label} ({percentile.peer_context.tier_count} of {percentile.peer_context.peer_count_with_valid_data} names). Ranks this model&rsquo;s valuation composite, not a price multiple.
+              </p>
+            : percentile && <p className="stock-peer-context">
+                No peer comparison published: {percentile.peer_count_with_valid_data} valid {percentile.peer_group_label} peers, below the {percentile.minimum_peer_count} needed to rank against.
+              </p>}
         </div>}
 
         <div className="tabs">

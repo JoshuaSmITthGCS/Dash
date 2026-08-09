@@ -4,7 +4,7 @@ from common import load_json, save_json
 from observability import diagnostics_payload, run_manifest
 from peer_groups import canonical_percentiles
 from recommendation_policy_v2 import build_recommendation_v2
-from scoring_v2 import build_v2_analysis
+from scoring_v2 import MODEL_VERSION, build_v2_analysis
 
 
 def migrate(payload):
@@ -35,14 +35,14 @@ def migrate(payload):
             if not row.get("valuation_percentile"):
                 row["valuation_percentile"] = peers.get(row["ticker"])
             if row.get("sector_valuation_percentile") is None:
-                canonical_percentile = (row.get("valuation_percentile") or {}).get("value")
+                canonical_percentile = (row.get("valuation_percentile") or {}).get("ordinal")
                 row["sector_valuation_percentile"] = canonical_percentile
             seen.add(row["ticker"])
     from scorer import SETTINGS
     output["schema_version"] = SETTINGS["model"]["advisor_schema_version"]
     output["model_version"] = SETTINGS["model"]["semantic_version"]
     output.setdefault("methodology", {})["canonical_layer"] = {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": MODEL_VERSION,
         "migration": "legacy fields retained; v2 decisions are independently versioned",
     }
     rejected = (output.get("run_manifest") or {}).get("rejected_at_each_step") or {"migration": 0}

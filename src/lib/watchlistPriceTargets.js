@@ -44,32 +44,41 @@ export function suggestDipBuyPrice(stock) {
   }
 }
 
+const TIER_PHRASES = {
+  cheapest_third: 'the cheapest third of its peer group',
+  middle_third: 'the middle third of its peer group',
+  most_expensive_third: 'the most expensive third of its peer group',
+}
+
 /**
- * A valuation-percentile-based discount: only applies when this name is priced richer than
- * its own configured "fair" percentile against sector/industry peers (peer_groups.py
- * desirability_percentile, where a higher percentile means cheaper than more peers). A name
- * already at or above the fair percentile gets good_buy == current price -- there is no
- * invented discount for a name that is already reasonably priced.
+ * A peer-tier-based discount. The input is a tier midpoint from peer_groups.TIER_MIDPOINTS,
+ * not a measured percentile -- the ranked quantity is a composite of discrete valuation
+ * bands, and peer groups below the minimum sample publish no tier at all, so those names get
+ * no suggested discount rather than one derived from a number nobody can support. A name in
+ * the cheapest third gets good_buy == current price: there is no invented discount for a name
+ * already priced reasonably against its peers.
  */
 export function suggestGoodBuyPrice(stock) {
   if (!stock || !finite(stock.price) || stock.price <= 0) return null
-  const percentile = stock.valuation_percentile?.value ?? stock.sector_valuation_percentile
-  if (!finite(percentile)) {
+  const ordinal = stock.valuation_percentile?.ordinal ?? stock.sector_valuation_percentile
+  const tier = stock.valuation_percentile?.tier
+  if (!finite(ordinal)) {
     return {
       price: null,
       discountPct: null,
-      derivation: 'No sector-relative valuation percentile published for this name yet.',
+      derivation: 'No peer valuation tier published for this name: its peer group is below the minimum sample needed to rank against.',
     }
   }
-  const gap = Math.max(0, config.good_buy.fair_valuation_percentile - percentile)
+  const gap = Math.max(0, config.good_buy.fair_valuation_percentile - ordinal)
   const discountPct = clamp(gap * config.good_buy.discount_pct_per_percentile_point, 0, config.good_buy.max_discount_pct)
   const price = Math.round(stock.price * (1 - discountPct / 100) * 100) / 100
+  const where = TIER_PHRASES[tier] || 'its peer group'
   return {
     price,
     discountPct,
     derivation: discountPct > 0
-      ? `Cheaper than ${percentile.toFixed(0)}% of peers today (fair is ${config.good_buy.fair_valuation_percentile.toFixed(0)}%), so a ${discountPct.toFixed(1)}% discount is suggested before calling this a good entry.`
-      : `Already cheaper than ${percentile.toFixed(0)}% of peers, at or above the ${config.good_buy.fair_valuation_percentile.toFixed(0)}% fair threshold -- the current price is already a reasonable entry by this measure.`,
+      ? `Valuation score sits in ${where}, so a ${discountPct.toFixed(1)}% discount is suggested before calling this a good entry. Ranks this model's valuation composite, not a price multiple.`
+      : `Valuation score already sits in ${where} -- the current price is already a reasonable entry by this measure.`,
   }
 }
 
