@@ -1,8 +1,10 @@
 # TODO
 
-_Last updated: 2026-08-09 (backlog_growth wired via dimensional XBRL, §2; customer-concentration,
-geographic-concentration, and curated-manager institutional-13F risk modifiers wired into the
-live score, §2a)_
+_Last updated: 2026-08-09, revised same day after review (backlog_growth wired via
+dimensional XBRL, §2; customer-concentration and geographic-concentration modifiers moved
+to shadow mode pending coverage measurement, institutional 13F pulled out of the score
+entirely and rebuilt as its own congress-style screen with active/passive manager
+classification, §2a; point-in-time capture for all of the above confirmed, §2c)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
@@ -123,61 +125,125 @@ is a thin basis for a screen whose whole purpose is corroboration.
 ---
 
 ## 2a. `capability_status.fx_exposure`, `.institutional_13f_changes`, and
-     `.customer_concentration_risk` — now wired into the score, not just displayed
+     `.customer_concentration_risk` — corrected diagnosis, revised architecture
 
-Confirmed by the 2026-08-09 build: all three are implemented as bounded modifiers in
-`advisor_engine.apply_modifiers` (config in `settings.json` under `modifiers.
-geographic_concentration`, `modifiers.institutional_13f`, `modifiers.
-customer_concentration_risk`), fed from `fetch_advisor.collect_filing_risk_signals` and
-`collect_institutional_ownership_signals`, both called ahead of scoring in `run()` the same
-way `collect_insider_signals` already was — see `tests/test_advisor_engine.py`'s
-`BuildResearchWiresTheThreeFilingRiskModifiersTests` for proof each one actually moves
-`row["score"]`, not just a display field.
+First pass (2026-08-09, early) wired all three straight into the champion score. Review
+caught two separate mistakes in that: shipping unmeasured coverage as if it were verified,
+and treating curated-manager 13F flow as a clean proxy for conviction when it is dominated
+by mechanical index rebalancing. Both are fixed below, not patched over.
 
 - [x] ~~**`fx_exposure`**~~ Scored as single-country revenue concentration
       (`pipeline/geographic_exposure.py`) from `us-gaap:Revenues` dimensioned on
       `StatementGeographicalAxis`, read via `pipeline/xbrl_dimensions.dimensional_facts`
-      the same way `backlog_growth` is. Deliberately narrower than "FX exposure" as a
-      general idea: it penalizes concentration in one non-domestic geography, not
-      international revenue in general — a globally diversified company with no single
-      dominant foreign country scores no penalty. Not wired into the theme layer; it is a
-      score modifier (`geographic_concentration`), which is where the risk-not-direction
-      framing actually applies.
-
-- [x] ~~**`institutional_13f_changes`**~~ There is still no per-company "who holds this
-      ticker" EDGAR endpoint, so full 13F-universe coverage still needs SEC's bulk
-      quarterly data sets, not a per-refresh fetch — that part of the original diagnosis
-      was right. What shipped instead: a curated list of **publicly traded** institutional
-      managers (`pipeline/config/institutional_managers.json`, resolved through the same
-      live `ticker_map()` every other CIK lookup in this codebase uses — never a
-      hand-typed CIK, which could silently attribute one manager's holdings to another),
-      each one's own 13F-HR information tables (`pipeline/institutional_ownership.py`),
-      OpenFIGI CUSIP→ticker mapping (`pipeline/openfigi_client.py`), and a bounded
-      modifier scored on breadth of curated managers adding vs. cutting a position
-      (`institutional_13f`). **Known gap, stated plainly**: large, influential private
-      13F filers (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no
-      ticker and are not reachable this way — this is a curated subset, the same honest
-      tradeoff `segment_map`/`customer_map` already make elsewhere in `theme_signals.py`.
-      **Not yet done, because there was no network access while this was written**: this
-      has never executed against the live OpenFIGI endpoint or a live 13F filing. Verify
-      the CUSIP resolution rate and manager coverage on the first real production run
-      before trusting the modifier's magnitude — the logic is tested end-to-end against
-      synthetic fixtures (`tests/test_institutional_ownership.py`,
-      `tests/test_openfigi_client.py`, `tests/test_filing_risk_collectors.py`), but a
-      fixture cannot tell you OpenFIGI's real resolution rate or whether the curated
-      managers' tickers still route to the CIKs this list assumes.
+      the same way `backlog_growth` is — deliberately narrower than "FX exposure" as a
+      general idea, penalizing concentration in one non-domestic geography, not
+      international revenue in general. **Shadow mode only**: wired into
+      `apply_challenger_modifiers`, deliberately absent from the champion
+      `apply_modifiers` (see that function's docstring). Two reasons, not one: coverage
+      is unmeasured (below), and geography tags routinely reflect shipping destination or
+      contracting entity rather than end demand — a contract manufacturer can book
+      enormous "China" revenue that is really an assembly step. Both need checking against
+      real filings before this penalizes a live score.
 
 - [x] ~~**`customer_concentration_risk`**~~ Not the same capability as the theme layer's
       `customer_concentration_to_spenders` above (§2) — kept separate deliberately.
       `us-gaap:ConcentrationRiskPercentage1` dimensioned by `ConcentrationRiskByTypeAxis =
       CustomerConcentrationRiskMember` gives concentration *magnitude*, scored as a
       penalty-only modifier (`pipeline/concentration_risk.py`); it still cannot name the
-      customer, so it cannot answer the theme layer's supply-chain question. **Not yet
-      done**: measure `ConcentrationRiskPercentage1` tagging coverage across the scored
-      universe on a live run. The modifier only ever fires on filers that tagged the
-      percentage — a filer that names its concentrated customer in Item 1 prose without
-      tagging the percentage contributes nothing here, and there is no visibility yet into
-      how large that gap is.
+      customer, so it cannot answer the theme layer's supply-chain question. **Shadow mode
+      only**, same as `geographic_concentration` and for the sharper version of the same
+      reason: a penalty-only modifier that only fires on filers who happened to tag the
+      concept systematically favors whichever companies didn't tag it — worse than not
+      scoring it at all. `capability_status.customer_concentration_risk` now publishes
+      `concentration_tag_coverage` (tagged filings ÷ filings reviewed) every run
+      specifically so this has a number attached before anyone promotes it to champion.
+      **The gate**: promote to `apply_modifiers` only once coverage across the scored
+      universe is measured on a live run and clears roughly the same ~60% bar the theme
+      layer's own concentration signal is held to (§2 above) — below that, it stays a
+      confidence input at most, never a hard modifier.
+
+- [x] ~~**`institutional_13f_changes`**~~ **Rebuilt, not just moved to shadow mode.** The
+      original design scored curated-manager 13F breadth as a bounded modifier feeding
+      the same score as valuation and sector percentiles. That is a subtler problem than
+      unmeasured coverage: restricting 13F reads to *publicly traded* managers (there is
+      still no per-company "who holds this ticker" EDGAR endpoint, so full-universe
+      coverage still needs SEC's bulk quarterly data sets — that half of the original
+      diagnosis was right) is not a random sample of institutional flow. It oversamples
+      the largest passive indexers — BlackRock, State Street, Invesco — whose
+      quarter-over-quarter position changes are close to mechanically determined by index
+      membership and fund flows, not conviction. Scoring that into a composite that
+      already has size/valuation inputs would partly reintroduce market cap as a second,
+      hidden input labeled "smart money."
+
+      **What shipped instead**: pulled out of the research score entirely (not shadow
+      mode — genuinely unscored), published as its own factual screen,
+      `pipeline/build_institutional_screen.py`, the same architecture as
+      `pipeline/build_congress_screen.py` for STOCK Act disclosures — descriptive flags
+      (`ACCUMULATION`/`CLUSTER_ACCUMULATION`/`DISTRIBUTION`/`CLUSTER_DISTRIBUTION`), an
+      explicit disclaimer, its own append-only point-in-time store
+      (`pipeline/data/institutional_13f/positions.jsonl`, keyed by manager/CUSIP/**filing
+      date** — never quarter-end, since a 13F position is disclosed up to 45 days after
+      the period it describes and timestamping by period-end would be a point-in-time
+      violation baked into the one part of this system built specifically to avoid that),
+      and its own monthly schedule (`.github/workflows/institutional-13f.yml` — 13F data
+      is inherently quarterly, so anything more frequent than monthly buys nothing).
+      `pipeline/config/institutional_managers.json` now classifies every curated manager
+      `active`/`passive`/`alternative`, and the screen defaults to `active` only —
+      Blackstone/KKR/Apollo/Ares (`alternative`) are excluded too, since a private-equity
+      manager's public 13F stakes are usually residual take-private holdings, not a
+      portfolio-flow signal comparable to a mutual-fund manager's.
+
+      Everything below the CIK-resolution layer is unchanged and still real: managers are
+      resolved through the live `ticker_map()` every other CIK lookup in this codebase
+      uses (never a hand-typed CIK, which could silently attribute one manager's holdings
+      to another), and CUSIP→ticker still goes through OpenFIGI
+      (`pipeline/openfigi_client.py`). **Not yet done, because there was no network access
+      while any of this was written**: none of it has executed against the live OpenFIGI
+      endpoint or a live 13F filing. Verify the CUSIP resolution rate and manager coverage
+      on the first real run — the logic is tested end-to-end against synthetic fixtures
+      (`tests/test_institutional_ownership.py`, `tests/test_openfigi_client.py`,
+      `tests/test_build_institutional_screen.py`), but a fixture cannot tell you
+      OpenFIGI's real resolution rate or whether the curated managers' tickers still route
+      to the CIKs this list assumes.
+
+---
+
+## 2c. The point-in-time record for these five signals — confirmed, not assumed
+
+Every one of `backlog_growth`, `customer_concentration_risk`, `geographic_concentration`,
+`insider_activity`, and the (now-removed-from-scoring) institutional 13F work has a
+specific, checkable answer for "does today's run get recorded before it's gone forever" —
+`pit_store.py`'s own governing claim is that a day not captured **cannot be
+reconstructed retroactively**.
+
+- **The three score modifiers** (`insider_activity`, `customer_concentration_risk`,
+  `geographic_concentration`) are captured through `validation/ic_harness.py`, not
+  `pit_store.TRACKED_FIELDS` — that list is fundamentals inputs (P/E, ROE, ...), and no
+  modifier has ever lived there, insider activity included. `ic_harness.append_refresh`
+  runs on every `fetch_advisor.run()` (`fetch_advisor.py`'s `append_ic_refresh` call) and
+  snapshots `row["modifiers"]` through `_modifier_contract`, keyed off
+  `settings.json`'s `validation.modifier_fields` — which now lists both new modifier
+  names alongside `insider_activity`. Confirmed by
+  `tests/test_ic_harness.py::test_snapshot_jsonl_contains_required_reproducibility_fields`
+  and `tests/test_explainability.py`, both asserting the full modifier key set including
+  the two new ones. Champion `all_points` will correctly show `0.0` for both (shadow mode
+  means the champion path genuinely doesn't use them); challenger `all_points` carries the
+  real value. Nothing here is late — it shipped in the same commit as the signals
+  themselves.
+- **`backlog_growth`** is a theme-layer signal, evaluated through the theme screen's own
+  scoring history, not `pit_store`/`ic_harness` at all — same treatment every other theme
+  signal (`segment_revenue_share`, `hyperscaler_capex_growth`, ...) already gets.
+- **Institutional 13F** no longer needs any of this: it isn't part of the score, so there
+  is no "did the modifier's point value get archived" question to ask. Its own
+  point-in-time record is `pipeline/data/institutional_13f/positions.jsonl`, append-only,
+  keyed by filing date, exactly like `pipeline/data/congress/trades.jsonl`.
+- **Known real gap, pre-existing and not introduced here**: `payload["research"]` (what
+  `ic_harness` snapshots with full modifier detail) is only the published top-`N` rows;
+  the rest of the scored universe is slimmed via `_screen_row` before reaching
+  `screen_universe`, which does not carry `row["modifiers"]`. Every modifier — insider
+  activity included — has only ever had point-in-time modifier detail for published rows.
+  Not a new limitation, but worth having written down once instead of rediscovering it
+  during the first backtest that asks why an unpublished row's modifier history is empty.
 
 ---
 

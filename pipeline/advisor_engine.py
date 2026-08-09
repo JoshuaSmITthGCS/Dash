@@ -303,6 +303,12 @@ def concentration_risk_modifier(concentration):
     a raw list of disclosed percentages or an already-scored summary, so the pipeline can
     compute it once per filing and reuse it. Penalty-only: this is a known, uncompensated
     risk, not a bet on a direction.
+
+    Deliberately wired into ``apply_challenger_modifiers`` only, not the champion
+    ``apply_modifiers`` - ``ConcentrationRiskPercentage1`` tagging coverage across the
+    scored universe has never been measured (no network access existed while this was
+    written), and a penalty-only modifier that only fires on tagged filers systematically
+    favors whichever companies happen not to have tagged the concept. See TODO.md.
     """
     if not concentration:
         return 0.0, None
@@ -328,6 +334,13 @@ def geographic_concentration_modifier(geographic_exposure):
     Same shape as ``concentration_risk_modifier``, scored by ``geographic_exposure``:
     penalty-only, and only for concentration in one country, not international revenue in
     general - see that module's docstring for why the two are not the same claim.
+
+    Also challenger-only, for a second reason beyond untested tagging coverage: revenue
+    tagged against a geography frequently reflects shipping destination or the
+    contracting entity rather than end demand - a contract manufacturer can book
+    enormous "China" revenue that is really an assembly step, not Chinese consumer
+    exposure. The tag needs spot-checking against real filings before this penalizes a
+    live score. See TODO.md.
     """
     if not geographic_exposure:
         return 0.0, None
@@ -345,26 +358,6 @@ def geographic_concentration_modifier(geographic_exposure):
         return 0.0, None
     floor = -cfg.get("max_penalty", 2.0)
     return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
-
-
-def institutional_ownership_modifier(institutional_ownership):
-    """Reward or penalize breadth of curated public-manager 13F accumulation/distribution.
-
-    Unlike the two concentration modifiers above, this is two-sided like insider activity:
-    corroborated buying across several curated managers is constructive, corroborated
-    selling is not. The scoring (breadth of net movers, requiring a plurality before it
-    fires at all) lives in ``institutional_ownership.score_institutional_ownership``.
-    """
-    if not institutional_ownership or institutional_ownership.get("score_points") is None:
-        return 0.0, None
-    points = institutional_ownership["score_points"]
-    if not points:
-        return 0.0, None
-    cfg = MODIFIERS.get("institutional_13f", {})
-    cap = cfg.get("max_points", 3.0)
-    floor = -cfg.get("max_penalty", 2.0)
-    notes = institutional_ownership.get("notes") or []
-    return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
 
 
 def liquidity_modifier(extended):
@@ -445,9 +438,16 @@ def macro_regime_modifier(snapshot, macro_regime):
 
 
 def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
-                    insider_activity=None, concentration_risk=None, geographic_exposure=None,
-                    institutional_ownership=None):
-    """Blend the bounded refinements onto the evidence score and explain every one."""
+                    insider_activity=None):
+    """Blend the bounded refinements onto the evidence score and explain every one.
+
+    ``customer_concentration_risk``, ``geographic_concentration``, and ``institutional_13f``
+    are deliberately absent from this, the champion path. The first two live only in
+    ``apply_challenger_modifiers`` until their tagging coverage is measured (see
+    ``concentration_risk_modifier``/``geographic_concentration_modifier``); the third has
+    been pulled out of scoring entirely and published as its own screen instead - see
+    ``build_institutional_screen.py``.
+    """
     applied = {}
     notes = []
     for name, (points, note) in {
@@ -457,9 +457,6 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         "expectations": expectations_modifier(extended),
         "macro_regime": macro_regime_modifier(snapshot, macro_regime),
         "insider_activity": insider_modifier(insider_activity),
-        "customer_concentration_risk": concentration_risk_modifier(concentration_risk),
-        "geographic_concentration": geographic_concentration_modifier(geographic_exposure),
-        "institutional_13f": institutional_ownership_modifier(institutional_ownership),
     }.items():
         if points:
             applied[name] = points
@@ -477,12 +474,16 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
 def apply_challenger_modifiers(base, snapshot, extended, config, sector_percentile=None,
                                short_interest_rank=None, macro_regime=None,
                                insider_activity=None, concentration_risk=None,
-                               geographic_exposure=None, institutional_ownership=None):
+                               geographic_exposure=None):
     """Apply fractionally allocated modifiers under the configured combined cap.
 
     Each individual maximum is ``combined_cap * configured_fraction``. The final sum is
     clamped once to plus or minus ``combined_cap`` so changing one allocation never changes
     another modifier's implicit scale.
+
+    ``concentration_risk``/``geographic_exposure`` are scored here and nowhere else in the
+    live score (shadow mode) until their tagging coverage has been measured - see
+    ``apply_modifiers``.
     """
     cap = float(config["modifier_cap"])
     fractions = config["modifier_fractions"]
@@ -568,18 +569,6 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
         )
     if geographic_note:
         notes.append(geographic_note.replace(";", ","))
-
-    institutional_points, institutional_note = institutional_ownership_modifier(institutional_ownership)
-    if institutional_points:
-        fraction_key = ("institutional_13f_positive" if institutional_points > 0
-                        else "institutional_13f_negative")
-        old_key = "max_points" if institutional_points > 0 else "max_penalty"
-        old_cap = MODIFIERS.get("institutional_13f", {}).get(old_key)
-        applied["institutional_13f"] = round(
-            institutional_points / old_cap * cap * fractions[fraction_key], 2
-        )
-    if institutional_note:
-        notes.append(institutional_note.replace(";", ","))
 
     uncapped_total = round(sum(applied.values()), 2)
     total = round(max(-cap, min(cap, uncapped_total)), 2)
@@ -784,7 +773,7 @@ def cross_sectional_challenger(row, snapshot, normalizer):
 
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
                                macro_regime=None, insider_activity=None, concentration_risk=None,
-                               geographic_exposure=None, institutional_ownership=None):
+                               geographic_exposure=None):
     """Build isolated signal edits plus the cumulative challenger beside the champion."""
     normalization = cross_sectional_challenger(row, snapshot, normalizer)
     champion_components = row.get("components") or {}
@@ -828,7 +817,6 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         row.get("base_score", 0.0), snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
         macro_regime, insider_activity, concentration_risk, geographic_exposure,
-        institutional_ownership,
     )
     modifier_recalibration = {
         "variant": "fractional_modifier_cap",
@@ -850,7 +838,6 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         final_base["base_score"], snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
         macro_regime, insider_activity, concentration_risk, geographic_exposure,
-        institutional_ownership,
     )
     challenger = {
         "variant": "signal_corrections_cumulative",
@@ -929,8 +916,7 @@ def build_evidence(categories, technical_parts, extended):
 
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
                    volumes=None, extended=None, sector_percentile=None, macro_regime=None,
-                   insider_activity=None, concentration_risk=None, geographic_exposure=None,
-                   institutional_ownership=None):
+                   insider_activity=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -944,8 +930,7 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     })
     confidence, base, raw_score = blended["confidence"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
-                                       insider_activity, concentration_risk, geographic_exposure,
-                                       institutional_ownership)
+                                       insider_activity)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, confidence)
     strengths, risks = build_evidence(categories, technical_parts, extended)

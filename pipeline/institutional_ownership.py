@@ -1,5 +1,16 @@
-"""Score institutional 13F accumulation/distribution the way Form 4 insider activity is
-scored: pure classification and clustering logic, fully testable without the network.
+"""Classify institutional 13F accumulation/distribution: pure logic, fully testable
+without the network.
+
+Consumed by ``build_institutional_screen.py``, not the research score. It was originally
+wired into ``advisor_engine.py`` as a bounded modifier and pulled back out on review: the
+curated manager list this module reads (see below) oversamples the largest passive
+indexers, whose position changes track index membership and fund flows more than
+conviction, so scoring it into a composite that already carries valuation and
+sector-percentile inputs would partly reintroduce market cap as a second, hidden input
+under a "smart money" label. ``build_institutional_screen.py`` instead publishes it as a
+factual, disclaimed screen - descriptive flags, not points - the same way
+``build_congress_screen.py`` handles STOCK Act disclosures, and defaults to reading only
+``style: active`` managers from the curated list for the same reason.
 
 The structural problem 13F has that Form 4 does not: a Form 4 is filed by the *company*
 being traded, so ``SecEdgarClient.recent_form4_filings(ticker)`` finds it directly. A 13F

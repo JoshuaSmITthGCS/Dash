@@ -5,7 +5,6 @@ import os
 import re
 import statistics
 import time
-from collections import defaultdict
 from datetime import datetime, timezone
 
 from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_challenger,
@@ -22,9 +21,6 @@ from fundamentals_extended import (derive_extended, earnings_surprise_rows, exte
 from insider_signal import summarize as summarize_insiders
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
-from institutional_ownership import (aggregate_by_cusip, holdings_change,
-                                     parse_13f_info_table, score_institutional_ownership)
-from openfigi_client import OpenFigiClient
 import pit_store
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
@@ -54,7 +50,6 @@ from validation.ic_harness import (append_refresh as append_ic_refresh,
 
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
-INSTITUTIONAL_MANAGERS = load_json("institutional_managers.json", from_config=True) or {}
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
 # The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
@@ -762,7 +757,8 @@ def collect_filing_risk_signals(sec, symbols, *, cache=None):
     warms the cache for the other, so the two risk modifiers below cost no extra filing
     fetches beyond what the theme screen was already going to make.
     """
-    empty_diagnostics = {"filings_reviewed": 0, "filings_unreadable": 0}
+    empty_diagnostics = {"filings_reviewed": 0, "filings_unreadable": 0,
+                         "concentration_tagged": 0, "geographic_tagged": 0}
     if not sec.available or not symbols:
         return {}, {}, empty_diagnostics
     cache = cache or CACHE
@@ -800,95 +796,13 @@ def collect_filing_risk_signals(sec, symbols, *, cache=None):
         diagnostics["filings_unreadable"] += counted.get("filings_unreadable", 0)
         if concentration is not None:
             concentration_signals[symbol] = concentration
+            if concentration.get("available"):
+                diagnostics["concentration_tagged"] += 1
         if geography is not None:
             geographic_signals[symbol] = geography
+            if geography.get("available") and geography.get("shares"):
+                diagnostics["geographic_tagged"] += 1
     return concentration_signals, geographic_signals, diagnostics
-
-
-def collect_institutional_ownership_signals(sec, symbols, *, cache=None, managers=None,
-                                            openfigi=None):
-    """Quarter-over-quarter 13F accumulation/distribution across a curated manager list.
-
-    See ``pipeline/institutional_ownership.py`` for why this is a curated set of publicly
-    traded managers rather than the full 13F universe: there is no per-company "who holds
-    this" EDGAR endpoint, only per-manager filings, so covering every filer needs SEC's
-    bulk quarterly data sets rather than a per-refresh fetch. This collector reads each
-    curated manager's own two most recent 13F-HR information tables instead - the same
-    per-CIK filing pattern ``collect_insider_signals`` already uses for Form 4, just
-    against ``pipeline/config/institutional_managers.json`` in place of the scored
-    universe.
-    """
-    empty_diagnostics = {"managers_reviewed": 0, "filings_unreadable": 0,
-                         "cusips_seen": 0, "cusips_mapped": 0}
-    managers = managers if managers is not None else INSTITUTIONAL_MANAGERS.get("managers", [])
-    if not sec.available or not symbols or not managers:
-        return {}, empty_diagnostics
-    cache = cache or CACHE
-    openfigi = openfigi or OpenFigiClient()
-
-    def collect_one(manager):
-        ticker = manager["ticker"]
-
-        def produce():
-            filings = sec.recent_forms(ticker, ("13F-HR", "13F-HR/A"), limit=2)
-            quarters = []
-            for filing in filings:
-                try:
-                    text = sec.filing_document(filing["cik"], filing["accession"], filing["document"])
-                    holdings = parse_13f_info_table(text, ticker)
-                    unreadable = False
-                except Exception:  # noqa: BLE001
-                    holdings, unreadable = [], True
-                quarters.append({"filed": filing["filed"], "holdings": holdings,
-                                 "unreadable": unreadable})
-            return quarters
-
-        try:
-            return ticker, cache.fetch("sec_submissions", f"13f:{ticker}", produce,
-                                       source="sec_edgar")
-        except Exception as exc:  # noqa: BLE001
-            LOG.warn(f"{ticker}: 13F lookup failed ({type(exc).__name__})")
-            return ticker, None
-
-    results = [entry for entry in parallel_map(collect_one, managers, provider="sec_edgar",
-                                               max_workers=4) if entry]
-    diagnostics = dict(empty_diagnostics)
-    for ticker, quarters in results:
-        if not quarters:
-            continue
-        diagnostics["managers_reviewed"] += 1
-        diagnostics["filings_unreadable"] += sum(1 for q in quarters if q["unreadable"])
-
-    # Re-key from "per manager, per CUSIP" to "per CUSIP, across every curated manager" -
-    # the shape ``institutional_ownership.holdings_change`` scores against.
-    current_by_cusip = defaultdict(dict)
-    prior_by_cusip = defaultdict(dict)
-    for ticker, quarters in results:
-        if not quarters:
-            continue
-        if len(quarters) >= 1:
-            for cusip, manager_shares in aggregate_by_cusip(quarters[0]["holdings"]).items():
-                current_by_cusip[cusip].update(manager_shares)
-        if len(quarters) >= 2:
-            for cusip, manager_shares in aggregate_by_cusip(quarters[1]["holdings"]).items():
-                prior_by_cusip[cusip].update(manager_shares)
-
-    all_cusips = set(current_by_cusip) | set(prior_by_cusip)
-    diagnostics["cusips_seen"] = len(all_cusips)
-    ticker_by_cusip = openfigi.map_cusips(all_cusips)
-    diagnostics["cusips_mapped"] = len(ticker_by_cusip)
-
-    universe = {symbol.upper() for symbol in symbols}
-    signals = {}
-    for cusip, resolved_ticker in ticker_by_cusip.items():
-        if resolved_ticker.upper() not in universe:
-            continue
-        change = holdings_change(current_by_cusip.get(cusip, {}), prior_by_cusip.get(cusip, {}))
-        points, detail = score_institutional_ownership(change)
-        if detail.get("available"):
-            signals[resolved_ticker.upper()] = {"source": "SEC EDGAR Form 13F-HR (curated managers)",
-                                                "score_points": points, **detail}
-    return signals, diagnostics
 
 
 def fetch_optional(client, function, **params):
@@ -1406,16 +1320,12 @@ def run():
 
     # Customer-concentration and geographic-concentration risk, from the same shortlist of
     # candidates and the same rate-limited SEC client - see collect_filing_risk_signals for
-    # why this shares its cache keys with the theme layer's filing fetches.
+    # why this shares its cache keys with the theme layer's filing fetches. Shadow mode
+    # only (challenger score_variants) until tagging coverage is measured - see
+    # advisor_engine.apply_modifiers's docstring.
     concentration_signals, geographic_signals, filing_risk_diagnostics = (
         collect_filing_risk_signals(sec, insider_candidates)
     )
-
-    # Institutional 13F accumulation/distribution across a curated list of publicly traded
-    # asset managers - see collect_institutional_ownership_signals for why this cannot be a
-    # per-company lookup the way Form 4 is.
-    institutional_signals, institutional_diagnostics = collect_institutional_ownership_signals(
-        sec, insider_candidates)
 
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
@@ -1432,11 +1342,6 @@ def run():
         "sec_filing_risk": ("unavailable" if not sec.available else
                             "degraded" if filing_risk_diagnostics["filings_unreadable"] else
                             "healthy"),
-        "sec_institutional_13f": (
-            "unavailable" if not sec.available else
-            "unavailable" if not INSTITUTIONAL_MANAGERS.get("managers") else
-            "degraded" if institutional_diagnostics["filings_unreadable"] else "healthy"
-        ),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
@@ -1451,16 +1356,15 @@ def run():
             sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
-            concentration_risk=concentration_signals.get(symbol),
-            geographic_exposure=geographic_signals.get(symbol),
-            institutional_ownership=institutional_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
+        # concentration_risk/geographic_exposure are display fields and challenger-only
+        # (score_variants) inputs here - shadow mode until their tagging coverage is
+        # measured. See advisor_engine.apply_modifiers's docstring.
         row["concentration_risk"] = concentration_signals.get(symbol)
         row["geographic_exposure"] = geographic_signals.get(symbol)
-        row["institutional_ownership"] = institutional_signals.get(symbol)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
         # The previous run's consensus target is the only comparison point that exists for
         # target drift: Yahoo serves today's view and nothing else, which is precisely why
@@ -1504,7 +1408,6 @@ def run():
                 insider_signals.get(symbol),
                 concentration_signals.get(symbol),
                 geographic_signals.get(symbol),
-                institutional_signals.get(symbol),
             ))
         elif cross_normalizer:
             row["score_variants"]["challenger"] = cross_sectional_challenger(
@@ -1732,63 +1635,66 @@ def run():
                         "coverage has not yet been measured on a live production run.",
             },
             "institutional_13f_changes": {
-                "status": (
-                    "configuration_required" if not sec.available else
-                    "unavailable" if not INSTITUTIONAL_MANAGERS.get("managers") else
-                    "degraded" if institutional_diagnostics["filings_unreadable"] else
-                    "available"
-                ),
-                "source": "SEC EDGAR Form 13F-HR (curated managers) + OpenFIGI CUSIP mapping",
-                "scored_symbols": len(institutional_signals),
-                "managers_reviewed": institutional_diagnostics["managers_reviewed"],
-                "filings_unreadable": institutional_diagnostics["filings_unreadable"],
-                "cusips_seen": institutional_diagnostics["cusips_seen"],
-                "cusips_mapped": institutional_diagnostics["cusips_mapped"],
-                "note": "There is no per-company '13F holders of this ticker' EDGAR endpoint, "
-                        "only per-manager filings, so full-universe coverage needs SEC's bulk "
-                        "quarterly 13F data sets rather than a per-refresh fetch. This reads a "
-                        "curated list of publicly traded managers' own 13F-HR information "
-                        "tables instead (pipeline/config/institutional_managers.json), maps "
-                        "CUSIPs to tickers via OpenFIGI, and scores breadth of net movers - see "
-                        "pipeline/institutional_ownership.py. Necessarily partial: privately "
-                        "held filers (Renaissance, Citadel, Bridgewater, ...) are not reachable "
-                        "this way. This has never run against the live OpenFIGI endpoint or "
-                        "live 13F filings (no network access existed while it was written); "
-                        "verify resolution rate on the first real production run.",
+                "status": "separate_screen",
+                "source": "SEC EDGAR Form 13F-HR (curated public managers) + OpenFIGI CUSIP mapping",
+                "note": "Pulled out of the research score entirely, not just shadowed: "
+                        "restricting 13F coverage to publicly traded managers "
+                        "(pipeline/config/institutional_managers.json - there is no per-company "
+                        "'who holds this ticker' EDGAR endpoint, so full-universe coverage needs "
+                        "SEC's bulk quarterly data sets instead) oversamples the largest passive "
+                        "indexers, whose position changes are close to mechanically determined "
+                        "by index membership rather than conviction - feeding that into a score "
+                        "that already has size/valuation inputs would double-count market cap "
+                        "under a 'smart money' label. Published as its own factual, unscored "
+                        "screen instead, the same way pipeline/build_congress_screen.py handles "
+                        "STOCK Act disclosures: pipeline/build_institutional_screen.py, its own "
+                        "schedule (13F data is inherently quarterly), its own point-in-time "
+                        "store under pipeline/data/institutional_13f/. Has never run against the "
+                        "live OpenFIGI endpoint or live 13F filings (no network access existed "
+                        "while it was written); verify CUSIP resolution rate on the first real run.",
             },
             "fx_exposure": {
-                "status": (
-                    "configuration_required" if not sec.available else
-                    "degraded" if filing_risk_diagnostics["filings_unreadable"] else
-                    "available"
-                ),
+                "status": "shadow_only",
                 "source": "SEC EDGAR XBRL (Revenues x StatementGeographicalAxis)",
+                "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
+                "geographic_tag_coverage": (
+                    round(filing_risk_diagnostics["geographic_tagged"] /
+                         filing_risk_diagnostics["filings_reviewed"], 3)
+                    if filing_risk_diagnostics["filings_reviewed"] else None
+                ),
                 "note": "Geographic revenue is XBRL-tagged, not free text - the prior "
                         "'filing_parser_required' status was wrong for the same reason "
                         "backlog_growth's was: company_concept/companyfacts return default "
                         "(non-dimensional) facts only. Scored as single-country revenue "
-                        "concentration (pipeline/geographic_exposure.py), on the same "
-                        "risk-not-direction principle as customer_concentration_risk below - "
-                        "broad international diversification with no single dominant country "
-                        "scores no penalty. Wired as a score modifier "
-                        "('geographic_concentration'), not into the theme layer.",
+                        "concentration (pipeline/geographic_exposure.py) on the same "
+                        "risk-not-direction principle as customer_concentration_risk below, but "
+                        "kept out of the live score ('shadow_only', challenger score_variants "
+                        "only): revenue tagged by geography often reflects shipping destination "
+                        "or contracting entity rather than end demand (a contract manufacturer "
+                        "can book enormous 'China' revenue that is really an assembly step), so "
+                        "this needs spot-checking against real filings, and geographic_tag_"
+                        "coverage above needs measuring, before it penalizes a live score.",
             },
             "customer_concentration_risk": {
-                "status": (
-                    "configuration_required" if not sec.available else
-                    "degraded" if filing_risk_diagnostics["filings_unreadable"] else
-                    "available"
-                ),
+                "status": "shadow_only",
                 "source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
                 "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
                 "filings_unreadable": filing_risk_diagnostics["filings_unreadable"],
+                "concentration_tag_coverage": (
+                    round(filing_risk_diagnostics["concentration_tagged"] /
+                         filing_risk_diagnostics["filings_reviewed"], 3)
+                    if filing_risk_diagnostics["filings_reviewed"] else None
+                ),
                 "note": "ASC 280 customer-concentration percentage read from dimensional XBRL "
-                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier. "
-                        "Distinct from the theme layer's customer_concentration_to_spenders: "
-                        "the percentage gives magnitude, not the customer's identity, so it "
-                        "cannot replace that signal's name-matching against confirmed theme "
-                        "spenders. Tagging coverage across the scored universe has not been "
-                        "measured on a live production run.",
+                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier but "
+                        "kept out of the live score ('shadow_only', challenger score_variants "
+                        "only) until concentration_tag_coverage above is measured on a real run "
+                        "- a penalty-only modifier that only fires on tagged filers systematically "
+                        "favors whichever companies happen not to have tagged the concept, which "
+                        "is worse than not scoring it at all. Distinct from the theme layer's "
+                        "customer_concentration_to_spenders: the percentage gives magnitude, not "
+                        "the customer's identity, so it cannot replace that signal's name-matching "
+                        "against confirmed theme spenders.",
             },
         },
         "source_status": {

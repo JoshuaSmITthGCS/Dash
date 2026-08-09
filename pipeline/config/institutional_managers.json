@@ -1,21 +1,22 @@
 {
   "_comment": "Curated, publicly traded 13F institutional filers. Every CIK is resolved live through SecEdgarClient.ticker_map() from the ticker below at run time - never a hand-typed CIK - so a wrong or delisted ticker degrades to 'no data for this manager' rather than silently reading a different filer's holdings under this name. Necessarily partial: large, influential 13F filers that are privately held (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no ticker and are not reachable this way. Expand by adding tickers, not CIKs.",
+  "_style_comment": "'style' matters because it is not a random subset of institutional flow. The largest managers here (BlackRock, State Street, Invesco) run AUM dominated by index funds and ETFs - their quarter-over-quarter position changes are close to mechanically determined by index membership and fund flows, not conviction, and feeding that into a research score that already carries valuation and sector-percentile inputs would partly reintroduce market-cap/size as a hidden second input under a 'smart money' label. build_institutional_screen.py defaults to style=active only for exactly this reason. 'alternative' (private-equity/alternative-asset managers) is excluded from the default sleeve too: their public-equity 13F stakes are typically residual holdings from take-privates or specific strategic positions, lumpy and idiosyncratic rather than a portfolio-flow signal comparable to a mutual-fund manager's.",
   "managers": [
-    {"ticker": "BLK", "name": "BlackRock"},
-    {"ticker": "STT", "name": "State Street"},
-    {"ticker": "TROW", "name": "T. Rowe Price"},
-    {"ticker": "BEN", "name": "Franklin Resources"},
-    {"ticker": "IVZ", "name": "Invesco"},
-    {"ticker": "AMG", "name": "Affiliated Managers Group"},
-    {"ticker": "JHG", "name": "Janus Henderson"},
-    {"ticker": "VRTS", "name": "Virtus Investment Partners"},
-    {"ticker": "APAM", "name": "Artisan Partners"},
-    {"ticker": "CNS", "name": "Cohen & Steers"},
-    {"ticker": "AB", "name": "AllianceBernstein"},
-    {"ticker": "BX", "name": "Blackstone"},
-    {"ticker": "KKR", "name": "KKR & Co."},
-    {"ticker": "APO", "name": "Apollo Global Management"},
-    {"ticker": "ARES", "name": "Ares Management"},
-    {"ticker": "BRK-B", "name": "Berkshire Hathaway"}
+    {"ticker": "BLK", "name": "BlackRock", "style": "passive"},
+    {"ticker": "STT", "name": "State Street", "style": "passive"},
+    {"ticker": "IVZ", "name": "Invesco", "style": "passive"},
+    {"ticker": "TROW", "name": "T. Rowe Price", "style": "active"},
+    {"ticker": "BEN", "name": "Franklin Resources", "style": "active"},
+    {"ticker": "AMG", "name": "Affiliated Managers Group", "style": "active"},
+    {"ticker": "JHG", "name": "Janus Henderson", "style": "active"},
+    {"ticker": "VRTS", "name": "Virtus Investment Partners", "style": "active"},
+    {"ticker": "APAM", "name": "Artisan Partners", "style": "active"},
+    {"ticker": "CNS", "name": "Cohen & Steers", "style": "active"},
+    {"ticker": "AB", "name": "AllianceBernstein", "style": "active"},
+    {"ticker": "BRK-B", "name": "Berkshire Hathaway", "style": "active"},
+    {"ticker": "BX", "name": "Blackstone", "style": "alternative"},
+    {"ticker": "KKR", "name": "KKR & Co.", "style": "alternative"},
+    {"ticker": "APO", "name": "Apollo Global Management", "style": "alternative"},
+    {"ticker": "ARES", "name": "Ares Management", "style": "alternative"}
   ]
 }

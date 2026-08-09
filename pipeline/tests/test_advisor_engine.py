@@ -8,9 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
                             build_research, concentration_risk_modifier,
                             geographic_concentration_modifier, insider_modifier,
-                            institutional_ownership_modifier, macro_regime_modifier,
-                            sentiment_score, shrink_research_components, technical_factors,
-                            technical_score_from_parts)
+                            macro_regime_modifier, sentiment_score, shrink_research_components,
+                            technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -442,29 +441,12 @@ class GeographicConcentrationModifierTests(unittest.TestCase):
         self.assertEqual(geographic_concentration_modifier({"shares": {}}), (0.0, None))
 
 
-class InstitutionalOwnershipModifierTests(unittest.TestCase):
-    def test_a_precomputed_positive_summary_lifts_the_score(self):
-        points, note = institutional_ownership_modifier(
-            {"score_points": 1.5, "notes": ["3 curated institutional manager(s) added a position"]})
-        self.assertEqual(points, 1.5)
-        self.assertIn("added", note)
-
-    def test_a_precomputed_negative_summary_penalizes_the_score(self):
-        points, _ = institutional_ownership_modifier({"score_points": -1.0, "notes": []})
-        self.assertEqual(points, -1.0)
-
-    def test_absent_data_is_neutral(self):
-        self.assertEqual(institutional_ownership_modifier(None), (0.0, None))
-        self.assertEqual(institutional_ownership_modifier({}), (0.0, None))
-
-    def test_points_respect_the_configured_caps(self):
-        points, _ = institutional_ownership_modifier({"score_points": 999.0, "notes": []})
-        self.assertLessEqual(points, MODIFIERS.get("institutional_13f", {}).get("max_points", 3.0))
-
-
-class BuildResearchWiresTheThreeFilingRiskModifiersTests(unittest.TestCase):
-    """End-to-end: these three signals must actually move ``row["score"]``, not just exist
-    as unread fields - the whole point of scoring them ahead of ranking rather than after."""
+class BuildResearchDoesNotYetUseConcentrationOrGeographicRiskTests(unittest.TestCase):
+    """Champion ``row["score"]`` must be identical regardless of concentration/geographic
+    data - both are shadow-mode only (challenger score_variants) until their XBRL tagging
+    coverage across the scored universe has actually been measured on a live run. A
+    penalty-only modifier that only fires on tagged filers would otherwise systematically
+    favor whichever companies happen not to have tagged the concept."""
 
     def setUp(self):
         self.snapshot = {
@@ -476,25 +458,33 @@ class BuildResearchWiresTheThreeFilingRiskModifiersTests(unittest.TestCase):
         }
         self.closes = [100 + index * 0.1 for index in range(100)]
 
-    def _score(self, **filing_risk_kwargs):
-        row = build_research("TEST", self.snapshot, self.closes, self.closes, [],
-                             **filing_risk_kwargs)
-        return row["score"]
+    def test_build_research_has_no_parameter_for_either_signal(self):
+        row = build_research("TEST", self.snapshot, self.closes, self.closes, [])
+        with self.assertRaises(TypeError):
+            build_research("TEST", self.snapshot, self.closes, self.closes, [],
+                           concentration_risk={"percentages": [0.40]})
+        self.assertIn("score", row)
 
-    def test_severe_customer_concentration_lowers_the_score(self):
-        baseline = self._score()
-        concentrated = self._score(concentration_risk={"percentages": [0.40]})
+
+class ChallengerOnlyShadowModeTests(unittest.TestCase):
+    """The two concentration modifiers DO move the challenger score - that is the whole
+    point of shadow mode: measurable, but not yet risking the live champion score."""
+
+    def setUp(self):
+        self.config = SETTINGS["challengers"]["signal_corrections"]
+
+    def test_severe_customer_concentration_lowers_the_challenger_score_only(self):
+        baseline, _ = apply_challenger_modifiers(70.0, {}, {}, self.config)
+        concentrated, _ = apply_challenger_modifiers(
+            70.0, {}, {}, self.config, concentration_risk={"percentages": [0.40]})
         self.assertLess(concentrated, baseline)
 
-    def test_severe_geographic_concentration_lowers_the_score(self):
-        baseline = self._score()
-        concentrated = self._score(geographic_exposure={"shares": {"us": 0.3, "cn": 0.7}})
+    def test_severe_geographic_concentration_lowers_the_challenger_score_only(self):
+        baseline, _ = apply_challenger_modifiers(70.0, {}, {}, self.config)
+        concentrated, _ = apply_challenger_modifiers(
+            70.0, {}, {}, self.config,
+            geographic_exposure={"shares": {"us": 0.3, "cn": 0.7}})
         self.assertLess(concentrated, baseline)
-
-    def test_corroborated_institutional_accumulation_raises_the_score(self):
-        baseline = self._score()
-        accumulating = self._score(institutional_ownership={"score_points": 2.0, "notes": []})
-        self.assertGreater(accumulating, baseline)
 
 
 if __name__ == "__main__":
