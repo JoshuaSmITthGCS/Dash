@@ -108,14 +108,52 @@ describe('CongressTrades page', () => {
     const names = screen.getAllByText(/Laggard|Winner/).map((el) => el.textContent)
     expect(names.indexOf('Winner')).toBeLessThan(names.indexOf('Laggard'))
   })
-
-  it('says the provider refused rather than claiming no trades were disclosed', () => {
+  it('says the feed failed rather than implying a quiet week', () => {
     useData.mockReturnValue({
       data: {
-        status: 'degraded', results: [],
-        degraded_reason: 'No disclosures could be collected: senate: FMP senate-latest request '
-          + 'failed with HTTP 402. HTTP 402 means the FMP plan for this key does not include '
-          + 'the Congressional trading endpoints.',
+        status: 'unavailable', reason_code: 'CONGRESS_DISCLOSURE_FEED_UNAVAILABLE',
+        collection: { failures: ['senate-latest: FMP senate-latest request failed with HTTP 403'] },
+        results: [],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText(/Disclosure feed unavailable/)).toBeVisible()
+    expect(screen.getByText(/HTTP 403/)).toBeVisible()
+  })
+
+  it('distinguishes an empty publish window from nothing ever collected', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'unavailable', reason_code: 'NO_DISCLOSURES_IN_PUBLISH_WINDOW',
+        publish_window_days: 120, results: [],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText(/No disclosures filed in the trailing 120 days/)).toBeVisible()
+  })
+
+  it('keeps the plain waiting message when collection simply has not started', () => {
+    useData.mockReturnValue({
+      data: { status: 'unavailable', reason_code: 'NO_DISCLOSURES_COLLECTED_YET', results: [] },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText(/No disclosures collected yet/)).toBeVisible()
+  })
+  it('flags a run that reached only some sources, rather than presenting it as complete', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'partial', reason_code: 'SOME_SOURCES_UNAVAILABLE',
+        collection: { failures: ['fmp-senate: FMP senate-latest request failed with HTTP 402'] },
+        results: [trade({ representative: 'Jane Doe' })],
       },
       loading: false, error: null,
     })
@@ -123,21 +161,7 @@ describe('CongressTrades page', () => {
     render(<MemoryRouter><CongressTrades /></MemoryRouter>)
 
     expect(screen.getByRole('alert')).toHaveTextContent(/HTTP 402/)
-    expect(screen.queryByText(/No disclosures collected yet/)).toBeNull()
-  })
-
-  it('marks a run that published from stored disclosures as incomplete, not failed', () => {
-    useData.mockReturnValue({
-      data: {
-        status: 'partial', results: [trade({ representative: 'Jane Doe' })],
-        degraded_reason: 'Published from previously collected disclosures; this run could not reach house.',
-      },
-      loading: false, error: null,
-    })
-
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
-
-    expect(screen.getByText('Collection incomplete')).toBeVisible()
+    expect(screen.getByText('Collected from some sources only')).toBeVisible()
     expect(screen.getAllByText(/Jane Doe/).length).toBeGreaterThan(0)
   })
 

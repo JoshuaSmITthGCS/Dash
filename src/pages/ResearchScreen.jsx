@@ -59,6 +59,7 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
         <label>Min tactical<input type="number" min="0" max="100" value={filters.tactical} onChange={update('tactical')} /></label>
         <label>Membership<select value={filters.membership} onChange={update('membership')}><option value="all">All</option><option value="yes">Members</option><option value="no">Non-members</option></select></label>
       </div></ResponsiveControlPanel>
+      {data?.coverage_note ? <p className="disclaimer" role="note">{data.coverage_note}</p> : null}
       {!rows.length ? <Empty note={data?.status === 'unavailable' ? `Unavailable: ${data.reason_code}` : 'No results match these filters.'} /> : <>
       <ResultCards rows={rows} getKey={(row) => row.ticker} variant={preferences.mobileResearchView}
         title={(row) => `#${row.rank ?? '–'} · ${row.ticker}`}
