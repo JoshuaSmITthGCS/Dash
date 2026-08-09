@@ -3,6 +3,8 @@
 from datetime import timedelta
 
 from insider_signal import score_insider_activity
+from concentration_risk import score_concentration_risk
+from geographic_exposure import score_geographic_concentration
 from risk_metrics import (annualized_volatility, beta_vs_benchmark, daily_returns,
                           drawdown_score, low_beta_score, max_drawdown, momentum_12_1,
                           ratio_to_score, sharpe_ratio, sortino_ratio)
@@ -293,6 +295,78 @@ def insider_modifier(insider_activity):
     return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
 
 
+def concentration_risk_modifier(concentration):
+    """Penalize revenue concentrated in a single named customer (ASC 280).
+
+    The scoring itself lives in ``concentration_risk`` (largest disclosed customer share,
+    tiered warning/severe penalty). Like ``insider_modifier``, this adapter accepts either
+    a raw list of disclosed percentages or an already-scored summary, so the pipeline can
+    compute it once per filing and reuse it. Penalty-only: this is a known, uncompensated
+    risk, not a bet on a direction.
+    """
+    if not concentration:
+        return 0.0, None
+    cfg = MODIFIERS.get("customer_concentration_risk", {})
+    if concentration.get("score_points") is not None:
+        points = concentration["score_points"]
+        notes = concentration.get("notes") or []
+    else:
+        percentages = concentration.get("percentages") or []
+        if not percentages:
+            return 0.0, None
+        points, detail = score_concentration_risk(percentages, config=cfg)
+        notes = detail.get("notes") or []
+    if not points:
+        return 0.0, None
+    floor = -cfg.get("max_penalty", 3.0)
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
+def geographic_concentration_modifier(geographic_exposure):
+    """Penalize revenue concentrated in a single non-domestic geography.
+
+    Same shape as ``concentration_risk_modifier``, scored by ``geographic_exposure``:
+    penalty-only, and only for concentration in one country, not international revenue in
+    general - see that module's docstring for why the two are not the same claim.
+    """
+    if not geographic_exposure:
+        return 0.0, None
+    cfg = MODIFIERS.get("geographic_concentration", {})
+    if geographic_exposure.get("score_points") is not None:
+        points = geographic_exposure["score_points"]
+        notes = geographic_exposure.get("notes") or []
+    else:
+        shares = geographic_exposure.get("shares") or {}
+        if not shares:
+            return 0.0, None
+        points, detail = score_geographic_concentration(shares, config=cfg)
+        notes = detail.get("notes") or []
+    if not points:
+        return 0.0, None
+    floor = -cfg.get("max_penalty", 2.0)
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
+def institutional_ownership_modifier(institutional_ownership):
+    """Reward or penalize breadth of curated public-manager 13F accumulation/distribution.
+
+    Unlike the two concentration modifiers above, this is two-sided like insider activity:
+    corroborated buying across several curated managers is constructive, corroborated
+    selling is not. The scoring (breadth of net movers, requiring a plurality before it
+    fires at all) lives in ``institutional_ownership.score_institutional_ownership``.
+    """
+    if not institutional_ownership or institutional_ownership.get("score_points") is None:
+        return 0.0, None
+    points = institutional_ownership["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("institutional_13f", {})
+    cap = cfg.get("max_points", 3.0)
+    floor = -cfg.get("max_penalty", 2.0)
+    notes = institutional_ownership.get("notes") or []
+    return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
+
+
 def liquidity_modifier(extended):
     """Penalize names you cannot exit without moving the price."""
     cfg = MODIFIERS.get("liquidity", {})
@@ -371,7 +445,8 @@ def macro_regime_modifier(snapshot, macro_regime):
 
 
 def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
-                    insider_activity=None):
+                    insider_activity=None, concentration_risk=None, geographic_exposure=None,
+                    institutional_ownership=None):
     """Blend the bounded refinements onto the evidence score and explain every one."""
     applied = {}
     notes = []
@@ -382,6 +457,9 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         "expectations": expectations_modifier(extended),
         "macro_regime": macro_regime_modifier(snapshot, macro_regime),
         "insider_activity": insider_modifier(insider_activity),
+        "customer_concentration_risk": concentration_risk_modifier(concentration_risk),
+        "geographic_concentration": geographic_concentration_modifier(geographic_exposure),
+        "institutional_13f": institutional_ownership_modifier(institutional_ownership),
     }.items():
         if points:
             applied[name] = points
@@ -398,7 +476,8 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
 
 def apply_challenger_modifiers(base, snapshot, extended, config, sector_percentile=None,
                                short_interest_rank=None, macro_regime=None,
-                               insider_activity=None):
+                               insider_activity=None, concentration_risk=None,
+                               geographic_exposure=None, institutional_ownership=None):
     """Apply fractionally allocated modifiers under the configured combined cap.
 
     Each individual maximum is ``combined_cap * configured_fraction``. The final sum is
@@ -471,6 +550,36 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
         )
     if insider_note:
         notes.append(insider_note.replace(";", ","))
+
+    concentration_points, concentration_note = concentration_risk_modifier(concentration_risk)
+    if concentration_points:
+        old_cap = MODIFIERS.get("customer_concentration_risk", {}).get("max_penalty")
+        applied["customer_concentration_risk"] = round(
+            concentration_points / old_cap * cap * fractions["customer_concentration_risk"], 2
+        )
+    if concentration_note:
+        notes.append(concentration_note.replace(";", ","))
+
+    geographic_points, geographic_note = geographic_concentration_modifier(geographic_exposure)
+    if geographic_points:
+        old_cap = MODIFIERS.get("geographic_concentration", {}).get("max_penalty")
+        applied["geographic_concentration"] = round(
+            geographic_points / old_cap * cap * fractions["geographic_concentration"], 2
+        )
+    if geographic_note:
+        notes.append(geographic_note.replace(";", ","))
+
+    institutional_points, institutional_note = institutional_ownership_modifier(institutional_ownership)
+    if institutional_points:
+        fraction_key = ("institutional_13f_positive" if institutional_points > 0
+                        else "institutional_13f_negative")
+        old_key = "max_points" if institutional_points > 0 else "max_penalty"
+        old_cap = MODIFIERS.get("institutional_13f", {}).get(old_key)
+        applied["institutional_13f"] = round(
+            institutional_points / old_cap * cap * fractions[fraction_key], 2
+        )
+    if institutional_note:
+        notes.append(institutional_note.replace(";", ","))
 
     uncapped_total = round(sum(applied.values()), 2)
     total = round(max(-cap, min(cap, uncapped_total)), 2)
@@ -674,7 +783,8 @@ def cross_sectional_challenger(row, snapshot, normalizer):
 
 
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
-                               macro_regime=None, insider_activity=None):
+                               macro_regime=None, insider_activity=None, concentration_risk=None,
+                               geographic_exposure=None, institutional_ownership=None):
     """Build isolated signal edits plus the cumulative challenger beside the champion."""
     normalization = cross_sectional_challenger(row, snapshot, normalizer)
     champion_components = row.get("components") or {}
@@ -717,7 +827,8 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
     modifier_score, modifier_detail = apply_challenger_modifiers(
         row.get("base_score", 0.0), snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
-        macro_regime, insider_activity,
+        macro_regime, insider_activity, concentration_risk, geographic_exposure,
+        institutional_ownership,
     )
     modifier_recalibration = {
         "variant": "fractional_modifier_cap",
@@ -738,7 +849,8 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
     final_score, final_modifiers = apply_challenger_modifiers(
         final_base["base_score"], snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
-        macro_regime, insider_activity,
+        macro_regime, insider_activity, concentration_risk, geographic_exposure,
+        institutional_ownership,
     )
     challenger = {
         "variant": "signal_corrections_cumulative",
@@ -817,7 +929,8 @@ def build_evidence(categories, technical_parts, extended):
 
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
                    volumes=None, extended=None, sector_percentile=None, macro_regime=None,
-                   insider_activity=None):
+                   insider_activity=None, concentration_risk=None, geographic_exposure=None,
+                   institutional_ownership=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -831,7 +944,8 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     })
     confidence, base, raw_score = blended["confidence"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
-                                       insider_activity)
+                                       insider_activity, concentration_risk, geographic_exposure,
+                                       institutional_ownership)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, confidence)
     strengths, risks = build_evidence(categories, technical_parts, extended)

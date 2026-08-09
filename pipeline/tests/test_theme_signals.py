@@ -68,8 +68,21 @@ class _FakeSec:
     def ticker_map(self):
         return {"ACME": "0000000001"}
 
-    def _get(self, url, as_json=False):
-        return {"filings": {"recent": self._filings}}
+    def recent_forms(self, ticker, forms, limit=2):
+        cik = self.ticker_map().get(ticker.upper())
+        filings = []
+        for index, form in enumerate(self._filings.get("form", [])):
+            if form not in forms:
+                continue
+            filings.append({
+                "cik": cik,
+                "accession": self._filings["accessionNumber"][index],
+                "document": self._filings["primaryDocument"][index],
+                "filed": self._filings.get("filingDate", [""])[index],
+            })
+            if len(filings) >= limit:
+                break
+        return filings
 
     def filing_document(self, cik, accession, document):
         return self._documents[(accession, document)]

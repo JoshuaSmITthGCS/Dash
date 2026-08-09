@@ -58,6 +58,9 @@ def _metric_scores(detail):
 MODIFIER_SOURCE = {
     "insider_activity": "sec_form4",
     "macro_regime": "fred",
+    "customer_concentration_risk": "sec_filing_risk",
+    "geographic_concentration": "sec_filing_risk",
+    "institutional_13f": "sec_institutional_13f",
 }
 
 # Provider statuses that mean "we never got to look", as distinct from "we looked and saw

@@ -158,6 +158,21 @@ def _concept_values(sec, ticker, concepts, *, cache=None, units="USD", limit=8):
     return []
 
 
+def recent_10k_filings(sec, ticker):
+    """Up to two most recent 10-K filings for a ticker, newest first, uncached.
+
+    Callers wrap this in ``cache.fetch("sec_submissions", f"10k:{ticker}", ...)``
+    themselves rather than caching internally. That cache key is a cross-module contract:
+    ``fetch_advisor.collect_filing_risk_signals`` reads the identical key, so a
+    concentration/geographic-exposure lookup and a backlog/keyword-density lookup for the
+    same ticker in the same run share one cached filing list instead of issuing it twice.
+    """
+    filings = sec.recent_forms(ticker, ("10-K",), limit=2)
+    for filing in filings:
+        filing["url"] = f"{int(filing['cik'])}/{filing['accession']}/{filing['document']}"
+    return filings
+
+
 def hyperscaler_capex_growth(sec, universe, *, cache=None):
     """Aggregate capex growth across the theme's named big spenders.
 
@@ -220,7 +235,7 @@ class EdgarThemeSignals:
         try:
             filings = self.cache.fetch(
                 "sec_submissions", f"10k:{ticker}",
-                lambda: self._recent_annual_reports(ticker), source="sec_edgar")
+                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
         except Exception as exc:  # noqa: BLE001
             LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
             return {}
@@ -252,7 +267,7 @@ class EdgarThemeSignals:
         try:
             filings = self.cache.fetch(
                 "sec_submissions", f"10k:{ticker}",
-                lambda: self._recent_annual_reports(ticker), source="sec_edgar")
+                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
         except Exception as exc:  # noqa: BLE001
             LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
             return []
@@ -272,27 +287,6 @@ class EdgarThemeSignals:
             if total is not None:
                 values.append(total)
         return values
-
-    def _recent_annual_reports(self, ticker):
-        cik = self.sec.ticker_map().get(ticker.upper())
-        if not cik:
-            return []
-        payload = self.sec._get(f"https://data.sec.gov/submissions/CIK{cik}.json", as_json=True)
-        recent = payload.get("filings", {}).get("recent", {})
-        filings = []
-        for index, form in enumerate(recent.get("form", [])):
-            if form != "10-K":
-                continue
-            accession = recent["accessionNumber"][index]
-            document = recent["primaryDocument"][index]
-            filings.append({
-                "cik": cik, "accession": accession, "document": document,
-                "filed": recent.get("filingDate", [""])[index],
-                "url": f"{int(cik)}/{accession}/{document}",
-            })
-            if len(filings) >= 2:
-                break
-        return filings
 
     def __call__(self, ticker, theme):
         if not self.available:

@@ -39,7 +39,11 @@
         "expectations": 0.15,
         "macro_regime": 0.15,
         "insider_positive": 0.25,
-        "insider_negative": 0.15
+        "insider_negative": 0.15,
+        "customer_concentration_risk": 0.15,
+        "geographic_concentration": 0.1,
+        "institutional_13f_positive": 0.15,
+        "institutional_13f_negative": 0.1
       },
       "_comment": "The cumulative challenger neutralizes short-horizon relative strength, applies confidence shrinkage once, and expresses every modifier allocation as a fraction of the combined cap."
     }
@@ -87,7 +91,10 @@
       "liquidity",
       "expectations",
       "macro_regime",
-      "insider_activity"
+      "insider_activity",
+      "customer_concentration_risk",
+      "geographic_concentration",
+      "institutional_13f"
     ],
     "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
   },
@@ -1022,6 +1029,24 @@
       "max_penalty": 3.0,
       "cluster_bonus": 1.0,
       "min_trade_value": 25000.0
+    },
+    "customer_concentration_risk": {
+      "_comment": "ASC 280 customer concentration read from dimensional XBRL (pipeline/concentration_risk.py) - a known, penalty-only risk, not a bet on direction. Below warning_share scores zero; at or above it, half the max penalty; at or above severe_share, the full penalty.",
+      "warning_share": 0.15,
+      "severe_share": 0.30,
+      "max_penalty": 3.0
+    },
+    "geographic_concentration": {
+      "_comment": "Single-country revenue concentration read from dimensional XBRL (pipeline/geographic_exposure.py), same shape as customer_concentration_risk. Only fires on concentration in one non-domestic geography, not on international revenue in general.",
+      "warning_share": 0.30,
+      "severe_share": 0.50,
+      "max_penalty": 2.0
+    },
+    "institutional_13f": {
+      "_comment": "Breadth of curated public asset managers' quarter-over-quarter 13F position change (pipeline/institutional_ownership.py). Two-sided like insider_activity: requires min_managers net movers on one side before it scores anything, since one manager's flows are not corroboration. Curated managers only - see pipeline/config/institutional_managers.json for why.",
+      "max_points": 3.0,
+      "max_penalty": 2.0,
+      "min_managers": 2
     }
   },
   "bucket_weights": {

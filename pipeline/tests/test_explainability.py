@@ -26,7 +26,8 @@ class ExplainabilityTests(unittest.TestCase):
         self.assertLessEqual(abs(result["reconciliation_error"]), 0.01)
         self.assertEqual({item["key"] for item in result["modifiers"]}, {
             "sector_valuation", "short_interest", "liquidity", "expectations",
-            "macro_regime", "insider_activity", "score_rounding",
+            "macro_regime", "insider_activity", "customer_concentration_risk",
+            "geographic_concentration", "institutional_13f", "score_rounding",
         })
 
     def test_anomaly_rules_describe_observed_cash_earnings_divergence(self):

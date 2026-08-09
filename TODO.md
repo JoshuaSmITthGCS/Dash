@@ -1,6 +1,8 @@
 # TODO
 
-_Last updated: 2026-08-09 (backlog_growth wired via dimensional XBRL; see §2)_
+_Last updated: 2026-08-09 (backlog_growth wired via dimensional XBRL, §2; customer-concentration,
+geographic-concentration, and curated-manager institutional-13F risk modifiers wired into the
+live score, §2a)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
@@ -120,33 +122,62 @@ is a thin basis for a screen whose whole purpose is corroboration.
 
 ---
 
-## 2a. `capability_status.fx_exposure` and `.institutional_13f_changes` — still blocked,
-     but for a different reason than the status notes used to say
+## 2a. `capability_status.fx_exposure`, `.institutional_13f_changes`, and
+     `.customer_concentration_risk` — now wired into the score, not just displayed
 
-Both entries said "filing_parser_required" and "mapping_required" respectively. Neither
-description was quite right, and fixing `backlog_growth` above (§2) surfaces why: it's
-worth reading that entry's root cause first, since both of these are the same root cause
-in a different capability.
+Confirmed by the 2026-08-09 build: all three are implemented as bounded modifiers in
+`advisor_engine.apply_modifiers` (config in `settings.json` under `modifiers.
+geographic_concentration`, `modifiers.institutional_13f`, `modifiers.
+customer_concentration_risk`), fed from `fetch_advisor.collect_filing_risk_signals` and
+`collect_institutional_ownership_signals`, both called ahead of scoring in `run()` the same
+way `collect_insider_signals` already was — see `tests/test_advisor_engine.py`'s
+`BuildResearchWiresTheThreeFilingRiskModifiersTests` for proof each one actually moves
+`row["score"]`, not just a display field.
 
-- [ ] **`fx_exposure`** — geographic revenue (`us-gaap:Revenues` dimensioned on
-      `StatementGeographicalAxis`) is XBRL-tagged, not prose, so this was never really a
-      filing-text-extraction problem. `pipeline/xbrl_dimensions.dimensional_facts` can
-      already pull it out of a filing (see `test_geographic_revenue_is_recovered_from_an_
-      inline_document` in `tests/test_xbrl_dimensions.py`) the same way it does for
-      backlog. What's still missing: a signal function that turns per-issuer geographic
-      segments into one normalized exposure number — segment naming is as
-      management-defined and inconsistent here as it is for `segment_revenue_share` — and
-      a theme that declares it. Nobody should mark this `available` before that function
-      exists and has run against real filings.
+- [x] ~~**`fx_exposure`**~~ Scored as single-country revenue concentration
+      (`pipeline/geographic_exposure.py`) from `us-gaap:Revenues` dimensioned on
+      `StatementGeographicalAxis`, read via `pipeline/xbrl_dimensions.dimensional_facts`
+      the same way `backlog_growth` is. Deliberately narrower than "FX exposure" as a
+      general idea: it penalizes concentration in one non-domestic geography, not
+      international revenue in general — a globally diversified company with no single
+      dominant foreign country scores no penalty. Not wired into the theme layer; it is a
+      score modifier (`geographic_concentration`), which is where the risk-not-direction
+      framing actually applies.
 
-- [ ] **`institutional_13f_changes`** — CUSIP-to-ticker mapping is the blocker, and
-      OpenFIGI's mapping API is free with no documented daily/weekly/monthly cap for the
-      CUSIP-in direction (it just won't return CUSIP in the output, per its
-      redistribution terms — irrelevant here since ticker is the output we want). SEC's
-      own fails-to-deliver files pair CUSIP with ticker/symbol as a free official
-      cross-check. Neither the mapping client nor the 13F info-table parser nor the
-      quarter-over-quarter holdings diff exists yet — this is a larger, separate piece of
-      work than the dimensional-facts fix above, not a quick follow-on.
+- [x] ~~**`institutional_13f_changes`**~~ There is still no per-company "who holds this
+      ticker" EDGAR endpoint, so full 13F-universe coverage still needs SEC's bulk
+      quarterly data sets, not a per-refresh fetch — that part of the original diagnosis
+      was right. What shipped instead: a curated list of **publicly traded** institutional
+      managers (`pipeline/config/institutional_managers.json`, resolved through the same
+      live `ticker_map()` every other CIK lookup in this codebase uses — never a
+      hand-typed CIK, which could silently attribute one manager's holdings to another),
+      each one's own 13F-HR information tables (`pipeline/institutional_ownership.py`),
+      OpenFIGI CUSIP→ticker mapping (`pipeline/openfigi_client.py`), and a bounded
+      modifier scored on breadth of curated managers adding vs. cutting a position
+      (`institutional_13f`). **Known gap, stated plainly**: large, influential private
+      13F filers (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no
+      ticker and are not reachable this way — this is a curated subset, the same honest
+      tradeoff `segment_map`/`customer_map` already make elsewhere in `theme_signals.py`.
+      **Not yet done, because there was no network access while this was written**: this
+      has never executed against the live OpenFIGI endpoint or a live 13F filing. Verify
+      the CUSIP resolution rate and manager coverage on the first real production run
+      before trusting the modifier's magnitude — the logic is tested end-to-end against
+      synthetic fixtures (`tests/test_institutional_ownership.py`,
+      `tests/test_openfigi_client.py`, `tests/test_filing_risk_collectors.py`), but a
+      fixture cannot tell you OpenFIGI's real resolution rate or whether the curated
+      managers' tickers still route to the CIKs this list assumes.
+
+- [x] ~~**`customer_concentration_risk`**~~ Not the same capability as the theme layer's
+      `customer_concentration_to_spenders` above (§2) — kept separate deliberately.
+      `us-gaap:ConcentrationRiskPercentage1` dimensioned by `ConcentrationRiskByTypeAxis =
+      CustomerConcentrationRiskMember` gives concentration *magnitude*, scored as a
+      penalty-only modifier (`pipeline/concentration_risk.py`); it still cannot name the
+      customer, so it cannot answer the theme layer's supply-chain question. **Not yet
+      done**: measure `ConcentrationRiskPercentage1` tagging coverage across the scored
+      universe on a live run. The modifier only ever fires on filers that tagged the
+      percentage — a filer that names its concentrated customer in Item 1 prose without
+      tagging the percentage contributes nothing here, and there is no visibility yet into
+      how large that gap is.
 
 ---
 

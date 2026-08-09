@@ -1,0 +1,21 @@
+{
+  "_comment": "Curated, publicly traded 13F institutional filers. Every CIK is resolved live through SecEdgarClient.ticker_map() from the ticker below at run time - never a hand-typed CIK - so a wrong or delisted ticker degrades to 'no data for this manager' rather than silently reading a different filer's holdings under this name. Necessarily partial: large, influential 13F filers that are privately held (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no ticker and are not reachable this way. Expand by adding tickers, not CIKs.",
+  "managers": [
+    {"ticker": "BLK", "name": "BlackRock"},
+    {"ticker": "STT", "name": "State Street"},
+    {"ticker": "TROW", "name": "T. Rowe Price"},
+    {"ticker": "BEN", "name": "Franklin Resources"},
+    {"ticker": "IVZ", "name": "Invesco"},
+    {"ticker": "AMG", "name": "Affiliated Managers Group"},
+    {"ticker": "JHG", "name": "Janus Henderson"},
+    {"ticker": "VRTS", "name": "Virtus Investment Partners"},
+    {"ticker": "APAM", "name": "Artisan Partners"},
+    {"ticker": "CNS", "name": "Cohen & Steers"},
+    {"ticker": "AB", "name": "AllianceBernstein"},
+    {"ticker": "BX", "name": "Blackstone"},
+    {"ticker": "KKR", "name": "KKR & Co."},
+    {"ticker": "APO", "name": "Apollo Global Management"},
+    {"ticker": "ARES", "name": "Ares Management"},
+    {"ticker": "BRK-B", "name": "Berkshire Hathaway"}
+  ]
+}
