@@ -2,14 +2,20 @@ export const NEWS_SORT_OPTIONS = [
   { key: 'date', label: 'Date' },
   { key: 'relevance', label: 'Relevance' },
   { key: 'sentiment', label: 'Sentiment' },
+  { key: 'rating', label: 'Rating (-5 to 5)' },
+  { key: 'allocation', label: '% of portfolio' },
 ]
 
 // Lower research_rank means a stronger candidate (rank 1 = best), so relevance sorts ascending
-// by default while date and sentiment sort with the strongest/most-recent value first.
+// by default while everything else sorts with the strongest/most-recent/largest value first.
+// rating and allocationPct aren't present on the raw news item - the caller enriches each item
+// with them (researchRating() and portfolio position value) before calling sortNews.
 const VALUE_FOR = {
   date: (item) => item.published_at ? new Date(item.published_at).getTime() : null,
   relevance: (item) => item.research_rank,
   sentiment: (item) => item.headline_direction,
+  rating: (item) => item.rating,
+  allocation: (item) => item.allocationPct,
 }
 
 export function sortNews(items, key, direction = 'desc') {

@@ -3,9 +3,9 @@ import { nextNewsSort, sortNews } from './newsSort'
 
 describe('news sorting', () => {
   const items = [
-    { url: 'no-date', published_at: null, research_rank: null, headline_direction: null },
-    { url: 'old', published_at: '2026-01-01T00:00:00Z', research_rank: 12, headline_direction: -0.4 },
-    { url: 'new', published_at: '2026-08-01T00:00:00Z', research_rank: 3, headline_direction: 0.8 },
+    { url: 'no-date', published_at: null, research_rank: null, headline_direction: null, rating: null, allocationPct: null },
+    { url: 'old', published_at: '2026-01-01T00:00:00Z', research_rank: 12, headline_direction: -0.4, rating: -2, allocationPct: 3.5 },
+    { url: 'new', published_at: '2026-08-01T00:00:00Z', research_rank: 3, headline_direction: 0.8, rating: 4, allocationPct: 18.2 },
   ]
 
   it('sorts by date, newest first by default, unavailable dates last', () => {
@@ -20,6 +20,16 @@ describe('news sorting', () => {
 
   it('sorts by sentiment, most positive first', () => {
     expect(sortNews(items, 'sentiment', 'desc').map((item) => item.url))
+      .toEqual(['new', 'old', 'no-date'])
+  })
+
+  it('sorts by rating, best (highest) first', () => {
+    expect(sortNews(items, 'rating', 'desc').map((item) => item.url))
+      .toEqual(['new', 'old', 'no-date'])
+  })
+
+  it('sorts by allocation, largest position first', () => {
+    expect(sortNews(items, 'allocation', 'desc').map((item) => item.url))
       .toEqual(['new', 'old', 'no-date'])
   })
 
