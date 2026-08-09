@@ -26,6 +26,20 @@ const compactMoney = (value) => {
   return money(value)
 }
 
+// An empty screen has more than one cause, and "nothing was disclosed this week" is the only
+// one that needs no attention. Saying that when the disclosure feed actually refused every
+// request would hide a broken collector behind a reassuring sentence.
+export function emptyNote(data) {
+  const failures = data?.collection?.failures || []
+  if (data?.reason_code === 'CONGRESS_DISCLOSURE_FEED_UNAVAILABLE') {
+    return `Disclosure feed unavailable, so nothing could be collected this run${failures.length ? ` (${failures[0]})` : ''}.`
+  }
+  if (data?.reason_code === 'NO_DISCLOSURES_IN_PUBLISH_WINDOW') {
+    return `No disclosures filed in the trailing ${data.publish_window_days || 120} days.`
+  }
+  return 'No disclosures collected yet – this screen updates weekly.'
+}
+
 function FlagChips({ flags }) {
   if (!flags?.length) return <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>
   return <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -125,7 +139,7 @@ export default function CongressTrades() {
       </div></ResponsiveControlPanel>
 
       {!filtered.length ? (
-        <Empty note={rows.length ? 'No disclosures match these filters.' : 'No disclosures collected yet – this screen updates weekly.'} />
+        <Empty note={rows.length ? 'No disclosures match these filters.' : emptyNote(data)} />
       ) : (
         <>
         <ResultCards rows={filtered} getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}

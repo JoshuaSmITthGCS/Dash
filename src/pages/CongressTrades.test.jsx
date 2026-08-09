@@ -102,4 +102,44 @@ describe('CongressTrades page', () => {
     const names = screen.getAllByText(/Laggard|Winner/).map((el) => el.textContent)
     expect(names.indexOf('Winner')).toBeLessThan(names.indexOf('Laggard'))
   })
+  it('says the feed failed rather than implying a quiet week', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'unavailable', reason_code: 'CONGRESS_DISCLOSURE_FEED_UNAVAILABLE',
+        collection: { failures: ['senate-latest: FMP senate-latest request failed with HTTP 403'] },
+        results: [],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText(/Disclosure feed unavailable/)).toBeVisible()
+    expect(screen.getByText(/HTTP 403/)).toBeVisible()
+  })
+
+  it('distinguishes an empty publish window from nothing ever collected', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'unavailable', reason_code: 'NO_DISCLOSURES_IN_PUBLISH_WINDOW',
+        publish_window_days: 120, results: [],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText(/No disclosures filed in the trailing 120 days/)).toBeVisible()
+  })
+
+  it('keeps the plain waiting message when collection simply has not started', () => {
+    useData.mockReturnValue({
+      data: { status: 'unavailable', reason_code: 'NO_DISCLOSURES_COLLECTED_YET', results: [] },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText(/No disclosures collected yet/)).toBeVisible()
+  })
 })

@@ -35,7 +35,7 @@ const routeDescriptions = {
   '/finances': 'Income, spending, pools, accounts, and contribution-room tracking.',
   '/planning': 'Retirement and goal probability simulator with live levers, fan chart, and sequence-risk lesson.',
   '/screens/momentum': 'Monthly skip-month momentum research screen.',
-  '/screens/quality-value': 'Quality at multi-year valuation lows.',
+  '/screens/quality-value': 'Quality at valuation lows, measured against each company\'s own collected multiple history.',
   '/screens/earnings': 'Point-in-time earnings timeliness.',
   '/screens/matrix': 'Structural versus tactical research matrix.',
   '/screens/early-session': 'Early-session research.',
