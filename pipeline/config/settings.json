@@ -23,7 +23,7 @@
     },
     "signal_corrections": {
       "enabled": true,
-      "short_horizon_treatment": "neutral",
+      "short_horizon_treatment": "reversal",
       "reversal_weight": 0.08,
       "shrinkage_target": 50.0,
       "shrinkage_max_pull": 1.0,
@@ -46,10 +46,10 @@
         "institutional_13f_negative": 0.1,
         "congressional_buying": 0.15
       },
-      "_comment": "The cumulative challenger neutralizes short-horizon relative strength, applies confidence shrinkage once, and expresses every modifier allocation as a fraction of the combined cap."
+      "_comment": "The cumulative challenger applies data-coverage shrinkage once and expresses every modifier allocation as a fraction of the combined cap. Its short-horizon treatment is 'reversal' rather than 'neutral' now that the champion is neutral: with both set to neutral the variant was identical to the champion and the comparison tested nothing. Reversal asks the open question -- whether short-horizon relative strength carries contrarian information -- at the reduced reversal_weight."
     }
   },
-  "short_horizon_treatment": "legacy_momentum",
+  "short_horizon_treatment": "neutral",
   "confidence": {
     "_comment": "Decomposes the single confidence scalar (weighted fundamental/technical/news coverage, see scorer.weighted_coverage) into the components docs/RESEARCH-CONTRACT.md's confidence redesign calls for. This is additive: it does not change the score, the champion formula, or the existing 'confidence' field -- it publishes a confidence_detail breakdown alongside it so a low score can be explained ('why') rather than just observed.",
     "freshness_stale_after_hours": 36,
@@ -1296,7 +1296,7 @@
     }
   },
   "market_behavior": {
-    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant. technical_extended (pipeline/technical_indicators.py: moving-average slope, RSI, Bollinger %B, OBV slope) is deliberately small -- 0.06 against 0.94 elsewhere in this blend, and market_behavior itself is only 18% of the total composite (ranking_weights.market_behavior), so this indicator family contributes roughly 1% of the total score. See technical_indicators.py's module docstring for why it stays this narrow.",
+    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant. technical_extended (pipeline/technical_indicators.py) is deliberately small. relative_strength is listed here but excluded from the champion blend by short_horizon_treatment='neutral': it is computed as ret_20d minus a benchmark return that is the same scalar for every row, so it is rank-identical to return_20d by construction (Spearman +1.00 across 877 published rows) and was drawing 16% of this blend for a signal already present. See research/audit/CURRENT_MODEL_AUDIT.md section 6.",
     "weights": {
       "momentum_12_1": 0.3,
       "risk_adjusted": 0.26,

@@ -687,45 +687,91 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
 
 # ---------------- action guidance ----------------
 
+def _reading(source, key):
+    """A metric's value only when it was actually measured.
+
+    Every deterioration test below used ``(source.get(key) or fallback)``, which silently
+    turned "we have no interest-coverage figure" into 99x and "we have no drawdown figure"
+    into 0%. Both read as "no concern", so the entire guidance engine failed *open*: a
+    company with missing data could never be told to TRIM or SELL, and a genuine 0.0 reading
+    was indistinguishable from an absent one because ``or`` triggers on falsiness, not on
+    None. Missing evidence must be visible as missing. See
+    ``research/audit/CURRENT_MODEL_AUDIT.md`` section 7a.
+    """
+    value = (source or {}).get(key)
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
 def action_for(score, stance, fundamental_parts, technical_parts, extended, sentiment_parts):
     """Sell / trim / watch guidance that requires two independent factors to agree.
 
     Price alone never triggers an action. Neither does one bad headline. The rule is the
     same one a disciplined holder would use: the business, the chart, and the narrative
     have to corroborate each other before anyone touches a position.
+
+    Every test is None-safe by construction (see ``_reading``): a metric that was never
+    measured neither triggers a concern nor suppresses one, and the inputs that could not be
+    evaluated are reported in ``unmeasured`` so a reader can see what the verdict did not
+    consider. Whether 2-of-3 is the right rule at all is a Phase 9 question; this only stops
+    it from being decided by absent data.
     """
     categories = fundamental_parts.get("categories", {})
     concerns = {}
+    unmeasured = []
 
     fundamental_reasons = []
     for key, label in (("profitability", "profitability"), ("financial_health", "balance-sheet health"),
                        ("accounting_quality", "accounting quality"), ("growth", "growth")):
         value = categories.get(key)
-        if value is not None and value < 45:
+        if value is None:
+            unmeasured.append(f"fundamentals.{key}")
+        elif value < 45:
             fundamental_reasons.append(f"{label} score {value:.0f}/100")
-    if (extended.get("interest_coverage") or 99) < 2:
-        fundamental_reasons.append(f"interest coverage only {extended['interest_coverage']:.1f}x")
-    if (extended.get("accruals_ratio") or 0) > 0.10:
+    coverage = _reading(extended, "interest_coverage")
+    if coverage is None:
+        unmeasured.append("fundamentals.interest_coverage")
+    elif coverage < 2:
+        fundamental_reasons.append(f"interest coverage only {coverage:.1f}x")
+    accruals = _reading(extended, "accruals_ratio")
+    if accruals is None:
+        unmeasured.append("fundamentals.accruals_ratio")
+    elif accruals > 0.10:
         fundamental_reasons.append("earnings running well ahead of cash flow")
     if fundamental_reasons:
         concerns["fundamentals"] = fundamental_reasons
 
     technical_reasons = []
-    if (technical_parts.get("max_drawdown_252d") or 0) < -30:
-        technical_reasons.append(f"{abs(technical_parts['max_drawdown_252d']):.0f}% peak-to-trough fall this year")
-    if (technical_parts.get("relative_strength_20d") or 0) < -10:
-        technical_reasons.append(f"trailing SPY by {abs(technical_parts['relative_strength_20d']):.0f} points over 20 days")
-    if (technical_parts.get("return_60d") or 0) < -15 and (technical_parts.get("return_20d") or 0) < 0:
+    drawdown = _reading(technical_parts, "max_drawdown_252d")
+    if drawdown is None:
+        unmeasured.append("market_behavior.max_drawdown_252d")
+    elif drawdown < -30:
+        technical_reasons.append(f"{abs(drawdown):.0f}% peak-to-trough fall this year")
+    relative = _reading(technical_parts, "relative_strength_20d")
+    if relative is None:
+        unmeasured.append("market_behavior.relative_strength_20d")
+    elif relative < -10:
+        technical_reasons.append(f"trailing SPY by {abs(relative):.0f} points over 20 days")
+    return_60 = _reading(technical_parts, "return_60d")
+    return_20 = _reading(technical_parts, "return_20d")
+    if return_60 is None or return_20 is None:
+        unmeasured.append("market_behavior.sustained_decline")
+    elif return_60 < -15 and return_20 < 0:
         technical_reasons.append("sustained decline across 20- and 60-day windows")
     if technical_reasons:
         concerns["market_behavior"] = technical_reasons
 
     sentiment_reasons = []
-    average = sentiment_parts.get("average")
-    if average is not None and average < -0.15 and sentiment_parts.get("article_count", 0) >= 3:
-        sentiment_reasons.append(f"{sentiment_parts['article_count']} articles averaging negative coverage")
-    if (extended.get("short_percent_of_float") or 0) >= 0.15:
-        sentiment_reasons.append(f"{extended['short_percent_of_float'] * 100:.0f}% of float sold short")
+    average = _reading(sentiment_parts, "average")
+    article_count = _reading(sentiment_parts, "article_count") or 0
+    if average is None:
+        unmeasured.append("positioning.news_sentiment")
+    elif average < -0.15 and article_count >= 3:
+        sentiment_reasons.append(f"{article_count:.0f} articles averaging negative coverage")
+    short_float = _reading(extended, "short_percent_of_float")
+    if short_float is None:
+        unmeasured.append("positioning.short_percent_of_float")
+    elif short_float >= 0.15:
+        sentiment_reasons.append(f"{short_float * 100:.0f}% of float sold short")
     if sentiment_reasons:
         concerns["positioning"] = sentiment_reasons
 
@@ -750,6 +796,9 @@ def action_for(score, stance, fundamental_parts, technical_parts, extended, sent
     }[action]
     return {"action": action, "suggested_trim_pct": trim, "agreement_strength": strength,
             "agreement_count": agreement, "reasons": reasons[:5], "summary": summary,
+            # What the verdict could not evaluate. A HOLD backed by six unmeasured inputs and
+            # a HOLD backed by six measured ones are different claims and must look different.
+            "unmeasured_inputs": unmeasured,
             "factors": {name: group for name, group in concerns.items()}}
 
 
@@ -1010,13 +1059,18 @@ def build_evidence(categories, technical_parts, extended):
     if dso is not None and dso > 0.15:
         risks.append(f"Receivable days up {dso * 100:.0f}% year over year")
 
-    if (technical_parts.get("max_drawdown_252d") or 0) < -25:
-        risks.append(f"Fell {abs(technical_parts['max_drawdown_252d']):.0f}% peak-to-trough over the past year")
-    elif technical_parts.get("drawdown_60d", 0) < -10:
-        risks.append(f"Down {abs(technical_parts['drawdown_60d']):.1f}% from its 60-day high")
-    if (technical_parts.get("relative_strength_20d") or 0) > 3:
+    # Same None-safety as action_for: an unmeasured drawdown is not a small one.
+    drawdown_252 = _reading(technical_parts, "max_drawdown_252d")
+    drawdown_60 = _reading(technical_parts, "drawdown_60d")
+    if drawdown_252 is not None and drawdown_252 < -25:
+        risks.append(f"Fell {abs(drawdown_252):.0f}% peak-to-trough over the past year")
+    elif drawdown_60 is not None and drawdown_60 < -10:
+        risks.append(f"Down {abs(drawdown_60):.1f}% from its 60-day high")
+    relative_20 = _reading(technical_parts, "relative_strength_20d")
+    if relative_20 is not None and relative_20 > 3:
         strengths.append("Outperforming SPY over 20 trading days")
-    if (technical_parts.get("volume_ratio_60d") or 0) >= 1.3:
+    volume_ratio = _reading(technical_parts, "volume_ratio_60d")
+    if volume_ratio is not None and volume_ratio >= 1.3:
         strengths.append("Advances are carrying heavier volume than declines")
 
     if not strengths:
