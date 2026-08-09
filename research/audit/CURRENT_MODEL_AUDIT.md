@@ -1,5 +1,32 @@
 # ValueSignal — Current Model Audit (Phase 0)
 
+> **Status: this document is a record of the system as audited on 2026-08-09, not a
+> description of the code today.** Phases 1, 3 and part of 2 have since fixed most of what
+> follows. Findings are written in the present tense because that is what they were; the
+> table below maps each to its remedy. Where a finding is still open it says so.
+>
+> | Finding | Status | Fixed in |
+> |---|---|---|
+> | §2 False peer-relative claim (and the alphabetical tie-break) | fixed | `cb3cc53` |
+> | §3 Fictional timeliness layer | fixed | `ac24342` |
+> | §4 Coverage published as confidence | fixed | `cd581b5` |
+> | §5 Industry conditioning not applied on the live path | fixed | `0e0a9ad` |
+> | §5c Incremental margin from a near-zero denominator | fixed | `31335a4` |
+> | §6 `relative_strength_20d` duplicates `return_20d` | fixed | `790d0da` |
+> | §7a Deterioration engine fails open on missing data | fixed | `790d0da` |
+> | §7b–7e Neutral imputation, silent renormalization | fixed for the layers named; `renormalize` now records every drop | `ac24342` |
+> | §8 Displayed precision beyond input resolution | **partly open** — peer tiers and absent layers fixed; the 0.1-point research score is not, and needs Phase 8 calibration |
+> | §9 Duplicated guidance implementations | **open** — four still exist |
+> | §11/§12 Enrichment feedback loop | fixed | `31335a4` |
+> | §12 17% coverage cliff on two categories | **open** — needs a `FULL_UNIVERSE_RESEARCH=1` run |
+> | §10 Entity keying by ticker rather than CIK | **open** — Phase 2.1, blocked on network |
+> | §1 C-3 Eight days of point-in-time history | **open, critical** — Phase 2.2, blocked on network |
+>
+> Every measurement below was computed from `public/data/advisor.json` as committed at the
+> time of the audit. That artifact has not been regenerated (a refresh requires provider
+> access this environment does not have), so the numbers remain reproducible exactly as
+> stated.
+
 **No edits were made to produce this document.** Every numeric claim is computed from
 `public/data/advisor.json` as committed (generated `2026-08-09T09:09:35Z`, model `3.2.0`,
 universe 926, scored rows 877, published rows 40). Code reading establishes mechanism; the
