@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08T20:15:06.454362+00:00",
+  "generated_at": "2026-08-09T03:38:22.022837+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-08T20:13:09.385847+00:00",
+      "checked_at": "2026-08-09T03:35:50.049493+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 926,
-        "scored": 233,
+        "scored": 223,
         "ranked": 40,
         "failed": [
           "ANSS",
@@ -54,13 +54,23 @@
           "HOLX",
           "IGT",
           "INFA",
+          "IPG",
+          "ITCI",
+          "JBT",
+          "JHG",
+          "JNPR",
+          "JWN",
+          "K",
+          "LANC",
+          "MASI",
+          "MMC",
           "TTM"
         ]
       }
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-08T20:13:46.918364+00:00",
+      "checked_at": "2026-08-09T03:37:38.840869+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
@@ -76,7 +86,7 @@
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-08T20:15:06.454342+00:00",
+      "checked_at": "2026-08-09T03:38:22.022817+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -223,8 +233,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "eb67e28a64f94f383a241422a8c6efe8f211f8aa",
+    "git_commit_sha": "1e7e5411ff770d2fa7ea4f45e73d8f6cb5776833",
     "config_hash": "63cd889bfa70be07ac7834bd386dd809375026e974a7f15bf766c15c3088be9d",
-    "generated_at": "2026-08-08T20:15:06.454362+00:00"
+    "generated_at": "2026-08-09T03:38:22.022837+00:00"
   }
 }
