@@ -1,7 +1,8 @@
 import { lazy, Suspense, useState } from 'react'
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
@@ -89,6 +90,7 @@ function ProfilePanel() {
 function AppContent() {
   const { currentUser, loading, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
+  const { pathname } = useLocation()
   const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
 
   return (
@@ -136,6 +138,7 @@ function AppContent() {
           </div>
         </header>
         <DataStatus />
+        <ErrorBoundary key={pathname}>
         <Suspense fallback={<div className="route-loading" role="status"><span className="loading-mark" /></div>}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -173,6 +176,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
         <ModelVersionFooter />
       </main>
 
