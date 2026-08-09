@@ -1,9 +1,9 @@
 {
-  "schema_version": "1.2.0",
-  "model_version": "institutional-13f-v1.2.0",
-  "generated_at": "2026-08-09T19:09:11.885617+00:00",
-  "status": "degraded",
-  "degraded_reason": "3489 CUSIP(s) were collected but none mapped to a ticker - check the OpenFIGI mapping step.",
+  "schema_version": "1.3.0",
+  "model_version": "institutional-13f-v1.3.0",
+  "generated_at": "2026-08-09T20:06:45.364455+00:00",
+  "status": "success",
+  "degraded_reason": null,
   "manager_coverage": [
     {
       "manager": "TROW",
@@ -57,6 +57,14 @@
       "periods": [],
       "holdings_parsed": 0,
       "notes": [
+        "rejected CIK 0001587281 (None): name does not match",
+        "rejected CIK 0001591068 (None): name does not match",
+        "rejected CIK 0001319111 (None): name does not match",
+        "rejected CIK 0001913482 (None): name does not match",
+        "rejected CIK 0002079921 (None): name does not match",
+        "rejected CIK 0000019481 (None): name does not match",
+        "rejected CIK 0001005020 (None): name does not match",
+        "rejected CIK 0002045870 (None): name does not match",
         "CIK 0000883237 ('VIRTUS INVESTMENT PARTNERS, INC.') files no 13F-HR"
       ]
     },
@@ -118,13 +126,16 @@
   "filings_unreadable": 0,
   "amendments_seen": 0,
   "cusips_seen": 3489,
-  "cusips_mapped": 0,
+  "cusips_mapped": 278,
+  "cusips_pending": 0,
+  "openfigi_tier": "anonymous",
+  "openfigi_errors": [],
   "disclaimer": "Which curated, publicly traded active managers added or cut a position between their two most recent distinct 13F reporting periods. Not a claim about why, and coverage is necessarily partial - large privately held managers (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no ticker and are not reachable this way. Each result's `as_of` is the SEC filing date, which trails the quarter it describes by up to 45 days - advisor_engine.institutional_ownership_modifier decays its score contribution by that lag rather than treating it as current.",
   "results": [],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "319a7a9f1868ec439b13aa79ff44c4810687002e",
+    "git_commit_sha": "f6047d8d6a97194cfb80176e601a837c730cc4cc",
     "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
-    "generated_at": "2026-08-09T19:09:11.885617+00:00"
+    "generated_at": "2026-08-09T20:06:45.364455+00:00"
   }
 }
