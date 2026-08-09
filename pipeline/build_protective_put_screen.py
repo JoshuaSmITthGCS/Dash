@@ -19,7 +19,8 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
+                            next_earnings_date, realized_volatility_20d, research_universe_factors,
                             select_by_target_moneyness, select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
@@ -31,10 +32,20 @@ TARGET_MONEYNESS = -0.075
 MONEYNESS_TOLERANCE = 0.03
 MINIMUM_HISTORY_SESSIONS = 21
 
-WEIGHTS = {"iv_value": .40, "cost_efficiency": .30, "liquidity": .30}
+# news_sentiment uses "inverse" mode: a bearish tilt modestly raises the case for owning
+# insurance, kept smallest of any screen since it's the factor most likely to overlap with
+# iv_value (both reflect market-implied risk). research_confidence is a quality gate -
+# "worth protecting". Existing factors shrunk proportionally to still sum to 1.0.
+#
+# iv_value trimmed further (was .35): the single-name IV-vs-RV signal it's built on is
+# weaker and noisier than the same signal at the index level (Driessen, Maenhout & Vilkov
+# 2009 - individual variance risk was not reliably priced in their sample). liquidity
+# picked up the difference.
+WEIGHTS = {"iv_value": .28, "cost_efficiency": .26, "liquidity": .33,
+          "news_sentiment": .05, "research_confidence": .08}
 
 
-def build_row(entry, yf, as_of=None):
+def build_row(entry, yf, as_of=None, generated_at=None):
     """One candidate hedge row per ticker, or None if it doesn't clear a qualifying put."""
     ticker = entry.get("ticker")
     if not ticker or yf is None:
@@ -57,6 +68,10 @@ def build_row(entry, yf, as_of=None):
                                         TARGET_DAYS_TO_EXPIRATION, as_of)
     if expiration is None:
         return None
+    earnings_date = next_earnings_date(ticker_obj, ticker, as_of)
+    if expiration_spans_earnings(expiration, earnings_date, as_of):
+        LOG.info(f"{ticker}: excluded, {expiration} spans earnings on {earnings_date}")
+        return None
 
     try:
         chain = ticker_obj.option_chain(expiration)
@@ -72,6 +87,7 @@ def build_row(entry, yf, as_of=None):
     max_loss_with_hedge_pct = ((price - put["strike"]) + cost) / price
     iv_rv_ratio = (put["implied_volatility"] / realized
                    if put["implied_volatility"] and realized else None)
+    research_factors = research_universe_factors(entry, generated_at, as_of, direction=1, sentiment_mode="inverse")
     group_id, group_label = peer_group(entry)
     return {
         "ticker": ticker, "peer_group": group_id, "peer_group_label": group_label,
@@ -88,17 +104,20 @@ def build_row(entry, yf, as_of=None):
             "cost": round(cost, 4), "cost_pct": round(cost_pct, 4),
             "floor_price": put["strike"],
             "max_loss_with_hedge_pct": round(max_loss_with_hedge_pct, 4),
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "iv_value": -iv_rv_ratio if iv_rv_ratio is not None else None,
             "cost_efficiency": -cost_pct,
             "liquidity": liquidity_factor(put),
+            **research_factors,
         },
     }
 
 
-def build_rows(universe, yf, as_of=None):
-    return [row for row in (build_row(entry, yf, as_of) for entry in universe) if row is not None]
+def build_rows(universe, yf, as_of=None, generated_at=None):
+    return [row for row in (build_row(entry, yf, as_of, generated_at) for entry in universe) if row is not None]
 
 
 def score_rows(rows, config=None):
@@ -170,6 +189,7 @@ def run(as_of=None):
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    snapshot_generated_at = payload.get("generated_at")
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
         LOG.warn("Protective put screen: no published universe to score, skipping")
@@ -186,7 +206,7 @@ def run(as_of=None):
         save_json("screens/protective-puts.json", result)
         return result
 
-    rows = build_rows(universe, yf, as_of)
+    rows = build_rows(universe, yf, as_of, snapshot_generated_at)
     if not rows:
         result = unavailable("NO_QUALIFYING_CONTRACTS", generated_at)
         save_json("screens/protective-puts.json", result)
@@ -263,7 +283,10 @@ def run_backtest(as_of=None):
                    "prices. Real historical bid/ask spreads, open interest, and fill quality are "
                    "not modeled. Trade settlement uses real historical closing prices. The "
                    "'baseline' block is the same tickers held unhedged over the same periods, "
-                   "for comparison.")
+                   "for comparison. The live screen's ranking also factors in news sentiment "
+                   "and the ticker's broader research-universe score/confidence; this backtest "
+                   "does not, since no point-in-time history of those signals exists yet to "
+                   "backtest against without look-ahead risk.")
     if not universe:
         result = {"schema_version": "1.0.0", "model_version": "protective-put-backtest-v1.0.0",
                   "config_version": "screens-v1.0.0", "generated_at": generated_at,

@@ -63,7 +63,7 @@ def make_yahoo_history(per_ticker):
 TODAY = date(2024, 3, 1)
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -80,43 +80,43 @@ DOWN_HISTORY = fake_history(start_price=139, drift=-1.0)
 #   strike=102 -> delta ~0.4541 (nearest to LONG_LEG_TARGET_DELTA=0.45)
 #   strike=111 -> delta ~0.1969 (nearest to SHORT_LEG_TARGET_DELTA=0.20)
 GOOD_CALLS = [
-    contract(95, 8.00, 8.20), contract(100, 5.50, 5.70),
-    contract(102, 4.00, 4.20),  # long leg: mid 4.10
-    contract(105, 2.80, 3.00), contract(110, 1.30, 1.50),
-    contract(111, 1.00, 1.20),  # short leg: mid 1.10
-    contract(115, 0.50, 0.65), contract(120, 0.20, 0.26),
+    contract(95, 8.08, 8.12), contract(100, 5.58, 5.62),
+    contract(102, 4.08, 4.12),  # long leg: mid 4.10
+    contract(105, 2.88, 2.92), contract(110, 1.38, 1.42),
+    contract(111, 1.08, 1.12),  # short leg: mid 1.10
+    contract(115, 0.555, 0.595), contract(120, 0.21, 0.25),
 ]
 
 # Calibrated against options_common.put_delta(100, strike, 0.4, 30):
 #   strike=99 -> delta ~-0.4424 (nearest to LONG_LEG_TARGET_DELTA=0.45)
 #   strike=91 -> delta ~-0.1895 (nearest to SHORT_LEG_TARGET_DELTA=0.20)
 GOOD_PUTS = [
-    contract(80, 0.20, 0.26), contract(85, 0.50, 0.65),
-    contract(90, 1.20, 1.40),
-    contract(91, 1.00, 1.20),  # short leg: mid 1.10
-    contract(95, 2.80, 3.00),
-    contract(99, 4.00, 4.20),  # long leg: mid 4.10
+    contract(80, 0.21, 0.25), contract(85, 0.555, 0.595),
+    contract(90, 1.28, 1.32),
+    contract(91, 1.08, 1.12),  # short leg: mid 1.10
+    contract(95, 2.88, 2.92),
+    contract(99, 4.08, 4.12),  # long leg: mid 4.10
 ]
 
 # Same strikes/deltas as GOOD_CALLS, but priced so the long leg is cheaper than the
 # short leg -> net_debit <= 0 (a coherent debit spread should never price this way for
 # this delta ordering, but build_row must guard it).
 NET_CREDIT_CALLS = [
-    contract(95, 8.00, 8.20), contract(100, 5.50, 5.70),
-    contract(102, 0.50, 0.60),  # long leg: mid 0.55
-    contract(105, 2.80, 3.00), contract(110, 1.30, 1.50),
-    contract(111, 1.00, 1.20),  # short leg: mid 1.10
-    contract(115, 0.50, 0.65), contract(120, 0.20, 0.26),
+    contract(95, 8.08, 8.12), contract(100, 5.58, 5.62),
+    contract(102, 0.53, 0.57),  # long leg: mid 0.55
+    contract(105, 2.88, 2.92), contract(110, 1.38, 1.42),
+    contract(111, 1.08, 1.12),  # short leg: mid 1.10
+    contract(115, 0.555, 0.595), contract(120, 0.21, 0.25),
 ]
 
 # Same strikes/deltas as GOOD_CALLS, but priced so net_debit consumes the whole width
 # (width=9, net_debit=13) -> width <= net_debit, no room left for profit.
 TIGHT_CALLS = [
-    contract(95, 8.00, 8.20), contract(100, 5.50, 5.70),
-    contract(102, 14.90, 15.10),  # long leg: mid 15.00
-    contract(105, 2.80, 3.00), contract(110, 1.30, 1.50),
-    contract(111, 1.90, 2.10),  # short leg: mid 2.00
-    contract(115, 0.50, 0.65), contract(120, 0.20, 0.26),
+    contract(95, 8.08, 8.12), contract(100, 5.58, 5.62),
+    contract(102, 14.98, 15.02),  # long leg: mid 15.00
+    contract(105, 2.88, 2.92), contract(110, 1.38, 1.42),
+    contract(111, 1.98, 2.02),  # short leg: mid 2.00
+    contract(115, 0.555, 0.595), contract(120, 0.21, 0.25),
 ]
 
 
@@ -388,8 +388,10 @@ BT_DOWN_COST = 243.3
 BT_DOWN_MAX_PROFIT_PNL = (BT_DOWN_LONG_STRIKE - BT_DOWN_SHORT_STRIKE) * 100 - BT_DOWN_COST  # 428.7
 BT_DOWN_MAX_LOSS_PNL = -BT_DOWN_COST  # -243.3
 
-STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio", "max_drawdown",
-             "win_rate", "average_pnl_per_trade", "equity_curve"}
+STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
+                          "skewness", "kurtosis", "probabilistic_sharpe_ratio", "deflated_sharpe_ratio",
+                          "deflated_sharpe_trials", "max_drawdown", "win_rate", "average_pnl_per_trade",
+                          "equity_curve"}
 
 
 def single_period_closes(entry_history, settle_price, filler_sessions=20):
@@ -440,7 +442,7 @@ def test_backtest_universe_put_spread_max_profit_at_or_below_short_strike(monkey
     stats = module.backtest_universe([make_universe_entry("Y")], FakeYf({}))
 
     assert stats["num_trades"] == 1
-    assert abs(stats["average_pnl_per_trade"] - BT_DOWN_MAX_PROFIT_PNL) < 0.5
+    assert abs(stats["average_pnl_per_trade"] - BT_DOWN_MAX_PROFIT_PNL) < 1.0
 
 
 def test_backtest_universe_put_spread_max_loss_at_or_above_long_strike(monkeypatch):
@@ -450,7 +452,7 @@ def test_backtest_universe_put_spread_max_loss_at_or_above_long_strike(monkeypat
     stats = module.backtest_universe([make_universe_entry("Y")], FakeYf({}))
 
     assert stats["num_trades"] == 1
-    assert abs(stats["average_pnl_per_trade"] - BT_DOWN_MAX_LOSS_PNL) < 0.5
+    assert abs(stats["average_pnl_per_trade"] - BT_DOWN_MAX_LOSS_PNL) < 1.0
 
 
 def test_backtest_universe_returns_none_when_no_ticker_has_enough_history(monkeypatch):

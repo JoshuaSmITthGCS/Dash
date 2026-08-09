@@ -26,12 +26,16 @@ export const STRATEGY_SCREENS = {
       'your shares) before expiration. Requires owning 100 shares per contract.',
     strategyLabel: () => 'Covered call',
     metricsConfig: () => [
-      ['annualized_yield', 'Annualized yield', 'pct'],
+      ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
+      ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['breakeven', 'Breakeven', 'money'],
       ['max_return_if_assigned_pct', 'Max return if assigned', 'pct'],
-      ['probability_assigned', 'Probability assigned', 'pct'],
+      ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
       ['downside_cushion_pct', 'Downside cushion', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'cash-secured-put': {
@@ -44,15 +48,23 @@ export const STRATEGY_SCREENS = {
       'expiring worthless, and liquidity.',
     riskNote: GENERIC_RISK_NOTE + ' Selling puts obligates you to buy 100 shares at the ' +
       'strike if assigned, even if the stock keeps falling below it. This screen assumes the ' +
-      'put is fully cash-secured, not leveraged — set aside the full collateral shown.',
+      'put is fully cash-secured, not leveraged — set aside the full collateral shown. On a ' +
+      'smaller account, that collateral requirement (shown as "Collateral required" above) can ' +
+      'be more capital than you have — a defined-risk put credit spread caps both the collateral ' +
+      'and the loss, at the cost of paying commissions and a bid/ask spread on two legs instead ' +
+      'of one, which eats a bigger share of a small trade’s edge. See the Vertical spread screen.',
     strategyLabel: () => 'Cash-secured put',
     metricsConfig: () => [
-      ['annualized_yield', 'Annualized yield', 'pct'],
+      ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
+      ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['effective_cost_basis', 'Effective cost basis', 'money'],
       ['collateral', 'Collateral required', 'money'],
-      ['probability_otm', 'Probability OTM (keep premium)', 'pct'],
-      ['probability_assigned', 'Probability assigned', 'pct'],
+      ['probability_otm', 'Probability OTM, risk-neutral (keep premium)', 'pct'],
+      ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'protective-put': {
@@ -72,6 +84,8 @@ export const STRATEGY_SCREENS = {
       ['cost', 'Cost per share', 'money'],
       ['floor_price', 'Floor price', 'money'],
       ['max_loss_with_hedge_pct', 'Max loss, hedged', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   collar: {
@@ -92,6 +106,8 @@ export const STRATEGY_SCREENS = {
       ['range_width_pct', 'Range width', 'pct'],
       ['max_loss_pct', 'Max loss', 'pct'],
       ['max_gain_pct', 'Max gain', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'vertical-spread': {
@@ -112,6 +128,8 @@ export const STRATEGY_SCREENS = {
       ['max_profit', 'Max profit', 'money'],
       ['max_loss', 'Max loss', 'money'],
       ['width', 'Spread width', 'money'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'advanced-strategies': {
@@ -129,16 +147,20 @@ export const STRATEGY_SCREENS = {
       'a big move just to break even — time decay works against both legs every day the stock sits still.',
     strategyLabel: (row) => row.strategy === 'iron_condor' ? 'Iron condor' : 'Straddle',
     metricsConfig: (row) => row.strategy === 'iron_condor' ? [
-      ['probability_in_range', 'Probability in range', 'pct'],
+      ['probability_in_range', 'Probability in range (risk-neutral)', 'pct'],
       ['net_credit', 'Net credit', 'money'],
       ['max_profit', 'Max profit', 'money'],
       ['max_loss', 'Max loss', 'money'],
+      ['news_sentiment', 'News calm tilt (low = controversial)', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
-      ['probability_of_profit', 'Probability of profit', 'pct'],
+      ['probability_of_profit', 'Probability of profit (risk-neutral)', 'pct'],
       ['cost', 'Cost (both legs)', 'money'],
       ['breakeven_up', 'Breakeven, upside', 'money'],
       ['breakeven_down', 'Breakeven, downside', 'money'],
       ['required_move_pct', 'Required move', 'pct'],
+      ['news_sentiment', 'News attention tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
   'short-term-trades': {
@@ -164,18 +186,28 @@ export const STRATEGY_SCREENS = {
       ['realized_volatility_20d', 'Realized volatility (20d)', 'pct'],
       ['implied_realized_vol_ratio', 'Implied / realized vol', 'ratio'],
       ['moneyness', 'Moneyness', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : row.strategy === 'sell_call' ? [
-      ['annualized_yield', 'Annualized yield', 'pct'],
+      ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
+      ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['breakeven', 'Breakeven', 'money'],
-      ['probability_assigned', 'Probability assigned', 'pct'],
+      ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
       ['downside_cushion_pct', 'Downside cushion', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
-      ['annualized_yield', 'Annualized yield', 'pct'],
+      ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
+      ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
       ['premium', 'Premium collected', 'money'],
       ['effective_cost_basis', 'Effective cost basis', 'money'],
       ['collateral', 'Collateral required', 'money'],
-      ['probability_otm', 'Probability OTM (keep premium)', 'pct'],
+      ['probability_otm', 'Probability OTM, risk-neutral (keep premium)', 'pct'],
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
 }

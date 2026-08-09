@@ -67,12 +67,12 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-31"  # 30 days out from TODAY, matches TARGET_DAYS_TO_EXPIRATION
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.3, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.3, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
 
-def collar_chain(put_strike=92, put_bid=2.0, put_ask=2.2, call_strike=105, call_bid=2.0, call_ask=2.2):
+def collar_chain(put_strike=92, put_bid=2.0, put_ask=2.08, call_strike=105, call_bid=2.0, call_ask=2.08):
     """A chain with one qualifying put (~7.5% OTM) and one qualifying call (~30 delta)."""
     puts = [contract(strike=put_strike, bid=put_bid, ask=put_ask)]
     calls = [contract(strike=call_strike, bid=call_bid, ask=call_ask)]
@@ -171,13 +171,13 @@ def test_metrics_are_internally_consistent_for_debit_and_credit(monkeypatch):
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"AAA": fake_history()}))
 
     # Net debit: put costs more than the call collects.
-    debit_chain = collar_chain(put_bid=2.0, put_ask=2.2, call_bid=1.0, call_ask=1.2)
+    debit_chain = collar_chain(put_bid=2.0, put_ask=2.08, call_bid=1.0, call_ask=1.06)
     fake_yf = FakeYf({"AAA": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: debit_chain})})
     debit_row = module.build_row(universe, fake_yf, as_of=TODAY)
     assert debit_row["metrics"]["net_cost"] > 0
 
     # Net credit: call collects more than the put costs.
-    credit_chain = collar_chain(put_bid=1.0, put_ask=1.2, call_bid=2.0, call_ask=2.2)
+    credit_chain = collar_chain(put_bid=1.0, put_ask=1.06, call_bid=2.0, call_ask=2.08)
     fake_yf = FakeYf({"AAA": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: credit_chain})})
     credit_row = module.build_row(universe, fake_yf, as_of=TODAY)
     assert credit_row["metrics"]["net_cost"] < 0
@@ -274,11 +274,11 @@ def test_run_publishes_scored_results(monkeypatch):
     }))
     fake_yf = FakeYf({
         "AAA": FakeTicker(options=[EXPIRATION],
-                          chains={EXPIRATION: collar_chain(put_bid=2.0, put_ask=2.2,
-                                                            call_bid=1.0, call_ask=1.2)}),
+                          chains={EXPIRATION: collar_chain(put_bid=2.0, put_ask=2.08,
+                                                            call_bid=1.0, call_ask=1.06)}),
         "BBB": FakeTicker(options=[EXPIRATION],
-                          chains={EXPIRATION: collar_chain(put_bid=1.0, put_ask=1.2,
-                                                            call_bid=2.0, call_ask=2.2)}),
+                          chains={EXPIRATION: collar_chain(put_bid=1.0, put_ask=1.06,
+                                                            call_bid=2.0, call_ask=2.08)}),
     })
     monkeypatch.setitem(sys.modules, "yfinance", fake_yf)
     monkeypatch.setenv("ENABLE_COLLAR_SCREEN", "1")

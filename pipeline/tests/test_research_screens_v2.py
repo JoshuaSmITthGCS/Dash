@@ -2,7 +2,25 @@ from datetime import date, timedelta
 
 from research_screens_v2 import (classify_quality_value, historical_percentile, momentum_factors,
                                  momentum_scores, position_size, robust_value_score,
-                                 sleeve_volatility_scale, tactical_score)
+                                 sleeve_volatility_scale, tactical_score, winsorize, zscores)
+
+
+def test_winsorize_preserves_length_when_every_value_is_none():
+    # A factor column can legitimately be all-None (e.g. zero news coverage across an
+    # entire batch) - winsorize() must not collapse to [], which desyncs it from
+    # zscores()'s own len(values)-preserving None-fill and crashes the caller's
+    # standardized[field][index] lookup with an IndexError.
+    assert winsorize([None, None, None]) == [None, None, None]
+
+
+def test_zscores_preserves_length_when_every_value_is_none():
+    assert zscores(winsorize([None, None])) == [None, None]
+
+
+def test_winsorize_still_clips_extremes_with_some_none_values_present():
+    result = winsorize([1, None, 100, 50])
+    assert result[1] is None
+    assert len(result) == 4
 
 
 def daily_prices(start=date(2023, 1, 1), sessions=520):

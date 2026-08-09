@@ -20,7 +20,8 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, liquidity_factor, realized_volatility_20d,
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
+                            next_earnings_date, realized_volatility_20d, research_universe_factors,
                             select_by_target_delta, select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
@@ -32,10 +33,15 @@ LONG_LEG_TARGET_DELTA = 0.45
 SHORT_LEG_TARGET_DELTA = 0.20
 MINIMUM_HISTORY_SESSIONS = 21
 
-WEIGHTS = {"risk_reward": .40, "liquidity": .30, "trend_strength": .30}
+# news_sentiment/research_confidence are sign-aligned with the chosen side (call=+1,
+# put=-1) via research_universe_factors' "signed" mode - conviction-confirmation, same
+# reasoning as the multi-day options screen. Existing factors shrunk proportionally to
+# still sum to 1.0.
+WEIGHTS = {"risk_reward": .34, "liquidity": .26, "trend_strength": .25,
+          "news_sentiment": .08, "research_confidence": .07}
 
 
-def build_row(entry, yf, as_of=None):
+def build_row(entry, yf, as_of=None, generated_at=None):
     """One candidate spread row per ticker, or None if no coherent spread qualifies."""
     ticker = entry.get("ticker")
     if not ticker or yf is None:
@@ -57,6 +63,10 @@ def build_row(entry, yf, as_of=None):
     expiration, dte = select_expiration(expirations, MIN_DAYS_TO_EXPIRATION, MAX_DAYS_TO_EXPIRATION,
                                         TARGET_DAYS_TO_EXPIRATION, as_of)
     if expiration is None:
+        return None
+    earnings_date = next_earnings_date(ticker_obj, ticker, as_of)
+    if expiration_spans_earnings(expiration, earnings_date, as_of):
+        LOG.info(f"{ticker}: excluded, {expiration} spans earnings on {earnings_date}")
         return None
 
     side = "put" if (trend or 0) < 0 else "call"
@@ -89,6 +99,9 @@ def build_row(entry, yf, as_of=None):
     max_loss = net_debit
     max_profit = width - net_debit
     risk_reward = max_profit / max_loss
+    direction = -1 if side == "put" else 1
+    research_factors = research_universe_factors(entry, generated_at, as_of, direction=direction,
+                                                  sentiment_mode="signed")
 
     group_id, group_label = peer_group(entry)
     return {
@@ -106,17 +119,20 @@ def build_row(entry, yf, as_of=None):
             "net_debit": round(net_debit, 4), "width": round(width, 4),
             "max_profit": round(max_profit, 4), "max_loss": round(max_loss, 4),
             "risk_reward": round(risk_reward, 4),
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "risk_reward": risk_reward,
             "liquidity": min(liquidity_factor(long_leg), liquidity_factor(short_leg)),
             "trend_strength": abs(trend) if trend is not None else None,
+            **research_factors,
         },
     }
 
 
-def build_rows(universe, yf, as_of=None):
-    return [row for row in (build_row(entry, yf, as_of) for entry in universe) if row is not None]
+def build_rows(universe, yf, as_of=None, generated_at=None):
+    return [row for row in (build_row(entry, yf, as_of, generated_at) for entry in universe) if row is not None]
 
 
 def score_rows(rows, config=None):
@@ -189,6 +205,7 @@ def run(as_of=None):
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    snapshot_generated_at = payload.get("generated_at")
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
         LOG.warn("Vertical spread screen: no published universe to score, skipping")
@@ -205,7 +222,7 @@ def run(as_of=None):
         save_json("screens/vertical-spreads.json", result)
         return result
 
-    rows = build_rows(universe, yf, as_of)
+    rows = build_rows(universe, yf, as_of, snapshot_generated_at)
     if not rows:
         result = unavailable("NO_QUALIFYING_CONTRACTS", generated_at)
         save_json("screens/vertical-spreads.json", result)
@@ -290,7 +307,11 @@ def run_backtest(as_of=None):
     methodology = ("Simulated: option entry prices are Black-Scholes estimates using trailing "
                    "realized volatility as the implied-volatility input, not quoted historical "
                    "prices. Real historical bid/ask spreads, open interest, and fill quality are "
-                   "not modeled. Trade settlement uses real historical closing prices.")
+                   "not modeled. Trade settlement uses real historical closing prices. The live "
+                   "screen's ranking also factors in news sentiment and the ticker's broader "
+                   "research-universe score/confidence; this backtest does not, since no "
+                   "point-in-time history of those signals exists yet to backtest against "
+                   "without look-ahead risk.")
     if not universe:
         LOG.warn("Vertical spread backtest: no published universe to backtest, skipping")
         result = {"schema_version": "1.0.0", "model_version": "vertical-spread-backtest-v1.0.0",

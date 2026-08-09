@@ -33,9 +33,10 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, contract_liquidity, liquidity_factor,
-                            probability_below, realized_volatility_20d, select_by_target_delta,
-                            select_contract, select_expiration, trend_20d)
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, contract_liquidity, expiration_spans_earnings,
+                            liquidity_factor, next_earnings_date, probability_below, realized_volatility_20d,
+                            research_universe_factors, select_by_target_delta, select_contract,
+                            select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -46,18 +47,31 @@ SHORT_WING_TARGET_DELTA = 0.18
 LONG_WING_TARGET_DELTA = 0.08
 MINIMUM_HISTORY_SESSIONS = 21
 
-IRON_CONDOR_WEIGHTS = {"credit_efficiency": .40, "probability_in_range": .35, "liquidity": .25}
-STRADDLE_WEIGHTS = {"iv_value": .35, "probability_of_profit": .35, "liquidity": .30}
+# Iron condor wants calm, not a direction - "calm" mode (-|average|*coverage) penalizes
+# controversy in either direction, since the strategy's failure mode is an unexpected big
+# move either way. Straddle wants the opposite of calm - "attention" mode rewards news
+# volume (a live-catalyst proxy) regardless of polarity, since the strategy doesn't care
+# which way price moves. research_confidence is an unsigned quality gate for both (neither
+# strategy picks a directional side). Existing factors shrunk proportionally.
+IRON_CONDOR_WEIGHTS = {"credit_efficiency": .34, "probability_in_range": .30, "liquidity": .21,
+                       "news_sentiment": .08, "research_confidence": .07}
+# straddle's iv_value trimmed further (was .30): same single-name-VRP-is-weaker-than-index
+# reasoning as build_options_screen.py's and build_protective_put_screen.py's identical
+# trims (Driessen, Maenhout & Vilkov 2009). liquidity picked up the difference.
+STRADDLE_WEIGHTS = {"iv_value": .25, "probability_of_profit": .31, "liquidity": .31,
+                    "news_sentiment": .08, "research_confidence": .05}
 
 
-def fetch_chain(entry, yf, as_of=None):
+def fetch_chain(entry, yf, as_of=None, generated_at=None):
     """Shared per-ticker setup: history, expiration selection, and one option chain fetch.
 
-    Returns (ticker, price, dte, expiration, trend, realized, chain, entry, history_sessions),
-    or None if the ticker doesn't clear a qualifying history/expiration/chain. The extra
-    trailing history_sessions element (beyond the base ticker/price/.../entry tuple both
-    strategy builders unpack) is what lets each strategy's row carry the session count
-    without re-fetching price history a second time per strategy.
+    Returns (ticker, price, dte, expiration, trend, realized, chain, entry, history_sessions,
+    generated_at), or None if the ticker doesn't clear a qualifying history/expiration/chain.
+    The extra trailing history_sessions/generated_at elements (beyond the base
+    ticker/price/.../entry tuple both strategy builders unpack) are what let each strategy's
+    row carry the session count and the advisor.json snapshot timestamp (for the
+    news_sentiment/research_confidence staleness discount) without re-fetching either a
+    second time per strategy.
     """
     ticker = entry.get("ticker")
     if not ticker or yf is None:
@@ -80,18 +94,26 @@ def fetch_chain(entry, yf, as_of=None):
                                         TARGET_DAYS_TO_EXPIRATION, as_of)
     if expiration is None:
         return None
+    earnings_date = next_earnings_date(ticker_obj, ticker, as_of)
+    if expiration_spans_earnings(expiration, earnings_date, as_of):
+        # Applies to both strategies this screen builds - the straddle side is explicitly
+        # documented as a "cheap-volatility idea, not a catalyst-timed one" (see module
+        # docstring), so an earnings-inflated straddle candidate would misrepresent itself
+        # exactly as much as an earnings-inflated iron condor would.
+        LOG.info(f"{ticker}: excluded, {expiration} spans earnings on {earnings_date}")
+        return None
 
     try:
         chain = ticker_obj.option_chain(expiration)
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{ticker}: option chain unavailable ({type(exc).__name__})")
         return None
-    return (ticker, price, dte, expiration, trend, realized, chain, entry, len(closes))
+    return (ticker, price, dte, expiration, trend, realized, chain, entry, len(closes), generated_at, as_of)
 
 
 def build_iron_condor_row(setup):
     """Sell a call spread + sell a put spread around price, or None if legs don't qualify."""
-    ticker, price, dte, expiration, trend, realized, chain, entry, history_sessions = setup
+    ticker, price, dte, expiration, trend, realized, chain, entry, history_sessions, generated_at, as_of = setup
 
     short_call = select_by_target_delta(chain.calls, price, dte, side="call", target_delta=SHORT_WING_TARGET_DELTA)
     long_call = select_by_target_delta(chain.calls, price, dte, side="call", target_delta=LONG_WING_TARGET_DELTA)
@@ -116,6 +138,7 @@ def build_iron_condor_row(setup):
     probability_in_range = (None if prob_below_short_call is None or prob_below_short_put is None
                             else prob_below_short_call - prob_below_short_put)
     credit_efficiency = net_credit / max_loss
+    research_factors = research_universe_factors(entry, generated_at, as_of, sentiment_mode="calm")
 
     group_id, group_label = peer_group(entry)
     return {
@@ -131,12 +154,15 @@ def build_iron_condor_row(setup):
             "net_credit": round(net_credit, 4), "max_profit": round(max_profit, 4),
             "max_loss": round(max_loss, 4),
             "probability_in_range": round(probability_in_range, 4) if probability_in_range is not None else None,
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "credit_efficiency": credit_efficiency,
             "probability_in_range": probability_in_range,
             "liquidity": min(liquidity_factor(short_call), liquidity_factor(long_call),
                             liquidity_factor(short_put), liquidity_factor(long_put)),
+            **research_factors,
         },
     }
 
@@ -151,7 +177,7 @@ def _contract_at_strike(frame, strike, price):
 
 def build_straddle_row(setup):
     """Buy a call + put at the same near-the-money strike, or None if legs don't qualify."""
-    ticker, price, dte, expiration, trend, realized, chain, entry, history_sessions = setup
+    ticker, price, dte, expiration, trend, realized, chain, entry, history_sessions, generated_at, as_of = setup
 
     call = select_contract(chain.calls, price)
     put = select_contract(chain.puts, price)
@@ -184,6 +210,7 @@ def build_straddle_row(setup):
     prob_below_down = probability_below(price, breakeven_down, iv_avg, dte) if iv_avg else None
     probability_of_profit = (None if prob_below_up is None or prob_below_down is None
                              else 1 - (prob_below_up - prob_below_down))
+    research_factors = research_universe_factors(entry, generated_at, as_of, sentiment_mode="attention")
 
     group_id, group_label = peer_group(entry)
     return {
@@ -200,20 +227,23 @@ def build_straddle_row(setup):
             "cost": round(cost, 4), "breakeven_up": round(breakeven_up, 4), "breakeven_down": round(breakeven_down, 4),
             "required_move_pct": round(required_move_pct, 4),
             "probability_of_profit": round(probability_of_profit, 4) if probability_of_profit is not None else None,
+            "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
+            "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
         "factors": {
             "iv_value": -iv_rv_ratio if iv_rv_ratio is not None else None,
             "probability_of_profit": probability_of_profit,
             "liquidity": min(liquidity_factor(call), liquidity_factor(put)),
+            **research_factors,
         },
     }
 
 
-def build_rows(universe, yf, as_of=None):
+def build_rows(universe, yf, as_of=None, generated_at=None):
     """Returns (condor_rows, straddle_rows); a ticker can land in either, both, or neither."""
     condor_rows, straddle_rows = [], []
     for entry in universe:
-        setup = fetch_chain(entry, yf, as_of)
+        setup = fetch_chain(entry, yf, as_of, generated_at)
         if setup is None:
             continue
         condor_row = build_iron_condor_row(setup)
@@ -301,6 +331,7 @@ def run(as_of=None):
         return None
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
+    snapshot_generated_at = payload.get("generated_at")
     generated_at = datetime.now(timezone.utc).isoformat()
     if not universe:
         LOG.warn("Advanced strategies screen: no published universe to score, skipping")
@@ -317,7 +348,7 @@ def run(as_of=None):
         save_json("screens/advanced-strategies.json", result)
         return result
 
-    condor_rows, straddle_rows = build_rows(universe, yf, as_of)
+    condor_rows, straddle_rows = build_rows(universe, yf, as_of, snapshot_generated_at)
     if not condor_rows and not straddle_rows:
         result = unavailable("NO_QUALIFYING_CONTRACTS", generated_at)
         save_json("screens/advanced-strategies.json", result)
@@ -453,7 +484,11 @@ def run_backtest(as_of=None):
                    "realized volatility as the implied-volatility input, not quoted historical "
                    "prices. Real historical bid/ask spreads, open interest, and fill quality are "
                    "not modeled. Trade settlement uses real historical closing prices. The "
-                   "straddle backtest has no earnings-calendar awareness, same as the live screen.")
+                   "straddle backtest has no earnings-calendar awareness, same as the live screen. "
+                   "The live screen's ranking also factors in news sentiment and the ticker's "
+                   "broader research-universe score/confidence; this backtest does not, since no "
+                   "point-in-time history of those signals exists yet to backtest against "
+                   "without look-ahead risk.")
     if not universe:
         result = {"schema_version": "1.0.0", "model_version": "advanced-options-backtest-v1.0.0",
                   "config_version": "screens-v1.0.0", "generated_at": generated_at,

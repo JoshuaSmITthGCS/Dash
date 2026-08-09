@@ -64,7 +64,7 @@ def make_yahoo_history(per_ticker):
 TODAY = date(2024, 3, 1)
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -76,7 +76,7 @@ def test_build_row_selects_put_within_five_to_ten_percent_band(monkeypatch):
     # price=100: 7.5% below is 92.5. Offer a range of puts; the closest to -7.5% should win.
     chain_puts = [
         contract(strike=98, bid=1.0, ask=1.1),   # -2% moneyness, outside tolerance band
-        contract(strike=93, bid=2.0, ask=2.2),   # -7% moneyness, within band, close to target
+        contract(strike=93, bid=2.0, ask=2.08),   # -7% moneyness, within band, close to target
         contract(strike=70, bid=0.1, ask=0.15),  # -30% moneyness, far OTM
     ]
     fake_yf = FakeYf({"HEDGE": FakeTicker(options=[expiration], chains={expiration: FakeChain([], chain_puts)})})
@@ -215,9 +215,9 @@ def test_run_publishes_scored_results(monkeypatch):
     # BBB closes at 80 + 39*0.05 = 81.95; strike 76 -> moneyness ~ -7.3%, inside the band.
     fake_yf = FakeYf({
         "AAA": FakeTicker(options=[expiration],
-                          chains={expiration: FakeChain([], [contract(strike=94, bid=2, ask=2.2)])}),
+                          chains={expiration: FakeChain([], [contract(strike=94, bid=2, ask=2.08)])}),
         "BBB": FakeTicker(options=[expiration],
-                          chains={expiration: FakeChain([], [contract(strike=76, bid=1.5, ask=1.7)])}),
+                          chains={expiration: FakeChain([], [contract(strike=76, bid=1.5, ask=1.56)])}),
     })
     monkeypatch.setitem(sys.modules, "yfinance", fake_yf)
     monkeypatch.setenv("ENABLE_PROTECTIVE_PUT_SCREEN", "1")

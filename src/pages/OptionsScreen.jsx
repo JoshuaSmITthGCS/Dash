@@ -11,6 +11,7 @@ import BacktestSummary from '../components/BacktestSummary.jsx'
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
 const pct = (value, digits = 1) => value == null ? '–' : `${(value * 100).toFixed(digits)}%`
 const money = (value) => value == null ? '–' : `$${Number(value).toFixed(2)}`
+const signed = (value) => value == null ? '–' : `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}`
 const dateLabel = (value) => {
   if (!value) return '–'
   const parsed = new Date(`${value}T00:00:00Z`)
@@ -70,6 +71,8 @@ function OptionIdeaCard({ row, onOpen }) {
       <div><dt>Implied vol.</dt><dd>{pct(row.implied_volatility)}</dd></div>
       <div><dt>IV / RV (20d)</dt><dd>{number(row.implied_realized_vol_ratio, 2)}×</dd></div>
       <div><dt>20d trend</dt><dd><Move pct={row.trend_20d} /></dd></div>
+      <div><dt>News sentiment tilt</dt><dd>{signed(row.news_sentiment)}</dd></div>
+      <div><dt>Research confidence tilt</dt><dd>{signed(row.research_confidence)}</dd></div>
     </dl>
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>

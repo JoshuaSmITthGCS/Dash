@@ -20,12 +20,34 @@ class FakeChain:
         self.puts = FakeFrame(puts)
 
 
+class FakeEarningsFrame:
+    def __init__(self, rows):
+        self.index = [row[0] for row in rows]
+        self.columns = ["Surprise(%)"]
+        self.empty = not rows
+        self._surprises = [row[1] for row in rows]
+
+    def __getitem__(self, column):
+        class _Column:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return self._values
+        return _Column(self._surprises)
+
+
+NAN = float("nan")
+
+
 class FakeTicker:
-    def __init__(self, options=None, chains=None, raise_on_options=False, raise_on_chain=False):
+    def __init__(self, options=None, chains=None, raise_on_options=False, raise_on_chain=False,
+                earnings_dates=None):
         self._options = options or []
         self._chains = chains or {}
         self._raise_on_options = raise_on_options
         self._raise_on_chain = raise_on_chain
+        self.earnings_dates = earnings_dates
 
     @property
     def options(self):
@@ -63,7 +85,7 @@ def make_yahoo_history(per_ticker):
 TODAY = date(2024, 3, 1)
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -103,8 +125,8 @@ def test_build_row_selects_call_on_positive_trend_and_put_on_negative(monkeypatc
     }
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
     expiration = "2024-03-15"
-    chain_calls = [contract(strike=138, bid=2.0, ask=2.2)]
-    chain_puts = [contract(strike=160, bid=2.0, ask=2.2)]
+    chain_calls = [contract(strike=138, bid=2.0, ask=2.08)]
+    chain_puts = [contract(strike=160, bid=2.0, ask=2.08)]
     fake_yf = FakeYf({
         "UP": FakeTicker(options=[expiration], chains={expiration: FakeChain(chain_calls, [])}),
         "DOWN": FakeTicker(options=[expiration], chains={expiration: FakeChain([], chain_puts)}),
@@ -116,6 +138,61 @@ def test_build_row_selects_call_on_positive_trend_and_put_on_negative(monkeypatc
     assert up_row["option_type"] == "call"
     assert down_row["option_type"] == "put"
     assert up_row["days_to_expiration"] == 14
+
+
+def test_build_row_populates_sentiment_and_research_confidence_from_the_entry(monkeypatch):
+    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9, "score": 70, "confidence": 0.8,
+                  "sentiment_detail": {"average": 0.5, "coverage": 0.6, "article_count": 4}}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"UP": fake_history(drift=1.0)}))
+    expiration = "2024-03-15"
+    fake_yf = FakeYf({"UP": FakeTicker(options=[expiration],
+                                       chains={expiration: FakeChain([contract(strike=138, bid=2.0, ask=2.08)], [])})})
+
+    row = module.build_row(universe_up, fake_yf, as_of=TODAY, generated_at="2024-03-01T00:00:00+00:00")
+
+    assert row["option_type"] == "call"
+    assert row["news_sentiment"] == 0.5 * 0.6  # signed mode, call side -> direction=1
+    assert row["research_confidence"] == (70 - 50) * 0.8
+    assert row["factors"]["news_sentiment"] == row["news_sentiment"]
+    assert row["factors"]["research_confidence"] == row["research_confidence"]
+
+
+def test_build_row_leaves_sentiment_and_research_confidence_none_without_source_data(monkeypatch):
+    universe_up = {"ticker": "UP", "sector": "Technology", "market_cap": 5e9}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"UP": fake_history(drift=1.0)}))
+    expiration = "2024-03-15"
+    fake_yf = FakeYf({"UP": FakeTicker(options=[expiration],
+                                       chains={expiration: FakeChain([contract(strike=138, bid=2.0, ask=2.08)], [])})})
+
+    row = module.build_row(universe_up, fake_yf, as_of=TODAY)
+
+    assert row["news_sentiment"] is None
+    assert row["research_confidence"] is None
+
+
+def test_build_row_excludes_a_contract_spanning_a_known_earnings_date(monkeypatch):
+    universe = {"ticker": "EARNTEST1", "sector": "Technology", "market_cap": 5e9}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"EARNTEST1": fake_history(drift=1.0)}))
+    expiration = "2024-03-15"
+    # Expiration is 14 days out (within window); earnings lands inside that window.
+    fake_yf = FakeYf({"EARNTEST1": FakeTicker(
+        options=[expiration], chains={expiration: FakeChain([contract(strike=138, bid=2.0, ask=2.08)], [])},
+        earnings_dates=FakeEarningsFrame([("2024-03-08", NAN)]))})
+
+    assert module.build_row(universe, fake_yf, as_of=TODAY) is None
+
+
+def test_build_row_keeps_a_contract_when_earnings_falls_outside_the_expiration(monkeypatch):
+    universe = {"ticker": "EARNTEST2", "sector": "Technology", "market_cap": 5e9}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history({"EARNTEST2": fake_history(drift=1.0)}))
+    expiration = "2024-03-15"
+    fake_yf = FakeYf({"EARNTEST2": FakeTicker(
+        options=[expiration], chains={expiration: FakeChain([contract(strike=138, bid=2.0, ask=2.08)], [])},
+        earnings_dates=FakeEarningsFrame([("2024-04-01", NAN)]))})  # after this expiration
+
+    row = module.build_row(universe, fake_yf, as_of=TODAY)
+    assert row is not None
+    assert row["ticker"] == "EARNTEST2"
 
 
 def test_build_row_returns_none_without_qualifying_expiration(monkeypatch):
@@ -158,9 +235,9 @@ def test_run_publishes_scored_results(monkeypatch):
     expiration = "2024-03-15"
     fake_yf = FakeYf({
         "AAA": FakeTicker(options=[expiration],
-                          chains={expiration: FakeChain([contract(strike=139, bid=2, ask=2.2)], [])}),
+                          chains={expiration: FakeChain([contract(strike=139, bid=2, ask=2.08)], [])}),
         "BBB": FakeTicker(options=[expiration],
-                          chains={expiration: FakeChain([contract(strike=100, bid=2, ask=2.2)], [])}),
+                          chains={expiration: FakeChain([contract(strike=100, bid=2, ask=2.08)], [])}),
     })
     monkeypatch.setitem(sys.modules, "yfinance", fake_yf)
     monkeypatch.setenv("ENABLE_MULTIDAY_OPTIONS_SCREEN", "1")

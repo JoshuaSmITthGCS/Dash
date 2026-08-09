@@ -65,13 +65,13 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-08"  # exactly TARGET_DAYS_TO_EXPIRATION (7) out from TODAY
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
 
 # strike=102, iv=0.3, price=100, dte=7 -> Black-Scholes call delta ~0.32 (see options_common.call_delta)
-TARGET_DELTA_CALL = contract(strike=102, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
+TARGET_DELTA_CALL = contract(strike=102, bid=2.0, ask=2.08, iv=0.3, open_interest=200)
 
 
 def test_build_row_selects_call_near_target_delta(monkeypatch):
@@ -89,10 +89,10 @@ def test_build_row_selects_call_near_target_delta(monkeypatch):
     assert row["days_to_expiration"] == 7
     assert row["call"]["strike"] == 102
     assert abs(row["call"]["delta"] - module.TARGET_DELTA) < 0.05
-    assert row["metrics"]["premium"] == 2.1
-    assert row["metrics"]["breakeven"] == 97.9
+    assert row["metrics"]["premium"] == 2.04
+    assert row["metrics"]["breakeven"] == 97.96
     assert row["capital_required"] == 10000
-    assert row["metrics"]["downside_cushion_pct"] == 0.021
+    assert row["metrics"]["downside_cushion_pct"] == 0.0204
 
 
 def test_build_row_returns_none_when_history_too_thin(monkeypatch):
@@ -137,9 +137,9 @@ def test_build_row_returns_none_when_no_contract_clears_target_delta(monkeypatch
 def test_score_rows_gates_small_cap_and_ranks_better_row_first():
     rows = [
         {"ticker": "BIG", "price": 50, "market_cap": 5e9, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
+         "factors": {"expected_value_pct": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
         {"ticker": "SMALL", "price": 50, "market_cap": 1e8, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.10, "liquidity": 0.5, "cushion": 0.01}, "call": {}},
+         "factors": {"expected_value_pct": 0.10, "liquidity": 0.5, "cushion": 0.01}, "call": {}},
     ]
     scored = module.score_rows(rows)
     by_ticker = {row["ticker"]: row for row in scored}
@@ -153,7 +153,7 @@ def test_score_rows_gates_small_cap_and_ranks_better_row_first():
 def test_score_rows_flags_insufficient_history():
     rows = [
         {"ticker": "NOHIST", "price": 50, "market_cap": 5e9, "realized_volatility_20d": None,
-         "factors": {"annualized_yield": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
+         "factors": {"expected_value_pct": 0.30, "liquidity": 2.0, "cushion": 0.03}, "call": {}},
     ]
     scored = module.score_rows(rows)
     assert "INSUFFICIENT_HISTORY" in scored[0]["reason_codes"]
@@ -196,8 +196,8 @@ def test_run_publishes_scored_results(monkeypatch):
     ]
     per_ticker = {"AAA": fake_history(), "BBB": fake_history(start_price=80)}
     monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
-    aaa_call = contract(strike=102, bid=2.0, ask=2.2, iv=0.3, open_interest=200)
-    bbb_call = contract(strike=82, bid=1.6, ask=1.76, iv=0.3, open_interest=200)
+    aaa_call = contract(strike=102, bid=2.0, ask=2.08, iv=0.3, open_interest=200)
+    bbb_call = contract(strike=82, bid=1.6, ask=1.66, iv=0.3, open_interest=200)
     fake_yf = FakeYf({
         "AAA": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain([aaa_call], [])}),
         "BBB": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain([bbb_call], [])}),
@@ -277,7 +277,9 @@ def test_backtest_universe_returns_stats_with_capped_gain(monkeypatch):
     assert stats is not None
     assert stats["num_trades"] > 0
     assert set(stats) == {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
-                          "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
+                          "skewness", "kurtosis", "probabilistic_sharpe_ratio", "deflated_sharpe_ratio",
+                          "deflated_sharpe_trials", "max_drawdown", "win_rate", "average_pnl_per_trade",
+                          "equity_curve"}
 
     # The jump at JUMP_INDEX (90) lands inside the walk-forward period entered at index 86 and
     # settled at index 91 - recompute what backtest_universe would have sold at that entry
@@ -313,7 +315,9 @@ def test_backtest_universe_returns_none_when_history_too_short(monkeypatch):
 
 
 BACKTEST_STATS_KEYS = {"num_trades", "total_return", "annualized_return", "sharpe_ratio",
-                       "max_drawdown", "win_rate", "average_pnl_per_trade", "equity_curve"}
+                          "skewness", "kurtosis", "probabilistic_sharpe_ratio", "deflated_sharpe_ratio",
+                          "deflated_sharpe_trials", "max_drawdown", "win_rate", "average_pnl_per_trade",
+                          "equity_curve"}
 
 
 def test_run_backtest_publishes_success(monkeypatch):

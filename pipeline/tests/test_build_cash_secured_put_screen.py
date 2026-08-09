@@ -64,7 +64,7 @@ TODAY = date(2024, 3, 1)
 EXPIRATION = "2024-03-08"  # 7 days out from TODAY, matches TARGET_DAYS_TO_EXPIRATION
 
 
-def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
+def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=200):
     return {"strike": strike, "bid": bid, "ask": ask, "openInterest": open_interest,
             "impliedVolatility": iv, "volume": volume}
 
@@ -72,8 +72,8 @@ def contract(strike, bid, ask, open_interest=200, iv=0.4, volume=10):
 # Puts at price=100, dte=7: delta(strike=97) ~ -0.282, the closest of these to -0.30.
 PUTS_AT_100 = [
     contract(strike=92, bid=0.60, ask=0.70),
-    contract(strike=97, bid=1.90, ask=2.10),
-    contract(strike=100, bid=4.60, ask=4.90),
+    contract(strike=97, bid=1.90, ask=1.95),
+    contract(strike=100, bid=4.60, ask=4.68),
 ]
 
 # Puts at price=80, dte=7: delta(strike=78) ~ -0.314, closest of these to -0.30.
@@ -160,9 +160,9 @@ def test_probability_otm_and_assigned_sum_to_one(monkeypatch):
 def test_score_rows_gates_small_caps():
     rows = [
         {"ticker": "BIG", "price": 50, "market_cap": 5e9, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.30, "probability_otm": 0.8, "liquidity": 2.0}},
+         "factors": {"expected_value_pct": 0.30, "probability_otm": 0.8, "liquidity": 2.0}},
         {"ticker": "SMALL", "price": 50, "market_cap": 1e8, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.10, "probability_otm": 0.6, "liquidity": 0.5}},
+         "factors": {"expected_value_pct": 0.10, "probability_otm": 0.6, "liquidity": 0.5}},
     ]
     scored = module.score_rows(rows)
     by_ticker = {row["ticker"]: row for row in scored}
@@ -178,7 +178,7 @@ def test_score_rows_ranks_higher_yield_and_liquidity_above_worse():
     tickers = ["WORST", "LOW", "MID", "HIGH", "BEST"]
     rows = [
         {"ticker": ticker, "price": 50, "market_cap": 5e9, "realized_volatility_20d": 0.3,
-         "factors": {"annualized_yield": 0.05 + 0.05 * index,
+         "factors": {"expected_value_pct": 0.05 + 0.05 * index,
                      "probability_otm": 0.5 + 0.05 * index,
                      "liquidity": 0.5 + 0.5 * index}}
         for index, ticker in enumerate(tickers)
