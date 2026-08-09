@@ -115,6 +115,11 @@ def classify_profile(snapshot):
         return "utility"
     if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal")):
         return "commodity_producer"
+    # Ahead of the generic profit-margin branches: a semiconductor company's capex and
+    # inventory cycles are not readable through industrial cutoffs regardless of whether it
+    # is currently profitable.
+    if "semiconductor" in text:
+        return "semiconductor"
     pre_profit = snapshot.get("profit_margin") is not None and snapshot.get("profit_margin") < 0
     if pre_profit and "biotech" in text:
         return "pre_profit_biotechnology"
@@ -143,6 +148,38 @@ def applicability_for(metric_id, profile):
     if registry and profile not in registry.get("applicability_profiles", []):
         return {"status": "suppressed", "replaced_by": None, "reason": "Metric registry does not declare this profile applicable."}
     return {"status": "applied", "replaced_by": None, "reason": None}
+
+
+def suppressed_metrics(profile, metric_ids):
+    """Metrics this business profile cannot be meaningfully scored on.
+
+    The live scorer used two hardcoded tuples (``FINANCIAL_EXEMPT``,
+    ``TANGIBLE_BOOK_SECTORS``) keyed off Yahoo's sector string, while the registry's correct
+    per-profile rules governed only the shadow path. That is why an insurer's DSO trend was
+    scored at 80/100 with 215 receivable days published beside it, and why its price-to-book
+    and debt-to-equity -- the two canonical insurer inputs -- were forced to null. One
+    authority now serves both paths.
+    """
+    rules = profile_rules(profile)
+    if profile == "etf":
+        return set(metric_ids)
+    suppressed = set()
+    for metric_id in metric_ids:
+        rule = rules.get(metric_id)
+        if rule and rule[0] in ("suppressed", "replaced"):
+            suppressed.add(metric_id)
+    return suppressed
+
+
+def required_for_score(profile, category):
+    """Metrics whose absence prevents ``category`` from publishing for this profile.
+
+    Renormalizing a category onto whatever happened to resolve is right for a *minor*
+    missing input and wrong for a defining one. An insurer's valuation without price-to-book
+    is not a thin valuation reading, it is not a valuation reading.
+    """
+    declared = APPLICABILITY.get("required_for_score", {}).get(profile, {})
+    return tuple(declared.get(category, ()))
 
 
 def reconcile(metric_id, observations):

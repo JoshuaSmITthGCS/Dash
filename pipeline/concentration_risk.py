@@ -86,9 +86,32 @@ def score_concentration_risk(percentages, config=None):
     }
 
 
-def summarize(document_text, config=None):
-    """Convenience wrapper returning a single publishable concentration-risk record."""
+def summarize(document_text, config=None, *, filing_read=True):
+    """A publishable concentration-risk record that distinguishes three states.
+
+    The objection to scoring this live was that a penalty-only modifier firing only on
+    tagged filers systematically rewards whichever companies happen not to have tagged the
+    concept. That objection holds only if "filing read, nothing disclosed" is conflated with
+    "no filing read". They are separated here:
+
+      * ``filing_read=False``            -> ``measured: False``. Nothing is scored, and the
+                                            row records that the input was never obtained.
+      * filing read, no disclosure       -> ``measured: True``, zero penalty. ASC 280-10-50-42
+                                            *requires* naming any customer at or above 10% of
+                                            consolidated revenue, so a read filing with no
+                                            such tag is affirmative evidence of diversified
+                                            revenue, not absence of evidence.
+      * filing read, disclosure present  -> ``measured: True``, penalty scaled by the share.
+
+    With that distinction the comparison is fair -- concentrated filers against filers known
+    to be unconcentrated -- and the modifier can enter the live score.
+    """
+    if not filing_read:
+        return {"source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
+                "score_points": 0.0, "measured": False, "available": False,
+                "percentages": [],
+                "reason": "10-K could not be read, so customer concentration was not measured"}
     percentages = customer_concentration_percentages(document_text)
     points, detail = score_concentration_risk(percentages, config=config)
     return {"source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
-            "score_points": points, **detail}
+            "score_points": points, "measured": True, **detail}

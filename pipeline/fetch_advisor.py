@@ -817,7 +817,10 @@ def collect_filing_risk_signals(sec, symbols, *, cache=None):
                     filing["cik"], filing["accession"], filing["document"]),
                 source="sec_edgar")
         except Exception:  # noqa: BLE001
-            return symbol, None, None, {"filings_reviewed": 1, "filings_unreadable": 1}
+            # The filing exists but could not be read. That is a measurement failure, not
+            # evidence of diversified revenue, and must not be scored as either.
+            return (symbol, summarize_concentration("", filing_read=False), None,
+                    {"filings_reviewed": 1, "filings_unreadable": 1})
         return (symbol, summarize_concentration(text), summarize_geography(text),
                 {"filings_reviewed": 1, "filings_unreadable": 0})
 
@@ -1449,9 +1452,9 @@ def run():
 
     # Customer-concentration and geographic-concentration risk, from the same shortlist of
     # candidates and the same rate-limited SEC client - see collect_filing_risk_signals for
-    # why this shares its cache keys with the theme layer's filing fetches. Shadow mode
-    # only (challenger score_variants) until tagging coverage is measured - see
-    # advisor_engine.apply_modifiers's docstring.
+    # why this shares its cache keys with the theme layer's filing fetches. Customer
+    # concentration feeds the champion score as of Phase 3.3; geographic exposure stays
+    # challenger-only. See advisor_engine.apply_modifiers's docstring.
     concentration_signals, geographic_signals, filing_risk_diagnostics = (
         collect_filing_risk_signals(sec, insider_candidates)
     )
@@ -1504,15 +1507,16 @@ def run():
             insider_activity=insider_signals.get(symbol),
             institutional_ownership=institutional_signals.get(symbol),
             congressional_activity=congressional_signals.get(symbol),
+            concentration_risk=concentration_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["institutional_ownership"] = institutional_signals.get(symbol)
         row["congressional_activity"] = congressional_signals.get(symbol)
-        # concentration_risk/geographic_exposure are display fields and challenger-only
-        # (score_variants) inputs here - shadow mode until their tagging coverage is
-        # measured. See advisor_engine.apply_modifiers's docstring.
+        # concentration_risk is now a champion-path input (Phase 3.3, see
+        # advisor_engine.concentration_risk_modifier). geographic_exposure remains a display
+        # field and a challenger-only input - see geographic_concentration_modifier.
         row["concentration_risk"] = concentration_signals.get(symbol)
         row["geographic_exposure"] = geographic_signals.get(symbol)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
@@ -1865,7 +1869,7 @@ def run():
                         "coverage above needs measuring, before it penalizes a live score.",
             },
             "customer_concentration_risk": {
-                "status": "shadow_only",
+                "status": "scored",
                 "source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
                 "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
                 "filings_unreadable": filing_risk_diagnostics["filings_unreadable"],
@@ -1875,12 +1879,15 @@ def run():
                     if filing_risk_diagnostics["filings_reviewed"] else None
                 ),
                 "note": "ASC 280 customer-concentration percentage read from dimensional XBRL "
-                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier but "
-                        "kept out of the live score ('shadow_only', challenger score_variants "
-                        "only) until concentration_tag_coverage above is measured on a real run "
-                        "- a penalty-only modifier that only fires on tagged filers systematically "
-                        "favors whichever companies happen not to have tagged the concept, which "
-                        "is worse than not scoring it at all. Distinct from the theme layer's "
+                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier in "
+                        "the champion path as of Phase 3.3. The objection that kept it in shadow "
+                        "mode - that a penalty-only modifier firing only on tagged filers favors "
+                        "whichever companies never tagged the concept - is answered by separating "
+                        "'filing read, nothing disclosed' from 'no filing read': ASC 280-10-50-42 "
+                        "requires naming any customer at or above 10% of consolidated revenue, so "
+                        "a read filing with no such tag is affirmative evidence of diversified "
+                        "revenue, while an unreadable filing is scored nothing at all. Distinct "
+                        "from the theme layer's "
                         "customer_concentration_to_spenders: the percentage gives magnitude, not "
                         "the customer's identity, so it cannot replace that signal's name-matching "
                         "against confirmed theme spenders.",

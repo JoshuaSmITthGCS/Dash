@@ -442,12 +442,18 @@ class GeographicConcentrationModifierTests(unittest.TestCase):
         self.assertEqual(geographic_concentration_modifier({"shares": {}}), (0.0, None))
 
 
-class BuildResearchDoesNotYetUseConcentrationOrGeographicRiskTests(unittest.TestCase):
-    """Champion ``row["score"]`` must be identical regardless of concentration/geographic
-    data - both are shadow-mode only (challenger score_variants) until their XBRL tagging
-    coverage across the scored universe has actually been measured on a live run. A
-    penalty-only modifier that only fires on tagged filers would otherwise systematically
-    favor whichever companies happen not to have tagged the concept."""
+class CustomerConcentrationEntersTheLiveScoreTests(unittest.TestCase):
+    """Phase 3.3: a disclosed single-customer revenue share moves the champion score.
+
+    It was shadow-only because a penalty-only modifier that fires only on tagged filers
+    rewards companies that never tagged the concept. That objection is answered by
+    separating "filing read, nothing disclosed" from "no filing read" -- ASC 280-10-50-42
+    requires naming any customer at or above 10% of consolidated revenue, so a read filing
+    with no such tag is affirmative evidence of diversified revenue.
+
+    Geographic concentration stays challenger-only for a different reason: revenue tagged
+    against a geography often reflects shipping destination rather than end demand.
+    """
 
     def setUp(self):
         self.snapshot = {
@@ -459,12 +465,35 @@ class BuildResearchDoesNotYetUseConcentrationOrGeographicRiskTests(unittest.Test
         }
         self.closes = [100 + index * 0.1 for index in range(100)]
 
-    def test_build_research_has_no_parameter_for_either_signal(self):
-        row = build_research("TEST", self.snapshot, self.closes, self.closes, [])
+    def row(self, **kwargs):
+        return build_research("TEST", self.snapshot, self.closes, self.closes, [], **kwargs)
+
+    def test_a_disclosed_severe_concentration_lowers_the_published_score(self):
+        baseline = self.row()
+        concentrated = self.row(concentration_risk={"measured": True, "percentages": [0.91]})
+        self.assertLess(concentrated["score"], baseline["score"])
+        self.assertIn("customer_concentration_risk", concentrated["modifiers"]["applied"])
+
+    def test_a_read_filing_with_no_disclosure_is_not_penalised(self):
+        baseline = self.row()
+        diversified = self.row(concentration_risk={"measured": True, "percentages": []})
+        self.assertEqual(diversified["score"], baseline["score"])
+
+    def test_an_unread_filing_scores_nothing_rather_than_crediting_safety(self):
+        baseline = self.row()
+        unknown = self.row(concentration_risk={"measured": False, "percentages": []})
+        self.assertEqual(unknown["score"], baseline["score"])
+        self.assertNotIn("customer_concentration_risk", unknown["modifiers"]["applied"])
+
+    def test_the_penalty_scales_with_the_disclosed_share(self):
+        warning = self.row(concentration_risk={"measured": True, "percentages": [0.18]})
+        severe = self.row(concentration_risk={"measured": True, "percentages": [0.91]})
+        self.assertLess(severe["score"], warning["score"])
+
+    def test_geographic_concentration_remains_outside_the_champion_path(self):
         with self.assertRaises(TypeError):
             build_research("TEST", self.snapshot, self.closes, self.closes, [],
-                           concentration_risk={"percentages": [0.40]})
-        self.assertIn("score", row)
+                           geographic_exposure={"shares": {"China": 0.8}})
 
 
 class ChallengerOnlyShadowModeTests(unittest.TestCase):

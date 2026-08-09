@@ -366,13 +366,16 @@ def concentration_risk_modifier(concentration):
     compute it once per filing and reuse it. Penalty-only: this is a known, uncompensated
     risk, not a bet on a direction.
 
-    Deliberately wired into ``apply_challenger_modifiers`` only, not the champion
-    ``apply_modifiers`` - ``ConcentrationRiskPercentage1`` tagging coverage across the
-    scored universe has never been measured (no network access existed while this was
-    written), and a penalty-only modifier that only fires on tagged filers systematically
-    favors whichever companies happen not to have tagged the concept. See TODO.md.
+    Now in the champion path. The objection that kept it out -- that a penalty-only modifier
+    firing only on tagged filers rewards companies that simply never tagged the concept --
+    is answered by ``concentration_risk.summarize`` separating "filing read, nothing
+    disclosed" from "no filing read". ASC 280-10-50-42 requires naming any customer at or
+    above 10% of consolidated revenue, so a read filing with no such tag is affirmative
+    evidence of diversified revenue. A row whose filing could not be read carries
+    ``measured: False`` and is scored nothing at all rather than being credited with safety
+    it has not demonstrated.
     """
-    if not concentration:
+    if not concentration or concentration.get("measured") is False:
         return 0.0, None
     cfg = MODIFIERS.get("customer_concentration_risk", {})
     if concentration.get("score_points") is not None:
@@ -511,13 +514,15 @@ def macro_regime_modifier(snapshot, macro_regime):
 
 def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
                     insider_activity=None, institutional_ownership=None,
-                    congressional_activity=None):
+                    congressional_activity=None, concentration_risk=None):
     """Blend the bounded refinements onto the evidence score and explain every one.
 
-    ``customer_concentration_risk`` and ``geographic_concentration`` are deliberately
-    absent from this, the champion path - they live only in `apply_challenger_modifiers``
-    until their tagging coverage is measured (see ``concentration_risk_modifier``/
-    ``geographic_concentration_modifier``). ``institutional_13f`` is back in the champion
+    ``customer_concentration_risk`` is in the champion path as of Phase 3.3 -- see
+    ``concentration_risk_modifier`` for how the tagging-coverage objection is answered.
+    ``geographic_concentration`` remains challenger-only for the separate reason given on
+    ``geographic_concentration_modifier``: revenue tagged by geography often reflects
+    shipping destination or contracting entity rather than end demand, which is a
+    correctness problem rather than a coverage one. ``institutional_13f`` is in the champion
     path with lag decay baked into its input - see ``institutional_ownership_modifier``.
     ``congressional_buying`` is this file's one scoped exception to "no political
     inputs" - see the module docstring.
@@ -533,6 +538,11 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         "insider_activity": insider_modifier(insider_activity),
         "institutional_13f": institutional_ownership_modifier(institutional_ownership),
         "congressional_buying": congressional_buying_modifier(congressional_activity),
+        # Phase 3.3: a disclosed single-customer revenue share is an uncompensated risk the
+        # live score has to carry, not a shadow-only observation. Cirrus Logic disclosed
+        # roughly 91% of net sales from one end customer in FY2026 and the published score
+        # reflected none of it.
+        "customer_concentration_risk": concentration_risk_modifier(concentration_risk),
     }.items():
         if points:
             applied[name] = points
@@ -1083,7 +1093,7 @@ def build_evidence(categories, technical_parts, extended):
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
                    volumes=None, extended=None, sector_percentile=None, macro_regime=None,
                    insider_activity=None, institutional_ownership=None,
-                   congressional_activity=None):
+                   congressional_activity=None, concentration_risk=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -1098,7 +1108,7 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     data_coverage, base, raw_score = blended["data_coverage"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
                                        insider_activity, institutional_ownership,
-                                       congressional_activity)
+                                       congressional_activity, concentration_risk)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, data_coverage)
     strengths, risks = build_evidence(categories, technical_parts, extended)
