@@ -327,3 +327,19 @@ class SecEdgarClient:
         accession = str(accession).replace("-", "")
         return self._get(
             f"{SEC_ROOT}/Archives/edgar/data/{int(cik)}/{accession}/{document}")
+
+    def filing_index(self, cik, accession):
+        """Every document filed under one accession, from EDGAR's own directory listing.
+
+        A filing's ``primaryDocument`` is often the cover page or a rendered summary, not
+        every exhibit - a 13F-HR's actual holdings, for instance, are commonly a separate
+        ``InfoTable.xml`` exhibit the submissions API never names directly. This is the
+        same problem ``form4_document_urls`` solved for Form 4 by trying several candidate
+        paths; unlike Form 4's fixed rendering-directory pattern, an exhibit name has no
+        fixed convention, so the caller needs the real listing to search it.
+        """
+        accession = str(accession).replace("-", "")
+        payload = self._get(f"{SEC_ROOT}/Archives/edgar/data/{int(cik)}/{accession}/index.json",
+                            as_json=True)
+        return [item["name"] for item in (payload.get("directory") or {}).get("item", [])
+                if item.get("name")]

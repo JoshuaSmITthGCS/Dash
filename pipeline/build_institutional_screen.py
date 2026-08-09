@@ -162,6 +162,43 @@ def append_new_positions(rows, *, collected_at=None):
     return written
 
 
+def _info_table_holdings(sec, ticker, filing):
+    """A filing's holdings, trying its ``primaryDocument`` first and falling back to the
+    filing's own directory listing when that yields nothing.
+
+    A 13F-HR's ``primaryDocument`` is routinely the cover page, not the information
+    table - the holdings live in a separate exhibit (conventionally named something like
+    ``InfoTable.xml``) that the submissions API never names directly. There is no fixed
+    naming convention to hardcode, unlike Form 4's rendering-directory pattern, so this
+    searches the real per-filing document listing (``filing_index``) for a name
+    containing "infotable" and tries each candidate in turn, keeping the first that
+    actually parses to a non-empty holdings list. Returns ``(holdings, unreadable)``;
+    ``unreadable`` means the fetch or parse itself failed, not "found nothing".
+    """
+    cik, accession = filing["cik"], filing["accession"]
+    try:
+        text = sec.filing_document(cik, accession, filing["document"])
+        holdings = parse_13f_info_table(text, ticker)
+    except Exception:  # noqa: BLE001
+        return [], True
+    if holdings:
+        return holdings, False
+    try:
+        candidates = [name for name in sec.filing_index(cik, accession)
+                     if "infotable" in name.lower() and name != filing["document"]]
+    except Exception:  # noqa: BLE001
+        return [], False
+    for name in candidates:
+        try:
+            text = sec.filing_document(cik, accession, name)
+            holdings = parse_13f_info_table(text, ticker)
+        except Exception:  # noqa: BLE001
+            continue
+        if holdings:
+            return holdings, False
+    return [], False
+
+
 def manager_quarters(sec, manager):
     """A curated manager's two most recent *distinct periods*, newest first.
 
@@ -184,12 +221,7 @@ def manager_quarters(sec, manager):
     quarters = []
     for period in ordered_periods:
         filing = by_period[period]
-        try:
-            text = sec.filing_document(filing["cik"], filing["accession"], filing["document"])
-            holdings = parse_13f_info_table(text, ticker)
-            unreadable = False
-        except Exception:  # noqa: BLE001
-            holdings, unreadable = [], True
+        holdings, unreadable = _info_table_holdings(sec, ticker, filing)
         quarters.append({
             "period": period, "filed": filing["filed"], "holdings": holdings,
             "unreadable": unreadable, "is_amendment": filing.get("form") == "13F-HR/A",

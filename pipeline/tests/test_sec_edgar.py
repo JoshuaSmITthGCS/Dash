@@ -260,6 +260,24 @@ class FilingsForCikTests(unittest.TestCase):
         self.assertEqual(client.recent_forms("NOPE", ("13F-HR",)), [])
 
 
+class FilingIndexTests(unittest.TestCase):
+    def test_every_document_name_in_the_accession_is_returned(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        client._get = lambda url, as_json=False: {"directory": {"item": [
+            {"name": "primary_doc.xml", "type": "13F-HR", "size": "1200"},
+            {"name": "InfoTable.xml", "type": "13F-HR EX-INFO TABLE", "size": "84000"},
+        ]}}
+
+        names = client.filing_index("0000001113169", "0001113169-26-000042")
+
+        self.assertEqual(names, ["primary_doc.xml", "InfoTable.xml"])
+
+    def test_a_missing_directory_listing_degrades_to_an_empty_list(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        client._get = lambda url, as_json=False: {}
+        self.assertEqual(client.filing_index("1", "acc-1"), [])
+
+
 class _FakeResponse:
     def __init__(self, payload):
         self._payload = payload

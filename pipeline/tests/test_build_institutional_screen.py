@@ -41,15 +41,20 @@ class ActiveManagersTests(unittest.TestCase):
 class _FakeSec:
     available = True
 
-    def __init__(self, filings_by_ticker, documents_by_accession):
+    def __init__(self, filings_by_ticker, documents_by_accession, index_by_accession=None):
         self._filings = filings_by_ticker
         self._documents = documents_by_accession
+        self._index = index_by_accession or {}
 
     def recent_forms(self, ticker, forms, limit=2):
         return self._filings.get(ticker, [])[:limit]
 
     def filing_document(self, cik, accession, document):
-        return self._documents[accession]
+        return self._documents[(accession, document)] if (accession, document) in self._documents \
+            else self._documents[accession]
+
+    def filing_index(self, cik, accession):
+        return self._index.get(accession, [])
 
 
 class ManagerQuartersTests(unittest.TestCase):
@@ -103,6 +108,40 @@ class ManagerQuartersTests(unittest.TestCase):
 
         self.assertEqual(quarters, [{"period": "2026-03-31", "filed": "2026-05-01",
                                      "holdings": [], "unreadable": True, "is_amendment": False}])
+
+    def test_a_cover_page_primary_document_falls_back_to_the_info_table_exhibit(self):
+        # The real-world shape this whole fallback exists for: primaryDocument is an
+        # empty cover page, and the actual holdings live in a separate exhibit the
+        # submissions API never names - only the filing's own directory listing does.
+        filings = {"TROW": [{"cik": "1", "form": "13F-HR", "accession": "acc-1",
+                             "document": "primary_doc.xml", "filed": "2026-05-14",
+                             "period": "2026-03-31"}]}
+        documents = {
+            ("acc-1", "primary_doc.xml"): "<edgarSubmission><coverPage/></edgarSubmission>",
+            ("acc-1", "InfoTable.xml"): INFO_TABLE_TEMPLATE.format(shares=2000),
+        }
+        sec = _FakeSec(filings, documents, index_by_accession={
+            "acc-1": ["primary_doc.xml", "InfoTable.xml"],
+        })
+
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+
+        self.assertEqual(quarters[0]["holdings"][0]["shares"], 2000.0)
+        self.assertFalse(quarters[0]["unreadable"])
+
+    def test_no_matching_exhibit_in_the_index_yields_empty_holdings_not_unreadable(self):
+        filings = {"TROW": [{"cik": "1", "form": "13F-HR", "accession": "acc-1",
+                             "document": "primary_doc.xml", "filed": "2026-05-14",
+                             "period": "2026-03-31"}]}
+        documents = {("acc-1", "primary_doc.xml"): "<edgarSubmission><coverPage/></edgarSubmission>"}
+        sec = _FakeSec(filings, documents, index_by_accession={
+            "acc-1": ["primary_doc.xml", "exhibit99.xml"],
+        })
+
+        quarters = screen.manager_quarters(sec, {"ticker": "TROW"})
+
+        self.assertEqual(quarters[0]["holdings"], [])
+        self.assertFalse(quarters[0]["unreadable"])
 
 
 class FlagForTests(unittest.TestCase):

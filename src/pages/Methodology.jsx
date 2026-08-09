@@ -16,6 +16,10 @@ const MODIFIERS = [
   ['liquidity', 'Liquidity', 'A name you cannot exit without moving the price carries a real cost that fundamentals never show.'],
   ['expectations', 'Analyst expectations', 'Consensus is used only when the published minimum analyst coverage is present.'],
   ['macro_regime', 'Macro regime', 'FRED rates, inflation, labor, and yield-curve conditions are weighted by sector sensitivity and never replace company evidence.'],
+  ['institutional_13f', 'Institutional 13F', 'A curated set of publicly traded, actively managed 13F filers – index funds and private-equity managers are excluded, since their position changes track index membership or take-private deals rather than conviction. Decayed by filing lag: a position disclosed 45+ days ago carries less weight than a fresh one.'],
+  ['congressional_buying', 'Congressional buying', 'Reward-only. Disclosed Congressional stock purchases score a mild positive; a member’s first-ever trade in a company under a $2B market cap scores an additional bonus. Sales and non-buying never penalize.'],
+  ['customer_concentration_risk', 'Customer concentration (shadow only)', 'ASC 280 customer-concentration disclosures, penalty-only. Not yet part of the published score – shown here, and in the challenger comparison, while tagging coverage across the scored universe is being measured.'],
+  ['geographic_concentration', 'Geographic concentration (shadow only)', 'Revenue concentrated in a single non-domestic country, penalty-only. Not yet part of the published score, for the same reason as customer concentration – coverage and tag accuracy are still being checked against real filings.'],
 ]
 
 const percent = (value) => typeof value === 'number' ? Math.round(value * 100) : null
@@ -48,9 +52,11 @@ export default function Methodology() {
     implied_vs_realized_volatility: { status: 'opt_in', source: 'Option chains + calculated returns', note: 'Enable options requests in the pipeline.' },
     analyst_revision_trends: { status: 'provider_required', note: 'Point-in-time estimate history is not supplied by the current providers.' },
     guidance_beat_miss_history: { status: 'provider_required', note: 'Requires contemporaneous consensus snapshots.' },
-    backlog_growth: { status: 'filing_parser_required', note: 'Backlog is issuer-specific and non-GAAP.' },
-    institutional_13f_changes: { status: 'mapping_required', source: 'SEC EDGAR', note: 'Reliable CUSIP-to-ticker mapping is still required.' },
-    fx_exposure: { status: 'filing_parser_required', source: 'SEC filings', note: 'Requires issuer-specific filing text normalization.' },
+    backlog_growth: { status: 'available', source: 'SEC EDGAR XBRL', note: 'Remaining performance obligation, read from dimensional XBRL contexts.' },
+    institutional_13f_changes: { status: 'available', source: 'SEC EDGAR Form 13F-HR + OpenFIGI', note: 'Curated, publicly traded, actively managed filers only; decayed by filing lag.' },
+    congressional_buying: { status: 'available', source: 'STOCK Act disclosures', note: 'Reward-only; disclosed purchases, with a bonus for a first-ever trade in a small company.' },
+    customer_concentration_risk: { status: 'shadow_only', source: 'SEC EDGAR XBRL', note: 'ASC 280 customer concentration. Challenger-only pending tagging-coverage measurement.' },
+    fx_exposure: { status: 'shadow_only', source: 'SEC EDGAR XBRL', note: 'Single-country revenue concentration. Challenger-only pending measurement.' },
   }
   return <>
     <div className="page-head"><div>
