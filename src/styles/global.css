@@ -515,6 +515,33 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .dip-watch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }.dip-watch-head strong { font: 750 12px var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }.dip-watch-head span { color: var(--text-faint); font-size: 11px; }
 .dip-watch-levels { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }.dip-watch-levels > div { padding: 8px 10px; border-radius: 12px; background: var(--bg-elev); }.dip-watch-levels span { display: block; color: var(--text-faint); font-size: 8px; text-transform: uppercase; }.dip-watch-levels b { display: block; margin-top: 3px; font: 700 14px var(--font-mono); color: var(--text); }
 .dip-watch-note { margin: 10px 0 0; color: var(--text-faint); font-size: 10px; }
+.buying-the-dip-chart { margin: var(--section-gap, 24px) 0; padding: var(--card-padding, 20px); }
+.dip-chart-note { margin: -4px 0 18px; max-width: 720px; color: var(--text-faint); font-size: 11px; line-height: 1.5; }
+.dip-chart-rows { display: grid; gap: 16px; }
+.dip-chart-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 90px 56px; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border-subtle, var(--border)); }
+.dip-chart-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.dip-chart-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dip-chart-identity div { min-width: 0; }
+.dip-chart-identity strong { display: block; font: 700 13px var(--font-mono); }
+.dip-chart-identity span { display: block; overflow: hidden; color: var(--text-faint); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+.dip-chart-track-wrap { min-width: 0; }
+.dip-chart-track { position: relative; height: 8px; border-radius: 999px; background: var(--bg-elev, var(--surface-secondary)); }
+.dip-chart-buyzone { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: color-mix(in srgb, var(--pos) 32%, transparent); }
+.dip-chart-marker { position: absolute; top: 50%; width: 12px; height: 12px; border: 2px solid var(--bg-card, var(--surface-primary)); border-radius: 50%; background: var(--warn); transform: translate(-50%, -50%); }
+.dip-chart-marker.near_floor { background: var(--pos); }
+.dip-chart-track-labels { display: flex; justify-content: space-between; margin-top: 6px; color: var(--text-faint); font: 600 8px var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
+.dip-chart-figures { text-align: right; }
+.dip-chart-figures b { display: block; font: 700 14px var(--font-mono); }
+.dip-chart-status { display: block; margin-top: 2px; font-size: 9px; }
+.dip-chart-status.near_floor { color: var(--pos); }
+.dip-chart-status.in_range { color: var(--warn); }
+.dip-chart-score { text-align: right; }
+.dip-chart-score b { display: block; font: 700 16px var(--font-mono); }
+.dip-chart-score small { color: var(--text-faint); font-size: 8px; text-transform: uppercase; }
+@media (max-width: 680px) {
+  .dip-chart-row { grid-template-columns: 1fr; gap: 8px; }
+  .dip-chart-figures, .dip-chart-score { text-align: left; }
+}
 .empty-state { min-height: 260px; display: grid; place-content: center; justify-items: center; text-align: center; color: var(--text-dim); }.empty-state h2 { margin-top: 12px; }.empty-state p { margin-top: 5px; color: var(--text-faint); }
 .news-card { display: grid; gap: 10px; }.news-card p, .body-copy { color: var(--text-dim); }.news-context { color: var(--text-faint); font: 9px var(--font-mono); }.news-discovery-note { margin: -4px 0 14px; font-size: 11px; }.sec-label { display: flex; align-items: center; gap: 10px; margin: 22px 0 14px; color: var(--text-faint); font: 600 9px var(--font-mono); text-transform: uppercase; letter-spacing: .12em; }.sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 .callout { margin: 0 0 22px; padding: 15px 17px; border-left: 3px solid var(--accent); border-radius: 0 14px 14px 0; background: var(--bg-elev); color: var(--text-dim); }.callout strong { color: var(--text); }

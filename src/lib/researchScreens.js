@@ -1,3 +1,5 @@
+import { dipWatch } from './dipWatch'
+
 const clamp = (value, minimum = 0, maximum = 100) =>
   Math.min(maximum, Math.max(minimum, value))
 
@@ -105,6 +107,36 @@ export function rankValueTurnarounds(rows, limit = 5) {
     })
     .filter(Boolean)
   return sortCorroboratedFirst(candidates).slice(0, limit)
+}
+
+// Buying the dip: names the platform already rates ATTRACTIVE or PROMISING - the
+// already-vetted, "amazing" side of the universe, not just anything that fell - that are
+// also genuinely down from their highs right now. Reuses dipWatch's own floor/recovery
+// band (src/lib/dipWatch.js) rather than a second opinion on what "the bottom" means, so
+// this screen and the single-stock badge never disagree about the same row. Excludes
+// 'recovering' rows on purpose: once price has cleared the recovery level the dip is
+// already over, so it no longer belongs on a screen about buying one. Ranked by quality
+// first (score) and proximity to the estimated floor second, so a merely-cheap name never
+// outranks a merely-dipping great one.
+export function rankBuyingTheDip(rows, limit = 8) {
+  const candidates = stocksOnly(rows)
+    .map((row) => {
+      if (!finite(row.score)) return null
+      const watch = dipWatch(row)
+      if (!watch || watch.status === 'recovering') return null
+      const proximityToFloor = clamp(100 - watch.distanceToFloorPct * 2)
+      return {
+        ...row,
+        screen: {
+          ...watch,
+          rankScore: row.score * 0.6 + proximityToFloor * 0.4,
+        },
+      }
+    })
+    .filter(Boolean)
+  return candidates
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
 }
 
 // ETFs are evaluated on their own, separate from the stock screens: a diversified fund

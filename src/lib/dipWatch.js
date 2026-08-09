@@ -25,6 +25,20 @@ function round2(value) {
   return value == null ? null : Math.round(value * 100) / 100
 }
 
+// The 52-week high/low implied by the published price and its distance from each - the
+// same back-calculation dipWatch uses internally, exposed so callers that need the actual
+// range (not just the floor/recovery band) don't reimplement it.
+export function weekRange(stock) {
+  const price = stock?.price
+  const technical = stock?.technical_detail || {}
+  const { pct_from_52w_high, pct_above_52w_low } = technical
+  if (price == null || price <= 0 || pct_from_52w_high == null || pct_above_52w_low == null) return null
+  return {
+    weekHigh: price / (1 + pct_from_52w_high / 100),
+    weekLow: price / (1 + pct_above_52w_low / 100),
+  }
+}
+
 // Real high/low over the trailing window, anchored to the data's own latest date rather
 // than the device clock - this is committed pipeline data that can be a few days old.
 function recentHighLow(history, days) {
@@ -45,14 +59,14 @@ export function dipWatch(stock) {
 
   const price = stock.price
   const technical = stock.technical_detail || {}
-  const { pct_from_52w_high, pct_above_52w_low, max_drawdown_252d, return_60d } = technical
-  if (price == null || price <= 0 || pct_from_52w_high == null || pct_above_52w_low == null) return null
+  const { max_drawdown_252d, return_60d } = technical
+  const range = weekRange(stock)
+  if (!range) return null
 
-  const isDown = pct_from_52w_high <= DOWN_FROM_HIGH_THRESHOLD && (return_60d == null || return_60d < 0)
+  const isDown = technical.pct_from_52w_high <= DOWN_FROM_HIGH_THRESHOLD && (return_60d == null || return_60d < 0)
   if (!isDown) return null
 
-  const weekHigh = price / (1 + pct_from_52w_high / 100)
-  const weekLow = price / (1 + pct_above_52w_low / 100)
+  const { weekHigh, weekLow } = range
   // If the current decline goes on to match the worst 1-year drawdown on record, this is
   // where it bottoms - a second, pattern-based floor estimate to blend with the observed
   // 52-week low rather than trusting either alone.
