@@ -51,7 +51,7 @@ from common import LOG, STORE_DIR, load_json, save_json
 from institutional_ownership import (aggregate_by_cusip, holdings_change,
                                      parse_13f_info_table, score_institutional_ownership)
 from openfigi_client import OpenFigiClient
-from sec_edgar import SecEdgarClient
+from sec_edgar import SecEdgarClient, entity_name_matches
 
 INSTITUTIONAL_DIR = os.path.join(STORE_DIR, "institutional_13f")
 POSITIONS = "positions.jsonl"
@@ -61,6 +61,14 @@ UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 # Fetched per manager rather than the bare 2 needed, so an amendment landing after its
 # original still leaves both of the two most recent *distinct periods* reachable.
 FILINGS_LOOKBACK = 6
+FILER_FORMS = ("13F-HR", "13F-HR/A")
+# A company-name prefix search returns alphabetical neighbours, not just the family being
+# looked for; the name guard rejects those, this only bounds how many are examined.
+FILER_SEARCH_LIMIT = 40
+# A manager family filing through more than a handful of adviser subsidiaries is far more
+# likely to be an over-broad name match than a real structure, so resolution stops there
+# rather than fanning out into an unbounded number of submissions requests.
+MAX_FILERS_PER_MANAGER = 6
 
 
 def active_managers(config=None):
@@ -162,69 +170,198 @@ def append_new_positions(rows, *, collected_at=None):
     return written
 
 
-def _info_table_holdings(sec, ticker, filing):
-    """A filing's holdings, trying its ``primaryDocument`` first and falling back to the
-    filing's own directory listing when that yields nothing.
+# Ranked hints for which exhibit in a 13F accession is the information table. Ordering only -
+# every XML document in the filing is tried regardless, because filers name this exhibit
+# whatever they like ("form13fInfoTable.xml", "informationTable.xml", "13f_hr_q2.xml",
+# "holdings.xml"). Matching on a single spelling is what produced a screen that reported
+# healthy runs and zero holdings: "informationTable.xml" does not contain the substring
+# "infotable", so the one filter previously applied skipped the very file it was looking for.
+_INFO_TABLE_HINTS = ("infotable", "informationtable", "information_table", "info_table",
+                     "table", "13f", "holding")
 
-    A 13F-HR's ``primaryDocument`` is routinely the cover page, not the information
-    table - the holdings live in a separate exhibit (conventionally named something like
-    ``InfoTable.xml``) that the submissions API never names directly. There is no fixed
-    naming convention to hardcode, unlike Form 4's rendering-directory pattern, so this
-    searches the real per-filing document listing (``filing_index``) for a name
-    containing "infotable" and tries each candidate in turn, keeping the first that
-    actually parses to a non-empty holdings list. Returns ``(holdings, unreadable)``;
-    ``unreadable`` means the fetch or parse itself failed, not "found nothing".
+
+def _rank_info_table_candidate(name):
+    lowered = name.lower()
+    for rank, hint in enumerate(_INFO_TABLE_HINTS):
+        if hint in lowered:
+            return rank
+    return len(_INFO_TABLE_HINTS)
+
+
+def _info_table_holdings(sec, manager_id, filing):
+    """A filing's holdings, trying its ``primaryDocument`` first and falling back to every
+    XML document in the filing's own directory listing.
+
+    A 13F-HR's ``primaryDocument`` is essentially always the cover page, not the information
+    table - the holdings live in a separate exhibit that the submissions API never names.
+    There is no naming convention to hardcode, unlike Form 4's rendering-directory pattern,
+    so this reads the real per-filing document listing (``filing_index``), sorts the XML
+    documents by how much their name looks like an information table, and keeps the first
+    that actually parses to a non-empty holdings list. Sorting rather than filtering is the
+    point: the name hints decide what to try *first*, never what to exclude.
+
+    Returns ``(holdings, unreadable)``. ``unreadable`` means the fetch or parse itself failed;
+    a filing whose documents were all readable but held no equity rows is not unreadable, and
+    the two are counted separately so a blank screen can say which one it hit.
     """
     cik, accession = filing["cik"], filing["accession"]
+    # Tracked rather than returned immediately: a primary document that could not be fetched
+    # is a real failure to report, but it is not a reason to skip the exhibit that actually
+    # holds the positions - the fallback still runs, and this only decides what to report if
+    # the fallback also comes up empty.
+    unreadable = False
     try:
         text = sec.filing_document(cik, accession, filing["document"])
-        holdings = parse_13f_info_table(text, ticker)
+        holdings = parse_13f_info_table(text, manager_id)
     except Exception:  # noqa: BLE001
-        return [], True
+        holdings, unreadable = [], True
     if holdings:
         return holdings, False
     try:
-        candidates = [name for name in sec.filing_index(cik, accession)
-                     if "infotable" in name.lower() and name != filing["document"]]
+        listing = sec.filing_index(cik, accession)
     except Exception:  # noqa: BLE001
-        return [], False
+        return [], True
+    candidates = [name for name in listing
+                  if name.lower().endswith(".xml") and name != filing["document"]]
+    candidates.sort(key=_rank_info_table_candidate)
     for name in candidates:
         try:
             text = sec.filing_document(cik, accession, name)
-            holdings = parse_13f_info_table(text, ticker)
+            holdings = parse_13f_info_table(text, manager_id)
         except Exception:  # noqa: BLE001
+            unreadable = True
             continue
         if holdings:
             return holdings, False
-    return [], False
+    return [], unreadable
 
 
-def manager_quarters(sec, manager):
+def resolve_filer_ciks(sec, manager):
+    """Every EDGAR entity that actually files 13F-HRs for one curated manager family.
+
+    This is the step whose absence made the screen publish successful, empty runs. The
+    curated config identifies a manager by its *listed* ticker, and ``ticker_map`` resolves
+    that to the CIK of the operating company - which for an asset manager is the entity that
+    files the 10-K, not the one that files the 13F. Those are different registrants with
+    different CIKs (T. Rowe Price Group vs. its adviser subsidiaries), and asking the
+    operating company's CIK for 13F-HRs correctly returns nothing at all. Berkshire is the
+    exception that hid this: it files its own 13F, so a spot check on the one recognisable
+    name passes while most of the sleeve silently resolves to zero filings.
+
+    Resolution order, widest net first, with every candidate verified before it is trusted:
+
+      1. the ticker's own CIK, for the minority of managers that do file their own 13F;
+      2. an EDGAR company-name prefix search for the configured name and any ``filer_aliases``
+         (adviser subsidiaries are filed under names the colloquial one does not prefix -
+         "PRICE T ROWE ASSOCIATES" is not reachable from "T. Rowe Price").
+
+    Every candidate has to actually file 13F-HRs, and every *searched* candidate additionally
+    has to token-match the configured name or one of its aliases - re-checked against the
+    submissions payload rather than the search feed's own label, so the name a holding is
+    attributed under is the one EDGAR reports for the CIK being read. Together those are what
+    let the config keep its rule of never hand-typing a CIK: identity is asserted by name and
+    confirmed against EDGAR, so a bad match drops out loudly here instead of publishing a
+    different manager's holdings under this one's label. The ticker's own CIK is exempt from
+    the name check only because it comes from SEC's ticker file, which already established it.
+
+    Returns ``(ciks, notes)``; ``notes`` records what was searched and what was rejected, so a
+    manager that resolves to nothing says why in the published payload.
+    """
+    names = [manager.get("name") or manager["ticker"], *(manager.get("filer_aliases") or [])]
+    candidates, notes, seen = [], [], set()
+
+    # The ticker's own CIK comes from SEC's own ticker file, so its identity is already
+    # established and is not re-checked by name - only search hits need the guard, and
+    # applying it here could only reject a correct CIK whose EDGAR name is spelled
+    # differently from the config's.
+    ticker_cik = sec.ticker_map().get(manager["ticker"].upper())
+    if ticker_cik:
+        candidates.append((ticker_cik, False))
+        seen.add(ticker_cik)
+    else:
+        notes.append(f"ticker {manager['ticker']} did not resolve to a CIK")
+
+    for name in names:
+        try:
+            hits = sec.company_search(name, form_type="13F-HR", limit=FILER_SEARCH_LIMIT)
+        except Exception as exc:  # noqa: BLE001
+            notes.append(f"company search for {name!r} failed ({type(exc).__name__})")
+            continue
+        for cik, conformed in hits:
+            if cik in seen:
+                continue
+            seen.add(cik)
+            if not any(entity_name_matches(conformed, candidate) for candidate in names):
+                notes.append(f"rejected CIK {cik} ({conformed!r}): name does not match")
+                continue
+            candidates.append((cik, True))
+
+    resolved = []
+    for cik, from_search in candidates:
+        try:
+            conformed = sec.entity_name(cik)
+            filings = sec.filings_for_cik(cik, FILER_FORMS, limit=1)
+        except Exception as exc:  # noqa: BLE001
+            notes.append(f"CIK {cik} unreadable ({type(exc).__name__})")
+            continue
+        if not filings:
+            notes.append(f"CIK {cik} ({conformed!r}) files no 13F-HR")
+            continue
+        # Re-checked against the submissions payload rather than trusting the search feed's
+        # own label, so the name a holding is attributed under is the one EDGAR reports for
+        # the CIK actually being read.
+        if from_search and not any(entity_name_matches(conformed, candidate) for candidate in names):
+            notes.append(f"rejected CIK {cik} ({conformed!r}): name does not match")
+            continue
+        resolved.append(cik)
+        if len(resolved) >= MAX_FILERS_PER_MANAGER:
+            break
+    return resolved, notes
+
+
+def manager_quarters(sec, manager, ciks):
     """A curated manager's two most recent *distinct periods*, newest first.
 
-    Fetches ``FILINGS_LOOKBACK`` filings (not just 2) and groups by the period each one
-    covers, keeping only the most recently *filed* record per period - so a 13F-HR/A
-    amendment supersedes the 13F-HR it revises instead of being counted as its own
-    quarter. ``is_amendment`` is carried through so the point-in-time layer and the
+    Fetches ``FILINGS_LOOKBACK`` filings per resolved filer (not just 2) and groups by the
+    period each one covers, keeping only the most recently *filed* record per (filer, period)
+    - so a 13F-HR/A amendment supersedes the 13F-HR it revises instead of being counted as
+    its own quarter. ``is_amendment`` is carried through so the point-in-time layer and the
     published screen can both show which number is original and which was revised.
+
+    Holdings from several filers are unioned into the period they share, because a manager
+    family that files through more than one adviser subsidiary holds one economic position
+    split across those filings - counting them as separate managers would inflate the very
+    breadth count this screen is built on.
     """
-    ticker = manager["ticker"]
-    filings = sec.recent_forms(ticker, ("13F-HR", "13F-HR/A"), limit=FILINGS_LOOKBACK)
+    manager_id = manager["ticker"]
+    filings = []
+    for cik in ciks:
+        try:
+            filings.extend(sec.filings_for_cik(cik, FILER_FORMS, limit=FILINGS_LOOKBACK))
+        except Exception:  # noqa: BLE001
+            continue
+
     by_period = {}
     for filing in filings:
         period = filing.get("period") or filing["filed"]
-        current = by_period.get(period)
+        slot = by_period.setdefault(period, {})
+        current = slot.get(filing["cik"])
         if current is None or filing["filed"] > current["filed"]:
-            by_period[period] = filing
+            slot[filing["cik"]] = filing
     ordered_periods = sorted(by_period, reverse=True)[:2]
 
     quarters = []
     for period in ordered_periods:
-        filing = by_period[period]
-        holdings, unreadable = _info_table_holdings(sec, ticker, filing)
+        holdings, unreadable, is_amendment, filed = [], False, False, ""
+        for filing in by_period[period].values():
+            parsed, failed = _info_table_holdings(sec, manager_id, filing)
+            holdings.extend(parsed)
+            unreadable = unreadable or failed
+            is_amendment = is_amendment or filing.get("form") == "13F-HR/A"
+            filed = max(filed, filing["filed"] or "")
         quarters.append({
-            "period": period, "filed": filing["filed"], "holdings": holdings,
-            "unreadable": unreadable, "is_amendment": filing.get("form") == "13F-HR/A",
+            "period": period, "filed": filed, "holdings": holdings,
+            "unreadable": unreadable, "is_amendment": is_amendment,
         })
     return quarters
 
@@ -291,17 +428,31 @@ def run():
 
     current_by_cusip, prior_by_cusip, as_of_by_cusip = {}, {}, {}
     managers_reviewed, filings_unreadable, amendments_seen = 0, 0, 0
-    new_position_rows = []
+    new_position_rows, coverage = [], []
     for manager in managers:
-        quarters = manager_quarters(sec, manager)
+        ciks, notes = resolve_filer_ciks(sec, manager)
+        quarters = manager_quarters(sec, manager, ciks) if ciks else []
+        holdings_parsed = sum(len(quarter["holdings"]) for quarter in quarters)
+        # Recorded for every configured manager, including the ones that produced nothing.
+        # A manager silently absent from the totals is exactly how this screen published
+        # confident, empty runs; the per-manager reason travels with the payload instead.
+        coverage.append({
+            "manager": manager["ticker"], "name": manager.get("name"),
+            "filer_ciks": ciks, "periods": [quarter["period"] for quarter in quarters],
+            "holdings_parsed": holdings_parsed,
+            "notes": notes if not ciks or not holdings_parsed else [],
+        })
         if not quarters:
+            LOG.warn(f"Institutional 13F: no readable 13F-HR for {manager['ticker']} "
+                     f"({'; '.join(notes) or 'no filings found'})")
             continue
         managers_reviewed += 1
         filings_unreadable += sum(1 for quarter in quarters if quarter["unreadable"])
         amendments_seen += sum(1 for quarter in quarters if quarter["is_amendment"])
         for index, quarter in enumerate(quarters[:2]):
             target = current_by_cusip if index == 0 else prior_by_cusip
-            for cusip, manager_shares in aggregate_by_cusip(quarter["holdings"]).items():
+            positions = aggregate_by_cusip(quarter["holdings"])
+            for cusip, manager_shares in positions.items():
                 target.setdefault(cusip, {}).update(manager_shares)
                 if index == 0:
                     # Latest-filed wins across managers too, since as_of drives decay for
@@ -309,10 +460,16 @@ def run():
                     existing = as_of_by_cusip.get(cusip)
                     if existing is None or quarter["filed"] > existing:
                         as_of_by_cusip[cusip] = quarter["filed"]
-            for holding in quarter["holdings"]:
+            # Stored per (manager, cusip) already summed, matching ``_position_key``. Writing
+            # one row per raw information-table line instead would hand the point-in-time
+            # layer several rows sharing a key, which it reads as this manager amending its
+            # own filing mid-batch and logs as a phantom revision.
+            issuers = {holding["cusip"]: holding.get("issuer") for holding in quarter["holdings"]}
+            for cusip, manager_shares in positions.items():
                 new_position_rows.append({
-                    "manager": manager["ticker"], "cusip": holding["cusip"],
-                    "issuer": holding.get("issuer"), "shares": holding["shares"],
+                    "manager": manager["ticker"], "cusip": cusip,
+                    "issuer": issuers.get(cusip),
+                    "shares": manager_shares.get(manager["ticker"]),
                     "filed": quarter["filed"], "period": quarter["period"],
                     "quarter_rank": index, "is_amendment": quarter["is_amendment"],
                 })
@@ -327,11 +484,33 @@ def run():
     results = build_results(current_by_cusip, prior_by_cusip, ticker_by_cusip,
                             UNIVERSE.get("symbols", ()), as_of_by_cusip=as_of_by_cusip)
 
+    # "No manager moved a position" and "nothing was collected" produce the same empty
+    # results list and are not the same claim. Only the first is a finding; the second is a
+    # broken run, and reporting it as success is what left the screen reading "no flagged
+    # activity yet" while the collection underneath it had failed outright.
+    status, degraded_reason = "success", None
+    if not managers_reviewed:
+        status = "degraded"
+        degraded_reason = ("No configured manager resolved to a readable 13F-HR filer - see "
+                           "manager_coverage for the per-manager reason.")
+    elif not all_cusips:
+        status = "degraded"
+        degraded_reason = (f"{managers_reviewed} manager(s) had 13F-HR filings but no "
+                           "information table could be parsed from them.")
+    elif not ticker_by_cusip:
+        status = "degraded"
+        degraded_reason = (f"{len(all_cusips)} CUSIP(s) were collected but none mapped to a "
+                           "ticker - check the OpenFIGI mapping step.")
+    if degraded_reason:
+        LOG.warn(f"Institutional 13F screen degraded: {degraded_reason}")
+
     payload = {
-        "schema_version": "1.1.0",
-        "model_version": "institutional-13f-v1.1.0",
+        "schema_version": "1.2.0",
+        "model_version": "institutional-13f-v1.2.0",
         "generated_at": generated_at.isoformat(),
-        "status": "success",
+        "status": status,
+        "degraded_reason": degraded_reason,
+        "manager_coverage": coverage,
         "manager_universe": "publicly traded, style=active only - see "
                             "pipeline/config/institutional_managers.json",
         "managers_reviewed": managers_reviewed,

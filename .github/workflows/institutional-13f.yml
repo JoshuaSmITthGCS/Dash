@@ -17,7 +17,10 @@ concurrency:
 
 jobs:
   collect:
-    if: github.ref == 'refs/heads/main'
+    # Scheduled runs stay on main. A manual dispatch is allowed from any branch so a change
+    # to the collector can be exercised against live EDGAR *before* it is merged - the
+    # commit step below is what stays gated on main, so a branch run publishes nothing.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -33,7 +36,30 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
           OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
         run: python pipeline/build_institutional_screen.py
+      - name: Summarise what was collected
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          payload = json.load(open("public/data/screens/institutional-13f.json"))
+          print(f"**Status:** `{payload.get('status')}`\n")
+          if payload.get("degraded_reason"):
+              print(f"> {payload['degraded_reason']}\n")
+          print(f"- managers reviewed: {payload.get('managers_reviewed')} "
+                f"of {payload.get('managers_configured')}")
+          print(f"- CUSIPs seen: {payload.get('cusips_seen')}, "
+                f"mapped: {payload.get('cusips_mapped')}")
+          print(f"- results published: {len(payload.get('results') or [])}\n")
+          print("| Manager | Filer CIKs | Periods | Holdings | Notes |")
+          print("| --- | --- | --- | --- | --- |")
+          for row in payload.get("manager_coverage") or []:
+              print(f"| {row['manager']} | {', '.join(row['filer_ciks']) or '–'} "
+                    f"| {', '.join(row['periods']) or '–'} | {row['holdings_parsed']} "
+                    f"| {'; '.join(row['notes'])[:300] or '–'} |")
+          PY
+          cat "$GITHUB_STEP_SUMMARY"
       - name: Commit collected data with retry
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config user.name "valuesignal-data-bot"

@@ -1,4 +1,5 @@
 import os
+import pytest
 import tempfile
 from datetime import datetime, timezone
 from unittest.mock import Mock
@@ -293,7 +294,135 @@ def test_build_results_sorts_most_recently_disclosed_first():
     assert [row["symbol"] for row in results] == ["NEWER", "OLDER"]
 
 
-def test_run_skips_without_configuration(monkeypatch):
-    monkeypatch.setattr(module, "CongressTradesClient",
-                        lambda: (_ for _ in ()).throw(module.CongressTradesError("no key")))
-    assert module.run() is None
+def _fmp_rejecting_every_fetch(status=402):
+    """A configured client whose key the provider refuses - the shape of a plan that does
+    not cover these endpoints, as opposed to a week in which nobody disclosed a trade."""
+    def refuse(*args, **kwargs):
+        raise module.CongressTradesError(f"FMP senate-latest request failed with HTTP {status}")
+
+    client = Mock()
+    client.senate_latest.side_effect = refuse
+    client.house_latest.side_effect = refuse
+    client.price_history.side_effect = refuse
+    return client
+
+
+def _mirror_returning(rows, seen=None):
+    client = Mock()
+    client.senate_latest.return_value = (rows, len(rows) if seen is None else seen)
+    client.house_latest.return_value = ([], 0)
+    return client
+
+
+def _mirror_rejecting_every_fetch():
+    def refuse(*args, **kwargs):
+        raise module.CongressTradesError("senate disclosure dataset request failed (URLError)")
+
+    client = Mock()
+    client.senate_latest.side_effect = refuse
+    client.house_latest.side_effect = refuse
+    return client
+
+
+def test_an_unconfigured_fmp_key_no_longer_aborts_the_run(monkeypatch):
+    # The keyless mirrors are a complete source on their own, so a missing or unentitled FMP
+    # key must cost the price-performance column, not the entire screen.
+    saved = {}
+    with TempStore():
+        monkeypatch.setattr(module, "CongressTradesClient",
+                            lambda: (_ for _ in ()).throw(module.CongressTradesError("no key")))
+        monkeypatch.setattr(module, "StockWatcherClient",
+                            lambda: _mirror_returning([trade(
+                                disclosure_date=datetime.now(timezone.utc).date().isoformat())]))
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    # The keyless mirror carried the run; only the FMP-only performance column is missing.
+    assert payload["status"] == "partial"
+    assert payload["reason_code"] == "SOME_SOURCES_UNAVAILABLE"
+    assert payload["results"]
+    assert "return_since_purchase_pct" not in payload["results"][0]
+
+
+def test_one_source_failing_still_publishes_what_the_other_returned(monkeypatch):
+    saved = {}
+    with TempStore():
+        monkeypatch.setattr(module, "CongressTradesClient", _fmp_rejecting_every_fetch)
+        monkeypatch.setattr(module, "StockWatcherClient",
+                            lambda: _mirror_returning([trade(
+                                disclosure_date=datetime.now(timezone.utc).date().isoformat())]))
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    # Running more than one source is only worth it if one failing costs its own coverage
+    # and nothing else.
+    assert payload["status"] == "partial"
+    assert payload["reason_code"] == "SOME_SOURCES_UNAVAILABLE"
+    assert payload["results"]
+    assert payload["collection"]["source_counts"]["mirror-senate"] == 1
+
+
+def test_run_that_collects_nothing_because_every_source_refused_is_unavailable(monkeypatch):
+    saved = {}
+    with TempStore():
+        # History already exists, so this is a real feed outage rather than an environment
+        # that has never collected anything - and it has to publish, saying so.
+        module.append_new_trades([trade(disclosure_date="2020-01-02", transaction_date="2020-01-01")])
+        monkeypatch.setattr(module, "CongressTradesClient", _fmp_rejecting_every_fetch)
+        monkeypatch.setattr(module, "StockWatcherClient", _mirror_rejecting_every_fetch)
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    # Publishing this as "success" is what left the page saying "no disclosures collected
+    # yet" - a claim about Congress - when the truth was that every request was rejected.
+    assert payload["status"] == "unavailable"
+    assert payload["reason_code"] == "CONGRESS_DISCLOSURE_FEED_UNAVAILABLE"
+    assert payload["results"] == []
+    assert any("402" in failure for failure in payload["collection"]["failures"])
+    assert len(payload["collection"]["failures"]) == 4
+    assert saved["status"] == "unavailable"
+
+
+def test_a_run_with_nothing_reachable_and_nothing_stored_publishes_nothing(monkeypatch):
+    # An offline or local environment must not overwrite a good published screen with an
+    # empty one. Once any history exists, the test above shows an outage does publish.
+    with TempStore():
+        monkeypatch.setattr(module, "CongressTradesClient", _fmp_rejecting_every_fetch)
+        monkeypatch.setattr(module, "StockWatcherClient", _mirror_rejecting_every_fetch)
+        monkeypatch.setattr(module, "save_json",
+                            lambda name, payload: pytest.fail("must not publish"))
+        assert module.run() is None
+
+
+def test_a_mirror_that_returns_rows_none_of_which_parse_says_so(monkeypatch):
+    # Reachable but no longer shaped the way this reads it - a different failure from an
+    # unreachable source, and one that would otherwise publish as a quiet Congress.
+    saved = {}
+    with TempStore():
+        monkeypatch.setattr(module, "CongressTradesClient", _fmp_rejecting_every_fetch)
+        module.append_new_trades([trade(disclosure_date="2020-01-02", transaction_date="2020-01-01")])
+        monkeypatch.setattr(module, "StockWatcherClient", lambda: _mirror_returning([], seen=8_000))
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    assert payload["status"] == "unavailable"
+    assert any("columns may have changed" in failure
+               for failure in payload["collection"]["failures"])
+
+
+def test_run_with_previously_stored_disclosures_reports_partial_not_degraded(monkeypatch):
+    saved = {}
+    with TempStore():
+        module.append_new_trades([trade(disclosure_date=datetime.now(timezone.utc).date().isoformat())])
+        monkeypatch.setattr(module, "CongressTradesClient", _fmp_rejecting_every_fetch)
+        monkeypatch.setattr(module, "StockWatcherClient", _mirror_rejecting_every_fetch)
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    assert payload["status"] == "partial"
+    assert payload["results"]

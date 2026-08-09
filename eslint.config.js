@@ -4,7 +4,7 @@ const globals = Object.fromEntries([
   // browser
   'alert', 'Blob', 'clients', 'confirm', 'console', 'crypto', 'document', 'fetch', 'FileReader', 'import.meta',
   'localStorage', 'navigator', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-  'Notification', 'TextEncoder', 'URL', 'window',
+  'Notification', 'TextEncoder', 'URL', 'URLSearchParams', 'window',
   // test runner
   'afterEach', 'beforeEach', 'describe', 'expect', 'it', 'vi',
 ].map((name) => [name, 'readonly']))

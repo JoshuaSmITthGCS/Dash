@@ -151,15 +151,6 @@ jobs:
         # Reads the same on-disk Yahoo price cache the previous step just warmed - no new
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
-      - name: Build structural + tactical screen from the estimate revisions and price history just fetched
-        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        # Shares the momentum builder's factor pass over the same warmed price cache, so
-        # this adds no network calls either.
-        run: python pipeline/build_structural_tactical_screen.py || echo "::warning::Structural + tactical screen build failed; keeping previous structural-tactical.json"
-      - name: Build quality-value screen from collected point-in-time valuations
-        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        # Reads pit_store, which the scoring step above has already appended to this run.
-        run: python pipeline/build_quality_value_screen.py || echo "::warning::Quality-value screen build failed; keeping previous quality-value.json"
       - name: Build multi-day options, covered-call, cash-secured-put, and short-term-trades screens from one shared chain fetch per ticker
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # build_options_strategies.py fetches ONE option chain per ticker (both mechanisms
@@ -209,6 +200,16 @@ jobs:
       - name: Rescore the last published data (no network calls)
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore == 'true'
         run: python pipeline/rescore.py
+      - name: Build the quality-at-valuation-lows screen
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Reads only what is already on disk - the advisor snapshot just written, the backtest
+        # cache's closes and statements, and the point-in-time observation store - so it runs
+        # on the rescore path too, and costs no provider requests either way.
+        run: python pipeline/build_quality_value_screen.py || echo "::warning::Quality-value screen build failed; keeping previous quality-value.json"
+      - name: Build the earnings-timeliness and structural-tactical screens
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Must precede shadow_portfolios.py, which selects a sleeve from structural-tactical.json.
+        run: python pipeline/build_tactical_screens.py || echo "::warning::Tactical screen build failed; keeping previous earnings-timeliness.json and structural-tactical.json"
       - name: Append and publish prospective shadow portfolios
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/shadow_portfolios.py

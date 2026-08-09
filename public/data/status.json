@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-09T08:26:53.448419+00:00",
+  "generated_at": "2026-08-09T09:12:00.657930+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-09T08:24:48.086154+00:00",
+      "checked_at": "2026-08-09T09:09:41.987629+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 926,
-        "scored": 219,
+        "scored": 877,
         "ranked": 40,
         "failed": [
           "ANSS",
@@ -68,13 +68,29 @@
           "MOG.A",
           "PARA",
           "PCH",
-          "TTM"
+          "PNM",
+          "PSTG",
+          "SEE",
+          "SKX",
+          "SMAR",
+          "SNV",
+          "SPR",
+          "SUM",
+          "TGNA",
+          "TMHC",
+          "TPH",
+          "TPX",
+          "TTM",
+          "VSCO",
+          "WBA",
+          "X",
+          "ZI"
         ]
       }
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-09T08:26:10.963802+00:00",
+      "checked_at": "2026-08-09T09:11:17.745516+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
@@ -90,7 +106,7 @@
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-09T08:26:53.448404+00:00",
+      "checked_at": "2026-08-09T09:12:00.657904+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -237,8 +253,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "e5d7ff8c756b31ad98773516b4ec24f5b62e7f7a",
+    "git_commit_sha": "565fec7631caa6dcd621f47ca680ef4827ba7fc0",
     "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
-    "generated_at": "2026-08-09T08:26:53.448419+00:00"
+    "generated_at": "2026-08-09T09:12:00.657930+00:00"
   }
 }

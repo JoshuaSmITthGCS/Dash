@@ -1,216 +1,269 @@
-"""Publishes the quality-value research screen from prospectively collected valuations.
+"""Publishes the "quality at valuation lows" screen.
 
-Like the tactical sleeve, the scoring contract already existed in ``research_screens_v2``
-(``robust_value_score`` and ``classify_quality_value``) and the shadow report already listed
-the sleeve; the builder that connects them did not, so the published file stayed pinned to a
-hand-written ``POINT_IN_TIME_VALUATION_HISTORY_NOT_COLLECTED`` placeholder.
+research_screens_v2 has carried this screen's formulas - `robust_value_score`,
+`classify_quality_value` - and their tests since the screen was designed. What never existed
+was a script to feed them real inputs, so public/data/screens/quality-value.json shipped as a
+hand-written placeholder reading POINT_IN_TIME_VALUATION_HISTORY_NOT_COLLECTED. This is that
+script.
 
-That reason code was true when it was written and is not any more: ``pit_store`` has been
-appending observed valuations since the store opened. It is deliberately not true in reverse
-either - Yahoo serves restated multiples with no as-reported history, so "cheap against its
-own history" can only ever be answered from observations this pipeline recorded itself.
-Until a ticker has ``minimum_history_observations`` of them, it is published with an explicit
-``INSUFFICIENT_HISTORICAL_DATA`` flag and held ineligible rather than scored against a
-history too short to mean anything.
+The four inputs the classifier wants, and where each comes from:
+
+  own-history cheapness   valuation_history.multiple_series - a daily multiple series rebuilt
+                          from the backtest cache's closes and quarterly statements, with each
+                          statement withheld until its filing deadline had passed
+  peer cheapness          the published sector valuation percentile, or the cross-sectional
+                          valuation category score where no peer percentile was constructed
+  business quality        the published profitability, financial-health, accounting-quality
+                          and capital-allocation category scores
+  forward revisions       the published 30-day estimate revision magnitude and breadth,
+                          ranked across the cross-section
+
+The own-history window is only as deep as the cached statements reach. Companies below
+valuation_history.MINIMUM_HISTORY_SESSIONS are still published, still ranked on peer value and
+quality, and classified "insufficient historical data" with an explicit reason code - the
+screen says what it knows about them rather than dropping them or pretending to a percentile
+it cannot support.
 """
 
 from datetime import datetime, timezone
 
-import pit_store
-from canonical_metrics import applicability_for
 from common import LOG, load_json, save_json
 from peer_groups import peer_group
-from research_screens_v2 import classify_quality_value, historical_percentile, robust_value_score
+from research_screens_v2 import classify_quality_value, robust_value_score
+from screen_inputs import (backtest_entry, cross_sectional_percentiles, latest_observations,
+                           median_dollar_volume, universe_rows, with_current_price)
+from valuation_history import (APPLICABILITY, MINIMUM_FUNDAMENTAL_STEPS,
+                               MINIMUM_HISTORY_SESSIONS, REPORTING_LAG_DAYS, applicable_metrics,
+                               multiple_series, profile_for)
 
-# ``lower_is_cheaper`` is the direction that makes a metric a bargain, not its sign. A
-# falling multiple is cheap; a falling free-cash-flow yield is not.
-VALUATION_METRICS = {
-    "forward_pe": True,
-    "ev_to_ebitda": True,
-    "ev_to_sales": True,
-    "price_to_book": True,
-    "free_cash_flow_yield": False,
-}
-HISTORY_YEARS = 3
+QUALITY_WEIGHTS = {"profitability": .35, "financial_health": .30,
+                   "accounting_quality": .20, "capital_allocation": .15}
+# The whole scored cross-section is around 900 names. Publishing every one of them costs the
+# better part of a megabyte over a phone connection to deliver a table nobody scrolls to the
+# end of, so the file carries the ranked head and states both numbers.
+PUBLISH_LIMIT = 300
+# Altman below the distress zone, or a company that cannot cover its interest bill out of
+# operating profit, is a value trap by the screen's own definition - not a valuation low.
 DISTRESS_ALTMAN_Z = 1.8
+DISTRESS_INTEREST_COVERAGE = 1.0
 
 
-def _quality_score(entry):
-    structural = (entry.get("analysis_v2") or {}).get("structural") or {}
-    components = entry.get("components") or {}
-    for value in (structural.get("effective_score"), components.get("fundamentals"),
-                  entry.get("score")):
-        if value is not None:
-            return float(value)
-    return None
+def quality_score(categories):
+    """Weighted mean of the published quality categories, ignoring valuation and growth.
 
-
-def _applicability(entry):
-    profile = (entry.get("analysis_v2") or {}).get("applicability_profile") or "general"
-    return {metric: 0 if applicability_for(metric, profile)["status"] == "suppressed" else 1
-            for metric in VALUATION_METRICS}
-
-
-def build_metrics(entry, histories):
-    """``{metric: {history, current, lower_is_cheaper}}`` for one ticker."""
-    stored = histories.get(str(entry.get("ticker") or "").upper()) or {}
-    metrics = {}
-    for metric, lower_is_cheaper in VALUATION_METRICS.items():
-        current = entry.get(metric)
-        history = [row["value"] for row in stored.get(metric) or []]
-        if current is None and not history:
-            continue
-        metrics[metric] = {"history": history, "current": current,
-                           "lower_is_cheaper": lower_is_cheaper}
-    return metrics
-
-
-def observation_depth(metrics, applicability):
-    """Longest applicable own-history run, which is what the minimum actually gates on."""
-    lengths = [len(item["history"]) for metric, item in metrics.items()
-               if applicability.get(metric, 0)]
-    return max(lengths) if lengths else 0
-
-
-def peer_value_scores(rows):
-    """Cheapness against same-profile peers today, blended across applicable metrics."""
-    by_group = {}
-    for row in rows:
-        by_group.setdefault(row["peer_group"][0], []).append(row)
-    scores = {}
-    for members in by_group.values():
-        for row in members:
-            percentiles = []
-            for metric, lower_is_cheaper in VALUATION_METRICS.items():
-                if not row["applicability"].get(metric, 0):
-                    continue
-                current = (row["metrics"].get(metric) or {}).get("current")
-                peers = [value for other in members
-                         if (value := (other["metrics"].get(metric) or {}).get("current")) is not None]
-                # One company is not a peer group; a lone member would score its own
-                # 100th percentile against itself.
-                if current is None or len(peers) < 2:
-                    continue
-                percentile = historical_percentile(peers, current, lower_is_cheaper)
-                if percentile is not None:
-                    percentiles.append(percentile)
-            scores[row["ticker"]] = (round(sum(percentiles) / len(percentiles), 4)
-                                     if percentiles else None)
-    return scores
-
-
-def collect(universe, histories):
-    """One row per ticker. ``research`` and ``portfolio_coverage`` overlap, and a company
-    listed in both is one company -- scoring it twice would give it two entries competing
-    for the same sleeve.
+    Valuation is the other axis of this screen and must not appear on both sides of it;
+    growth is a forecast, and the classifier gates on revisions for that.
     """
-    rows, seen = [], set()
-    for entry in universe:
-        ticker = entry.get("ticker")
-        if not ticker or ticker in seen:
+    present = {key: value for key, value in (categories or {}).items()
+               if key in QUALITY_WEIGHTS and isinstance(value, (int, float))}
+    weight = sum(QUALITY_WEIGHTS[key] for key in present)
+    if not weight:
+        return None
+    return sum(value * QUALITY_WEIGHTS[key] for key, value in present.items()) / weight
+
+
+def peer_value(row):
+    """Peer cheapness on 0-100, higher is cheaper, plus which basis produced it."""
+    percentile = row.get("sector_valuation_percentile")
+    if isinstance(percentile, (int, float)):
+        return float(percentile), "sector_valuation_percentile"
+    categories = (row.get("fundamental_categories") or {})
+    value = categories.get("valuation")
+    if isinstance(value, (int, float)):
+        return float(value), "cross_sectional_valuation_score"
+    return None, None
+
+
+def is_distressed(observed):
+    """Distress from the point-in-time store's own solvency readings, never from cheapness."""
+    altman, coverage = observed.get("altman_z"), observed.get("interest_coverage")
+    if isinstance(altman, (int, float)) and altman < DISTRESS_ALTMAN_Z:
+        return True
+    return isinstance(coverage, (int, float)) and coverage < DISTRESS_INTEREST_COVERAGE
+
+
+def build_rows(universe, observations, entry_for=backtest_entry):
+    """One row per ticker with its own-history cheapness computed where history allows."""
+    rows = []
+    for row in universe:
+        ticker = row.get("ticker")
+        if not ticker or row.get("is_etf"):
             continue
-        metrics = build_metrics(entry, histories)
-        if not metrics:
-            continue
-        seen.add(ticker)
+        observed = observations.get(ticker) or {}
+        entry = with_current_price(entry_for(ticker) or {}, row.get("price"),
+                                   row.get("last_polled_at")) or {}
+        margin = row.get("profit_margin")
+        profile = profile_for({**row, "profit_margin": observed.get("profit_margin")
+                               if margin is None else margin})
+        series = multiple_series(entry) if entry else {}
+        applicable = applicable_metrics(profile, series)
+        own_history, per_metric = robust_value_score(
+            {name: series[name] for name in applicable}, applicable) if applicable else (None, {})
+        sessions = max((series[name]["sessions"] for name in applicable), default=0)
+        peer_score, peer_basis = peer_value(row)
+        group_id, group_label = peer_group(row)
+        closes, volumes = entry.get("closes") or [], entry.get("volumes") or []
         rows.append({
-            "ticker": ticker, "metrics": metrics, "applicability": _applicability(entry),
-            "peer_group": peer_group(entry), "quality_score": _quality_score(entry),
-            "confidence": entry.get("confidence"),
-            "altman_z": entry.get("altman_z"),
-            "estimate_detail": entry.get("estimate_detail") or {},
+            "ticker": ticker, "sector": row.get("sector"),
+            "peer_group": group_id, "peer_group_label": group_label, "business_profile": profile,
+            "market_cap": row.get("market_cap") or observed.get("market_cap"),
+            "median_dollar_volume_60d": median_dollar_volume(closes, volumes),
+            "structural_score": row.get("score"),
+            "confidence": ((row.get("score_variants") or {}).get("champion") or {}).get("confidence"),
+            "own_history_score": own_history, "own_history_sessions": sessions,
+            "own_history_steps": max((series[name]["fundamental_steps"] for name in applicable),
+                                     default=0),
+            "own_history_start": min((series[name]["start"] for name in applicable), default=None),
+            "applicable_metrics": applicable,
+            "metric_percentiles": {name: (None if value is None else round(value, 2))
+                                   for name, value in per_metric.items()},
+            "peer_value_score": peer_score, "peer_value_basis": peer_basis,
+            "quality_score": quality_score(row.get("fundamental_categories")),
+            "distressed": is_distressed(observed),
+            "revision_magnitude_raw": (row.get("estimate_detail") or {}).get("eps_revision_30d_pct"),
+            "revision_breadth_raw": (row.get("estimate_detail") or {}).get("revision_breadth_30d"),
         })
     return rows
 
 
-def score_universe(rows, minimum_observations, weights):
-    peers = peer_value_scores(rows)
-    scored = []
+def attach_revision_percentiles(rows):
+    """Rank the two revision readings across the cross-section onto the 0-100 the gate expects.
+
+    `classify_quality_value` treats a revision score at or below 20 as deterioration, i.e. the
+    bottom fifth of the market - a percentile, not a raw growth rate, so it has to be ranked
+    here rather than passed through.
+    """
+    magnitude = cross_sectional_percentiles([row["revision_magnitude_raw"] for row in rows])
+    breadth = cross_sectional_percentiles([row["revision_breadth_raw"] for row in rows])
+    for row, magnitude_value, breadth_value in zip(rows, magnitude, breadth):
+        row["revision_current_year"] = magnitude_value
+        row["revision_next_year"] = breadth_value
+    return rows
+
+
+def classify_rows(rows):
     for row in rows:
-        own_history_score, raw = robust_value_score(row["metrics"], row["applicability"])
-        depth = observation_depth(row["metrics"], row["applicability"])
-        sufficient = depth >= minimum_observations
-        peer_score = peers.get(row["ticker"])
-        detail = row["estimate_detail"]
-        distressed = (row["altman_z"] is not None
-                      and float(row["altman_z"]) < DISTRESS_ALTMAN_Z)
         classification, reasons = classify_quality_value(
-            own_history_score, peer_score, row["quality_score"],
-            revision_current_year=detail.get("eps_revision_30d_pct"),
-            revision_next_year=detail.get("revision_breadth_30d"),
-            revision_acceleration=detail.get("net_upgrades_90d"),
-            distressed=distressed, minimum_history=sufficient,
-        )
-        parts = {"own_history_weight": own_history_score, "peer_value_weight": peer_score,
-                 "quality_weight": row["quality_score"]}
-        available = {key: value for key, value in parts.items() if value is not None}
-        total_weight = sum(weights.get(key, 0) for key in available)
-        composite = (round(sum(weights.get(key, 0) * value
-                               for key, value in available.items()) / total_weight, 4)
-                     if total_weight else None)
-        scored.append({
-            "ticker": row["ticker"], "peer_group": row["peer_group"][1],
-            "quality_value_score": composite, "own_history_score": own_history_score,
-            "peer_value_score": peer_score, "quality_score": row["quality_score"],
-            "classification": classification, "reason_codes": reasons,
-            "observations": depth, "minimum_observations": minimum_observations,
-            "confidence": row["confidence"], "metric_percentiles": raw,
-            "eligibility": sufficient and classification == "actionable value",
-        })
-    return sorted(scored, key=lambda row: (row["quality_value_score"] is not None,
-                                           row["quality_value_score"] or 0), reverse=True)
+            row["own_history_score"], row["peer_value_score"], row["quality_score"],
+            revision_current_year=row["revision_current_year"],
+            revision_next_year=row["revision_next_year"],
+            revision_acceleration=None,
+            distressed=row["distressed"],
+            minimum_history=row["own_history_sessions"] >= MINIMUM_HISTORY_SESSIONS)
+        row["classification"] = classification
+        row["reason_codes"] = reasons
+    return rows
+
+
+def composite_percentiles(rows):
+    """Rank by own-history cheapness when it exists, peer cheapness otherwise.
+
+    Both are already 0-100 cheapness readings, so a company with a real own-history window and
+    one still accumulating stay comparable; `own_history_sessions` on the row says which is
+    which rather than leaving the two silently blended.
+    """
+    basis = [row["own_history_score"] if row["own_history_score"] is not None
+             else row["peer_value_score"] for row in rows]
+    for row, percentile in zip(rows, cross_sectional_percentiles(basis)):
+        row["percentile"] = percentile
+    return rows
 
 
 def to_result(rank, row):
-    return {"rank": rank, **row}
+    return {
+        "rank": rank, "ticker": row["ticker"], "sector": row.get("sector"),
+        "peer_group": row.get("peer_group_label") or row.get("peer_group"),
+        "business_profile": row.get("business_profile"),
+        "classification": row["classification"],
+        "percentile": None if row.get("percentile") is None else round(row["percentile"], 2),
+        "structural_score": row.get("structural_score"),
+        # This screen scores the durable axis only. The tactical column stays empty here on
+        # purpose; earnings-timeliness and the matrix are where the near-term axis is scored.
+        "tactical_score": None,
+        "confidence": row.get("confidence"),
+        "market_cap": row.get("market_cap"),
+        "median_dollar_volume_60d": row.get("median_dollar_volume_60d"),
+        "own_history_score": None if row["own_history_score"] is None else round(row["own_history_score"], 2),
+        "own_history_sessions": row["own_history_sessions"],
+        "own_history_steps": row.get("own_history_steps"),
+        "own_history_start": row.get("own_history_start"),
+        "peer_value_score": None if row["peer_value_score"] is None else round(row["peer_value_score"], 2),
+        "peer_value_basis": row.get("peer_value_basis"),
+        "quality_score": None if row["quality_score"] is None else round(row["quality_score"], 2),
+        # Which multiples were used is `business_profile` plus the published weight table;
+        # what they said is here, per metric, on the same cheapness scale as the composite.
+        "metric_percentiles": row.get("metric_percentiles"),
+        "distressed": row["distressed"],
+        "eligibility": row["own_history_sessions"] >= MINIMUM_HISTORY_SESSIONS,
+        "current_membership": False,
+        "reason_codes": row["reason_codes"],
+    }
+
+
+def payload(rows, generated_at):
+    with_history = [row for row in rows if row["own_history_sessions"] >= MINIMUM_HISTORY_SESSIONS]
+    # Companies the screen can actually answer its own question about come first. Below them
+    # sit the ones still ranked on peer value alone, so the two bases are never interleaved
+    # into a single league table that hides which is which.
+    ranked = sorted(rows, key=lambda row: (
+        row["own_history_sessions"] < MINIMUM_HISTORY_SESSIONS,
+        row.get("percentile") is None,
+        -(row.get("percentile") or 0), -(row.get("quality_score") or 0), row["ticker"]))
+    return {
+        "schema_version": "1.0.0", "model_version": "quality-value-v2.0.0",
+        "config_version": "screens-v2.0.0", "generated_at": generated_at,
+        "status": "success" if rows else "unavailable",
+        **({} if rows else {"reason_code": "NO_SCORED_UNIVERSE"}),
+        "own_history": {
+            "source": "reconstructed_from_cached_statements_and_closes",
+            "minimum_sessions": MINIMUM_HISTORY_SESSIONS,
+            "minimum_fundamental_steps": MINIMUM_FUNDAMENTAL_STEPS,
+            "reporting_lag_days": REPORTING_LAG_DAYS,
+            "tickers_with_history": len(with_history),
+            "deepest_sessions": max((row["own_history_sessions"] for row in rows), default=0),
+            "earliest_start": min((row["own_history_start"] for row in with_history
+                                   if row.get("own_history_start")), default=None),
+        },
+        "quality_weights": QUALITY_WEIGHTS,
+        "metric_weights_by_profile": APPLICABILITY,
+        "universe_scored": len(rows), "publish_limit": PUBLISH_LIMIT,
+        "coverage_note": coverage_note(rows, with_history),
+        "results": [to_result(rank + 1, row) for rank, row in enumerate(ranked[:PUBLISH_LIMIT])],
+    }
+
+
+def coverage_note(rows, with_history):
+    """One sentence stating the window actually measured, so the screen cannot overclaim."""
+    if not with_history:
+        return (f"No company yet has {MINIMUM_HISTORY_SESSIONS} sessions of reconstructed "
+                "valuation history; every row is ranked on peer cheapness alone. The file "
+                f"carries the top {PUBLISH_LIMIT} of {len(rows)} scored companies.")
+    deepest = max(row["own_history_sessions"] for row in with_history)
+    start = min((row["own_history_start"] for row in with_history if row.get("own_history_start")),
+                default="an unrecorded date")
+    return (f"Own-history cheapness is measured over each company's reconstructed multiple "
+            f"series - at most {deepest} sessions, starting {start}, priced against statements "
+            f"only from {REPORTING_LAG_DAYS} days after each period ended. "
+            f"{len(with_history)} of {len(rows)} companies clear the "
+            f"{MINIMUM_HISTORY_SESSIONS}-session minimum; the rest are ranked on peer "
+            f"cheapness and quality until their own record is deep enough. The file carries "
+            f"the top {PUBLISH_LIMIT} of {len(rows)} scored companies.")
 
 
 def run():
-    payload = load_json("advisor.json") or {}
-    universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
-    models = load_json("research_models.json", from_config=True) or {}
-    config = models.get("quality_value") or {}
-    minimum_observations = config.get("minimum_history_observations", 12)
-    weights = {"own_history_weight": config.get("own_history_weight", 0.5),
-               "peer_value_weight": config.get("peer_value_weight", 0.15),
-               "quality_weight": config.get("quality_weight", 0.35)}
-    header = {
-        "schema_version": "1.0.0",
-        "model_version": config.get("model_version", "quality-value-v2.0.0"),
-        "config_version": models.get("config_version", "screens-v2.0.0"),
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "minimum_history_observations": minimum_observations,
-    }
+    advisor = load_json("advisor.json") or {}
+    universe = universe_rows(advisor)
     if not universe:
         LOG.warn("Quality-value screen: no published universe to score, skipping")
-        result = {**header, "status": "unavailable", "reason_code": "NO_PUBLISHED_UNIVERSE",
-                  "results": []}
-        save_json("screens/quality-value.json", result)
-        return result
-
-    histories = pit_store.valuation_histories(
-        years=HISTORY_YEARS, days_per_year=365, metrics=tuple(VALUATION_METRICS))
-    rows = collect(universe, histories)
-    scored = score_universe(rows, minimum_observations, weights)
-    results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
-    eligible = sum(1 for row in results if row["eligibility"])
-    deepest = max((row["observations"] for row in results), default=0)
-    if not results:
-        result = {**header, "status": "unavailable",
-                  "reason_code": "POINT_IN_TIME_VALUATION_HISTORY_NOT_COLLECTED", "results": []}
-    elif deepest < minimum_observations:
-        # Collection is running and the screen is scored; the own-history percentiles the
-        # sleeve is built on are simply not seasoned yet. Reporting the depth reached makes
-        # the wait a countdown instead of an indefinite placeholder.
-        result = {**header, "status": "unavailable",
-                  "reason_code": "POINT_IN_TIME_VALUATION_HISTORY_TOO_SHORT",
-                  "observations_collected": deepest, "results": results}
-    else:
-        result = {**header, "status": "success", "observations_collected": deepest,
-                  "results": results}
+        return None
+    rows = classify_rows(attach_revision_percentiles(
+        build_rows(universe, latest_observations())))
+    composite_percentiles(rows)
+    result = payload(rows, datetime.now(timezone.utc).isoformat())
     save_json("screens/quality-value.json", result)
-    LOG.info(f"Quality-value screen: scored {len(results)} tickers ({eligible} eligible, "
-             f"deepest own history {deepest}/{minimum_observations} observations)")
+    LOG.info(f"Quality-value screen: scored {result['universe_scored']} tickers "
+             f"({result['own_history']['tickers_with_history']} with own-history depth), "
+             f"published {len(result['results'])}")
     return result
 
 

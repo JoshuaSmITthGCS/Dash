@@ -1,8 +1,14 @@
 {
-  "schema_version": "1.0.0",
-  "model_version": "congress-trades-v1.1.0",
-  "generated_at": "2026-08-09T08:33:23.085063+00:00",
-  "status": "success",
+  "schema_version": "1.2.0",
+  "model_version": "congress-trades-v1.3.0",
+  "generated_at": "2026-08-09T18:22:58.431904+00:00",
+  "status": "degraded",
+  "degraded_reason": "No disclosures could be collected: mirror-senate: senate disclosure dataset request failed (HTTPError: HTTP Error 403: Forbidden); mirror-house: house disclosure dataset request failed (HTTPError: HTTP Error 403: Forbidden)",
+  "source_errors": [
+    "mirror-senate: senate disclosure dataset request failed (HTTPError: HTTP Error 403: Forbidden)",
+    "mirror-house: house disclosure dataset request failed (HTTPError: HTTP Error 403: Forbidden)"
+  ],
+  "source_counts": {},
   "publish_window_days": 120,
   "history_days": 0,
   "late_filing_threshold_days": 45,
@@ -18,8 +24,8 @@
   "results": [],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d343865661a510bfa692f1d68c3e43e65badfa92",
+    "git_commit_sha": "6554a1e46b1441ac27cab85423498e5e03bd0ec3",
     "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
-    "generated_at": "2026-08-09T08:33:23.085063+00:00"
+    "generated_at": "2026-08-09T18:22:58.431904+00:00"
   }
 }

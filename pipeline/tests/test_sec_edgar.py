@@ -278,6 +278,94 @@ class FilingIndexTests(unittest.TestCase):
         self.assertEqual(client.filing_index("1", "acc-1"), [])
 
 
+MULTI_MATCH_ATOM = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><content type="text/xml"><company-info>
+    <cik>0000080255</cik><conformed-name>PRICE T ROWE ASSOCIATES INC /MD/</conformed-name>
+  </company-info></content></entry>
+  <entry><content type="text/xml"><company-info>
+    <cik>0001113169</cik><conformed-name>T. Rowe Price Group, Inc.</conformed-name>
+  </company-info></content></entry>
+</feed>"""
+
+SINGLE_MATCH_ATOM = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <company-info>
+    <cik>0001067983</cik><conformed-name>BERKSHIRE HATHAWAY INC</conformed-name>
+  </company-info>
+  <entry><title>13F-HR</title></entry>
+</feed>"""
+
+
+class EntityNameMatchTests(unittest.TestCase):
+    """The guard that lets the curated config keep asserting a manager by *name* rather than
+    by a hand-typed CIK - it has to survive EDGAR's word order and punctuation while still
+    refusing an unrelated filer."""
+
+    def test_reordered_and_repunctuated_conformed_name_still_matches(self):
+        self.assertTrue(sec_edgar.entity_name_matches(
+            "PRICE T ROWE ASSOCIATES INC /MD/", "T. Rowe Price"))
+
+    def test_adviser_subsidiary_with_extra_words_matches_the_family_name(self):
+        self.assertTrue(sec_edgar.entity_name_matches(
+            "ARTISAN PARTNERS LIMITED PARTNERSHIP", "Artisan Partners"))
+
+    def test_an_unrelated_filer_is_rejected(self):
+        self.assertFalse(sec_edgar.entity_name_matches(
+            "ARTISAN CONSUMER GOODS INC", "Artisan Partners"))
+
+    def test_a_single_shared_token_is_not_enough_for_a_multi_token_name(self):
+        self.assertFalse(sec_edgar.entity_name_matches(
+            "FRANKLIN ELECTRIC CO INC", "Franklin Resources"))
+
+    def test_an_empty_expected_name_never_matches(self):
+        self.assertFalse(sec_edgar.entity_name_matches("BERKSHIRE HATHAWAY INC", ""))
+
+
+class CompanySearchTests(unittest.TestCase):
+    def _client_returning(self, body):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        return client, mock.patch.object(
+            sec_edgar.urllib.request, "urlopen",
+            lambda request, timeout=None: contextlib.nullcontext(_FakeResponse(body.encode())))
+
+    def test_a_multi_company_feed_returns_every_candidate(self):
+        client, patched = self._client_returning(MULTI_MATCH_ATOM)
+        with patched:
+            found = client.company_search("T. Rowe Price", form_type="13F-HR")
+        self.assertEqual(found, [("0000080255", "PRICE T ROWE ASSOCIATES INC /MD/"),
+                                 ("0001113169", "T. Rowe Price Group, Inc.")])
+
+    def test_a_single_match_feed_returns_the_company_header(self):
+        # A search that matches exactly one company returns that company's *filing list*
+        # instead of a company list, with the CIK only in the header - a shape that reads as
+        # "no results" if the parser only walks <entry> elements.
+        client, patched = self._client_returning(SINGLE_MATCH_ATOM)
+        with patched:
+            found = client.company_search("Berkshire Hathaway", form_type="13F-HR")
+        self.assertEqual(found, [("0001067983", "BERKSHIRE HATHAWAY INC")])
+
+    def test_an_unparseable_response_degrades_to_no_candidates(self):
+        client, patched = self._client_returning("<html>rate limited</html>")
+        with patched:
+            self.assertEqual(client.company_search("Anything"), [])
+
+
+class SubmissionsCacheTests(unittest.TestCase):
+    def test_one_cik_is_fetched_once_per_process(self):
+        client = SecEdgarClient(user_agent="Test Harness test@example.com", limiter=_NoopLimiter())
+        calls = []
+
+        def fake_urlopen(request, timeout=None):
+            calls.append(request.full_url)
+            return contextlib.nullcontext(_FakeResponse(b'{"name": "BERKSHIRE HATHAWAY INC"}'))
+
+        with mock.patch.object(sec_edgar.urllib.request, "urlopen", fake_urlopen):
+            self.assertEqual(client.entity_name("0001067983"), "BERKSHIRE HATHAWAY INC")
+            client.submissions("1067983")   # same CIK, unpadded
+        self.assertEqual(len(calls), 1)
+
+
 class _FakeResponse:
     def __init__(self, payload):
         self._payload = payload

@@ -56,6 +56,17 @@ class AggregateByCusipTests(unittest.TestCase):
         self.assertEqual(by_cusip["X"], {"a": 100, "b": 200})
         self.assertEqual(by_cusip["Y"], {"a": 50})
 
+    def test_repeated_rows_for_one_manager_and_cusip_are_summed_not_overwritten(self):
+        # One information table routinely splits a single holding across investment-
+        # discretion rows. Keeping only the last row reports a fraction of the position,
+        # which then reads as a quarter-over-quarter cut the manager never made.
+        holdings = [
+            {"manager_id": "a", "cusip": "X", "shares": 600},   # SOLE
+            {"manager_id": "a", "cusip": "X", "shares": 300},   # DEFINED
+            {"manager_id": "a", "cusip": "X", "shares": 100},   # OTHER
+        ]
+        self.assertEqual(aggregate_by_cusip(holdings)["X"], {"a": 1000})
+
 
 class HoldingsChangeTests(unittest.TestCase):
     def test_a_manager_growing_a_position_more_than_five_percent_counts_as_added(self):
