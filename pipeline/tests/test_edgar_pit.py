@@ -321,3 +321,43 @@ class JobArtifactTests(unittest.TestCase):
         self.assertEqual(manifest["companies_failed"], 2)
         self.assertEqual(manifest["companies"][0]["status"], "fetch_failed")
         self.assertIn("TimeoutError", manifest["companies"][0]["reason"])
+
+
+class UnresolvedClassificationTests(unittest.TestCase):
+    """A single bucket of unresolved tickers hides the one that matters.
+
+    Against the first real run: 49 unresolved split into 3 funds (correct -- funds file no
+    operating-company financials), 45 configured tickers absent from published data (a stale
+    universe: acquisitions closed, tickers reassigned), and 1 company being scored live with
+    no CIK behind it. Only the last needs a person.
+    """
+
+    PUBLISHED = [
+        {"ticker": "VOO", "name": "Vanguard S&P 500 ETF", "sector": "ETF", "is_etf": True},
+        {"ticker": "AEP", "name": "American Electric Power Company", "sector": "Utilities",
+         "is_etf": False, "score": 36.2},
+    ]
+
+    def classify(self, unresolved):
+        from build_pit_fundamentals import classify_unresolved
+        return classify_unresolved(unresolved, self.PUBLISHED)
+
+    def test_a_fund_without_a_cik_is_expected_not_a_gap(self):
+        self.assertEqual(self.classify({"VOO": "not in map"})["fund"], ["VOO"])
+
+    def test_a_ticker_absent_from_published_data_is_a_stale_universe_entry(self):
+        buckets = self.classify({"WBA": "not in map"})
+        self.assertEqual(buckets["absent_from_data"], ["WBA"])
+        self.assertEqual(buckets["scored_but_unresolved"], [])
+
+    def test_a_company_scored_live_with_no_cik_is_surfaced_for_review(self):
+        buckets = self.classify({"AEP": "not in map"})
+        self.assertEqual(len(buckets["scored_but_unresolved"]), 1)
+        entry = buckets["scored_but_unresolved"][0]
+        self.assertEqual(entry["ticker"], "AEP")
+        self.assertEqual(entry["published_name"], "American Electric Power Company")
+
+    def test_the_three_cases_are_separated_rather_than_pooled(self):
+        buckets = self.classify({"VOO": "x", "WBA": "x", "AEP": "x"})
+        self.assertEqual([len(buckets[key]) for key in
+                          ("fund", "absent_from_data", "scored_but_unresolved")], [1, 1, 1])

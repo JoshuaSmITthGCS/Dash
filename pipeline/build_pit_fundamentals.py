@@ -87,6 +87,44 @@ def append_rows(path, rows):
     return len(rows)
 
 
+def classify_unresolved(unresolved, published_rows):
+    """Sort unresolvable tickers into the three cases that need different responses.
+
+    A single bucket of 49 failures hides the one that matters. Against the first real run:
+    3 were ETFs, 45 were configured tickers that no longer appear in published data at all,
+    and 1 was a company being scored live with no CIK -- and only that last case is a
+    problem to investigate.
+
+      ``fund``            An ETF or trust. Funds do not file operating-company financials, so
+                          having no CIK here is correct and expected, not a gap.
+      ``absent_from_data`` Configured in the universe but not in the published payload
+                          either. Almost always an acquisition that closed or a ticker that
+                          was reassigned -- the universe file is stale. These are also the
+                          survivorship-bias names: still listed in config, no longer trading.
+      ``scored_but_unresolved`` Being scored and published right now with no CIK behind it.
+                          The only category that needs a person to look.
+    """
+    published = {row.get("ticker"): row for row in published_rows or [] if row.get("ticker")}
+    buckets = {"fund": [], "absent_from_data": [], "scored_but_unresolved": []}
+    for ticker in sorted(unresolved):
+        row = published.get(ticker)
+        if row is None:
+            buckets["absent_from_data"].append(ticker)
+        elif row.get("is_etf") or row.get("sector") == "ETF":
+            buckets["fund"].append(ticker)
+        else:
+            buckets["scored_but_unresolved"].append(
+                {"ticker": ticker, "published_name": row.get("name"),
+                 "sector": row.get("sector"), "score": row.get("score")})
+    return buckets
+
+
+def published_rows():
+    payload = load_json("advisor.json") or {}
+    return [*payload.get("research", []), *payload.get("screen_universe", []),
+            *payload.get("portfolio_coverage", [])]
+
+
 def universe_symbols():
     payload = load_json("advisor_universe.json", from_config=True) or {}
     return tuple(dict.fromkeys((*payload.get("symbols", ()), *payload.get("portfolio_symbols", ()))))
@@ -154,15 +192,26 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
 
     # Written on every run, not just audit-only: the resolution behind a backfill is part of
     # its provenance, and a reader needs it to interpret coverage.
+    unresolved_kinds = classify_unresolved(audit["unresolved_reasons"], published_rows())
     _write_json(ENTITY_AUDIT, {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "mode": "audit_only" if audit_only else "backfill",
         "universe_size": len(symbols),
+        "unresolved_kinds": unresolved_kinds,
         **audit,
     })
+    needs_review = unresolved_kinds["scored_but_unresolved"]
+    if needs_review:
+        LOG.warn(f"{len(needs_review)} ticker(s) are scored and published with no CIK behind "
+                 "them, which is the only unresolved category that needs a person: "
+                 + ", ".join(row["ticker"] for row in needs_review))
+    LOG.info(f"Unresolved breakdown: {len(unresolved_kinds['fund'])} funds (expected), "
+             f"{len(unresolved_kinds['absent_from_data'])} absent from published data "
+             f"(stale universe entries), {len(needs_review)} scored but unresolved")
     if audit_only:
-        print(json.dumps({k: v for k, v in audit.items()
-                          if k not in ("resolved_map", "unresolved_reasons")}, indent=2))
+        print(json.dumps({**{k: v for k, v in audit.items()
+                             if k not in ("resolved_map", "unresolved_reasons")},
+                          "unresolved_kinds": unresolved_kinds}, indent=2))
         return 0
 
     resolved = list(audit["resolved_map"].items())

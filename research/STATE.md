@@ -32,7 +32,7 @@ write through... just make it better"), so Phases 1 and 3 were executed without 
 |---|---|---|
 | 0 | Reverse-engineer the system | **COMPLETE** |
 | 1 | Integrity fixes | **COMPLETE** (1.1, 1.2, 1.3 + two extras) |
-| 2 | Point-in-time data integrity | **2.1 + 2.2 written and tested; 2.4 done. Job awaits a run with network (see below). 2.3/2.5 open** |
+| 2 | Point-in-time data integrity | **2.1 verified against live SEC (861/910, 0 ambiguous); 2.2 written, awaiting a `sample` run; 2.4 done; 2.3/2.5 open** |
 | 3 | Industry conditioning | **COMPLETE** (3.1, 3.2 partial, 3.3 partial) |
 | 4–10 | Research program | **BLOCKED on Phase 2** |
 | 11 | Deliverables | blocked |
@@ -136,6 +136,30 @@ provider destroys the original. companyfacts carries every filing that ever repo
 period, so `edgar_facts.restatements` can report both sides and a later analysis can ask how
 often a decision made on the original would have been made differently on the revision. This
 is the one thing the current data sources can never supply.
+
+**D-2.9 — Entity resolution verified against the live SEC map on 2026-08-09.** 861 of 910
+universe tickers resolve to a CIK (94.6%), **zero ambiguous**, zero CIKs claimed by two
+tickers. The resolver is sound; proceed to fetching. The 49 that do not resolve are not
+resolver failures and are now classified rather than pooled:
+
+| Kind | Count | Meaning |
+|---|---|---|
+| `fund` | 3 | VOO, VGT, PINC. Funds file no operating-company financials; no CIK is correct. |
+| `absent_from_data` | 45 | Configured in `advisor_universe.json` but absent from the published payload too. Acquisitions that closed and tickers reassigned — the universe file is stale. |
+| `scored_but_unresolved` | 1 | AEP, scored live at 36.2 with no CIK behind it. The only case needing a person. |
+
+Two ticker changes are confirmed in the SEC map itself: **BK → BNY** (CIK 1390777) and
+**MMC → MRSH** (CIK 62709). Both companies still file; the universe holds their old symbols.
+
+**PINC is the ticker-reuse defect happening live, not hypothetically.** The universe was
+configured with PINC meaning Premier Inc; PINC now resolves to the PGIM Securitized Income
+ETF, and the pipeline published a score of 41.1 for it. It is flagged `is_etf` so it never
+reached the fundamentals model — the damage is contained — but it is the exact failure mode
+section 10 of the audit described, with a live example.
+
+**Universe hygiene is now a named open item:** 47 of 910 configured tickers never appear in
+published data at all. That is both a wasted-fetch problem and a survivorship signal — those
+names stopped trading and the universe still lists them.
 
 **D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
 EV/EBITDA from these observations is a separate step on purpose: the facts should be written
