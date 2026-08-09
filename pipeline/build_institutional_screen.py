@@ -255,12 +255,14 @@ def resolve_filer_ciks(sec, manager):
          (adviser subsidiaries are filed under names the colloquial one does not prefix -
          "PRICE T ROWE ASSOCIATES" is not reachable from "T. Rowe Price").
 
-    Every candidate must clear two independent checks before its holdings are attributed to
-    this manager: its EDGAR conformed name has to token-match the configured name or one of
-    its aliases, *and* it has to actually file 13F-HRs. That pair is what lets the config keep
-    its rule of never hand-typing a CIK - the identity is asserted by name and confirmed
-    against EDGAR, so a bad match drops out loudly here instead of publishing a different
-    manager's holdings under this one's label.
+    Every candidate has to actually file 13F-HRs, and every *searched* candidate additionally
+    has to token-match the configured name or one of its aliases - re-checked against the
+    submissions payload rather than the search feed's own label, so the name a holding is
+    attributed under is the one EDGAR reports for the CIK being read. Together those are what
+    let the config keep its rule of never hand-typing a CIK: identity is asserted by name and
+    confirmed against EDGAR, so a bad match drops out loudly here instead of publishing a
+    different manager's holdings under this one's label. The ticker's own CIK is exempt from
+    the name check only because it comes from SEC's ticker file, which already established it.
 
     Returns ``(ciks, notes)``; ``notes`` records what was searched and what was rejected, so a
     manager that resolves to nothing says why in the published payload.
