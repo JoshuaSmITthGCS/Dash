@@ -39,7 +39,8 @@ import re
 from datetime import date, datetime, timedelta, timezone
 
 from common import LOG, STORE_DIR, load_json, save_json
-from congress_trades import CongressTradesClient, CongressTradesError, StockWatcherClient
+from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
+                             StockWatcherClient)
 
 CONGRESS_DIR = os.path.join(STORE_DIR, "congress")
 TRADES = "trades.jsonl"
@@ -379,7 +380,8 @@ def build_results(rows, *, as_of=None):
     return classified, history_days
 
 
-def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient):
+def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient,
+            efd_factory=SenateEfdClient):
     """Every disclosure any available source will give up, recording why anything that failed did.
 
     A failed fetch used to be logged and then forgotten, so a run where the provider refused
@@ -427,13 +429,26 @@ def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient)
             counts[name] = len(fetched)
 
     mirror_client = mirror_factory()
-    for name, fetch in (("mirror-senate", mirror_client.senate_latest),
-                        ("mirror-house", mirror_client.house_latest)):
+    sources = [("mirror-senate", mirror_client.senate_latest),
+               ("mirror-house", mirror_client.house_latest)]
+    if efd_factory is not None:
+        # The Senate's own system, added after both community mirrors were withdrawn and
+        # started answering 403 to everything. One chamber only - the House Clerk publishes
+        # its periodic transaction reports as scanned PDFs with no machine-readable
+        # transactions - so this narrows the gap rather than closing it.
+        sources.insert(0, ("senate-efd",
+                           lambda: efd_factory().fetch(since_days=PUBLISH_WINDOW_DAYS)))
+
+    for name, fetch in sources:
         try:
             fetched, seen = fetch()
-        except CongressTradesError as exc:
-            failures.append(f"{name}: {exc}")
-            LOG.warn(f"Congress trades fetch failed ({name}: {exc})")
+        # Broad on purpose: these sources are HTML and third-party JSON, so a shape change
+        # raises whatever the parser raises. One source failing has to cost that source's
+        # coverage and be reported, never take down a run the other sources could publish.
+        except Exception as exc:  # noqa: BLE001
+            reason = exc if isinstance(exc, CongressTradesError) else f"{type(exc).__name__}: {exc}"
+            failures.append(f"{name}: {reason}")
+            LOG.warn(f"Congress trades fetch failed ({name}: {reason})")
             continue
         rows.extend(fetched)
         counts[name] = len(fetched)
@@ -466,7 +481,8 @@ def run():
     # Passed explicitly rather than relying on collect()'s defaults: a default argument is
     # bound at import, so a test (or any caller) swapping the module-level client would be
     # silently ignored and reach the real provider instead.
-    fmp_client, fetched, failures, source_counts = collect(CongressTradesClient, StockWatcherClient)
+    fmp_client, fetched, failures, source_counts = collect(
+        CongressTradesClient, StockWatcherClient, SenateEfdClient)
     stored_before = _read_all()
     if not fetched and not stored_before:
         # Nothing reachable and nothing ever collected is what a local or offline environment

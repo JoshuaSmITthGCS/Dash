@@ -48,6 +48,13 @@ jobs:
               print(f"> {payload['degraded_reason']}\n")
           for error in payload.get("source_errors") or []:
               print(f"- source error: `{error}`")
+          counts = payload.get("source_counts") or {}
+          # Printed per source, not just as a total: "senate-efd read 40, mirrors read 0" is
+          # a partially working screen, and a single total cannot say which half is missing.
+          for source, count in sorted(counts.items()):
+              print(f"- source `{source}`: {count} usable row(s)")
+          if not counts:
+              print("- no source returned any rows")
           print(f"\n- disclosures published: {len(payload.get('results') or [])}")
           print(f"- summary: `{json.dumps(payload.get('summary') or {})}`")
           PY

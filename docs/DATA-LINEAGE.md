@@ -10,7 +10,9 @@
 | FRED | Macro regime (6 series) | `FRED_API_KEY` | Optional |
 | SEC EDGAR | Form 4 insider, theme signals | `SEC_USER_AGENT` | Free, needs fair-access header |
 | Financial Modeling Prep | Congressional STOCK Act disclosures (needs a plan covering the Congressional endpoints; answers HTTP 402 otherwise) | (see `congress_trades.py`) | Weekly |
-| House/Senate stock-watcher datasets | Congressional STOCK Act disclosures, keyless mirror of the same Clerk and eFD filings | (see `congress_trades.py`) | Weekly |
+| Senate eFD | Senate STOCK Act disclosures, keyless, from the Senate's own system | none | Weekly |
+| House/Senate stock-watcher datasets | Congressional STOCK Act disclosures, keyless mirror — withdrawn, answers HTTP 403; overridable via `CONGRESS_HOUSE_DATASET_URL` / `CONGRESS_SENATE_DATASET_URL` | (see `congress_trades.py`) | Weekly |
+| OpenFIGI | CUSIP → ticker for 13F holdings | `OPENFIGI_API_KEY` (optional; without it a request carries 10 CUSIPs instead of 100) | Monthly |
 
 ## Point-in-time stores
 

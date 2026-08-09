@@ -22,7 +22,12 @@ jobs:
     # commit step below is what stays gated on main, so a branch run publishes nothing.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Long enough for a *first* CUSIP mapping pass without a key: OpenFIGI's anonymous tier
+    # takes 10 CUSIPs per request at 25 requests a minute, so several thousand first-seen
+    # CUSIPs is a quarter of an hour of pacing. Later runs read the committed
+    # pipeline/data/institutional_13f/cusip_tickers.json cache and finish in seconds.
+    # Setting the (free) OPENFIGI_API_KEY secret raises the batch to 100 and removes the wait.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -48,7 +53,12 @@ jobs:
           print(f"- managers reviewed: {payload.get('managers_reviewed')} "
                 f"of {payload.get('managers_configured')}")
           print(f"- CUSIPs seen: {payload.get('cusips_seen')}, "
-                f"mapped: {payload.get('cusips_mapped')}")
+                f"mapped: {payload.get('cusips_mapped')}, "
+                f"still pending: {payload.get('cusips_pending')}")
+          print(f"- OpenFIGI tier: `{payload.get('openfigi_tier')}` "
+                "(set the free OPENFIGI_API_KEY secret for 100-CUSIP batches)")
+          for error in payload.get("openfigi_errors") or []:
+              print(f"- OpenFIGI error: `{error}`")
           print(f"- results published: {len(payload.get('results') or [])}\n")
           print("| Manager | Filer CIKs | Periods | Holdings | Notes |")
           print("| --- | --- | --- | --- | --- |")

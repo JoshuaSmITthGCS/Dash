@@ -324,6 +324,42 @@ def _mirror_rejecting_every_fetch():
     return client
 
 
+def _efd_returning(rows, seen=None):
+    client = Mock()
+    client.fetch.return_value = (rows, len(rows) if seen is None else seen)
+    return client
+
+
+@pytest.fixture(autouse=True)
+def _no_live_efd(monkeypatch):
+    """Senate eFD is a live HTTP source; no test may reach it.
+
+    Defaults to "reachable, nothing filed in the window" so every existing assertion about
+    which sources failed keeps meaning what it did. A test that wants eFD rows overrides it.
+    """
+    monkeypatch.setattr(module, "SenateEfdClient", lambda: _efd_returning([]))
+
+
+def test_senate_efd_carries_the_screen_when_both_mirrors_are_withdrawn(monkeypatch):
+    # The production state this source was added for: both stock-watcher buckets answer 403
+    # AccessDenied, and FMP's key is not entitled to the Congressional endpoints. Without a
+    # source that is not somebody else's mirror, the screen publishes nothing at all.
+    saved = {}
+    today = datetime.now(timezone.utc).date().isoformat()
+    with TempStore():
+        monkeypatch.setattr(module, "CongressTradesClient", _fmp_rejecting_every_fetch)
+        monkeypatch.setattr(module, "StockWatcherClient", _mirror_rejecting_every_fetch)
+        monkeypatch.setattr(module, "SenateEfdClient",
+                            lambda: _efd_returning([trade(disclosure_date=today)]))
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    assert payload["results"]
+    assert payload["collection"]["source_counts"]["senate-efd"] == 1
+    assert payload["status"] == "partial"  # the House half really is missing; say so
+
+
 def test_an_unconfigured_fmp_key_no_longer_aborts_the_run(monkeypatch):
     # The keyless mirrors are a complete source on their own, so a missing or unentitled FMP
     # key must cost the price-performance column, not the entire screen.

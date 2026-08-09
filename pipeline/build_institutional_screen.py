@@ -56,6 +56,7 @@ from sec_edgar import SecEdgarClient, entity_name_matches
 INSTITUTIONAL_DIR = os.path.join(STORE_DIR, "institutional_13f")
 POSITIONS = "positions.jsonl"
 REVISIONS = "revisions.jsonl"
+CUSIP_TICKERS = "cusip_tickers.json"
 MANAGERS_CONFIG = load_json("institutional_managers.json", from_config=True) or {}
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 # Fetched per manager rather than the bare 2 needed, so an amendment landing after its
@@ -69,6 +70,15 @@ FILER_SEARCH_LIMIT = 40
 # likely to be an over-broad name match than a real structure, so resolution stops there
 # rather than fanning out into an unbounded number of submissions requests.
 MAX_FILERS_PER_MANAGER = 6
+# A CUSIP OpenFIGI has already answered for does not change its answer, so the mapping is
+# cached across runs and only the CUSIPs never asked about cost requests. That is what makes
+# an unauthenticated run viable at all: the anonymous tier maps 10 CUSIPs per request at 25
+# requests a minute, so a first sight of ~3,500 CUSIPs is a quarter of an hour of pacing,
+# while every later monthly run only asks about the handful the managers newly bought.
+UNMAPPED_RETRY_DAYS = 180
+# Bounded so a first run finishes inside the job timeout with a usable, published prefix
+# rather than being killed with nothing. Keyed runs map 100 per request and need no ceiling.
+ANONYMOUS_REQUEST_BUDGET = 400
 
 
 def active_managers(config=None):
@@ -119,6 +129,84 @@ def _append_jsonl(path, rows):
 
 def _read_all():
     return _read_jsonl(_positions_path())
+
+
+def _ticker_cache_path():
+    os.makedirs(INSTITUTIONAL_DIR, exist_ok=True)
+    return os.path.join(INSTITUTIONAL_DIR, CUSIP_TICKERS)
+
+
+def read_ticker_cache(path=None):
+    """Everything OpenFIGI has already answered, as ``{"tickers": {...}, "unmapped": {...}}``.
+
+    Both halves matter. ``tickers`` spares the next run from re-asking a question with a
+    stable answer; ``unmapped`` remembers the CUSIPs OpenFIGI had no ticker for, so a
+    delisted or non-equity holding does not consume the request budget every single month
+    ahead of the CUSIPs that could still resolve. Unmapped entries carry the date they were
+    asked and are re-asked after ``UNMAPPED_RETRY_DAYS``, since "no ticker" can become one.
+    """
+    path = path or _ticker_cache_path()
+    if not os.path.exists(path):
+        return {"tickers": {}, "unmapped": {}}
+    try:
+        with open(path) as handle:
+            payload = json.load(handle)
+    except (OSError, ValueError):
+        return {"tickers": {}, "unmapped": {}}
+    tickers = payload.get("tickers")
+    unmapped = payload.get("unmapped")
+    return {"tickers": tickers if isinstance(tickers, dict) else {},
+            "unmapped": unmapped if isinstance(unmapped, dict) else {}}
+
+
+def write_ticker_cache(cache, *, path=None, updated_at=None):
+    path = path or _ticker_cache_path()
+    payload = {
+        "schema_version": "1.0.0",
+        "updated_at": updated_at or datetime.now(timezone.utc).isoformat(),
+        "_comment": "CUSIP->ticker answers from OpenFIGI, cached because they do not change "
+                    "and the anonymous rate limit makes re-asking expensive. 'unmapped' "
+                    f"entries are re-asked after {UNMAPPED_RETRY_DAYS} days.",
+        "tickers": dict(sorted(cache.get("tickers", {}).items())),
+        "unmapped": dict(sorted(cache.get("unmapped", {}).items())),
+    }
+    with open(path, "w") as handle:
+        json.dump(payload, handle, indent=2, sort_keys=False)
+        handle.write("\n")
+    return payload
+
+
+def cusips_to_map(current_by_cusip, prior_by_cusip, cache, *, today=None):
+    """Which CUSIPs still need an OpenFIGI answer, most worth asking about first.
+
+    Ordering is the whole point: with a request ceiling, whatever is asked first is what
+    gets published. A CUSIP some curated manager actually opened or exited this quarter is
+    the only kind that can produce a flag, so those lead; within each group, the ones held
+    by more managers lead, since breadth is what the screen scores on and a widely held
+    name is likelier to be in the covered universe at all.
+    """
+    today = today or datetime.now(timezone.utc).date()
+    tickers, unmapped = cache.get("tickers", {}), cache.get("unmapped", {})
+    ranked = []
+    for cusip in set(current_by_cusip) | set(prior_by_cusip):
+        if cusip in tickers:
+            continue
+        asked = unmapped.get(cusip)
+        if asked and _days_since(asked, today) < UNMAPPED_RETRY_DAYS:
+            continue
+        current = current_by_cusip.get(cusip, {})
+        prior = prior_by_cusip.get(cusip, {})
+        moved = set(current) != set(prior)
+        ranked.append((0 if moved else 1, -len(set(current) | set(prior)), cusip))
+    return [cusip for _, _, cusip in sorted(ranked)]
+
+
+def _days_since(iso_date, today):
+    try:
+        asked = datetime.strptime(str(iso_date)[:10], "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return UNMAPPED_RETRY_DAYS  # unparseable - treat as due for another ask
+    return (today - asked).days
 
 
 def _position_key(row):
@@ -276,7 +364,7 @@ def resolve_filer_ciks(sec, manager):
     # differently from the config's.
     ticker_cik = sec.ticker_map().get(manager["ticker"].upper())
     if ticker_cik:
-        candidates.append((ticker_cik, False))
+        candidates.append((ticker_cik, False, None))
         seen.add(ticker_cik)
     else:
         notes.append(f"ticker {manager['ticker']} did not resolve to a CIK")
@@ -294,12 +382,16 @@ def resolve_filer_ciks(sec, manager):
             if not any(entity_name_matches(conformed, candidate) for candidate in names):
                 notes.append(f"rejected CIK {cik} ({conformed!r}): name does not match")
                 continue
-            candidates.append((cik, True))
+            candidates.append((cik, True, conformed))
 
     resolved = []
-    for cik, from_search in candidates:
+    for cik, from_search, searched_name in candidates:
         try:
-            conformed = sec.entity_name(cik)
+            # Falls back to the name the search feed reported. A submissions payload without
+            # a "name" is rare but real, and treating that absence as a failed name check
+            # rejected filers EDGAR had already matched by name - a silent coverage loss
+            # that read, in the published notes, exactly like a wrong-manager rejection.
+            conformed = sec.entity_name(cik) or searched_name
             filings = sec.filings_for_cik(cik, FILER_FORMS, limit=1)
         except Exception as exc:  # noqa: BLE001
             notes.append(f"CIK {cik} unreadable ({type(exc).__name__})")
@@ -478,8 +570,31 @@ def run():
     LOG.info(f"Institutional 13F positions: +{added} new point-in-time record(s)")
 
     all_cusips = set(current_by_cusip) | set(prior_by_cusip)
-    openfigi = OpenFigiClient()
-    ticker_by_cusip = openfigi.map_cusips(all_cusips) if all_cusips else {}
+    cache = read_ticker_cache()
+    wanted = cusips_to_map(current_by_cusip, prior_by_cusip, cache,
+                           today=generated_at.date())
+    openfigi = OpenFigiClient(max_requests=(None if os.getenv("OPENFIGI_API_KEY", "").strip()
+                                            else ANONYMOUS_REQUEST_BUDGET))
+    newly_mapped = openfigi.map_cusips(wanted) if wanted else {}
+    if wanted:
+        # Recorded whether or not anything resolved: an unresolved CUSIP that was actually
+        # asked about must not be asked again next month, and one that was never reached
+        # (refused batch, or the request ceiling) must be.
+        unattempted = set(openfigi.pending)
+        attempted = [cusip for cusip in wanted if cusip not in unattempted]
+        cache["tickers"].update(newly_mapped)
+        for cusip in attempted:
+            if cusip in newly_mapped:
+                cache["unmapped"].pop(cusip, None)
+            else:
+                cache["unmapped"][cusip] = generated_at.date().isoformat()
+        write_ticker_cache(cache, updated_at=generated_at.isoformat())
+    for error in openfigi.errors:
+        LOG.warn(f"Institutional 13F: OpenFIGI ({openfigi.tier}) {error}")
+    ticker_by_cusip = {cusip: ticker for cusip, ticker in cache["tickers"].items()
+                       if cusip in all_cusips}
+    cusips_pending = len([cusip for cusip in all_cusips
+                          if cusip not in ticker_by_cusip and cusip not in cache["unmapped"]])
 
     results = build_results(current_by_cusip, prior_by_cusip, ticker_by_cusip,
                             UNIVERSE.get("symbols", ()), as_of_by_cusip=as_of_by_cusip)
@@ -499,14 +614,19 @@ def run():
                            "information table could be parsed from them.")
     elif not ticker_by_cusip:
         status = "degraded"
+        # Says what OpenFIGI actually refused rather than "check the mapping step". The
+        # anonymous tier's job cap is a tenth of the keyed one, so a keyed-size batch sent
+        # without a key is rejected on every request - a failure that used to be swallowed
+        # whole and published as a confident, empty screen.
+        refusal = f" OpenFIGI ({openfigi.tier}): {openfigi.errors[0]}." if openfigi.errors else ""
         degraded_reason = (f"{len(all_cusips)} CUSIP(s) were collected but none mapped to a "
-                           "ticker - check the OpenFIGI mapping step.")
+                           f"ticker.{refusal}")
     if degraded_reason:
         LOG.warn(f"Institutional 13F screen degraded: {degraded_reason}")
 
     payload = {
-        "schema_version": "1.2.0",
-        "model_version": "institutional-13f-v1.2.0",
+        "schema_version": "1.3.0",
+        "model_version": "institutional-13f-v1.3.0",
         "generated_at": generated_at.isoformat(),
         "status": status,
         "degraded_reason": degraded_reason,
@@ -519,6 +639,11 @@ def run():
         "amendments_seen": amendments_seen,
         "cusips_seen": len(all_cusips),
         "cusips_mapped": len(ticker_by_cusip),
+        # Not yet asked about, or asked and refused - the honest denominator for how
+        # complete this run's coverage is, and what the next run picks up first.
+        "cusips_pending": cusips_pending,
+        "openfigi_tier": openfigi.tier,
+        "openfigi_errors": openfigi.errors,
         "disclaimer": "Which curated, publicly traded active managers added or cut a "
                       "position between their two most recent distinct 13F reporting "
                       "periods. Not a claim about why, and coverage is necessarily "
@@ -533,7 +658,8 @@ def run():
     save_json("screens/institutional-13f.json", payload)
     LOG.info(f"Institutional 13F screen: {len(results)} ticker(s) with a flagged "
              f"manager-breadth change, {managers_reviewed}/{len(managers)} managers reviewed, "
-             f"{amendments_seen} amendment(s) seen")
+             f"{amendments_seen} amendment(s) seen, {len(ticker_by_cusip)}/{len(all_cusips)} "
+             f"CUSIP(s) mapped ({cusips_pending} still pending)")
     return payload
 
 
