@@ -1542,9 +1542,41 @@ def run():
             },
             "analyst_revision_trends": {"status": "provider_required", "note": "Point-in-time estimate history is not supplied by current providers."},
             "guidance_beat_miss_history": {"status": "provider_required", "note": "Needs normalized company guidance and contemporaneous consensus snapshots."},
-            "backlog_growth": {"status": "filing_parser_required", "note": "Backlog is non-GAAP and must be extracted company-by-company from filings."},
-            "institutional_13f_changes": {"status": "mapping_required", "source": "SEC EDGAR", "note": "Filings are free; reliable CUSIP-to-ticker mapping is not."},
-            "fx_exposure": {"status": "filing_parser_required", "source": "SEC 10-K/10-Q", "note": "Needs filing-text extraction and issuer-specific normalization."},
+            "backlog_growth": {
+                "status": "available",
+                "source": "SEC EDGAR XBRL (dimensional contexts read from the raw filing)",
+                "note": "RevenueRemainingPerformanceObligation is XBRL-tagged, not free text - the "
+                        "prior 'filing_parser_required' status was wrong. The blocker was that "
+                        "company_concept/companyfacts return default (non-dimensional) facts only, "
+                        "and filers routinely tag this concept solely in SatisfactionPeriodAxis "
+                        "bands with no undimensioned total for those APIs to see. "
+                        "pipeline.xbrl_dimensions reads contexts out of the filing document "
+                        "directly instead, and EdgarThemeSignals.backlog_values sums the bands "
+                        "when no total exists. Wired into ai_infrastructure.yaml. Per-symbol "
+                        "coverage has not yet been measured on a live production run.",
+            },
+            "institutional_13f_changes": {
+                "status": "mapping_required",
+                "source": "SEC EDGAR",
+                "note": "Filings are free; reliable CUSIP-to-ticker mapping is still the blocker. "
+                        "OpenFIGI's mapping API accepts CUSIP as input (just not as output, "
+                        "per its redistribution terms) with no documented rate ceiling, which "
+                        "covers this direction; SEC's own fails-to-deliver files pair CUSIP "
+                        "with ticker as a free cross-check. Not yet implemented - this needs a "
+                        "13F info-table parser and quarter-over-quarter holdings diff on top of "
+                        "the mapping, which is a larger lift than the mapping alone.",
+            },
+            "fx_exposure": {
+                "status": "filing_parser_required",
+                "source": "SEC 10-K/10-Q",
+                "note": "Geographic revenue (us-gaap:Revenues dimensioned on "
+                        "StatementGeographicalAxis) is XBRL-tagged, not free text, and is "
+                        "extractable today via pipeline.xbrl_dimensions the same way "
+                        "backlog_growth is - see that capability's note. No signal function "
+                        "consumes it yet: normalizing per-issuer geographic segments into one "
+                        "exposure number still needs doing, and no shipped theme declares "
+                        "fx_exposure. Tracked in TODO.md.",
+            },
         },
         "source_status": {
             "alpha_vantage": {"status": "disabled_for_intraday_refresh" if not client else

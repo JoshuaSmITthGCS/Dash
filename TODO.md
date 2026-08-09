@@ -1,6 +1,6 @@
 # TODO
 
-_Last updated: 2026-08-02 (revised after the first production run and the universe expansion)_
+_Last updated: 2026-08-09 (backlog_growth wired via dimensional XBRL; see §2)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
@@ -68,9 +68,10 @@ is otherwise finished, and each reports itself unavailable rather than failing l
 
 ## 2. Theme layer — declared signals that never answer
 
-The screen technically runs, but only **2 of its 5 declared signals actually compute**
-(`filing_keyword_density_trend` and `hyperscaler_capex_growth`). Since
-`min_signals_required` is 2, every theme score currently rests on the bare minimum. That
+The screen technically runs, and now **3 of its 6 declared signals actually compute**
+(`filing_keyword_density_trend`, `hyperscaler_capex_growth`, and — as of this update —
+`backlog_growth`, once it has actually run in production; see below). Since
+`min_signals_required` is 2, every theme score still rests close to the bare minimum. That
 is a thin basis for a screen whose whole purpose is corroboration.
 
 - [ ] **`segment_revenue_share`** — `EdgarThemeSignals` accepts a `segment_map` but
@@ -82,15 +83,33 @@ is a thin basis for a screen whose whole purpose is corroboration.
 
 - [ ] **`customer_concentration_to_spenders`** — same problem, `customer_map` is never
       populated. Needs a 10-K Item 1 major-customer extractor (ASC 280 requires naming
-      customers above 10% of revenue) or a curated map.
+      customers above 10% of revenue) or a curated map. Note this stays a name-matching
+      problem even after `xbrl_dimensions.dimensional_facts` — `us-gaap:
+      ConcentrationRiskPercentage1` dimensioned by `ConcentrationRiskByTypeAxis =
+      CustomerConcentrationRiskMember` gives the *magnitude* of concentration, not the
+      customer's identity, so it can sharpen a curated match's confidence but cannot
+      replace the name lookup. **Before wiring the percentage in as anything more than a
+      confidence input**, measure tagging coverage across the scored universe — plenty of
+      filers disclose the customer in Item 1 prose and never tag the percentage at all. If
+      coverage comes in under roughly 60%, treat it as a confidence input, not a gate, and
+      lean on full-text search over the risk-factor language as the fallback.
 
 - [ ] **`transcript_theme_salience`** — normalized in `themes.py` but no provider computes
       it. Needs an earnings-call transcript source. Many filers attach transcripts as 8-K
       exhibits, which is free on EDGAR; the paid APIs (API Ninjas, FMP) are the alternative.
 
-- [ ] **`backlog_growth`** — listed in `LEADING_SIGNALS` and normalized, but nothing
-      computes it and no shipped theme declares it. Either build the MD&A extractor or drop
-      it from the constant so the list stops implying a capability that does not exist.
+- [x] ~~**`backlog_growth`**~~ Root cause wasn't a missing MD&A extractor: 
+      `RevenueRemainingPerformanceObligation` is XBRL-tagged, but `company_concept` and
+      `companyfacts` return default (non-dimensional) facts only, and filers routinely tag
+      this concept solely in `SatisfactionPeriodAxis` bands ("within 12 months" / "beyond
+      12 months") with no undimensioned total for those APIs to return — so the concept
+      looked untagged when it was really just dimensioned. `pipeline/xbrl_dimensions.py`
+      reads `<context>` segments straight out of the filing document (the same raw text
+      `filing_keyword_signals` already fetches), and
+      `EdgarThemeSignals.backlog_values`/`backlog_total` sum the bands when no total
+      exists. `ai_infrastructure.yaml` now declares it at weight 0.10. **Not yet done:**
+      run it in production and check resolution rate across the scored universe — nothing
+      here has executed against a live filing.
 
 - [ ] **`expand_via_tnic: true`** is declared in `ai_infrastructure.yaml` and read by
       nothing. Either wire up the Hoberg-Phillips TNIC peer data (free download) to expand a
@@ -98,6 +117,36 @@ is a thin basis for a screen whose whole purpose is corroboration.
 
 - [ ] **Add a second theme.** One theme does not exercise the "drop in a YAML file, no code
       change" claim. A second, structurally different one would prove it.
+
+---
+
+## 2a. `capability_status.fx_exposure` and `.institutional_13f_changes` — still blocked,
+     but for a different reason than the status notes used to say
+
+Both entries said "filing_parser_required" and "mapping_required" respectively. Neither
+description was quite right, and fixing `backlog_growth` above (§2) surfaces why: it's
+worth reading that entry's root cause first, since both of these are the same root cause
+in a different capability.
+
+- [ ] **`fx_exposure`** — geographic revenue (`us-gaap:Revenues` dimensioned on
+      `StatementGeographicalAxis`) is XBRL-tagged, not prose, so this was never really a
+      filing-text-extraction problem. `pipeline/xbrl_dimensions.dimensional_facts` can
+      already pull it out of a filing (see `test_geographic_revenue_is_recovered_from_an_
+      inline_document` in `tests/test_xbrl_dimensions.py`) the same way it does for
+      backlog. What's still missing: a signal function that turns per-issuer geographic
+      segments into one normalized exposure number — segment naming is as
+      management-defined and inconsistent here as it is for `segment_revenue_share` — and
+      a theme that declares it. Nobody should mark this `available` before that function
+      exists and has run against real filings.
+
+- [ ] **`institutional_13f_changes`** — CUSIP-to-ticker mapping is the blocker, and
+      OpenFIGI's mapping API is free with no documented daily/weekly/monthly cap for the
+      CUSIP-in direction (it just won't return CUSIP in the output, per its
+      redistribution terms — irrelevant here since ticker is the output we want). SEC's
+      own fails-to-deliver files pair CUSIP with ticker/symbol as a free official
+      cross-check. Neither the mapping client nor the 13F info-table parser nor the
+      quarter-over-quarter holdings diff exists yet — this is a larger, separate piece of
+      work than the dimensional-facts fix above, not a quick follow-on.
 
 ---
 
