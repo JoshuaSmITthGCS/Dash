@@ -70,7 +70,9 @@ and the root files as archaeology.
 | **FRED** | Six macro series → a sector-sensitive regime modifier | Raw observations never published or cached |
 | **SEC EDGAR** | Form 4 insider transactions, theme signals from filings | Requires `SEC_USER_AGENT`; **currently unset, so this layer is dark** |
 | **Financial Modeling Prep** | Congressional disclosures (optional: needs a plan covering the Congressional endpoints, and adds the price-performance column) | Weekly, separate workflow |
-| **House/Senate stock-watcher datasets** | Congressional disclosures, keyless | Weekly, same workflow |
+| **Senate eFD** | Senate STOCK Act disclosures, keyless and authoritative; electronically filed periodic transaction reports only (paper filings are scanned PDFs with no machine-readable trades) | Weekly, same workflow |
+| **House/Senate stock-watcher datasets** | Congressional disclosures, keyless — **withdrawn: both buckets now answer HTTP 403 AccessDenied.** Point `CONGRESS_HOUSE_DATASET_URL` / `CONGRESS_SENATE_DATASET_URL` at a live mirror to restore House coverage | Weekly, same workflow |
+| **OpenFIGI** | CUSIP → ticker for 13F holdings. Keyless works but caps a request at **10** CUSIPs (a key raises it to 100); answers are cached in `pipeline/data/institutional_13f/cusip_tickers.json` | Monthly, 13F workflow |
 | **Marketstack** | Pre-market screens | Separate workflow |
 
 The client enforces 1.1s between uncached Alpha Vantage requests. Raw provider responses are cached

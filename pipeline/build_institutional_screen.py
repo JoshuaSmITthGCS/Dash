@@ -580,7 +580,8 @@ def run():
         # Recorded whether or not anything resolved: an unresolved CUSIP that was actually
         # asked about must not be asked again next month, and one that was never reached
         # (refused batch, or the request ceiling) must be.
-        attempted = [cusip for cusip in wanted if cusip not in set(openfigi.pending)]
+        unattempted = set(openfigi.pending)
+        attempted = [cusip for cusip in wanted if cusip not in unattempted]
         cache["tickers"].update(newly_mapped)
         for cusip in attempted:
             if cusip in newly_mapped:

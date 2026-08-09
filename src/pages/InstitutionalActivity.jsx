@@ -104,7 +104,13 @@ export default function InstitutionalActivity() {
           <div className="card kpi">
             <div className="kpi-label">CUSIPs mapped</div>
             <div className="kpi-value">{data.cusips_mapped ?? '–'}</div>
-            <div className="kpi-note">of {data.cusips_seen ?? '–'} seen</div>
+            {/* Mapping a CUSIP to a ticker is rate-limited, so a run can legitimately finish
+                with some still unresolved. Saying so keeps a partial map from reading as a
+                complete one - the unmapped holdings are absent from the table below. */}
+            <div className="kpi-note">
+              of {data.cusips_seen ?? '–'} seen
+              {data.cusips_pending ? `, ${data.cusips_pending} awaiting lookup` : ''}
+            </div>
           </div>
           <div className="card kpi">
             <div className="kpi-label">Amendments seen</div>
