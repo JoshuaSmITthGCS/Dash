@@ -10,6 +10,7 @@ import os
 import re
 import time
 import urllib.parse
+import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
@@ -175,21 +176,63 @@ class SecEdgarClient:
             self._limiter = limiter_for("sec_edgar")
         return self._limiter
 
-    def _get(self, url, as_json=False):
+    # SEC answers a rate-limit breach with 403 or 429 rather than a queue, and a client that
+    # retries immediately earns a longer block. Back off exponentially and give up rather
+    # than hammer: a partial backfill is recoverable, a blocked User-Agent is not.
+    RETRY_STATUSES = (403, 429, 500, 502, 503, 504)
+    MAX_ATTEMPTS = 5
+
+    def _get(self, url, as_json=False, *, raw=False):
         if not self.available:
             raise RuntimeError("SEC_USER_AGENT is required by SEC fair-access policy")
-        # Blocks until this caller owns the next slot, across every thread in the process.
-        self.limiter().acquire()
-        request = urllib.request.Request(url, headers={
-            "User-Agent": self.user_agent,
-            "Accept-Encoding": "identity",
-            "Host": urllib.parse.urlparse(url).netloc,
-        })
-        with urllib.request.urlopen(request, timeout=20) as response:
-            payload = response.read()
+        last_error = None
+        for attempt in range(self.MAX_ATTEMPTS):
+            # Blocks until this caller owns the next slot, across every thread in the process.
+            self.limiter().acquire()
+            request = urllib.request.Request(url, headers={
+                "User-Agent": self.user_agent,
+                "Accept-Encoding": "identity",
+                "Host": urllib.parse.urlparse(url).netloc,
+            })
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    payload = response.read()
+                break
+            except urllib.error.HTTPError as error:
+                last_error = error
+                if error.code not in self.RETRY_STATUSES or attempt + 1 == self.MAX_ATTEMPTS:
+                    raise
+                delay = 2 ** attempt
+                LOG.warn(f"SEC {error.code} on {url}; backing off {delay}s "
+                         f"(attempt {attempt + 1}/{self.MAX_ATTEMPTS})")
+                time.sleep(delay)
+            except urllib.error.URLError as error:
+                last_error = error
+                if attempt + 1 == self.MAX_ATTEMPTS:
+                    raise
+                time.sleep(2 ** attempt)
+        else:  # pragma: no cover - the loop always breaks or raises
+            raise last_error
         if self.request_delay:
             time.sleep(self.request_delay)
+        if raw:
+            return payload
         return json.loads(payload) if as_json else payload.decode("utf-8", errors="replace")
+
+    def company_facts(self, cik):
+        """Every XBRL fact this filer has ever reported, with per-fact filing dates."""
+        cik = str(cik).zfill(10)
+        return self._get(f"{SEC_DATA}/api/xbrl/companyfacts/CIK{cik}.json", as_json=True)
+
+    def ticker_map_rows(self):
+        """The raw company_tickers.json rows, for edgar_entities.EntityResolver."""
+        payload = self._get(f"{SEC_ROOT}/files/company_tickers.json", as_json=True)
+        return list(payload.values())
+
+    def bulk_company_facts(self):
+        """The whole-universe companyfacts archive: one download instead of ~900 requests."""
+        return self._get(f"{SEC_ROOT}/Archives/edgar/daily-index/xbrl/companyfacts.zip",
+                         raw=True)
 
     def ticker_map(self):
         if self._tickers is None:

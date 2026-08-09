@@ -32,7 +32,7 @@ write through... just make it better"), so Phases 1 and 3 were executed without 
 |---|---|---|
 | 0 | Reverse-engineer the system | **COMPLETE** |
 | 1 | Integrity fixes | **COMPLETE** (1.1, 1.2, 1.3 + two extras) |
-| 2 | Point-in-time data integrity | **2.4 done; 2.1/2.2/2.3/2.5 blocked on network** |
+| 2 | Point-in-time data integrity | **2.1 + 2.2 written and tested; 2.4 done. Job awaits a run with network (see below). 2.3/2.5 open** |
 | 3 | Industry conditioning | **COMPLETE** (3.1, 3.2 partial, 3.3 partial) |
 | 4–10 | Research program | **BLOCKED on Phase 2** |
 | 11 | Deliverables | blocked |
@@ -63,7 +63,8 @@ cd581b5  refactor(contract): rename the completeness scalar from confidence to d
 | Enrichment feedback loop | **fixed** | `enrichment_rotation` admits 15 statement-starved names per refresh |
 | 17% coverage cliff on two categories | **open** | needs `FULL_UNIVERSE_RESEARCH=1` run |
 | Implausible provider values accepted unscreened | **fixed** | `plausibility.py` + `derive_margins` source guard |
-| No point-in-time history | **open, critical** | Phase 2.2 — blocked, see B-2 |
+| No point-in-time history | **job written, not yet run** | `build_pit_fundamentals.py` + `.github/workflows/backfill-pit-fundamentals.yml` |
+| Entity keying by ticker, not CIK | **fixed in the new store** | `edgar_entities.EntityResolver`, fails loudly on ambiguity |
 
 ## Decisions made, with justification
 
@@ -123,6 +124,24 @@ at the source where the source holds the inputs (`derive_margins` owns both reve
 so it owns the incremental-margin denominator test) and downstream as a backstop over
 whatever the row carries.
 
+**D-2.6 — Point-in-time observations are stamped with `filed`, never with the period end.**
+A 10-Q for the quarter ending June 30 is typically accepted in early August, and the gap
+varies by weeks between filers. `backtest_historical.quarter_known_dates` approximates this
+with a fixed `report_lag_days`; `edgar_facts.as_of` uses the real date, so a quarter is
+invisible between its period end and its filing. That single property is what the whole
+research program rests on.
+
+**D-2.7 — Amendments are additional observations, never overwrites.** A restated-fundamentals
+provider destroys the original. companyfacts carries every filing that ever reported a
+period, so `edgar_facts.restatements` can report both sides and a later analysis can ask how
+often a decision made on the original would have been made differently on the revision. This
+is the one thing the current data sources can never supply.
+
+**D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
+EV/EBITDA from these observations is a separate step on purpose: the facts should be written
+once and re-derived from as often as the derivation changes. Baking a derivation into the
+store would mean re-fetching SEC every time the formula moves.
+
 **D-2.5 — The plausibility screen is deliberately narrow.** Rules encode arithmetic and
 accounting impossibilities, not opinions about companies. A margin above 100% is impossible;
 a P/E of 3 is merely unusual and the module does not touch it. Measured rejection rate on the
@@ -160,9 +179,13 @@ pipeline does not ingest. Not faked. See "Next" below.
 
 ## Next, in order
 
-1. **Phase 2.2 — EDGAR XBRL backfill.** The critical path, and **blocked by B-2**. Key by CIK
-   (Phase 2.1) before anything else downstream. Nothing in Phases 4–10 can start until this
-   lands; do not be tempted to start them on `pipeline/data/backtest_cache/`, which is
+1. **Run the backfill.** `.github/workflows/backfill-pit-fundamentals.yml`, in this order:
+   `audit-only` (no fetching — reports how many of the ~910 tickers resolve to a CIK and
+   which are ambiguous), then `sample` (25 companies), then `full`. Append-only and
+   resumable. The code is written and unit-tested against fixtures; it has never touched the
+   live SEC endpoint, so **the first `audit-only` run is the real test** and its resolution
+   rate is the number to check before trusting anything downstream.
+   Do not start Phases 4–10 on `pipeline/data/backtest_cache/` in the meantime — that is
    restated Yahoo statements over today's survivors.
 2. **Commodity mid-cycle valuation.** Candidate source: FRED PPI series (e.g. `PCU2122`,
    `WPU10`) plus LBMA/COMEX settle prices. Completes Phase 3.3 and makes D-3.4 resolvable.
