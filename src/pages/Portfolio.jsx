@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useAuth } from '../lib/FirebaseAuthContext'
-import { Loading, RefreshProgress } from '../components/Bits'
+import { Loading, RefreshProgress, RatingBadge } from '../components/Bits'
 import { ActionPill } from '../components/ActionGuidance'
 import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
@@ -26,6 +26,7 @@ import {
   sortPortfolioPositions,
 } from '../lib/portfolioSort'
 import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
+import { buildRatingContext, researchRating } from '../lib/researchRating.js'
 import { explainPortfolioMove } from '../lib/portfolioAttribution.js'
 import PortfolioMoveExplanation from '../components/PortfolioMoveExplanation.jsx'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
@@ -271,7 +272,14 @@ export default function Portfolio() {
     ? ((portfolioStats.totalValue - portfolioStats.totalCost) / portfolioStats.totalCost) * 100
     : 0
 
-  const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
+  // Same percentile-based -5..+5 read used on the Research page (src/lib/researchRating.js),
+  // built from the published research pool so a holding rates against the same peers there.
+  const ratingContext = buildRatingContext(research)
+  const portfolioPositions = portfolioStats.positions.map((position) => ({
+    ...position,
+    allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null,
+    rating: researchRating(position.priceInfo, ratingContext),
+  }))
   // Tagged the same way mergePortfolioQuotes tags a holding's live quote, since this is the
   // raw Netlify-function payload rather than something already run through that merge.
   const benchmarkQuote = quoteRefreshIsNewest && portfolioQuotes.quotes?.SPY
@@ -781,7 +789,10 @@ export default function Portfolio() {
             <article className="holding-card" key={pos.id || pos.ticker}>
               <div className="holding-card-head">
                 <CompanyLogo company={pos.priceInfo || pos} size={40} /><div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span><small>{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</small></div>
-                <ActionPill recommendation={pos.recommendation} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" />
+                  <ActionPill recommendation={pos.recommendation} />
+                </div>
               </div>
               <div className="holding-value">
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
@@ -861,6 +872,13 @@ export default function Portfolio() {
                 <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>
                 <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
                 <SortableHeader numeric sortKey="score" sort={portfolioSort} onSort={setSortKey}>Score</SortableHeader>
+                <SortableHeader numeric sortKey="rating" sort={portfolioSort} onSort={setSortKey}
+                  info={<InfoTag label="Rating" align="right">
+                    <strong>Rating</strong>
+                    <p>-5 (worst) to +5 (best), a percentile read of the research score against the
+                      pool of stocks or ETFs it competes in - see src/lib/researchRating.js.</p>
+                  </InfoTag>}
+                >Rating</SortableHeader>
                 <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}
                   info={<InfoTag label="1M trend" align="right">
                     <strong>1-month trend</strong>
@@ -907,6 +925,7 @@ export default function Portfolio() {
                   </td>
                   <td className="num"><Move value={pos.gainPct} /></td>
                   <td className="mono num score-cell">{pos.priceInfo?.score ?? '–'}</td>
+                  <td className="num"><RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" /></td>
                   <td className="num portfolio-trend-cell">
                     {pos.trendValues.length > 1 ? (
                       <>
@@ -940,7 +959,7 @@ export default function Portfolio() {
               ))}
               {portfolioStats.positions.length === 0 && (
                 <tr>
-                  <td colSpan="13" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
+                  <td colSpan="14" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
                     No positions yet. Click "+ Add Position" to start tracking.
                   </td>
                 </tr>
