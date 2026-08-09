@@ -379,42 +379,77 @@ def build_results(rows, *, as_of=None):
     return classified, history_days
 
 
-def run():
+def collect(client_factory=CongressTradesClient):
+    """Fetch both chambers, recording why anything that failed did.
+
+    A failed fetch used to be logged and then forgotten, so a run where the provider refused
+    every request published exactly what a genuinely quiet week publishes: zero disclosures
+    under a "success" status, which the page reads out as "no disclosures collected yet". The
+    two are not the same thing and the difference is the whole story, so the failures come back
+    with the rows and end up in the published payload.
+    """
+    fetched, failures = [], []
     try:
-        client = CongressTradesClient()
+        client = client_factory()
     except CongressTradesError as exc:
         LOG.warn(f"Congress trades collection skipped: {exc}")
-        return None
-
-    fetched = []
-    for fetch in (client.senate_latest, client.house_latest):
+        return None, [], [f"client: {exc}"]
+    for name, fetch in (("senate-latest", client.senate_latest), ("house-latest", client.house_latest)):
         try:
             fetched.extend(fetch())
         except CongressTradesError as exc:
-            LOG.warn(f"Congress trades fetch failed ({type(exc).__name__}: {exc})")
+            failures.append(f"{name}: {exc}")
+            LOG.warn(f"Congress trades fetch failed ({name}: {exc})")
+    return client, fetched, failures
 
-    added = append_new_trades(fetched)
+
+def publication_status(results, stored, failures):
+    """Say which of the three "no rows" situations this is, or that there are rows."""
+    if results:
+        return "success", None
+    if failures:
+        return "unavailable", "CONGRESS_DISCLOSURE_FEED_UNAVAILABLE"
+    if not stored:
+        return "unavailable", "NO_DISCLOSURES_COLLECTED_YET"
+    return "unavailable", "NO_DISCLOSURES_IN_PUBLISH_WINDOW"
+
+
+def run():
+    client, fetched, failures = collect()
+    if client is None:
+        # No key configured is not a finding about Congress. A local or unconfigured run must
+        # leave the published screen exactly as the last configured run left it.
+        return None
+    added = append_new_trades(fetched) if fetched else 0
     LOG.info(f"Congress trades: +{added} new disclosure(s) recorded")
 
     generated_at = datetime.now(timezone.utc)
-    results, history_days = build_results(_read_all(), as_of=generated_at)
+    stored = _read_all()
+    results, history_days = build_results(stored, as_of=generated_at)
 
-    performance = compute_price_performance(results, client)
+    # Price history costs one request per symbol, so it is only worth asking for when the
+    # client is alive and there is something to measure.
+    performance = compute_price_performance(results, client) if client and results else {}
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
+    status, reason_code = publication_status(results, stored, failures)
     payload = {
         "schema_version": "1.0.0", "model_version": "congress-trades-v1.1.0",
-        "generated_at": generated_at.isoformat(), "status": "success",
+        "generated_at": generated_at.isoformat(), "status": status,
+        **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
         "late_filing_threshold_days": LATE_FILING_DAYS,
         "rare_trader_minimum_history_days": RARE_TRADER_MINIMUM_HISTORY_DAYS,
         "concentrated_size_floor": CONCENTRATED_SIZE_FLOOR,
+        "collection": {"disclosures_fetched": len(fetched), "new_disclosures": added,
+                       "disclosures_stored": len(stored), "failures": failures},
         "summary": summary_stats(results),
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)
-    LOG.info(f"Congress trades screen: {len(results)} disclosure(s) published, {history_days}d of history")
+    LOG.info(f"Congress trades screen: {len(results)} disclosure(s) published ({status}), "
+             f"{history_days}d of history")
     return payload
 
 
