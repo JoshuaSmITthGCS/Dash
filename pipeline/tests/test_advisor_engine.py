@@ -7,10 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
                             build_research, concentration_risk_modifier,
-                            geographic_concentration_modifier, insider_modifier,
-                            institutional_ownership_modifier, macro_regime_modifier,
-                            sentiment_score, shrink_research_components, technical_factors,
-                            technical_score_from_parts)
+                            congressional_buying_modifier, geographic_concentration_modifier,
+                            insider_modifier, institutional_ownership_modifier,
+                            macro_regime_modifier, sentiment_score, shrink_research_components,
+                            technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -544,6 +544,46 @@ class BuildResearchWiresInstitutionalOwnershipIntoTheChampionScoreTests(unittest
             institutional_ownership={"score_points": 0.2, "notes": []},
         )["score"]
         self.assertGreater(fresh, stale)
+
+
+class CongressionalBuyingModifierTests(unittest.TestCase):
+    def test_a_precomputed_positive_summary_lifts_the_score(self):
+        points, note = congressional_buying_modifier(
+            {"score_points": 1.5, "notes": ["2 member(s) disclosed a purchase"]})
+        self.assertEqual(points, 1.5)
+        self.assertIn("purchase", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(congressional_buying_modifier(None), (0.0, None))
+        self.assertEqual(congressional_buying_modifier({}), (0.0, None))
+
+    def test_points_are_never_negative_even_if_the_input_somehow_is(self):
+        points, _ = congressional_buying_modifier({"score_points": -5.0, "notes": []})
+        self.assertGreaterEqual(points, 0.0)
+
+    def test_points_respect_the_configured_cap(self):
+        points, _ = congressional_buying_modifier({"score_points": 999.0, "notes": []})
+        self.assertLessEqual(points, MODIFIERS.get("congressional_buying", {}).get("max_points", 4.0))
+
+
+class BuildResearchWiresCongressionalBuyingIntoTheChampionScoreTests(unittest.TestCase):
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_disclosed_congressional_buying_raises_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        bought = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            congressional_activity={"score_points": 2.0, "notes": []},
+        )["score"]
+        self.assertGreater(bought, baseline)
 
 
 if __name__ == "__main__":

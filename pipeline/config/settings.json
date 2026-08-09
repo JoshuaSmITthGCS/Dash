@@ -43,7 +43,8 @@
         "customer_concentration_risk": 0.15,
         "geographic_concentration": 0.1,
         "institutional_13f_positive": 0.15,
-        "institutional_13f_negative": 0.1
+        "institutional_13f_negative": 0.1,
+        "congressional_buying": 0.15
       },
       "_comment": "The cumulative challenger neutralizes short-horizon relative strength, applies confidence shrinkage once, and expresses every modifier allocation as a fraction of the combined cap."
     }
@@ -94,7 +95,8 @@
       "insider_activity",
       "customer_concentration_risk",
       "geographic_concentration",
-      "institutional_13f"
+      "institutional_13f",
+      "congressional_buying"
     ],
     "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
   },
@@ -1049,6 +1051,12 @@
       "min_managers": 2,
       "half_life_days": 45,
       "max_age_days": 135
+    },
+    "congressional_buying": {
+      "_comment": "Disclosed Congressional stock purchases (pipeline/congress_signal.py), reward-only. Explicit, scoped exception to the 'no political inputs' principle stated in advisor_engine.py's module docstring - see that docstring and TODO.md for what was declined (scoring congressional holdings as evidence a stock/sector is politically protected from failure) versus what shipped (breadth x freshness of disclosed purchases, with a bonus for EXTRAORDINARY_BUY: a member's first-ever trade in a sub-$2B company). Reads the weekly-published congress screen, not a live fetch. Evidentiary basis: Ziobrowski et al. (JFQA 2004, and the 2011 House companion study) find abnormal returns to disclosed Congressional purchases in pre-STOCK-Act samples; whether that survives the post-2012 mandatory-disclosure regime is untested here.",
+      "max_points": 4.0,
+      "min_trade_value": 15000.0,
+      "extraordinary_bonus": 2.0
     }
   },
   "bucket_weights": {

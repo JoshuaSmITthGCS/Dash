@@ -1,4 +1,14 @@
-"""Explainable, fundamentals-first research scoring. No political inputs."""
+"""Explainable, fundamentals-first research scoring.
+
+One deliberate, explicit exception to what was previously an unqualified "no political
+inputs" rule: ``congressional_buying_modifier`` scores disclosed Congressional stock
+purchases, reward-only, on explicit instruction. It does not claim political protection
+from failure ("Congress wouldn't let this stock fail") - that framing was raised and
+declined; see the module's own docstring in ``congress_signal.py`` and TODO.md for what
+it does score and the evidentiary basis (Ziobrowski et al.) it rests on. Every other
+modifier in this file remains free of political inputs; this is a scoped exception, not a
+reversal of the principle.
+"""
 
 from datetime import timedelta
 
@@ -324,6 +334,29 @@ def institutional_ownership_modifier(institutional_ownership):
     return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
 
 
+def congressional_buying_modifier(congressional_activity):
+    """Reward disclosed Congressional stock purchases, per explicit instruction.
+
+    Reward-only - never penalizes a sale or the absence of buying, since neither carries
+    the "how would they know about this" information content a purchase might. Reads an
+    already-scored summary from ``congress_signal.score_congressional_buying`` (via
+    ``fetch_advisor.collect_congressional_signals``, which reads the weekly-published
+    congress screen rather than fetching live) and only re-clamps to the configured cap -
+    see this module's own top docstring for the "no political inputs" exception this is,
+    and ``congress_signal.py`` for the breadth/freshness/extraordinary-purchase scoring
+    and its evidentiary basis.
+    """
+    if not congressional_activity or congressional_activity.get("score_points") is None:
+        return 0.0, None
+    points = congressional_activity["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("congressional_buying", {})
+    cap = cfg.get("max_points", 4.0)
+    notes = congressional_activity.get("notes") or []
+    return round(max(0.0, min(cap, points)), 2), ("; ".join(notes) or None)
+
+
 def concentration_risk_modifier(concentration):
     """Penalize revenue concentrated in a single named customer (ASC 280).
 
@@ -467,7 +500,8 @@ def macro_regime_modifier(snapshot, macro_regime):
 
 
 def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
-                    insider_activity=None, institutional_ownership=None):
+                    insider_activity=None, institutional_ownership=None,
+                    congressional_activity=None):
     """Blend the bounded refinements onto the evidence score and explain every one.
 
     ``customer_concentration_risk`` and ``geographic_concentration`` are deliberately
@@ -475,6 +509,8 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
     until their tagging coverage is measured (see ``concentration_risk_modifier``/
     ``geographic_concentration_modifier``). ``institutional_13f`` is back in the champion
     path with lag decay baked into its input - see ``institutional_ownership_modifier``.
+    ``congressional_buying`` is this file's one scoped exception to "no political
+    inputs" - see the module docstring.
     """
     applied = {}
     notes = []
@@ -486,6 +522,7 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         "macro_regime": macro_regime_modifier(snapshot, macro_regime),
         "insider_activity": insider_modifier(insider_activity),
         "institutional_13f": institutional_ownership_modifier(institutional_ownership),
+        "congressional_buying": congressional_buying_modifier(congressional_activity),
     }.items():
         if points:
             applied[name] = points
@@ -503,7 +540,8 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
 def apply_challenger_modifiers(base, snapshot, extended, config, sector_percentile=None,
                                short_interest_rank=None, macro_regime=None,
                                insider_activity=None, concentration_risk=None,
-                               geographic_exposure=None, institutional_ownership=None):
+                               geographic_exposure=None, institutional_ownership=None,
+                               congressional_activity=None):
     """Apply fractionally allocated modifiers under the configured combined cap.
 
     Each individual maximum is ``combined_cap * configured_fraction``. The final sum is
@@ -512,8 +550,9 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
 
     ``concentration_risk``/``geographic_exposure`` are scored here and nowhere else in the
     live score (shadow mode) until their tagging coverage has been measured - see
-    ``apply_modifiers``. ``institutional_ownership`` is scored here too, in addition to the
-    champion path, so its challenger variant stays comparable to every other modifier.
+    ``apply_modifiers``. ``institutional_ownership``/``congressional_activity`` are scored
+    here too, in addition to the champion path, so their challenger variants stay
+    comparable to every other modifier.
     """
     cap = float(config["modifier_cap"])
     fractions = config["modifier_fractions"]
@@ -611,6 +650,15 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
         )
     if institutional_note:
         notes.append(institutional_note.replace(";", ","))
+
+    congressional_points, congressional_note = congressional_buying_modifier(congressional_activity)
+    if congressional_points:
+        old_cap = MODIFIERS.get("congressional_buying", {}).get("max_points")
+        applied["congressional_buying"] = round(
+            congressional_points / old_cap * cap * fractions["congressional_buying"], 2
+        )
+    if congressional_note:
+        notes.append(congressional_note.replace(";", ","))
 
     uncapped_total = round(sum(applied.values()), 2)
     total = round(max(-cap, min(cap, uncapped_total)), 2)
@@ -815,7 +863,8 @@ def cross_sectional_challenger(row, snapshot, normalizer):
 
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
                                macro_regime=None, insider_activity=None, concentration_risk=None,
-                               geographic_exposure=None, institutional_ownership=None):
+                               geographic_exposure=None, institutional_ownership=None,
+                               congressional_activity=None):
     """Build isolated signal edits plus the cumulative challenger beside the champion."""
     normalization = cross_sectional_challenger(row, snapshot, normalizer)
     champion_components = row.get("components") or {}
@@ -859,7 +908,7 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         row.get("base_score", 0.0), snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
         macro_regime, insider_activity, concentration_risk, geographic_exposure,
-        institutional_ownership,
+        institutional_ownership, congressional_activity,
     )
     modifier_recalibration = {
         "variant": "fractional_modifier_cap",
@@ -881,7 +930,7 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         final_base["base_score"], snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
         macro_regime, insider_activity, concentration_risk, geographic_exposure,
-        institutional_ownership,
+        institutional_ownership, congressional_activity,
     )
     challenger = {
         "variant": "signal_corrections_cumulative",
@@ -960,7 +1009,8 @@ def build_evidence(categories, technical_parts, extended):
 
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
                    volumes=None, extended=None, sector_percentile=None, macro_regime=None,
-                   insider_activity=None, institutional_ownership=None):
+                   insider_activity=None, institutional_ownership=None,
+                   congressional_activity=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -974,7 +1024,8 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     })
     confidence, base, raw_score = blended["confidence"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
-                                       insider_activity, institutional_ownership)
+                                       insider_activity, institutional_ownership,
+                                       congressional_activity)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, confidence)
     strengths, risks = build_evidence(categories, technical_parts, extended)

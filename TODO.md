@@ -1,11 +1,13 @@
 # TODO
 
-_Last updated: 2026-08-09, revised twice same day (backlog_growth wired via dimensional
-XBRL, §2; customer-concentration and geographic-concentration modifiers moved to shadow
-mode pending coverage measurement, §2a; institutional 13F pulled out of the score into a
-congress-style screen with active/passive manager classification, then put back into the
-champion score with filing-lag decay and amendment/revision handling per explicit
-instruction, §2a; point-in-time capture for all of the above confirmed, §2c)_
+_Last updated: 2026-08-09, revised three times same day (backlog_growth wired via
+dimensional XBRL, §2; customer-concentration and geographic-concentration modifiers moved
+to shadow mode pending coverage measurement, §2a; institutional 13F pulled out of the
+score into a congress-style screen with active/passive manager classification, then put
+back into the champion score with filing-lag decay and amendment/revision handling per
+explicit instruction, §2a; a political-protection framing for Congressional trades
+declined, a narrower reward-only congressional-buying modifier built instead per
+follow-up instruction, §2a; point-in-time capture for all of the above confirmed, §2c)_
 
 What is still needed to make the rebuilt scoring platform fully functional. The model,
 schemas, tests, and infrastructure are in place and green; the items below are the gaps
@@ -220,34 +222,73 @@ by mechanical index rebalancing. Both are fixed below, not patched over.
       real resolution rate, whether the curated managers' tickers still route to the CIKs
       this list assumes, or how often a real amendment actually revises a real filing.
 
-      **Declined, not built**: a request to also weight this by whether Congressional
-      trade disclosures (the separate `build_congress_screen.py` screen) show the same
-      stock or sector as one politicians wouldn't "let fail." Not implemented —
-      `advisor_engine.py`'s own governing line is "No political inputs," and
-      `build_congress_screen.py`'s docstring is explicit that it publishes facts with no
-      conflict-of-interest interpretation layered on. Treating congressional holdings as
-      evidence of political protection and scoring that would reverse both decisions
-      rather than extend them. Open to a non-scored, disclaimed correlation flag shown
-      alongside both screens if there's a concrete request for it; not open to it moving
-      `row["score"]`.
+- [x] ~~**`congressional_buying` — declined once, then built in a narrower, confirmed
+      form.**~~ First ask: weight the institutional 13F modifier by whether Congressional
+      trade disclosures show the same stock or sector as one politicians "wouldn't let
+      fail." Declined — `advisor_engine.py`'s own governing line was an unqualified "No
+      political inputs," and `build_congress_screen.py`'s docstring is explicit that it
+      publishes facts with no conflict-of-interest interpretation layered on. Treating
+      congressional holdings as evidence of political protection and scoring that would
+      have reversed both decisions rather than extended them.
+
+      Follow-up ask, confirmed after the tradeoff was raised: score disclosed
+      Congressional *purchases* on their own terms — not a political-protection claim,
+      a reward-only signal on the same evidentiary footing insider buying already gets.
+      Refined twice more in conversation: not just large dollar amounts, but *unique*
+      picks (a member's first-ever trade in a company, and specifically a small one —
+      the obvious blue-chip everyone already holds isn't unusual), and "any positive
+      sign" should count too, not only the unusual ones.
+
+      **What shipped**: `pipeline/congress_signal.py`, a bounded, reward-only modifier
+      (`congressional_buying`) with two tiers, mirroring `insider_signal.py`'s own
+      breadth/freshness/cluster-bonus shape rather than inventing a new one — any
+      disclosed purchase is a mild positive (breadth of distinct members × freshness,
+      reusing `insider_signal.decay`), and purchases flagged `EXTRAORDINARY_BUY` by a new
+      `build_congress_screen.classify` rule (a member's first-ever trade in a company
+      under a $2B market-cap ceiling — `market_cap_by_ticker()`, reused from the same
+      main-pipeline classification `sector_by_ticker()` already draws on) earn an
+      additional breadth-scaled bonus. Sells and non-buying never penalize; this is the
+      one modifier in the file that is asymmetric that way, deliberately — a member not
+      buying a stock carries none of the "how would they know about this" information
+      content a purchase might. Reads the weekly-published congress screen
+      (`collect_congressional_signals` in `fetch_advisor.py`), no live FMP calls in the
+      per-refresh path, same non-live-fetch pattern the 13F modifier uses.
+
+      `advisor_engine.py`'s module docstring was rewritten to state this exception
+      explicitly rather than leave an inaccurate blanket claim in the code — every other
+      modifier in the file remains free of political inputs; this is one scoped
+      exception, not a reversal of the principle.
+
+      **Evidentiary basis, stated with its limit**: Ziobrowski et al. ("Abnormal Returns
+      from the Common Stock Investments of the U.S. Senate", *JFQA* 2004, and the 2011
+      House companion study) find significant abnormal returns to disclosed Congressional
+      purchases — but in samples predating the STOCK Act's 2012 mandatory-disclosure and
+      trading-restriction regime. Whether the edge survives in the post-STOCK-Act world
+      this module actually reads (45-day disclosure deadline, the same regime this
+      codebase's own point-in-time handling already accounts for) is untested here and
+      should be treated skeptically rather than assumed. Has never run against live FMP
+      data or a real congress screen publish; verify the `EXTRAORDINARY_BUY` hit rate
+      on the first real run, the same way every other never-network-tested capability in
+      this file needs verifying.
 
 ---
 
 ## 2c. The point-in-time record for these signals — confirmed, not assumed
 
 Every one of `backlog_growth`, `customer_concentration_risk`, `geographic_concentration`,
-`insider_activity`, and `institutional_13f` has a specific, checkable answer for "does
-today's run get recorded before it's gone forever" — `pit_store.py`'s own governing claim
-is that a day not captured **cannot be reconstructed retroactively**.
+`insider_activity`, `institutional_13f`, and `congressional_buying` has a specific,
+checkable answer for "does today's run get recorded before it's gone forever" —
+`pit_store.py`'s own governing claim is that a day not captured **cannot be
+reconstructed retroactively**.
 
-- **The four score modifiers** (`insider_activity`, `customer_concentration_risk`,
-  `geographic_concentration`, `institutional_13f`) are captured through
-  `validation/ic_harness.py`, not `pit_store.TRACKED_FIELDS` — that list is fundamentals
-  inputs (P/E, ROE, ...), and no modifier has ever lived there, insider activity included.
-  `ic_harness.append_refresh` runs on every `fetch_advisor.run()`
+- **The five score modifiers** (`insider_activity`, `customer_concentration_risk`,
+  `geographic_concentration`, `institutional_13f`, `congressional_buying`) are captured
+  through `validation/ic_harness.py`, not `pit_store.TRACKED_FIELDS` — that list is
+  fundamentals inputs (P/E, ROE, ...), and no modifier has ever lived there, insider
+  activity included. `ic_harness.append_refresh` runs on every `fetch_advisor.run()`
   (`fetch_advisor.py`'s `append_ic_refresh` call) and snapshots `row["modifiers"]` through
   `_modifier_contract`, keyed off `settings.json`'s `validation.modifier_fields` — which
-  now lists all three new modifier names alongside `insider_activity`. Confirmed by
+  now lists every new modifier name alongside `insider_activity`. Confirmed by
   `tests/test_ic_harness.py::test_snapshot_jsonl_contains_required_reproducibility_fields`
   and `tests/test_explainability.py`, both asserting the full modifier key set. Champion
   `all_points` shows `0.0` for `customer_concentration_risk`/`geographic_concentration`

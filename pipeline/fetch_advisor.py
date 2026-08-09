@@ -22,6 +22,7 @@ from insider_signal import summarize as summarize_insiders
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
 from institutional_ownership import decay as institutional_decay
+from congress_signal import score_congressional_buying
 import pit_store
 from fred import FredClient, FredError, fetch_regime
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
@@ -856,6 +857,49 @@ def collect_institutional_signals(symbols, *, as_of=None, screen_payload=None):
     return signals, diagnostics
 
 
+def collect_congressional_signals(symbols, *, as_of=None, screen_payload=None):
+    """Fold the weekly-published congress screen into a reward-only score input.
+
+    No live FMP calls here: ``build_congress_screen.py`` runs on its own weekly schedule
+    and is the source of record. Reads ``public/data/screens/congress-trades.json``
+    (already-classified rows carrying ``flags`` from ``build_congress_screen.classify``,
+    including the ``EXTRAORDINARY_BUY`` tier) and scores each requested ticker with
+    ``congress_signal.score_congressional_buying`` - see that module and
+    ``advisor_engine.py``'s module docstring for why this is scored at all.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/congress-trades.json") or {}))
+    results = payload.get("results") or []
+    diagnostics = {"requested": len(symbols), "screen_available": bool(results),
+                   "tickers_matched": 0}
+    if not results:
+        return {}, diagnostics
+    as_of_date = as_of or date.today()
+    cfg = SETTINGS.get("modifiers", {}).get("congressional_buying", {})
+    by_ticker = {}
+    for row in results:
+        symbol = str(row.get("symbol") or "").upper()
+        if symbol:
+            by_ticker.setdefault(symbol, []).append(row)
+
+    signals = {}
+    for symbol in symbols:
+        ticker = str(symbol).upper()
+        rows = by_ticker.get(ticker)
+        if not rows:
+            continue
+        points, detail = score_congressional_buying(rows, ticker, as_of=as_of_date, config=cfg)
+        if not points:
+            continue
+        diagnostics["tickers_matched"] += 1
+        signals[ticker] = {
+            "source": "Congressional STOCK Act disclosures (weekly screen)",
+            "score_points": points,
+            "notes": detail.get("notes") or [],
+        }
+    return signals, diagnostics
+
+
 def fetch_optional(client, function, **params):
     try:
         return client.query(function, **params)
@@ -1385,6 +1429,12 @@ def run():
     # documented on the modifier itself, not fixed by it.
     institutional_signals, institutional_diagnostics = collect_institutional_signals(insider_candidates)
 
+    # Congressional buying, reward-only - reads build_congress_screen.py's last weekly
+    # publish, no live FMP calls in this per-refresh path. This is advisor_engine.py's one
+    # scoped exception to "no political inputs" - see that module's docstring and
+    # congress_signal.py for what is and is not claimed.
+    congressional_signals, congressional_diagnostics = collect_congressional_signals(insider_candidates)
+
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
     # reliability signal to attach -- only a run-wide one.
@@ -1402,6 +1452,8 @@ def run():
                             "healthy"),
         "institutional_13f_screen": ("unavailable" if not institutional_diagnostics["screen_available"]
                                      else "healthy"),
+        "congress_screen": ("unavailable" if not congressional_diagnostics["screen_available"]
+                            else "healthy"),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
@@ -1417,11 +1469,13 @@ def run():
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
             institutional_ownership=institutional_signals.get(symbol),
+            congressional_activity=congressional_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["institutional_ownership"] = institutional_signals.get(symbol)
+        row["congressional_activity"] = congressional_signals.get(symbol)
         # concentration_risk/geographic_exposure are display fields and challenger-only
         # (score_variants) inputs here - shadow mode until their tagging coverage is
         # measured. See advisor_engine.apply_modifiers's docstring.
@@ -1471,6 +1525,7 @@ def run():
                 concentration_signals.get(symbol),
                 geographic_signals.get(symbol),
                 institutional_signals.get(symbol),
+                congressional_signals.get(symbol),
             ))
         elif cross_normalizer:
             row["score_variants"]["challenger"] = cross_sectional_challenger(
@@ -1725,6 +1780,26 @@ def run():
                         "endpoint or live 13F filings (no network access existed while "
                         "this was written); verify CUSIP resolution rate and manager "
                         "coverage on the first real run.",
+            },
+            "congressional_buying": {
+                "status": ("unavailable" if not congressional_diagnostics["screen_available"] else
+                          "available"),
+                "source": "STOCK Act disclosures via pipeline/build_congress_screen.py's "
+                         "weekly publish (Financial Modeling Prep)",
+                "tickers_matched": congressional_diagnostics["tickers_matched"],
+                "note": "Explicit, scoped exception to advisor_engine.py's 'no political "
+                        "inputs' principle - see that module's docstring. Reward-only "
+                        "modifier ('congressional_buying'): breadth x freshness of "
+                        "disclosed purchases, with a bonus for EXTRAORDINARY_BUY (a "
+                        "member's first-ever trade in a sub-$2B company, "
+                        "build_congress_screen.classify). A request to instead score "
+                        "whether Congress 'wouldn't let a stock/sector fail' was raised "
+                        "and declined - not implemented, see TODO.md. Evidentiary basis "
+                        "(Ziobrowski et al., JFQA 2004) predates the STOCK Act's 2012 "
+                        "disclosure regime; untested against the post-2012 world this "
+                        "reads. Has never run against live FMP data or a live congress "
+                        "screen publish (no network access existed while this was "
+                        "written); verify EXTRAORDINARY_BUY hit rate on the first real run.",
             },
             "fx_exposure": {
                 "status": "shadow_only",
