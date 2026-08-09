@@ -69,4 +69,34 @@ describe('InstitutionalActivity page', () => {
     expect(screen.getByText('3')).toBeVisible()
     expect(screen.getByText(/of 9 configured/)).toBeVisible()
   })
+
+  it('says the collection failed rather than claiming no manager moved a position', () => {
+    // A degraded run and a genuinely quiet quarter both publish zero results. Only the
+    // second is a finding about institutions, so the page must not render them alike.
+    useData.mockReturnValue({
+      data: {
+        status: 'degraded', results: [],
+        degraded_reason: 'No configured manager resolved to a readable 13F-HR filer.',
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><InstitutionalActivity /></MemoryRouter>)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/No configured manager resolved/)
+    expect(screen.getByText('Collection did not complete')).toBeVisible()
+    expect(screen.getByText(/not a statement that no manager moved a position/)).toBeVisible()
+    expect(screen.queryByText(/No flagged activity yet/)).toBeNull()
+  })
+
+  it('hides the KPI tiles on a degraded run so zeroes are not read as measurements', () => {
+    useData.mockReturnValue({
+      data: { status: 'degraded', managers_reviewed: 0, managers_configured: 9, results: [] },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><InstitutionalActivity /></MemoryRouter>)
+
+    expect(screen.queryByText(/of 9 configured/)).toBeNull()
+  })
 })

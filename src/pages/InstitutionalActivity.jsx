@@ -60,6 +60,13 @@ export default function InstitutionalActivity() {
     {loading ? <Loading /> : error ? (
       <div className="card etf-state" role="alert"><strong>Institutional 13F screen unavailable</strong><span>{error.message}</span></div>
     ) : <>
+      {data && data.status !== 'success' && (
+        <div className="card etf-state" role="alert">
+          <strong>{data.status === 'skipped' ? 'Collection did not run' : 'Collection did not complete'}</strong>
+          <span>{data.degraded_reason || 'The last run published no holdings. Nothing below reflects current 13F filings.'}</span>
+        </div>
+      )}
+
       {data && data.status === 'success' && (
         <div className="grid congress-kpi-grid">
           <div className="card kpi">
@@ -100,7 +107,10 @@ export default function InstitutionalActivity() {
       </div></ResponsiveControlPanel>
 
       {!filtered.length ? (
-        <Empty note={rows.length ? 'No results match these filters.' : 'No flagged activity yet – this screen updates monthly.'} />
+        <Empty note={rows.length ? 'No results match these filters.'
+          : data && data.status !== 'success'
+            ? 'Nothing to show – the last collection run did not complete, so this is not a statement that no manager moved a position.'
+            : 'No flagged activity yet – this screen updates monthly.'} />
       ) : (
         <>
         <ResultCards rows={filtered} getKey={(row, index) => `${row.ticker}-${row.cusip}-${index}`}

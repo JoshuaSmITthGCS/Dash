@@ -74,6 +74,13 @@ export default function CongressTrades() {
     {loading ? <Loading /> : error ? (
       <div className="card etf-state" role="alert"><strong>Congress trades screen unavailable</strong><span>{error.message}</span></div>
     ) : <>
+      {data && data.status && data.status !== 'success' && (
+        <div className="card etf-state" role="alert">
+          <strong>{data.status === 'partial' ? 'Collection incomplete' : 'Collection did not complete'}</strong>
+          <span>{data.degraded_reason || 'The last run could not reach the disclosure source, so nothing below reflects current filings.'}</span>
+        </div>
+      )}
+
       {summary && (
         <div className="grid congress-kpi-grid">
           <div className="card kpi">
@@ -125,7 +132,10 @@ export default function CongressTrades() {
       </div></ResponsiveControlPanel>
 
       {!filtered.length ? (
-        <Empty note={rows.length ? 'No disclosures match these filters.' : 'No disclosures collected yet – this screen updates weekly.'} />
+        <Empty note={rows.length ? 'No disclosures match these filters.'
+          : data && data.status && data.status !== 'success'
+            ? 'Nothing to show – the last collection run did not complete, so this is not a statement that no trades were disclosed.'
+            : 'No disclosures collected yet – this screen updates weekly.'} />
       ) : (
         <>
         <ResultCards rows={filtered} getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}

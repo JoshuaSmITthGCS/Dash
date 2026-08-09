@@ -386,11 +386,12 @@ def run():
         LOG.warn(f"Congress trades collection skipped: {exc}")
         return None
 
-    fetched = []
-    for fetch in (client.senate_latest, client.house_latest):
+    fetched, source_errors = [], []
+    for name, fetch in (("senate", client.senate_latest), ("house", client.house_latest)):
         try:
             fetched.extend(fetch())
         except CongressTradesError as exc:
+            source_errors.append(f"{name}: {exc}")
             LOG.warn(f"Congress trades fetch failed ({type(exc).__name__}: {exc})")
 
     added = append_new_trades(fetched)
@@ -403,9 +404,28 @@ def run():
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
+    # An empty screen because no member of Congress disclosed a trade and an empty screen
+    # because the provider refused every request are indistinguishable in the results list,
+    # and only the first is a fact about Congress. HTTP 402 in particular means the API key
+    # is valid but the plan does not cover these endpoints - a run that reports that as
+    # "success" leaves the page saying "no disclosures collected yet" indefinitely.
+    status, degraded_reason = "success", None
+    if source_errors and not results:
+        status = "degraded"
+        degraded_reason = ("No disclosures could be collected: " + "; ".join(source_errors) +
+                           ". HTTP 402 means the FMP plan for this key does not include the "
+                           "Congressional trading endpoints.")
+    elif source_errors:
+        status = "partial"
+        degraded_reason = ("Published from previously collected disclosures; this run could "
+                           "not reach " + "; ".join(source_errors) + ".")
+    if degraded_reason:
+        LOG.warn(f"Congress trades screen {status}: {degraded_reason}")
+
     payload = {
-        "schema_version": "1.0.0", "model_version": "congress-trades-v1.1.0",
-        "generated_at": generated_at.isoformat(), "status": "success",
+        "schema_version": "1.1.0", "model_version": "congress-trades-v1.2.0",
+        "generated_at": generated_at.isoformat(), "status": status,
+        "degraded_reason": degraded_reason, "source_errors": source_errors,
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
         "late_filing_threshold_days": LATE_FILING_DAYS,
         "rare_trader_minimum_history_days": RARE_TRADER_MINIMUM_HISTORY_DAYS,

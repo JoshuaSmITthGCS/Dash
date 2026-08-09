@@ -297,3 +297,45 @@ def test_run_skips_without_configuration(monkeypatch):
     monkeypatch.setattr(module, "CongressTradesClient",
                         lambda: (_ for _ in ()).throw(module.CongressTradesError("no key")))
     assert module.run() is None
+
+
+def _client_rejecting_every_fetch(status):
+    """A configured client whose key the provider refuses - the shape of a plan that does
+    not cover these endpoints, as opposed to a week in which nobody disclosed a trade."""
+    def refuse(*args, **kwargs):
+        raise module.CongressTradesError(f"FMP senate-latest request failed with HTTP {status}")
+
+    client = Mock()
+    client.senate_latest.side_effect = refuse
+    client.house_latest.side_effect = refuse
+    client.price_history.side_effect = refuse
+    return client
+
+
+def test_run_that_collects_nothing_because_the_provider_refused_is_degraded(monkeypatch, tmp_path):
+    saved = {}
+    with TempStore():
+        monkeypatch.setattr(module, "CongressTradesClient", lambda: _client_rejecting_every_fetch(402))
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        payload = module.run()
+
+    # Publishing this as "success" is what left the page saying "no disclosures collected
+    # yet" - a claim about Congress - when the truth was that every request was rejected.
+    assert payload["status"] == "degraded"
+    assert payload["results"] == []
+    assert "402" in payload["degraded_reason"]
+    assert len(payload["source_errors"]) == 2
+    assert saved["status"] == "degraded"
+
+
+def test_run_with_previously_stored_disclosures_reports_partial_not_degraded(monkeypatch):
+    saved = {}
+    with TempStore():
+        module.append_new_trades([trade(disclosure_date=datetime.now(timezone.utc).date().isoformat())])
+        monkeypatch.setattr(module, "CongressTradesClient", lambda: _client_rejecting_every_fetch(402))
+        monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
+        monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        payload = module.run()
+
+    assert payload["status"] == "partial"
+    assert payload["results"]

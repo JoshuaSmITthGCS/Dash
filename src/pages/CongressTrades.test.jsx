@@ -102,4 +102,36 @@ describe('CongressTrades page', () => {
     const names = screen.getAllByText(/Laggard|Winner/).map((el) => el.textContent)
     expect(names.indexOf('Winner')).toBeLessThan(names.indexOf('Laggard'))
   })
+
+  it('says the provider refused rather than claiming no trades were disclosed', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'degraded', results: [],
+        degraded_reason: 'No disclosures could be collected: senate: FMP senate-latest request '
+          + 'failed with HTTP 402. HTTP 402 means the FMP plan for this key does not include '
+          + 'the Congressional trading endpoints.',
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/HTTP 402/)
+    expect(screen.queryByText(/No disclosures collected yet/)).toBeNull()
+  })
+
+  it('marks a run that published from stored disclosures as incomplete, not failed', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'partial', results: [trade({ representative: 'Jane Doe' })],
+        degraded_reason: 'Published from previously collected disclosures; this run could not reach house.',
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByText('Collection incomplete')).toBeVisible()
+    expect(screen.getAllByText(/Jane Doe/).length).toBeGreaterThan(0)
+  })
 })

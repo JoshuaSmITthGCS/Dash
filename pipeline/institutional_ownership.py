@@ -121,10 +121,20 @@ def parse_13f_info_table(xml_text, manager_id):
 
 
 def aggregate_by_cusip(holdings):
-    """Every manager's position in each CUSIP, keyed by CUSIP."""
+    """Every manager's total position in each CUSIP, keyed by CUSIP.
+
+    Shares are *summed* per (CUSIP, manager), not assigned, because one information table
+    routinely reports the same CUSIP on several rows - a filer splits a single holding across
+    investment-discretion categories (SOLE / DEFINED / OTHER), and a manager family that
+    files through more than one adviser subsidiary contributes a row from each. Overwriting
+    would silently keep whichever row happened to come last and report a fraction of the real
+    position, which then reads as a quarter-over-quarter *cut* the manager never made.
+    """
     by_cusip = defaultdict(dict)
     for holding in holdings:
-        by_cusip[holding["cusip"]][holding["manager_id"]] = holding["shares"]
+        positions = by_cusip[holding["cusip"]]
+        manager_id = holding["manager_id"]
+        positions[manager_id] = positions.get(manager_id, 0.0) + holding["shares"]
     return dict(by_cusip)
 
 

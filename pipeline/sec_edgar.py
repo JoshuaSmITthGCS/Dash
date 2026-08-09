@@ -22,6 +22,34 @@ SEC_DATA = "https://data.sec.gov"
 # at the same path with the XSL rendering directory stripped off.
 XSL_RENDER_DIRECTORY = re.compile(r"^xsl[^/]*/", re.IGNORECASE)
 
+# EDGAR conformed names are upper-case, punctuation-noisy, and word-ordered differently
+# from how a manager is colloquially known ("PRICE T ROWE ASSOCIATES INC /MD/" for what the
+# config calls "T. Rowe Price"). Comparing them as raw strings fails on every one of those
+# differences, so both sides are reduced to a bag of alphanumeric tokens first.
+_NAME_NOISE = re.compile(r"[^A-Z0-9 ]+")
+
+
+def _name_tokens(value):
+    return _NAME_NOISE.sub(" ", (value or "").upper()).split()
+
+
+def entity_name_matches(conformed_name, expected_name):
+    """Whether an EDGAR conformed name plausibly belongs to the expected manager family.
+
+    Token-subset, not equality: an adviser subsidiary's conformed name is the family name
+    plus extra words ("ARTISAN PARTNERS **LIMITED PARTNERSHIP**"), and EDGAR reorders and
+    re-punctuates freely. Requires at least two tokens to match on, because a single common
+    token ("FRANKLIN", "ARTISAN") would happily accept an unrelated filer - and attributing
+    one manager's holdings to another is the specific failure this guard exists to prevent.
+    """
+    wanted = _name_tokens(expected_name)
+    if not wanted:
+        return False
+    have = set(_name_tokens(conformed_name))
+    if len(wanted) < 2:
+        return wanted[0] in have
+    return all(token in have for token in wanted)
+
 
 def _number(value):
     try:
@@ -132,6 +160,10 @@ class SecEdgarClient:
         self.request_delay = request_delay
         self._limiter = limiter
         self._tickers = None
+        # One submissions payload per CIK per process. Filer resolution reads a candidate's
+        # payload to check both its conformed name and whether it files the form at all, and
+        # the caller then reads the same payload again for the filings themselves.
+        self._submissions = {}
 
     @property
     def available(self):
@@ -168,11 +200,70 @@ class SecEdgarClient:
             }
         return self._tickers
 
+    def submissions(self, cik):
+        """One CIK's submissions payload, fetched at most once per process."""
+        cik = str(cik).zfill(10)
+        if cik not in self._submissions:
+            self._submissions[cik] = self._get(f"{SEC_DATA}/submissions/CIK{cik}.json", as_json=True)
+        return self._submissions[cik]
+
+    def entity_name(self, cik):
+        """EDGAR's conformed name for a CIK - what a resolved filer must be checked against
+        before its holdings are attributed to a configured manager."""
+        return (self.submissions(cik) or {}).get("name")
+
+    def company_search(self, name, form_type=None, limit=40):
+        """Entities whose EDGAR conformed name *begins with* ``name``, as ``(cik, name)``.
+
+        The reason this exists: ``company_tickers.json`` maps a ticker to the CIK of the
+        *listed operating company*, and for an asset manager that is almost never the entity
+        that files the 13F. T. Rowe Price Group files the 10-K; its adviser subsidiaries file
+        the 13F-HRs, under their own CIKs, and no EDGAR endpoint links a parent to them. This
+        company-name search is the only free way to reach them without hand-typing a CIK -
+        which the curated config deliberately refuses to do, because a mistyped CIK reads a
+        *different* manager's holdings under the configured name and fails silently wrong.
+
+        ``company=`` is a prefix match on the conformed name, not a substring one, so an
+        entity filed under a reordered name ("PRICE T ROWE ASSOCIATES") is not reachable from
+        the colloquial spelling and needs its own alias in the config. Callers must still
+        verify each hit with ``entity_name_matches`` - a prefix search returns neighbours.
+        """
+        params = {"action": "getcompany", "company": name, "owner": "include",
+                  "count": str(limit), "output": "atom"}
+        if form_type:
+            params["type"] = form_type
+        try:
+            payload = self._get(f"{SEC_ROOT}/cgi-bin/browse-edgar?{urllib.parse.urlencode(params)}")
+        except OSError:
+            return []
+        try:
+            root = ET.fromstring(payload)
+        except ET.ParseError:
+            return []
+
+        def local(tag):
+            return tag.rsplit("}", 1)[-1].lower()
+
+        found, seen = [], set()
+        # Two response shapes: several matches come back as a list of <company-info> blocks,
+        # while a single exact match returns that company's filing list with one
+        # <company-info> header. Walking every <company-info> in the tree handles both.
+        for node in root.iter():
+            if local(node.tag) != "company-info":
+                continue
+            fields = {local(child.tag): (child.text or "").strip() for child in node}
+            cik = fields.get("cik")
+            if not cik or cik in seen:
+                continue
+            seen.add(cik)
+            found.append((str(cik).zfill(10), fields.get("conformed-name")))
+        return found
+
     def recent_form4_filings(self, ticker, lookback_days=180, max_filings=12):
         cik = self.ticker_map().get(ticker.upper())
         if not cik:
             return []
-        payload = self._get(f"{SEC_DATA}/submissions/CIK{cik}.json", as_json=True)
+        payload = self.submissions(cik)
         recent = payload.get("filings", {}).get("recent", {})
         cutoff = date.today() - timedelta(days=lookback_days)
         filings = []
@@ -209,7 +300,7 @@ class SecEdgarClient:
         ``period`` is the same quarter the original filing already covered, and a caller
         that groups by ``filed`` alone will mistake the amendment for a new quarter.
         """
-        payload = self._get(f"{SEC_DATA}/submissions/CIK{cik}.json", as_json=True)
+        payload = self.submissions(cik)
         recent = payload.get("filings", {}).get("recent", {})
         filings = []
         for index, form in enumerate(recent.get("form", [])):
