@@ -1,13 +1,16 @@
 # ValueSignal — Architecture Specification
 
-**Status: draft in progress.** Sections 1–10 and 12 are complete and independently verified
-against current code (branch `claude/valuesignal-spec-audit-qf2wni`, HEAD as of 2026-08-10).
-Section 11 (undetermined) is a living list, updated as gaps are found or closed. Pending: full
-integration of `docs/spec/METRIC_REGISTRY.md` and `docs/spec/registry.json` (a per-metric
-table and a machine-readable dump, both being compiled in parallel) into this document's
-weight tables in §6, and a final read-through pass for internal consistency once both land. Do
-not treat this file as finished; it is being assembled incrementally and will be redeployed in
-place.
+**Status: complete draft, all twelve required sections written.** All sections are
+independently verified against current code (branch `claude/valuesignal-spec-audit-qf2wni`,
+HEAD as of 2026-08-10). `docs/spec/METRIC_REGISTRY.md` (one row per metric, 51 metrics
+documented, 43 fully determined) and `docs/spec/registry.json` (machine-readable equivalent,
+plus a top-level `weights` object and a `defaults` array of 23 silent-default sites) are
+complete companion documents — §6's tables here give the full weight hierarchy narratively;
+the registry files give the exhaustive per-metric detail (formula, source, fallback chain,
+suppression profile, display label/tooltip) this document does not repeat in full to avoid the
+two documents drifting apart. Section 11 (undetermined) remains a living list of what this pass
+could not establish — it is deliberately not empty, per the task brief's own instruction that a
+thorough undetermined list is a better outcome than false completeness.
 
 Every factual claim below carries a `path/to/file.py:line` citation to code read directly in
 this session, not copied from this repository's own internal audit documents
@@ -682,16 +685,19 @@ a defect worth flagging beyond noting it exists.
 Example: `ev_to_ebitda` = `0.78 × 0.28 × 0.27 = 0.05896`, i.e. ~5.9% of the full composite score
 before any suppression, coverage shrink, or modifier is applied — and 0% for any name where it
 is suppressed (all insurers, confirmed for THG). The full one-row-per-metric table with every
-metric's effective composite weight is being built as `docs/spec/METRIC_REGISTRY.md` in
-parallel; it is not reproduced in full here to avoid duplication and drift between the two
-documents.
+metric's effective composite weight, source, fallback chain, and suppression profile is in
+`docs/spec/METRIC_REGISTRY.md` (human-readable) and `docs/spec/registry.json`
+(machine-readable) — not reproduced in full here to avoid duplication and drift between the
+documents. Both confirm the true fundamentals metric count is **32**, not the "~33" this task's
+brief approximated.
 
-### 6.4 Market behavior: sub-weights
+### 6.4 Market behavior: sub-weights — and a structural correction found late in this pass
 
-`advisor_engine.py:53-59` (`DEFAULT_TECHNICAL_WEIGHTS`, overridable via
-`settings.json.market_behavior.weights`):
+`advisor_engine.py:53-59` (`DEFAULT_TECHNICAL_WEIGHTS`, overridden by
+`settings.json.market_behavior.weights`, confirmed present and numerically identical to the
+defaults):
 
-| Sub-metric | Weight |
+| Sub-metric | Configured weight |
 |---|---|
 | momentum_12_1 | 0.30 |
 | risk_adjusted | 0.26 |
@@ -701,8 +707,64 @@ documents.
 | low_beta | 0.06 |
 | technical_extended | 0.06 |
 
-Sums to 1.0. Effective composite weight of e.g. `momentum_12_1` = `0.18 × 0.30 = 0.054`, ~5.4%
-of the full composite before shrink/modifiers.
+These sum to **1.06**, not 1.0 — confirmed by direct computation against `settings.json`. This
+is mathematically inert on its own: `technical_score_from_parts` (`advisor_engine.py:207-234`)
+always divides by `sum(weight for _, weight in answered)` (line 232), not by a fixed constant,
+so the *ratios* between sub-metrics are unaffected by the table not summing to 1. It is worth
+recording precisely rather than silently correcting, since a reader computing "effective
+composite weight" by hand from the raw table (as this document did in an earlier draft) would
+get a number about 6% too high for every sub-metric unless they either renormalize by 1.06 or
+account for the second effect below.
+
+**The champion path currently runs with `relative_strength` structurally removed, not merely
+occasionally missing.** `settings.json`'s top-level (not `market_behavior`-nested)
+`short_horizon_treatment` key is set to `"neutral"` (confirmed by direct read). The champion's
+one and only call to `technical_factors` (`advisor_engine.py:1099`, inside `build_research`)
+passes no explicit `short_horizon_treatment`, so it resolves via `treatment =
+short_horizon_treatment or SETTINGS.get("short_horizon_treatment", "legacy_momentum")`
+(`advisor_engine.py:182-184`) to `"neutral"`. Inside `technical_score_from_parts`
+(`advisor_engine.py:207-234`), the `"neutral"` branch does `weights.pop("relative_strength",
+None)` (line 219) — **`relative_strength` is entirely removed from the weight table before the
+weighted average is computed, for every row the champion scores**, not renormalized-away only
+when its value happens to be missing. The other six sub-weights are renormalized over their own
+sum (0.30+0.26+0.14+0.08+0.06+0.06 = 0.90):
+
+| Sub-metric | Configured weight | **Actual effective weight within market_behavior (champion, current config)** |
+|---|---|---|
+| momentum_12_1 | 0.30 | 0.30/0.90 = **0.333** |
+| risk_adjusted | 0.26 | 0.26/0.90 = **0.289** |
+| relative_strength | 0.16 | **0 — structurally excluded, not merely reweighted on absence** |
+| drawdown_resilience | 0.14 | 0.14/0.90 = **0.156** |
+| volume_confirmation | 0.08 | 0.08/0.90 = **0.089** |
+| low_beta | 0.06 | 0.06/0.90 = **0.067** |
+| technical_extended | 0.06 | 0.06/0.90 = **0.067** |
+
+Effective composite weight of `momentum_12_1` under current config is therefore `0.18 × 0.333 ≈
+0.060`, not the `0.18 × 0.30 = 0.054` a reader would compute from the raw table alone.
+
+**This appears to be a deliberate, already-shipped fix for exactly the redundancy the internal
+(stale) audit's §6 flagged** — that `relative_strength_20d` is rank-identical to `return_20d`
+by construction (`relative = ret_20 - bench_ret`, where `bench_ret` is the same scalar for every
+row, so subtracting it cannot change a cross-sectional ranking) and was, in that audit's
+snapshot, drawing 16% of the market-behavior weight for zero incremental ranking information.
+`technical_score_from_parts`'s docstring (lines 208-213) documents all three treatments
+(`legacy_momentum` keeps it, `neutral` removes it, `reversal` flips its sign to `100 -
+legacy_score` under a separately configured weight) as a deliberate design surface, and the
+`"neutral"` treatment is what current config actually runs. **I did not find this fix
+called out anywhere else in this document's earlier drafts or in the internal audit's own status
+table (§0)** — it is not one of the four/five commit-tagged fixes already discussed, but the
+live config value achieves the same practical effect (zero weight on the redundant metric) via a
+different mechanism (a global treatment switch rather than deleting the metric or its weight
+entry). Confirmed present in the live artifact: THG's `score_variants.short_horizon` challenger
+variant explicitly declares `"short_horizon_treatment": "reversal"` as a distinct alternative
+being tested — meaning the champion score and this named challenger differ specifically on this
+one axis, which is exactly what a champion/challenger comparison is for.
+
+A module comment (`advisor_engine.py:45-52`) explicitly argues `technical_extended`'s small
+weight is deliberate given "the literature behind adding many technical indicators mostly shows
+data-snooping" — the closest thing to a stated methodological justification for a specific
+weight value found anywhere in this codebase. It is a design-rationale comment, not a citation
+to an external validation result.
 
 A module comment (`advisor_engine.py:45-52`, attached directly to this weight table) explicitly
 argues `technical_extended`'s small weight is deliberate given "the literature behind adding
@@ -744,6 +806,24 @@ THG's live row) uses a **different combined cap of 20.0** and allocates each mod
 *fraction* of that cap (`fractions` object in `SAMPLE_OUTPUT.json`, e.g. `short_interest_penalty:
 0.3` of the 20-point cap = 6 points max) — this is a distinct, non-champion scoring path; do not
 conflate its ±20 cap with the champion's ±15 cap.
+
+### 6.5b A fourth, independent weighting scheme feeding the frontend "thesis" gauge
+
+`src/lib/bullBearScore.js` (read in full): computes a "bull/bear thesis" score from its own
+hardcoded weight table — `FACTORS = [['Fundamentals', 0.4, ...], ['Price behavior', 0.3, ...],
+['News sentiment', 0.2, ...], ['Risk quality', 0.1, ...]]` (lines 1-17) — **40/30/20/10**,
+reading `stock.components.fundamentals`, `.market_behavior`, `.news_sentiment`, and
+`stock.technical_detail.risk_adjusted` respectively. This is a **fourth weighting scheme**
+alongside the champion's `ranking_weights` (78/18/4), the shadow structural category weights
+(§6.2), and the shadow timeliness weights (§4, `scoring_v2.py`) — all four operate on
+overlapping or identical underlying inputs (`components.fundamentals`/`market_behavior`/
+`news_sentiment` specifically) but assign them materially different relative importance. This
+`thesis` score in turn feeds directly into `watchlistGuidance.js`'s Setup Quality geometric mean
+(§9.2) at a further 0.30 weight. **A single published `components` object is reweighted at
+least twice more downstream of the backend, by two different and undocumented-as-related
+schemes, before a user sees a final "Setup Quality" number.** No cross-reference or shared
+config was found linking `bullBearScore.js`'s 40/30/20/10 to any other weight table in this
+system — it appears to be an independent design decision made directly in the frontend.
 
 ### 6.6 Weight provenance
 
@@ -1089,17 +1169,54 @@ an ongoing dual-name dependency.
    named replacement actually matters to the resulting score, which could mislead a reader of
    the payload (or of `docs/spec/METRIC_REGISTRY.md`, if that document reports `replaced_by`
    without this caveat) into thinking the replacement metric carries more weight than it does.
-6. **Two profiles absent from `business_profiles.json`'s `profiles` object.**
-   `classify_profile` can return `"semiconductor"` or `"other_pre_profit"`, both of which have
-   real suppression rules in `applicability_matrix.json` (confirmed working, e.g. CRUS), but
-   neither appears in `business_profiles.json`'s `profiles` dict, which `scoring_v2.py` reads
-   for `replacement_metrics`/`critical_metrics`. **Severity: not yet established** — I confirmed
-   the gap exists in the config files but did not trace whether `scoring_v2.py`'s fallback for a
-   missing profile entry (`(BUSINESS_PROFILES.get("profiles") or {}).get(profile, {})`, which
-   defaults to an empty dict) causes any visible degradation for a real semiconductor name in
-   the current artifact, or is a harmless dead branch because nothing downstream requires those
-   two profiles to have replacement/critical metrics declared. Flagged for follow-up, not
-   asserted as a confirmed live defect.
+6. **RESOLVED from UNDETERMINED to CONFIRMED, and more severe than originally suspected: the
+   shadow path suppresses nearly every metric for semiconductor names; the live path does not.**
+   Root cause, fully traced: the live path's suppression function,
+   `canonical_metrics.suppressed_metrics(profile, metric_ids)` (`canonical_metrics.py:153-171`,
+   called from `scorer.applicability` at `scorer.py:243-260`), suppresses a metric **only** when
+   an *explicit* per-profile rule exists in `applicability_matrix.json`'s `rules` object — for
+   `"semiconductor"`, that's exactly two metrics (`capex_to_depreciation`,
+   `inventory_days_trend`). The shadow path's suppression function,
+   `canonical_metrics.applicability_for(metric_id, profile)` (lines 141-150, called once per
+   metric from `scoring_v2.build_v2_analysis`), has a **second, broader suppression path**: when
+   no explicit rule exists for a metric/profile pair, it checks whether the profile is listed in
+   that metric's `applicability_profiles` declaration in `metric_registry.json`, and **suppresses
+   by default if not listed**. `metric_registry.json`'s `declaration_defaults.
+   applicability_profiles` (the fallback list used by any metric without its own explicit
+   declaration) lists 11 profiles and **does not include `"semiconductor"` or
+   `"other_pre_profit"`**. Net effect, verified against the live artifact for CRUS (Cirrus
+   Logic, `applicability_profile: "semiconductor"`): the **live** path suppresses **3** metrics
+   (`capex_to_depreciation`, `inventory_days_trend`, `price_to_tangible_book` — the last from the
+   separate `TANGIBLE_BOOK_SECTORS` gate, §5); the **shadow** path's `analysis_v2.applicability.
+   suppressed_metrics` suppresses **28 of CRUS's roughly 32 scoreable metrics** — including
+   `forward_pe`, `price_to_book`, `return_on_equity`, `interest_coverage`, `piotroski_f`, and
+   nearly everything else that is normally applied. **Severity: high, and specific to the
+   shadow/champion divergence this document is asked to characterize precisely (§8).** For a
+   semiconductor name, the shadow structural score is not a differently-computed version of the
+   same evaluation the champion performs — it is evaluated on almost no data at all, because a
+   single missing entry in a config file's default profile list silently starves it. This is a
+   materially different and more severe finding than the internal audit's original semiconductor
+   observation (§5b there described a capex-specific mis-scoring on the *live* path, since
+   fixed; this is a *shadow-path-only*, near-total-suppression defect that has no live-path
+   analogue and was not previously documented anywhere found this session).
+7. **Seven metrics named as profile replacements in config have zero computation anywhere in
+   the pipeline.** Confirmed by the parallel metric-registry compilation and independently
+   grep-checked this session: `combined_ratio`, `risk_based_capital_ratio`, `normalized_roe`,
+   `capital_ratio`, `price_to_ffo`, `affo_yield`, `cash_runway_months` are named as the intended
+   substitute metrics for insurers, banks, and REITs in `applicability_matrix.json`'s
+   `replaced_by` fields and/or `business_profiles.json`'s `replacement_metrics` lists, but no
+   function in `pipeline/*.py` computes any of them — they are declared in
+   `metric_registry.json` (so they have units, a direction, a definition) but never populated.
+   Combined with finding §5's separate result (a *computed* replacement metric doesn't inherit
+   the suppressed metric's weight), this means the applicability system's `replaced_by` metadata
+   currently promises two things neither of which is delivered in full: the named replacement
+   either (a) doesn't exist as a computed value at all (this finding), or (b) exists but carries
+   only its own small configured weight rather than the suppressed metric's larger one (§5).
+   **Severity: moderate** — this is arguably honest (an insurer's combined ratio genuinely isn't
+   available from this pipeline's free data sources, matching the "unbuildable on free data"
+   conclusion the internal audit reached about the timeliness layer), but the config's framing
+   as a "replacement" rather than an acknowledged gap could mislead a reader of the applicability
+   payload into thinking a substitute is actually in use.
 7. **`portfolio_fit: below_target` is a structural constant for every unpositioned name** — this
    item from the internal audit is confirmed **not fixed** (§8.2), unlike its three siblings.
    Severity: low for the *score* (portfolio fit is not an input to the composite score) but
@@ -1193,8 +1310,6 @@ Consolidated from every UNDETERMINED marker above, plus items not yet touched at
   in one published example row (§4.4).
 - Whether `"replaced"` is ever assigned as an actual metric status anywhere in current code, or
   is dead code alongside `"suppressed"` (§5).
-- Whether `business_profiles.json`'s missing `semiconductor`/`other_pre_profit` entries cause
-  any visible degradation (§10.2 item 6).
 - Root cause of the 74.7 vs. 74.5 `effective_score` discrepancy (§10.2 item 8).
 - Root cause of the two different `suppressed_metrics` lists on one row (§10.2 item 9).
 - Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
