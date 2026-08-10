@@ -62,7 +62,12 @@ What's independently confirmed in this session and safe to state now:
   (`fetch_advisor.py:1343`, `ALPHA_ENRICH_LIMIT`, clamped `max(0, min(5, ...))`).
 - The published artifact examined throughout this document, `public/data/advisor.json`, carries
   `generated_at: 2026-08-10T05:23:37Z`, `model_version: 3.2.0`, `schema_version: 6`,
-  `universe_count: 926` (confirmed by direct query against the committed file).
+  `universe_count: 926` (confirmed by direct query against the committed file). Further
+  top-level facts pulled directly from it this session: `data_mode: "live"`, `universe_mode:
+  "fast"`, `polled_count: 247` — i.e. the committed artifact is a **fast-mode** product that
+  re-polled 247 names — and its `research` array holds exactly 40 rows, matching
+  `advisor_universe.json`'s `publish_limit: 40` (with `extended_limit: 150` governing the
+  statement-enrichment shortlist; both read directly from that config file).
 
 ---
 
@@ -361,13 +366,14 @@ any prior audit) and against the code that reads each block:**
 
 Sums to 1.0 exactly. `_weights()` (`advisor_engine.py:35-39`) merges config over defaults,
 accepting only numeric, non-underscore-prefixed keys — so a malformed config entry is silently
-dropped back to the hardcoded default rather than raising. **This is config-driven with a
-code-level fallback, confirmed still present** — verifying whether `settings.json` actually
-overrides these three values or the code defaults are what's live requires comparing the
-config file's `ranking_weights` block against `DEFAULT_RANKING_WEIGHTS`; not yet done this
-session (UNDETERMINED whether config or default is the operative source for these three
-specific numbers, though they are identical either way per the values found in `settings.json`
-fundamentals earlier in this session — full `ranking_weights` block not yet read directly).
+dropped back to the hardcoded default rather than raising. **Resolved this session:
+`settings.json` does contain a top-level `ranking_weights` block** with `fundamentals: 0.78,
+market_behavior: 0.18, news_sentiment: 0.04` (read directly), numerically identical to
+`DEFAULT_RANKING_WEIGHTS` — so the config file is the operative source, the code default is a
+live-but-redundant fallback, and an editor of these weights should edit `settings.json`. The
+config block also carries a `_comment` giving the stated rationale for the 4% news weight
+("headline alpha decays within days (Tetlock 2007)") — like §6.4's momentum comment, a design
+rationale in prose, not a citation to a validation result on this system's own data.
 
 ### 6.2 Fundamentals: category level
 
@@ -461,31 +467,33 @@ design rationale, not evidence of fitting.
 
 ### 6.5 Bounded post-blend modifiers
 
-`pipeline/advisor_engine.py:apply_modifiers` (lines 515-557), champion path:
+`pipeline/advisor_engine.py:apply_modifiers` (lines 515-557), champion path. **Every
+per-modifier bound below is now verified by direct read of the modifier function's body**, and
+every cap value was cross-checked against `settings.json`'s `modifiers` block (read directly),
+which declares the identical numbers — so config and code defaults agree, and config
+(`MODIFIERS = SETTINGS.get("modifiers", {})`, `advisor_engine.py:43`) is the operative source:
 
-| Modifier | Bound | Source function |
-|---|---|---|
-| sector_valuation | ±3 (per internal-audit orientation, not re-verified numerically this session) | `sector_percentile_modifier` |
-| short_interest | up to −6 | `short_interest_modifier` |
-| liquidity | −3 | `liquidity_modifier` |
-| expectations | ±3 | `expectations_modifier` |
-| macro_regime | ±3 | `macro_regime_modifier` |
-| insider_activity | +5 / −3 | `insider_modifier` |
-| institutional_13f | — (in champion path per Phase 3.3, per docstring) | `institutional_ownership_modifier` |
-| congressional_buying | reward-only, up to +4 per prior orientation | `congressional_buying_modifier` |
-| customer_concentration_risk | — (added to champion path per Phase 3.3) | `concentration_risk_modifier` |
+| Modifier | Range (points) | Shape | Source function (all in `advisor_engine.py`) |
+|---|---|---|---|
+| sector_valuation | −3 / 0 / +3 | discrete three-way: full cap for cheapest peer tier, full penalty for most expensive, nothing for middle or for `None` (no tier below 30 peers) | `sector_percentile_modifier` (465-486) |
+| short_interest | [−6, 0] | penalty-only: −6 at ≥15% of float, −3 at ≥8%, +1.5 added (still clamped to −6) at ≥5 days-to-cover | `short_interest_modifier` (254-278) |
+| liquidity | [−3, 0] | penalty-only: −3 below $5M average daily dollar volume, −1.5 below $25M | `liquidity_modifier` (428-438) |
+| expectations | [−3, +3] | ±half-cap each from analyst target upside (≥+20% / ≤−5%) and consensus rating (≤2.0 / ≥3.5), requires ≥3 analysts | `expectations_modifier` (441-462) |
+| macro_regime | [−3, +3] | continuous, sector-weighted FRED factor blend scaled to the cap, dead-zoned below 0.25 points, requires macro coverage ≥0.7 | `macro_regime_modifier` (489-512) |
+| insider_activity | [−3, +5] | asymmetric two-sided clamp of `insider_signal`'s score | `insider_modifier` (281-305) |
+| institutional_13f | [−2, +3] | asymmetric two-sided clamp of the decayed 13F breadth score (decay applied upstream; `max_age_days: 135` in config) | `institutional_ownership_modifier` (308-334) |
+| congressional_buying | [0, +4] | reward-only clamp | `congressional_buying_modifier` (337-357) |
+| customer_concentration_risk | [−3, 0] | penalty-only clamp; `measured: False` rows scored nothing rather than credited | `concentration_risk_modifier` (360-393) |
 
 **Combined cap, confirmed by direct read**: `total = round(max(-15.0, min(15.0,
 uncapped_total)), 2)` (`advisor_engine.py:552`) — a hard ±15-point cap on the summed modifiers,
-confirmed as a literal in the function body, not a config value. `geographic_concentration`
-remains challenger-only (`apply_challenger_modifiers`, a separate function starting at line
-560), per that function's docstring, for a stated correctness reason (geography-tagged revenue
-often reflects shipping/contracting entity rather than end demand) rather than a coverage
-reason. Individual per-modifier point caps (the ±3/±6/etc. figures in the table above) were
-sourced from the internal audit's orientation and **not independently re-derived from each
-modifier function's body this session** — flagged UNDETERMINED for the exact current numeric
-caps on each of the nine modifiers; only the combined ±15 cap is independently confirmed by
-direct code read.
+confirmed as a literal in the function body, not a config value. (The theoretical pre-cap sum
+of the individual bounds is [−23, +16], so the ±15 combined cap can actually bind on the
+penalty side.) `geographic_concentration` remains challenger-only ([−2, 0],
+`geographic_concentration_modifier`, lines 396-425; applied in `apply_challenger_modifiers`
+starting at line 560), per that function's docstring, for a stated correctness reason
+(geography-tagged revenue often reflects shipping/contracting entity rather than end demand)
+rather than a coverage reason.
 
 A separate challenger variant (`score_variants.modifier_recalibration`, confirmed present in
 THG's live row) uses a **different combined cap of 20.0** and allocates each modifier a
@@ -787,20 +795,44 @@ What's independently confirmed this session and stated with citation now:
    directly affects position-sizing guidance display for any user without a matching portfolio
    entry, which given `portfolio_coverage` limitations (not yet quantified this session — see
    §11) may be most published names.
-8. **THG's `effective_score` appears as two slightly different values in one payload**: `74.7`
-   (`recommendation_v2.company.structural.effective_score`) vs. `74.5`
-   (`analysis_v2.structural.effective_score`) — same conceptual computation, same input `raw_
-   score: 90.5`, not yet root-caused. Both round from a computation of the form `50 + confidence
-   × (raw − 50)`; a 0.2-point gap implies the two call sites use slightly different `confidence`
-   inputs (0.61 vs. a marginally different value) despite both being fed from what appears to be
-   the same `structural` block. **Not root-caused this session — flagged, not resolved.**
-9. **Two different `suppressed_metrics` lists for the same THG row** (noted in
-   `TRACE_THG.md` §5, not yet resolved): `fundamental_detail.suppressed_metrics` includes
-   `sales_multiple` and excludes `trailing_revenue_growth`; `analysis_v2.applicability.
-   suppressed_metrics` does the reverse. Likely explained by the `ALIASES` mapping in
-   `scoring_v2.py:72-76` (`revenue_growth → trailing_revenue_growth`) operating on a different
-   metric-ID namespace than the legacy path uses, but not confirmed by reading the producing
-   code for `fundamental_detail.suppressed_metrics` this session.
+8. **THG's `effective_score` appears as two slightly different values in one payload —
+   root-caused as a rounding-order defect.** `74.5` (`analysis_v2.structural`) is computed by
+   the producer from **unrounded** confidence (`scoring_v2.py:164-166`: `0.3418/0.4066 × 0.72
+   = 0.60525…` → `50 + 0.60525 × 40.5 = 74.51`), which is then published rounded to two
+   decimals (`evidence_weight_resolved: 0.61`, `scoring_v2.py:188`). `74.7`
+   (`recommendation_v2.company.structural`) comes from `recommendation_policy_v2._score_layer`
+   (`recommendation_policy_v2.py:59`), which **recomputes** the effective score from the
+   layer's *rounded* published confidence instead of trusting the `effective_score` field the
+   layer already carries: `50 + 0.61 × 40.5 = 74.705 → 74.7`. Both arithmetics reproduce the
+   published values exactly. **Severity: low numerically (bounded by ±0.005 × |raw − 50|, so
+   ≤ ±0.25 points), but it is a genuine "same value, two answers" contract violation** — a
+   downstream module re-derives from lossier inputs what its input already states, and both
+   versions publish. Full derivation in `TRACE_THG.md` §4.
+9. **The live path and the v2 path can suppress *different metrics for the same company* —
+   root-caused as two distinct registry-consultation gaps, both confirmed by direct read.**
+   For THG: `fundamental_detail.suppressed_metrics` includes `sales_multiple` but not
+   `trailing_revenue_growth`; the v2 blocks do the reverse. Cause (full detail in
+   `TRACE_THG.md` §5 item 1):
+   - *Namespace split*: the live path queries the applicability registry with legacy IDs
+     (`scorer.py:252`), the v2 path with canonical IDs after `ALIASES` mapping
+     (`scoring_v2.py:103-104`). `applicability_matrix.json`'s insurer rule is keyed
+     `sales_multiple` (legacy), so only the live path sees it; the v2 path asks about
+     `price_to_sales`, which has no rule and no registry entry, and treats it as applied-but-
+     missing.
+   - *Fallback asymmetry*: `applicability_for` (v2, `canonical_metrics.py:147-149`)
+     suppresses by default any metric whose `metric_registry.json` entry does not declare the
+     profile applicable; the live path's `suppressed_metrics` (`canonical_metrics.py:153-172`)
+     never consults `metric_registry.json` at all. `trailing_revenue_growth`'s registry entry
+     declares no insurer profiles, so v2 suppresses it — while **the live scorer scores
+     revenue growth for insurers** (`scorer.py:584`), against the registry's declared intent.
+     The effect is score-relevant, not cosmetic: THG's legacy `growth` category is 86.1 (with
+     revenue growth in) vs. v2's 100.0 (with it out).
+   - The `suppressed_metrics` docstring's claim that "one authority now serves both paths"
+     (`canonical_metrics.py:156-162`, describing `0e0a9ad`) is therefore only half-true: one
+     *file set*, two inconsistent read paths. **Severity: moderate** — the live score includes
+     (or excludes) metrics contrary to the canonical registry's declarations for any profile
+     whose rules are keyed in only one namespace, or whose suppression relies on the
+     registry-declaration default.
 
 ### 10.3 Not yet investigated this session (candidates flagged by the internal audit, unverified either way)
 
@@ -818,23 +850,23 @@ follow-up checklist, explicitly not as confirmed findings.
 
 ## 11. Undetermined
 
-Consolidated from every UNDETERMINED marker above, plus items not yet touched at all:
+Consolidated from every UNDETERMINED marker above, plus items not yet touched at all.
+Resolved since the checkpoint draft (and removed from this list): per-modifier caps (§6.5, now
+all directly verified), `ranking_weights` config presence (§6.1, confirmed in `settings.json`),
+the 74.7 vs. 74.5 discrepancy (§10.2 item 8, root-caused), and the two `suppressed_metrics`
+lists (§10.2 item 9, root-caused). Still open:
 
-- Exact current per-modifier point caps for 8 of 9 champion-path modifiers (only the ±15
-  combined cap is directly confirmed; §6.5).
-- Whether `ranking_weights` (fundamentals 0.78/market_behavior 0.18/news_sentiment 0.04) is
-  actually present in `settings.json` or is running on the hardcoded `DEFAULT_RANKING_WEIGHTS`
-  fallback (§6.1) — the two are numerically identical in what was observed, so this doesn't
-  change any number in this document, but it changes *how* a reader would edit the weight.
 - Full TTM/annual/quarterly period-convention audit across all ~29 fundamental metrics (§4.3).
 - `CrossSectionalNormalizer`'s internal winsorization/tie-handling logic, beyond what's visible
   in one published example row (§4.4).
 - Whether `"replaced"` is ever assigned as an actual metric status anywhere in current code, or
   is dead code alongside `"suppressed"` (§5).
 - Whether `business_profiles.json`'s missing `semiconductor`/`other_pre_profit` entries cause
-  any visible degradation (§10.2 item 6).
-- Root cause of the 74.7 vs. 74.5 `effective_score` discrepancy (§10.2 item 8).
-- Root cause of the two different `suppressed_metrics` lists on one row (§10.2 item 9).
+  any visible degradation (§10.2 item 6). Partially narrowed this session: the miss surfaces
+  through `scorer.applicability`'s `profile_contract` lookup (`scorer.py:255-259`), where an
+  absent profile entry means `price_to_tangible_book` is suppressed unless the *sector* string
+  is in `TANGIBLE_BOOK_SECTORS` — a sector-string fallback doing exactly the kind of work the
+  registry was supposed to take over; still not traced to a visibly wrong published number.
 - Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
   session).
 - Everything in §10.3 (audit items not re-verified).
