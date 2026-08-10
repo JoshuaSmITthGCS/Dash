@@ -1,10 +1,13 @@
 # ValueSignal — Architecture Specification
 
-**Status: draft in progress.** Sections 4, 5, 6, 8, and part of 10 are complete and
-independently verified against current code (branch `claude/valuesignal-spec-audit-qf2wni`,
-HEAD as of 2026-08-10, working tree matching commit `e312488`). Sections 1–3, 9, and 12 are
-pending synthesis from a parallel research pass and are marked accordingly below. Do not treat
-this file as finished; it is being assembled incrementally and will be redeployed in place.
+**Status: draft in progress.** Sections 1–10 and 12 are complete and independently verified
+against current code (branch `claude/valuesignal-spec-audit-qf2wni`, HEAD as of 2026-08-10).
+Section 11 (undetermined) is a living list, updated as gaps are found or closed. Pending: full
+integration of `docs/spec/METRIC_REGISTRY.md` and `docs/spec/registry.json` (a per-metric
+table and a machine-readable dump, both being compiled in parallel) into this document's
+weight tables in §6, and a final read-through pass for internal consistency once both land. Do
+not treat this file as finished; it is being assembled incrementally and will be redeployed in
+place.
 
 Every factual claim below carries a `path/to/file.py:line` citation to code read directly in
 this session, not copied from this repository's own internal audit documents
@@ -42,44 +45,293 @@ against a live example (THG).
 
 ## 1. System overview
 
-**[PENDING — synthesis from data-sources/runtime-topology research pass. Will draw on
-`docs/spec/FILE_INVENTORY.md`, which is complete and code-grounded: npm scripts, GitHub Actions
-schedules (`refresh-advisor.yml` etc.), and Netlify function endpoints are already documented
-there with citations.]**
+ValueSignal is a static React single-page application (built by Vite, deployed to Netlify) that
+displays a pre-computed research payload. All scoring happens offline, in a Python pipeline run
+by scheduled GitHub Actions — the deployed frontend never computes a score; it renders JSON
+committed to the repository. This split (compute offline, serve static JSON) means "the system"
+is really two independent programs that only communicate through committed files:
+`pipeline/*.py` (producer) and `src/**/*.{jsx,js}` (consumer), plus three small Netlify
+serverless functions that bridge live, low-latency needs the static JSON can't serve.
 
-What's independently confirmed in this session and safe to state now:
+**Path from a scheduled run to a rendered number:**
 
-- The one function that produces the published research payload is `pipeline/fetch_advisor.py`;
-  its entry point is `run()` (currently starting at line 1313 — this line number has already
-  shifted once during this session's investigation, confirming the file is under active
-  modification; do not trust line numbers from any document older than this session).
-- Two run modes are selected by the `ADVISOR_UNIVERSE_MODE` environment variable
-  (`fetch_advisor.py:1337`, default `"full"`): full mode polls the entire configured universe
-  and refits normalization distributions from scratch; fast mode (confirmed to exist, exact
-  current mechanics not yet re-read this session — see `docs/spec/TRACE_THG.md` §1) reuses a
-  prior fit and only re-polls a rotating subset.
-- Alpha Vantage enrichment is capped at 5 symbols per refresh regardless of universe size
-  (`fetch_advisor.py:1343`, `ALPHA_ENRICH_LIMIT`, clamped `max(0, min(5, ...))`).
-- The published artifact examined throughout this document, `public/data/advisor.json`, carries
-  `generated_at: 2026-08-10T05:23:37Z`, `model_version: 3.2.0`, `schema_version: 6`,
-  `universe_count: 926` (confirmed by direct query against the committed file).
+1. GitHub Actions fires `refresh-advisor.yml` on a cron schedule (confirmed in
+   `docs/spec/FILE_INVENTORY.md`: `cron: '7 11,12,16,17,19,20 * * 1-5'`, weekdays,
+   ET-market-hours-aligned, ~6 runs/day, gated against `America/New_York` so DST doesn't shift
+   the effective local time) or on manual `workflow_dispatch`.
+2. The workflow runs `pipeline/fetch_advisor.py`'s `run()` function (entry point confirmed at
+   line 1313 as of this session — this number has already shifted once during this
+   investigation, confirming the file is under active edit; do not trust line numbers from any
+   document older than this session). This is the one function that produces
+   `public/data/advisor.json` and is described in full in §§2-8 of this document.
+3. Downstream builders run in the same job (per `FILE_INVENTORY.md`'s workflow trace): the
+   options-strategy screen builders, `run_strategy_backtests.py`, `fetch_etfs.py` /
+   `build_etf_comparisons.py` / `fetch_factors.py`, `rescore.py`,
+   `build_quality_value_screen.py`, `build_tactical_screens.py`, `shadow_portfolios.py`,
+   `validate_data.py`, `stability_report.py`, `evaluate_alerts.py` — then the workflow commits
+   the updated `public/data/*.json` files directly to the repository (`contents: write`
+   permission, push retries, per `FILE_INVENTORY.md`).
+4. Netlify rebuilds and redeploys the static site on every push to the default branch
+   (`npm run build` → `vite build`, publishing `dist/`), or serves the previously-built site
+   unchanged if only data files (not app code) changed — the published JSON under `public/data/`
+   is fetched by the already-deployed frontend at runtime, so a data-only refresh does not
+   necessarily require a full site rebuild (exact caching/versioning behavior of this handoff is
+   UNDETERMINED — not traced this session).
+5. The browser loads the SPA, fetches `public/data/advisor.json` (and siblings) directly, and
+   `src/lib/useData.js` / `src/lib/schemaMigrations.js` parse and (if needed) upgrade the row
+   shape before any component renders a number.
+
+**Three run parameters that shape every published payload**, confirmed by direct code read:
+- `ADVISOR_UNIVERSE_MODE` (`fetch_advisor.py:1337`, default `"full"`): `full` polls all 910
+  configured symbols and refits cross-sectional normalization distributions from scratch; `fast`
+  polls only the prior run's top 100 + portfolio + a rotating 120-name slice of the stalest
+  tail, reusing the prior fit (§3 has the full mechanics).
+- `ALPHA_ENRICH_LIMIT` (`fetch_advisor.py:1343`, clamped `max(0, min(5, ...))`, default 5):
+  regardless of universe size, only 5 symbols per refresh receive Alpha Vantage enrichment.
+- `publish_limit` (40) and `extended_limit` (150), both from `advisor_universe.json`: of the
+  ~910-symbol universe, at most 150 receive statement-derived (ROIC, Altman Z, Piotroski, etc.)
+  enrichment, and only the top 40 are published to the `research` array the frontend's main
+  leaderboard reads from — everything else lands in the lighter `screen_universe` array (§4.1
+  and §6 already establish that a `screen_universe` row and a `research` row are not the same
+  statistic; this is why).
+
+**The published artifact examined throughout this document**, `public/data/advisor.json`,
+carries `generated_at: 2026-08-10T05:23:37Z`, `model_version: 3.2.0`, `schema_version: 6`,
+`universe_count: 926` (confirmed by direct query against the committed file — 926 vs. the
+universe file's 910 configured symbols reflects portfolio/watchlist additions layered on top of
+the base list at run time, consistent with `advisor_universe.json`'s separate
+`portfolio_symbols` block).
+
+**Netlify serverless functions** (`netlify/functions/*.mjs`, confirmed in `FILE_INVENTORY.md`):
+`refresh-data.mjs` (admin-authenticated manual refresh trigger, dispatches and polls GitHub
+Actions runs), `portfolio-prices.mjs` (Firebase-ID-token-authenticated live/post-market quote
+fetch for a user's held symbols), `alert-push.mjs` (Web Push notification delivery for
+Firestore-recorded alert events, quiet-hours aware). These are the only three points where the
+deployed system does anything beyond serving static JSON.
+
+**Repo layout, by module purpose** (full detail in `docs/spec/FILE_INVENTORY.md`, which covers
+every significant file individually — not reproduced here): `pipeline/` (the Python scoring
+pipeline and ~20 screen builders), `research/` (backtesting/candidate-signal research code, plus
+the prior internal audit discussed in §0), `src/` (the React frontend — `pages`, `components`,
+`lib`, `workers`), `netlify/functions/` (the three serverless bridges above), `scripts/`
+(evidence/report generation, screenshots, hygiene checks), `.github/workflows/` (the refresh,
+backfill, and CI schedules).
 
 ---
 
 ## 2. Data sources
 
-**[PENDING — full section from parallel research pass covering: per-provider endpoints,
-authentication, rate limits as implemented in `pipeline/cache.py`, retry/backoff, caching TTLs,
-failure behavior per provider, and a field-level provenance table. Will be inserted here on
-completion.]**
+### 2.1 Provider-by-provider
+
+**Yahoo Finance (yfinance)** — `pipeline/providers.py` (`YahooAdapter`) and `pipeline/fetch_advisor.py`.
+- Calls: `yf.Ticker(symbol).info`, `.history()`, statement frames (`extended_inputs`), option
+  chains — `fetch_advisor.py:417-431` (quote snapshot), `:501-543` (`yahoo_extended`,
+  statement-derived metrics), `:546-576` (options IV, opt-in via `ENABLE_OPTIONS_VOLATILITY`).
+- Auth: none (no key required).
+- Rate limit as implemented: `DEFAULT_RATE_LIMITS["yahoo"] = 240`/min — a **self-declared
+  guess**, not a documented Yahoo limit; `cache.py:39-43`'s comment states this explicitly
+  ("Yahoo publishes no rate limit ... this is our own conservative guess"). Enforced via
+  `limiter_for("yahoo")` at `fetch_advisor.py:452`, `providers.py:175/208/253`,
+  `yahoo_news.py:185`.
+- Cache: namespaces `price_history` (TTL 6h), `quote` (TTL 900s), `statements` (TTL 7 days) —
+  `cache.py:53-55`.
+- Retry: `retry_with_backoff` (`cache.py:347-362`) — 4 attempts, delay `2**attempt` seconds
+  (2/4/8/16s). Used for batch `yf.download` (`fetch_advisor.py:400-403`) and elsewhere.
+- On failure: per-symbol try/except swallows the error, logs a warning, serves a stale cache
+  entry if one exists (`DiskCache.fetch`, `allow_stale_on_error=True` by default,
+  `cache.py:225-245`), or leaves that field unenriched. `.info` failure and statement-frame
+  failure are caught **separately** (`fetch_advisor.py:501-528`) so one broken call doesn't
+  blank the other. A symbol is dropped from the run only if it has fewer than 21 price sessions
+  or no name (`fetch_advisor.py:1036-1037`, caught per-symbol at `:1399-1401`).
+- Point-in-time: **no** — Yahoo/yfinance serves only as-of-today restated data, which is exactly
+  why the separate PIT store layer exists (below).
+
+**Alpha Vantage** — `pipeline/alpha_vantage.py` (`AlphaVantageClient`).
+- Functions called from `fetch_advisor.py`: `OVERVIEW` (`:990`), `TIME_SERIES_DAILY` (`:992`,
+  plus SPY benchmark at `:1372-1375`), `NEWS_SENTIMENT` (`:1010`, only when Marketaux is
+  unavailable/failed), `INSIDER_TRANSACTIONS` (`:1014`).
+- Auth: `ALPHA_VANTAGE_API_KEY` from `.env.local` (`alpha_vantage.py:21-38`).
+- Coverage capped at `min(5, ALPHA_ENRICH_LIMIT)` symbols per run (`fetch_advisor.py:1343,
+  1348`) — 905 of 910 universe symbols never touch Alpha Vantage at all.
+- Rate limit: does **not** use `cache.py`'s token-bucket machinery. Paces itself with a
+  hardcoded `min_interval=1.1`s between requests (`alpha_vantage.py:36,42,60-62`).
+  `DEFAULT_RATE_LIMITS["alpha_vantage"] = 5`/min (`cache.py:34`) is **dead configuration for
+  this call path** — a separate, unused `AlphaVantageAdapter` class in `providers.py:291-323`
+  does call `limiter_for`, but nothing imports it; `fetch_advisor.py` imports
+  `AlphaVantageClient` from `alpha_vantage.py` instead. Flagged as a new finding in §10.
+- Cache: own file cache under `pipeline/cache/alpha_vantage/`, default `cache_hours=20`.
+- Retry: **none** — a single `requests.get`; any error status or an `Error Message`/`Note`/
+  `Information` field in the payload raises immediately (`alpha_vantage.py:63-76`).
+- On failure: caught in `fetch_optional()` (`fetch_advisor.py:945-950`), logged, returns `{}` —
+  silent, not loud. `merge_snapshots()` falls through to Yahoo for every field.
+- Point-in-time: no.
+
+**Marketaux** — `pipeline/marketaux.py`.
+- Endpoint `https://api.marketaux.com/v1/news/all` (`marketaux.py:19`), called per-symbol
+  (`fetch_advisor.py:1001-1004`) and for broader discovery news (`:695-699`).
+- Auth: `MARKETAUX_API_TOKEN`.
+- Rate limit: `DEFAULT_RATE_LIMITS["marketaux"] = 60`/min exists (`cache.py:46`) but, like Alpha
+  Vantage, is **never invoked** — no `limiter_for` call anywhere in `marketaux.py`.
+- Cache: own file cache, `cache_hours=4` default.
+- Retry: none — a non-200 or malformed payload raises immediately.
+- On failure: caught at `fetch_advisor.py:1006-1008`, symbol falls back to Alpha Vantage news
+  (if alpha-enriched) or runs on Yahoo's own per-symbol news, which is fetched unconditionally
+  regardless of Marketaux state (`:985-986`). If `MARKETAUX_API_TOKEN` is unset, the client is
+  `None` for the whole run.
+- Point-in-time: no.
+
+**FRED** — `pipeline/fred.py`.
+- Endpoint `https://api.stlouisfed.org/fred/series/observations`, six series (`treasury_10y,
+  fed_funds, cpi, unemployment, yield_curve, sahm`) — `fred.py:14,18-25`.
+- Auth: `FRED_API_KEY`.
+- Rate limit: `DEFAULT_RATE_LIMITS["fred"] = 120`/min defined (`cache.py:45`) but **never
+  enforced** — `fred.py` never calls `limiter_for`.
+- Cache: **none at all**. The module docstring states explicitly "raw observations are held in
+  memory only" (`fred.py:3`) — every refresh re-fetches all 6 series live.
+- Retry: none.
+- On failure: `fetch_regime()` tolerates up to 4 of 6 series failing (`fred.py:167-178`); a
+  total failure sets the whole macro-regime block to `None` rather than fabricating a value —
+  confirmed the run continues either way.
+- Point-in-time: no — current-value-only, and explicitly not persisted.
+
+**SEC EDGAR** — `pipeline/sec_edgar.py`.
+- Endpoints: Form 4 ownership XML (`recent_form4_filings`/`form4_transactions`, called at
+  `fetch_advisor.py:754`); `ticker_map()` from SEC's `company_tickers.json`
+  (`sec_edgar.py:222-239`); submissions JSON; XBRL `company_facts`/`company_concept`/`frames`
+  (used by `theme_signals.py`); full-text search. 13F-HR retrieval happens in a **separate
+  monthly job** (`build_institutional_screen.py`), not live inside the advisor refresh.
+- Auth: no API key, but requires `SEC_USER_AGENT` (a real contact string) per SEC fair-access
+  policy — without it, the insider and theme layers report themselves unavailable rather than
+  spoof a client (`sec_edgar.py:1-6,154-155,169-171,186-187`).
+- Rate limit: `540`/min (9/s, deliberately under SEC's published 10/s) — `cache.py:35-38`,
+  **actually enforced** via a real shared token bucket (`sec_edgar.py:173-177,191`) — the one
+  provider besides Yahoo where the configured limit is genuinely wired in.
+- Cache: `sec_submissions` TTL 24h, `sec_document` TTL 30 days ("a filed document never
+  changes"), `sec_xbrl` TTL 24h.
+- Retry: a dedicated 5-attempt exponential backoff specifically on `403/429/500/502/503/504`
+  (`sec_edgar.py:182-215`), separate from `cache.py`'s generic retry helper.
+- On failure: per-symbol exceptions caught, added to a `failures` list; diagnostics distinguish
+  "no filings" from "unreadable filings."
+- Point-in-time: **the one genuinely point-in-time source in this pipeline.** EDGAR facts are
+  as-filed and immutable once filed. `pipeline/pit_fundamentals_store.py`,
+  `pipeline/pit_shares.py`, `pipeline/pit_market.py`, `pipeline/pit_store.py` build a
+  deduplicated point-in-time capture layer on top of it. Every other provider (Yahoo, Alpha
+  Vantage, Marketaux, FRED) is as-of-today-only.
+
+**Congress / FMP / Senate eFD** — `pipeline/congress_trades.py`, run by a **separate weekly
+job** (`build_congress_screen.py`), not called live from `fetch_advisor.py`, which only reads
+the already-published `public/data/screens/congress-trades.json` at read time
+(`fetch_advisor.py:902-925`, docstring: "No live FMP calls here"). Three source clients, per the
+module's own docstring none alone dependable: `CongressTradesClient` (FMP, key `FMP_API_KEY`,
+**not present in `.env.example`**), `SenateEfdClient` (keyless), `StockWatcherClient` (its own
+docstring states this mirror **currently returns HTTP 403 on every request** — confirmed dead).
+Live artifact check: `congress-trades.json` currently shows `status: "partial"`, 1,162 rows —
+the job runs but incompletely, consistent with one of its three sources being dead.
+
+**Institutional ownership (13F) + OpenFIGI** — `pipeline/institutional_ownership.py` +
+`pipeline/openfigi_client.py`, run by a separate monthly job. `fetch_advisor.py:852-899` reads
+the published `institutional-13f.json` at read time and applies filing-lag decay — no live
+SEC/OpenFIGI calls inside the advisor refresh itself. OpenFIGI auth (`OPENFIGI_API_KEY`) is
+optional; unset falls to an anonymous tier capped at 10 jobs/request vs. 100 keyed (**not in
+`.env.example`**). Live artifact check (`institutional-13f.json`): `status: "success"`,
+`openfigi_tier: "anonymous"`, `cusips_seen: 3489`, `cusips_mapped: 278`, but **`results: []` —
+zero published rows**, because only 4 of 9 configured 13F managers resolved a filer CIK at all,
+and the corroboration gate (`min_managers: 2`, `institutional_ownership.py:49`) is never
+cleared. Confirmed: `institutional_ownership` is `None` for all 40 published rows in the current
+artifact. A stale in-code comment (`fetch_advisor.py:1901-1904`, "has never run against the live
+OpenFIGI endpoint or live 13F filings") is itself now inaccurate — the pipeline does run against
+both live endpoints, it just produces zero usable corroborated output. **Flagged as a defect in
+its own right in §10: a diagnostic comment that no longer describes the code's actual behavior.**
+
+**Marketstack** — separate scheduled job (`.github/workflows/marketstack-premarket.yml`), not
+called from `fetch_advisor.py`. Auth `MARKETSTACK_API_KEY` (**not in `.env.example`**). Batches
+up to 100 symbols/request, twice daily, to stay under a 100-calls/month plan. Data appended
+point-in-time under `pipeline/data/marketstack/`, never overwritten.
+
+**RSS feeds** — `pipeline/fetch_news.py`, a keyless fallback using `feedparser` against named
+feeds, used when Marketaux is unavailable.
+
+### 2.2 Field-level provenance table
+
+| Field | Primary source | Fallback chain | On total failure |
+|---|---|---|---|
+| `price` | Alpha Vantage OVERVIEW-derived close (5 enriched symbols only), `fetch_advisor.py:613,619` | Yahoo `fetch_snapshot` via `merge_snapshots` (`:633-646,1022`) for all symbols | `None` — no numeric default substituted anywhere in this path |
+| `forward_pe` | Alpha Vantage `ForwardPE` (5 symbols) | Yahoo `.info`-derived fallback via `merge_snapshots` | `None` |
+| `return_on_equity` | Alpha Vantage `ReturnOnEquityTTM` | Yahoo fallback; statement-derived ROIC (distinct metric) computed separately for the top-150 enriched subset | `None` |
+| `days_sales_outstanding` | `fundamentals_extended.derive_extended`, statement-derived, top-150 (`EXTENDED_LIMIT`) subset only | none — statement-only | `None` (absent entirely outside the shortlist) |
+| `short_percent_of_float` | Yahoo `.info.shortPercentOfFloat` via `derive_extended`, top-150 subset only | none | `None` |
+| `analyst_rating` | Yahoo `.info.recommendationMean` via `derive_extended`, top-150 subset only | none | `None` |
+| `institutional_ownership` | `public/data/screens/institutional-13f.json` (monthly job) | none | `None` — verified 0 of 40 published rows non-null currently |
+| `congressional_activity` | `public/data/screens/congress-trades.json` (weekly job) | none | `None` — verified 1 of 40 published rows non-null currently |
+| `insider_activity` | Live SEC EDGAR Form 4, shortlist sized by `SEC_FORM4_LIMIT` | none | symbol absent from `signals`, added to a `failures` list |
+| news sentiment | Marketaux, merged ahead of Yahoo's unconditional per-symbol news | Alpha Vantage `NEWS_SENTIMENT` if Marketaux absent/failed and alpha-enriched → Yahoo-only baseline otherwise | never fully `None` — Yahoo per-symbol news always runs |
+| macro regime inputs | FRED, 6 series | none (an unused Alpha Vantage `macro_context()` helper exists but is not called from `main()`) | whole `fred_regime` block `None` if fewer than 2 of 6 series resolve |
+| `valuation_percentile`/`peer_context` | `peer_groups.canonical_percentiles` | n/a | explicit `None` with `invalid_reason`, never a fabricated tier |
+| `market_cap` | Alpha Vantage (5 symbols) | Yahoo fallback | `None`; also subject to a cross-source plausibility check (`fetch_advisor.py:1026-1035`) that can drop an implausible value entirely |
+
+Cross-provider disagreement handling: `screen_plausibility()` (`fetch_advisor.py:1026-1035`)
+explicitly compares Alpha Vantage vs. Yahoo readings for `market_cap`/`price` and can drop a
+field as implausible rather than silently keeping whichever provider answered first.
+
+**Summary of point-in-time status**: of every provider in this pipeline, only SEC EDGAR is
+genuinely point-in-time (as-filed, immutable, captured into an append-only store). Yahoo, Alpha
+Vantage, Marketaux, and FRED all serve current/restated-only data with no historical capture at
+the provider layer — any point-in-time reconstruction for those sources depends entirely on
+`pipeline/pit_store.py` and siblings having captured a prior run's observation, not on the
+provider itself.
 
 ---
 
 ## 3. Universe construction
 
-**[PENDING — from parallel research pass: `pipeline/config/advisor_universe.json` structure,
-symbol count, static vs. generated, inclusion/exclusion criteria, ticker-to-entity resolution,
-and universe change history via `git log` on that file.]**
+`pipeline/config/advisor_universe.json` — loaded directly and confirmed: top-level keys
+`description`, `publish_limit` (**40**), `extended_limit` (**150**), `portfolio_symbols` (21
+tickers), `symbols` (**910 tickers**, a flat array of ticker strings — no CIK or exchange
+qualifier attached in this file).
+
+**Static, not generated.** No code in `pipeline/*.py` builds this file programmatically at
+runtime; `fetch_advisor.py:55-57` simply loads it via `load_json(...)`.
+
+**Inclusion/exclusion criteria**: the file's own `description` field states a rationale in
+prose — a "diversified liquid US large- and mid-cap candidate universe," with breadth justified
+by the argument that a signal's information ratio scales with the square root of the number of
+independent bets. This is a **documented design rationale, not an enforced code-level filter** —
+no market-cap floor, liquidity screen, or sector cap was found applied against this list at
+runtime. What does exist is regression/consistency testing on the curated list itself:
+`pipeline/tests/test_universe_config.py` — `test_symbols_are_unique_and_well_formed`,
+`test_breadth_is_wide_enough_for_cross_sectional_ranking`,
+`test_the_statement_shortlist_stays_well_under_the_universe`,
+`test_configured_holdings_are_inside_the_scored_universe`. These check shape and internal
+consistency, not membership criteria.
+
+**Ticker-to-entity resolution**: tickers map to CIKs only at lookup time, via
+`SecEdgarClient.ticker_map()`, which builds `{ticker.upper(): cik.zfill(10)}` from SEC's own
+`company_tickers.json` (`sec_edgar.py:232-239`). There is no exchange qualifier anywhere in the
+configuration — a bare ticker string is the only identifier the universe file carries, and CIK
+resolution is a live/cached lookup layered on top, never a stored mapping in
+`advisor_universe.json` itself. This means cross-listing or ticker-reuse ambiguity is inherently
+unresolvable from the universe file alone.
+
+**Change history**: `git log --oneline -- pipeline/config/advisor_universe.json` returns exactly
+one commit visible in this clone. **This repository is a shallow clone** (confirmed:
+`git rev-parse --is-shallow-repository` → `true`, 136 total commits visible) — this does not
+prove the universe has only changed once historically, only that a single change is visible in
+the truncated history available to this session. Whether the universe has changed prior to this
+clone's history horizon is **UNDETERMINED**, not "no."
+
+**`ADVISOR_UNIVERSE_MODE`** (`fetch_advisor.py:1337-1370`, re-read fresh — line numbers have
+shifted since earlier in this session, confirming the file is still under active edit):
+- `os.getenv("ADVISOR_UNIVERSE_MODE", "full")` — default **`full`**.
+- `full`: all 910 configured (or `ADVISOR_SYMBOLS`-overridden) symbols are polled.
+- `fast`: restricted to the union of (a) the prior run's top `ADVISOR_FAST_UNIVERSE_SIZE`
+  (default 100) ranked symbols, (b) current `portfolio_symbols`, and (c) an
+  `ADVISOR_FAST_ROTATION_SIZE` (default 120) slice of the stalest tail names — sized, per an
+  in-code comment, so the full ~900-name universe cycles through roughly every seven fast
+  refreshes. Symbols left out of a fast refresh are **not dropped** — they carry forward their
+  last full-refresh row.
+- `publish_limit` (40) and `extended_limit` (150) are independent of universe mode — they gate
+  how many symbols get statement enrichment or make the published leaderboard, not how many get
+  quote-polled.
 
 ---
 
@@ -723,20 +975,87 @@ numbers** are UNDETERMINED without re-running this calculation against NEM's act
 
 ## 9. Publication contract
 
-**[PENDING — full JSON schema field-by-field walkthrough and frontend-consumption trace from
-parallel research pass, including the "cheaper than approximately X% of peers" sentence's
-current fate (already confirmed elsewhere in this document that the underlying percentile
-mechanism was replaced by a ≥30-peer tier system — the parallel pass is confirming exactly how
-this now renders, if at all, in `src/components/*.jsx`).]**
+**Schemas present**: `pipeline/schemas/` contains `advisor.schema.json` (930 lines — top-level
+`$schema`, `type`, `required`, `properties`, `additionalProperties`, `$defs`), plus
+`etfs.schema.json`, `news.schema.json`, `picks.schema.json`, `politicians.schema.json`,
+`prices.schema.json`, `recommendation-v5.schema.json`, `signals.schema.json`,
+`status.schema.json`, `trades.schema.json`. Full field-by-field schema walkthrough not exhaustively
+reproduced here — see `docs/spec/METRIC_REGISTRY.md` and `docs/spec/SAMPLE_OUTPUT.json`'s
+key-by-key annotation (below) for the fields that matter for scoring; the schema file itself is
+the authoritative full contract for anyone validating a payload mechanically.
 
-What's independently confirmed this session and stated with citation now:
-- `pipeline/peer_groups.py` (full file read this session) no longer computes or exposes a
-  percentage. Its output object's `peer_context` field is `None` below 30 valid peers
-  (`MINIMUM_VALID_PEERS = 30`, line 36) and otherwise carries a `tier` (one of
-  `cheapest_third`/`middle_third`/`most_expensive_third`) with a `tier_phrase` pre-written for
-  display (`"in the cheapest third of"` etc., `TIER_LABELS`, lines 38-42) and an `ordinal`
-  midpoint (16.7/50.0/83.3) rather than a computed percentile. THG's live `valuation_percentile`
-  has `peer_context: null` (7 valid peers, below the 30 minimum).
+`pipeline/config/research_contract.json`: top-level keys `_comment`, `contract_version
+("1.0.0")`, `universe`, `forecast_targets`, `execution_assumptions`,
+`champion_challenger_governance`. Notably, `forecast_targets.primary` **self-declares**
+`implementation_status: "not_implemented"` for its 63-trading-day forward sector-residual return
+target, and points to `pipeline/validation/ic_harness.py` as scoring a related-but-not-identical
+raw-return diagnostic today. This is an honest, self-reported gap rather than a false claim of a
+working target.
+
+### 9.1 The peer-percentile sentence, traced end to end (current code)
+
+1. `pipeline/peer_groups.py:99-126` (`canonical_percentiles`) — confirmed no continuous
+   percentage is ever computed or exposed. `MINIMUM_VALID_PEERS = 30` (line 36); tiers only
+   (`cheapest_third`/`middle_third`/`most_expensive_third`); tie-averaged rank fractions
+   (lines 79-96) so tied names always land in the same tier; an explicit `None` with
+   `invalid_reason: "insufficient_valid_peers"` when a group is too thin (lines 117-120). The
+   `_metadata()` function has no `value`/`display_value` key by design (comment at lines
+   137-139). THG's live row: `peer_context: null` (7 valid peers, below the 30 minimum).
+2. **Frontend rendering** — `src/components/StockDetailModal.jsx:253-259`:
+   ```jsx
+   {percentile?.peer_context
+     ? <p className="stock-peer-context" title={...}>
+         Valuation score {percentile.peer_context.tier_phrase} {percentile.peer_group_label}
+         ({percentile.peer_context.tier_count} of {percentile.peer_context.peer_count_with_valid_data} names).
+         Ranks this model's valuation composite, not a price multiple.
+       </p>
+     : percentile && <p className="stock-peer-context">
+         No peer comparison published: {percentile.peer_count_with_valid_data} valid
+         {percentile.peer_group_label} peers, below the {percentile.minimum_peer_count} needed to rank against.
+       </p>}
+   ```
+   A code comment directly above (lines 248-252) documents the old defect being replaced
+   verbatim: *"The old sentence read 'Cheaper than approximately 85% of Property & casualty
+   insurers, based on 14 valid peers'... Groups under the minimum publish nothing at all now."*
+   **There is no remaining "cheaper than X%" sentence anywhere in `src/`** — confirmed by
+   grepping `peer_context|tier_phrase|valuation_percentile|cheapest_third` across the whole
+   `src/` tree; every hit is tier-phrase language or a plain `tier`/`ordinal` consumer
+   (`src/lib/watchlistPriceTargets.js`, `src/lib/modeConfidence.js`,
+   `src/lib/valueGrowthScore.js`, `src/lib/rankingModels.js`), none of which render a percentage
+   to the user. Regression tests exist specifically to prevent recurrence:
+   `pipeline/tests/test_peer_claims_regression.py::test_no_row_anywhere_publishes_a_continuous_percentile`,
+   `::test_every_published_tier_is_backed_by_a_sufficient_sample`,
+   `::test_tied_valuation_scores_never_land_in_different_tiers`.
+
+### 9.2 Setup Quality — `src/lib/watchlistGuidance.js` (full file read)
+
+A **weighted geometric mean**: `weightedGeometricMean` computes `G = exp(Σ wᵢ·ln(sᵢ) / Σ wᵢ)`
+and returns `0` outright if any weighted subscore is `≤ 0` — the file's own comment states this
+is deliberate, "a zero subscore makes the geometric mean zero, so published Sell stays
+decisive." Four subscores feed it: `thesis` (from `bullBearScore`, sigmoid-transformed),
+`research` (the raw model `score`, sigmoid-transformed), `coverage` (sigmoid-transformed
+**`data_coverage`** — confirmed the current, renamed field: `const dataCoverage =
+finite(stock.data_coverage) ? stock.data_coverage : null`, `watchlistGuidance.js:76` — no
+reference to a stale `confidence` field anywhere in this file), and `guidance` (a lookup table
+keyed on the recommendation action). A hard block independently forces `Avoid` and zero
+allocation when `dataCoverage < config.hard_coverage_floor` or the action is `SELL`, regardless
+of what the geometric mean computed.
+
+### 9.3 `confidenceGate.js` and `researchRating.js` — confirmed migrated to `data_coverage`
+
+`src/lib/confidenceGate.js`'s own docstring states directly: the quantity it gates on "is
+`data_coverage` — the share of the evidence this model intended to use that actually resolved.
+It is not a reliability score ... which is exactly why it was renamed out of 'confidence'."
+Every exported function still takes an internally-named `confidence` parameter, but callers
+(`src/lib/recommendation.js`, `src/lib/entryTiming.js`) feed it `stock.data_coverage` values —
+confirmed by reading the call sites, not just the gate module. `src/lib/researchRating.js:48`:
+`rating *= finite(row.data_coverage) ? Math.max(MIN_CONFIDENCE_SHRINK, row.data_coverage) :
+LIGHT_DATA_SHRINK` — reads `data_coverage` directly, with a fixed shrink fallback for
+`screen_universe` rows that never compute a coverage figure. A one-time migration shim remains
+for legacy cached rows: `src/lib/schemaMigrations.js:131-153` — `if (migrated.data_coverage ==
+null && row.confidence != null) migrated.data_coverage = row.confidence` — but every live
+consumer reads `data_coverage` as primary, and this shim only exists to upgrade old data, not as
+an ongoing dual-name dependency.
 
 ---
 
@@ -802,7 +1121,50 @@ What's independently confirmed this session and stated with citation now:
    metric-ID namespace than the legacy path uses, but not confirmed by reading the producing
    code for `fundamental_detail.suppressed_metrics` this session.
 
-### 10.3 Not yet investigated this session (candidates flagged by the internal audit, unverified either way)
+### 10.3 Further defects found this session, from the data-sources/publication research pass
+
+10. **Configured rate limits for Alpha Vantage, Marketaux, and FRED are dead configuration.**
+    `pipeline/cache.py`'s `DEFAULT_RATE_LIMITS` declares `alpha_vantage: 5`/min, `marketaux:
+    60`/min, `fred: 120`/min, but none of the three provider modules ever calls
+    `limiter_for()` — Alpha Vantage instead paces itself with an independent hardcoded
+    `1.1`s-between-requests constant inside `alpha_vantage.py`; Marketaux and FRED have no
+    pacing at all beyond whatever the synchronous per-symbol loop imposes naturally. Only Yahoo
+    and SEC EDGAR actually route through the shared token-bucket limiter. **Severity: low
+    operationally** (Alpha Vantage's own pacing is arguably more conservative than the
+    configured limit, and the low per-run call volumes for Marketaux/FRED make a runaway
+    unlikely), **but the config values are misleading** — a reader of `settings.json`/`cache.py`
+    would reasonably conclude all five providers are rate-limited identically, and three of them
+    are not limited by this mechanism at all.
+11. **A whole unused adapter class.** `pipeline/providers.py:291-323` defines
+    `AlphaVantageAdapter`, which *does* correctly call `limiter_for(self.name)` — but nothing in
+    the codebase imports or instantiates it; `fetch_advisor.py` uses `AlphaVantageClient` from
+    `alpha_vantage.py` instead, which is the version described in defect 10 above. This reads as
+    an abandoned refactor: the rate-limit-respecting version of the Alpha Vantage client exists
+    in the codebase and is not the one actually running.
+12. **A stale diagnostic comment describing the opposite of current behavior.**
+    `fetch_advisor.py:1901-1904` states institutional-ownership scoring "has never run against
+    the live OpenFIGI endpoint or live 13F filings." The live artifact
+    (`public/data/screens/institutional-13f.json`) shows it has run — `status: "success"`,
+    3,489 CUSIPs seen, 278 mapped — and produces zero usable rows only because the
+    corroboration gate (`min_managers: 2`) isn't cleared with just 3-4 resolved managers. A
+    reader of this comment would conclude the feature is entirely unbuilt/untested rather than
+    built, running, and currently under-corroborated. **Severity: low** (does not affect scoring
+    — `institutional_ownership` is `None` for all 40 published rows either way, correctly), but
+    it actively misleads anyone reading the code to understand system state, which is the exact
+    failure mode this whole specification exercise is meant to guard against.
+13. **`StockWatcherClient`'s endpoint is confirmed dead** (HTTP 403 on every request, per its
+    own docstring in `congress_trades.py`), leaving the weekly Congressional-trades screen
+    dependent on two of its three intended sources. The published screen self-reports
+    `status: "partial"`. Not hidden — the status field is honest — but worth noting as a
+    source that could simply be removed rather than left silently failing every run.
+14. **Three provider API keys used in code are absent from `.env.example`**: `FMP_API_KEY`
+    (`congress_trades.py`), `OPENFIGI_API_KEY` (`openfigi_client.py`), `MARKETSTACK_API_KEY`
+    (`marketstack.py`). A new deployer following `.env.example` and the README's local-setup
+    instructions would not know these three variables exist or matter, even though three
+    published screens (Congressional trades, institutional 13F look-through, Marketstack
+    pre/post-market prices) depend on them.
+
+### 10.4 Not yet investigated this session (candidates flagged by the internal audit, unverified either way)
 
 The internal audit raised several further items — the enrichment feedback loop (statement-level
 metrics only ever fetched for names a prior run already ranked highly), the 17%-of-universe
@@ -837,22 +1199,83 @@ Consolidated from every UNDETERMINED marker above, plus items not yet touched at
 - Root cause of the two different `suppressed_metrics` lists on one row (§10.2 item 9).
 - Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
   session).
-- Everything in §10.3 (audit items not re-verified).
-- All of §§1-3, 9, 12 pending the parallel research pass's completion and integration.
+- Everything in §10.4 (audit items not re-verified).
+- Whether the universe (`advisor_universe.json`) has ever changed prior to this repository
+  clone's visible history — this session's clone is shallow (136 commits visible), so "1 commit
+  touches this file" is not proof of a static history, only of what's visible (§3).
+- Whether `"replaced"` is ever assigned as an actual metric status anywhere in current code, or
+  is dead code alongside `"suppressed"` (§5) — not resolved by the second research pass either.
+- Full field-by-field walkthrough of `pipeline/schemas/advisor.schema.json` (930 lines) — only
+  spot-referenced this session, not exhaustively mapped field-by-field to producing code (§9).
+- Section 1 (system overview) still needs full integration of confirmed runtime-topology facts
+  from `docs/spec/FILE_INVENTORY.md` (GitHub Actions schedules, Netlify function endpoints) into
+  a coherent narrative — the file inventory itself is complete and citation-grounded, but this
+  document's §1 has not yet been rewritten to draw on it fully.
 
 ---
 
 ## 12. Test and validation inventory
 
-**[PENDING — from parallel research pass: test file counts and coverage by module, whether any
-test validates a financial formula against a known-correct value, and a direct check of whether
-any backtest/IC/calibration result has ever actually been produced (vs. the gate simply never
-opening, per §6.6's finding that `historical_calibration` is `null` for every row in the current
-artifact).]**
+**Scale**: `pipeline/tests/` — **111** Python test files. `src/**/*.test.{js,jsx}` — **59**
+files (14 components, 32 lib, 12 pages, 1 at `src` root).
 
-Independently confirmed this session (§6.6): the live artifact's own published
-`data_coverage_detail.limitations` states, for every row, "insufficient prospective calibration
-history (requires 24 eligible IC periods)" — the system is, as of this run, self-reporting that
-it has not been calibrated. This is not a test-suite finding; it's the running system's own
-output, which is stronger evidence than a test result would be, since it reflects the actual
-production state rather than a controlled test scenario.
+Representative sample across modules: `test_fundamentals_extended.py`
+(`test_altman_z_is_skipped_for_banks`, `test_altman_variant_follows_the_sector`,
+`test_z_double_prime_drops_the_asset_turnover_term`,
+`test_piotroski_rewards_improving_fundamentals`); `test_peer_claims_regression.py`
+(`test_thg_publishes_no_percentile_claim`,
+`test_no_row_anywhere_publishes_a_continuous_percentile`,
+`test_tied_valuation_scores_never_land_in_different_tiers` — this file exists specifically to
+prevent the §10.1 peer-percentile defect from recurring, with THG as a named regression case);
+`test_universe_config.py`; `test_ic_harness.py` (18 tests); `test_score_calibration.py`;
+`test_data_coverage.py` (19 tests); `test_pit_store.py` (18 tests); `test_scorer.py` (38 tests).
+These span provider clients, scoring, PIT storage, and screen builders.
+
+**Does any test assert a financial calculation against an independently-known-correct value?**
+Yes, at the formula level, against hand-computed expected numbers on synthetic fixtures — e.g.
+`test_fundamentals_extended.py`: `derive_roic(INCOME, BALANCE) ≈ 0.1572`;
+`derive_interest_coverage(INCOME) == 12.5`; gross-profits-to-assets `== 0.3` (hand-derived from
+`(1000-400)/2000`); `derive_asset_growth == 0.2` (`1200/1000-1`); `days_sales_outstanding ==
+150/1000*365`. These are internal-consistency/regression checks against fixed synthetic inputs,
+**not** validation against an independently-published real-world reference value for an actual
+company (e.g. a hand-verified Altman Z for a real, named filer). No such external-ground-truth
+test was found.
+
+**Backtest / IC / calibration — verified against code and live artifacts together, not code
+alone:**
+
+- `pipeline/score_calibration.py` (227 lines): builds a score-vs-forward-return calibration
+  table from the IC harness's closed observations. Its own docstring states plainly that "the IC
+  harness has 0 of the 24 required periods and the PIT store is three days deep, so this
+  publishes `insufficient_data` with real bucket definitions and zero counts."
+- `pipeline/reports/score_calibration.json` (live artifact) confirms this at runtime: every
+  fixed score band (`80+, 75-79, ... 0-59`) shows `"status": "insufficient_data",
+  "observations": 0, "shortfall": 30`.
+- `pipeline/evaluation.py` (442 lines) and `pipeline/validation/ic_harness.py` (626 lines)
+  implement the actual methodology described in the README: rank IC (Spearman), ICIR, quantile
+  spread/monotonicity, deflated Sharpe ratio (Bailey & López de Prado 2014), and
+  probability-of-backtest-overfitting via combinatorially-symmetric cross-validation (Bailey et
+  al. 2017). `ic_harness.py` states it "only grades scores that were recorded before their
+  forward returns existed... until a later PIT snapshot supplies a complete forward horizon,
+  every statistic remains in an accumulating state."
+- Live artifact `public/data/validation/ic_validation.json` (`generated_at:
+  2026-08-10T05:23:43Z`) confirms this is still true today: `snapshot_refreshes: 29`,
+  `monthly_score_snapshots: 1`, and for every horizon under `primary_variants.champion`:
+  `"periods_accumulated": 0, "minimum_periods": 24, "status": "accumulating", "mean_rank_ic":
+  null, "icir": null`.
+- Confirmed in `public/data/advisor.json`: every published row's
+  `data_coverage_detail.components.historical_calibration` is `null` (spot-checked across the
+  file). `pipeline/data_coverage.py:127,159-178` is the code that always resolves this to `None`
+  while `CFG.get("historical_calibration_minimum_periods", 24)` is unmet.
+
+**Plain statement, as the brief requires: no predictive-performance validation currently exists
+with a non-null result anywhere in this repository.** The machinery — rank IC, ICIR, deflated
+Sharpe, CSCV overfitting probability, score-bucket calibration — is fully implemented and wired
+into a real IC harness that has accumulated 29 snapshot refreshes so far, but every gate
+requires either 24 monthly IC periods or 30 closed forward-return observations per score bucket,
+and both remain at 0/insufficient as of the latest run. This is visible both in the code's own
+comments and in the live JSON artifacts the system currently publishes — it is a designed,
+self-reported "not yet," not a silently missing or fabricated capability. This directly answers
+§6.6's question from the other direction: it is not merely that no weight has been *fitted* to
+data — no score, weight, or threshold in this system has been *validated* against forward
+outcomes either, and the system says so about itself in its own published output.
