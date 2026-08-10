@@ -461,8 +461,20 @@ than pre-judging it.
 
 ### 4.3 Units, periods, adjustments
 
-UNDETERMINED this session: split/dividend adjustment handling in price history
-(`pipeline/fetch_prices.py`, not yet read), and a systematic TTM-vs-annual-vs-quarterly audit
+**Split/dividend adjustment in `pipeline/fetch_prices.py` — resolved this session, and it is
+safe by construction.** All three of the file's `yf.Ticker(...).history(...)` calls (lines 61,
+201, 248) omit `auto_adjust`, so yfinance's default `auto_adjust=True` applies and every
+`Close` read is split- and dividend-adjusted. Every consumption is adjustment-invariant:
+the published `price` prefers the live quote fields (`currentPrice` /
+`regularMarketPrice`, line 66) and falls back to the *latest* adjusted close, where the
+adjustment factor is 1.0; `pct_30d` (line 72) and the politician 90-day
+forward-return-vs-SPY calculation (lines 248-261) are ratios within a window, which cancel
+adjustment factors outside the window (the same factor-cancellation argument
+`pit_market.py`'s module docstring documents for the backtest path). No historical price
+*level* is consumed anywhere in the file, so the "adjusted close read as a traded price"
+pitfall that required repair in the PIT layer does not arise here.
+
+Still UNDETERMINED this session: a systematic TTM-vs-annual-vs-quarterly audit
 across all ~29 fundamental metrics. Partial evidence: `canonical_metrics.Observation`
 (lines 43-58) carries `is_ttm: bool = False` and `is_forward: bool = False` fields with
 default-`False` values, and both v2 call sites that construct observations
@@ -1264,8 +1276,6 @@ degradation and an ambiguous `profile_confidence: 0.0`, no current score effect)
 `CrossSectionalNormalizer`'s internals (§4.4, now read in full). Still open:
 
 - Full TTM/annual/quarterly period-convention audit across all ~29 fundamental metrics (§4.3).
-- Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
-  session).
 - Everything in §10.4 (audit items not re-verified).
 - Whether the universe (`advisor_universe.json`) has ever changed prior to this repository
   clone's visible history — this session's clone is shallow (136 commits visible), so "1 commit
