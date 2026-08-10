@@ -1,0 +1,2124 @@
+{
+  "settings": {
+    "start": "2017-01-01",
+    "end": "2026-06-01",
+    "rebalance_every_days": 21,
+    "holding_days": 21,
+    "metrics_tested": 32,
+    "nominal_t": 1.96,
+    "bonferroni_t": 3.163,
+    "redundant_at": 0.7
+  },
+  "dates": 153,
+  "results": {
+    "peg": {
+      "periods": 0,
+      "category": "valuation",
+      "weight_in_category": 0.09,
+      "weight_in_score": 0.0252,
+      "median_coverage": 0.0,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_risk": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_monotonicity": null,
+      "sharpe_monotonicity": null,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "forward_pe": {
+      "periods": 0,
+      "category": "valuation",
+      "weight_in_category": 0.15,
+      "weight_in_score": 0.042,
+      "median_coverage": 0.0,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_risk": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_monotonicity": null,
+      "sharpe_monotonicity": null,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "sales_multiple": {
+      "periods": 153,
+      "mean_ic": 0.007696976604769579,
+      "ic_stdev": 0.14767813151646175,
+      "t_statistic": 0.6446881582294818,
+      "hit_rate": 0.5228758169934641,
+      "category": "valuation",
+      "weight_in_category": 0.09,
+      "weight_in_score": 0.0252,
+      "median_coverage": 0.7783251231527094,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.18450850775448902,
+        0.19537497496631095,
+        0.1815416134093204,
+        0.15129660477528462,
+        0.14847402495304007,
+        0.15716185911336944,
+        0.1662981511295354,
+        0.16714802921419025,
+        0.12609784245045397,
+        0.15362112747663415
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.21009925141991076,
+          "sharpe": 0.9169424616751172
+        },
+        {
+          "volatility_annualised": 0.21411272223216007,
+          "sharpe": 0.9473165352951168
+        },
+        {
+          "volatility_annualised": 0.20929144664553986,
+          "sharpe": 0.9079913088817362
+        },
+        {
+          "volatility_annualised": 0.18959712454372588,
+          "sharpe": 0.8432768113368613
+        },
+        {
+          "volatility_annualised": 0.1978450141722881,
+          "sharpe": 0.8047501588591395
+        },
+        {
+          "volatility_annualised": 0.17969591962746992,
+          "sharpe": 0.9067457528103143
+        },
+        {
+          "volatility_annualised": 0.16124534384820996,
+          "sharpe": 1.0403091394782993
+        },
+        {
+          "volatility_annualised": 0.17415092857419887,
+          "sharpe": 0.9799939224927394
+        },
+        {
+          "volatility_annualised": 0.17927134505923314,
+          "sharpe": 0.7557732780050306
+        },
+        {
+          "volatility_annualised": 0.18543655194742856,
+          "sharpe": 0.8691547181576219
+        }
+      ],
+      "decile_monotonicity": 0.6121212121212121,
+      "sharpe_monotonicity": 0.22424242424242424,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "price_to_book": {
+      "periods": 153,
+      "mean_ic": -0.017412670144799393,
+      "ic_stdev": 0.17578585129405214,
+      "t_statistic": -1.225256942510417,
+      "hit_rate": 0.4444444444444444,
+      "category": "valuation",
+      "weight_in_category": 0.05,
+      "weight_in_score": 0.014000000000000002,
+      "median_coverage": 0.9098457888493475,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.19837230881068013,
+        0.1387459146805785,
+        0.14694909228401998,
+        0.15283720355023234,
+        0.1415731902831583,
+        0.16315003915863024,
+        0.17616202529032376,
+        0.1803302162430489,
+        0.21783985859896204,
+        0.20279848765870723
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.26109703265068107,
+          "sharpe": 0.8308822311516908
+        },
+        {
+          "volatility_annualised": 0.1885349346642784,
+          "sharpe": 0.7878881279041952
+        },
+        {
+          "volatility_annualised": 0.1970961336303054,
+          "sharpe": 0.799855908342306
+        },
+        {
+          "volatility_annualised": 0.19056459849483823,
+          "sharpe": 0.8472390479316755
+        },
+        {
+          "volatility_annualised": 0.1996188930989719,
+          "sharpe": 0.7682439759139646
+        },
+        {
+          "volatility_annualised": 0.1700901005904199,
+          "sharpe": 0.9788472985312704
+        },
+        {
+          "volatility_annualised": 0.17948915966833792,
+          "sharpe": 0.9997095065021149
+        },
+        {
+          "volatility_annualised": 0.18164737210799012,
+          "sharpe": 1.0094272858311146
+        },
+        {
+          "volatility_annualised": 0.1923744439644353,
+          "sharpe": 1.1288363185768937
+        },
+        {
+          "volatility_annualised": 0.1894711264229584,
+          "sharpe": 1.0761032359385168
+        }
+      ],
+      "decile_monotonicity": -0.6121212121212121,
+      "sharpe_monotonicity": -0.8303030303030303,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "price_to_tangible_book": {
+      "periods": 0,
+      "category": "valuation",
+      "weight_in_category": 0.05,
+      "weight_in_score": 0.014000000000000002,
+      "median_coverage": 0.0,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_risk": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_monotonicity": null,
+      "sharpe_monotonicity": null,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "ev_to_ebitda": {
+      "periods": 153,
+      "mean_ic": -0.013899842070098171,
+      "ic_stdev": 0.16093485993919476,
+      "t_statistic": -1.0683300757102374,
+      "hit_rate": 0.45098039215686275,
+      "category": "valuation",
+      "weight_in_category": 0.27,
+      "weight_in_score": 0.07560000000000001,
+      "median_coverage": 0.590964590964591,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.13545507080267183,
+        0.15764329283515943,
+        0.15280079132092528,
+        0.15960416643827058,
+        0.1355831961458791,
+        0.17514485833823001,
+        0.17839529626149098,
+        0.1516863947771372,
+        0.2042054604380148,
+        0.19672195620509436
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.2234554691642004,
+          "sharpe": 0.6849791712020573
+        },
+        {
+          "volatility_annualised": 0.2102199946271947,
+          "sharpe": 0.8087333185381502
+        },
+        {
+          "volatility_annualised": 0.1887358343934924,
+          "sharpe": 0.8529952453018302
+        },
+        {
+          "volatility_annualised": 0.16978634437325962,
+          "sharpe": 0.9623630753365944
+        },
+        {
+          "volatility_annualised": 0.1742649168933661,
+          "sharpe": 0.8212600402637572
+        },
+        {
+          "volatility_annualised": 0.1786888335853639,
+          "sharpe": 1.0004813303088014
+        },
+        {
+          "volatility_annualised": 0.16518567449305144,
+          "sharpe": 1.082590122465225
+        },
+        {
+          "volatility_annualised": 0.17809377696646078,
+          "sharpe": 0.8874473279262229
+        },
+        {
+          "volatility_annualised": 0.18009395718610177,
+          "sharpe": 1.1295469488317857
+        },
+        {
+          "volatility_annualised": 0.19872542360776646,
+          "sharpe": 1.0081014941190578
+        }
+      ],
+      "decile_monotonicity": -0.6848484848484848,
+      "sharpe_monotonicity": -0.8303030303030303,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "ev_to_ebit": {
+      "periods": 153,
+      "mean_ic": -0.01158724916849163,
+      "ic_stdev": 0.15287333296919225,
+      "t_statistic": -0.9375497603954771,
+      "hit_rate": 0.45751633986928103,
+      "category": "valuation",
+      "weight_in_category": 0.12,
+      "weight_in_score": 0.033600000000000005,
+      "median_coverage": 0.6595492289442467,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.1282168691021437,
+        0.16064941026988477,
+        0.15904713840884255,
+        0.146053393072332,
+        0.17283788557964175,
+        0.14597104513118242,
+        0.1642853321612614,
+        0.19221475177311542,
+        0.186257881214293,
+        0.18044696881812516
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.21802028466328005,
+          "sharpe": 0.6667858388274783
+        },
+        {
+          "volatility_annualised": 0.20357468163494055,
+          "sharpe": 0.8400091302477839
+        },
+        {
+          "volatility_annualised": 0.17618300061831058,
+          "sharpe": 0.9314066327328243
+        },
+        {
+          "volatility_annualised": 0.18126672309572162,
+          "sharpe": 0.8469444378789431
+        },
+        {
+          "volatility_annualised": 0.16586508668588495,
+          "sharpe": 1.0505783298917994
+        },
+        {
+          "volatility_annualised": 0.16332925055069758,
+          "sharpe": 0.9206055235893071
+        },
+        {
+          "volatility_annualised": 0.16303790892260103,
+          "sharpe": 1.0214414469004713
+        },
+        {
+          "volatility_annualised": 0.178055362875283,
+          "sharpe": 1.0837882618265229
+        },
+        {
+          "volatility_annualised": 0.1826841706790868,
+          "sharpe": 1.0324277258790662
+        },
+        {
+          "volatility_annualised": 0.19628499845405784,
+          "sharpe": 0.948899245880698
+        }
+      ],
+      "decile_monotonicity": -0.7575757575757576,
+      "sharpe_monotonicity": -0.7212121212121212,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "ev_to_fcf": {
+      "periods": 153,
+      "mean_ic": -0.01073736104469604,
+      "ic_stdev": 0.1362763751306077,
+      "t_statistic": -0.9745916785336659,
+      "hit_rate": 0.45751633986928103,
+      "category": "valuation",
+      "weight_in_category": 0.18,
+      "weight_in_score": 0.0504,
+      "median_coverage": 0.6789099526066351,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.15962675022213269,
+        0.14523986927545462,
+        0.1597136747731327,
+        0.15568109953597076,
+        0.15401212565541367,
+        0.18136498030108106,
+        0.15527862649682378,
+        0.1682545619594744,
+        0.1854797614627619,
+        0.2007468296302195
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19192382112883793,
+          "sharpe": 0.8723258957736734
+        },
+        {
+          "volatility_annualised": 0.20465597742665845,
+          "sharpe": 0.7694822754858863
+        },
+        {
+          "volatility_annualised": 0.21046426748717928,
+          "sharpe": 0.8139892367505348
+        },
+        {
+          "volatility_annualised": 0.18428835131058843,
+          "sharpe": 0.8828299229465926
+        },
+        {
+          "volatility_annualised": 0.1731095690517863,
+          "sharpe": 0.9192600549650838
+        },
+        {
+          "volatility_annualised": 0.18554622291060438,
+          "sharpe": 0.9973991567084599
+        },
+        {
+          "volatility_annualised": 0.1682997085255686,
+          "sharpe": 0.9466164131798566
+        },
+        {
+          "volatility_annualised": 0.17628040364343237,
+          "sharpe": 0.9768338821854837
+        },
+        {
+          "volatility_annualised": 0.18814344269290426,
+          "sharpe": 1.0052415014788372
+        },
+        {
+          "volatility_annualised": 0.1933732184220117,
+          "sharpe": 1.0497326365573212
+        }
+      ],
+      "decile_monotonicity": -0.6606060606060606,
+      "sharpe_monotonicity": -0.9272727272727272,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "return_on_equity": {
+      "periods": 153,
+      "mean_ic": 0.00010726012773024164,
+      "ic_stdev": 0.10776851659774724,
+      "t_statistic": 0.012310965670050042,
+      "hit_rate": 0.47058823529411764,
+      "category": "profitability",
+      "weight_in_category": 0.1,
+      "weight_in_score": 0.026000000000000002,
+      "median_coverage": 0.9155107187894073,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.18257101001699638,
+        0.1802220415889335,
+        0.18067815708349078,
+        0.16157008659648908,
+        0.12844047401402903,
+        0.16108246883002963,
+        0.1489650811668013,
+        0.15230366947136553,
+        0.2060765632819226,
+        0.25982715429789094
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1792994257500162,
+          "sharpe": 1.0311992702967419
+        },
+        {
+          "volatility_annualised": 0.168661995549834,
+          "sharpe": 1.07317573852875
+        },
+        {
+          "volatility_annualised": 0.1842446511439864,
+          "sharpe": 0.9993179295701129
+        },
+        {
+          "volatility_annualised": 0.17994797322214467,
+          "sharpe": 0.9275472884878431
+        },
+        {
+          "volatility_annualised": 0.18027805788516826,
+          "sharpe": 0.7651530873409704
+        },
+        {
+          "volatility_annualised": 0.19046074495755785,
+          "sharpe": 0.8854141388935738
+        },
+        {
+          "volatility_annualised": 0.1838442549370896,
+          "sharpe": 0.8526248697500348
+        },
+        {
+          "volatility_annualised": 0.1856490359866832,
+          "sharpe": 0.8603944845843762
+        },
+        {
+          "volatility_annualised": 0.22928513271655884,
+          "sharpe": 0.938139461674647
+        },
+        {
+          "volatility_annualised": 0.23759372802659923,
+          "sharpe": 1.1010646184175725
+        }
+      ],
+      "decile_monotonicity": -0.07878787878787885,
+      "sharpe_monotonicity": 0.17575757575757578,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "return_on_invested_capital": {
+      "periods": 153,
+      "mean_ic": 0.00492180832673868,
+      "ic_stdev": 0.11535335594934254,
+      "t_statistic": 0.5277645049815413,
+      "hit_rate": 0.5163398692810458,
+      "category": "profitability",
+      "weight_in_category": 0.26,
+      "weight_in_score": 0.06760000000000001,
+      "median_coverage": 0.7101796407185629,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.1985107083500537,
+        0.17555491317885674,
+        0.18950182909443147,
+        0.15441477095757916,
+        0.15615752897934732,
+        0.14154685559633795,
+        0.14998287791977472,
+        0.16168079301824556,
+        0.20238982182339593,
+        0.22119246993650687
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1811944899459594,
+          "sharpe": 1.0969498078669129
+        },
+        {
+          "volatility_annualised": 0.16133509889461328,
+          "sharpe": 1.0900007173638306
+        },
+        {
+          "volatility_annualised": 0.18498164264000844,
+          "sharpe": 1.0373658526930505
+        },
+        {
+          "volatility_annualised": 0.18541187013770313,
+          "sharpe": 0.8713292453816119
+        },
+        {
+          "volatility_annualised": 0.1776963883035608,
+          "sharpe": 0.9105448976343271
+        },
+        {
+          "volatility_annualised": 0.18285443442580804,
+          "sharpe": 0.8203742063318972
+        },
+        {
+          "volatility_annualised": 0.18019897995566853,
+          "sharpe": 0.8711749559732285
+        },
+        {
+          "volatility_annualised": 0.17305752694774446,
+          "sharpe": 0.9575513518955728
+        },
+        {
+          "volatility_annualised": 0.2181197179579934,
+          "sharpe": 0.9585170951796156
+        },
+        {
+          "volatility_annualised": 0.24409412046267295,
+          "sharpe": 0.9488426078795046
+        }
+      ],
+      "decile_monotonicity": -0.1393939393939394,
+      "sharpe_monotonicity": 0.4545454545454546,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "gross_profits_to_assets": {
+      "periods": 153,
+      "mean_ic": 0.01888955200844355,
+      "ic_stdev": 0.1144490622339876,
+      "t_statistic": 2.041527033017893,
+      "hit_rate": 0.5620915032679739,
+      "category": "profitability",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.0572,
+      "median_coverage": 0.5260663507109005,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.21010871633315098,
+        0.2465484741608499,
+        0.2276943190970453,
+        0.23674344818011694,
+        0.1781799255683154,
+        0.18523861080104131,
+        0.156780000528443,
+        0.1791793218121307,
+        0.18145511804429448,
+        0.1771239233705082
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19217256761859358,
+          "sharpe": 1.0956013114929042
+        },
+        {
+          "volatility_annualised": 0.20380872018104684,
+          "sharpe": 1.1907776147221556
+        },
+        {
+          "volatility_annualised": 0.1950191097558504,
+          "sharpe": 1.1574167613930313
+        },
+        {
+          "volatility_annualised": 0.20759827440581993,
+          "sharpe": 1.134415849458816
+        },
+        {
+          "volatility_annualised": 0.18569438406811492,
+          "sharpe": 0.9823556071795689
+        },
+        {
+          "volatility_annualised": 0.20527649420572566,
+          "sharpe": 0.9364212212095134
+        },
+        {
+          "volatility_annualised": 0.19453202034797212,
+          "sharpe": 0.8503069575422559
+        },
+        {
+          "volatility_annualised": 0.18717363010095078,
+          "sharpe": 0.9805649897850739
+        },
+        {
+          "volatility_annualised": 0.2105611690823621,
+          "sharpe": 0.902644667985407
+        },
+        {
+          "volatility_annualised": 0.1963421424804546,
+          "sharpe": 0.9349529645162993
+        }
+      ],
+      "decile_monotonicity": 0.7333333333333334,
+      "sharpe_monotonicity": 0.8181818181818181,
+      "significant_nominally": true,
+      "significant_after_multiple_testing": false
+    },
+    "cash_conversion": {
+      "periods": 153,
+      "mean_ic": 0.0013025913758918175,
+      "ic_stdev": 0.05855649805111186,
+      "t_statistic": 0.27515589261157786,
+      "hit_rate": 0.5686274509803921,
+      "category": "profitability",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.041600000000000005,
+      "median_coverage": 0.7603305785123967,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.17448168696650868,
+        0.15468175920422955,
+        0.1357582702675164,
+        0.1805271971097404,
+        0.13756006211528615,
+        0.18857520729539146,
+        0.16338763037211934,
+        0.15391469831893168,
+        0.1757426698413691,
+        0.17850158636716462
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.16616289036124557,
+          "sharpe": 1.0576017837903433
+        },
+        {
+          "volatility_annualised": 0.18137639781132922,
+          "sharpe": 0.8885510510597524
+        },
+        {
+          "volatility_annualised": 0.17255028676417442,
+          "sharpe": 0.8288713212762998
+        },
+        {
+          "volatility_annualised": 0.1791543715745498,
+          "sharpe": 1.0222766019969691
+        },
+        {
+          "volatility_annualised": 0.18608378944634307,
+          "sharpe": 0.7895453176086821
+        },
+        {
+          "volatility_annualised": 0.18643834123623046,
+          "sharpe": 1.0262981626032908
+        },
+        {
+          "volatility_annualised": 0.1722568856653386,
+          "sharpe": 0.9706784161640881
+        },
+        {
+          "volatility_annualised": 0.18071054887266647,
+          "sharpe": 0.8878095758441857
+        },
+        {
+          "volatility_annualised": 0.19255627068387485,
+          "sharpe": 0.9424190859749861
+        },
+        {
+          "volatility_annualised": 0.18997885797655087,
+          "sharpe": 0.9657890430347451
+        }
+      ],
+      "decile_monotonicity": -0.2727272727272727,
+      "sharpe_monotonicity": 0.11515151515151512,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "free_cash_flow_yield": {
+      "periods": 153,
+      "mean_ic": -0.006055834785526937,
+      "ic_stdev": 0.11804068332866988,
+      "t_statistic": -0.6345823939995635,
+      "hit_rate": 0.45751633986928103,
+      "category": "profitability",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.041600000000000005,
+      "median_coverage": 0.8567901234567902,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.15745996869679946,
+        0.1810589861312064,
+        0.1693326607064709,
+        0.14915157101166976,
+        0.15714678769015578,
+        0.15676013860823068,
+        0.17591359799341388,
+        0.1953101671587152,
+        0.1854937827538896,
+        0.23017011271430676
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.20746968150558098,
+          "sharpe": 0.8135931889580686
+        },
+        {
+          "volatility_annualised": 0.2212527153987853,
+          "sharpe": 0.8675134608145778
+        },
+        {
+          "volatility_annualised": 0.19031101919306198,
+          "sharpe": 0.9222366414852512
+        },
+        {
+          "volatility_annualised": 0.18221207367331832,
+          "sharpe": 0.8587760925057226
+        },
+        {
+          "volatility_annualised": 0.17743020423576422,
+          "sharpe": 0.9168831144699697
+        },
+        {
+          "volatility_annualised": 0.16209120004285366,
+          "sharpe": 0.984966414868458
+        },
+        {
+          "volatility_annualised": 0.17195775800404056,
+          "sharpe": 1.0346763874707683
+        },
+        {
+          "volatility_annualised": 0.18512419096597627,
+          "sharpe": 1.063936624336437
+        },
+        {
+          "volatility_annualised": 0.20099709982701702,
+          "sharpe": 0.9528748975838832
+        },
+        {
+          "volatility_annualised": 0.2237900865397615,
+          "sharpe": 1.0463601798213167
+        }
+      ],
+      "decile_monotonicity": -0.5757575757575757,
+      "sharpe_monotonicity": -0.8424242424242425,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "profit_margin": {
+      "periods": 153,
+      "mean_ic": -0.013026067348541337,
+      "ic_stdev": 0.09986443879258933,
+      "t_statistic": -1.613422722256288,
+      "hit_rate": 0.43137254901960786,
+      "category": "profitability",
+      "weight_in_category": 0.1,
+      "weight_in_score": 0.026000000000000002,
+      "median_coverage": 0.8695121951219512,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.1584389753191342,
+        0.14527164000031267,
+        0.12762745238424844,
+        0.1640978774322539,
+        0.13253769021420236,
+        0.1506158708786678,
+        0.1487872799408121,
+        0.19453059897314473,
+        0.22585688625948563,
+        0.24985865744817337
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.17559340165200124,
+          "sharpe": 0.9312639606780044
+        },
+        {
+          "volatility_annualised": 0.17391076457860158,
+          "sharpe": 0.871702228370895
+        },
+        {
+          "volatility_annualised": 0.16182274606839797,
+          "sharpe": 0.8268247831266817
+        },
+        {
+          "volatility_annualised": 0.16854816948237347,
+          "sharpe": 0.9909719677704628
+        },
+        {
+          "volatility_annualised": 0.17545672670335152,
+          "sharpe": 0.8006372899858669
+        },
+        {
+          "volatility_annualised": 0.17914086532619816,
+          "sharpe": 0.8768223500952643
+        },
+        {
+          "volatility_annualised": 0.17657077142892502,
+          "sharpe": 0.8789031882312713
+        },
+        {
+          "volatility_annualised": 0.1967304181109588,
+          "sharpe": 1.009073092330269
+        },
+        {
+          "volatility_annualised": 0.22668758726855703,
+          "sharpe": 1.0189984296533823
+        },
+        {
+          "volatility_annualised": 0.2697813864931536,
+          "sharpe": 0.9688251152198387
+        }
+      ],
+      "decile_monotonicity": -0.6484848484848484,
+      "sharpe_monotonicity": -0.5272727272727273,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "debt_to_equity": {
+      "periods": 153,
+      "mean_ic": -0.0028411995564232516,
+      "ic_stdev": 0.06408918167763188,
+      "t_statistic": -0.5483561609593625,
+      "hit_rate": 0.45751633986928103,
+      "category": "financial_health",
+      "weight_in_category": 0.18,
+      "weight_in_score": 0.027,
+      "median_coverage": 0.8374851720047449,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.1823242507323306,
+        0.16319911169169599,
+        0.19150395891200667,
+        0.15485665567880758,
+        0.1487992761828456,
+        0.14591189107218905,
+        0.14579988226583818,
+        0.17057174711845247,
+        0.16602640084899467,
+        0.2144337089967372
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.17722856546893623,
+          "sharpe": 1.0404319614201596
+        },
+        {
+          "volatility_annualised": 0.18915652521276322,
+          "sharpe": 0.899160851942412
+        },
+        {
+          "volatility_annualised": 0.19623314957395518,
+          "sharpe": 0.9977790297319387
+        },
+        {
+          "volatility_annualised": 0.19152243282096187,
+          "sharpe": 0.8525951499739
+        },
+        {
+          "volatility_annualised": 0.1879616987146822,
+          "sharpe": 0.838399627148322
+        },
+        {
+          "volatility_annualised": 0.18253205590597535,
+          "sharpe": 0.842687420519151
+        },
+        {
+          "volatility_annualised": 0.1846005340270952,
+          "sharpe": 0.8343135946983349
+        },
+        {
+          "volatility_annualised": 0.17972501138743133,
+          "sharpe": 0.9715861372463475
+        },
+        {
+          "volatility_annualised": 0.18670950494803548,
+          "sharpe": 0.9221517193206746
+        },
+        {
+          "volatility_annualised": 0.20127700453759054,
+          "sharpe": 1.07407411951404
+        }
+      ],
+      "decile_monotonicity": -0.030303030303030276,
+      "sharpe_monotonicity": -0.018181818181818077,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "current_ratio": {
+      "periods": 153,
+      "mean_ic": 0.015046429640756828,
+      "ic_stdev": 0.12282472388232787,
+      "t_statistic": 1.5152816974382193,
+      "hit_rate": 0.5424836601307189,
+      "category": "financial_health",
+      "weight_in_category": 0.1,
+      "weight_in_score": 0.015,
+      "median_coverage": 0.8158536585365853,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.24722016911519784,
+        0.23694729462993314,
+        0.20695093942826515,
+        0.18344330882117177,
+        0.16708625476816574,
+        0.19942179019413842,
+        0.17475190978918476,
+        0.1971117065198027,
+        0.14160025022756417,
+        0.15798183437054547
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.21004854780071086,
+          "sharpe": 1.1661255247571678
+        },
+        {
+          "volatility_annualised": 0.20248678161011088,
+          "sharpe": 1.1591562766275292
+        },
+        {
+          "volatility_annualised": 0.2061315931941779,
+          "sharpe": 1.021934492365183
+        },
+        {
+          "volatility_annualised": 0.19976583059538147,
+          "sharpe": 0.9487429185217836
+        },
+        {
+          "volatility_annualised": 0.19212428091420014,
+          "sharpe": 0.9065988631187362
+        },
+        {
+          "volatility_annualised": 0.1839245950998528,
+          "sharpe": 1.0876956600657701
+        },
+        {
+          "volatility_annualised": 0.1801428526440221,
+          "sharpe": 0.9911313910069639
+        },
+        {
+          "volatility_annualised": 0.18971022345864497,
+          "sharpe": 1.0500484858939263
+        },
+        {
+          "volatility_annualised": 0.1676228256846434,
+          "sharpe": 0.8773336386437174
+        },
+        {
+          "volatility_annualised": 0.16885864287602909,
+          "sharpe": 0.9595100163756614
+        }
+      ],
+      "decile_monotonicity": 0.8303030303030303,
+      "sharpe_monotonicity": 0.5636363636363637,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "interest_coverage": {
+      "periods": 153,
+      "mean_ic": -0.006450953133698298,
+      "ic_stdev": 0.11010994372450722,
+      "t_statistic": -0.7246746367256767,
+      "hit_rate": 0.43137254901960786,
+      "category": "financial_health",
+      "weight_in_category": 0.3,
+      "weight_in_score": 0.045,
+      "median_coverage": 0.7144622991347342,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.1669878715149007,
+        0.16042137308926585,
+        0.19889874367561355,
+        0.14131847603381642,
+        0.1449691344492785,
+        0.13795293328301783,
+        0.15206902649178677,
+        0.18165362396473306,
+        0.20394797916911922,
+        0.2719647592326808
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1741220962321797,
+          "sharpe": 0.979795306187522
+        },
+        {
+          "volatility_annualised": 0.1648411286759659,
+          "sharpe": 0.9898966514438908
+        },
+        {
+          "volatility_annualised": 0.18173280509807915,
+          "sharpe": 1.096229811119056
+        },
+        {
+          "volatility_annualised": 0.17214835657729383,
+          "sharpe": 0.8576725483793572
+        },
+        {
+          "volatility_annualised": 0.16717545831778335,
+          "sharpe": 0.8979637321544113
+        },
+        {
+          "volatility_annualised": 0.17000106996217676,
+          "sharpe": 0.8486635394188631
+        },
+        {
+          "volatility_annualised": 0.1863397278149444,
+          "sharpe": 0.8588296112338443
+        },
+        {
+          "volatility_annualised": 0.18304596524660985,
+          "sharpe": 1.0096972161822624
+        },
+        {
+          "volatility_annualised": 0.22863401792327298,
+          "sharpe": 0.9325692481267243
+        },
+        {
+          "volatility_annualised": 0.24862978828182825,
+          "sharpe": 1.1017506374736579
+        }
+      ],
+      "decile_monotonicity": -0.38181818181818183,
+      "sharpe_monotonicity": -0.10303030303030303,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "net_debt_to_ebitda": {
+      "periods": 153,
+      "mean_ic": 0.017021188278375104,
+      "ic_stdev": 0.08714907257447459,
+      "t_statistic": 2.4158658860755713,
+      "hit_rate": 0.5751633986928104,
+      "category": "financial_health",
+      "weight_in_category": 0.24,
+      "weight_in_score": 0.036,
+      "median_coverage": 0.6477832512315271,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.2254100636336993,
+        0.18679325236048627,
+        0.24629765237283463,
+        0.1614180095656068,
+        0.17320045423393182,
+        0.14898307281705936,
+        0.1426507892739184,
+        0.13523316400212582,
+        0.17501465836019592,
+        0.14971631206499225
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1858963144398767,
+          "sharpe": 1.1945655573605112
+        },
+        {
+          "volatility_annualised": 0.20230717674972903,
+          "sharpe": 0.9533154911523336
+        },
+        {
+          "volatility_annualised": 0.20589111098745377,
+          "sharpe": 1.1817577654040052
+        },
+        {
+          "volatility_annualised": 0.1961549179516775,
+          "sharpe": 0.8664671150632796
+        },
+        {
+          "volatility_annualised": 0.17881198911132568,
+          "sharpe": 0.9891583457152873
+        },
+        {
+          "volatility_annualised": 0.18241542933581312,
+          "sharpe": 0.8572121833011879
+        },
+        {
+          "volatility_annualised": 0.17008946753652215,
+          "sharpe": 0.8745467680951016
+        },
+        {
+          "volatility_annualised": 0.17492618278281147,
+          "sharpe": 0.8164242316879873
+        },
+        {
+          "volatility_annualised": 0.1837440652569186,
+          "sharpe": 0.9757668698357136
+        },
+        {
+          "volatility_annualised": 0.20568116570819073,
+          "sharpe": 0.7875454553878839
+        }
+      ],
+      "decile_monotonicity": 0.6606060606060606,
+      "sharpe_monotonicity": 0.6727272727272727,
+      "significant_nominally": true,
+      "significant_after_multiple_testing": false
+    },
+    "altman_z": {
+      "periods": 0,
+      "category": "financial_health",
+      "weight_in_category": 0.18,
+      "weight_in_score": 0.027,
+      "median_coverage": 0.0,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_risk": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_monotonicity": null,
+      "sharpe_monotonicity": null,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "revenue_growth": {
+      "periods": 153,
+      "mean_ic": 0.017543840713057545,
+      "ic_stdev": 0.13721634133634858,
+      "t_statistic": 1.5814831010900774,
+      "hit_rate": 0.6143790849673203,
+      "category": "growth",
+      "weight_in_category": 0.26,
+      "weight_in_score": 0.0286,
+      "median_coverage": 0.8694610778443114,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.2592346004770345,
+        0.20815792061839677,
+        0.16048202987300852,
+        0.1508675075164292,
+        0.157794928581364,
+        0.13979648208339546,
+        0.1534454182235545,
+        0.1322209867114319,
+        0.15065594805582405,
+        0.1935731738708133
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.22776683549297447,
+          "sharpe": 1.1334864721309936
+        },
+        {
+          "volatility_annualised": 0.19397141814458121,
+          "sharpe": 1.0780870446263286
+        },
+        {
+          "volatility_annualised": 0.1824957372536888,
+          "sharpe": 0.9114664105084372
+        },
+        {
+          "volatility_annualised": 0.18365695404194804,
+          "sharpe": 0.863043099578324
+        },
+        {
+          "volatility_annualised": 0.17742046876380874,
+          "sharpe": 0.9202179208752552
+        },
+        {
+          "volatility_annualised": 0.17028420655291407,
+          "sharpe": 0.8578518700714008
+        },
+        {
+          "volatility_annualised": 0.1858229136148146,
+          "sharpe": 0.8661391462874162
+        },
+        {
+          "volatility_annualised": 0.18561608389997147,
+          "sharpe": 0.7652587921233379
+        },
+        {
+          "volatility_annualised": 0.20463810013197659,
+          "sharpe": 0.7925738429895651
+        },
+        {
+          "volatility_annualised": 0.20365456669346632,
+          "sharpe": 0.9770889956200924
+        }
+      ],
+      "decile_monotonicity": 0.5515151515151515,
+      "sharpe_monotonicity": 0.5636363636363637,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "earnings_growth": {
+      "periods": 153,
+      "mean_ic": 0.00858521783316964,
+      "ic_stdev": 0.08332296642689845,
+      "t_statistic": 1.2744779067419632,
+      "hit_rate": 0.5947712418300654,
+      "category": "growth",
+      "weight_in_category": 0.2,
+      "weight_in_score": 0.022000000000000002,
+      "median_coverage": 0.9668367346938775,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.2236402566503457,
+        0.22700543913471893,
+        0.1693856692838822,
+        0.16237380435805004,
+        0.14816925206755016,
+        0.1583735572933347,
+        0.14630410450342568,
+        0.16603400980268868,
+        0.18321801248493608,
+        0.2096772471649062
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1926260296269749,
+          "sharpe": 1.1525432470535586
+        },
+        {
+          "volatility_annualised": 0.1860973407086646,
+          "sharpe": 1.201887942962462
+        },
+        {
+          "volatility_annualised": 0.1892517103782215,
+          "sharpe": 0.9279264948016142
+        },
+        {
+          "volatility_annualised": 0.17423702828112125,
+          "sharpe": 0.9564363441420822
+        },
+        {
+          "volatility_annualised": 0.17819177015629886,
+          "sharpe": 0.8688268399645737
+        },
+        {
+          "volatility_annualised": 0.18730218391772205,
+          "sharpe": 0.883382552234587
+        },
+        {
+          "volatility_annualised": 0.18807820570507486,
+          "sharpe": 0.8257272294721129
+        },
+        {
+          "volatility_annualised": 0.1978514868823078,
+          "sharpe": 0.8804867614341761
+        },
+        {
+          "volatility_annualised": 0.19688442145567656,
+          "sharpe": 0.958797392905874
+        },
+        {
+          "volatility_annualised": 0.2133490404764512,
+          "sharpe": 1.0050850745516904
+        }
+      ],
+      "decile_monotonicity": 0.2606060606060606,
+      "sharpe_monotonicity": 0.32121212121212117,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "fcf_growth_3y": {
+      "periods": 153,
+      "mean_ic": 0.0020053449012557155,
+      "ic_stdev": 0.07855381176191438,
+      "t_statistic": 0.3157675735226333,
+      "hit_rate": 0.5490196078431373,
+      "category": "growth",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.0242,
+      "median_coverage": 0.8376703841387856,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.19264537282052507,
+        0.19215769105002445,
+        0.1394494026099875,
+        0.1822105042864477,
+        0.1610807827269336,
+        0.1796202039146757,
+        0.14930546703131387,
+        0.18946317533493895,
+        0.1881546293359353,
+        0.18216290342676467
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.18639587118055437,
+          "sharpe": 1.0449721664534293
+        },
+        {
+          "volatility_annualised": 0.1856481633168537,
+          "sharpe": 1.0457078257363455
+        },
+        {
+          "volatility_annualised": 0.17587829895405765,
+          "sharpe": 0.8345994249970644
+        },
+        {
+          "volatility_annualised": 0.1967146423664365,
+          "sharpe": 0.9562119272509018
+        },
+        {
+          "volatility_annualised": 0.18280192830751107,
+          "sharpe": 0.913208639557833
+        },
+        {
+          "volatility_annualised": 0.18288876482403169,
+          "sharpe": 1.0009067771932756
+        },
+        {
+          "volatility_annualised": 0.17789904442191326,
+          "sharpe": 0.8761925246080823
+        },
+        {
+          "volatility_annualised": 0.18483307562591603,
+          "sharpe": 1.0386772736118361
+        },
+        {
+          "volatility_annualised": 0.19450828851017618,
+          "sharpe": 0.9899293755175648
+        },
+        {
+          "volatility_annualised": 0.20704275275360898,
+          "sharpe": 0.9180743495608038
+        }
+      ],
+      "decile_monotonicity": 0.21212121212121215,
+      "sharpe_monotonicity": 0.2606060606060606,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "operating_margin_trend": {
+      "periods": 153,
+      "mean_ic": -0.004494834694117272,
+      "ic_stdev": 0.11738950695194776,
+      "t_statistic": -0.4736201393482944,
+      "hit_rate": 0.5424836601307189,
+      "category": "growth",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.0176,
+      "median_coverage": 0.7292418772563177,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.20616013508966113,
+        0.1987604656836759,
+        0.1809859776738949,
+        0.11879285518377625,
+        0.1265024796357801,
+        0.15810473509487588,
+        0.14826119388293102,
+        0.18189550989792336,
+        0.18701390044966493,
+        0.21407069796880163
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.20557058137629947,
+          "sharpe": 1.0212528361974156
+        },
+        {
+          "volatility_annualised": 0.19728156479856904,
+          "sharpe": 1.0242372920222782
+        },
+        {
+          "volatility_annualised": 0.18303606395486977,
+          "sharpe": 1.006592830838735
+        },
+        {
+          "volatility_annualised": 0.17657900883630143,
+          "sharpe": 0.7269520382867611
+        },
+        {
+          "volatility_annualised": 0.16711607703220535,
+          "sharpe": 0.7996282642732421
+        },
+        {
+          "volatility_annualised": 0.16696334886436595,
+          "sharpe": 0.9678804119203697
+        },
+        {
+          "volatility_annualised": 0.17593687600944985,
+          "sharpe": 0.8780984950962247
+        },
+        {
+          "volatility_annualised": 0.18889251187290088,
+          "sharpe": 0.985213675254157
+        },
+        {
+          "volatility_annualised": 0.20856562714646337,
+          "sharpe": 0.9310046220658025
+        },
+        {
+          "volatility_annualised": 0.2365061570405602,
+          "sharpe": 0.94367045471939
+        }
+      ],
+      "decile_monotonicity": -0.09090909090909083,
+      "sharpe_monotonicity": 0.4424242424242424,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "earnings_surprise": {
+      "periods": 0,
+      "category": "growth",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.0176,
+      "median_coverage": 0.0,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_risk": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "decile_monotonicity": null,
+      "sharpe_monotonicity": null,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "net_buyback_yield": {
+      "periods": 153,
+      "mean_ic": 0.006780981824062085,
+      "ic_stdev": 0.08671763097205881,
+      "t_statistic": 0.9672325221272488,
+      "hit_rate": 0.5490196078431373,
+      "category": "capital_allocation",
+      "weight_in_category": 0.34,
+      "weight_in_score": 0.034,
+      "median_coverage": 0.8335451080050826,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.1915344113664028,
+        0.1990524853655422,
+        0.18471758316551545,
+        0.1532626596775979,
+        0.1474966028333362,
+        0.1612328533137617,
+        0.1882352566418397,
+        0.1715902850914406,
+        0.18191497590246364,
+        0.16728951224168864
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19569940453949958,
+          "sharpe": 0.9999983062624119
+        },
+        {
+          "volatility_annualised": 0.2055103865509433,
+          "sharpe": 0.9932051465656205
+        },
+        {
+          "volatility_annualised": 0.2142829150511203,
+          "sharpe": 0.903842725961303
+        },
+        {
+          "volatility_annualised": 0.18479285193614406,
+          "sharpe": 0.8692670018967562
+        },
+        {
+          "volatility_annualised": 0.177374891734217,
+          "sharpe": 0.8689828086553906
+        },
+        {
+          "volatility_annualised": 0.18649446857795768,
+          "sharpe": 0.9000163750165934
+        },
+        {
+          "volatility_annualised": 0.1783071836228877,
+          "sharpe": 1.0633805090851927
+        },
+        {
+          "volatility_annualised": 0.18015184288008856,
+          "sharpe": 0.9753851957339051
+        },
+        {
+          "volatility_annualised": 0.1814484682015682,
+          "sharpe": 1.018468736576898
+        },
+        {
+          "volatility_annualised": 0.1887025467420419,
+          "sharpe": 0.919946160615122
+        }
+      ],
+      "decile_monotonicity": 0.38181818181818183,
+      "sharpe_monotonicity": -0.1393939393939394,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "stock_comp_to_revenue": {
+      "periods": 153,
+      "mean_ic": -0.01772938351529426,
+      "ic_stdev": 0.15473880502303178,
+      "t_statistic": -1.4172292638507,
+      "hit_rate": 0.48366013071895425,
+      "category": "capital_allocation",
+      "weight_in_category": 0.28,
+      "weight_in_score": 0.028000000000000004,
+      "median_coverage": 0.7892156862745098,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.15164833184293536,
+        0.1566785979112819,
+        0.13372670281216448,
+        0.16488465238822414,
+        0.16611644476874132,
+        0.11869801972043237,
+        0.19664351612741293,
+        0.22538603650959188,
+        0.22110861488107614,
+        0.19177238511947547
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.18815438638350213,
+          "sharpe": 0.8490095090334185
+        },
+        {
+          "volatility_annualised": 0.1766006492047064,
+          "sharpe": 0.9175704599766585
+        },
+        {
+          "volatility_annualised": 0.17382651938532417,
+          "sharpe": 0.8136998922346236
+        },
+        {
+          "volatility_annualised": 0.18362628104834774,
+          "sharpe": 0.9284377684064512
+        },
+        {
+          "volatility_annualised": 0.17925662388146943,
+          "sharpe": 0.9530252688837659
+        },
+        {
+          "volatility_annualised": 0.18944961478634292,
+          "sharpe": 0.6903160933860035
+        },
+        {
+          "volatility_annualised": 0.19171186650093164,
+          "sharpe": 1.039143661139441
+        },
+        {
+          "volatility_annualised": 0.20265990302844764,
+          "sharpe": 1.1124760750616924
+        },
+        {
+          "volatility_annualised": 0.21207782187118243,
+          "sharpe": 1.0545593326563716
+        },
+        {
+          "volatility_annualised": 0.2522484699106532,
+          "sharpe": 0.8263758070373722
+        }
+      ],
+      "decile_monotonicity": -0.696969696969697,
+      "sharpe_monotonicity": -0.35757575757575766,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "capex_to_depreciation": {
+      "periods": 153,
+      "mean_ic": -0.004220977316891044,
+      "ic_stdev": 0.05775874679736996,
+      "t_statistic": -0.9039428460212264,
+      "hit_rate": 0.48366013071895425,
+      "category": "capital_allocation",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.016,
+      "median_coverage": 0.7571606475716065,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.19036981309510703,
+        0.19040637716887776,
+        0.19048786011485364,
+        0.18381204195660628,
+        0.1519888756478509,
+        0.17896136710434174,
+        0.1717717821405762,
+        0.18853853265815523,
+        0.19056748051565386,
+        0.18721072031044272
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19498513582802404,
+          "sharpe": 0.9974305159519132
+        },
+        {
+          "volatility_annualised": 0.18325991415873133,
+          "sharpe": 1.0492628617662711
+        },
+        {
+          "volatility_annualised": 0.18885794412894327,
+          "sharpe": 1.023892756646753
+        },
+        {
+          "volatility_annualised": 0.18923468700144758,
+          "sharpe": 0.9919792773817491
+        },
+        {
+          "volatility_annualised": 0.1807967567435191,
+          "sharpe": 0.8777928809499974
+        },
+        {
+          "volatility_annualised": 0.19100467289128395,
+          "sharpe": 0.9633063477441473
+        },
+        {
+          "volatility_annualised": 0.18492474215776442,
+          "sharpe": 0.956695460831774
+        },
+        {
+          "volatility_annualised": 0.19054842519566043,
+          "sharpe": 1.0087644086687464
+        },
+        {
+          "volatility_annualised": 0.19669350499968247,
+          "sharpe": 0.9922621193573848
+        },
+        {
+          "volatility_annualised": 0.211336269632474,
+          "sharpe": 0.9241383811450609
+        }
+      ],
+      "decile_monotonicity": 0.1393939393939394,
+      "sharpe_monotonicity": 0.49090909090909096,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "asset_growth": {
+      "periods": 153,
+      "mean_ic": -0.010096664056851626,
+      "ic_stdev": 0.0764193981879,
+      "t_statistic": -1.6342557005127554,
+      "hit_rate": 0.45751633986928103,
+      "category": "capital_allocation",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.022000000000000002,
+      "median_coverage": 0.9986702127659575,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.15117851976818497,
+        0.16939128379622836,
+        0.15413770569935004,
+        0.1836936766002757,
+        0.16473851155535524,
+        0.16454948115349688,
+        0.19890025218566842,
+        0.20012756993037195,
+        0.2006886965589787,
+        0.20808205990777306
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.17904327440204684,
+          "sharpe": 0.8818175276275061
+        },
+        {
+          "volatility_annualised": 0.16648887922178016,
+          "sharpe": 1.0297803935383032
+        },
+        {
+          "volatility_annualised": 0.17947448923700854,
+          "sharpe": 0.8938997814148393
+        },
+        {
+          "volatility_annualised": 0.17788701873806329,
+          "sharpe": 1.0443877341909564
+        },
+        {
+          "volatility_annualised": 0.17643980100605194,
+          "sharpe": 0.9588645263839184
+        },
+        {
+          "volatility_annualised": 0.18822686240391698,
+          "sharpe": 0.909261116277022
+        },
+        {
+          "volatility_annualised": 0.19290597129643722,
+          "sharpe": 1.0436272209199697
+        },
+        {
+          "volatility_annualised": 0.19282301514443645,
+          "sharpe": 1.0491291828940874
+        },
+        {
+          "volatility_annualised": 0.2090167967196824,
+          "sharpe": 0.9857783510925385
+        },
+        {
+          "volatility_annualised": 0.22626401257524054,
+          "sharpe": 0.9539382076804513
+        }
+      ],
+      "decile_monotonicity": -0.8545454545454545,
+      "sharpe_monotonicity": -0.33333333333333326,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "accruals_ratio": {
+      "periods": 153,
+      "mean_ic": 0.004783861264944949,
+      "ic_stdev": 0.06665062040815224,
+      "t_statistic": 0.8878101286776495,
+      "hit_rate": 0.5424836601307189,
+      "category": "accounting_quality",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.022000000000000002,
+      "median_coverage": 0.9685990338164251,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.16328033225396488,
+        0.17552775244277363,
+        0.17213204030108864,
+        0.19064349727937846,
+        0.2207803470777301,
+        0.17678630254020766,
+        0.18623311388101427,
+        0.17701584341438248,
+        0.1377423775746789,
+        0.18478482241794292
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.18233711473376552,
+          "sharpe": 0.926513805231228
+        },
+        {
+          "volatility_annualised": 0.17789389111215484,
+          "sharpe": 1.0043586544779022
+        },
+        {
+          "volatility_annualised": 0.1823453924188605,
+          "sharpe": 0.9679482812808884
+        },
+        {
+          "volatility_annualised": 0.17641253231153317,
+          "sharpe": 1.084659029450717
+        },
+        {
+          "volatility_annualised": 0.19521688272155072,
+          "sharpe": 1.1279212115540491
+        },
+        {
+          "volatility_annualised": 0.19249384786555368,
+          "sharpe": 0.9479142622733572
+        },
+        {
+          "volatility_annualised": 0.19484712951705643,
+          "sharpe": 0.9802998432822638
+        },
+        {
+          "volatility_annualised": 0.19148227911070165,
+          "sharpe": 0.9528010730968907
+        },
+        {
+          "volatility_annualised": 0.19123823332196913,
+          "sharpe": 0.774613958254634
+        },
+        {
+          "volatility_annualised": 0.20136984554448198,
+          "sharpe": 0.9493282163798591
+        }
+      ],
+      "decile_monotonicity": -0.18787878787878798,
+      "sharpe_monotonicity": 0.296969696969697,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "piotroski_f": {
+      "periods": 119,
+      "mean_ic": -0.007382221958240302,
+      "ic_stdev": 0.09770321210557932,
+      "t_statistic": -0.8242363006629041,
+      "hit_rate": 0.5126050420168067,
+      "category": "accounting_quality",
+      "weight_in_category": 0.45,
+      "weight_in_score": 0.045000000000000005,
+      "median_coverage": 0.39354066985645936,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.18536253111739054,
+        0.19545633672718088,
+        0.11685163585567593,
+        0.20017230790191398,
+        0.20126903183955558,
+        0.1895394948721958,
+        0.1991701379490307,
+        0.14500641744697984,
+        0.21249215621622586,
+        0.20101501582680492
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19136496162754016,
+          "sharpe": 0.9900097822702151
+        },
+        {
+          "volatility_annualised": 0.19772498390526097,
+          "sharpe": 1.0079108391940634
+        },
+        {
+          "volatility_annualised": 0.19320497548001433,
+          "sharpe": 0.6710087477998036
+        },
+        {
+          "volatility_annualised": 0.17972582116143618,
+          "sharpe": 1.1129492691582665
+        },
+        {
+          "volatility_annualised": 0.20583224124834212,
+          "sharpe": 0.999304457169035
+        },
+        {
+          "volatility_annualised": 0.21024294935995372,
+          "sharpe": 0.9336207884473903
+        },
+        {
+          "volatility_annualised": 0.20954027671084927,
+          "sharpe": 0.9775204846625614
+        },
+        {
+          "volatility_annualised": 0.2021027512244184,
+          "sharpe": 0.7730781346647237
+        },
+        {
+          "volatility_annualised": 0.2134598919492127,
+          "sharpe": 1.018202266749368
+        },
+        {
+          "volatility_annualised": 0.251163391994243,
+          "sharpe": 0.8617714047913302
+        }
+      ],
+      "decile_monotonicity": -0.46666666666666656,
+      "sharpe_monotonicity": 0.19999999999999996,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    },
+    "days_sales_outstanding_trend": {
+      "periods": 153,
+      "mean_ic": 0.017930683296446415,
+      "ic_stdev": 0.10268142056961582,
+      "t_statistic": 2.1599847594811115,
+      "hit_rate": 0.5294117647058824,
+      "category": "accounting_quality",
+      "weight_in_category": 0.17,
+      "weight_in_score": 0.017,
+      "median_coverage": 0.6847172081829122,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.23246344618514958,
+        0.16004994781846493,
+        0.15206074537576897,
+        0.16496123097336013,
+        0.13763943671929524,
+        0.21593424173663434,
+        0.19481269123424028,
+        0.19047929983204193,
+        0.14030971183634366,
+        0.2031772027018992
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.2102768220257274,
+          "sharpe": 1.106641822776118
+        },
+        {
+          "volatility_annualised": 0.17967780647927373,
+          "sharpe": 0.9208365528808945
+        },
+        {
+          "volatility_annualised": 0.19060010599951258,
+          "sharpe": 0.8406092245449792
+        },
+        {
+          "volatility_annualised": 0.19673288162227132,
+          "sharpe": 0.8812400162513969
+        },
+        {
+          "volatility_annualised": 0.1832641830109183,
+          "sharpe": 0.7991939156790178
+        },
+        {
+          "volatility_annualised": 0.20228011463850906,
+          "sharpe": 1.0748457514753587
+        },
+        {
+          "volatility_annualised": 0.1887630597599637,
+          "sharpe": 1.0437479823816174
+        },
+        {
+          "volatility_annualised": 0.191942828425371,
+          "sharpe": 1.0105596485625983
+        },
+        {
+          "volatility_annualised": 0.198462415429437,
+          "sharpe": 0.7643648847697656
+        },
+        {
+          "volatility_annualised": 0.20872085725099188,
+          "sharpe": 0.9970632501975486
+        }
+      ],
+      "decile_monotonicity": 0.018181818181818188,
+      "sharpe_monotonicity": 0.1515151515151515,
+      "significant_nominally": true,
+      "significant_after_multiple_testing": false
+    },
+    "inventory_days_trend": {
+      "periods": 153,
+      "mean_ic": 0.0011355122100341441,
+      "ic_stdev": 0.07166579017075544,
+      "t_statistic": 0.19598626220379686,
+      "hit_rate": 0.49019607843137253,
+      "category": "accounting_quality",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.016,
+      "median_coverage": 0.509478672985782,
+      "dates_with_no_variation": 0,
+      "decile_cagr": [
+        0.2639309934100944,
+        0.17344457774092037,
+        0.2014885877912953,
+        0.18824099885479462,
+        0.19652799117765296,
+        0.18782120842390393,
+        0.20509569903013491,
+        0.1820451707197639,
+        0.1798727599666612,
+        0.24662479644645408
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.2020992166681392,
+          "sharpe": 1.2710804378450629
+        },
+        {
+          "volatility_annualised": 0.18101160514082207,
+          "sharpe": 0.9797684689331877
+        },
+        {
+          "volatility_annualised": 0.18019563501123517,
+          "sharpe": 1.1166350385912707
+        },
+        {
+          "volatility_annualised": 0.19008945211400582,
+          "sharpe": 1.009292127973351
+        },
+        {
+          "volatility_annualised": 0.18488425194239416,
+          "sharpe": 1.0701036297218844
+        },
+        {
+          "volatility_annualised": 0.19145470645140564,
+          "sharpe": 1.0014695724930254
+        },
+        {
+          "volatility_annualised": 0.18789115172430515,
+          "sharpe": 1.0938877244483032
+        },
+        {
+          "volatility_annualised": 0.20399983481468686,
+          "sharpe": 0.9279049808874676
+        },
+        {
+          "volatility_annualised": 0.21931012243242073,
+          "sharpe": 0.8662866616461607
+        },
+        {
+          "volatility_annualised": 0.2193396174762125,
+          "sharpe": 1.121953611933691
+        }
+      ],
+      "decile_monotonicity": 0.09090909090909094,
+      "sharpe_monotonicity": 0.296969696969697,
+      "significant_nominally": false,
+      "significant_after_multiple_testing": false
+    }
+  },
+  "redundant_pairs": [
+    {
+      "metrics": [
+        "ev_to_fcf",
+        "free_cash_flow_yield"
+      ],
+      "average_rank_correlation": 0.8454161309893586,
+      "dates": 153,
+      "combined_weight_in_score": 0.092,
+      "same_category": false
+    },
+    {
+      "metrics": [
+        "ev_to_ebit",
+        "ev_to_ebitda"
+      ],
+      "average_rank_correlation": 0.8263926348121344,
+      "dates": 153,
+      "combined_weight_in_score": 0.10920000000000002,
+      "same_category": true
+    },
+    {
+      "metrics": [
+        "return_on_equity",
+        "return_on_invested_capital"
+      ],
+      "average_rank_correlation": 0.7521933960383402,
+      "dates": 153,
+      "combined_weight_in_score": 0.09360000000000002,
+      "same_category": true
+    }
+  ],
+  "how_to_read": "mean_ic is the average rank correlation between a metric's scored value and the next month's return; positive means the model's scoring of it points the right way. t_statistic uses non-overlapping rebalances, so it is not inflated by reusing returns, but thirty-two metrics were tested together and only significant_after_multiple_testing should be treated as a result. dates_with_no_variation counts rebalances where every company received the same score for that metric -- a band configuration that cannot rank anything. sharpe_monotonicity is the ladder measure that survives the Phase 4 correction: a factor can look flat in return while sorting cleanly in risk-adjusted terms.",
+  "limitations": [
+    "Survivorship: measured on companies that still have a price feed today.",
+    "Four inputs cannot be reconstructed point-in-time (forward_pe, peg, earnings_surprise, altman_z) and are absent throughout rather than tested.",
+    "One regime, roughly nine years. A metric that failed here failed in this sample.",
+    "Redundancy is measured on scored values, which is what the model actually adds up. Two metrics can be redundant after banding without being redundant before."
+  ]
+}
