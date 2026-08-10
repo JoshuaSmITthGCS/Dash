@@ -1,21 +1,21 @@
 {
   "schema_version": "1.1.0",
   "model_version": "congress-trades-v1.2.0",
-  "generated_at": "2026-08-09T20:07:49.347230+00:00",
+  "generated_at": "2026-08-10T14:18:56.778902+00:00",
   "status": "partial",
   "reason_code": "SOME_SOURCES_UNAVAILABLE",
   "publish_window_days": 120,
-  "history_days": 119,
+  "history_days": 120,
   "late_filing_threshold_days": 45,
   "rare_trader_minimum_history_days": 90,
   "concentrated_size_floor": 50000,
   "collection": {
     "disclosures_fetched": 1162,
-    "new_disclosures": 1162,
+    "new_disclosures": 0,
     "disclosures_stored": 1162,
     "failures": [
-      "fmp-senate: FMP senate-latest request failed with HTTP 402",
-      "fmp-house: FMP house-latest request failed with HTTP 402",
+      "fmp-senate: FMP senate-latest request failed with HTTP 429",
+      "fmp-house: FMP house-latest request failed with HTTP 429",
       "mirror-senate: senate disclosure dataset is no longer public (HTTP 403 at https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json) - set CONGRESS_SENATE_DATASET_URL to a live mirror",
       "mirror-house: house disclosure dataset is no longer public (HTTP 403 at https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json) - set CONGRESS_HOUSE_DATASET_URL to a live mirror"
     ],
@@ -2274,11 +2274,7 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 30.09,
-      "price_latest": 101.65,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 237.82
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -2403,11 +2399,7 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 30.0,
-      "price_latest": 101.65,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 238.83
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -2636,11 +2628,7 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 30.68,
-      "price_latest": 101.65,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 231.32
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$15,001 - $50,000",
@@ -3573,7 +3561,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 824,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -3937,11 +3924,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 20.8,
-      "price_latest": 11.98,
-      "price_as_of": "2025-08-28",
-      "return_since_purchase_pct": -42.4
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$15,001 - $50,000",
@@ -6556,11 +6539,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 69.91,
-      "price_latest": 75.02,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 7.31
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$15,001 - $50,000",
@@ -6700,11 +6679,7 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 355.28,
-      "price_latest": 328.58,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -7.52
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -7422,11 +7397,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 19.92,
-      "price_latest": 23.46,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 17.77
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -8997,11 +8968,7 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 165.17,
-      "price_latest": 223.96,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 35.59
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -9212,11 +9179,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 7.96,
-      "price_latest": 9.36,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 17.59
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -9772,11 +9735,7 @@
         "SAME_SECTOR_REPEAT",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 358.96,
-      "price_latest": 499.99,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 39.29
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -10676,11 +10635,7 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 242.49,
-      "price_latest": 259.24,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 6.91
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -11837,11 +11792,7 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 807.6,
-      "price_latest": 1039.61,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 28.73
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -12100,11 +12051,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 77.19,
-      "price_latest": 87.25,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 13.03
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -12221,11 +12168,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 92.42,
-      "price_latest": 104.91,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 13.51
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -12413,11 +12356,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 295.52,
-      "price_latest": 362.5,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 22.67
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13413,11 +13352,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 50.31,
-      "price_latest": 47.06,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -6.46
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13513,11 +13448,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 259.02,
-      "price_latest": 407.08,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 57.16
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13634,6 +13565,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -13853,11 +13785,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 361.83,
-      "price_latest": 328.58,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -9.19
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14098,11 +14026,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 86.81,
-      "price_latest": 105.58,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 21.62
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14462,11 +14386,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 66.02,
-      "price_latest": 93.29,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 41.31
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14949,11 +14869,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 153.04,
-      "price_latest": 139.02,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -9.16
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14974,15 +14890,10 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 43.59,
-      "price_latest": 59.07,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 35.51
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -15240,11 +15151,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 143.06,
-      "price_latest": 172.01,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 20.24
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -15598,11 +15505,7 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 167.52,
-      "price_latest": 223.96,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 33.69
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -15623,7 +15526,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -15768,11 +15670,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 51.37,
-      "price_latest": 41.7,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -18.82
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -16442,7 +16340,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -16470,11 +16367,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 93.43,
-      "price_latest": 74.14,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -20.65
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$50,001 - $100,000",
@@ -16856,11 +16749,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 356.77,
-      "price_latest": 499.99,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 40.14
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -17003,11 +16892,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 36.32,
-      "price_latest": 44.47,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 22.44
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -17079,11 +16964,7 @@
         "SAME_SECTOR_REPEAT",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 246.63,
-      "price_latest": 313.33,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 27.04
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$15,001 - $50,000",
@@ -17107,11 +16988,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 525.72,
-      "price_latest": 592.1,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 12.63
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$15,001 - $50,000",
@@ -17583,11 +17460,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 615.84,
-      "price_latest": 587.95,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -4.53
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18043,11 +17916,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 240.45,
-      "price_latest": 259.24,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 7.81
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18192,11 +18061,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 43.13,
-      "price_latest": 101.65,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 135.68
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18506,11 +18371,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 471.85,
-      "price_latest": 413.36,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": -12.4
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18555,7 +18416,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -18583,11 +18443,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 802.89,
-      "price_latest": 1039.61,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 29.48
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18780,11 +18636,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 72.98,
-      "price_latest": 87.58,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 20.01
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18880,11 +18732,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 282.81,
-      "price_latest": 370.08,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 30.86
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -19052,11 +18900,7 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 11.37,
-      "price_latest": 13.98,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 22.96
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -19152,11 +18996,7 @@
         "BUY_SELL_FLIP",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 276.98,
-      "price_latest": 318.57,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 15.02
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -21035,11 +20875,7 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 248.8,
-      "price_latest": 313.33,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 25.94
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -21690,7 +21526,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 119,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -22376,11 +22211,7 @@
       "flags": [
         "NOVEL_TICKER"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 396.47,
-      "price_latest": 407.08,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 2.68
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -23181,11 +23012,7 @@
         "NOVEL_TICKER",
         "RARE_TRADER"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 77.17,
-      "price_latest": 87.25,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 13.06
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$250,001 - $500,000",
@@ -24897,11 +24724,7 @@
       "flags": [
         "NOVEL_TICKER"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 133.99,
-      "price_latest": 172.01,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 28.38
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -27362,11 +27185,7 @@
       "flags": [
         "NOVEL_TICKER"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 178.56,
-      "price_latest": 223.96,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 25.43
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -27389,11 +27208,7 @@
       "flags": [
         "NOVEL_TICKER"
       ],
-      "rare_trader_evaluated": true,
-      "price_at_purchase": 410.68,
-      "price_latest": 499.99,
-      "price_as_of": "2026-08-07",
-      "return_since_purchase_pct": 21.75
+      "rare_trader_evaluated": true
     },
     {
       "amount": "$1,001 - $15,000",
@@ -27467,8 +27282,8 @@
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "f6047d8d6a97194cfb80176e601a837c730cc4cc",
-    "config_hash": "abd05fbb7293bfce9108816138ce52fb3339d824b0a4286ecce6d3bd4dfed2fd",
-    "generated_at": "2026-08-09T20:07:49.347230+00:00"
+    "git_commit_sha": "ff64610f34d39f5175da78ec2d6144f3a142eec1",
+    "config_hash": "c5535dbb601454ce6e713f16b104f6b33a76ba3682c6a3be94d2aaeba567a2d2",
+    "generated_at": "2026-08-10T14:18:56.778902+00:00"
   }
 }
