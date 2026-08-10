@@ -1,0 +1,755 @@
+{
+  "settings": {
+    "start": "2017-01-01",
+    "end": "2026-06-01",
+    "rebalance_every_days": 21,
+    "holding_days": 21,
+    "directional_threshold": 0.3,
+    "material_gap": 0.005,
+    "bonferroni_t": 3.163
+  },
+  "dates": 153,
+  "results": {
+    "peg": {
+      "comparable_dates": 0,
+      "direction": null,
+      "two_tailed": false,
+      "raw": {
+        "periods": 0
+      },
+      "scored": {
+        "periods": 0
+      },
+      "ic_gap_raw_minus_scored": null,
+      "verdict": "not_comparable",
+      "category": "valuation",
+      "weight_in_category": 0.09,
+      "weight_in_score": 0.0252
+    },
+    "forward_pe": {
+      "comparable_dates": 0,
+      "direction": null,
+      "two_tailed": false,
+      "raw": {
+        "periods": 0
+      },
+      "scored": {
+        "periods": 0
+      },
+      "ic_gap_raw_minus_scored": null,
+      "verdict": "not_comparable",
+      "category": "valuation",
+      "weight_in_category": 0.15,
+      "weight_in_score": 0.042
+    },
+    "sales_multiple": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.01081527638124123,
+        "ic_stdev": 0.14754825920003872,
+        "t_statistic": 0.9066700033983286,
+        "hit_rate": 0.5359477124183006
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.007696976604769579,
+        "ic_stdev": 0.14767813151646175,
+        "t_statistic": 0.6446881582294818,
+        "hit_rate": 0.5228758169934641
+      },
+      "ic_gap_raw_minus_scored": 0.0031182997764716506,
+      "verdict": "bands_faithful",
+      "category": "valuation",
+      "weight_in_category": 0.09,
+      "weight_in_score": 0.0252
+    },
+    "price_to_book": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.017621453495890175,
+        "ic_stdev": 0.18463271699487382,
+        "t_statistic": -1.1805347701591042,
+        "hit_rate": 0.43790849673202614
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.017412670144799393,
+        "ic_stdev": 0.17578585129405214,
+        "t_statistic": -1.225256942510417,
+        "hit_rate": 0.4444444444444444
+      },
+      "ic_gap_raw_minus_scored": -0.00020878335109078203,
+      "verdict": "bands_faithful",
+      "category": "valuation",
+      "weight_in_category": 0.05,
+      "weight_in_score": 0.014000000000000002
+    },
+    "price_to_tangible_book": {
+      "comparable_dates": 0,
+      "direction": null,
+      "two_tailed": false,
+      "raw": {
+        "periods": 0
+      },
+      "scored": {
+        "periods": 0
+      },
+      "ic_gap_raw_minus_scored": null,
+      "verdict": "not_comparable",
+      "category": "valuation",
+      "weight_in_category": 0.05,
+      "weight_in_score": 0.014000000000000002
+    },
+    "ev_to_ebitda": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.011508039060065242,
+        "ic_stdev": 0.17034990604173056,
+        "t_statistic": -0.8356129162189131,
+        "hit_rate": 0.477124183006536
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.013899842070098171,
+        "ic_stdev": 0.16093485993919476,
+        "t_statistic": -1.0683300757102374,
+        "hit_rate": 0.45098039215686275
+      },
+      "ic_gap_raw_minus_scored": 0.002391803010032929,
+      "verdict": "bands_faithful",
+      "category": "valuation",
+      "weight_in_category": 0.27,
+      "weight_in_score": 0.07560000000000001
+    },
+    "ev_to_ebit": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.009708691980721659,
+        "ic_stdev": 0.15973560042671595,
+        "t_statistic": -0.7518041516637542,
+        "hit_rate": 0.46405228758169936
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.01158724916849163,
+        "ic_stdev": 0.15287333296919225,
+        "t_statistic": -0.9375497603954771,
+        "hit_rate": 0.45751633986928103
+      },
+      "ic_gap_raw_minus_scored": 0.001878557187769971,
+      "verdict": "bands_faithful",
+      "category": "valuation",
+      "weight_in_category": 0.12,
+      "weight_in_score": 0.033600000000000005
+    },
+    "ev_to_fcf": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.00606654913118488,
+        "ic_stdev": 0.15010528993471303,
+        "t_statistic": -0.4999095540554267,
+        "hit_rate": 0.477124183006536
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.01073736104469604,
+        "ic_stdev": 0.1362763751306077,
+        "t_statistic": -0.9745916785336659,
+        "hit_rate": 0.45751633986928103
+      },
+      "ic_gap_raw_minus_scored": 0.0046708119135111595,
+      "verdict": "bands_faithful",
+      "category": "valuation",
+      "weight_in_category": 0.18,
+      "weight_in_score": 0.0504
+    },
+    "return_on_equity": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.00015298784007922165,
+        "ic_stdev": 0.11125278292797697,
+        "t_statistic": -0.017009507739417878,
+        "hit_rate": 0.49673202614379086
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.00010726012773024164,
+        "ic_stdev": 0.10776851659774724,
+        "t_statistic": 0.012310965670050042,
+        "hit_rate": 0.47058823529411764
+      },
+      "ic_gap_raw_minus_scored": -0.0002602479678094633,
+      "verdict": "bands_faithful",
+      "category": "profitability",
+      "weight_in_category": 0.1,
+      "weight_in_score": 0.026000000000000002
+    },
+    "return_on_invested_capital": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.006416363718018926,
+        "ic_stdev": 0.11866038746887034,
+        "t_statistic": 0.6688503022640114,
+        "hit_rate": 0.5098039215686274
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.00492180832673868,
+        "ic_stdev": 0.11535335594934254,
+        "t_statistic": 0.5277645049815413,
+        "hit_rate": 0.5163398692810458
+      },
+      "ic_gap_raw_minus_scored": 0.001494555391280246,
+      "verdict": "bands_faithful",
+      "category": "profitability",
+      "weight_in_category": 0.26,
+      "weight_in_score": 0.06760000000000001
+    },
+    "gross_profits_to_assets": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.016024076581681167,
+        "ic_stdev": 0.12001368691569897,
+        "t_statistic": 1.6515356372394394,
+        "hit_rate": 0.5490196078431373
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.01888955200844355,
+        "ic_stdev": 0.1144490622339876,
+        "t_statistic": 2.041527033017893,
+        "hit_rate": 0.5620915032679739
+      },
+      "ic_gap_raw_minus_scored": -0.0028654754267623816,
+      "verdict": "bands_faithful",
+      "category": "profitability",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.0572
+    },
+    "cash_conversion": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.0054418954333093714,
+        "ic_stdev": 0.06357180195389822,
+        "t_statistic": 1.058842552144696,
+        "hit_rate": 0.5751633986928104
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.0013025913758918175,
+        "ic_stdev": 0.05855649805111186,
+        "t_statistic": 0.27515589261157786,
+        "hit_rate": 0.5686274509803921
+      },
+      "ic_gap_raw_minus_scored": 0.004139304057417554,
+      "verdict": "bands_faithful",
+      "category": "profitability",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.041600000000000005
+    },
+    "free_cash_flow_yield": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.0072631334569061914,
+        "ic_stdev": 0.124219618461075,
+        "t_statistic": -0.7232351890977448,
+        "hit_rate": 0.47058823529411764
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.006055834785526937,
+        "ic_stdev": 0.11804068332866988,
+        "t_statistic": -0.6345823939995635,
+        "hit_rate": 0.45751633986928103
+      },
+      "ic_gap_raw_minus_scored": -0.0012072986713792542,
+      "verdict": "bands_faithful",
+      "category": "profitability",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.041600000000000005
+    },
+    "profit_margin": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.012424648265334539,
+        "ic_stdev": 0.10064861033567225,
+        "t_statistic": -1.5269402226698725,
+        "hit_rate": 0.42483660130718953
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.013026067348541337,
+        "ic_stdev": 0.09986443879258933,
+        "t_statistic": -1.613422722256288,
+        "hit_rate": 0.43137254901960786
+      },
+      "ic_gap_raw_minus_scored": 0.000601419083206798,
+      "verdict": "bands_faithful",
+      "category": "profitability",
+      "weight_in_category": 0.1,
+      "weight_in_score": 0.026000000000000002
+    },
+    "debt_to_equity": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.00090089973703481,
+        "ic_stdev": 0.06559313611081338,
+        "t_statistic": -0.16988842099013496,
+        "hit_rate": 0.46405228758169936
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.0028411995564232516,
+        "ic_stdev": 0.06408918167763188,
+        "t_statistic": -0.5483561609593625,
+        "hit_rate": 0.45751633986928103
+      },
+      "ic_gap_raw_minus_scored": 0.0019402998193884416,
+      "verdict": "bands_faithful",
+      "category": "financial_health",
+      "weight_in_category": 0.18,
+      "weight_in_score": 0.027
+    },
+    "current_ratio": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.016126019613901175,
+        "ic_stdev": 0.12551347135732635,
+        "t_statistic": 1.5892146429351934,
+        "hit_rate": 0.5882352941176471
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.015046429640756828,
+        "ic_stdev": 0.12282472388232787,
+        "t_statistic": 1.5152816974382193,
+        "hit_rate": 0.5424836601307189
+      },
+      "ic_gap_raw_minus_scored": 0.001079589973144347,
+      "verdict": "bands_faithful",
+      "category": "financial_health",
+      "weight_in_category": 0.1,
+      "weight_in_score": 0.015
+    },
+    "interest_coverage": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.006610720170026732,
+        "ic_stdev": 0.10979127468524406,
+        "t_statistic": -0.7447776956929161,
+        "hit_rate": 0.43137254901960786
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.006450953133698298,
+        "ic_stdev": 0.11010994372450722,
+        "t_statistic": -0.7246746367256767,
+        "hit_rate": 0.43137254901960786
+      },
+      "ic_gap_raw_minus_scored": -0.00015976703632843408,
+      "verdict": "bands_faithful",
+      "category": "financial_health",
+      "weight_in_category": 0.3,
+      "weight_in_score": 0.045
+    },
+    "net_debt_to_ebitda": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.016356007296960157,
+        "ic_stdev": 0.0871968581315526,
+        "t_statistic": 2.3201826468448403,
+        "hit_rate": 0.6209150326797386
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.017021188278375104,
+        "ic_stdev": 0.08714907257447459,
+        "t_statistic": 2.4158658860755713,
+        "hit_rate": 0.5751633986928104
+      },
+      "ic_gap_raw_minus_scored": -0.0006651809814149472,
+      "verdict": "bands_faithful",
+      "category": "financial_health",
+      "weight_in_category": 0.24,
+      "weight_in_score": 0.036
+    },
+    "altman_z": {
+      "comparable_dates": 0,
+      "direction": null,
+      "two_tailed": false,
+      "raw": {
+        "periods": 0
+      },
+      "scored": {
+        "periods": 0
+      },
+      "ic_gap_raw_minus_scored": null,
+      "verdict": "not_comparable",
+      "category": "financial_health",
+      "weight_in_category": 0.18,
+      "weight_in_score": 0.027
+    },
+    "revenue_growth": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.01656410578337571,
+        "ic_stdev": 0.1459373174822176,
+        "t_statistic": 1.4039361333419917,
+        "hit_rate": 0.6143790849673203
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.017543840713057545,
+        "ic_stdev": 0.13721634133634858,
+        "t_statistic": 1.5814831010900774,
+        "hit_rate": 0.6143790849673203
+      },
+      "ic_gap_raw_minus_scored": -0.0009797349296818345,
+      "verdict": "bands_faithful",
+      "category": "growth",
+      "weight_in_category": 0.26,
+      "weight_in_score": 0.0286
+    },
+    "earnings_growth": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.0063552430526194045,
+        "ic_stdev": 0.08862218607773358,
+        "t_statistic": 0.8870241034035913,
+        "hit_rate": 0.5490196078431373
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.00858521783316964,
+        "ic_stdev": 0.08332296642689845,
+        "t_statistic": 1.2744779067419632,
+        "hit_rate": 0.5947712418300654
+      },
+      "ic_gap_raw_minus_scored": -0.0022299747805502356,
+      "verdict": "bands_faithful",
+      "category": "growth",
+      "weight_in_category": 0.2,
+      "weight_in_score": 0.022000000000000002
+    },
+    "fcf_growth_3y": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.003266021752863091,
+        "ic_stdev": 0.07311967956493759,
+        "t_statistic": 0.552497743811644,
+        "hit_rate": 0.5359477124183006
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.0020053449012557155,
+        "ic_stdev": 0.07855381176191438,
+        "t_statistic": 0.3157675735226333,
+        "hit_rate": 0.5490196078431373
+      },
+      "ic_gap_raw_minus_scored": 0.0012606768516073754,
+      "verdict": "bands_faithful",
+      "category": "growth",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.0242
+    },
+    "operating_margin_trend": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.005578005307636891,
+        "ic_stdev": 0.11735243607635804,
+        "t_statistic": -0.587939351732201,
+        "hit_rate": 0.5424836601307189
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.004494834694117272,
+        "ic_stdev": 0.11738950695194776,
+        "t_statistic": -0.4736201393482944,
+        "hit_rate": 0.5424836601307189
+      },
+      "ic_gap_raw_minus_scored": -0.0010831706135196193,
+      "verdict": "bands_faithful",
+      "category": "growth",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.0176
+    },
+    "earnings_surprise": {
+      "comparable_dates": 0,
+      "direction": null,
+      "two_tailed": false,
+      "raw": {
+        "periods": 0
+      },
+      "scored": {
+        "periods": 0
+      },
+      "ic_gap_raw_minus_scored": null,
+      "verdict": "not_comparable",
+      "category": "growth",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.0176
+    },
+    "net_buyback_yield": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.008577975026513652,
+        "ic_stdev": 0.09176020858670193,
+        "t_statistic": 1.156314843862021,
+        "hit_rate": 0.5555555555555556
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.006780981824062085,
+        "ic_stdev": 0.08671763097205881,
+        "t_statistic": 0.9672325221272488,
+        "hit_rate": 0.5490196078431373
+      },
+      "ic_gap_raw_minus_scored": 0.001796993202451567,
+      "verdict": "bands_faithful",
+      "category": "capital_allocation",
+      "weight_in_category": 0.34,
+      "weight_in_score": 0.034
+    },
+    "stock_comp_to_revenue": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.016115061238539664,
+        "ic_stdev": 0.1532966548727912,
+        "t_statistic": -1.3003042963644451,
+        "hit_rate": 0.43790849673202614
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.01772938351529426,
+        "ic_stdev": 0.15473880502303178,
+        "t_statistic": -1.4172292638507,
+        "hit_rate": 0.48366013071895425
+      },
+      "ic_gap_raw_minus_scored": 0.0016143222767545963,
+      "verdict": "bands_faithful",
+      "category": "capital_allocation",
+      "weight_in_category": 0.28,
+      "weight_in_score": 0.028000000000000004
+    },
+    "capex_to_depreciation": {
+      "comparable_dates": 153,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": -0.005148409015479844,
+        "ic_stdev": 0.06277198355375038,
+        "t_statistic": -1.014501994661153,
+        "hit_rate": 0.45098039215686275
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": -0.004220977316891044,
+        "ic_stdev": 0.05775874679736996,
+        "t_statistic": -0.9039428460212264,
+        "hit_rate": 0.48366013071895425
+      },
+      "ic_gap_raw_minus_scored": -0.0009274316985887999,
+      "verdict": "bands_faithful",
+      "category": "capital_allocation",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.016
+    },
+    "asset_growth": {
+      "comparable_dates": 38,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 38,
+        "mean_ic": 0.007492436023983176,
+        "ic_stdev": 0.10072912972117516,
+        "t_statistic": 0.4585215584651459,
+        "hit_rate": 0.5263157894736842
+      },
+      "scored": {
+        "periods": 38,
+        "mean_ic": 0.008966540206912529,
+        "ic_stdev": 0.08040340372970269,
+        "t_statistic": 0.6874518172824164,
+        "hit_rate": 0.5
+      },
+      "ic_gap_raw_minus_scored": -0.0014741041829293535,
+      "verdict": "bands_faithful",
+      "category": "capital_allocation",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.022000000000000002
+    },
+    "accruals_ratio": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.01245093896533138,
+        "ic_stdev": 0.07120033937808898,
+        "t_statistic": 2.16304600261406,
+        "hit_rate": 0.5620915032679739
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.004783861264944949,
+        "ic_stdev": 0.06665062040815224,
+        "t_statistic": 0.8878101286776495,
+        "hit_rate": 0.5424836601307189
+      },
+      "ic_gap_raw_minus_scored": 0.007667077700386432,
+      "verdict": "bands_cost_information",
+      "category": "accounting_quality",
+      "weight_in_category": 0.22,
+      "weight_in_score": 0.022000000000000002
+    },
+    "piotroski_f": {
+      "comparable_dates": 119,
+      "direction": 1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 119,
+        "mean_ic": -0.009354891959896439,
+        "ic_stdev": 0.1008051584489192,
+        "t_statistic": -1.012347233259318,
+        "hit_rate": 0.48739495798319327
+      },
+      "scored": {
+        "periods": 119,
+        "mean_ic": -0.007382221958240302,
+        "ic_stdev": 0.09770321210557932,
+        "t_statistic": -0.8242363006629041,
+        "hit_rate": 0.5126050420168067
+      },
+      "ic_gap_raw_minus_scored": -0.001972670001656137,
+      "verdict": "bands_faithful",
+      "category": "accounting_quality",
+      "weight_in_category": 0.45,
+      "weight_in_score": 0.045000000000000005
+    },
+    "days_sales_outstanding_trend": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.02044654033849629,
+        "ic_stdev": 0.10912631668337258,
+        "t_statistic": 2.3175870327963968,
+        "hit_rate": 0.5751633986928104
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.017930683296446415,
+        "ic_stdev": 0.10268142056961582,
+        "t_statistic": 2.1599847594811115,
+        "hit_rate": 0.5294117647058824
+      },
+      "ic_gap_raw_minus_scored": 0.002515857042049874,
+      "verdict": "bands_faithful",
+      "category": "accounting_quality",
+      "weight_in_category": 0.17,
+      "weight_in_score": 0.017
+    },
+    "inventory_days_trend": {
+      "comparable_dates": 153,
+      "direction": -1,
+      "two_tailed": false,
+      "raw": {
+        "periods": 153,
+        "mean_ic": 0.004468874760001677,
+        "ic_stdev": 0.07571032327707349,
+        "t_statistic": 0.7301108434993298,
+        "hit_rate": 0.5294117647058824
+      },
+      "scored": {
+        "periods": 153,
+        "mean_ic": 0.0011355122100341441,
+        "ic_stdev": 0.07166579017075544,
+        "t_statistic": 0.19598626220379686,
+        "hit_rate": 0.49019607843137253
+      },
+      "ic_gap_raw_minus_scored": 0.003333362549967533,
+      "verdict": "bands_faithful",
+      "category": "accounting_quality",
+      "weight_in_category": 0.16,
+      "weight_in_score": 0.016
+    }
+  },
+  "summary": {
+    "bands_cost_information": 1,
+    "bands_faithful": 26,
+    "bands_add_information": 0,
+    "not_comparable": 5,
+    "weight_on_metrics_whose_bands_cost_information": 0.022000000000000002
+  },
+  "how_to_read": "Both columns rank the same companies against the same forward returns on the same dates; only the banding differs. raw is the underlying value, signed by the direction the live bands themselves imply. A raw information coefficient well above the scored one means the cutoffs are discarding information the metric carries, and the remedy is recalibration rather than reweighting. The two close together means the bands are faithful and the metric is simply what it is.",
+  "limitations": [
+    "Survivorship, one regime, and the same statistical power limit as Phase 5: this sample cannot resolve an information coefficient below roughly 0.028 after multiple-testing correction, and every effect here is smaller than that.",
+    "A gap in information coefficient is evidence about ranking, not proof that a recalibrated band would earn the difference. Any proposed cutoff change still has to survive the design/test split in research/candidate.py.",
+    "Two-tailed metrics have no monotone raw direction and are reported as not_comparable rather than forced onto a line."
+  ]
+}

@@ -9,13 +9,29 @@ Numbers: `phase4_baselines.json`. Harness: `research/baselines.py`. Regenerate p
 
 ## The headline
 
-**Of the five factors this model is built on, one sorts stocks, one sorts them backwards, and
-three do not sort them at all.** Over 2017–2026, on 820 US companies, an equal-weighted
-holding of the whole universe returned 18.0% annualised. Most factor deciles sit between 13%
-and 19% — statistically indistinguishable from owning everything.
+Over 2017–2026, on 820 US companies, an equal-weighted holding of the whole universe returned
+**18.0% annualised at a Sharpe of 0.99**. That is the bar. Measured against it, risk-adjusted:
 
-That is the answer to the question the brief asks in GATE 4, and it arrives before any
-optimisation, which is the only point at which the answer is trustworthy.
+| factor | top-decile Sharpe | vs. universe | verdict |
+|---|---|---|---|
+| momentum_12_1 | 1.40 | +0.41 | sorts, strongly |
+| quality_and_momentum | 1.39 | +0.40 | sorts, most reliably |
+| quality_roic | 1.29 | +0.30 | sorts, once risk is counted |
+| value_quality_momentum | 1.25 | +0.26 | sorts |
+| profitability | 1.12 | +0.12 | does not sort |
+| low_accruals | 1.10 | +0.11 | sorts weakly |
+| value_and_momentum | 1.05 | +0.05 | barely |
+| **value_earnings_yield** | **0.79** | **−0.21** | **actively harmful** |
+
+**Momentum and quality sort the cross-section; cheapness sorts it backwards; gross
+profitability does not sort it at all.** That is the answer to the question the brief asks in
+GATE 4, and it arrives before any optimisation, which is the only point at which the answer is
+trustworthy.
+
+Everything below the top-twenty table depends on a distinction that raw returns cannot make.
+A decile earning 25% with 26% volatility and a decile earning 24% with 18% volatility look
+alike to a return-ranked ladder and are opposite results. Per-decile risk was added after the
+first pass for exactly that reason, and it changed one of the conclusions.
 
 ---
 
@@ -77,12 +93,17 @@ sorts backwards.
 
 Four findings, in order of how much they should change the model.
 
-### 1. Value ranked stocks backwards
+### 1. Value ranked stocks backwards, and took more risk doing it
 
 Earnings yield has a monotonicity of **−0.62**. The cheapest decile returned 17.4%; the most
 expensive returned 26.8%. This is not noise around zero — it is a consistent inverse ladder,
 and it is the single largest negative result here. The top-twenty portfolio also carried the
 worst drawdown of anything measured, −59.5% against the universe's −32.2%.
+
+Risk makes it worse rather than better. The cheapest decile carried **24.6% volatility**, the
+highest of any top decile measured, for a Sharpe of 0.79 against the universe's 0.99. A factor
+that bought lower returns with lower risk would be defensible; this one bought lower returns
+with *higher* risk. That is a value trap, not a value premium.
 
 Adding momentum to value did not rescue it. `value_and_momentum` returned 17.4%, below the
 universe, with the highest turnover of any strategy at 31% a month.
@@ -91,36 +112,70 @@ universe, with the highest turnover of any strategy at 31% a month.
 presents cheapness as a reason to buy. Over this window and this universe, cheapness was a
 reason not to.
 
-### 2. Quality and profitability do not sort the cross-section
+### 2. Quality works — but only once risk is accounted for. Gross profitability does not.
 
-Both are U-shaped. `quality_roic` pays 24% in its best decile and 25% in its *worst*, with the
-middle at 10–18%; `profitability` pays 19% at the top and 34% at the bottom, the highest
-single decile of any factor measured. Monotonicity is −0.22 and +0.01 — no ordering.
+**This finding replaces an earlier version of itself, and the correction matters.** On raw
+return, `quality_roic` looks like it does not sort: 24% in its best decile and 25% in its
+*worst*, monotonicity −0.22. I reported it that way, and it was misleading.
 
-`quality_roic`'s top-twenty result of 24.0% against the universe's 18.0% therefore does not
-survive contact with the deciles. Its apparent edge is concentrated at one extreme and mirrored
-at the other, which is the signature of something other than the quality ranking doing the
-work.
+The U-shape is not two ends doing the same thing. It is a good end and a *risky* end:
 
-### 3. Momentum sorts, but almost entirely in the first decile
+| quality_roic | D1 | D2 | D3 | D4 | D5 | D6 | D7 | D8 | D9 | D10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| return | 24% | 17% | 16% | 15% | 17% | 16% | 10% | 18% | 18% | 25% |
+| volatility | 17.9% | 17.4% | 17.4% | 18.9% | 17.9% | 18.6% | 17.7% | 16.7% | 19.6% | **27.7%** |
+| **Sharpe** | **1.29** | 1.01 | 0.93 | 0.85 | 0.96 | 0.90 | 0.62 | 1.08 | 0.93 | 0.94 |
 
-Momentum is the one factor with a real ladder — monotonicity +0.61, spread +15.3 points. But
-deciles 2 through 10 span 14% to 19%, essentially flat, and effectively the whole effect is D1
-against everything else. Within D1 it concentrates further: the top twenty returned 48.8%
-against the decile's 32.3%.
+The bottom decile earns its 25% with 27.7% volatility — half again the rest of the ladder —
+for a Sharpe of 0.94, below the universe's 0.99. The top decile earns 24% at 17.9% volatility,
+*less* risk than the universe, for a Sharpe of **1.29**. That is the second-best single-factor
+reading measured here and a clear +0.30 over the universe.
+
+Return-only deciles cannot see this, and mine could not until per-decile risk was added.
+High return at high risk and high return at low risk are opposite results, and a monotonicity
+computed on returns scores them identically.
+
+`profitability` (gross-profits-to-assets) does not survive the same test. Its Sharpe ladder is
+1.12 at the top and 1.15 at the bottom — genuinely U-shaped in risk-adjusted terms too, and no
+ordering at +0.01 monotonicity.
+
+**The consequence for the live model is specific.** Its profitability block weights ROIC at 26%
+and gross-profits-to-assets at 22%, alongside four more metrics. The one input that works is
+diluted by five that do not, and the block as a whole scores +0.04 Sharpe against the
+universe — against +0.30 for ROIC standing alone.
+
+### 3. Momentum sorts cleanly, and its ladder is the best-behaved thing measured
+
+Its Sharpe ladder runs **1.40, 1.10, 1.09, 0.93, 0.94, 0.92, 0.91, 0.78, 0.71, 0.66** — a
+near-monotonic decline over ten buckets, which is what a factor that carries information looks
+like. `quality_and_momentum` is nearly identical at 1.39 down to 0.67, with the highest
+return-monotonicity on the table (+0.81).
+
+On returns alone the picture looked more tail-concentrated than it is: monotonicity +0.61,
+spread +15.3 points, but deciles 2 through 10 spanning only 14% to 19%. The Sharpe ladder
+shows the ordering continues well past the first bucket even where returns flatten, because
+the lower deciles are taking progressively more risk for it. Within D1 the effect does still
+concentrate: the top twenty returned 48.8% against the decile's 32.3%.
 
 **A tail-concentrated effect is exactly where survivorship bias lands.** Selecting on past
 returns inside a set chosen for having survived is close to selecting on the survival itself,
 so of everything measured here, momentum's number is the one most inflated by the bias below.
 I do not report 48.8% as an expectation and no part of this engagement should.
 
-### 4. The best-sorting construction is quality *and* momentum
+### 4. The best-sorting construction is quality *and* momentum, and the two legs are not equals
 
-`quality_and_momentum` has the highest monotonicity at **+0.81** with a fairly steady ladder,
-despite neither of the standalone factors being convincing on their own — quality does not sort,
-and momentum sorts only at the tail. That is the most interesting positive result in this table
-and the one most worth pursuing in Phase 5. It is also, on a nine-year sample with no
-multiple-testing correction, one hypothesis rather than a finding.
+`quality_and_momentum` has the highest monotonicity at **+0.81** and a Sharpe ladder running
+1.39 down to 0.67 — the steadiest decline measured. Both of its legs sort on their own once
+risk is counted (momentum +0.41 over the universe, ROIC +0.30), so this is two working signals
+composing rather than two weak ones rescuing each other.
+
+Adding value to the pair makes it *worse*, not better: `value_quality_momentum` drops to +0.26
+and monotonicity +0.25, and `value_and_momentum` collapses to +0.05 and +0.02. Cheapness
+subtracts from every combination it enters here. That is the clearest single statement this
+table makes about the live model, which weights valuation at 28%.
+
+On a nine-year sample with no multiple-testing correction, all of this is a hypothesis worth
+testing in Phase 5 rather than a finding to act on.
 
 ---
 
