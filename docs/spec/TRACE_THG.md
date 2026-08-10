@@ -132,7 +132,7 @@ Confirmed working and internally consistent for THG:
   re-derives a value its input already carries, from lossier (rounded) inputs, so the payload
   publishes two versions of "the" effective score that can differ by up to ±0.2 (half the
   0.01 confidence-rounding step × the 40.5-point distance from neutral). Recorded as
-  finding 8 in `ARCHITECTURE.md` §10.2.
+  finding 9 in `ARCHITECTURE.md` §10.2.
 - `structural.evidence_weight_resolved: 0.61`, `coverage: 0.84`.
 - `timeliness.raw_score: null`, `effective_score: null`, `coverage: 0.0` — confirmed no
   fabricated 50.0 (see §0).
