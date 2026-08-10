@@ -122,9 +122,9 @@ export default function Methodology() {
         </p>
         <ul className="method-list">
           <li>Fundamentals are recorded point-in-time on every run, with restatements kept in a separate revision log, so future backtests can score on what was actually known at the time.</li>
-          <li>Universe membership is snapshotted too, delisted names included, so a backtest cannot quietly run on survivors only.</li>
-          <li>Results are deflated for the number of configurations tried. Test enough weightings and one looks good by construction; the significance bar is raised to account for that.</li>
-          <li>A change ships only if it improves out-of-sample performance after that deflation, regardless of how good it looks in sample.</li>
+          <li>Universe membership is snapshotted on every run, additions and removals recorded, so that in time a backtest cannot quietly run on survivors only. <strong>That protection is not yet in force.</strong> The log holds eight days and has recorded no removals, so any backtest run today still runs on the companies that exist today, and its returns are biased upward by an amount not yet measured. Companies that delisted before the log started cannot be recovered from it at all.</li>
+          <li>Results are deflated for the number of configurations tried. Test enough weightings and one looks good by construction, so the bar rises with the count: a deflated Sharpe ratio corrects for selection across trials and for non-normal returns, and the significance hurdle is a t-statistic of 3 rather than 2.</li>
+          <li>A change ships only if it improves out-of-sample performance after that deflation, regardless of how good it looks in sample. The harness runs on every build and grades only scores recorded before their forward returns existed — it never reconstructs history from today’s fundamentals. It currently reports <em>accumulating</em> at every horizon, short of the 24 periods it requires, so it has not yet had the evidence to pass or fail anything.</li>
         </ul>
       </section>
     </div>

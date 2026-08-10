@@ -99,17 +99,34 @@ export default function ScoreExplainability({ stock }) {
   if (!explainability) return null
   const attribution = explainability.attribution?.[variant]
   const metrics = explainability.metrics?.[variant] || []
+  // The waterfall reconciles a score variant. That is only the published score by
+  // coincidence: a variant re-scores the same evidence under its own normalization, so it can
+  // land elsewhere and carry different category scores while doing it. A panel headed "exact
+  // reconciliation" sitting above a card showing a different number is the kind of quiet
+  // inconsistency that costs a reader their trust in both figures, so the gap is published.
+  const reconciled = attribution?.final_score
+  const divergence = (typeof reconciled === 'number' && typeof stock.score === 'number'
+    && Math.abs(reconciled - stock.score) >= 0.05) ? reconciled - stock.score : null
   return <div className="score-explainability">
     <section>
-      <header className="section-heading"><div><span className="eyebrow">Exact reconciliation</span><h3>Why the score is {attribution?.final_score?.toFixed(1) ?? 'unavailable'}
+      <header className="section-heading"><div><span className="eyebrow">Exact reconciliation</span><h3>Why the {variant} score is {attribution?.final_score?.toFixed(1) ?? 'unavailable'}
         <InfoTag label="Score waterfall">
           <strong>Reading the waterfall</strong>
           <p>Starts from a neutral baseline and adds/subtracts each evidence line and modifier
             (confidence shrinkage, insider activity, sector valuation, etc.) exactly as the pipeline
             computed it - this is an exact reconciliation, not an approximation. The callouts above
             highlight the three largest-magnitude drivers, positive or negative.</p>
+          <p>It reconciles the <em>variant</em> named in the heading, which is not always the
+            published score. Each variant re-scores the same evidence under a different
+            normalization, so its category scores can differ from the published ones too. Where the
+            two diverge, the difference is stated beneath the heading rather than left for you to
+            notice.</p>
         </InfoTag>
-      </h3></div><div className="period-control" aria-label="Score model variant">{['champion', 'challenger'].map((key) => explainability.attribution?.[key] && <button className={variant === key ? 'active' : ''} key={key} onClick={() => setVariant(key)}>{key}</button>)}</div></header>
+      </h3>
+      {divergence !== null && <p className="attribution-divergence">
+        This reconciles the {variant} variant, not the published score of {stock.score?.toFixed(1)}
+        {' '}&mdash; a difference of {divergence > 0 ? '+' : ''}{divergence.toFixed(1)} points.
+      </p>}</div><div className="period-control" aria-label="Score model variant">{['champion', 'challenger'].map((key) => explainability.attribution?.[key] && <button className={variant === key ? 'active' : ''} key={key} onClick={() => setVariant(key)}>{key}</button>)}</div></header>
       <Waterfall attribution={attribution} />
     </section>
     <section><span className="eyebrow">Metric-level evidence</span><h3>What each input contributed</h3><ul className="metric-explanation-list">{metrics.map((metric) => <MetricExplanation key={metric.metric} metric={metric} sector={stock.sector || 'its sector'} />)}</ul></section>

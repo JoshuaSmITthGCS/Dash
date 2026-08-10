@@ -13,6 +13,7 @@ const attribution = (score) => ({
 const stock = {
   ticker: 'AAA',
   sector: 'Technology',
+  score: 62,
   explainability: {
     active_variant: 'champion',
     attribution: { champion: attribution(62), challenger: attribution(58) },
@@ -43,6 +44,18 @@ describe('score explainability', () => {
     expect(screen.getByText(/40th percentile versus its own 5-year history/)).toBeInTheDocument()
     expect(screen.getByText(/2 of 6 stored months/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'challenger' }))
-    expect(screen.getByText('Why the score is 58.0')).toBeInTheDocument()
+    expect(screen.getByText('Why the challenger score is 58.0')).toBeInTheDocument()
+  })
+
+  it('names the variant it reconciles, and says so when that is not the published score', () => {
+    // Newmont published 84.4 while its champion attribution reconciled to 85.3, under a
+    // heading reading "exact reconciliation". Exact it was; the same number it was not.
+    render(<ScoreExplainability stock={stock} />)
+    expect(screen.getByText('Why the champion score is 62.0')).toBeInTheDocument()
+    expect(screen.queryByText(/not the published score/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'challenger' }))
+    expect(screen.getByText(/not the published score of 62.0/)).toBeInTheDocument()
+    expect(screen.getByText(/a difference of -4.0 points/)).toBeInTheDocument()
   })
 })
