@@ -236,6 +236,11 @@ def derive(observations, when, *, cik=None):
         "cik": cik,
         "as_of": str(when)[:10],
         "metrics": metrics,
+        # The levels the ratios above were built from, published so a consumer can form its
+        # own ratios -- enterprise value, tangible book, EBITDA -- without re-deriving the
+        # trailing twelve months. Absent inputs stay absent here too.
+        "components": {**flows, **instants, "free_cash_flow": free_cash_flow,
+                       "nopat": nopat, "invested_capital": invested_capital},
         "inputs_missing": missing,
         "coverage": round(1 - len(missing) / len(metrics), 3),
         "flow_detail": flow_detail,
