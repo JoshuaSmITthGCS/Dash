@@ -129,18 +129,337 @@ this figure is much larger than the brief's "~120 names" description and how the
 
 ## 2. Data sources
 
-**[PENDING — full section from parallel research pass covering: per-provider endpoints,
-authentication, rate limits as implemented in `pipeline/cache.py`, retry/backoff, caching TTLs,
-failure behavior per provider, and a field-level provenance table. Will be inserted here on
-completion.]**
+### 2.1 Providers, endpoints, and how each is reached
+
+| # | Provider | Base endpoint(s) actually called |
+|---|---|---|
+| 1 | **Yahoo Finance** (via `yfinance`) | `yf.Ticker(symbol).info`, `.history()`, `.income_stmt`/`.balance_sheet`/`.cashflow`, `.calendar`/earnings pages, `.news`, `.option_chain()` — no REST URL is constructed directly; everything goes through the `yfinance` library. Batch downloads via `yf.download(chunk, ...)` (`fetch_advisor.py:401`). |
+| 2 | **Alpha Vantage** | `GET https://www.alphavantage.co/query` (`alpha_vantage.py:13`), functions `OVERVIEW`, `TIME_SERIES_DAILY`, `NEWS_SENTIMENT`, `INSIDER_TRANSACTIONS` (`fetch_advisor.py:990-1014`). |
+| 3 | **Marketaux** | `GET https://api.marketaux.com/v1/news/all` (`marketaux.py:19`). |
+| 4 | **Marketstack** (apilayer) | `GET https://api.marketstack.com/v2/eod/latest`, `.../intraday` (`marketstack.py:17,64-73`). |
+| 5 | **FRED** (St. Louis Fed) | `GET https://api.stlouisfed.org/fred/series/observations` (`fred.py:14`), six series: `DGS10, DFF, CPIAUCSL, UNRATE, T10Y2Y, SAHMREALTIME` (`fred.py:18-25`). |
+| 6 | **SEC EDGAR** | `company_tickers.json`, `/Archives/edgar/data/...` (filings, Form 4 XML), `data.sec.gov/submissions/CIK...json`, `/api/xbrl/companyfacts/...`, `/api/xbrl/companyconcept/...`, `/api/xbrl/frames/...`, `efts.sec.gov/LATEST/search-index` (full-text search) (`sec_edgar.py:18-19, 224-465`). |
+| 7 | **Financial Modeling Prep (FMP)** | `GET .../stable/{senate-latest, house-latest, historical-price-eod/light}` (`congress_trades.py:46,139-152`). |
+| 8 | **Senate eFD** (Electronic Financial Disclosure) | `efdsearch.senate.gov/search/home/`, `/search/report/data/`, per-report pages — session-cookie + CSRF-token scrape, not a documented API (`congress_trades.py:59-70, 255-422`). |
+| 9 | **House/Senate "stock-watcher" S3 mirrors** | `house-stock-watcher-data.s3-us-west-2.amazonaws.com/...`, `senate-stock-watcher-data...` — **both currently answer HTTP 403** (`congress_trades.py:20-25, 51-54, 475-484`), confirmed dead, not merely degraded. |
+| 10 | **OpenFIGI** | `POST api.openfigi.com/v3/mapping`, CUSIP→ticker only (`openfigi_client.py:34`). |
+| 11 | **Kenneth R. French Data Library** (Dartmouth) | Two static zipped CSVs, URLs from `settings.json.factor_data.{five_factor_url,momentum_url}` (`fetch_factors.py:14-19,108-110`). |
+
+Polygon appears only as an unused rate-limit entry (`cache.py:47`); no Polygon client exists
+anywhere in `pipeline/*.py`.
+
+### 2.2 Fields pulled from each endpoint
+
+- **Yahoo `info`**: `currentPrice`/`regularMarketPrice`, `shortName`/`longName`, `sector`,
+  `industry`, `marketCap`, `dividendYield`, `priceToSalesTrailing12Months`, `priceToBook`,
+  `forwardPE`, `trailingPE`, `trailingPegRatio`/`pegRatio`, `debtToEquity`, `currentRatio`,
+  `returnOnEquity`, `profitMargins`, `freeCashflow`, `revenueGrowth`, `earningsGrowth`,
+  `shortPercentOfFloat` (`fundamentals_extended.py:586`), plus `income_stmt`/`balance_sheet`/
+  `cashflow` statement frames for the enrichment shortlist. Yahoo also supplies 2-year daily
+  OHLCV (`yahoo_history`, `fetch_advisor.py:351-376`) and per-symbol company news.
+- **Alpha Vantage `OVERVIEW`**: `MarketCapitalization, ForwardPE, PEGRatio, PriceToBookRatio,
+  QuarterlyRevenueGrowthYOY, QuarterlyEarningsGrowthYOY, Name, Description, Exchange, Currency,
+  Sector, Industry, PriceToSalesRatioTTM, PERatio, ReturnOnEquityTTM, ProfitMargin,
+  AnalystTargetPrice, 52WeekHigh, 52WeekLow` (`fetch_advisor.py:579-630`). `NEWS_SENTIMENT` and
+  `INSIDER_TRANSACTIONS` are also called but only `NEWS_SENTIMENT` is parsed into published data;
+  `INSIDER_TRANSACTIONS`'s result feeds a lightweight diagnostic (`insider_summary`), distinct
+  from the SEC-Form-4-sourced `insider_signal.py` scoring path.
+- **Marketaux**: `title, url, source, published_at, description/snippet`, per-entity `symbol,
+  match_score, sentiment_score`.
+- **FRED**: raw `(date, value)` pairs per series, reduced to derived 0-100 regime factor scores,
+  never published raw.
+- **SEC EDGAR**: `company_tickers.json` (ticker→CIK map), Form 4 ownership XML (`transactionCode,
+  transactionShares, transactionPricePerShare, transactionDate`, owner identity/role), XBRL
+  company-facts (`val, unit, form, filed, start, end, accn, fy, fp` per concept), 13F info tables
+  (`nameOfIssuer, cusip, sshPrnamt, value, putCall`).
+- **FMP / Senate eFD / stock-watcher mirrors**: chamber, representative/senator, district/state,
+  `symbol`, `assetType`, `assetDescription`, `owner`, `type`, `amount`, `transactionDate`,
+  `disclosureDate`, `comment`, `link` — normalized to one common shape across all three sources.
+- **OpenFIGI**: CUSIP in, `{ticker}` out only.
+- **French Data Library**: monthly `Mkt-RF, SMB, HML, RMW, CMA, RF` (five-factor) and `Mom`
+  (momentum), parsed into `market_excess, size, value, profitability, investment, momentum,
+  risk_free`.
+
+### 2.3 Authentication
+
+| Provider | Env var | Behavior if absent |
+|---|---|---|
+| Alpha Vantage | `ALPHA_VANTAGE_API_KEY` | Client constructor raises `AlphaVantageError` |
+| Marketaux | `MARKETAUX_API_TOKEN` | Constructor raises; caught at `fetch_advisor.py:1350-1353`, degrades to the Alpha Vantage `NEWS_SENTIMENT` fallback for the ≤5 enriched symbols only |
+| Marketstack | `MARKETSTACK_API_KEY` | Constructor raises `MarketstackError` |
+| FRED | `FRED_API_KEY` | Constructor raises; caught at `fetch_advisor.py:1411-1417`, run continues with `fred_regime = None` |
+| SEC EDGAR | `SEC_USER_AGENT` (a required contact string per SEC fair-access policy — **not a secret key**) | `.available` is `False`; every request raises `RuntimeError` rather than sending an unidentified request |
+| FMP | `FMP_API_KEY` | Constructor raises `CongressTradesError` |
+| OpenFIGI | `OPENFIGI_API_KEY` (optional) | No auth required; absence drops to the **anonymous tier** — 10 jobs/request instead of 100, 2.5s pacing instead of 0.3s |
+| Yahoo, French Data Library, stock-watcher mirrors, Senate eFD | none | all keyless |
+
+All keys load from the environment or the git-ignored `.env.local` via one shared loader,
+`alpha_vantage.load_local_env()`, reused by every other client module. Every client explicitly
+excludes its key from cache keys, logs, and published JSON.
+
+### 2.4 Rate limits as implemented
+
+Two distinct mechanisms coexist:
+
+1. **Process-wide token-bucket limiter** (`cache.py:86-117`, `RateLimiter`), applied via
+   `limiter_for(provider).acquire()`. Configured defaults (overridable via
+   `settings.json.providers.rate_limits_per_minute`, currently **empty**, so these defaults are
+   what's actually live): `alpha_vantage` 5/min (`cache.py:34`); `sec_edgar` 540/min = 9/s,
+   deliberately under SEC's published 10/s ceiling (`cache.py:35-38`); `yahoo` 240/min = 4/s — the
+   module's own comment states this is **not a documented Yahoo limit**, just an empirically-chosen
+   guess (`cache.py:39-44`); `fred` 120/min, `marketaux` 60/min, `polygon` 5/min (unused),
+   `default` 60/min. SEC EDGAR additionally shares this exact limiter inside `SecEdgarClient._get`
+   specifically so N concurrent threads can't jointly exceed the ceiling.
+2. **Per-client minimum-interval/explicit sleeps**, independent of the shared limiter: Alpha
+   Vantage self-paces at `min_interval=1.1s` (`alpha_vantage.py:36,42,60-62`); Marketstack has no
+   client-side pacing (batches instead, up to 100 symbols/request); OpenFIGI paces at 0.3s
+   (keyed)/2.5s (anonymous) between batches; Senate eFD paces at a hand-picked 0.5s between
+   report-page requests.
+
+`parallel_map` (`cache.py:309-344`) bounds thread-pool concurrency to
+`min(8, allowance // 2 or 1)` workers per provider by default.
+
+### 2.5 Retry and backoff — exact parameters, including one docstring/code mismatch
+
+- **Generic HTTP** (`common.http_get_json`): `retries=3`, exponential `backoff ** attempt` with
+  `backoff=2.0` → sleeps of 2s, 4s between the 3 attempts (`common.py:50-70`).
+- **`cache.retry_with_backoff`** (`cache.py:347-362`), used for Yahoo batch-history downloads:
+  default `attempts=4, base_delay=2.0`, delay `base_delay ** attempt`. **CONTRADICTION between
+  docstring and code**: the docstring reads "Exponential backoff at 2s, 4s, 8s, 16s"
+  (`cache.py:349`), but the loop breaks *before* sleeping on the final (4th) attempt
+  (`cache.py:355-358`) — with the default `attempts=4` used at every call site found, only
+  **three** sleeps ever occur (2s, 4s, 8s), never a 16s one.
+- **SEC EDGAR** (`sec_edgar.py:182-220`): up to 5 attempts, retried only on `{403, 429, 500, 502,
+  503, 504}`, backoff `2 ** attempt` (1,2,4,8,16s), then re-raises. Non-retryable errors raise
+  immediately.
+- **OpenFIGI** (`openfigi_client.py:47-48,90-114`): up to 3 attempts per batch, retried only on
+  429/5xx, backoff `5.0 * attempt` (5s, 10s); a non-retryable error abandons the batch, recorded
+  in `self.errors`, not retried.
+- **Alpha Vantage / Marketaux / Marketstack / FRED / FMP clients** themselves implement **no
+  retry loop at all** — a single `requests.get(...)`, then a typed `*Error` exception on any
+  non-200. Retry for these five only happens where the call is routed through
+  `cache.cached_json`/`retry_with_backoff`, which — based on the code read this session — none of
+  them is; **not exhaustively swept across every call site, flagged UNDETERMINED**.
+- Senate eFD has **no retry at all** on any of its three request steps.
+
+### 2.6 Caching layer and TTLs (`pipeline/cache.py`)
+
+`DiskCache` (`cache.py:137-276`): JSON-on-disk, one file per `(namespace, key)` under
+`pipeline/data/cache/<namespace>/`, keyed by a SHA-256-truncated slug. Every entry stores
+`fetched_at`, `source`, and the raw `value`. `enabled` defaults to `True` unless
+`PIPELINE_CACHE_DISABLE` is set.
+
+Default TTLs, all overridable via `settings.json.providers.cache_ttl_seconds` (also empty, so
+live): `price_history` 6h; `quote` 15 min; `statements` 7 days; `sec_submissions` 24h;
+`sec_document` 30 days (a filed document never changes); `sec_xbrl` 24h; `etf_disclosure` 24h;
+`etf_full_history` 20h; `news` 30 min; default (unlisted) 1h.
+
+The Alpha Vantage and Marketaux clients each maintain a **separate, independent** file-based
+cache (`alpha_vantage.py:14,44-58`; `marketaux.py:20,36-50`), at fixed default ages (20h and 4h
+respectively) — a second, parallel cache implementation with its own defaults; neither client
+ever calls into `pipeline/cache.py`.
+
+**Staleness policy**: `DiskCache.get(allow_stale=True)` and `.fetch()`'s
+`allow_stale_on_error=True` default mean an expired-but-present entry is served whenever the live
+producer call raises. The live artifact confirms this machinery ran this refresh:
+`cache: {"hits": 1130, "misses": 965, "stale_hits": 1, "hit_rate": 0.539}` (`public/data/
+advisor.json`, top-level `cache` field, queried directly).
+
+### 2.7 Failure behavior per provider — silent vs. loud, with live-artifact evidence
+
+| Provider | Failure mode | Evidence from the live artifact |
+|---|---|---|
+| Yahoo (snapshot) | Per-symbol: caught, logged, excluded from `contexts` this run; the whole run only aborts if `contexts` is empty | `source_status.yahoo_fundamentals: {"status": "degraded", "failed_symbols": [46 tickers]}` — a real, partial, non-fatal degradation |
+| Yahoo (price history) | Falls back to `EMPTY_HISTORY` on any exception; a company with <21 closes is excluded entirely | — |
+| Yahoo (statement enrichment) | Failure counters recorded per stage, never abort the run | `source_status.yahoo_statement_enrichment: {"attempted": 150, "enriched": 148, ..., "no_statement_data": 2}` |
+| Alpha Vantage | Constructor failure is loud but not caught anywhere in `run()` — UNDETERMINED whether a genuinely-absent key aborts production; per-symbol failures inside the enrichment window are caught (`fetch_optional` returns `{}`) and recorded, not raised | `capability_status.alpha_vantage: {"status": "disabled_for_intraday_refresh"}` in this fast-mode run |
+| Marketaux | Constructor failure caught, degrades silently to AV `NEWS_SENTIMENT` fallback | `source_status.marketaux: {"status": "healthy"}` |
+| FRED | Caught; whole macro-regime modifier degrades to unavailable, not fatal | `source_status.fred: {"status": "healthy", "failed_series": []}` |
+| SEC EDGAR (Form 4) | Missing `SEC_USER_AGENT` degrades the source to unavailable rather than sending an anonymous request; per-filing parse failures recorded and skipped | `source_status.sec_form4: {"status": "healthy", "filings_unreadable": 0, "filings_reviewed": 6030}` |
+| SEC EDGAR (13F / Congress screens) | **Not fetched live inside `fetch_advisor.py` at all** — reads the last separately-scheduled screen publish, degrades to an empty signal set if missing/failed | — |
+| Congressional stock-watcher mirrors | Hard 403 classified specially, raised as a named, non-retried error telling the operator to configure a replacement URL — currently **permanently broken** | — |
+| OpenFIGI | Per-batch failures land in `self.errors`, never raised; an unresolved CUSIP is simply omitted | — |
+| French Data Library (factors) | Loud at the top: any exception caught once, logs `status: "error"`, returns `None`; the previously-published `factors/french.json` stays in place (stale, not blanked) | — |
+| Cross-provider implausible values (margin >100%, cross-source price/cap disagreement) | Neither silent-pass nor run-fatal: the specific field is dropped, the drop is logged with the exact rule and value that fired, run continues | — |
+
+**Overall pattern**: at the symbol level, essentially every provider failure is
+**silent-and-recorded** (logged, counted, published in a diagnostics block, run continues), not
+run-fatal. Only two things halt a run: zero symbols producing any usable context at all, and a
+client constructor that raises for a missing required credential — caught for Marketaux and FRED,
+**not caught for Alpha Vantage** (flagged UNDETERMINED above).
+
+### 2.8 Field-level provenance table
+
+| Field | Primary source | Fallback chain | On total failure |
+|---|---|---|---|
+| `price` | Yahoo `currentPrice`/`regularMarketPrice`, else last daily close | Alpha Vantage's snapshot only wins if its price history is *longer* than Yahoo's, which given Yahoo's 2y vs. AV's 100-session cap essentially never happens | Company excluded from the entire refresh — `collect()` raises if fewer than 21 closes resolve |
+| `market_cap`, `forward_pe`, `price_to_book`, `eps`/`earnings_growth`, `revenue_growth` | For the ≤5 Alpha-enriched symbols: **Alpha Vantage wins over Yahoo when both resolve** (`merge_snapshots(primary=overview_snapshot, fallback=yahoo_snapshot)` only fills from `fallback` when `primary` is `None`/`""`). For the remaining ~99%+ of the universe: Yahoo only. | Cross-checked post-hoc by `plausibility.screen`'s cross-source comparison; large disagreement drops the field rather than arbitrating | `null`, excluded from that metric's coverage denominator |
+| — **CONTRADICTION** | The **shadow** (`analysis_v2`) path applies the *opposite* precedence for `market_cap`/`price_to_book`: `canonical_metrics.reconcile()` ranks by `provider_reconciliation.json`'s `preferred_sources`, which lists `["yahoo","alpha_vantage"]` for `market_cap` and `["calculated_from_canonical_inputs","yahoo","alpha_vantage"]` for `price_to_book` — **Yahoo preferred over Alpha Vantage in the shadow path, Alpha Vantage preferred over Yahoo in the champion path**, for the identical ≤5-symbol window where both providers can disagree. | | |
+| `book_value` (`price_to_tangible_book`) | Derived from Yahoo statement frames only — no Alpha Vantage equivalent field exists | none | `null` |
+| `sector`/`industry` | Yahoo, defaulting non-ETF `sector` to `None` if omitted | AV, same AV-wins-when-present merge, ≤5-symbol window only | `None` — feeds `classify_profile`'s fallback path |
+| `components.news_sentiment` | Marketaux entity `sentiment_score`, ≤5-symbol Alpha-enriched shortlist only | Alpha Vantage `NEWS_SENTIMENT`, same shortlist, tried only when Marketaux absent/failed; universe-wide, Yahoo per-symbol news supplies **no native sentiment score at all** — direction is inferred from a fixed keyword lexicon, not a model | `null` — confirmed live for THG |
+| `insider activity` | SEC EDGAR Form 4 XML, open-market codes `P`/`S` only | none (single source) | Insider modifier contributes 0/unmeasured |
+| `institutional_ownership` | **Not fetched live per refresh at all** — reads the last separately-scheduled monthly 13F screen publish and time-decays it | none | `{}` if the screen file is absent/failed |
+| `congressional buying` | **Not fetched live per refresh either** — reads the last weekly screen publish (three sources merged upstream, weekly, not per-refresh) | none | `{}` |
+| `short_percent_of_float` | Yahoo, extended path only | none | `null` |
+| `macro regime` | FRED, 6 series blended, weighted-average over whichever resolved, requires ≥2 series | partial only | Whole `fred_regime = None`; modifier unavailable, not defaulted |
+| `analyst estimates/revisions` | Yahoo — the module's own docstring states Yahoo exposes only *today's* view, never as-of a past date, and nothing substitutes for the point-in-time store | none | Component drops, confidence lowers, per stated design |
+
+### 2.9 Point-in-time vs. restated — the single most important determination in this section
+
+**The live/published score is computed from restated (latest-available), not point-in-time,
+fundamental data.** Stated directly by the code, not inferred:
+
+- `pipeline/pit_store.py:3-4`: *"Yahoo (and yfinance on top of it) serves **restated** current
+  fundamentals with no as-originally-reported history."*
+- `pipeline/build_pit_fundamentals.py:12-16`: *"Every fundamental in this repository today comes
+  from a provider that serves **restated** figures with no as-reported history, keyed by ticker."*
+- `pipeline/build_pit_fundamentals.py:22-24`: *"What it deliberately does not do. It does not
+  derive ratios, score anything, or **feed the live pipeline**."*
+
+Verified, not just quoted: the champion score (`scorer._band_valuation_score`) operates on
+`snap`/`context["snapshot"]`, built exclusively by `fetch_prices.fetch_snapshot`/
+`fetch_advisor.overview_snapshot` — each provider's *current* view, not a filing-dated
+observation. `pipeline/pit_store.append_snapshot(research, source="advisor_refresh")`
+(`fetch_advisor.py:1723`) runs **after** scoring completes and only **writes** today's
+already-computed row into the archive for future backtesting — it is never read back into the
+score.
+
+A genuinely point-in-time archive exists but is a separate, parallel system:
+`pipeline/edgar_facts.py` stamps every SEC XBRL fact with its filing-`accepted` date (not the
+period-end date) and preserves restatements as additional observations rather than overwriting;
+populated by the standalone monthly job `build_pit_fundamentals.py`
+(`backfill-pit-fundamentals.yml`) into `pipeline/data/pit/fundamentals.jsonl`, keyed by CIK. This
+substrate feeds `ic_harness.py`, `evaluate_signal.py`, and (partially, per the internal audit's
+C-3 finding, not independently re-verified line-by-line this session) `backtest_historical.py` —
+**never** the published `advisor.json` score. The daily `pipeline/data/pit/observations.jsonl`
+store is a third, distinct thing again: a forward-only archive of each day's already-restated
+row, useful for measuring stability/turnover over time, not a reconstruction of what was knowable
+historically.
 
 ---
 
 ## 3. Universe construction
 
-**[PENDING — from parallel research pass: `pipeline/config/advisor_universe.json` structure,
-symbol count, static vs. generated, inclusion/exclusion criteria, ticker-to-entity resolution,
-and universe change history via `git log` on that file.]**
+### 3.1 Where the universe lives, and its actual size
+
+`pipeline/config/advisor_universe.json` (read in full):
+- `description`: a prose note that breadth is deliberate ("the information ratio of a signal
+  scales with the square root of the number of independent bets") — a stated design rationale,
+  not a citation to external validation.
+- `publish_limit: 40` — how many ranked rows land in `research[]`, the published leaderboard.
+- `extended_limit: 150` — how many highest-priority candidates get statement enrichment per
+  refresh.
+- `portfolio_symbols`: 21 hand-listed tickers (the maintainer's actual brokerage holdings).
+- `symbols`: **910 unique, well-formed tickers** (`len(symbols) == 910 == len(set(symbols))`),
+  all 21 `portfolio_symbols` already contained within it.
+
+**The brief's "~120 names" does not describe this universe — it describes a different, smaller
+parameter in an unrelated backtest tool.** `pipeline/backtest_historical.py:449` declares a CLI
+flag `--universe-limit`, **default 120**, described as *"Candidates to pull from
+advisor_universe.json (default 120)"* — this slices `symbols[:120]` for one lighter-weight
+standalone historical-backtest run, entirely separate from the live/published pipeline. This is
+the most likely origin of the brief's "~120" figure, though the specific causal chain (someone
+reading this default and mistaking it for the live universe size) is not proven, only the
+best-supported hypothesis.
+
+### 3.2 Static vs. regenerated
+
+No script writes or regenerates `advisor_universe.json`. Every reference to `advisor_universe` in
+the repo (`fetch_advisor.py:55`, `build_institutional_screen.py:61`,
+`build_pit_fundamentals.py:180`, `backtest_historical.py:65`, `backtest_monthly.py`,
+`backtest_emerging_growth.py`, `validate_data.py:210`) is a **reader** — none writes back. This
+is a hand-maintained JSON list, confirmed by its git history (§3.5): the one substantive edit
+found was made by a human GitHub username, not a bot/generator commit.
+
+**Guard tests** run in CI (`pipeline/tests/test_universe_config.py:73-92`, `StockUniverseTests`):
+symbols unique and well-formed (`[A-Z][A-Z0-9.-]{0,9}`); breadth ≥300; `extended_limit <
+len(SYMBOLS)/2` and `>= publish_limit`; every `portfolio_symbols` entry must already be inside
+`symbols` — i.e., **a holding that isn't in the base list will never be scored** (the exact bug a
+prior commit fixed for `VGT`, §3.5).
+
+### 3.3 Inclusion/exclusion criteria
+
+No filtering/screening code decides which tickers belong in `advisor_universe.json` — no
+liquidity screen, index-membership check, market-cap floor, or sector-balance rule anywhere in
+the pipeline touches this file. It is exactly what its own description says: a hand-curated
+"diversified liquid US large- and mid-cap candidate universe," with no code-enforced inclusion
+rule beyond the CI guard tests above. The only place a *listed* symbol can still fail to be
+scored is downstream, at `collect()`: fewer than 21 valid daily closes or no resolvable snapshot
+excludes that symbol from that run's `contexts` — a runtime data-availability gate, not a
+universe-construction criterion.
+
+### 3.4 Ticker-to-entity resolution — exists, but not in the live scoring path
+
+Two separate mechanisms:
+1. **`pipeline/edgar_entities.EntityResolver`** — the only true ticker→CIK resolver in the repo.
+   Resolves against a cached SEC `company_tickers.json` snapshot, **fails loudly on ambiguity**
+   (raises rather than guessing), and explicitly treats GOOG/GOOGL-style shared CIKs as
+   legitimate. Its only production callers are `build_pit_fundamentals.py` and `sec_edgar.py`'s
+   own simpler `ticker_map()` (used for Form 4 lookups — unlike `EntityResolver`, does **not**
+   raise on ambiguity). **`fetch_advisor.py`, the module that builds and publishes
+   `advisor.json`, never imports `edgar_entities` at all.** The live scoring/publishing path
+   carries **no CIK and no rigorous entity resolution** for any published name — a ticker is
+   simply the identity key throughout.
+2. **Company name/sector/industry/exchange**, as actually captured for the live payload: `name`,
+   `sector`, `industry` come from Yahoo's `info` for the whole universe. **`exchange` is captured
+   only for the ≤5 Alpha-Vantage-enriched symbols per refresh** — Yahoo's snapshot path never
+   reads an exchange field at all. So for ~900+ of ~926 published/tracked names on any given run,
+   **no exchange field exists anywhere in the published data.**
+
+### 3.5 Has the universe ever changed — full git history
+
+**Note on git-history reliability**: `git log --follow` on this path produced a false positive,
+attaching two unrelated commits from a different branch's history as if they were renames, due to
+content-similarity-based rename detection on a large, highly-similar JSON ticker list. Confirmed
+and discarded via `git log --all --oneline -- <path>` and `git merge-base --is-ancestor`, the
+methodology used below. **This false-positive pattern may affect other git-archaeology claims in
+this document that relied on `--follow`; not systematically re-checked elsewhere.**
+
+Canonical incremental history lives on `main` — four commits, same day (2026-08-04), oldest first:
+1. `cbc38ff` — creates the file (base ~907-symbol list, no `VGT`/`EXPE`/`CRUS`).
+2. `fa11991` (PR #36, human-authored) — adds `VGT` to `portfolio_symbols` **only**. The PR
+   description states plainly that VGT wasn't findable because it was never in the pipeline's
+   `portfolio_symbols` universe, and that day's `advisor.json` was hand-backfilled with a manual
+   price, marked `coverage_status: manual_price_only`, rather than a fabricated score.
+3. `5e44311` — adds `EXPE` and `CRUS` to `portfolio_symbols`.
+4. `c8e4c6b` — removes a duplicate `DECJ` entry; adds `VGT` to the **base** `symbols` list for
+   the first time (it had only ridden along as a "current holding" per §3.6's
+   `resolve_refresh_symbols` mechanism since commit 2, not been a first-class scored universe
+   member until this commit).
+
+**No change history is recorded anywhere in the running application** — no in-app changelog, no
+version field on the file itself. Git commit messages are the only record, and three of the four
+(`"css and refresh"`, `"here"`, a generic data-refresh message) do not describe the universe-list
+edit they contain at all; only PR #36's message documents its own change.
+
+### 3.6 Resolving the 926-vs-910-vs-120 discrepancy — CONTRADICTION only with the brief's premise, not internally
+
+- Config file base list: **910** unique symbols.
+- Published artifact's `universe_count`: **926** (`fetch_advisor.py:1764`,
+  `"universe_count": len(symbols)`, where `symbols` is the **runtime-resolved** set from
+  `resolve_refresh_symbols()`, not a static re-read of the config array).
+- `resolve_refresh_symbols` unions three sources: (a) the config's base `symbols`; (b) config
+  `portfolio_symbols` **plus** any ticker present in the *previous* run's published
+  `portfolio_coverage` — i.e., the user's actual live brokerage holdings, carried forward
+  run-to-run even if never added to the static config file; (c) an optional
+  `ADVISOR_PORTFOLIO_SYMBOLS` env-var override, unused in this run.
+- Computed directly against the committed artifact: published `universe` (926) minus the config's
+  base 910 leaves exactly **16** extra tickers (`AAOI, AMTM, ASTS, AXGN, DECJ, DEO, FISV, IDCC,
+  LEU, NBIS, PGY, RIGL, SOLS, TTM, UEC, VRT`), every one present in the same artifact's
+  `portfolio_coverage[]`. `910 + 16 = 926`, exact.
+- `polled_count: 247` is a **fourth**, still-different number — how many symbols were actually
+  re-fetched this specific run (`universe_mode: "fast"`), not the full 926. `count: 40` is the
+  `publish_limit`-bounded leaderboard. `research[]` has 40 rows; `screen_universe[]` has 838 more
+  (878 total scored/carried this run).
+
+**Verdict**: there is **no** "advisor/research universe of ~120 vs. a broader stock database of
+~926" split — that framing does not match anything in the code or data. There is exactly **one**
+universe mechanism, and the differing numbers (910 config / 926 published `universe_count` / 247
+`polled_count` / 40 published leaderboard / 878 scored-or-carried this run) are five precisely
+different quantities inside that one mechanism, not five competing universes. The brief's "~120"
+is a CONTRADICTION with the live system, and its most probable source (§3.1) is a
+same-day-named-but-unrelated CLI default in a standalone backtest tool.
 
 ---
 
@@ -784,20 +1103,253 @@ numbers** are UNDETERMINED without re-running this calculation against NEM's act
 
 ## 9. Publication contract
 
-**[PENDING — full JSON schema field-by-field walkthrough and frontend-consumption trace from
-parallel research pass, including the "cheaper than approximately X% of peers" sentence's
-current fate (already confirmed elsewhere in this document that the underlying percentile
-mechanism was replaced by a ≥30-peer tier system — the parallel pass is confirming exactly how
-this now renders, if at all, in `src/components/*.jsx`).]**
+*(Section written from a dedicated research pass over `SAMPLE_OUTPUT.json`, the code paths that
+produce each field, and every `src/` consumer. All citations verified directly against code read
+this session.)*
 
-What's independently confirmed this session and stated with citation now:
-- `pipeline/peer_groups.py` (full file read this session) no longer computes or exposes a
-  percentage. Its output object's `peer_context` field is `None` below 30 valid peers
-  (`MINIMUM_VALID_PEERS = 30`, line 36) and otherwise carries a `tier` (one of
-  `cheapest_third`/`middle_third`/`most_expensive_third`) with a `tier_phrase` pre-written for
-  display (`"in the cheapest third of"` etc., `TIER_LABELS`, lines 38-42) and an `ordinal`
-  midpoint (16.7/50.0/83.3) rather than a computed percentile. THG's live `valuation_percentile`
-  has `peer_context: null` (7 valid peers, below the 30 minimum).
+### 9.1 Field-by-key annotation of `SAMPLE_OUTPUT.json` (THG)
+
+Organized by substructure. One row per distinct field *shape* — repeated per-metric objects
+(e.g. `fundamental_detail.<metric>`, `metric_status.<metric>`, `normalization.<metric>`) are
+shown once with the metric name as an example, since the shape is identical across the ~29
+metrics.
+
+#### 9.1.1 Row identity / raw snapshot (top level)
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `ticker`, `name`, `sector`, `industry` | string | no | Identity/classification strings, straight from provider snapshot | `pipeline/canonical_metrics.py` snapshot construction (merged into the row via `**snapshot` at `advisor_engine.py:1124`) |
+| `price`, `market_cap`, `dividend_yield`, `beta`, … (raw fundamentals: `price_to_book`, `forward_pe`, `debt_to_equity`, etc.) | number | yes | Raw provider values, pre-scoring | Same snapshot merge, `advisor_engine.py:1124` |
+| `is_etf` | bool | no | ETF flag used for `StockDetailModal.jsx`'s `isEtf` branch and pipeline peer-group routing | Snapshot field, read at `pipeline/peer_groups.py:64` and `src/components/StockDetailModal.jsx:126` |
+| `observations` | object of `{metric: [Observation, …]}` | metric-keyed, each list can be empty | Full per-metric provenance: `value`, `unit`, `source`, `source_field`, `observed_at`, `fetched_at`, `is_ttm`, `is_forward`, `quality_flags`, `transform_version` | `Observation` dataclass, `canonical_metrics.py:43-58` |
+| `piotroski_tests` | object of 7 named booleans | no | The 7 individual Piotroski F-score component tests | `pipeline/fundamentals_extended.py:derive_piotroski` |
+| `statement_periods` | array of ISO date strings | no | Fiscal period-end dates the statement-derived metrics are computed from | `fundamentals_extended.py`, attached during `enrich()` (`fetch_advisor.py:1465`) |
+| `extended_coverage` | number [0,1] | no | Fraction of the ~13 statement-derived (extended) metrics that resolved | `fundamentals_extended.py` — exact producer line UNDETERMINED |
+
+#### 9.1.2 Champion score block (top level)
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `score` | number | no | Final published champion score, post-modifiers | `advisor_engine.py:1109` (`apply_modifiers`), formula §4.2 |
+| `base_score` | number | no | Score after the second coverage shrink, pre-modifiers | `advisor_engine.py:861` (`blend_research_components`) |
+| `raw_score` | number | no | Weighted blend of the three components, pre-shrink | `advisor_engine.py:1108` |
+| `stance` | enum string | no | `ATTRACTIVE`/`PROMISING`/`MIXED`/`CAUTION`/`INSUFFICIENT DATA` | `advisor_engine.py:815-824` (`stance_for`) |
+| `data_coverage` | number [0,1] | no | Legacy/champion blended coverage scalar (§7 item 1) | `advisor_engine.py:827-843` |
+| `components` | object `{fundamentals, market_behavior, news_sentiment}` | sub-fields nullable | Per-pillar scores feeding the blend | `advisor_engine.py:1101` |
+| `fundamental_categories` | object, 6 named category scores | nullable (withheld categories) | Category-level scores post required-metric gate | `scorer.py:_categories_with_required_gate` |
+| `sector_valuation_percentile` | number (16.7/50.0/83.3) or `null` | yes | Tier-ordinal (**not a raw percentile despite the name**) fed into `sector_percentile_modifier`, echoed onto the row | `advisor_engine.py:1130`; kept in sync with `valuation_percentile.ordinal` by an invariant check at `pipeline/validate_data.py:179` |
+| `modifiers` | object `{applied, total, uncapped_total, notes}` | `applied` keys vary per row | The bounded modifier stack, §6.5 | `advisor_engine.py:apply_modifiers` (515-557) |
+| `strengths`, `risks` | array of pre-formatted strings | no | Fully server-baked sentences (e.g. `"Strong valuation score (90/100)"`) — **not templates the frontend fills in; the exact string ships from Python** | `advisor_engine.py:build_evidence` (1034-1090) |
+| `recommendation` | object | no | Legacy `action_for` output: `action`, `suggested_trim_pct`, `agreement_strength`, `agreement_count`, `reasons`, `summary`, `unmeasured_inputs`, `factors` | `advisor_engine.py:action_for` (715-799), §8.1 |
+| `news_available` | bool | no | Whether any sentiment-eligible articles resolved this window | `advisor_engine.py:1129` |
+
+#### 9.1.3 `fundamental_detail` (champion bands-mode detail)
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `<metric>` (e.g. `forward_pe: 100.0`) | number 0-100 or `null` | yes — `null` for suppressed/unavailable | Discrete band score for one metric | `scorer.py:_band_valuation_score` step 3, §4.1 |
+| `categories` | object | mirrors `fundamental_categories` | Duplicate of the row-level category scores | `scorer.py:_categories_with_required_gate` |
+| `coverage` | number [0,1] | no | Fraction of metric *weight* resolved, exempting suppressed metrics | `scorer.py:weighted_coverage` (496-512) |
+| `raw_score` | number | no | Pre-shrink fundamentals score | `scorer.py:609` |
+| `applicability_profile` | string | no | The resolved business profile | `canonical_metrics.py:classify_profile` (95-130) |
+| `suppressed_metrics` | array of metric-id strings | no (can be empty) | Metrics zeroed out for this profile — **disagrees in membership with `analysis_v2.applicability.suppressed_metrics` for THG; root-caused in §10.2 item 9** | `scorer.py:548` |
+| `categories_withheld` | object, keyed by category | can be `{}` | Categories zeroed by the required-metric gate | `scorer.py:_categories_with_required_gate` (515-535) |
+| `sales_multiple_basis` | string or `null` | yes | Which raw metric (`ev_to_sales`) backs the derived `sales_multiple` score | `scorer.py:284, 622` |
+| `normalization_mode` | const string `"bands"` | no | Declares which of the two live normalization modes produced this block | `scorer.py`, reads `SETTINGS.get("normalization_mode")` |
+
+#### 9.1.4 `technical_detail`
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `return_5d`/`20d`/`60d`/`252d`, `max_drawdown_252d`, `sharpe_ratio`, `sortino_ratio`, etc. | number | yes (price-history depth) | Raw and derived price-series statistics | `advisor_engine.py:technical_factors` (line 95) |
+| `technical_extended_detail.raw` / `.scored` | object of 4 named indicators | yes per-indicator | Raw and 0-100 scored indicator values | `pipeline/technical_indicators.py` |
+| `momentum_12_1`, `risk_adjusted`, `relative_strength`, `drawdown_resilience`, `volume_confirmation`, `low_beta`, `technical_extended` | number 0-100 | yes | The 7 named sub-scores feeding `market_behavior`, weights per §6.4 | `advisor_engine.py:technical_factors` |
+| `coverage` | number [0,1] | no | Technical-pillar coverage | Same function |
+| `short_horizon_treatment` | enum string | no | Which short-horizon regime (`neutral`/`reversal`) was applied | Same function |
+
+#### 9.1.5 `sentiment_detail`, `insider_activity`, `concentration_risk`, `geographic_exposure`
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `sentiment_detail.{article_count, average, weighted_average, coverage, news_available, weighting_method}` | mixed | several nullable when no news | Sentiment-pillar detail | `advisor_engine.py:sentiment_score` (line 237) |
+| `insider_activity.{source, score_points, transactions_reviewed, buy_cluster, sell_cluster, method, notes}` | object | mostly null when `available: false` | Cohen/Malloy/Pomorski routine-vs-opportunistic Form 4 classification | `pipeline/insider_signal.py:score_insider_activity` (179), attached `fetch_advisor.py:1584` |
+| `concentration_risk.{score_points, measured, available, reason, percentages}` | object | `available: false` for THG | ASC 280 customer-concentration signal | `pipeline/concentration_risk.py:score_concentration_risk` (54), attached `fetch_advisor.py:1590` |
+| `geographic_exposure.{score_points, available, reason, shares}` | object | `available: false` for THG | ASC 280 geographic-revenue-split signal, challenger-only per §6.5 | `pipeline/geographic_exposure.py:score_geographic_concentration` (61), attached `fetch_advisor.py:1591` |
+| `congressional_activity` | object or `null` | yes — `null` for THG | STOCK Act buying signal | attached `fetch_advisor.py:1586` — **confirmed never read anywhere in `src/`, §9.4** |
+
+#### 9.1.6 `analysis_v2` (shadow structural/timeliness layer)
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `structural`/`timeliness` (identical shape: `raw_score`, `effective_score`, `evidence_weight_resolved`, `coverage`, `weight_renormalization{…}`, `missing_metrics`, `suppressed_metrics`, `classification`, `categories`/`forward`) | object | most numeric sub-fields nullable when unresolved | The two-layer structural/timeliness decomposition, §7 items 2-4 | `pipeline/scoring_v2.py:build_v2_analysis` (79) |
+| `metric_status.<metric>.{status, value, score_contribution, replaced_by, reason, quality_flags}` | object per metric | `value`/`score_contribution`/`replaced_by`/`reason` independently nullable | Per-metric applicability/status detail, §5 | `scoring_v2.py`, via `applicability_for` (`canonical_metrics.py:141-150`) |
+| `applicability.{profile_id, profile_confidence, applied_metrics, suppressed_metrics, replacement_metrics, unavailable_replacement_metrics, critical_data_gaps}` | object | arrays can be empty; `profile_confidence` is `0.0` for THG | Registry-level applicability summary, distinct from `business_profiles.json`'s registry per §5 | `scoring_v2.py:241-247` |
+| `canonical_metrics` (e.g. `{"peg": null}`) | object | value nullable | A canonical-PEG side-computation | `scoring_v2.py:268` — **confirmed never read in `src/`, §9.4** |
+| `screen_memberships` | array | can be `[]` | Which research screens this ticker currently qualifies for | `scoring_v2.py:256` — **confirmed never read in `src/`, §9.4** |
+| `position_action` | `null` at this path for THG | yes | Structurally-identical sibling of `recommendation_v2.position_action`, at this path — **confirmed never read in `src/`, §9.4; only `recommendation_v2.position_action` is consumed** | `scoring_v2.py` |
+
+#### 9.1.7 `recommendation_v2` (shadow policy)
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `company_structural_state`/`company_timeliness_state` | object | mirrors `analysis_v2.structural`/`.timeliness` (near-duplicate) | Same shape, second copy at this path — **root of the 74.7 vs. 74.5 `effective_score` discrepancy, root-caused in §10.2 item 8** | `pipeline/recommendation_policy_v2.py:build_recommendation_v2` (511) |
+| `portfolio_fit_state` / `portfolio_fit` | object `{current_weight, target_weight, maximum_weight, classification, …}` | `classification` never null | `below_target` structural constant for unpositioned names, §8.2/§10.2 item 7 | `recommendation_policy_v2.py:classify_portfolio_fit` (286-320) |
+| `position_rule_state` / `position_rules` | object | `rules: {}` when `no_position` | Stop-loss/floor machinery output, §8.2 | `recommendation_policy_v2.py:_stop_state` (323-376) |
+| `company.structural`/`company.timeliness`, `company_action`, `matrix_classification`, `deterioration_groups`, `action` | object/array | `action` fields non-null; layer scores nullable | Two-axis classification + deterioration flags | `recommendation_policy_v2.py:two_axis_classification` (65-97) |
+| `entry_action.{type, strategy, allowed, reason_codes}` | object | `allowed` always bool | Entry/re-entry gating | `recommendation_policy_v2.py:evaluate_entry_rules` (450-508) |
+| `data_quality.{unassessed_layers, evidence_weight_resolved, data_coverage, missing_critical_metrics, severe_unresolved, …}` | object | several array/bool fields | Shadow-path evidence-quality summary — `unassessed_layers` consumed in `src/`; `missing_critical_metrics`/`severe_unresolved` **confirmed never read in `src/`, §9.4** | `recommendation_policy_v2.py:build_recommendation_v2` |
+| `thesis_break_event` | `null` for THG | yes | Structural-break detector output | `recommendation_policy_v2.py:604` — **confirmed never read in `src/`, §9.4** |
+| `critical_field_requirements` | array | can be `[]` | Duplicate, at this top-level path, of `analysis_v2.applicability.critical_data_gaps` | `recommendation_policy_v2.py:605` — **confirmed never read in `src/`, §9.4** (only `applicability.critical_data_gaps` is rendered, `LiveValidation.jsx:41`) |
+| `legacy_recommendation_unchanged` | const `true` | no | Self-declares the shadow policy is non-authoritative | `recommendation_policy_v2.py:606` — **confirmed never read in `src/`, §9.4** |
+
+#### 9.1.8 `valuation_percentile` (peer tier — full trace in §9.3)
+
+| Field | Type | Nullable | Meaning |
+|---|---|---|---|
+| `peer_context` | object or `null` | `null` below 30 valid peers | Contains `tier`, `tier_phrase`, `tier_count`, `peer_count_with_valid_data`, `ranked_quantity_note` |
+| `tier` | enum string or `null` | yes | `cheapest_third`/`middle_third`/`most_expensive_third` |
+| `ordinal` | number (16.7/50.0/83.3) or `null` | yes | Tier midpoint — never a fine-grained percentile |
+| `peer_group_id`, `peer_group_label` | string | no | Which profile/sector group this ticker was ranked in |
+| `peer_count_total`, `peer_count_with_valid_data`, `minimum_peer_count` | integer | no | Sample-size transparency fields |
+| `invalid_reason` | string or `null` | yes | `"insufficient_valid_peers"` when below minimum |
+| `bottom_peers`, `top_peers` | array of `{ticker, value}` ×3 | no | Context peers regardless of whether a tier was assigned |
+
+Producer for the whole block: `pipeline/peer_groups.py:canonical_percentiles`/`_metadata` (lines
+99-170), attached at `pipeline/fetch_advisor.py:1613`.
+
+#### 9.1.9 `score_variants`, `data_coverage_detail`, `evidence`, `estimate_detail`, `theme_exposure`, `history`
+
+| Field | Type | Nullable | Meaning | Producer |
+|---|---|---|---|---|
+| `score_variants.{champion, normalization, short_horizon, confidence_shrinkage, modifier_recalibration, challenger}` | object per variant | variant-dependent | Full alternate scorings of the same evidence (§4.4, §6.5) — `normalization.fundamental_detail.normalization.<metric>` is the per-metric cross-sectional block (`raw_percentile`, `desirability_percentile`, `peer_count`, `normalization_scope`) consumed by `ScoreExplainability.jsx` (§9.3) | `pipeline/scorer.py:CrossSectionalNormalizer` (307) + `advisor_engine.py` variant builders (846-1032) |
+| `data_coverage_detail.{data_coverage, components{completeness, freshness, source_reliability, peer_sample, model_agreement, historical_calibration}, limitations, interpretation}` | object | several component sub-fields nullable | Decomposed coverage explanation, §7 item 5 | `pipeline/data_coverage.py:data_coverage_components` (151) |
+| `evidence.{news_events[], news_score, news_detail, insider_events[], insider_score, insider_score_long_term, insider_detail, expectation_score, expectation_detail}` | object | array fields can be empty | Dated, decayed evidence-event model backing the sentiment/insider/expectation scores | `pipeline/evidence_events.py:build_evidence` (395) |
+| `estimate_detail.{revision_breadth_30d, eps_revision_30d_pct, net_upgrades_90d, consensus_target, target_change_30d_pct, inputs_resolved}` | object | numeric fields nullable | Consensus-estimate revision snapshot; also duplicated as bare top-level fields (only the nested `estimate_detail.*` copies are confirmed read client-side, via `src/lib/rankingModels.js:113`) | `pipeline/yahoo_estimates.py:collect_estimate_detail` |
+| `theme_exposure` | array (`[]` for THG) | no | Theme-exposure matches | `pipeline/themes.py:score_theme_exposure` |
+| `history.points[]` | array of `{recorded_at, refresh_id, champion_score, challenger_score, champion_stance, challenger_stance, category_scores}` | no | Stored score-history snapshots for the trend chart | `explainability.py`, attached via `attach_explainability` (248) |
+
+### 9.2 Frontend consumption: where `advisor.json` is loaded
+
+- **Single loader, no service worker.** `src/lib/useData.js:67-129` (`useData(file)`) is the one
+  hook that fetches `public/data/*.json` files. `src/workers/` contains only
+  `projectionWorker.js` (a Monte-Carlo compute worker), unrelated to data loading.
+- The fetch itself: `useData.js:95` —
+  `fetch(\`${import.meta.env.BASE_URL}data/${file}?v=${Date.now()}\`, { cache: 'no-store' })` — a
+  plain client-side runtime fetch of the statically-committed JSON, cache-busted per call, not a
+  build-time import. This matches §1's description of the render-time path exactly.
+- **Caching**: successful payloads are written to `localStorage` under
+  `dash:last-refresh:<file>` (`useData.js:9,30-38`) so a reload shows the last-seen snapshot
+  immediately while a background revalidation runs (`useData.js:85-89`).
+- **Schema migration on the way in**: `useData.js:98-99` calls `migrate(datasetFor(file), raw)`
+  from `src/lib/schemaMigrations.js` before the data reaches a component. For `advisor.json` rows
+  this performs additive-only fixups, including the `valuation_percentile` migration at
+  `schemaMigrations.js:153-161` (drops legacy `value`/`display_value` keys, backfills
+  `peer_context`/`tier`/`ordinal` to `null` if absent, nulls the legacy
+  `sector_valuation_percentile` if the row predates the ordinal system).
+- **Call sites**: 14 pages/components call `useData('advisor.json')` directly
+  (`src/pages/{Watchlist,Methodology,Search,Dashboard,Picks,Insights,PolicyRadar,Glossary,
+  Diversification,ThemeExposureScreen,Finances,StrategyScreen,OptionsScreen}.jsx`,
+  `src/components/ModelVersionFooter.jsx`), each independently calling the hook — `useData`'s
+  module-level `inFlightRequests`/`memoryPayloads` maps deduplicate concurrent fetches across
+  these call sites (`useData.js:10-11`).
+
+**Baked-in-Python vs. assembled-in-React, concretely:**
+- Fully server-baked text strings, shipped verbatim: `strengths`/`risks`
+  (`advisor_engine.py:1034-1090`), `modifiers.notes` (per-modifier explanation sentences, e.g.
+  `"FRED macro regime is supportive for Financial Services (68/100)"`),
+  `recommendation.summary`, `valuation_percentile.peer_context.tier_phrase`/
+  `ranked_quantity_note`, `data_coverage_detail.interpretation`/`limitations`,
+  `analysis_v2.timeliness.unavailable_reason`. None of these are template-filled client-side;
+  React renders them as-is.
+- Computed/formatted in React: currency/percent formatting (`src/lib/formatters.js`), the peer-
+  context *sentence structure* wrapping the server-baked `tier_phrase` (`StockDetailModal.jsx:255`,
+  §9.3), score-band groupings (`src/lib/scoreBands.js`), price-target suggestions
+  (`watchlistPriceTargets.js`, entirely client-side math over published fields), stop-loss levels
+  for *live positions* (`src/lib/positionRisk.js`, since the shadow policy's own stop machinery is
+  unreachable per §8.2), dip/recovery floor levels (`src/lib/dipWatch.js`, §8.3), and all nine
+  `rankingModels.js` composite scores (client-side re-blends of published numeric fields for the
+  site's various screen pages, distinct from the pipeline's own scoring).
+
+### 9.3 The peer-percentile sentence — full trace, including two live discrepancies
+
+**The fixed, primary mechanism** — confirmed correctly wired end-to-end:
+
+1. `pipeline/peer_groups.py:99-170` (`canonical_percentiles`/`_metadata`) enforces
+   `MINIMUM_VALID_PEERS = 30` (line 36) and publishes `tier_phrase` pre-written per
+   `TIER_LABELS` (lines 38-42), never a raw percentage.
+2. Attached to the row at `pipeline/fetch_advisor.py:1613`.
+3. Rendered at **`src/components/StockDetailModal.jsx:253-259`**, inside the "Explore the
+   evidence" panel (`StockDetailModal.jsx:199-260`): the JSX reads `percentile.peer_context.
+   tier_phrase` directly and only assembles the surrounding sentence scaffold — it does not
+   recompute a percentage. A code comment immediately above (`StockDetailModal.jsx:248-252`)
+   explicitly documents the old broken percentage sentence as the thing being replaced. THG
+   (7 valid peers < 30) renders the "No peer comparison published" branch, matching
+   `SAMPLE_OUTPUT.json`'s `valuation_percentile.peer_context: null` exactly.
+
+**Two further mechanisms found this pass, not part of the original fix's scope:**
+
+1. **`ScoreExplainability.jsx` renders a genuine "Nth percentile" sentence, gated by a different
+   and much lower sample-size floor.** `MetricExplanation`
+   (`src/components/ScoreExplainability.jsx:56-72`, rendered inside
+   `StockDetailModal.jsx:279`) renders, per metric: `` `${ordinal(metric.sector_percentile)}
+   percentile in ${scope}` `` (e.g. "51st percentile in Financial Services"). This is sourced
+   from `metric.sector_percentile`, populated at `pipeline/explainability.py:145` from the
+   **cross-sectional challenger's** per-metric block
+   (`score_variants.normalization.fundamental_detail.normalization.<metric>`), produced by
+   `pipeline/scorer.py:CrossSectionalNormalizer` with `self.sector_minimum = int(config.get(
+   "sector_minimum_count", 8))` (`scorer.py:320`) — **a minimum of 8 sector peers (falling back
+   to the full universe below that, `scorer.py:426`), not 30**. `attach_explainability`
+   (`pipeline/explainability.py:248-268`) wires this same cross-sectional variant into the
+   metric explanations for **both** the `champion` and `challenger` tabs, and `active_variant`
+   defaults to `"champion"` (`explainability.py:258`) — so this per-metric percentile sentence is
+   the **default-visible** explanation attached to a champion score that was itself computed with
+   zero percentiles (bands mode, §4.4). This is a different field (per-metric multiple, not the
+   composite valuation category) and a different, much weaker sample-size floor than the one the
+   MINIMUM_VALID_PEERS=30 fix established as the system's standard — a live percentile sentence
+   the fix did not reach. **Flagged as a new finding, §10.2 item 10.**
+2. **`src/lib/watchlistPriceTargets.js` maintains its own copy of the tier-phrase wording,
+   independent of the published string.** `TIER_PHRASES` (`watchlistPriceTargets.js:47-51`) is a
+   hand-written map (`cheapest_third: 'the cheapest third of its peer group'`, etc.) used at line
+   75 to build the "good buy price" suggestion sentence. It reads only the raw `tier` key and
+   `ordinal` number off `stock.valuation_percentile` — it never reads the server-baked
+   `peer_context.tier_phrase` string `StockDetailModal.jsx` uses. The wording is currently
+   consistent with Python's `TIER_LABELS`, but is a second, independently-maintained copy of the
+   same three phrases that would silently drift if `TIER_LABELS` wording ever changed. This is a
+   live client-side reconstruction of tier text — smaller in scope than the retired percentage
+   sentence (it stays in tier-language, bounded by the same `ordinal` gate), but it is exactly
+   the "does any component still construct sentence text itself" case worth flagging.
+
+No component was found constructing a **percentage**-style peer sentence (e.g. `"${pct}% of
+peers"`) from `sector_valuation_percentile` or any other field — that field is confirmed used
+only as a numeric input to internal client-side ranking-model math (`rankingModels.js`,
+`modeConfidence.js`, `valueGrowthScore.js`, `researchScreens.js`), never formatted into peer-
+comparison prose.
+
+### 9.4 Fields confirmed never rendered anywhere in `src/`
+
+Grep-verified (zero matches for the field name anywhere under `src/`, including tests) — the
+pipeline computes and publishes these, but no page/component currently displays or reads them:
+`congressional_activity` (`fetch_advisor.py:1586`), `data_quality_violations`
+(`fetch_advisor.py:1612`), `alpha_enriched` (`fetch_advisor.py:1610`), `altman_z_variant`
+(`scorer.py:623,663`), `fundamental_detail.sales_multiple_basis` (`scorer.py:622,662`),
+`analysis_v2.canonical_metrics` (`scoring_v2.py:268`), `analysis_v2.screen_memberships`
+(`scoring_v2.py:256`), `analysis_v2.position_action` (distinct from the consumed
+`recommendation_v2.position_action`), `recommendation_v2.thesis_break_event`
+(`recommendation_policy_v2.py:604`), `recommendation_v2.critical_field_requirements` (distinct
+from the consumed `analysis_v2.applicability.critical_data_gaps`,
+`recommendation_policy_v2.py:605`), `recommendation_v2.legacy_recommendation_unchanged`
+(`recommendation_policy_v2.py:606`), `recommendation_v2.data_quality.missing_critical_metrics`/
+`.severe_unresolved`.
+
+By contrast, sibling-looking fields at nearby paths **are** consumed and should not be assumed
+dead by association: `recommendation_v2.position_action`
+(`RecommendationShadowPanel.jsx:63`, `LiveValidation.jsx:30`), `analysis_v2.applicability.
+profile_confidence`/`unavailable_replacement_metrics`/`critical_data_gaps`
+(`LiveValidation.jsx:35,40-41`), `recommendation_v2.data_quality.unassessed_layers`
+(`RecommendationShadowPanel.jsx:119-120`).
+
+This list is grep-verified but **not exhaustive** — a full field-by-field sweep of every path in
+`SAMPLE_OUTPUT.json` against `src/` was not performed (see §11).
 
 ---
 
