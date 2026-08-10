@@ -1,0 +1,655 @@
+{
+  "settings": {
+    "start": "2017-01-01",
+    "end": "2026-06-01",
+    "rebalance_every_days": 21,
+    "top_n": 20,
+    "holding_days": 21,
+    "costs_bps_per_side": 10,
+    "model_weights": {
+      "category_weights": {
+        "valuation": 0.28,
+        "profitability": 0.26,
+        "financial_health": 0.15,
+        "growth": 0.11,
+        "capital_allocation": 0.1,
+        "accounting_quality": 0.1
+      },
+      "metric_weights": {
+        "valuation": {
+          "peg": 0.09,
+          "forward_pe": 0.15,
+          "sales_multiple": 0.09,
+          "price_to_book": 0.05,
+          "price_to_tangible_book": 0.05,
+          "ev_to_ebitda": 0.27,
+          "ev_to_ebit": 0.12,
+          "ev_to_fcf": 0.18
+        },
+        "profitability": {
+          "return_on_invested_capital": 0.26,
+          "gross_profits_to_assets": 0.22,
+          "return_on_equity": 0.1,
+          "free_cash_flow_yield": 0.16,
+          "profit_margin": 0.1,
+          "cash_conversion": 0.16
+        },
+        "financial_health": {
+          "interest_coverage": 0.3,
+          "net_debt_to_ebitda": 0.24,
+          "debt_to_equity": 0.18,
+          "current_ratio": 0.1,
+          "altman_z": 0.18
+        },
+        "growth": {
+          "revenue_growth": 0.26,
+          "earnings_growth": 0.2,
+          "fcf_growth_3y": 0.22,
+          "operating_margin_trend": 0.16,
+          "earnings_surprise": 0.16
+        },
+        "capital_allocation": {
+          "net_buyback_yield": 0.34,
+          "stock_comp_to_revenue": 0.28,
+          "capex_to_depreciation": 0.16,
+          "asset_growth": 0.22
+        },
+        "accounting_quality": {
+          "accruals_ratio": 0.22,
+          "piotroski_f": 0.45,
+          "days_sales_outstanding_trend": 0.17,
+          "inventory_days_trend": 0.16
+        }
+      }
+    }
+  },
+  "rebalances": 164,
+  "scoring": {
+    "median_scored": 819,
+    "median_data_coverage": 0.7,
+    "inputs_unavailable_point_in_time": [
+      "forward_pe",
+      "peg",
+      "earnings_surprise",
+      "altman_z"
+    ],
+    "note": "Those four need analyst estimates or retained earnings, which this store does not hold. They are passed absent, so the live model's own renormalisation redistributes their weight and its coverage multiplier falls -- the same treatment a company with a silent provider gets today. The composite measured here is the live composite at reduced coverage, not a different model."
+  },
+  "results": {
+    "composite": {
+      "periods": 153,
+      "cagr": 0.19192691599299883,
+      "mean_period_return": 0.016763092056106814,
+      "volatility_annualised": 0.21997487602941898,
+      "sharpe": 0.9144549064156737,
+      "sortino": 1.3746963577916262,
+      "max_drawdown": -0.37324850987638336,
+      "win_rate": 0.6078431372549019,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.18006535947712418,
+      "median_names_rankable": 819,
+      "decile_cagr": [
+        0.15730092956324437,
+        0.1572248992834493,
+        0.16620631807501307,
+        0.15722010617167448,
+        0.16407582030718992,
+        0.1736920548629619,
+        0.19538412805042227,
+        0.18675035503955106,
+        0.21907846921028407,
+        0.21593657744318917
+      ],
+      "decile_spread": -0.0586356478799448,
+      "decile_monotonicity": -0.8666666666666667,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19232177754989419,
+          "sharpe": 0.8606481333760856
+        },
+        {
+          "volatility_annualised": 0.1833186420012757,
+          "sharpe": 0.8938003352516892
+        },
+        {
+          "volatility_annualised": 0.18228452838547132,
+          "sharpe": 0.940659889312236
+        },
+        {
+          "volatility_annualised": 0.17810158860632974,
+          "sharpe": 0.9140925032477489
+        },
+        {
+          "volatility_annualised": 0.18175256281677515,
+          "sharpe": 0.932174164914803
+        },
+        {
+          "volatility_annualised": 0.17786777462478703,
+          "sharpe": 0.9957726228350144
+        },
+        {
+          "volatility_annualised": 0.18741322657740545,
+          "sharpe": 1.0528467920509352
+        },
+        {
+          "volatility_annualised": 0.20537364204069583,
+          "sharpe": 0.942865723289967
+        },
+        {
+          "volatility_annualised": 0.19491809965790718,
+          "sharpe": 1.1221688556007243
+        },
+        {
+          "volatility_annualised": 0.22154303466713415,
+          "sharpe": 1.0007622790174866
+        }
+      ]
+    },
+    "composite_raw": {
+      "periods": 153,
+      "cagr": 0.13841572807115843,
+      "mean_period_return": 0.012463034513725265,
+      "volatility_annualised": 0.1954806442366553,
+      "sharpe": 0.7650701927483177,
+      "sortino": 1.1257632239824396,
+      "max_drawdown": -0.35890906080663454,
+      "win_rate": 0.5816993464052288,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.19509803921568628,
+      "median_names_rankable": 819,
+      "decile_cagr": [
+        0.1552978350677856,
+        0.13912569039091505,
+        0.1619050677769729,
+        0.17403511193994725,
+        0.17965822130340992,
+        0.16195427685312414,
+        0.20470546318039817,
+        0.19774902858680576,
+        0.21440189264990694,
+        0.20427102020866972
+      ],
+      "decile_spread": -0.04897318514088411,
+      "decile_monotonicity": -0.8909090909090909,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19100775059747008,
+          "sharpe": 0.8568344626117331
+        },
+        {
+          "volatility_annualised": 0.18573673139406366,
+          "sharpe": 0.7985183413838066
+        },
+        {
+          "volatility_annualised": 0.18566432721308998,
+          "sharpe": 0.9070062658992657
+        },
+        {
+          "volatility_annualised": 0.18399211109374225,
+          "sharpe": 0.9702486698242088
+        },
+        {
+          "volatility_annualised": 0.18192419732584755,
+          "sharpe": 1.0052872849775638
+        },
+        {
+          "volatility_annualised": 0.18379018409196152,
+          "sharpe": 0.9145840988616222
+        },
+        {
+          "volatility_annualised": 0.185418926552758,
+          "sharpe": 1.1046249552883054
+        },
+        {
+          "volatility_annualised": 0.19715519864091702,
+          "sharpe": 1.0197082184596495
+        },
+        {
+          "volatility_annualised": 0.1966246373716259,
+          "sharpe": 1.0950818733762548
+        },
+        {
+          "volatility_annualised": 0.21575208603813859,
+          "sharpe": 0.9762153394797964
+        }
+      ]
+    },
+    "valuation": {
+      "periods": 153,
+      "cagr": 0.1925481434976375,
+      "mean_period_return": 0.018025073929490584,
+      "volatility_annualised": 0.27978935843117997,
+      "sharpe": 0.7730847533541585,
+      "sortino": 1.1933991476400345,
+      "max_drawdown": -0.5014900069814402,
+      "win_rate": 0.6143790849673203,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.21143790849673202,
+      "median_names_rankable": 789,
+      "decile_cagr": [
+        0.16043605360571989,
+        0.15190724456660742,
+        0.16827551527708207,
+        0.16839612372211676,
+        0.1699942101514771,
+        0.16061803399607189,
+        0.17795972860461395,
+        0.17074843070423906,
+        0.18188402548297544,
+        0.22008181451743836
+      ],
+      "decile_spread": -0.05964576091171847,
+      "decile_monotonicity": -0.9030303030303031,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.24108312083976088,
+          "sharpe": 0.7430576689628954
+        },
+        {
+          "volatility_annualised": 0.20822830858205563,
+          "sharpe": 0.7889849543752299
+        },
+        {
+          "volatility_annualised": 0.18787549136958798,
+          "sharpe": 0.9267470814346292
+        },
+        {
+          "volatility_annualised": 0.1998039532736239,
+          "sharpe": 0.8844362452416349
+        },
+        {
+          "volatility_annualised": 0.1845682675811986,
+          "sharpe": 0.9497011357528379
+        },
+        {
+          "volatility_annualised": 0.17855211588397002,
+          "sharpe": 0.9303393455841734
+        },
+        {
+          "volatility_annualised": 0.1725976340650193,
+          "sharpe": 1.0415235920508266
+        },
+        {
+          "volatility_annualised": 0.16919582209065087,
+          "sharpe": 1.022624966115547
+        },
+        {
+          "volatility_annualised": 0.18018212826171262,
+          "sharpe": 1.0237395433719065
+        },
+        {
+          "volatility_annualised": 0.22159951187317511,
+          "sharpe": 1.0160788855834602
+        }
+      ]
+    },
+    "profitability": {
+      "periods": 153,
+      "cagr": 0.2031781456396653,
+      "mean_period_return": 0.016924547132258348,
+      "volatility_annualised": 0.18255232728413429,
+      "sharpe": 1.1125279453216326,
+      "sortino": 1.6621074596228291,
+      "max_drawdown": -0.30205380406755167,
+      "win_rate": 0.6601307189542484,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.10751633986928105,
+      "median_names_rankable": 811,
+      "decile_cagr": [
+        0.18334186515483686,
+        0.15877122073731065,
+        0.17393711504688802,
+        0.14916098292218738,
+        0.16182095969264254,
+        0.1666109564601128,
+        0.1905589383865114,
+        0.1815483979864918,
+        0.19431942396993462,
+        0.22519204103867008
+      ],
+      "decile_spread": -0.04185017588383322,
+      "decile_monotonicity": -0.6242424242424243,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1787072712028445,
+          "sharpe": 1.0373099192432174
+        },
+        {
+          "volatility_annualised": 0.17381751253917171,
+          "sharpe": 0.9400435535248175
+        },
+        {
+          "volatility_annualised": 0.17686775927366144,
+          "sharpe": 1.0015595027541913
+        },
+        {
+          "volatility_annualised": 0.18093658637901078,
+          "sharpe": 0.8645064216633277
+        },
+        {
+          "volatility_annualised": 0.18431783740196891,
+          "sharpe": 0.910787146599416
+        },
+        {
+          "volatility_annualised": 0.18638816105234504,
+          "sharpe": 0.924932985837847
+        },
+        {
+          "volatility_annualised": 0.18648267319601164,
+          "sharpe": 1.0355820564350213
+        },
+        {
+          "volatility_annualised": 0.1901785846159191,
+          "sharpe": 0.9787753090533985
+        },
+        {
+          "volatility_annualised": 0.21281201677362904,
+          "sharpe": 0.9475441444747023
+        },
+        {
+          "volatility_annualised": 0.23180542643627372,
+          "sharpe": 0.9998146118536799
+        }
+      ]
+    },
+    "financial_health": {
+      "periods": 153,
+      "cagr": 0.2102693407126639,
+      "mean_period_return": 0.017569007640947255,
+      "volatility_annualised": 0.19233226994898747,
+      "sharpe": 1.0961659826886316,
+      "sortino": 1.7139829690196038,
+      "max_drawdown": -0.3036377254633351,
+      "win_rate": 0.6405228758169934,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.03725490196078431,
+      "median_names_rankable": 795,
+      "decile_cagr": [
+        0.20509873947418744,
+        0.18095985548250026,
+        0.18302083635267863,
+        0.1694249754802013,
+        0.14155761120296217,
+        0.15407144799605854,
+        0.2015220211545794,
+        0.18297194561882857,
+        0.16761280423779734,
+        0.21538905072679593
+      ],
+      "decile_spread": -0.010290311252608486,
+      "decile_monotonicity": -0.018181818181818077,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1864579433104869,
+          "sharpe": 1.1006712648374224
+        },
+        {
+          "volatility_annualised": 0.18801598922603738,
+          "sharpe": 0.984967344833721
+        },
+        {
+          "volatility_annualised": 0.1834131385505098,
+          "sharpe": 1.014491273197225
+        },
+        {
+          "volatility_annualised": 0.1858965268575825,
+          "sharpe": 0.940462192536501
+        },
+        {
+          "volatility_annualised": 0.18772285293449906,
+          "sharpe": 0.8053593939386527
+        },
+        {
+          "volatility_annualised": 0.18190525314705727,
+          "sharpe": 0.8840979883444865
+        },
+        {
+          "volatility_annualised": 0.1754529575204272,
+          "sharpe": 1.1410548237916318
+        },
+        {
+          "volatility_annualised": 0.2066709796231281,
+          "sharpe": 0.9231763120349804
+        },
+        {
+          "volatility_annualised": 0.18958414768658424,
+          "sharpe": 0.9184801844567047
+        },
+        {
+          "volatility_annualised": 0.21269175036768154,
+          "sharpe": 1.0308533319669562
+        }
+      ]
+    },
+    "growth": {
+      "periods": 153,
+      "cagr": 0.2640022327125213,
+      "mean_period_return": 0.022176879587948076,
+      "volatility_annualised": 0.24477478550322382,
+      "sharpe": 1.0872139240496725,
+      "sortino": 1.9636563614859894,
+      "max_drawdown": -0.33813430813354506,
+      "win_rate": 0.6339869281045751,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.1911764705882353,
+      "median_names_rankable": 813,
+      "decile_cagr": [
+        0.232114909217912,
+        0.1939760269691182,
+        0.17611290821266623,
+        0.15870270000568176,
+        0.15633410158203076,
+        0.17695779172180792,
+        0.16976093183304863,
+        0.1715832744560608,
+        0.16365142854238468,
+        0.19208090829979718
+      ],
+      "decile_spread": 0.04003400091811482,
+      "decile_monotonicity": 0.32121212121212117,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.2052049325013353,
+          "sharpe": 1.1284557289868098
+        },
+        {
+          "volatility_annualised": 0.184518096422985,
+          "sharpe": 1.0600386481303261
+        },
+        {
+          "volatility_annualised": 0.1891956009414821,
+          "sharpe": 0.9572459389859787
+        },
+        {
+          "volatility_annualised": 0.17916904428340297,
+          "sharpe": 0.9167519651380401
+        },
+        {
+          "volatility_annualised": 0.18186278235105693,
+          "sharpe": 0.8952885809608647
+        },
+        {
+          "volatility_annualised": 0.18155417794189166,
+          "sharpe": 0.9945429143100284
+        },
+        {
+          "volatility_annualised": 0.19027986306304678,
+          "sharpe": 0.9239597232694513
+        },
+        {
+          "volatility_annualised": 0.18894585221210122,
+          "sharpe": 0.9390237062239674
+        },
+        {
+          "volatility_annualised": 0.19547830295016064,
+          "sharpe": 0.8785930062966313
+        },
+        {
+          "volatility_annualised": 0.22110787348649208,
+          "sharpe": 0.9105625341487927
+        }
+      ]
+    },
+    "capital_allocation": {
+      "periods": 153,
+      "cagr": 0.13918756648077513,
+      "mean_period_return": 0.012533584302678303,
+      "volatility_annualised": 0.19475925729482518,
+      "sharpe": 0.7722508995013294,
+      "sortino": 1.0406641295555676,
+      "max_drawdown": -0.39445372370857756,
+      "win_rate": 0.6405228758169934,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.13725490196078433,
+      "median_names_rankable": 814,
+      "decile_cagr": [
+        0.1771400179115037,
+        0.1653284181720618,
+        0.13668171950274632,
+        0.15799469275843014,
+        0.17887864548669863,
+        0.1856022124863752,
+        0.15670619169078792,
+        0.18493976696740644,
+        0.21763377283303975,
+        0.2307080874501264
+      ],
+      "decile_spread": -0.0535680695386227,
+      "decile_monotonicity": -0.6606060606060606,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.18652879353283353,
+          "sharpe": 0.9745800648258213
+        },
+        {
+          "volatility_annualised": 0.18310841613407836,
+          "sharpe": 0.9333459129150277
+        },
+        {
+          "volatility_annualised": 0.18638313092141226,
+          "sharpe": 0.7848962242927546
+        },
+        {
+          "volatility_annualised": 0.17263741544100147,
+          "sharpe": 0.9415525628187206
+        },
+        {
+          "volatility_annualised": 0.18404024165399022,
+          "sharpe": 0.9925204374436833
+        },
+        {
+          "volatility_annualised": 0.1836298703455659,
+          "sharpe": 1.0253984268436693
+        },
+        {
+          "volatility_annualised": 0.18442002232199015,
+          "sharpe": 0.8874732538484649
+        },
+        {
+          "volatility_annualised": 0.19312437752351422,
+          "sharpe": 0.9808373928304274
+        },
+        {
+          "volatility_annualised": 0.21125075920144065,
+          "sharpe": 1.0455581293334926
+        },
+        {
+          "volatility_annualised": 0.2282288264775992,
+          "sharpe": 1.0306821660619643
+        }
+      ]
+    },
+    "accounting_quality": {
+      "periods": 153,
+      "cagr": 0.11701137787911753,
+      "mean_period_return": 0.011133034809984418,
+      "volatility_annualised": 0.21020775144224213,
+      "sharpe": 0.6355446780777764,
+      "sortino": 0.8628980480187185,
+      "max_drawdown": -0.44784318749666197,
+      "win_rate": 0.6274509803921569,
+      "costs_bps_per_side": 10,
+      "average_turnover": 0.07450980392156863,
+      "median_names_rankable": 808,
+      "decile_cagr": [
+        0.1578715309989942,
+        0.18996376024595163,
+        0.1857749953940937,
+        0.18360362677756714,
+        0.17394001093690514,
+        0.1934791129161939,
+        0.14928551078793562,
+        0.15184919371156314,
+        0.18033124411732127,
+        0.22129702367130788
+      ],
+      "decile_spread": -0.06342549267231368,
+      "decile_monotonicity": -0.042424242424242475,
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.17996178322465584,
+          "sharpe": 0.9095816304096378
+        },
+        {
+          "volatility_annualised": 0.18255870341355115,
+          "sharpe": 1.0515486428214218
+        },
+        {
+          "volatility_annualised": 0.18573619601576077,
+          "sharpe": 1.0174642839301604
+        },
+        {
+          "volatility_annualised": 0.19175067417880953,
+          "sharpe": 0.9811534381090395
+        },
+        {
+          "volatility_annualised": 0.17974812635264167,
+          "sharpe": 0.9881204336712018
+        },
+        {
+          "volatility_annualised": 0.1945360538762717,
+          "sharpe": 1.0128555175195904
+        },
+        {
+          "volatility_annualised": 0.19318645661660297,
+          "sharpe": 0.821870590933992
+        },
+        {
+          "volatility_annualised": 0.19134089590719353,
+          "sharpe": 0.8400284201449093
+        },
+        {
+          "volatility_annualised": 0.19030125131364986,
+          "sharpe": 0.9718701747619249
+        },
+        {
+          "volatility_annualised": 0.21029375516309204,
+          "sharpe": 1.0630940543987364
+        }
+      ]
+    },
+    "equal_weight_universe": {
+      "periods": 153,
+      "cagr": 0.18020596563406155,
+      "mean_period_return": 0.015336980715539022,
+      "volatility_annualised": 0.1851882279880907,
+      "sharpe": 0.993820020775316,
+      "sortino": 1.3678705970620244,
+      "max_drawdown": -0.3219186172722954,
+      "win_rate": 0.673202614379085,
+      "costs_bps_per_side": 0,
+      "average_turnover": null,
+      "median_names_rankable": 0,
+      "decile_cagr": null,
+      "decile_spread": null,
+      "decile_monotonicity": null,
+      "decile_risk": []
+    }
+  },
+  "limitations": [
+    "Survivorship: the candidate set is today's price cache. Every return here is biased upward by an amount this pipeline cannot yet quantify, and the comparison against equal_weight_universe is the only reading that partly controls for it.",
+    "Window: roughly nine years, one regime, and the one in which value performed worst in decades. A composite weighting valuation at 28% is being measured in its most hostile sample.",
+    "Four inputs are absent point-in-time; see scoring.inputs_unavailable_point_in_time.",
+    "No multiple-testing correction has been applied."
+  ]
+}
