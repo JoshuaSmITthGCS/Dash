@@ -1457,15 +1457,229 @@ Consolidated from every UNDETERMINED marker above, plus items not yet touched at
 
 ## 12. Test and validation inventory
 
-**[PENDING — from parallel research pass: test file counts and coverage by module, whether any
-test validates a financial formula against a known-correct value, and a direct check of whether
-any backtest/IC/calibration result has ever actually been produced (vs. the gate simply never
-opening, per §6.6's finding that `historical_calibration` is `null` for every row in the current
-artifact).]**
+### 12.1 Test file inventory
 
-Independently confirmed this session (§6.6): the live artifact's own published
-`data_coverage_detail.limitations` states, for every row, "insufficient prospective calibration
-history (requires 24 eligible IC periods)" — the system is, as of this run, self-reporting that
-it has not been calibrated. This is not a test-suite finding; it's the running system's own
-output, which is stronger evidence than a test result would be, since it reflects the actual
-production state rather than a controlled test scenario.
+**`pipeline/tests/*.py`** — 108 files, ~1,627 `def test_` functions, unittest/pytest style, run
+via `pytest pipeline/tests` in `.github/workflows/ci.yml:30`. Selected files relevant to the
+scoring core:
+
+| File | Cases (approx.) | Covers | Kind |
+|---|---|---|---|
+| `test_scorer.py` | ~38 | Band/range/lower-is-better scoring primitives, category weight sums, sector-relative PE, coverage weighting | Unit (synthetic fixtures) |
+| `test_canonical_v2.py` | ~29 | `calculate_peg`, `Observation`, `applicability_for`, `classify_profile`, `reconcile`, `build_v2_analysis`, `peer_groups.py` | Unit |
+| `test_advisor_engine.py` | ~55 | Technical factors, sentiment blend, every bounded modifier, deterioration engine | Unit |
+| `test_recommendation_policy_v2.py` | ~24 | `effective_score`, `build_recommendation_v2` action-label matrix, confidence gating | Unit, table-driven |
+| `test_optimize_weights.py` | ~13 | Dirichlet weight sampling, holdout evaluation plumbing — tests the *search machinery*, not the resulting weights | Unit |
+| `test_score_calibration.py` | ~20 | Gate logic, bucket math, `confidence_detail` wiring | Unit |
+| `test_ic_harness.py` | ~17 | Append-only snapshot idempotency, ICIR unlock at 24 periods, sector-residual fallback, deflated-Sharpe trial count | Unit |
+| `test_baseline_snapshot.py` | 4 | Anchors 5 real rows from a specific `advisor.json` as a regression fixture | Regression/snapshot — **not** outcome validation |
+| `test_backtest_monthly.py`, `test_backtest_common.py`, `test_policy_backtest.py` | ~15 | Backtest-*engine* mechanics on synthetic series — not that any live weight beats a benchmark | Unit |
+| `test_sec_edgar_contract.py` | ~6 | AST-walks every pipeline module to fail the build on duplicate method definitions | Static/meta-test |
+| Remaining ~95 files | — | Screen builders (14 files), provider clients, PIT store, options-strategy backtests, plausibility/enrichment/coverage audits | mostly unit, some contract/integration |
+
+**`tests/functions/*.test.js`** — 3 files, 18 cases, Vitest, covering `netlify/functions/*.mjs`
+serverless handlers (mocked Firestore/GitHub API, request/response shape) — not financial-
+calculation tests.
+
+**`src/**/*.test.{js,jsx}`** (colocated per-file, not under a single `src/test/` dir) — 59 files,
+~478 cases, run by `npm test` → `vitest run`. Covers frontend logic (`recommendation.test.js`,
+`rankingModels.test.js`, `factorAnalytics.test.js`, `portfolioAnalytics.test.js`, etc.) — UI-facing
+behavior, not independent verification of the Python scoring pipeline's math.
+
+`research/STATE.md:409` records a full-suite checkpoint from an earlier commit than current HEAD:
+`pytest pipeline/tests -q # 1595 passed`, `npm test # 508 passed` — close to but not identical to
+the counts above; current suite has since grown.
+
+### 12.2 Hand-computed financial-value assertions — hunted specifically
+
+**None of the tests in `test_scorer.py`, `test_canonical_v2.py`, `test_advisor_engine.py`,
+`test_recommendation_policy_v2.py` assert a scored value against an independently-sourced,
+real-world "known-correct" outcome** (e.g. nothing of the shape "AAPL's ROIC on date X should
+equal Y because that is AAPL's real ROIC"). What exists is **arithmetic-correctness testing of
+the scoring formulas against hand-picked synthetic inputs** — verifying the code computes what
+the formula says, not that the formula predicts anything real. Examples:
+- `test_canonical_v2.py:23-24`: `calculate_peg(10, 10, "percentage_points", periods_match=True,
+  definition_known=True) == 1.0` — hand-computed, but validates `calculate_peg`'s arithmetic, not
+  that PEG=1.0 means anything for future returns.
+- `test_scorer.py:56-57`: confirms `lower_is_better_score` returns the configured floor/ceiling
+  for out-of-band inputs — a code-behavior check, not an outcome check.
+- `test_recommendation_policy_v2.py:52`: `effective_score(90, 0.5) == 70.0` — confirms the
+  confidence-shrinkage formula's arithmetic.
+- Multiple `assertAlmostEqual(sum(weights.values()), 1.0)` checks confirm weight *configuration*
+  sums correctly, not that the weights are empirically justified.
+
+The closest thing to an outcome-linked assertion is `test_baseline_snapshot.py`, which anchors 5
+rows of a specific `advisor.json` and asserts confidence stayed ≤0.5 for all of them — a
+**regression/drift detector against the pipeline's own prior output** ("diffable against real
+published behavior instead of only synthetic fixtures," per its own docstring), not a comparison
+to any real subsequent stock-price outcome.
+
+**Conclusion**: no test in the repository asserts a scored/derived financial value against a
+known-correct outcome grounded in real market or fundamental data. All value-level assertions
+found are formula-arithmetic checks against synthetic or fixture inputs.
+
+### 12.3 `score_calibration.py` and `ic_harness.py` — what they compute, and whether either has ever produced a real result
+
+**`ic_harness.py`** (`pipeline/validation/ic_harness.py`, 627 lines): a prospective full-universe
+IC validation harness. `append_refresh` writes one immutable JSONL snapshot per scored ticker per
+refresh into `pipeline/pit_store/<date>.jsonl`, idempotent per `refresh_id`. Snapshots group into
+monthly observation periods; per period it computes forward return over a real trading-session
+horizon and a **sector-residual label** (stock return minus equal-weight sector-peer mean) as the
+primary target (a secondary calendar-day/raw-return diagnostic path also exists), Spearman rank
+IC, ICIR (mean IC / IC stdev), a 95% CI, decile bucket returns/monotonicity, top-minus-bottom
+long/short spread net of modeled trading costs, and a deflated-Sharpe probability using the
+`experiment_registry.py`-tracked trial count as a floor. ICIR eligibility gates on
+`CONFIG["minimum_icir_periods"] = 24` (`settings.json:77`).
+
+**Has it ever produced a real result? No.** `main()` (`ic_harness.py:599-622`), what
+`ci.yml:29` runs on every push/PR, by default only calls `write_report()`/`build_report()` over
+whatever is already in `pipeline/pit_store/` — it does **not** pass `--append-current` in CI, so
+CI grades the store, it does not grow it. The live `pipeline/pit_store/` directory holds exactly
+**6 daily files, dated 2026-08-05 through 2026-08-10** — under one calendar week, nowhere near
+the 24 *monthly* periods the ICIR gate requires. `test_ic_harness.py:66` and
+`test_score_calibration.py`'s `LiveHarnessTests.test_the_current_harness_supplies_no_closed_
+observations` (`:124`) both encode this as expected/tested behavior, not a bug — the test suite
+itself asserts the gate is currently and correctly closed.
+
+**`score_calibration.py`** (227 lines): consumes closed `(score, sector_residual_return)`
+observations from the IC harness's primary path and buckets them two ways — 5 adaptive
+equal-count quantiles and 6 fixed score bands (`FIXED_BANDS = ((80,101),(75,80),(70,75),(65,70),
+(60,65),(0,60))`) — reporting per-bucket mean/median residual return, a 95% CI, "beat sector" rate
+with a Wald CI, volatility, and a drawdown-of-sorted-outcomes stat, gated on
+`MINIMUM_BUCKET_OBSERVATIONS = 30` observations per bucket. Running `main()` today:
+`observations_from_harness()` returns an empty list (0 closed periods), so `build_report(rows=[])`
+produces `status: "insufficient_data"` for every bucket and `publishable_to_confidence_detail:
+False` — matching the live artifact's `historical_calibration: null` (§6.6). **This module has
+never produced a populated report against real data**, by construction of what data currently
+exists in the repo.
+
+**Direct conclusion**: no IC study, backtest, or calibration check running through the live
+pipeline's own harness has ever produced a real, populated result. The gate is real, working
+code, correctly reporting its own emptiness — not a fabricated "everything is fine" stub.
+
+### 12.4 `research/` — the actual predictive-validation study, characterized precisely
+
+This is a **separate, offline research program**, not the live `ic_harness`/`score_calibration`
+path, built on its own point-in-time fundamentals store reconstructed from raw SEC EDGAR XBRL
+filings, independent of the live 6-day `pipeline/pit_store/`. All committed to `main` (27 commits
+touch `research/`). It is the closest thing to a real predictive-validation study anywhere in
+this repo.
+
+- **Phase 4** (`research/results/PHASE4-BASELINES.md`, `research/baselines.py`): 820 US companies
+  (median per rebalance), **2017-01-01 to 2026-06-01**, 164 rebalances (21-session hold),
+  point-in-time fundamentals, top-20 and full decile ladders, 10bps/side costs. Equal-weight
+  universe: 18.0% CAGR / Sharpe 0.99 (benchmark). `momentum_12_1` and `quality_and_momentum` sort
+  cleanly (monotonicity +0.61/+0.81, +0.41/+0.40 Sharpe over universe). `value_earnings_yield`
+  **sorts backwards** (monotonicity −0.62, Sharpe 0.79 vs. universe's 0.99, "actively harmful" per
+  the doc's own verdict). `profitability` (gross-profits-to-assets) does not sort at all.
+- **Phase 5** (`PHASE5-FEATURES.md`, `research/features.py`): all 32 of the live model's
+  fundamental inputs, measured **as the model's own band-scored value**, same window. **"None of
+  the thirty-two metrics passes a significance bar that accounts for testing thirty-two metrics.
+  The largest t-statistic on the table is +2.4 against a Bonferroni threshold of 3.163"** — the
+  exact "none of the thirty-two inputs survives multiple-testing correction" finding this task's
+  brief references. 43.2% of score weight sits on positive-IC metrics, **44.2% on negative-IC
+  metrics**. Four independent valuation multiples (`price_to_book`, `ev_to_ebitda`, `ev_to_ebit`,
+  `ev_to_fcf`) all show negative IC and Sharpe-ladder monotonicity between −0.72 and −0.93 — the
+  valuation block carries 28% of score weight.
+- **Phase 5b** (`PHASE5B-BANDS.md`, `research/bands.py`): tested whether the model's band cutoffs
+  destroy signal versus the underlying metrics. 26 of 27 comparable metrics score faithfully;
+  band recalibration is explicitly closed off as a remedy.
+- **Phase 6** (`PHASE6-COMPOSITE.md`, `research/composite.py`): the **live scorer itself**
+  (`scorer._band_valuation_score`, real config), point-in-time, same window, 819 companies/
+  rebalance. **"Ranking by the live composite and holding the best-scored decile earned a Sharpe
+  of 0.86 against 0.99 for equal-weighting the whole universe. The ladder is inverted... Return
+  monotonicity −0.87; Sharpe monotonicity −0.88"** — the exact "the composite ranks backwards"
+  finding the brief references. The model's largest-weighted block (valuation, 28%) has the worst
+  top-decile Sharpe (0.74); its smallest-weighted block (growth, 11%) has the best (1.13).
+  Conclusion, quoted: "the complicated model did not beat holding everything, let alone the
+  simple factor combinations in Phase 4, three of which did."
+- **Phase 6b** (`PHASE6B-CANDIDATE.md`, `research/candidate.py`): a **pre-registered, split-sample**
+  test — 6 candidate rankings selected by design-half (2017-01→2021-07) Sharpe-decile-
+  monotonicity, winner chosen before the test half was read, scored on 2021-07→2026-06 out of
+  sample. Selected candidate `momentum_only`: 43.5% CAGR / Sharpe 1.38 vs. live composite's
+  15.1%/0.79 and universe's 9.8%/0.64 — but the doc itself flags momentum as "the factor most
+  inflated by the one bias this pipeline has not fixed" (survivorship) and states explicitly
+  "43.5% is not a forward expectation." It also **retracts** an interim recommendation to remove
+  the valuation category — better in-sample (design-half Sharpe 1.17 vs. live 1.06) but **worse
+  than the model it was fixing on every measure out-of-sample** (test-half Sharpe 0.54 vs. live
+  0.79). The full-window "ranks backwards" finding is **not stable when split**: composite Sharpe
+  monotonicity was −0.85 in the design half but **+0.04** (flat, not inverted) in the test half.
+- **`LIVE-LEADERBOARD-AUDIT.md`** (`research/audit_leaderboard.py`, reads `advisor.json` directly,
+  no backtest): the published leaderboard is sorted by **data-enrichment depth, not scoring
+  merit** — 100 of the top 100 published rows come from the 16.8% of the universe with full
+  statement enrichment; best rank achieved by any non-enriched company is #127; the
+  enrichment-priority mechanism (`enrichment_selection.previous_top`) is self-reinforcing (16 of
+  the current top 20 were in the prior run's top 20).
+
+Every result file explicitly and repeatedly states the binding limitation is **survivorship
+bias** (the candidate universe = companies with a price feed *today*; delisted/acquired/zeroed
+names are absent, biasing every return upward by an unquantified amount) and that the window is a
+single regime (2017-2026, one of the strongest growth-over-value stretches in decades) —
+unresolved as of the last commit touching `research/`.
+
+### 12.5 One unambiguous sentence
+
+**No validation of the live ValueSignal model's predictive performance against real forward
+outcomes exists anywhere in the pipeline's own production path** (`ic_harness.py`/
+`score_calibration.py` have never accumulated enough point-in-time history to clear their own
+gates) **— but a real, methodologically serious offline study does exist in `research/`** (Phases
+4-6b, on 2017-2026 point-in-time SEC EDGAR data), **and its central finding is that the live
+scoring composite, run on the actual production code and configuration, ranked its own top decile
+*worse* than the equal-weighted universe on a risk-adjusted basis** (Sharpe 0.86 vs. 0.99,
+Sharpe-monotonicity −0.88) **over the full window studied, with the model's largest-weighted
+category (valuation, 28% of score) also its worst-performing one — though a pre-registered
+out-of-sample split (Phase 6b) found this specific "ranks backwards" characterization was
+concentrated in 2017-2021 and the model's ranking was closer to flat/random (not inverted) in
+2021-2026, and every number in the study is qualified by an acknowledged, unquantified
+survivorship bias** that its own authors say caps what can be claimed about absolute (not just
+relative) performance.
+
+### 12.6 Supplement to §6.6 — weight/threshold provenance, four more constants
+
+| Constant | Location | `git log -S` result | Interpretation |
+|---|---|---|---|
+| `minimum_icir_periods: 24` | `settings.json:77` | Real origin found: `79ed21b`, "feat: add prospective IC validation harness" — the line was newly added there | No reference to fitting/backtesting in the commit; the number matches "2 years of monthly refreshes," a stated *a priori* design target (`score_calibration.py:9`, `research/STATE.md`), not a fitted one |
+| `0.65 + 0.35*coverage` confidence multiplier | `scorer.py:615,652` | Predates the fetch boundary — true origin UNDETERMINED (see shallow-clone note below) | Cannot be traced further |
+| `±15` combined-modifier cap | `advisor_engine.py:552` | Same shallow-clone boundary artifact | UNDETERMINED |
+| `MINIMUM_BUCKET_OBSERVATIONS = 30` | `score_calibration.py:50` | Same shallow-clone boundary artifact | The file's own docstring gives a stated, non-empirical rationale: "Chosen before looking at any result: roughly the point at which a proportion's 95% interval is narrower than ±15 points" — an a priori statistical-power heuristic |
+
+**Methodological finding, important on its own**: this checkout is a **shallow git clone with
+four graft/boundary commits** (`.git/shallow` lists exactly `0e173cf`, `768fa11`, `993f354`,
+`cbc38ff`; `git rev-list --max-parents=0 --all` confirms these are the only visible "roots").
+Diffing against any of these four shows the entire file freshly added, because their real parents
+were never fetched — meaning `git log -S <pattern>` in this checkout can spuriously report one of
+these four as the origin of *any* string present in the files they touch, regardless of true
+history (confirmed: unrelated feature-commit messages surfaced as apparent hits for scoring
+constants during this check). **Any git-archaeology conclusion in this document that terminates
+at one of these four hashes should be read as "predates the available history," not as a genuine
+finding about that commit's intent** — this includes §6.6's own `ev_to_ebitda: 0.27` search.
+
+No commit message reachable in this shallow history, for any constant investigated across this
+document, references fitting, calibration, or backtesting as the basis for a specific numeric
+value — consistent with, and extending, §6.6's original conclusion: **no weight in this system
+has been fitted to or validated against outcome data.**
+
+### 12.7 Open items / UNDETERMINED for this section
+
+- True git origin of the `0.65 + 0.35×coverage` confidence multiplier, the ±15 combined-modifier
+  cap, and `MINIMUM_BUCKET_OBSERVATIONS = 30` — blocked by the shallow clone's graft boundaries;
+  would need a full/unshallow fetch of the actual remote history.
+- Whether `pipeline/tests`/`npm test` currently pass in full — not re-run this session.
+- Whether `ci.yml`'s `ic_harness.py --snapshot` invocation without `--append-current` is
+  deliberate (grade-only) or an oversight — accumulation instead appears to depend on
+  `refresh-advisor.yml`'s production runs writing to `pipeline/pit_store/` directly, not
+  independently re-verified this session.
+- Whether `research/`'s Phase 7 (multiple-testing correction) through Phase 11 (deliverables) were
+  ever executed — `research/STATE.md:39` states "5-10 not started" as of that checkpoint, no
+  `PHASE7`-or-later file exists in `research/results/`.
+- Exact current row/refresh count inside `pipeline/pit_store/`'s 6 daily files, beyond the file
+  count itself.
+
+---
+
+Independently confirmed and worth repeating here (also stated in §6.6): the live artifact's own
+published `data_coverage_detail.limitations` states, for every row, "insufficient prospective
+calibration history (requires 24 eligible IC periods)" — the system is, as of this run,
+self-reporting that it has not been calibrated. This is not a test-suite finding; it's the
+running system's own output, which is stronger evidence than a test result would be, since it
+reflects the actual production state rather than a controlled test scenario.
