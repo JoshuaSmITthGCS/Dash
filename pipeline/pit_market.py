@@ -64,6 +64,22 @@ CACHE_DIR = os.path.join(STORE_DIR, "backtest_cache")
 # been acquired, or gone dark. Two quarters plus filing lag.
 FILING_SILENCE_DAYS = 270
 
+# A single session that changes the price by this factor is not a price move. It is a ticker
+# that stopped denoting one security and started denoting another, and the series either side
+# of it belongs to two different companies.
+#
+# Chord Energy is the case in this cache. Oasis Petroleum emerged from Chapter 11 on
+# 2020-11-19 with its old equity cancelled and new equity issued; the cache splices both under
+# CHRD, so 2020-11-20 reads $0.12 to $31.00 -- a 258-fold session. Carried into a backtest it
+# is a +39,130% month, and one such month is enough on its own to put a factor's annualised
+# volatility above 500% and its Sortino ratio near 10.
+#
+# The threshold sits where the two populations separate. The largest genuine single-session
+# moves in this cache are 2.7x (Chord itself, at 23 cents, bouncing back the next day) and
+# 2.08x (Avis in the 2021 squeeze); the reorganisation is two orders of magnitude beyond
+# either. Nothing in the cache falls between 2.7x and 258x.
+IDENTITY_BREAK_FACTOR = 4.0
+
 
 class PriceHistory:
     """One security's price series, with level and return questions answered separately."""
@@ -76,6 +92,27 @@ class PriceHistory:
         # ``raw_closes``, which invites exactly the mistake documented above.
         self.split_adjusted = split_adjusted
         self.volumes = volumes or []
+        self.identity_breaks = self._find_identity_breaks()
+
+    def _find_identity_breaks(self):
+        """Sessions where the ticker changed which security it denotes."""
+        breaks = []
+        for index in range(1, len(self.adjusted)):
+            previous, current = self.adjusted[index - 1], self.adjusted[index]
+            if not previous or not current:
+                continue
+            step = current / previous
+            if step >= IDENTITY_BREAK_FACTOR or step <= 1 / IDENTITY_BREAK_FACTOR:
+                breaks.append(index)
+        return breaks
+
+    def _last_break_before(self, index):
+        return next((position for position in reversed(self.identity_breaks)
+                     if position <= index), None)
+
+    def spans_identity_break(self, first, last):
+        """Whether a window from ``first`` to ``last`` crosses a change of security."""
+        return any(first < position <= last for position in self.identity_breaks)
 
     @classmethod
     def load(cls, ticker, directory=None):
@@ -118,8 +155,11 @@ class PriceHistory:
         Adjusted closes are correct here: the ratio depends only on corporate actions between
         the two dates, all of which were known by ``end``.
         """
-        first, last = self.adjusted_price(start), self.adjusted_price(end)
-        if first in (None, 0) or last is None:
+        opening, closing = self._index_at(start), self._index_at(end)
+        if opening is None or closing is None or self.spans_identity_break(opening, closing):
+            return None
+        first, last = self.adjusted[opening], self.adjusted[closing]
+        if not first or last is None:
             return None
         return last / first - 1
 
@@ -143,8 +183,19 @@ class PriceHistory:
         return values[len(values) // 2]
 
     def covers(self, when, *, minimum_sessions=1):
+        """Whether ``minimum_sessions`` of *this* security's history precede ``when``.
+
+        History is counted from the last identity break rather than from the start of the
+        file. A company that emerged from bankruptcy with new equity has no more trading
+        record than one that listed the same day, and must earn the same warm-up before it is
+        rankable -- which is also what stops a twelve-month momentum reading from measuring
+        the security that the ticker used to mean.
+        """
         index = self._index_at(when)
-        return index is not None and index + 1 >= minimum_sessions
+        if index is None:
+            return False
+        origin = self._last_break_before(index)
+        return index + 1 - (origin or 0) >= minimum_sessions
 
 
 def load_universe_prices(tickers, directory=None):

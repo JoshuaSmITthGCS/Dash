@@ -158,3 +158,48 @@ def test_a_cache_without_raw_closes_falls_back_rather_than_failing(tmp_path):
         json.dump({"dates": ["2020-01-01"], "closes": [10.0]}, handle)
     loaded = PriceHistory.load("OLD", str(tmp_path))
     assert loaded.price("2020-01-01") == 10.0
+
+
+# ------------------------------------------------------------------------ identity breaks
+
+def broken_series(ticker="CHRD"):
+    """A ticker that stops denoting one security and starts denoting another.
+
+    Modelled on Chord Energy: Oasis Petroleum emerged from Chapter 11 on 2020-11-19 with its
+    old equity cancelled, and the cache splices both companies under one symbol.
+    """
+    dates = [f"2020-{month:02d}-{day:02d}"
+             for month in range(1, 13) for day in (1, 15)]
+    prices = [0.12] * 21 + [31.0] * 3
+    return PriceHistory(ticker, dates, prices, prices, [1e6] * len(dates))
+
+
+def test_a_reorganisation_is_recognised_as_a_change_of_security():
+    prices = broken_series()
+    assert prices.identity_breaks == [21]
+    assert prices.spans_identity_break(20, 22) is True
+    assert prices.spans_identity_break(10, 20) is False
+    assert prices.spans_identity_break(21, 23) is False
+
+
+def test_a_return_is_refused_rather_than_reported_across_a_break():
+    """The alternative is a +25,733% month, which no downstream statistic survives."""
+    prices = broken_series()
+    assert prices.total_return("2020-11-01", "2020-12-01") is None
+    assert prices.total_return("2020-01-01", "2020-06-01") == pytest.approx(0.0)
+
+
+def test_history_is_counted_from_the_break_not_the_start_of_the_file():
+    """New equity has no trading record, however long the old ticker's file is."""
+    prices = broken_series()
+    assert prices.covers("2020-11-01", minimum_sessions=20) is True
+    assert prices.covers("2020-12-15", minimum_sessions=20) is False
+    assert prices.covers("2020-12-15", minimum_sessions=3) is True
+
+
+def test_a_real_move_however_violent_is_not_a_break():
+    """Avis doubled in a session in 2021 and Chord bounced 2.7x at 23 cents. Both are real."""
+    dates = ["2021-11-01", "2021-11-02", "2021-11-03"]
+    prices = PriceHistory("CAR", dates, [100.0, 208.0, 190.0], [100.0, 208.0, 190.0])
+    assert prices.identity_breaks == []
+    assert prices.total_return("2021-11-01", "2021-11-02") == pytest.approx(1.08)

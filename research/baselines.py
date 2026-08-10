@@ -142,12 +142,18 @@ def price_context(history, when, shares=None):
 
 
 def forward_return(history, start, horizon_days=21):
-    """Return over the holding period following a rebalance date."""
+    """Return over the holding period following a rebalance date.
+
+    ``None`` where the window crosses an identity break -- a ticker that stopped denoting one
+    security and started denoting another. Chord Energy's Chapter 11 emergence reads as a
+    +39,130% month otherwise, which is enough on its own to make a factor's annualised
+    volatility exceed 500%.
+    """
     index = history._index_at(start)  # noqa: SLF001
     if index is None:
         return None
     end = min(index + horizon_days, len(history.dates) - 1)
-    if end <= index:
+    if end <= index or history.spans_identity_break(index, end):
         return None
     first, last = history.adjusted[index], history.adjusted[end]
     if not first:
