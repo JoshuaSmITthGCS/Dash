@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-10T15:37:21.567915+00:00",
+  "generated_at": "2026-08-10T17:22:04.440901+00:00",
   "comparison": "old_double_confidence_penalty_vs_new_single_shrinkage_challenger",
   "comparable_universe_count": 197,
   "path_definitions": {
@@ -9,44 +9,44 @@
   "correlations": {
     "log_market_cap": {
       "old_double_penalty": {
-        "count": 195,
-        "pearson": 0.024371,
-        "spearman": 0.010447
+        "count": 183,
+        "pearson": 0.072381,
+        "spearman": 0.062196
       },
       "new_single_shrinkage": {
-        "count": 195,
-        "pearson": -0.064548,
-        "spearman": -0.10767
+        "count": 183,
+        "pearson": 0.029142,
+        "spearman": -0.001456
       }
     },
     "data_coverage": {
       "old_double_penalty": {
         "count": 197,
-        "pearson": 0.760163,
-        "spearman": 0.684456
+        "pearson": 0.784974,
+        "spearman": 0.652475
       },
       "new_single_shrinkage": {
         "count": 197,
-        "pearson": 0.195065,
-        "spearman": 0.265246
+        "pearson": 0.25055,
+        "spearman": 0.288996
       }
     },
     "analyst_coverage_count": {
       "old_double_penalty": {
         "count": 148,
-        "pearson": 0.044924,
-        "spearman": 0.001958
+        "pearson": 0.054452,
+        "spearman": 0.00271
       },
       "new_single_shrinkage": {
         "count": 148,
-        "pearson": -0.001448,
-        "spearman": -0.015317
+        "pearson": 0.008719,
+        "spearman": -0.002698
       }
     }
   },
   "market_cap_correlation_absolute_drop": {
-    "pearson": false,
-    "spearman": false,
-    "passed": false
+    "pearson": true,
+    "spearman": true,
+    "passed": true
   }
 }
