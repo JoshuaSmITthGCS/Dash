@@ -3,9 +3,18 @@ import { describe, expect, it } from 'vitest'
 import ResearchRadarChart, { radarEntries } from './ResearchRadarChart'
 
 describe('ResearchRadarChart', () => {
-  it('prefers canonical structural categories and clamps scores to the chart scale', () => {
+  it('plots the categories that produced this page\'s score, not another model\'s', () => {
+    // Globus Medical published growth at 64.6 while the v2 structural layer read 81.7. Both
+    // were rendered as "Growth" on one page, on one scale, with nothing marking them apart.
     const entries = radarEntries({
-      fundamental_categories: { valuation: 20, growth: 30, quality: 40 },
+      fundamental_categories: { valuation: 78, growth: 64.6, financial_health: 100 },
+      analysis_v2: { structural: { categories: { valuation: 78.3, growth: 81.7, financial_health: 100 } } },
+    })
+    expect(entries.find((entry) => entry.key === 'growth').value).toBe(64.6)
+  })
+
+  it('falls back to the structural layer only when the published categories are absent', () => {
+    const entries = radarEntries({
       analysis_v2: { structural: { categories: { valuation: 112, growth: -4, financial_health: 72 } } },
     })
     expect(entries.map((entry) => entry.value)).toEqual([100, 0, 72])
