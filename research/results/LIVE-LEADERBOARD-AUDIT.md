@@ -74,11 +74,20 @@ categories worth 20 points of median score. So:
 2. Enrichment resolves two categories worth ~20 points, and lifts the other four.
 3. It stays in the top 20, which is what earns it enrichment again.
 
-**16 of the current top 20 were in the previous top 20.** One is a rotated-in challenger. The
-Phase 1 `enrichment_rotation` fix reduced this loop — five challengers per refresh do enter,
-and DINO reached #13 that way — but it did not break it. At five rotations per refresh against
-874 companies, a name outside the priority list waits a long time for the data that would let
-it compete.
+**16 of the current top 20 were in the previous top 20.**
+
+**Correction to an earlier reading of this.** I first wrote that the Phase 1
+`enrichment_rotation` fix had reduced this loop without breaking it. It had not run at all: this
+artifact was generated at 09:09 on 2026-08-09 and the rotation shipped at 22:35 the same day.
+The five names that do rotate in are `CHALLENGER_ENRICH_LIMIT`, which predates the fix.
+
+The loop is also larger than the priority list. Of a 150-company statement budget, the priority
+names account for about forty; the remaining ~110 slots were filled inside `enrich` by
+`sorted(valuation_score, reverse=True)` — descending pre-enrichment score. Enrichment is what
+supplies the statement metrics, so a company scoring poorly *because* it lacked them was denied
+the pull that would have let it show otherwise, permanently. That allocation is now ordered by
+how long a company has gone without statements instead, so the universe passes through
+enrichment over roughly six runs rather than never.
 
 This is the Phase 0 defect family — coverage read as quality — one level up from where it was
 found. There it was a scalar mislabelled `confidence`. Here it is the ranking itself.

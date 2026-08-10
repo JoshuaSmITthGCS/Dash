@@ -1049,7 +1049,7 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
     }
 
 
-def enrich(contexts, limit, delay, priority=()):
+def enrich(contexts, limit, delay, priority=(), fallback_order=()):
     """Pull financial statements for the shortlist and fold the derived metrics into each snapshot.
 
     Shortlisting is done on core fundamentals alone, which every candidate has in equal
@@ -1063,11 +1063,29 @@ def enrich(contexts, limit, delay, priority=()):
     universe-wide enrichment collapse is diagnosable from the published artifact instead of
     a single opaque zero.
     """
-    ranked_by_score = sorted(contexts, key=lambda context: valuation_score(context["snapshot"])[0] or 0,
-                             reverse=True)
+    # Everything past the priority names used to be ordered by pre-enrichment score, and that
+    # was the large half of the closed loop ``enrichment_rotation`` was written to break. The
+    # rotation covers roughly fifteen names; this ordering decides the other ~110 slots of a
+    # 150-company budget. Enrichment is what supplies ROIC, EV/EBITDA, Piotroski, Altman and
+    # accruals, so a company scoring poorly *because* it lacked those metrics was denied the
+    # pull that would have let it show otherwise -- every run, permanently. Measured on the
+    # 2026-08-09 artifact: 147 of 874 companies carried the statement-derived categories, and
+    # all of the top 100 published rows came from that 147. See
+    # research/results/LIVE-LEADERBOARD-AUDIT.md.
+    #
+    # ``fallback_order`` lets the caller supply a staleness-first ordering instead. Score order
+    # remains the default so a caller that does not care -- and every existing test -- behaves
+    # as before, and so this stays one explicit decision rather than a hidden one.
     by_symbol = {context["symbol"]: context for context in contexts}
     ranked = [by_symbol[symbol] for symbol in priority if symbol in by_symbol]
-    ranked.extend(context for context in ranked_by_score if context["symbol"] not in set(priority))
+    taken = set(priority)
+    for symbol in fallback_order:
+        if symbol in by_symbol and symbol not in taken:
+            ranked.append(by_symbol[symbol])
+            taken.add(symbol)
+    ranked.extend(sorted((context for context in contexts if context["symbol"] not in taken),
+                         key=lambda context: valuation_score(context["snapshot"])[0] or 0,
+                         reverse=True))
     diagnostics = {"attempted": 0, "info_fetch_failed": 0, "statement_fetch_failed": 0,
                    "derivation_failed": 0, "no_statement_data": 0,
                    "implausible_fields_dropped": 0}
@@ -1462,7 +1480,15 @@ def run():
         previous_payload=previous_payload,
     )
     effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
-    enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)
+    # Behind the named priority slots, spend the rest of the statement budget on whoever has
+    # gone longest without it rather than on whoever scored best without it. The second is a
+    # closed loop: enrichment supplies the metrics that raise a score, so ranking the budget by
+    # score hands the data to the companies that already have it.
+    enrichment_fallback = enrichment_rotation(preliminary_symbols, set(statement_priority),
+                                              previous_payload or {}, len(preliminary_symbols))
+    enriched_count, enrichment_diagnostics = enrich(
+        contexts, effective_extended_limit, delay, statement_priority,
+        fallback_order=enrichment_fallback)
 
     challenger_cfg = (SETTINGS.get("challengers") or {}).get(
         "cross_sectional_normalization", {}

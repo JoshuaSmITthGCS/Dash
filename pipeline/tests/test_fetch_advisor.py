@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 import pandas as pd
 
@@ -652,3 +653,70 @@ class PointInTimeExpectationTests(unittest.TestCase):
         self.assertEqual(archived["analyst_consensus_target"], 130.0)
         self.assertEqual(archived["revision_breadth_30d"], 0.75)
         self.assertEqual(archived["net_upgrades_90d"], 4)
+
+
+class EnrichmentBudgetOrderTests(unittest.TestCase):
+    """The ~110 slots behind the priority list decide who can ever be measured.
+
+    Ordering them by pre-enrichment score is a closed loop: enrichment supplies ROIC,
+    EV/EBITDA, Piotroski, Altman and accruals, so a company scoring poorly because it lacks
+    those metrics is denied the pull that would let it show otherwise. On the 2026-08-09
+    artifact, 147 of 874 companies carried the statement categories and every one of the top
+    100 published rows came from that 147.
+    """
+
+    @staticmethod
+    def _contexts(symbols, scores):
+        return [{"symbol": symbol, "ticker_obj": None,
+                 "snapshot": {"ticker": symbol, "forward_pe": scores[symbol]},
+                 "history": {}}
+                for symbol in symbols]
+
+    def test_the_budget_beyond_priority_follows_staleness_not_score(self):
+        symbols = ("HIGH", "STARVED")
+        contexts = self._contexts(symbols, {"HIGH": 5.0, "STARVED": 90.0})
+        captured = []
+
+        def fake_extended(symbol, *_args, **_kwargs):
+            captured.append(symbol)
+            return {"extended_coverage": 1}
+
+        with mock.patch("fetch_advisor.yahoo_extended", side_effect=fake_extended):
+            enrich(contexts, 1, 0, priority=(), fallback_order=("STARVED", "HIGH"))
+        self.assertEqual(captured, ["STARVED"],
+                         "a one-company budget must go to the starved name, not the "
+                         "high scorer, or the ranking only rediscovers what it already liked")
+
+    def test_named_priority_still_outranks_the_staleness_order(self):
+        """Incumbents and holdings keep their guaranteed slots; only the tail changes."""
+        symbols = ("INCUMBENT", "STARVED")
+        contexts = self._contexts(symbols, {"INCUMBENT": 5.0, "STARVED": 90.0})
+        captured = []
+        with mock.patch("fetch_advisor.yahoo_extended",
+                        side_effect=lambda symbol, *a, **k: captured.append(symbol) or
+                        {"extended_coverage": 1}):
+            enrich(contexts, 1, 0, priority=("INCUMBENT",), fallback_order=("STARVED",))
+        self.assertEqual(captured, ["INCUMBENT"])
+
+    def test_score_order_remains_the_default_when_no_ordering_is_supplied(self):
+        """One explicit decision rather than a hidden one: callers opt in."""
+        symbols = ("CHEAP", "EXPENSIVE")
+        contexts = self._contexts(symbols, {"CHEAP": 5.0, "EXPENSIVE": 90.0})
+        captured = []
+        with mock.patch("fetch_advisor.yahoo_extended",
+                        side_effect=lambda symbol, *a, **k: captured.append(symbol) or
+                        {"extended_coverage": 1}):
+            enrich(contexts, 2, 0)
+        self.assertEqual(len(captured), 2)
+
+    def test_every_company_is_still_reachable_within_the_budget(self):
+        """Nothing may be dropped: the tail orders the universe, it does not truncate it."""
+        symbols = tuple(f"S{index:02d}" for index in range(10))
+        contexts = self._contexts(symbols, {symbol: 1.0 for symbol in symbols})
+        captured = []
+        with mock.patch("fetch_advisor.yahoo_extended",
+                        side_effect=lambda symbol, *a, **k: captured.append(symbol) or
+                        {"extended_coverage": 1}):
+            enrich(contexts, 10, 0, priority=("S09",), fallback_order=("S00", "S01"))
+        self.assertEqual(sorted(captured), sorted(symbols))
+        self.assertEqual(captured[:3], ["S09", "S00", "S01"])
