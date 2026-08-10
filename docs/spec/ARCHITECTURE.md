@@ -544,15 +544,23 @@ direct read this session) plus `pipeline/config/metric_registry.json`'s per-metr
   apply to this profile (e.g. THG's `ev_to_ebitda`: `"EV/EBITDA is not an insurer-standard
   valuation measure."`, `replaced_by: "price_to_book"`). Excluded from both score and coverage
   denominator (§4.1 steps 2 and 5).
-- `"replaced"`: appears as a possible status value in `suppressed_metrics()`
-  (`canonical_metrics.py:169`, checked alongside `"suppressed"`) but was not observed as a
-  distinct status string in THG's actual `metric_status` output — every suppressed entry in the
-  live example carries status `"suppressed"` with a `replaced_by` field pointing at the
-  substitute metric, rather than the substitute itself carrying a `"replaced"` status.
-  UNDETERMINED whether `"replaced"` is ever actually assigned as a metric's own status anywhere
-  in the current codebase, or whether it exists in the code as a dead branch alongside
-  `"suppressed"` at `scoring_v2.py:127` (`if status in ("suppressed", "replaced"):`). Needs a
-  grep across all producers of `metric_status` to confirm.
+- `"replaced"`: **resolved this session — a real, assignable status that happens to be
+  invisible in the current artifact.** The matrix declares it for exactly two rules
+  (`utility.free_cash_flow_yield` and `commodity_producer.peg` — confirmed by enumerating
+  every rule tuple's status in `applicability_matrix.json`), and `applicability_for` passes a
+  rule's status through verbatim (`canonical_metrics.py:146`), so those two metric/profile
+  pairs would publish `status: "replaced"`. It does not appear in the current artifact for two
+  verified reasons: (a) all 10 published `commodity_producer` rows have their `peg` status
+  **overwritten** to `"suppressed"` by the canonical-PEG special case
+  (`scoring_v2.py:119-121`, which fires whenever `calculate_peg` rejects the provider PEG —
+  true for every one of the 10, each carrying the `provider_peg_rejected` quality flag,
+  confirmed by artifact query), and (b) no `utility`-profile row is in this run's published 40
+  (profile census of the artifact: 15 general, 10 commodity_producer, 4 P&C, 3 diversified
+  insurer, 3 bank, 2 life insurer, 2 profitable biotech, 1 semiconductor). Behaviorally,
+  `"replaced"` and `"suppressed"` are identical everywhere they are consumed — both
+  membership tests (`canonical_metrics.py:169`, `scoring_v2.py:127`) treat them as one set —
+  so the distinction is purely descriptive, and finding 5 (§10.2) applies to it in full: the
+  named replacement inherits no weight either way.
 - `"unavailable"`: the metric is applicable to this profile (not suppressed) but its value is
   simply missing this run — e.g. THG's `price_to_sales`: `status: "unavailable"`, no
   applicability reason given (`reason: null`). This is a data-completeness gap, not a
@@ -1214,14 +1222,13 @@ follow-up checklist, explicitly not as confirmed findings.
 Consolidated from every UNDETERMINED marker above, plus items not yet touched at all.
 Resolved since the checkpoint draft (and removed from this list): per-modifier caps (§6.5, now
 all directly verified), `ranking_weights` config presence (§6.1, confirmed in `settings.json`),
-the 74.7 vs. 74.5 discrepancy (§10.2 item 8, root-caused), and the two `suppressed_metrics`
-lists (§10.2 item 9, root-caused). Still open:
+the 74.7 vs. 74.5 discrepancy (§10.2 item 8, root-caused), the two `suppressed_metrics`
+lists (§10.2 item 9, root-caused), and the `"replaced"` status question (§5 — real but
+currently invisible, behaviorally identical to `"suppressed"`). Still open:
 
 - Full TTM/annual/quarterly period-convention audit across all ~29 fundamental metrics (§4.3).
 - `CrossSectionalNormalizer`'s internal winsorization/tie-handling logic, beyond what's visible
   in one published example row (§4.4).
-- Whether `"replaced"` is ever assigned as an actual metric status anywhere in current code, or
-  is dead code alongside `"suppressed"` (§5).
 - Whether `business_profiles.json`'s missing `semiconductor`/`other_pre_profit` entries cause
   any visible degradation (§10.2 item 6). Partially narrowed this session: the miss surfaces
   through `scorer.applicability`'s `profile_contract` lookup (`scorer.py:255-259`), where an
