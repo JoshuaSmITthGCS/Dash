@@ -1,0 +1,3295 @@
+{
+ "compiled_at": "2026-08-10",
+ "verified_against": {
+  "branch": "claude/valuesignal-spec-audit-qf2wni",
+  "artifact": "public/data/advisor.json",
+  "artifact_generated_at": "2026-08-10T05:23:37.933120+00:00",
+  "artifact_schema_version": 6,
+  "artifact_model_version": "3.2.0",
+  "published_research_rows": 40
+ },
+ "evidence_policy": "Every claim verified by direct read of the working tree; prior audits under research/ were not used as sources. UNDETERMINED marks anything not verifiable from code/config/artifact.",
+ "composite_weights": {
+  "source": "pipeline/config/settings.json:1104-1109 top-level ranking_weights key (present; advisor_engine.py:32 DEFAULT_RANKING_WEIGHTS is an identical fallback merged under it at advisor_engine.py:42)",
+  "weights": {
+   "fundamentals": 0.78,
+   "market_behavior": 0.18,
+   "news_sentiment": 0.04
+  },
+  "renormalization": "blend_research_components (advisor_engine.py:846-867) drops any None component and renormalizes over surviving weights; if none survive, raw=0.0",
+  "coverage_scaling": "base = raw * (0.8 + 0.2*data_coverage); data_coverage = 0.65*fund + 0.25*mkt + 0.10*news coverage (advisor_engine.py:838-843,861)",
+  "modifier_cap": "combined post-blend modifiers clamped to +/-15 points (advisor_engine.py:551-552)",
+  "fundamental_confidence_multiplier": "inside the fundamentals component itself: total = raw * (0.65 + 0.35*coverage) (scorer.py:615-616)"
+ },
+ "market_behavior_weights": {
+  "source": "pipeline/config/settings.json:1300-1308 market_behavior.weights (advisor_engine.py:58-59 merges over DEFAULT_TECHNICAL_WEIGHTS)",
+  "champion_short_horizon_treatment": "neutral",
+  "weights": [
+   {
+    "id": "momentum_12_1",
+    "configured_weight": 0.3,
+    "nominal_composite_weight_0.18x": 0.054,
+    "champion_status": "included",
+    "champion_effective_composite_weight_full_coverage": 0.06
+   },
+   {
+    "id": "risk_adjusted",
+    "configured_weight": 0.26,
+    "nominal_composite_weight_0.18x": 0.0468,
+    "champion_status": "included",
+    "champion_effective_composite_weight_full_coverage": 0.052
+   },
+   {
+    "id": "relative_strength",
+    "configured_weight": 0.16,
+    "nominal_composite_weight_0.18x": 0.0288,
+    "champion_status": "excluded (short_horizon_treatment='neutral')",
+    "champion_effective_composite_weight_full_coverage": 0.0
+   },
+   {
+    "id": "drawdown_resilience",
+    "configured_weight": 0.14,
+    "nominal_composite_weight_0.18x": 0.0252,
+    "champion_status": "included",
+    "champion_effective_composite_weight_full_coverage": 0.028
+   },
+   {
+    "id": "volume_confirmation",
+    "configured_weight": 0.08,
+    "nominal_composite_weight_0.18x": 0.0144,
+    "champion_status": "included",
+    "champion_effective_composite_weight_full_coverage": 0.016
+   },
+   {
+    "id": "low_beta",
+    "configured_weight": 0.06,
+    "nominal_composite_weight_0.18x": 0.0108,
+    "champion_status": "included",
+    "champion_effective_composite_weight_full_coverage": 0.012
+   },
+   {
+    "id": "technical_extended",
+    "configured_weight": 0.06,
+    "nominal_composite_weight_0.18x": 0.0108,
+    "champion_status": "included",
+    "champion_effective_composite_weight_full_coverage": 0.012
+   }
+  ]
+ },
+ "category_weights": {
+  "source": "pipeline/config/settings.json:594-601 fundamentals.category_weights",
+  "weights": {
+   "valuation": 0.28,
+   "profitability": 0.26,
+   "financial_health": 0.15,
+   "growth": 0.11,
+   "capital_allocation": 0.1,
+   "accounting_quality": 0.1
+  },
+  "category_effective_composite": {
+   "valuation": 0.2184,
+   "profitability": 0.2028,
+   "financial_health": 0.117,
+   "growth": 0.0858,
+   "capital_allocation": 0.078,
+   "accounting_quality": 0.078
+  }
+ },
+ "metrics": [
+  {
+   "id": "peg",
+   "category": "valuation",
+   "weight_in_category": 0.09,
+   "effective_composite_weight": 0.01966,
+   "scoring_function": "band_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 75,
+     "<=fair_max": 50,
+     "<=poor_max": 25,
+     "beyond": 10,
+     "negative_value": 15
+    },
+    "bands": {
+     "excellent_max": 1.0,
+     "good_max": 1.5,
+     "fair_max": 2.0,
+     "poor_max": 3.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Forward P/E divided by expected annual EPS growth expressed in percentage points.",
+   "registry_id": "peg",
+   "registry_entry": "metrics",
+   "source_fields": "yahoo quote info.pegRatio via providers.map_quote (providers.py:281) / Alpha Vantage OVERVIEW PEGRatio (providers.py:353, fetch_advisor.py:621); v2 layer recomputes canonically from forward_pe + expected_eps_growth (canonical_metrics.calculate_peg:81-92) and rejects provider PEG (scoring_v2.py:89-96)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "forward_pe",
+     "reason": "Universal PEG is not comparable for leveraged financial institutions."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "forward_pe",
+     "reason": "Universal PEG does not normalize underwriting cycles or reserve development."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "forward_pe",
+     "reason": "Universal PEG does not normalize underwriting cycles or reserve development."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "forward_pe",
+     "reason": "Universal PEG does not normalize underwriting cycles or reserve development."
+    },
+    "reit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_ffo",
+     "reason": "EPS is distorted by property depreciation."
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "suppressed",
+     "matrix_status": "replaced",
+     "replaced_by": "midcycle_ev_ebitda",
+     "reason": "Point estimates are dominated by commodity-cycle assumptions."
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "cash_runway_months",
+     "reason": "No positive earnings denominator."
+    },
+    "other_pre_profit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "gross_margin_and_runway",
+     "reason": "No positive earnings denominator."
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 9,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 18
+  },
+  {
+   "id": "forward_pe",
+   "category": "valuation",
+   "weight_in_category": 0.15,
+   "effective_composite_weight": 0.03276,
+   "scoring_function": "multiple_score",
+   "cutoffs": {
+    "tiers": {
+     "nonpositive": 5,
+     "<suspicious_below": 60,
+     "<=cheap_max": 100,
+     "<=healthy_max": 80,
+     "<=elevated_max": 45,
+     "beyond": 15
+    },
+    "bands_by_sector": {
+     "Technology": {
+      "suspicious_below": 8,
+      "cheap_max": 25,
+      "healthy_max": 35,
+      "elevated_max": 50
+     },
+     "Consumer Defensive": {
+      "suspicious_below": 6,
+      "cheap_max": 15,
+      "healthy_max": 20,
+      "elevated_max": 28
+     },
+     "Utilities": {
+      "suspicious_below": 6,
+      "cheap_max": 15,
+      "healthy_max": 20,
+      "elevated_max": 28
+     },
+     "Financial Services": {
+      "suspicious_below": 5,
+      "cheap_max": 12,
+      "healthy_max": 18,
+      "elevated_max": 25
+     },
+     "Financials": {
+      "suspicious_below": 5,
+      "cheap_max": 12,
+      "healthy_max": 18,
+      "elevated_max": 25
+     },
+     "Healthcare": {
+      "suspicious_below": 6,
+      "cheap_max": 16,
+      "healthy_max": 25,
+      "elevated_max": 38
+     },
+     "default": {
+      "suspicious_below": 5,
+      "cheap_max": 15,
+      "healthy_max": 25,
+      "elevated_max": 40
+     }
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Current price divided by next-fiscal-year consensus diluted EPS.",
+   "registry_id": "forward_pe",
+   "registry_entry": "metrics",
+   "source_fields": "yahoo quote info.forwardPE (canonical_metrics.py:233, providers.py:280); Alpha Vantage OVERVIEW ForwardPE fallback (providers.py:352)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_ffo",
+     "reason": "P/FFO is the standard earnings multiple for REITs."
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "cash_runway_months",
+     "reason": "No positive consensus earnings."
+    },
+    "other_pre_profit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "gross_margin_and_runway",
+     "reason": "No positive consensus earnings."
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 4,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40
+  },
+  {
+   "id": "sales_multiple",
+   "category": "valuation",
+   "weight_in_category": 0.09,
+   "effective_composite_weight": 0.01966,
+   "scoring_function": "multiple_score (via sales_multiple_score)",
+   "cutoffs": {
+    "tiers": {
+     "nonpositive": 5,
+     "<suspicious_below": 60,
+     "<=cheap_max": 100,
+     "<=healthy_max": 80,
+     "<=elevated_max": 45,
+     "beyond": 15
+    },
+    "preferred_basis": "ev_to_sales (statement-enriched shortlist), fallback price_to_sales",
+    "bands_ev_to_sales_by_sector": {
+     "Technology": {
+      "cheap_max": 5.5,
+      "healthy_max": 15.0,
+      "elevated_max": 26.0
+     },
+     "Healthcare": {
+      "cheap_max": 2.5,
+      "healthy_max": 5.5,
+      "elevated_max": 11.0
+     },
+     "Industrials": {
+      "cheap_max": 1.4,
+      "healthy_max": 3.0,
+      "elevated_max": 5.5
+     },
+     "Consumer Cyclical": {
+      "cheap_max": 1.4,
+      "healthy_max": 3.5,
+      "elevated_max": 6.5
+     },
+     "Consumer Defensive": {
+      "cheap_max": 1.4,
+      "healthy_max": 3.0,
+      "elevated_max": 4.5
+     },
+     "default": {
+      "cheap_max": 1.5,
+      "healthy_max": 3.5,
+      "elevated_max": 8.5
+     }
+    },
+    "bands_price_to_sales_by_sector": {
+     "Technology": {
+      "cheap_max": 5.0,
+      "healthy_max": 15.0,
+      "elevated_max": 25.0
+     },
+     "Healthcare": {
+      "cheap_max": 2.0,
+      "healthy_max": 5.0,
+      "elevated_max": 10.0
+     },
+     "Industrials": {
+      "cheap_max": 1.0,
+      "healthy_max": 2.5,
+      "elevated_max": 5.0
+     },
+     "Consumer Cyclical": {
+      "cheap_max": 1.0,
+      "healthy_max": 3.0,
+      "elevated_max": 6.0
+     },
+     "Consumer Defensive": {
+      "cheap_max": 1.0,
+      "healthy_max": 2.5,
+      "elevated_max": 4.0
+     },
+     "default": {
+      "cheap_max": 1.0,
+      "healthy_max": 3.0,
+      "elevated_max": 8.0
+     }
+    },
+    "note": "ev_to_sales/price_to_sales sector tables carry no suspicious_below key, so the value-trap tier never fires for the sales multiple"
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Market capitalization divided by TTM revenue.",
+   "registry_id": "price_to_sales",
+   "registry_entry": "metric_inventory",
+   "source_fields": "ev_to_sales derived from enterpriseValue (or marketCap+totalDebt-cash) / revenue (fundamentals_extended.py:479-511); fallback yahoo info.priceToSalesTrailing12Months (canonical_metrics.py:237)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_tangible_book",
+     "reason": "Interest and fee income is not comparable to industrial sales."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Premium revenue is not comparable to industrial sales, and EV is not an insurer measure."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Premium revenue is not comparable to industrial sales, and EV is not an insurer measure."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Premium revenue is not comparable to industrial sales, and EV is not an insurer measure."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "price_to_book",
+   "category": "valuation",
+   "weight_in_category": 0.05,
+   "effective_composite_weight": 0.01092,
+   "scoring_function": "band_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 75,
+     "<=fair_max": 50,
+     "<=poor_max": 25,
+     "beyond": 10,
+     "negative_value": 15
+    },
+    "bands": {
+     "excellent_max": 1.0,
+     "good_max": 3.0,
+     "fair_max": 6.0,
+     "poor_max": 10.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Market capitalization divided by common shareholders equity from the latest filing.",
+   "registry_id": "price_to_book",
+   "registry_entry": "metrics",
+   "source_fields": "yahoo quote info.priceToBook (canonical_metrics.py:236, providers.py:281); Alpha Vantage OVERVIEW PriceToBookRatio fallback (providers.py:354)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "cash_runway_months",
+     "reason": "Book value does not capture pipeline probability."
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 2,
+   "required_for_score_in": [
+    "diversified_insurer",
+    "life_insurer",
+    "property_casualty_insurer",
+    "reit"
+   ],
+   "published_nonnull_rows_of_40": 40
+  },
+  {
+   "id": "price_to_tangible_book",
+   "category": "valuation",
+   "weight_in_category": 0.05,
+   "effective_composite_weight": 0.01092,
+   "scoring_function": "band_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 75,
+     "<=fair_max": 50,
+     "<=poor_max": 25,
+     "beyond": 10,
+     "negative_value": 15
+    },
+    "bands": {
+     "excellent_max": 1.5,
+     "good_max": 3.0,
+     "fair_max": 6.0,
+     "poor_max": 12.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Market capitalization divided by tangible common equity.",
+   "registry_id": "price_to_tangible_book",
+   "registry_entry": "metric_inventory",
+   "source_fields": "marketCap / (equity - goodwill - intangibles) from annual balance sheet (fundamentals_extended.py:492-514)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [
+    "bank"
+   ],
+   "published_nonnull_rows_of_40": 22,
+   "conditional_gate": "Additionally suppressed unless sector is in scorer.TANGIBLE_BOOK_SECTORS (Financial Services/Financials/Financial/Real Estate/Utilities/Energy/Basic Materials/Materials/Industrials) or the profile lists it as a replacement metric (scorer.py:180-181, 253-259). Snapshot-dependent, not expressible per profile alone."
+  },
+  {
+   "id": "ev_to_ebitda",
+   "category": "valuation",
+   "weight_in_category": 0.27,
+   "effective_composite_weight": 0.05897,
+   "scoring_function": "multiple_score",
+   "cutoffs": {
+    "tiers": {
+     "nonpositive": 5,
+     "<suspicious_below": 60,
+     "<=cheap_max": 100,
+     "<=healthy_max": 80,
+     "<=elevated_max": 45,
+     "beyond": 15
+    },
+    "bands": {
+     "suspicious_below": 3.0,
+     "cheap_max": 10.0,
+     "healthy_max": 15.0,
+     "elevated_max": 22.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Enterprise value divided by positive TTM EBITDA.",
+   "registry_id": "ev_to_ebitda",
+   "registry_entry": "metric_inventory",
+   "source_fields": "EV / EBITDA, statement EBITDA or info.ebitda; EV from info.enterpriseValue or marketCap+(totalDebt or 0)-(cash or 0) (fundamentals_extended.py:479-504)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Enterprise value is economically misleading for banks."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "EV/EBITDA is not an insurer-standard valuation measure."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "EV/EBITDA is not an insurer-standard valuation measure."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "EV/EBITDA is not an insurer-standard valuation measure."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "ev_to_ebit",
+   "category": "valuation",
+   "weight_in_category": 0.12,
+   "effective_composite_weight": 0.02621,
+   "scoring_function": "multiple_score",
+   "cutoffs": {
+    "tiers": {
+     "nonpositive": 5,
+     "<suspicious_below": 60,
+     "<=cheap_max": 100,
+     "<=healthy_max": 80,
+     "<=elevated_max": 45,
+     "beyond": 15
+    },
+    "bands": {
+     "suspicious_below": 4.0,
+     "cheap_max": 12.0,
+     "healthy_max": 18.0,
+     "elevated_max": 26.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "UNDETERMINED - no entry in pipeline/config/metric_registry.json (see source_fields for the code-level derivation)",
+   "registry_id": "ev_to_ebit",
+   "registry_entry": "MISSING",
+   "source_fields": "EV / statement EBIT (fundamentals_extended.py:488,508)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_tangible_book",
+     "reason": "Enterprise value is economically misleading for banks."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Enterprise value is economically misleading for insurers, on the same grounds as EV/EBITDA."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Enterprise value is economically misleading for insurers, on the same grounds as EV/EBITDA."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Enterprise value is economically misleading for insurers, on the same grounds as EV/EBITDA."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "ev_to_fcf",
+   "category": "valuation",
+   "weight_in_category": 0.18,
+   "effective_composite_weight": 0.03931,
+   "scoring_function": "multiple_score",
+   "cutoffs": {
+    "tiers": {
+     "nonpositive": 5,
+     "<suspicious_below": 60,
+     "<=cheap_max": 100,
+     "<=healthy_max": 80,
+     "<=elevated_max": 45,
+     "beyond": 15
+    },
+    "bands": {
+     "suspicious_below": 5.0,
+     "cheap_max": 18.0,
+     "healthy_max": 28.0,
+     "elevated_max": 45.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Enterprise value divided by positive TTM free cash flow.",
+   "registry_id": "ev_to_fcf",
+   "registry_entry": "metric_inventory",
+   "source_fields": "EV / statement Free Cash Flow or info.freeCashflow (fundamentals_extended.py:490,512)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_tangible_book",
+     "reason": "Industrial FCF is not comparable for banks."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Industrial FCF is not comparable for insurers."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Industrial FCF is not comparable for insurers."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Industrial FCF is not comparable for insurers."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "return_on_equity",
+   "category": "profitability",
+   "weight_in_category": 0.1,
+   "effective_composite_weight": 0.02028,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.2,
+     "good_min": 0.15,
+     "fair_min": 0.1,
+     "weak_min": 0.05
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "Net income available to common shareholders divided by average common equity.",
+   "registry_id": "return_on_equity",
+   "registry_entry": "metric_inventory",
+   "source_fields": "yahoo quote info.returnOnEquity (canonical_metrics.py:238); Alpha Vantage OVERVIEW ReturnOnEquityTTM fallback (providers.py:355, fetch_advisor.py:622)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 39
+  },
+  {
+   "id": "return_on_invested_capital",
+   "category": "profitability",
+   "weight_in_category": 0.26,
+   "effective_composite_weight": 0.05273,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.2,
+     "good_min": 0.13,
+     "fair_min": 0.08,
+     "weak_min": 0.04
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "NOPAT divided by average invested operating capital.",
+   "registry_id": "return_on_invested_capital",
+   "registry_entry": "metric_inventory",
+   "source_fields": "EBIT*(1-effective tax rate)/avg(total_debt+equity-cash), annual statements (fundamentals_extended.derive_roic:168-184); tax rate falls back to 0.21 when unreadable (line 161-165)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "return_on_equity",
+     "reason": "Debt is an operating input for banks."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "normalized_roe",
+     "reason": "Insurer leverage and float make generic ROIC misleading."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "normalized_roe",
+     "reason": "Insurer leverage and float make generic ROIC misleading."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "normalized_roe",
+     "reason": "Insurer leverage and float make generic ROIC misleading."
+    },
+    "reit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "same_store_noi_growth",
+     "reason": "Generic ROIC is distorted by property accounting."
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "pipeline_stage",
+     "reason": "Pre-profit biotechnology has no stable operating-return denominator."
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 7,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "gross_profits_to_assets",
+   "category": "profitability",
+   "weight_in_category": 0.22,
+   "effective_composite_weight": 0.04462,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.33,
+     "good_min": 0.22,
+     "fair_min": 0.13,
+     "weak_min": 0.06
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "UNDETERMINED - no entry in pipeline/config/metric_registry.json (see source_fields for the code-level derivation)",
+   "registry_id": "gross_profits_to_assets",
+   "registry_entry": "MISSING",
+   "source_fields": "Gross Profit (or revenue-cost_of_revenue) / avg total assets, annual statements (fundamentals_extended.py:341-357)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "net_interest_margin",
+     "reason": "Banks report no gross-profit line."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "underwriting_income",
+     "reason": "Insurers report no gross-profit line; premiums less claims is underwriting income."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "underwriting_income",
+     "reason": "Insurers report no gross-profit line; premiums less claims is underwriting income."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "underwriting_income",
+     "reason": "Insurers report no gross-profit line; premiums less claims is underwriting income."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "lifting_production_cost",
+     "reason": "Gross profitability moves with realized price rather than asset productivity."
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 6,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 17
+  },
+  {
+   "id": "cash_conversion",
+   "category": "profitability",
+   "weight_in_category": 0.16,
+   "effective_composite_weight": 0.03245,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 1.0,
+     "good_min": 0.8,
+     "fair_min": 0.6,
+     "weak_min": 0.35
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "TTM free cash flow divided by positive TTM net income.",
+   "registry_id": "cash_conversion",
+   "registry_entry": "metric_inventory",
+   "source_fields": "FCF (or operating_cash_flow - |capex or 0|) / positive net income, annual statements (fundamentals_extended.py:187-196)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "combined_ratio",
+     "reason": "Claims reserves break industrial earnings-to-cash comparisons."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "combined_ratio",
+     "reason": "Claims reserves break industrial earnings-to-cash comparisons."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "combined_ratio",
+     "reason": "Claims reserves break industrial earnings-to-cash comparisons."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 4,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 31
+  },
+  {
+   "id": "free_cash_flow_yield",
+   "category": "profitability",
+   "weight_in_category": 0.16,
+   "effective_composite_weight": 0.03245,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.08,
+     "good_min": 0.05,
+     "fair_min": 0.02,
+     "weak_min": 0.0
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "TTM free cash flow divided by point-in-time market capitalization.",
+   "registry_id": "free_cash_flow_yield",
+   "registry_entry": "metrics",
+   "source_fields": "info.freeCashflow / info.marketCap (canonical_metrics.py:269-275)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "price_to_book",
+     "reason": "Bank cash flow statements do not describe distributable owner cash like industrial FCF."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "total_capital_return_yield",
+     "reason": "Industrial FCF is distorted by premiums, claims, reserves and investment flows."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "total_capital_return_yield",
+     "reason": "Industrial FCF is distorted by premiums, claims, reserves and investment flows."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "total_capital_return_yield",
+     "reason": "Industrial FCF is distorted by premiums, claims, reserves and investment flows."
+    },
+    "reit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "affo_yield",
+     "reason": "AFFO better reflects recurring property cash generation."
+    },
+    "utility": {
+     "status": "suppressed",
+     "matrix_status": "replaced",
+     "replaced_by": "funds_from_operations_yield",
+     "reason": "Regulated utilities commonly fund large mandated capital programs."
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "cash_runway_months",
+     "reason": "Cash burn should be evaluated as runway."
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 8,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "profit_margin",
+   "category": "profitability",
+   "weight_in_category": 0.1,
+   "effective_composite_weight": 0.02028,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.2,
+     "good_min": 0.12,
+     "fair_min": 0.06,
+     "weak_min": 0.0
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "TTM net income divided by TTM revenue.",
+   "registry_id": "profit_margin",
+   "registry_entry": "metric_inventory",
+   "source_fields": "yahoo quote info.profitMargins (canonical_metrics.py:239); Alpha Vantage OVERVIEW ProfitMargin fallback (providers.py:356)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40
+  },
+  {
+   "id": "debt_to_equity",
+   "category": "financial_health",
+   "weight_in_category": 0.18,
+   "effective_composite_weight": 0.02106,
+   "scoring_function": "band_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 75,
+     "<=fair_max": 50,
+     "<=poor_max": 25,
+     "beyond": 10,
+     "negative_value": 15
+    },
+    "bands": {
+     "excellent_max": 0.5,
+     "good_max": 1.0,
+     "fair_max": 2.0,
+     "poor_max": 3.0
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Interest-bearing debt divided by common equity.",
+   "registry_id": "debt_to_equity",
+   "registry_entry": "metric_inventory",
+   "source_fields": "yahoo quote info.debtToEquity / 100 (canonical_metrics.py:261-267)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [
+    "bank",
+    "diversified_insurer",
+    "life_insurer",
+    "property_casualty_insurer"
+   ],
+   "published_nonnull_rows_of_40": 36
+  },
+  {
+   "id": "current_ratio",
+   "category": "financial_health",
+   "weight_in_category": 0.1,
+   "effective_composite_weight": 0.0117,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 2.0,
+     "good_min": 1.5,
+     "fair_min": 1.0,
+     "weak_min": 0.75
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "multiple",
+   "definition": "Current assets divided by current liabilities for the same filing period.",
+   "registry_id": "current_ratio",
+   "registry_entry": "metrics",
+   "source_fields": "yahoo quote info.currentRatio (canonical_metrics.py:235)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": null,
+     "reason": "Bank liquidity is governed by deposits, liquid assets and regulatory ratios."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "risk_based_capital_ratio",
+     "reason": "Insurer liquidity and solvency require statutory measures."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "risk_based_capital_ratio",
+     "reason": "Insurer liquidity and solvency require statutory measures."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "risk_based_capital_ratio",
+     "reason": "Insurer liquidity and solvency require statutory measures."
+    },
+    "reit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "fixed_charge_coverage",
+     "reason": "REIT liquidity is better assessed through debt maturity and coverage."
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 6,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "interest_coverage",
+   "category": "financial_health",
+   "weight_in_category": 0.3,
+   "effective_composite_weight": 0.0351,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 12.0,
+     "good_min": 6.0,
+     "fair_min": 3.0,
+     "weak_min": 1.5
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "multiple",
+   "definition": "Operating income divided by interest expense for a matched period.",
+   "registry_id": "interest_coverage",
+   "registry_entry": "metric_inventory",
+   "source_fields": "statement EBIT / |interest expense|; 99.0 imputed when no interest expense and EBIT>0 (fundamentals_extended.py:259-266)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 37
+  },
+  {
+   "id": "net_debt_to_ebitda",
+   "category": "financial_health",
+   "weight_in_category": 0.24,
+   "effective_composite_weight": 0.02808,
+   "scoring_function": "lower_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 80,
+     "<=fair_max": 55,
+     "<=poor_max": 30,
+     "beyond": 10
+    },
+    "bands": {
+     "excellent_max": 0.5,
+     "good_max": 1.5,
+     "fair_max": 3.0,
+     "poor_max": 4.5
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "multiple",
+   "definition": "Debt less cash divided by positive TTM EBITDA.",
+   "registry_id": "net_debt_to_ebitda",
+   "registry_entry": "metric_inventory",
+   "source_fields": "(total_debt - (cash or 0)) / positive EBITDA, statements with info fallbacks (fundamentals_extended.py:269-277)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "capital_ratio",
+     "reason": "Deposits and borrowings are operating funding."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "debt_to_capital",
+     "reason": "EBITDA leverage is not an insurer solvency measure."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "debt_to_capital",
+     "reason": "EBITDA leverage is not an insurer solvency measure."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "debt_to_capital",
+     "reason": "EBITDA leverage is not an insurer solvency measure."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "altman_z",
+   "category": "financial_health",
+   "weight_in_category": 0.18,
+   "effective_composite_weight": 0.02106,
+   "scoring_function": "altman_score (higher_is_better_score on variant bands)",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands_by_variant": {
+     "z": {
+      "excellent_min": 3.0,
+      "good_min": 2.6,
+      "fair_min": 1.8,
+      "weak_min": 1.1
+     },
+     "z_double_prime": {
+      "excellent_min": 2.6,
+      "good_min": 2.0,
+      "fair_min": 1.1,
+      "weak_min": 0.5
+     }
+    },
+    "variant_selection": "sector-based (fundamentals_extended.altman_variant_for): financials -> None (suppressed); manufacturer_sectors -> z; else z_double_prime"
+   },
+   "direction": "higher_is_better",
+   "unit": "score_0_100",
+   "definition": "Declared Altman model using matched annual inputs.",
+   "registry_id": "altman_z",
+   "registry_entry": "metric_inventory",
+   "source_fields": "annual statements + marketCap; variant by sector; partial sum over available terms with minimum term count 4 (z) / 3 (z'') (fundamentals_extended.py:287-338)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "capital_ratio",
+     "reason": "Industrial bankruptcy model is not calibrated for banks."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "risk_based_capital_ratio",
+     "reason": "Industrial bankruptcy model is not calibrated for insurers."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "risk_based_capital_ratio",
+     "reason": "Industrial bankruptcy model is not calibrated for insurers."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "risk_based_capital_ratio",
+     "reason": "Industrial bankruptcy model is not calibrated for insurers."
+    },
+    "reit": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "fixed_charge_coverage",
+     "reason": "Industrial bankruptcy model is not calibrated for REITs."
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "cash_runway_months",
+     "reason": "Industrial distress scores do not represent pipeline and binary-event risk."
+    },
+    "pre_profit_biotechnology": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "cash_runway_months",
+     "reason": "Industrial distress scores do not represent clinical-stage solvency or binary-event risk."
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 8,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 26
+  },
+  {
+   "id": "revenue_growth",
+   "category": "growth",
+   "weight_in_category": 0.26,
+   "effective_composite_weight": 0.02231,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.2,
+     "good_min": 0.1,
+     "fair_min": 0.03,
+     "weak_min": 0.0
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "Latest TTM revenue versus the preceding TTM revenue.",
+   "registry_id": "trailing_revenue_growth",
+   "registry_entry": "metrics",
+   "source_fields": "yahoo quote info.revenueGrowth (canonical_metrics.py:240); Alpha Vantage OVERVIEW QuarterlyRevenueGrowthYOY fallback (providers.py:357, fetch_advisor.py:624)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40,
+   "v2_registry_alias": "trailing_revenue_growth"
+  },
+  {
+   "id": "earnings_growth",
+   "category": "growth",
+   "weight_in_category": 0.2,
+   "effective_composite_weight": 0.01716,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.2,
+     "good_min": 0.1,
+     "fair_min": 0.03,
+     "weak_min": 0.0
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "Latest TTM diluted EPS versus preceding TTM diluted EPS.",
+   "registry_id": "trailing_eps_growth",
+   "registry_entry": "metric_inventory",
+   "source_fields": "yahoo quote info.earningsGrowth (canonical_metrics.py:241, flagged not_forward_growth); Alpha Vantage OVERVIEW QuarterlyEarningsGrowthYOY fallback (providers.py:358)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40,
+   "v2_registry_alias": "trailing_eps_growth"
+  },
+  {
+   "id": "fcf_growth_3y",
+   "category": "growth",
+   "weight_in_category": 0.22,
+   "effective_composite_weight": 0.01888,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.15,
+     "good_min": 0.08,
+     "fair_min": 0.02,
+     "weak_min": -0.05
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "Three-year compound annual growth in fiscal-year free cash flow.",
+   "registry_id": "fcf_growth_3y",
+   "registry_entry": "metric_inventory",
+   "source_fields": "CAGR over all annual Free Cash Flow periods on file, minimum 3 (fundamentals_extended.py:199-204)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "free_cash_flow_breakeven",
+     "reason": "Three-year FCF growth for a producer tracks the commodity cycle, not capital discipline."
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 2,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "operating_margin_trend",
+   "category": "growth",
+   "weight_in_category": 0.16,
+   "effective_composite_weight": 0.01373,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.02,
+     "good_min": 0.005,
+     "fair_min": -0.005,
+     "weak_min": -0.02
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "Current operating margin less comparable prior-period margin.",
+   "registry_id": "operating_margin_trend",
+   "registry_entry": "metric_inventory",
+   "source_fields": "operating_income/revenue now minus prior year, annual statements (fundamentals_extended.py:214-254)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "normalized_midcycle_margin",
+     "reason": "Trailing margin trend for a producer is the realized commodity price, not structural improvement."
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 2,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 27
+  },
+  {
+   "id": "earnings_surprise",
+   "category": "growth",
+   "weight_in_category": 0.16,
+   "effective_composite_weight": 0.01373,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 8.0,
+     "good_min": 3.0,
+     "fair_min": 0.0,
+     "weak_min": -5.0
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "UNDETERMINED - no entry in pipeline/config/metric_registry.json (see source_fields for the code-level derivation)",
+   "registry_id": "earnings_surprise",
+   "registry_entry": "MISSING",
+   "source_fields": "yfinance earnings_dates surprise column, last 4 quarters weighted 0.4/0.3/0.2/0.1 (fundamentals_extended.py:519-572); collection opt-in via ENABLE_EARNINGS_SURPRISE (fetch_advisor.py:472)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 0
+  },
+  {
+   "id": "net_buyback_yield",
+   "category": "capital_allocation",
+   "weight_in_category": 0.34,
+   "effective_composite_weight": 0.02652,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 0.03,
+     "good_min": 0.01,
+     "fair_min": 0.0,
+     "weak_min": -0.02
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "decimal",
+   "definition": "Reduction in diluted share count divided by beginning diluted share count.",
+   "registry_id": "net_buyback_yield",
+   "registry_entry": "metric_inventory",
+   "source_fields": "-(share count change) from shares_outstanding or diluted_shares, annual balance (fundamentals_extended.py:453-469)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40
+  },
+  {
+   "id": "stock_comp_to_revenue",
+   "category": "capital_allocation",
+   "weight_in_category": 0.28,
+   "effective_composite_weight": 0.02184,
+   "scoring_function": "lower_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 80,
+     "<=fair_max": 55,
+     "<=poor_max": 30,
+     "beyond": 10
+    },
+    "bands": {
+     "excellent_max": 0.01,
+     "good_max": 0.03,
+     "fair_max": 0.07,
+     "poor_max": 0.12
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "decimal",
+   "definition": "Stock-based compensation divided by matched-period revenue.",
+   "registry_id": "stock_comp_to_revenue",
+   "registry_entry": "metric_inventory",
+   "source_fields": "|Stock Based Compensation| / revenue, annual statements (fundamentals_extended.py:462-471)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 30
+  },
+  {
+   "id": "capex_to_depreciation",
+   "category": "capital_allocation",
+   "weight_in_category": 0.16,
+   "effective_composite_weight": 0.01248,
+   "scoring_function": "range_score",
+   "cutoffs": {
+    "tiers": {
+     "in_ideal": 100,
+     "in_acceptable": 65,
+     "outside": 25
+    },
+    "bands": {
+     "ideal_min": 0.9,
+     "ideal_max": 1.8,
+     "acceptable_min": 0.6,
+     "acceptable_max": 2.8
+    }
+   },
+   "direction": "ideal_range",
+   "unit": "multiple",
+   "definition": "Capital expenditures divided by depreciation and amortization for a matched period.",
+   "registry_id": "capex_to_depreciation",
+   "registry_entry": "metric_inventory",
+   "source_fields": "|capex| / |depreciation|, annual cash-flow statement (fundamentals_extended.py:465-473)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "efficiency_ratio",
+     "reason": "Physical reinvestment is not the bank value-creation engine."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "book_value_growth",
+     "reason": "Physical reinvestment is not the insurer value-creation engine."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "book_value_growth",
+     "reason": "Physical reinvestment is not the insurer value-creation engine."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "book_value_growth",
+     "reason": "Physical reinvestment is not the insurer value-creation engine."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "gross_margin_cycle",
+     "reason": "A low capex-to-depreciation ratio is structural for a fabless designer that outsources fabrication, not evidence of under-investment. Distinguishing fabless from integrated manufacturers requires a filing parse this pipeline does not yet do, so the interpretation is suppressed for the whole industry rather than applied wrongly to part of it."
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 6,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 27
+  },
+  {
+   "id": "asset_growth",
+   "category": "capital_allocation",
+   "weight_in_category": 0.22,
+   "effective_composite_weight": 0.01716,
+   "scoring_function": "range_score",
+   "cutoffs": {
+    "tiers": {
+     "in_ideal": 100,
+     "in_acceptable": 65,
+     "outside": 25
+    },
+    "bands": {
+     "_comment": "Investment factor: conservative asset growth beats aggressive. Shrinkage is not rewarded above steady reinvestment, so this is a range, not a floor.",
+     "ideal_min": -0.02,
+     "ideal_max": 0.12,
+     "acceptable_min": -0.12,
+     "acceptable_max": 0.25
+    }
+   },
+   "direction": "ideal_range",
+   "unit": "decimal",
+   "definition": "UNDETERMINED - no entry in pipeline/config/metric_registry.json (see source_fields for the code-level derivation)",
+   "registry_id": "asset_growth",
+   "registry_entry": "MISSING",
+   "source_fields": "total assets now / prior year - 1, annual balance (fundamentals_extended.py:360-371)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40
+  },
+  {
+   "id": "accruals_ratio",
+   "category": "accounting_quality",
+   "weight_in_category": 0.22,
+   "effective_composite_weight": 0.01716,
+   "scoring_function": "lower_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 80,
+     "<=fair_max": 55,
+     "<=poor_max": 30,
+     "beyond": 10
+    },
+    "bands": {
+     "excellent_max": -0.02,
+     "good_max": 0.03,
+     "fair_max": 0.08,
+     "poor_max": 0.15
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "decimal",
+   "definition": "Net income less operating cash flow divided by average total assets.",
+   "registry_id": "accruals_ratio",
+   "registry_entry": "metric_inventory",
+   "source_fields": "(net income - operating cash flow) / avg total assets, annual statements (fundamentals_extended.py:411-417)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "applied"
+    },
+    "property_casualty_insurer": {
+     "status": "applied"
+    },
+    "life_insurer": {
+     "status": "applied"
+    },
+    "diversified_insurer": {
+     "status": "applied"
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 1,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 40
+  },
+  {
+   "id": "piotroski_f",
+   "category": "accounting_quality",
+   "weight_in_category": 0.45,
+   "effective_composite_weight": 0.0351,
+   "scoring_function": "higher_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     ">=excellent_min": 100,
+     ">=good_min": 80,
+     ">=fair_min": 55,
+     ">=weak_min": 30,
+     "below": 10
+    },
+    "bands": {
+     "excellent_min": 8.0,
+     "good_min": 6.5,
+     "fair_min": 5.0,
+     "weak_min": 3.0
+    }
+   },
+   "direction": "higher_is_better",
+   "unit": "count",
+   "definition": "Count of applicable Piotroski binary tests, with declared coverage.",
+   "registry_id": "piotroski_f",
+   "registry_entry": "metric_inventory",
+   "source_fields": "9 binary tests from annual statements, scaled 9*passed/answered, None below 6 answered (fundamentals_extended.py:374-406)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "common_equity_tier_1_ratio",
+     "reason": "Generic accounting checklist omits credit and capital quality."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "combined_ratio",
+     "reason": "Generic accounting checklist omits underwriting and reserve quality."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "combined_ratio",
+     "reason": "Generic accounting checklist omits underwriting and reserve quality."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "combined_ratio",
+     "reason": "Generic accounting checklist omits underwriting and reserve quality."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "days_sales_outstanding_trend",
+   "category": "accounting_quality",
+   "weight_in_category": 0.17,
+   "effective_composite_weight": 0.01326,
+   "scoring_function": "lower_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 80,
+     "<=fair_max": 55,
+     "<=poor_max": 30,
+     "beyond": 10
+    },
+    "bands": {
+     "excellent_max": -0.05,
+     "good_max": 0.03,
+     "fair_max": 0.1,
+     "poor_max": 0.2
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "decimal",
+   "definition": "Comparable-period change in receivable days.",
+   "registry_id": "days_sales_outstanding_trend",
+   "registry_entry": "metric_inventory",
+   "source_fields": "receivables*365/revenue year-over-year drift (fundamentals_extended.py:425-448)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "net_charge_off_trend",
+     "reason": "Receivable days do not represent bank credit quality."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "loss_ratio",
+     "reason": "Receivable days do not represent insurer underwriting quality."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "loss_ratio",
+     "reason": "Receivable days do not represent insurer underwriting quality."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "loss_ratio",
+     "reason": "Receivable days do not represent insurer underwriting quality."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "applied"
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 5,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 28
+  },
+  {
+   "id": "inventory_days_trend",
+   "category": "accounting_quality",
+   "weight_in_category": 0.16,
+   "effective_composite_weight": 0.01248,
+   "scoring_function": "lower_is_better_score",
+   "cutoffs": {
+    "tiers": {
+     "<=excellent_max": 100,
+     "<=good_max": 80,
+     "<=fair_max": 55,
+     "<=poor_max": 30,
+     "beyond": 10
+    },
+    "bands": {
+     "excellent_max": -0.05,
+     "good_max": 0.03,
+     "fair_max": 0.1,
+     "poor_max": 0.2
+    }
+   },
+   "direction": "lower_is_better",
+   "unit": "decimal",
+   "definition": "Comparable-period change in inventory days.",
+   "registry_id": "inventory_days_trend",
+   "registry_entry": "metric_inventory",
+   "source_fields": "inventory*365/cost_of_revenue year-over-year drift (fundamentals_extended.py:425-448)",
+   "applicability": {
+    "general": {
+     "status": "applied"
+    },
+    "bank": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": null,
+     "reason": "Banks hold no inventory."
+    },
+    "property_casualty_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": null,
+     "reason": "Insurers hold no inventory."
+    },
+    "life_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": null,
+     "reason": "Insurers hold no inventory."
+    },
+    "diversified_insurer": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": null,
+     "reason": "Insurers hold no inventory."
+    },
+    "reit": {
+     "status": "applied"
+    },
+    "utility": {
+     "status": "applied"
+    },
+    "commodity_producer": {
+     "status": "applied"
+    },
+    "profitable_biotechnology": {
+     "status": "applied"
+    },
+    "pre_profit_biotechnology": {
+     "status": "applied"
+    },
+    "other_pre_profit": {
+     "status": "applied"
+    },
+    "semiconductor": {
+     "status": "suppressed",
+     "matrix_status": "suppressed",
+     "replaced_by": "inventory_cycle",
+     "reason": "Semiconductor inventory swings with the industry cycle and customer build plans; a rising trend is not an accounting-quality signal."
+    },
+    "etf": {
+     "status": "suppressed",
+     "reason": "ETF: all corporate metrics suppressed (canonical_metrics.py:164-165)"
+    }
+   },
+   "suppressed_in_count": 6,
+   "required_for_score_in": [],
+   "published_nonnull_rows_of_40": 17
+  }
+ ],
+ "profiles": {
+  "all_profiles_considered": [
+   "general",
+   "bank",
+   "property_casualty_insurer",
+   "life_insurer",
+   "diversified_insurer",
+   "reit",
+   "utility",
+   "commodity_producer",
+   "profitable_biotechnology",
+   "pre_profit_biotechnology",
+   "other_pre_profit",
+   "semiconductor",
+   "etf"
+  ],
+  "declared_in_applicability_matrix_profiles_array": [
+   "general",
+   "bank",
+   "property_casualty_insurer",
+   "life_insurer",
+   "diversified_insurer",
+   "reit",
+   "utility",
+   "commodity_producer",
+   "profitable_biotechnology",
+   "pre_profit_biotechnology",
+   "other_pre_profit"
+  ],
+  "rules_only_profile": [
+   "semiconductor"
+  ],
+  "business_profiles_json_profiles": [
+   "bank",
+   "commodity_producer",
+   "diversified_insurer",
+   "etf",
+   "general",
+   "life_insurer",
+   "pre_profit_biotechnology",
+   "profitable_biotechnology",
+   "property_casualty_insurer",
+   "reit",
+   "utility"
+  ],
+  "missing_from_business_profiles_json": [
+   "other_pre_profit",
+   "semiconductor"
+  ],
+  "classifier": "canonical_metrics.classify_profile (canonical_metrics.py:95-130): ticker_overrides first, then is_etf, reit, bank, insurers, utility, commodity, semiconductor, biotech (pre/post profit by profit_margin<0), other_pre_profit, general"
+ },
+ "sanity_checks": {
+  "category_weights_sum": 1.0,
+  "metric_weights_sums_by_category": {
+   "valuation": 1.0,
+   "profitability": 1.0,
+   "financial_health": 1.0,
+   "growth": 1.0,
+   "capital_allocation": 1.0000000000000002,
+   "accounting_quality": 1.0
+  },
+  "float_artifact_note": "capital_allocation metric weights sum to 1.0000000000000002 in IEEE-754 double arithmetic; all other categories and category_weights sum to exactly 1.0. The 1.0000000000000002 artifact appears at the capital_allocation metric level, NOT at the category-weights level.",
+  "market_behavior_weights_sum": 1.06,
+  "market_behavior_note": "sums to 1.06 as configured; champion short_horizon_treatment='neutral' (settings.json:52) removes relative_strength (0.16) and renormalizes over the surviving 0.90 (advisor_engine.technical_score_from_parts:216-234)",
+  "ranking_weights_sum": 1.0,
+  "fundamentals_effective_composite_sum": 0.78003
+ },
+ "defaults_and_imputations": {
+  "files_swept": [
+   "scorer.py",
+   "advisor_engine.py",
+   "scoring_v2.py",
+   "recommendation_policy_v2.py",
+   "fetch_advisor.py",
+   "fundamentals_extended.py",
+   "canonical_metrics.py",
+   "risk_metrics.py",
+   "technical_indicators.py",
+   "news_intelligence.py",
+   "insider_signal.py",
+   "institutional_ownership.py",
+   "congress_signal.py",
+   "concentration_risk.py",
+   "geographic_exposure.py",
+   "peer_groups.py",
+   "rank_picks.py",
+   "rank_emerging_growth.py",
+   "research_screens_v2.py",
+   "screen_inputs.py",
+   "explainability.py",
+   "fetch_etfs.py",
+   "providers.py"
+  ],
+  "patterns": [
+   "' or 0'",
+   "' or 50'",
+   "' or 99'",
+   "', 50.0'",
+   "', 0.0)'",
+   "'.get(k, <number>)'",
+   "'default='",
+   "'else 50'",
+   "'else 0'"
+  ],
+  "exclusions": "pipeline/tests/, backtest_*.py, validation/, reports/ (do not feed published scores)",
+  "findings": [
+   {
+    "site": "pipeline/scorer.py:159-163 (weighted_available)",
+    "trigger": "a metric score is None (missing or suppressed)",
+    "behavior": "metric dropped from the category mean; its weight is renormalized across the surviving metrics in the same category",
+    "feeds": "every published fundamentals category score and therefore the composite",
+    "scope": "champion",
+    "classification": "renormalization (documented; coverage penalizes it separately)"
+   },
+   {
+    "site": "pipeline/scorer.py:515-535 (_categories_with_required_gate)",
+    "trigger": "a profile-required metric (applicability_matrix.required_for_score) is missing",
+    "behavior": "the whole category publishes null with categories_withheld naming the metric; the null category is then dropped by weighted_available at the category level, renormalizing its category weight across surviving categories",
+    "feeds": "fundamentals component",
+    "scope": "champion",
+    "classification": "withholding gate; note the withheld category's weight silently re-spreads to the other categories"
+   },
+   {
+    "site": "pipeline/scorer.py:91-96 (band_score)",
+    "trigger": "value < 0 for a band-scored metric (peg, price_to_book, price_to_tangible_book, debt_to_equity)",
+    "behavior": "fixed score 15.0 ('penalize, don't zero out')",
+    "feeds": "metric score",
+    "scope": "champion",
+    "classification": "fixed imputation for negative readings"
+   },
+   {
+    "site": "pipeline/scorer.py:142-148 (multiple_score)",
+    "trigger": "value <= 0 -> 5.0; 0 < value < suspicious_below -> 60.0",
+    "behavior": "fixed value-trap tiers",
+    "feeds": "forward_pe / EV multiples / sales_multiple scores",
+    "scope": "champion",
+    "classification": "fixed tier (documented cutoff, not a silent default)"
+   },
+   {
+    "site": "pipeline/scorer.py:615-616",
+    "trigger": "always",
+    "behavior": "fundamentals total = raw * (0.65 + 0.35*coverage): even zero measured coverage would retain 65% of the raw category blend",
+    "feeds": "fundamentals component",
+    "scope": "champion",
+    "classification": "coverage scaling floor"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:846-867 (blend_research_components)",
+    "trigger": "a component (fundamentals / market_behavior / news_sentiment) is None",
+    "behavior": "component dropped; its ranking weight renormalizes onto the survivors (e.g. news None -> fundamentals effectively 0.78/0.96 = 0.8125). If ALL components are None, raw = 0.0 (a zero score, not a null)",
+    "feeds": "published composite score",
+    "scope": "champion",
+    "classification": "renormalization + a fail-to-zero edge case"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:838-843 (data_coverage_scalar)",
+    "trigger": "a coverage key absent from the coverage dict",
+    "behavior": "treated as 0.0 in the 0.65/0.25/0.10 weighted completeness scalar",
+    "feeds": "base = raw * (0.8 + 0.2*data_coverage), and the INSUFFICIENT DATA stance gate (<0.45, advisor_engine.py:815-817)",
+    "scope": "champion",
+    "classification": "fail-closed default"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:155-158",
+    "trigger": "no 12-1 momentum (under ~13 months of history)",
+    "behavior": "momentum input falls back to the 60-day return; if that is also None the momentum_12_1 part is dropped and its 0.30 weight renormalizes",
+    "feeds": "market_behavior component",
+    "scope": "champion",
+    "classification": "documented substitution"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:144-153",
+    "trigger": "pct_from_52w_high / pct_above_52w_low missing (statement enrichment only runs for a shortlist)",
+    "behavior": "recomputed from the trailing 252 closes when >=200 closes exist",
+    "feeds": "evidence/risk text and screen fields (not a scored sub-metric)",
+    "scope": "champion",
+    "classification": "derived fallback"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:77-92 (volume_confirmation)",
+    "trigger": "zero down-day volume over the 60-session window",
+    "behavior": "ratio pinned to 2.0 (score 90 after 35+(r-1)*55), instead of None",
+    "feeds": "volume_confirmation sub-score (0.08 weight of market behavior)",
+    "scope": "champion",
+    "classification": "fixed imputation"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:775",
+    "trigger": "sentiment article_count unmeasured",
+    "behavior": "'or 0' -> treated as zero articles; the negative-news concern requires >=3 articles so the concern cannot fire",
+    "feeds": "action_for guidance",
+    "scope": "champion",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:445-447",
+    "trigger": "analyst_count missing",
+    "behavior": "'or 0' -> below the 3-analyst gate -> expectations modifier contributes 0",
+    "feeds": "expectations modifier",
+    "scope": "champion",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:264-512 (all modifier functions)",
+    "trigger": "a modifiers.* key deleted from settings.json",
+    "behavior": "cfg.get(key, literal) code fallbacks that mirror current config values (e.g. max_penalty 6.0, float_severe 0.15, min_coverage 0.7)",
+    "feeds": "post-blend modifiers",
+    "scope": "champion",
+    "classification": "config-mirroring fallback; inert while settings.json carries the keys (verified identical 2026-08-10)"
+   },
+   {
+    "site": "pipeline/advisor_engine.py:700-712 (_reading) + action_for",
+    "trigger": "any guidance input missing",
+    "behavior": "explicitly returns None and records the input in unmeasured_inputs; the old '(x or 99)' / '(x or 0)' fail-open defaults are confirmed removed from the live file",
+    "feeds": "SELL/TRIM/WATCH/HOLD guidance",
+    "scope": "champion",
+    "classification": "confirmed-fixed (no default remains)"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:161-165 (effective_tax_rate)",
+    "trigger": "tax rate unreadable or outside [0, 0.6]",
+    "behavior": "0.21 statutory-federal fallback",
+    "feeds": "return_on_invested_capital (NOPAT), a 0.26-weight profitability metric",
+    "scope": "champion",
+    "classification": "silent numeric imputation"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:259-266 (derive_interest_coverage)",
+    "trigger": "interest expense missing or |interest| < 1 while EBIT > 0",
+    "behavior": "interest_coverage = 99.0 ('no debt service reads as maximum comfort')",
+    "feeds": "interest_coverage metric (scores 100, 0.30 weight of financial_health) AND action_for's coverage<2 deterioration test (99 = no concern)",
+    "scope": "champion",
+    "classification": "deliberate imputation; the one surviving 'or 99'-shaped site"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:176-183 (derive_roic)",
+    "trigger": "total_debt or cash line missing on the balance sheet",
+    "behavior": "'(total_debt or 0)', '(cash or 0)' in invested capital",
+    "feeds": "return_on_invested_capital",
+    "scope": "champion",
+    "classification": "silent zero-imputation"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:190-192 (derive_cash_conversion)",
+    "trigger": "Free Cash Flow line missing; capex missing in the fallback",
+    "behavior": "FCF = operating_cash_flow - abs(capex or 0): missing capex treated as zero, overstating FCF",
+    "feeds": "cash_conversion (0.16 weight of profitability)",
+    "scope": "champion",
+    "classification": "silent zero-imputation"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:269-277 (derive_net_debt_to_ebitda)",
+    "trigger": "cash line missing",
+    "behavior": "'(cash or 0)': missing cash treated as zero, overstating net debt",
+    "feeds": "net_debt_to_ebitda (0.24 weight of financial_health)",
+    "scope": "champion",
+    "classification": "silent zero-imputation (conservative direction)"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:482-495 (derive_enterprise_multiples)",
+    "trigger": "enterpriseValue missing -> EV = marketCap + (debt or 0) - (cash or 0); goodwill/intangibles missing -> 'or 0'",
+    "behavior": "missing debt/cash imputed zero in EV; missing goodwill/intangibles imputed zero so tangible book = full book equity",
+    "feeds": "ev_to_ebitda, ev_to_ebit, ev_to_sales, ev_to_fcf, price_to_tangible_book",
+    "scope": "champion",
+    "classification": "silent zero-imputation"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:314-337 (derive_altman_z)",
+    "trigger": "an Altman component unreadable",
+    "behavior": "component omitted from the weighted sum (contributes 0) provided >=4 (z) / >=3 (z'') components resolve; otherwise None",
+    "feeds": "altman_z",
+    "scope": "champion",
+    "classification": "partial-sum imputation with a floor"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:402-406 (derive_piotroski)",
+    "trigger": "some of the 9 tests unanswerable",
+    "behavior": "score scaled 9 * passed/answered when >=6 answered; None below 6",
+    "feeds": "piotroski_f (0.45 weight of accounting_quality)",
+    "scope": "champion",
+    "classification": "renormalization with a floor"
+   },
+   {
+    "site": "pipeline/fundamentals_extended.py:581-583 (derive_market_structure)",
+    "trigger": "averageVolume missing / 52w high missing",
+    "behavior": "volume from trailing 30 sessions; high/low from trailing 252 closes",
+    "feeds": "liquidity modifier input, 52w context",
+    "scope": "champion",
+    "classification": "derived fallback"
+   },
+   {
+    "site": "pipeline/technical_indicators.py:60-62 (relative_strength_index)",
+    "trigger": "zero average loss over the 14-day window",
+    "behavior": "RSI = 100.0 if any gain else 50.0",
+    "feeds": "technical_extended (0.06 of market behavior, ~1% of composite)",
+    "scope": "champion",
+    "classification": "fixed imputation (standard RSI convention)"
+   },
+   {
+    "site": "pipeline/news_intelligence.py:176-191 (weighted_sentiment)",
+    "trigger": "no article clears entity-confidence/dedup filters",
+    "behavior": "score None + coverage 0.0 (component then drops out of the blend); explicitly NOT the neutral 50 it used to publish",
+    "feeds": "news_sentiment component",
+    "scope": "champion",
+    "classification": "confirmed-fixed (fail-closed)"
+   },
+   {
+    "site": "pipeline/rank_picks.py:30-34 (momentum_score)",
+    "trigger": "pct_30d missing",
+    "behavior": "neutral 50.0",
+    "feeds": "short_term bucket_score in picks.json",
+    "scope": "picks",
+    "classification": "neutral imputation"
+   },
+   {
+    "site": "pipeline/rank_picks.py:72-78 (quality_score)",
+    "trigger": "profitability and growth categories both missing",
+    "behavior": "neutral 50.0",
+    "feeds": "long_term bucket_score",
+    "scope": "picks",
+    "classification": "neutral imputation"
+   },
+   {
+    "site": "pipeline/rank_picks.py:81-89 (val_or / composite)",
+    "trigger": "valuation_score (broad fundamental score) missing",
+    "behavior": "neutral 50.0 substituted into the composite. The long_term pool pre-filters non-null (rank_picks.py:210) but short_term and retirement do NOT: a name with no fundamental reading ranks at fundamental-neutral in those buckets; retirement core ETFs are seeded with valuation_score None by construction (rank_picks.py:178)",
+    "feeds": "short_term and retirement bucket_scores",
+    "scope": "picks",
+    "classification": "neutral imputation (decision-relevant)"
+   },
+   {
+    "site": "pipeline/rank_picks.py:59-69 (stability_score)",
+    "trigger": "market_cap / dividend_yield missing -> 'or 0'; unknown ETF category -> 'sector' -> 55; unknown category label -> 60",
+    "behavior": "missing size/yield earn no bonus (fail-closed); unknown ETF categories get midtier constants",
+    "feeds": "retirement bucket_score",
+    "scope": "picks",
+    "classification": "mixed fail-closed + constant"
+   },
+   {
+    "site": "pipeline/rank_picks.py:88 / 177",
+    "trigger": "political_score missing",
+    "behavior": "0 (no signal credit)",
+    "feeds": "all bucket composites",
+    "scope": "picks",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/rank_emerging_growth.py:91-93",
+    "trigger": "operating-margin trend missing -> margin_score 50.0; volatility-contraction unmeasurable -> contraction_score 50.0",
+    "behavior": "neutral 50 imputation inside the emerging-growth composite",
+    "feeds": "emerging-growth screen ranking",
+    "scope": "screen",
+    "classification": "neutral imputation"
+   },
+   {
+    "site": "pipeline/research_screens_v2.py:181-184",
+    "trigger": "price / market_cap / dollar-volume / history missing",
+    "behavior": "'or 0' -> fails the minimum gate -> row excluded",
+    "feeds": "v2 screen eligibility",
+    "scope": "screen",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/research_screens_v2.py:187",
+    "trigger": "a standardized momentum component missing for a row",
+    "behavior": "'(standardized[field][index] or 0)' -> contributes a 0 z-score (cross-sectional mean) to the momentum composite instead of dropping/renormalizing",
+    "feeds": "momentum screen ranking",
+    "scope": "screen",
+    "classification": "neutral imputation"
+   },
+   {
+    "site": "pipeline/research_screens_v2.py:253",
+    "trigger": "peer_value_score missing",
+    "behavior": "'or 0' -> fails the >=40 cheapness test",
+    "feeds": "value-turnaround screen",
+    "scope": "screen",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/fetch_advisor.py:1066",
+    "trigger": "valuation_score missing during enrichment selection",
+    "behavior": "sorts as 0 -> the name is deprioritized for statement enrichment",
+    "feeds": "which symbols get statement-derived metrics at all (coverage feedback loop)",
+    "scope": "champion-adjacent",
+    "classification": "fail-closed with a self-reinforcing coverage effect"
+   },
+   {
+    "site": "pipeline/fetch_etfs.py:274-275 (_average)",
+    "trigger": "no sub-scores resolve for an ETF factor average",
+    "behavior": "neutral 50.0",
+    "feeds": "ETF screen score",
+    "scope": "etf_screen",
+    "classification": "neutral imputation"
+   },
+   {
+    "site": "pipeline/fetch_etfs.py:~285 (ISSUER_QUALITY.get(issuer, 60))",
+    "trigger": "unknown ETF issuer",
+    "behavior": "structural-quality base 60",
+    "feeds": "ETF screen score",
+    "scope": "etf_screen",
+    "classification": "constant default"
+   },
+   {
+    "site": "pipeline/insider_signal.py:144-148,198 / pipeline/congress_signal.py:73",
+    "trigger": "transaction value / amount_lower missing",
+    "behavior": "'or 0' -> fails the min_trade_value gate -> transaction ignored",
+    "feeds": "insider / congressional modifiers",
+    "scope": "champion",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/explainability.py:50,118",
+    "trigger": "fundamental raw/score not numeric",
+    "behavior": "attribution weight falls back to 0.0 (no attribution credit)",
+    "feeds": "published explainability attribution (display), reconciled to 0.01 tolerance",
+    "scope": "champion-display",
+    "classification": "fail-closed"
+   },
+   {
+    "site": "pipeline/scoring_v2.py:162,180",
+    "trigger": "always (constants)",
+    "behavior": "provenance_reliability 0.72 with observations else 0.55; timing reliability 0.85/0.55 - hardcoded reliability priors, not measured",
+    "feeds": "v2 structural/timeliness confidence (shadow)",
+    "scope": "shadow_v2",
+    "classification": "hardcoded prior"
+   },
+   {
+    "site": "pipeline/scoring_v2.py:167,182",
+    "trigger": "confidence < 1",
+    "behavior": "effective = 50 + confidence*(raw-50): shrink toward neutral 50; raw None stays None (the old constant-50 timeliness default is confirmed removed; layer_health.assert_layers_vary guards the publish path)",
+    "feeds": "v2 effective scores (shadow)",
+    "scope": "shadow_v2",
+    "classification": "shrinkage toward 50 (fixed; fail-closed when absent)"
+   },
+   {
+    "site": "pipeline/recommendation_policy_v2.py:40-43 (effective_score)",
+    "trigger": "raw_score non-numeric",
+    "behavior": "_number(raw_score, 50.0) -> neutral 50; confidence non-numeric -> 0.0 (full shrink to 50)",
+    "feeds": "v2 company actions (shadow). NOTE: _score_layer (lines 46-62) guards raw None before calling, so the 50.0 default is currently unreachable through the production caller; it remains live for any direct caller",
+    "scope": "shadow_v2",
+    "classification": "neutral imputation (guarded)"
+   },
+   {
+    "site": "pipeline/recommendation_policy_v2.py:286-299 (classify_portfolio_fit)",
+    "trigger": "portfolio context missing",
+    "behavior": "current_weight -> 0.0, target_weight -> 0.03, maximum_weight -> 0.05 (config/recommendation_policy_v2.json portfolio.default_target_weight/default_max_weight); a ticker with no portfolio data classifies below_target",
+    "feeds": "v2 portfolio-fit and trim sizing (shadow)",
+    "scope": "shadow_v2",
+    "classification": "config-default imputation"
+   },
+   {
+    "site": "pipeline/recommendation_policy_v2.py:202-204",
+    "trigger": "crowded-short signal",
+    "behavior": "signal confidence hardcoded 0.7",
+    "feeds": "v2 deterioration groups (shadow)",
+    "scope": "shadow_v2",
+    "classification": "hardcoded prior"
+   },
+   {
+    "site": "pipeline/recommendation_policy_v2.py:596-598",
+    "trigger": "position action not from company_deterioration",
+    "behavior": "position_action.confidence published as 1.0",
+    "feeds": "v2 position action (shadow)",
+    "scope": "shadow_v2",
+    "classification": "constant confidence"
+   },
+   {
+    "site": "pipeline/recommendation_policy_v2.py:531-533",
+    "trigger": "no layer resolved",
+    "behavior": "company_confidence 0.0 -> insufficient_evidence gate",
+    "feeds": "v2 company action (shadow)",
+    "scope": "shadow_v2",
+    "classification": "fail-closed"
+   }
+  ]
+ }
+}
