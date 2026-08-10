@@ -32,9 +32,10 @@ write through... just make it better"), so Phases 1 and 3 were executed without 
 |---|---|---|
 | 0 | Reverse-engineer the system | **COMPLETE** |
 | 1 | Integrity fixes | **COMPLETE** (1.1, 1.2, 1.3 + two extras) |
-| 2 | Point-in-time data integrity | **2.1 + 2.2 COMPLETE. 1,448,995 observations, 860/861 companies, 2010–2026, 117,837 restatements. Derivation layer built. 2.3/2.5 open** |
+| 2 | Point-in-time data integrity | **2.1 + 2.2 + 2.4 COMPLETE. 1,448,995 observations, 860/861 companies, 2010–2026, 117,837 restatements. Derivation, price and share-basis layers built. 2.3/2.5 open** |
 | 3 | Industry conditioning | **COMPLETE** (3.1, 3.2 partial, 3.3 partial) |
-| 4–10 | Research program | **Fundamentals unblocked. Now blocked on survivorship and point-in-time prices — see "Next"** |
+| 4 | Baselines | **harness built, tested and committed (`research/baselines.py`). Full 2017–2026 run in flight; results land in `research/results/phase4_baselines.json`. Nothing is written up yet — if that file is absent, the run did not finish and must be repeated, not inferred** |
+| 5–10 | Research program | not started. Survivorship is the binding limitation on every number Phase 4 produces |
 | 11 | Deliverables | blocked |
 
 ## Commits on this branch
@@ -48,6 +49,10 @@ cd581b5  refactor(contract): rename the completeness scalar from confidence to d
 0e0a9ad  fix(conditioning): make the applicability registry authoritative on the live path
 149fc3f  Merge the ValueSignal integrity audit and Phase 1/3 remediation  (merged to main)
 31335a4  feat(integrity): screen implausible provider values and break the enrichment loop
+...      (Phase 2 backfill: entity resolver, EDGAR facts, sharded store, derivation layer)
+f251924  feat(pit): point-in-time prices and universe membership
+10948be  feat(pit): reconcile filed share counts with the price series' split basis
+0fac2d9  feat(research): baseline factor performance on point-in-time data
 ```
 
 ## What changed, by defect
@@ -63,8 +68,11 @@ cd581b5  refactor(contract): rename the completeness scalar from confidence to d
 | Enrichment feedback loop | **fixed** | `enrichment_rotation` admits 15 statement-starved names per refresh |
 | 17% coverage cliff on two categories | **open** | needs `FULL_UNIVERSE_RESEARCH=1` run |
 | Implausible provider values accepted unscreened | **fixed** | `plausibility.py` + `derive_margins` source guard |
-| No point-in-time history | **job written, not yet run** | `build_pit_fundamentals.py` + `.github/workflows/backfill-pit-fundamentals.yml` |
+| No point-in-time history | **fixed** | backfill run: 1,448,995 observations, 860/861 companies, 2010–2026 |
 | Entity keying by ticker, not CIK | **fixed in the new store** | `edgar_entities.EntityResolver`, fails loudly on ambiguity |
+| Split-adjusted price levels read as traded prices | **fixed** (found in Phase 4, not in the brief) | `pit_market.py` — price floor off by default, liquidity screened on split-invariant dollar volume |
+| As-filed share counts multiplied by adjusted prices | **fixed** (found in Phase 4, not in the brief) | `pit_shares.py` — split basis recovered from the filers' own ASC 260 restatements |
+| Successor registrants lose their predecessor's filings | **open, disclosed** | 13 tickers (XOM, BLK, APO, BG, TKO, DINO, NWE, TEAM, MRVL, APA, VTRS, PNFP, OZK) |
 
 ## Decisions made, with justification
 
@@ -264,6 +272,61 @@ Median derived-metric coverage 95%. Most-often-absent ratios are `gross_margin` 
 filers report no gross-profit line), `interest_coverage` (27%) and `return_on_invested_capital`
 (26%). Those absences are honest: no ratio is defaulted.
 
+**D-2.15 — I was wrong twice about price adjustment, and the second error was the expensive
+one.** First I recorded that today's adjusted closes embed future corporate actions and are
+therefore unusable for a backtest. That is false for *returns*: `adj[t] = price[t] × F[t]`,
+so a ratio between two dates cancels every factor outside the window. Verified on Apple
+across its 2020 4:1 split — adjusted +78.24% against raw +76.71% over 2020, and −24.68%
+against −24.88% over a split-free H1 2022, the small gaps being dividends.
+
+Then I recorded that `raw_closes` were prices as actually traded, and that reading them fixed
+the level problem. Also false. `raw_closes` is `yfinance` `Close` with `auto_adjust=False`,
+which Yahoo delivers **split-adjusted and merely dividend-unadjusted**. Apple's 2016-08-08
+close reads $27.09 there against roughly $108.37 as it traded — exactly a quarter, four years
+before the split. Checked across every split in the cache: none appears as a jump in either
+series.
+
+So the repository holds two series and **neither is a traded price level**. Consequences,
+each handled in code rather than described:
+
+| Question | Series | Correction needed |
+|---|---|---|
+| Total return between two dates | `closes` | none |
+| Dollar volume | `raw_closes` × volume | none — a split divides one and multiplies the other |
+| Market cap | `raw_closes` × shares | shares must be carried onto the same basis (D-2.16) |
+| Minimum price screen | *neither* | not recoverable; the rule is off by default |
+
+The price floor is the one that cannot be salvaged, and it fails in the dangerous direction:
+a company that later reverse-split is admitted historically at a price it never traded, and
+reverse splits are what delisting candidates do. `minimum_dollar_volume` does that work
+instead.
+
+**D-2.16 — Market cap needed the filers' own restatements, not a split feed.** Filed share
+counts are as-reported; the price series is on today's basis. Multiplying them gave Apple a
+$459bn market cap in July 2020 against $1.84tn, and an earnings yield four times too high —
+which does not average out, it puts a stock top of every value ranking.
+
+ASC 260 requires share counts to be restated for splits in every period presented, so the
+same period filed twice across a split *is* the split: Apple's June 2020 quarter appears as
+4,354,788,000 filed 2020-07-31 and 17,419,154,000 filed 2021-07-28. Comparing a period
+against itself is what makes this exact; consecutive periods fold buybacks in and read 3.79.
+
+Two mistakes of my own inside this, both caught by testing against the store rather than
+fixtures:
+
+1. A candidate set of every fraction with terms up to 20 matches almost any ratio, so it
+   recognises nothing — 19/5 is within a quarter of a percent of that same 3.79, and 13/5 of
+   a 2.6× stock-funded acquisition. Replaced with the ratios boards actually declare.
+2. A filer's units mis-tag is not a corporate action. CenterPoint reported 402 diluted shares
+   in 2010 meaning 401,993,000. Treated as a basis change it multiplied a decade of earlier
+   periods by a million. Scale errors are repaired per period and never propagate.
+
+Result over the 848 companies with share counts: 212 splits recognised, 943 units mis-tags
+repaired, 26 companies left with an unresolved period that publishes nothing, and three
+residual discontinuities — RH, ELF, IRT — all pre-IPO and all before the price series starts.
+Spot-checked against real market caps for Apple, Nvidia, Amazon, Microsoft, JPMorgan, Walmart
+and CSX at three dates each.
+
 **D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
 EV/EBITDA from these observations is a separate step on purpose: the facts should be written
 once and re-derived from as often as the derivation changes. Baking a derivation into the
@@ -283,73 +346,77 @@ pipeline does not ingest. Not faked. See "Next" below.
 
 ## Blockers
 
-- **B-1 (critical).** No usable point-in-time fundamental history — 8 days. Blocks Phases
-  4–10 entirely. Resolution: Phase 2.2, SEC EDGAR XBRL `companyfacts` keyed on `filed` dates.
-- **B-2 (confirmed by probe, not assumption).** Outbound egress policy blocks every market
-  data host this pipeline needs. Measured on 2026-08-09:
-
-  | Host | Result |
-  |---|---|
-  | `www.sec.gov` | 403 on CONNECT (policy denial) |
-  | `data.sec.gov` | blocked |
-  | `query1.finance.yahoo.com` | blocked |
-  | `api.stlouisfed.org` | blocked |
-  | `www.alphavantage.co` | blocked |
-  | `api.github.com` | 200 |
-
-  The proxy status endpoint records the SEC denial explicitly as
-  `connect_rejected / gateway answered 403 to CONNECT (policy denial or upstream failure)`.
-  Per `/root/.ccr/README.md` a policy denial must be reported rather than routed around.
-  **Phases 2.1, 2.2, 2.3 and 2.5 cannot be executed until these hosts are allowed**, and
-  Phases 4–10 depend on 2.2. Ask the user to enable egress for `sec.gov`, `data.sec.gov`,
-  `api.stlouisfed.org` and a price source before any further Phase 2 work is scheduled.
+- **B-1. RESOLVED.** Point-in-time fundamentals now cover 2010–2026 for 860 of 861 companies.
+- **B-2. RESOLVED — and it was never what it looked like.** This sandbox's egress policy
+  blocks `sec.gov`, `data.sec.gov`, Yahoo and FRED, which I recorded as a project blocker. It
+  is not: the user's GitHub Actions runners have full network access, and the same code that
+  cannot reach the SEC from here fetched 1.45m observations from there. **A future session
+  must not conclude a data source is unavailable from a sandbox probe.** Anything needing
+  network runs as a workflow; `.github/workflows/backfill-pit-fundamentals.yml` is the
+  pattern — it commits its own output back to `main` so the result is readable afterwards.
+- **B-3 (open, and now the binding one). Survivorship.** Every Phase 4 number is measured on
+  the 860 companies that exist in today's price cache. Companies that delisted, were acquired,
+  or went to zero between 2016 and now are absent, and no rule evaluated on this data can
+  recover them. The bias is upward and unquantified. SEC's full filer list includes delisted
+  registrants, so this is buildable; until it is built, Phase 4 supports statements about the
+  *relative ordering* of strategies and no statement about their level of return.
+- **B-4 (open, small, disclosed). Successor registrants.** 13 tickers reorganised under a new
+  CIK and the SEC ticker map reaches only the successor, so their predecessor filings are
+  unreachable under the current key. They carry no fundamentals for part of the window and
+  therefore sit out fundamental factors while remaining in momentum. Fixable by resolving
+  former-name/former-CIK chains from EDGAR submissions, which needs a network run.
 
 ## Next, in order
 
-1. **Run the backfill.** `.github/workflows/backfill-pit-fundamentals.yml`, in this order:
-   `audit-only` (no fetching), then `sample` (25 companies), then `full`. Append-only and
-   resumable. **Every run commits its report to `main`**, so a later session reads the
-   outcome from the repo rather than from a run log:
-
-   | File | Written by | What to read first |
-   |---|---|---|
-   | `pipeline/data/pit/entity_audit.json` | every run | `resolved` / `unresolved` counts, `ambiguous_tickers`, `shared_cik` |
-   | `pipeline/data/pit/entity_map.json` | every run | the SEC ticker map this run resolved against, for reproducibility |
-   | `pipeline/data/pit/fundamentals_manifest.json` | sample, full | per-company `resolved_tags`, `missing_concepts`, `earliest_period`, failures |
-   | `pipeline/data/pit/fundamentals.jsonl` | sample, full | the observations |
-   | `pipeline/data/pit/fundamental_restatements.jsonl` | sample, full | periods reported more than once |
-
-   The code is unit-tested against fixtures but **has never touched the live SEC endpoint**,
-   so the first `audit-only` run is the real test. Check the resolution rate before trusting
-   anything downstream; a long `missing_concepts` list in the sample manifest means
-   `edgar_facts.CONCEPT_TAGS` needs widening for tags real filers actually use.
-   Do not start Phases 4–10 on `pipeline/data/backtest_cache/` in the meantime — that is
-   restated Yahoo statements over today's survivors.
-2. **Commodity mid-cycle valuation.** Candidate source: FRED PPI series (e.g. `PCU2122`,
+1. **Point-in-time universe (survivorship) — B-3.** The largest remaining contamination and
+   the one that caps what every later phase may claim. Needs a network run: SEC's
+   `company_tickers.json` plus submissions history covers delisted registrants, and the
+   missing half is a price series for names Yahoo no longer serves. Write it as a workflow
+   that commits its output, the way the fundamentals backfill does. Until it exists, no phase
+   may state an expected return — only a relative ordering.
+2. **Successor-registrant chains — B-4.** EDGAR submissions carry `formerNames` and the
+   predecessor CIK. Resolving them recovers a full history for 13 tickers and removes a bias
+   that currently favours momentum over every fundamental factor for those names.
+3. **Phase 5, feature validation.** Now runnable on real point-in-time data: information
+   coefficient per metric, decile monotonicity, Spearman redundancy across the 21 metrics
+   `pit_derive` produces. This is where the Phase 0 finding about hidden factor overweighting
+   gets measured rather than asserted.
+4. **Commodity mid-cycle valuation.** Candidate source: FRED PPI series (e.g. `PCU2122`,
    `WPU10`) plus LBMA/COMEX settle prices. Completes Phase 3.3 and makes D-3.4 resolvable.
-3. **Point-in-time universe (survivorship).** Now the largest remaining contamination. The
-   860 stored companies and the 910-name universe are today's survivors; 45 configured
-   tickers already no longer trade. SEC's full filer list includes delisted companies, so
-   this is buildable — and until it is, any backtest overstates.
-4. **Point-in-time price adjustment.** `backtest_cache` has raw unadjusted closes for 860
-   tickers from 2016-08, which is the hard part, but no dated split/dividend factor series —
-   so today's adjusted closes embed future corporate actions. Derivable from raw-vs-adjusted.
-   Note prices start 2016 while fundamentals now start 2010: the binding window is 2016+.
-5. **Run `FULL_UNIVERSE_RESEARCH=1` once** (needs a price/statement provider, so blocked by
-   B-2). Quality-metric redundancy is currently measurable on 40 rows instead of 877. The
-   ordinary path no longer starves outsiders — `enrichment_rotation` rotates 15 in per
-   refresh — but one full sweep is still the fastest way to make Phase 5 possible.
-4. **Sector profiles still unbuilt** (Phase 3.2): REIT AFFO/NAV, bank NIM/efficiency/ROTCE,
+5. **Run `FULL_UNIVERSE_RESEARCH=1` once.** Quality-metric redundancy on the *live* path is
+   still measurable on 40 rows instead of 877. Independent of the PIT work above, which uses
+   its own store.
+6. **Sector profiles still unbuilt** (Phase 3.2): REIT AFFO/NAV, bank NIM/efficiency/ROTCE,
    insurer combined ratio and reserve development. All need inputs the pipeline does not yet
    derive; the registry declares them as `replacement_metrics` already.
+
+### Widening `edgar_facts.CONCEPT_TAGS` on the next backfill
+
+Gaps found while building Phase 4, each of which costs coverage today:
+
+- `WeightedAverageNumberOfDilutedSharesOutstanding` is absent for ~15 filers (Exxon among
+  them) and sparse for Alphabet, which tags per share class. Add
+  `WeightedAverageNumberOfSharesOutstandingBasicAndDiluted` and
+  `dei:EntityCommonStockSharesOutstanding`.
+- No dividend-per-share or book-value concepts, so no dividend or book yield is derivable.
+- No split concept exists in `companyfacts` at all; `pit_shares` recovers splits from
+  restatements instead, and does not need one.
 
 ## Verification for any future session
 
 ```
 pip install --ignore-installed PyJWT -r pipeline/requirements.txt
-PYTHONPATH=pipeline python -m pytest pipeline/tests -q     # 1489 passed
+PYTHONPATH=pipeline python -m pytest pipeline/tests -q     # 1595 passed
 npm ci && npm test                                          # 508 passed
 npm run lint && npm run build
 python pipeline/check_ui_weights.py
 python pipeline/validate_data.py
+```
+
+Re-running Phase 4 from a clean checkout (about fifteen minutes, no network — the store and
+the price cache are both committed):
+
+```
+PYTHONPATH=pipeline python -c "import sys,json; sys.path.insert(0,'research'); \
+  import baselines; print(json.dumps(baselines.run(), indent=2, default=str))"
 ```
