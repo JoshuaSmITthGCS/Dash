@@ -103,7 +103,10 @@ carries `generated_at: 2026-08-10T05:23:37Z`, `model_version: 3.2.0`, `schema_ve
 `universe_count: 926` (confirmed by direct query against the committed file — 926 vs. the
 universe file's 910 configured symbols reflects portfolio/watchlist additions layered on top of
 the base list at run time, consistent with `advisor_universe.json`'s separate
-`portfolio_symbols` block).
+`portfolio_symbols` block). Its provenance fields identify it as a **fast-mode** product:
+`data_mode: "live"`, `universe_mode: "fast"`, `polled_count: 247` — so the committed rows were
+produced by a refresh that re-polled 247 names, not the full universe — and its `research`
+array holds exactly 40 rows, matching `publish_limit`.
 
 **Netlify serverless functions** (`netlify/functions/*.mjs`, confirmed in `FILE_INVENTORY.md`):
 `refresh-data.mjs` (admin-authenticated manual refresh trigger, dispatches and polls GitHub
@@ -119,6 +122,7 @@ the prior internal audit discussed in §0), `src/` (the React frontend — `page
 `lib`, `workers`), `netlify/functions/` (the three serverless bridges above), `scripts/`
 (evidence/report generation, screenshots, hygiene checks), `.github/workflows/` (the refresh,
 backfill, and CI schedules).
+
 
 ---
 
@@ -485,17 +489,34 @@ is produced this way).
   and this remains true in current code) a metric's score is not regime-relative.
 - **`cross_sectional`** (challenger, published alongside the champion in
   `score_variants.normalization` — confirmed present in THG's live row):
-  `scorer.py:CrossSectionalNormalizer` (class located at line 296 per earlier reading this
-  session; internals — winsorization percentile, sector-vs-universe selection logic, tie
-  handling — not yet re-read line-by-line this session; UNDETERMINED pending follow-up, though
-  the *behavior* is directly visible in THG's published `score_variants.normalization.
-  fundamental_detail.normalization` block: e.g. `forward_pe` scored at `normalization_scope:
-  "sector"`, `peer_count: 123`, `raw_percentile: 50.8`, `desirability_percentile: 49.2`
-  (multiple mapped via `direction: "lower_is_better"` as `100 - raw_percentile` for
-  `forward_pe`, consistent with a percentile-rank-then-flip scheme); `price_to_book` scored at
-  `normalization_scope: "universe"` with `peer_count: 693`. This confirms a per-metric,
-  per-row choice between sector and universe reference populations is actually exercised in the
-  published challenger data, not merely described in a docstring.
+  `scorer.py:CrossSectionalNormalizer` (class at line 307, **now read in full**). Verified
+  mechanics:
+  - **Winsorization**: each metric's full-universe distribution is clipped at the 1st/99th
+    percentiles (`winsor_lower_percentile: 0.01` / `winsor_upper_percentile: 0.99`,
+    config-overridable via `settings.challengers.cross_sectional_normalization`); the
+    universe-derived bounds are then applied to every *sector* sub-distribution too, so a
+    sector's tails are clipped at universe levels, not sector levels (`_fit`, the shared
+    `winsor()` closure over `lower_bound`/`upper_bound`).
+  - **Sector-vs-universe selection**: per metric, per row — the sector distribution is used
+    iff it holds ≥ `sector_minimum_count` (default 8) eligible observations, else the
+    universe distribution (`score()`, the `len(sector_values) >= self.sector_minimum`
+    branch). This is what THG's published block shows: `forward_pe` scored against 123
+    sector peers, `price_to_book` against 693 universe values.
+  - **Tie handling**: average-rank percentile via `bisect_left`/`bisect_right` —
+    `percentile = 100 × (left + right − 1)/2 / (n − 1)`; a single-value distribution scores
+    50.0.
+  - **Direction**: `lower_is_better` metrics and range metrics flip (`100 − percentile`);
+    range metrics are first transformed to distance-from-configured-ideal
+    (`_range_distance`). Non-positive valuation multiples are excluded from the fit and
+    scored `not_applicable_nonpositive` rather than ranked.
+  - **Fast-mode reproducibility**: `from_published()` restores the exact prior full-refresh
+    fit from the published `normalization_distributions` block, which is how a fast-mode
+    refresh (like the committed artifact) reuses the prior fit rather than refitting on a
+    partial poll.
+  - **Own-history percentile**: valuation multiples only, requires ≥12 observations
+    (`own_history_minimum_observations`) over a 5-year window before publishing a value;
+    below that it publishes `own_history_status: "accumulating"` with the observation count
+    — exactly THG's published state (3 observations, accumulating).
 - **Own-history percentile**: every metric's normalization block in the challenger variant
   carries `own_history_percentile: null`, `own_history_status: "accumulating"`,
   `own_history_observations: 3` (THG, confirmed in `SAMPLE_OUTPUT.json`). This mechanism exists
@@ -543,15 +564,23 @@ direct read this session) plus `pipeline/config/metric_registry.json`'s per-metr
   apply to this profile (e.g. THG's `ev_to_ebitda`: `"EV/EBITDA is not an insurer-standard
   valuation measure."`, `replaced_by: "price_to_book"`). Excluded from both score and coverage
   denominator (§4.1 steps 2 and 5).
-- `"replaced"`: appears as a possible status value in `suppressed_metrics()`
-  (`canonical_metrics.py:169`, checked alongside `"suppressed"`) but was not observed as a
-  distinct status string in THG's actual `metric_status` output — every suppressed entry in the
-  live example carries status `"suppressed"` with a `replaced_by` field pointing at the
-  substitute metric, rather than the substitute itself carrying a `"replaced"` status.
-  UNDETERMINED whether `"replaced"` is ever actually assigned as a metric's own status anywhere
-  in the current codebase, or whether it exists in the code as a dead branch alongside
-  `"suppressed"` at `scoring_v2.py:127` (`if status in ("suppressed", "replaced"):`). Needs a
-  grep across all producers of `metric_status` to confirm.
+- `"replaced"`: **resolved this session — a real, assignable status that happens to be
+  invisible in the current artifact.** The matrix declares it for exactly two rules
+  (`utility.free_cash_flow_yield` and `commodity_producer.peg` — confirmed by enumerating
+  every rule tuple's status in `applicability_matrix.json`), and `applicability_for` passes a
+  rule's status through verbatim (`canonical_metrics.py:146`), so those two metric/profile
+  pairs would publish `status: "replaced"`. It does not appear in the current artifact for two
+  verified reasons: (a) all 10 published `commodity_producer` rows have their `peg` status
+  **overwritten** to `"suppressed"` by the canonical-PEG special case
+  (`scoring_v2.py:119-121`, which fires whenever `calculate_peg` rejects the provider PEG —
+  true for every one of the 10, each carrying the `provider_peg_rejected` quality flag,
+  confirmed by artifact query), and (b) no `utility`-profile row is in this run's published 40
+  (profile census of the artifact: 15 general, 10 commodity_producer, 4 P&C, 3 diversified
+  insurer, 3 bank, 2 life insurer, 2 profitable biotech, 1 semiconductor). Behaviorally,
+  `"replaced"` and `"suppressed"` are identical everywhere they are consumed — both
+  membership tests (`canonical_metrics.py:169`, `scoring_v2.py:127`) treat them as one set —
+  so the distinction is purely descriptive, and finding 5 (§10.2) applies to it in full: the
+  named replacement inherits no weight either way.
 - `"unavailable"`: the metric is applicable to this profile (not suppressed) but its value is
   simply missing this run — e.g. THG's `price_to_sales`: `status: "unavailable"`, no
   applicability reason given (`reason: null`). This is a data-completeness gap, not a
@@ -616,13 +645,14 @@ any prior audit) and against the code that reads each block:**
 
 Sums to 1.0 exactly. `_weights()` (`advisor_engine.py:35-39`) merges config over defaults,
 accepting only numeric, non-underscore-prefixed keys — so a malformed config entry is silently
-dropped back to the hardcoded default rather than raising. **This is config-driven with a
-code-level fallback, confirmed still present** — verifying whether `settings.json` actually
-overrides these three values or the code defaults are what's live requires comparing the
-config file's `ranking_weights` block against `DEFAULT_RANKING_WEIGHTS`; not yet done this
-session (UNDETERMINED whether config or default is the operative source for these three
-specific numbers, though they are identical either way per the values found in `settings.json`
-fundamentals earlier in this session — full `ranking_weights` block not yet read directly).
+dropped back to the hardcoded default rather than raising. **Resolved this session:
+`settings.json` does contain a top-level `ranking_weights` block** with `fundamentals: 0.78,
+market_behavior: 0.18, news_sentiment: 0.04` (read directly), numerically identical to
+`DEFAULT_RANKING_WEIGHTS` — so the config file is the operative source, the code default is a
+live-but-redundant fallback, and an editor of these weights should edit `settings.json`. The
+config block also carries a `_comment` giving the stated rationale for the 4% news weight
+("headline alpha decays within days (Tetlock 2007)") — like §6.4's momentum comment, a design
+rationale in prose, not a citation to a validation result on this system's own data.
 
 ### 6.2 Fundamentals: category level
 
@@ -775,31 +805,33 @@ design rationale, not evidence of fitting.
 
 ### 6.5 Bounded post-blend modifiers
 
-`pipeline/advisor_engine.py:apply_modifiers` (lines 515-557), champion path:
+`pipeline/advisor_engine.py:apply_modifiers` (lines 515-557), champion path. **Every
+per-modifier bound below is now verified by direct read of the modifier function's body**, and
+every cap value was cross-checked against `settings.json`'s `modifiers` block (read directly),
+which declares the identical numbers — so config and code defaults agree, and config
+(`MODIFIERS = SETTINGS.get("modifiers", {})`, `advisor_engine.py:43`) is the operative source:
 
-| Modifier | Bound | Source function |
-|---|---|---|
-| sector_valuation | ±3 (per internal-audit orientation, not re-verified numerically this session) | `sector_percentile_modifier` |
-| short_interest | up to −6 | `short_interest_modifier` |
-| liquidity | −3 | `liquidity_modifier` |
-| expectations | ±3 | `expectations_modifier` |
-| macro_regime | ±3 | `macro_regime_modifier` |
-| insider_activity | +5 / −3 | `insider_modifier` |
-| institutional_13f | — (in champion path per Phase 3.3, per docstring) | `institutional_ownership_modifier` |
-| congressional_buying | reward-only, up to +4 per prior orientation | `congressional_buying_modifier` |
-| customer_concentration_risk | — (added to champion path per Phase 3.3) | `concentration_risk_modifier` |
+| Modifier | Range (points) | Shape | Source function (all in `advisor_engine.py`) |
+|---|---|---|---|
+| sector_valuation | −3 / 0 / +3 | discrete three-way: full cap for cheapest peer tier, full penalty for most expensive, nothing for middle or for `None` (no tier below 30 peers) | `sector_percentile_modifier` (465-486) |
+| short_interest | [−6, 0] | penalty-only: −6 at ≥15% of float, −3 at ≥8%, +1.5 added (still clamped to −6) at ≥5 days-to-cover | `short_interest_modifier` (254-278) |
+| liquidity | [−3, 0] | penalty-only: −3 below $5M average daily dollar volume, −1.5 below $25M | `liquidity_modifier` (428-438) |
+| expectations | [−3, +3] | ±half-cap each from analyst target upside (≥+20% / ≤−5%) and consensus rating (≤2.0 / ≥3.5), requires ≥3 analysts | `expectations_modifier` (441-462) |
+| macro_regime | [−3, +3] | continuous, sector-weighted FRED factor blend scaled to the cap, dead-zoned below 0.25 points, requires macro coverage ≥0.7 | `macro_regime_modifier` (489-512) |
+| insider_activity | [−3, +5] | asymmetric two-sided clamp of `insider_signal`'s score | `insider_modifier` (281-305) |
+| institutional_13f | [−2, +3] | asymmetric two-sided clamp of the decayed 13F breadth score (decay applied upstream; `max_age_days: 135` in config) | `institutional_ownership_modifier` (308-334) |
+| congressional_buying | [0, +4] | reward-only clamp | `congressional_buying_modifier` (337-357) |
+| customer_concentration_risk | [−3, 0] | penalty-only clamp; `measured: False` rows scored nothing rather than credited | `concentration_risk_modifier` (360-393) |
 
 **Combined cap, confirmed by direct read**: `total = round(max(-15.0, min(15.0,
 uncapped_total)), 2)` (`advisor_engine.py:552`) — a hard ±15-point cap on the summed modifiers,
-confirmed as a literal in the function body, not a config value. `geographic_concentration`
-remains challenger-only (`apply_challenger_modifiers`, a separate function starting at line
-560), per that function's docstring, for a stated correctness reason (geography-tagged revenue
-often reflects shipping/contracting entity rather than end demand) rather than a coverage
-reason. Individual per-modifier point caps (the ±3/±6/etc. figures in the table above) were
-sourced from the internal audit's orientation and **not independently re-derived from each
-modifier function's body this session** — flagged UNDETERMINED for the exact current numeric
-caps on each of the nine modifiers; only the combined ±15 cap is independently confirmed by
-direct code read.
+confirmed as a literal in the function body, not a config value. (The theoretical pre-cap sum
+of the individual bounds is [−23, +16], so the ±15 combined cap can actually bind on the
+penalty side.) `geographic_concentration` remains challenger-only ([−2, 0],
+`geographic_concentration_modifier`, lines 396-425; applied in `apply_challenger_modifiers`
+starting at line 560), per that function's docstring, for a stated correctness reason
+(geography-tagged revenue often reflects shipping/contracting entity rather than end demand)
+rather than a coverage reason.
 
 A separate challenger variant (`score_variants.modifier_recalibration`, confirmed present in
 THG's live row) uses a **different combined cap of 20.0** and allocates each modifier a
@@ -1169,36 +1201,57 @@ an ongoing dual-name dependency.
    named replacement actually matters to the resulting score, which could mislead a reader of
    the payload (or of `docs/spec/METRIC_REGISTRY.md`, if that document reports `replaced_by`
    without this caveat) into thinking the replacement metric carries more weight than it does.
-6. **RESOLVED from UNDETERMINED to CONFIRMED, and more severe than originally suspected: the
-   shadow path suppresses nearly every metric for semiconductor names; the live path does not.**
-   Root cause, fully traced: the live path's suppression function,
-   `canonical_metrics.suppressed_metrics(profile, metric_ids)` (`canonical_metrics.py:153-171`,
-   called from `scorer.applicability` at `scorer.py:243-260`), suppresses a metric **only** when
-   an *explicit* per-profile rule exists in `applicability_matrix.json`'s `rules` object — for
-   `"semiconductor"`, that's exactly two metrics (`capex_to_depreciation`,
-   `inventory_days_trend`). The shadow path's suppression function,
+6. **Two distinct config files both omit `"semiconductor"`/`"other_pre_profit"` — one causes a
+   real, severe score effect via `metric_registry.json`; the other causes an informational-only
+   gap via `business_profiles.json`. Both confirmed independently this session, against
+   different mechanisms.**
+
+   **6a. `metric_registry.json`'s default profile list — confirmed high-severity score effect.**
+   The live path's suppression function, `canonical_metrics.suppressed_metrics(profile,
+   metric_ids)` (`canonical_metrics.py:153-171`, called from `scorer.applicability` at
+   `scorer.py:243-260`), suppresses a metric **only** when an *explicit* per-profile rule exists
+   in `applicability_matrix.json`'s `rules` object — for `"semiconductor"`, exactly two metrics
+   (`capex_to_depreciation`, `inventory_days_trend`). The shadow path's suppression function,
    `canonical_metrics.applicability_for(metric_id, profile)` (lines 141-150, called once per
    metric from `scoring_v2.build_v2_analysis`), has a **second, broader suppression path**: when
    no explicit rule exists for a metric/profile pair, it checks whether the profile is listed in
    that metric's `applicability_profiles` declaration in `metric_registry.json`, and **suppresses
    by default if not listed**. `metric_registry.json`'s `declaration_defaults.
    applicability_profiles` (the fallback list used by any metric without its own explicit
-   declaration) lists 11 profiles and **does not include `"semiconductor"` or
-   `"other_pre_profit"`**. Net effect, verified against the live artifact for CRUS (Cirrus
-   Logic, `applicability_profile: "semiconductor"`): the **live** path suppresses **3** metrics
-   (`capex_to_depreciation`, `inventory_days_trend`, `price_to_tangible_book` — the last from the
-   separate `TANGIBLE_BOOK_SECTORS` gate, §5); the **shadow** path's `analysis_v2.applicability.
-   suppressed_metrics` suppresses **28 of CRUS's roughly 32 scoreable metrics** — including
-   `forward_pe`, `price_to_book`, `return_on_equity`, `interest_coverage`, `piotroski_f`, and
-   nearly everything else that is normally applied. **Severity: high, and specific to the
-   shadow/champion divergence this document is asked to characterize precisely (§8).** For a
-   semiconductor name, the shadow structural score is not a differently-computed version of the
-   same evaluation the champion performs — it is evaluated on almost no data at all, because a
-   single missing entry in a config file's default profile list silently starves it. This is a
-   materially different and more severe finding than the internal audit's original semiconductor
-   observation (§5b there described a capex-specific mis-scoring on the *live* path, since
-   fixed; this is a *shadow-path-only*, near-total-suppression defect that has no live-path
-   analogue and was not previously documented anywhere found this session).
+   declaration) lists 11 profiles and does not include `"semiconductor"` or
+   `"other_pre_profit"`. Net effect, verified against the live artifact for CRUS
+   (`applicability_profile: "semiconductor"`): the **live** path suppresses 3 metrics; the
+   **shadow** path's `analysis_v2.applicability.suppressed_metrics` suppresses **28 of CRUS's
+   ~32 scoreable metrics**, including `forward_pe`, `price_to_book`, `return_on_equity`,
+   `interest_coverage`, and `piotroski_f`. This is not informational-only: CRUS's shadow
+   `structural.raw_score` (100.0) is computed from `applicable_weight: 0.1304` — only 13% of
+   total category weight is even applicable — with three of six categories (`financial_health`,
+   `growth`, `accounting_quality`) entirely `None` (verified by direct query against the live
+   artifact). **Severity: high.** For a semiconductor name, the shadow structural score is not a
+   differently-computed version of the same evaluation the champion performs — it is computed
+   from almost no data, confidently, because a single missing entry in a config file's default
+   profile list silently starves it. This has no live-path analogue (the live path's raw_score
+   for CRUS uses the normal ~29-metric base) and is a materially more severe, and mechanically
+   distinct, finding from the informational-only gap in 6b below.
+
+   **6b. `business_profiles.json`'s `profiles` object — confirmed informational-only, no score
+   effect.** The same two profiles are also absent from `business_profiles.json`'s `profiles`
+   dict, which `scoring_v2.py:241-247` reads separately for `replacement_metrics`/
+   `critical_metrics` — a different config file from 6a, consulted by different code.
+   `required_for_score` reads `applicability_matrix.json`, and category weights read
+   `settings.json`; neither consults `business_profiles.json`, so this specific gap has **no
+   score effect**. Live consequences instead: the v2 applicability contract's
+   `replacement_metrics`/`unavailable_replacement_metrics`/`critical_data_gaps` fields publish
+   empty (`[]`/`[]`/`[]`) for CRUS, versus THG's 23 declared replacement metrics (21 unavailable)
+   and 3 critical data gaps — the "what should we be measuring instead, and what's missing"
+   machinery structurally cannot fire for a semiconductor or other-pre-profit name. Worse,
+   `profile_confidence` (`scoring_v2.py:247`: `0.0 if not critical else (len(critical) −
+   len(critical_gaps)) / len(critical)`) publishes `0.0` for THG because all three declared
+   critical metrics are missing, and *also* `0.0` for CRUS because none were ever declared — a
+   reader of the payload cannot distinguish "profile contract fully unmet" from "no profile
+   contract exists" from this field alone. **Severity: low today** (informational fields only,
+   confirmed no score impact), but see 6a for the same root config gap's much more severe sibling
+   effect elsewhere in the same shadow layer.
 7. **Seven metrics named as profile replacements in config have zero computation anywhere in
    the pipeline.** Confirmed by the parallel metric-registry compilation and independently
    grep-checked this session: `combined_ratio`, `risk_based_capital_ratio`, `normalized_roe`,
@@ -1217,30 +1270,54 @@ an ongoing dual-name dependency.
    conclusion the internal audit reached about the timeliness layer), but the config's framing
    as a "replacement" rather than an acknowledged gap could mislead a reader of the applicability
    payload into thinking a substitute is actually in use.
-7. **`portfolio_fit: below_target` is a structural constant for every unpositioned name** — this
+8. **`portfolio_fit: below_target` is a structural constant for every unpositioned name** — this
    item from the internal audit is confirmed **not fixed** (§8.2), unlike its three siblings.
    Severity: low for the *score* (portfolio fit is not an input to the composite score) but
    directly affects position-sizing guidance display for any user without a matching portfolio
    entry, which given `portfolio_coverage` limitations (not yet quantified this session — see
    §11) may be most published names.
-8. **THG's `effective_score` appears as two slightly different values in one payload**: `74.7`
-   (`recommendation_v2.company.structural.effective_score`) vs. `74.5`
-   (`analysis_v2.structural.effective_score`) — same conceptual computation, same input `raw_
-   score: 90.5`, not yet root-caused. Both round from a computation of the form `50 + confidence
-   × (raw − 50)`; a 0.2-point gap implies the two call sites use slightly different `confidence`
-   inputs (0.61 vs. a marginally different value) despite both being fed from what appears to be
-   the same `structural` block. **Not root-caused this session — flagged, not resolved.**
-9. **Two different `suppressed_metrics` lists for the same THG row** (noted in
-   `TRACE_THG.md` §5, not yet resolved): `fundamental_detail.suppressed_metrics` includes
-   `sales_multiple` and excludes `trailing_revenue_growth`; `analysis_v2.applicability.
-   suppressed_metrics` does the reverse. Likely explained by the `ALIASES` mapping in
-   `scoring_v2.py:72-76` (`revenue_growth → trailing_revenue_growth`) operating on a different
-   metric-ID namespace than the legacy path uses, but not confirmed by reading the producing
-   code for `fundamental_detail.suppressed_metrics` this session.
+9. **THG's `effective_score` appears as two slightly different values in one payload —
+   root-caused as a rounding-order defect.** `74.5` (`analysis_v2.structural`) is computed by
+   the producer from **unrounded** confidence (`scoring_v2.py:164-166`: `0.3418/0.4066 × 0.72
+   = 0.60525…` → `50 + 0.60525 × 40.5 = 74.51`), which is then published rounded to two
+   decimals (`evidence_weight_resolved: 0.61`, `scoring_v2.py:188`). `74.7`
+   (`recommendation_v2.company.structural`) comes from `recommendation_policy_v2._score_layer`
+   (`recommendation_policy_v2.py:59`), which **recomputes** the effective score from the
+   layer's *rounded* published confidence instead of trusting the `effective_score` field the
+   layer already carries: `50 + 0.61 × 40.5 = 74.705 → 74.7`. Both arithmetics reproduce the
+   published values exactly. **Severity: low numerically (bounded by ±0.005 × |raw − 50|, so
+   ≤ ±0.25 points), but it is a genuine "same value, two answers" contract violation** — a
+   downstream module re-derives from lossier inputs what its input already states, and both
+   versions publish. Full derivation in `TRACE_THG.md` §4.
+10. **The live path and the v2 path can suppress *different metrics for the same company* —
+   root-caused as two distinct registry-consultation gaps, both confirmed by direct read.**
+   For THG: `fundamental_detail.suppressed_metrics` includes `sales_multiple` but not
+   `trailing_revenue_growth`; the v2 blocks do the reverse. Cause (full detail in
+   `TRACE_THG.md` §5 item 1):
+   - *Namespace split*: the live path queries the applicability registry with legacy IDs
+     (`scorer.py:252`), the v2 path with canonical IDs after `ALIASES` mapping
+     (`scoring_v2.py:103-104`). `applicability_matrix.json`'s insurer rule is keyed
+     `sales_multiple` (legacy), so only the live path sees it; the v2 path asks about
+     `price_to_sales`, which has no rule and no registry entry, and treats it as applied-but-
+     missing.
+   - *Fallback asymmetry*: `applicability_for` (v2, `canonical_metrics.py:147-149`)
+     suppresses by default any metric whose `metric_registry.json` entry does not declare the
+     profile applicable; the live path's `suppressed_metrics` (`canonical_metrics.py:153-172`)
+     never consults `metric_registry.json` at all. `trailing_revenue_growth`'s registry entry
+     declares no insurer profiles, so v2 suppresses it — while **the live scorer scores
+     revenue growth for insurers** (`scorer.py:584`), against the registry's declared intent.
+     The effect is score-relevant, not cosmetic: THG's legacy `growth` category is 86.1 (with
+     revenue growth in) vs. v2's 100.0 (with it out).
+   - The `suppressed_metrics` docstring's claim that "one authority now serves both paths"
+     (`canonical_metrics.py:156-162`, describing `0e0a9ad`) is therefore only half-true: one
+     *file set*, two inconsistent read paths. **Severity: moderate** — the live score includes
+     (or excludes) metrics contrary to the canonical registry's declarations for any profile
+     whose rules are keyed in only one namespace, or whose suppression relies on the
+     registry-declaration default.
 
 ### 10.3 Further defects found this session, from the data-sources/publication research pass
 
-10. **Configured rate limits for Alpha Vantage, Marketaux, and FRED are dead configuration.**
+11. **Configured rate limits for Alpha Vantage, Marketaux, and FRED are dead configuration.**
     `pipeline/cache.py`'s `DEFAULT_RATE_LIMITS` declares `alpha_vantage: 5`/min, `marketaux:
     60`/min, `fred: 120`/min, but none of the three provider modules ever calls
     `limiter_for()` — Alpha Vantage instead paces itself with an independent hardcoded
@@ -1252,13 +1329,13 @@ an ongoing dual-name dependency.
     unlikely), **but the config values are misleading** — a reader of `settings.json`/`cache.py`
     would reasonably conclude all five providers are rate-limited identically, and three of them
     are not limited by this mechanism at all.
-11. **A whole unused adapter class.** `pipeline/providers.py:291-323` defines
+12. **A whole unused adapter class.** `pipeline/providers.py:291-323` defines
     `AlphaVantageAdapter`, which *does* correctly call `limiter_for(self.name)` — but nothing in
     the codebase imports or instantiates it; `fetch_advisor.py` uses `AlphaVantageClient` from
     `alpha_vantage.py` instead, which is the version described in defect 10 above. This reads as
     an abandoned refactor: the rate-limit-respecting version of the Alpha Vantage client exists
     in the codebase and is not the one actually running.
-12. **A stale diagnostic comment describing the opposite of current behavior.**
+13. **A stale diagnostic comment describing the opposite of current behavior.**
     `fetch_advisor.py:1901-1904` states institutional-ownership scoring "has never run against
     the live OpenFIGI endpoint or live 13F filings." The live artifact
     (`public/data/screens/institutional-13f.json`) shows it has run — `status: "success"`,
@@ -1269,12 +1346,12 @@ an ongoing dual-name dependency.
     — `institutional_ownership` is `None` for all 40 published rows either way, correctly), but
     it actively misleads anyone reading the code to understand system state, which is the exact
     failure mode this whole specification exercise is meant to guard against.
-13. **`StockWatcherClient`'s endpoint is confirmed dead** (HTTP 403 on every request, per its
+14. **`StockWatcherClient`'s endpoint is confirmed dead** (HTTP 403 on every request, per its
     own docstring in `congress_trades.py`), leaving the weekly Congressional-trades screen
     dependent on two of its three intended sources. The published screen self-reports
     `status: "partial"`. Not hidden — the status field is honest — but worth noting as a
     source that could simply be removed rather than left silently failing every run.
-14. **Three provider API keys used in code are absent from `.env.example`**: `FMP_API_KEY`
+15. **Three provider API keys used in code are absent from `.env.example`**: `FMP_API_KEY`
     (`congress_trades.py`), `OPENFIGI_API_KEY` (`openfigi_client.py`), `MARKETSTACK_API_KEY`
     (`marketstack.py`). A new deployer following `.env.example` and the README's local-setup
     instructions would not know these three variables exist or matter, even though three
@@ -1297,35 +1374,26 @@ follow-up checklist, explicitly not as confirmed findings.
 
 ## 11. Undetermined
 
-Consolidated from every UNDETERMINED marker above, plus items not yet touched at all:
+Consolidated from every UNDETERMINED marker above, plus items not yet touched at all.
+Resolved since the checkpoint draft (and removed from this list): per-modifier caps (§6.5, now
+all directly verified), `ranking_weights` config presence (§6.1, confirmed in `settings.json`),
+the 74.7 vs. 74.5 discrepancy (§10.2 item 9, root-caused), the two `suppressed_metrics`
+lists (§10.2 item 10, root-caused), the `"replaced"` status question (§5 — real but
+currently invisible, behaviorally identical to `"suppressed"`), and the missing
+`semiconductor`/`other_pre_profit` profile entries (§10.2 item 6 — split into a confirmed
+high-severity score effect via `metric_registry.json` and a confirmed informational-only gap
+via `business_profiles.json`; see item 6a/6b), and `CrossSectionalNormalizer`'s internals
+(§4.4, now read in full). Still open:
 
-- Exact current per-modifier point caps for 8 of 9 champion-path modifiers (only the ±15
-  combined cap is directly confirmed; §6.5).
-- Whether `ranking_weights` (fundamentals 0.78/market_behavior 0.18/news_sentiment 0.04) is
-  actually present in `settings.json` or is running on the hardcoded `DEFAULT_RANKING_WEIGHTS`
-  fallback (§6.1) — the two are numerically identical in what was observed, so this doesn't
-  change any number in this document, but it changes *how* a reader would edit the weight.
 - Full TTM/annual/quarterly period-convention audit across all ~29 fundamental metrics (§4.3).
-- `CrossSectionalNormalizer`'s internal winsorization/tie-handling logic, beyond what's visible
-  in one published example row (§4.4).
-- Whether `"replaced"` is ever assigned as an actual metric status anywhere in current code, or
-  is dead code alongside `"suppressed"` (§5).
-- Root cause of the 74.7 vs. 74.5 `effective_score` discrepancy (§10.2 item 8).
-- Root cause of the two different `suppressed_metrics` lists on one row (§10.2 item 9).
 - Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
   session).
 - Everything in §10.4 (audit items not re-verified).
 - Whether the universe (`advisor_universe.json`) has ever changed prior to this repository
   clone's visible history — this session's clone is shallow (136 commits visible), so "1 commit
   touches this file" is not proof of a static history, only of what's visible (§3).
-- Whether `"replaced"` is ever assigned as an actual metric status anywhere in current code, or
-  is dead code alongside `"suppressed"` (§5) — not resolved by the second research pass either.
 - Full field-by-field walkthrough of `pipeline/schemas/advisor.schema.json` (930 lines) — only
   spot-referenced this session, not exhaustively mapped field-by-field to producing code (§9).
-- Section 1 (system overview) still needs full integration of confirmed runtime-topology facts
-  from `docs/spec/FILE_INVENTORY.md` (GitHub Actions schedules, Netlify function endpoints) into
-  a coherent narrative — the file inventory itself is complete and citation-grounded, but this
-  document's §1 has not yet been rewritten to draw on it fully.
 
 ---
 

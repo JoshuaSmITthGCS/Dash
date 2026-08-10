@@ -1,6 +1,9 @@
-# TRACE — THG (The Hanover Insurance Group) end-to-end, checkpoint draft
+# TRACE — THG (The Hanover Insurance Group) end-to-end
 
-Status: **partial, checkpoint draft**. This traces THG through the live (champion) scoring
+Status: **complete for the pipeline-side trace.** Every open thread from the checkpoint
+draft is now either resolved in place below (§5 records each resolution with the code that
+settles it) or explicitly delegated: frontend rendering of the live-vs-shadow disagreement
+is covered in `ARCHITECTURE.md` §9. This traces THG through the live (champion) scoring
 path and the shadow (`analysis_v2` / `recommendation_v2`) path using the actual committed
 artifact `public/data/advisor.json`, `generated_at: 2026-08-10T05:23:37Z`, `model_version:
 3.2.0`, `schema_version: 6`. All numbers below are copied from that file, not reconstructed.
@@ -37,11 +40,15 @@ system state that has since changed under it.
 
 ## 1. Where THG enters the pipeline
 
-- Universe membership: `pipeline/config/advisor_universe.json` (not yet fully read this pass
-  — UNDETERMINED whether THG is in the base list or a portfolio addition; to confirm before
-  final doc).
-- Run mode this artifact: `data_mode` / `universe_mode` fields exist in `advisor.json` top level
-  (not yet extracted) — UNDETERMINED, will pull in the next pass.
+- Universe membership — **resolved**: THG is one of the 910 entries in
+  `advisor_universe.json`'s base `symbols` list, and is *not* one of the 21
+  `portfolio_symbols` (both lists queried directly). The file also declares
+  `publish_limit: 40` and `extended_limit: 150` — which is why the published artifact
+  carries exactly 40 research rows out of a 926-name universe count.
+- Run mode this artifact — **resolved**: the artifact's top level carries `data_mode:
+  "live"`, `universe_mode: "fast"`, `polled_count: 247` (queried directly). So the row
+  under trace was produced by a **fast-mode** refresh that re-polled 247 of the configured
+  names rather than the full universe.
 - `enrichment_selection.previous_top` contains `"THG"` (confirmed by direct query against the
   committed artifact) — THG was in the prior run's top tier and therefore qualified for
   statement enrichment (`fundamentals_extended.derive_extended`) this run via
@@ -91,27 +98,41 @@ risk_adjusted 0.26, relative_strength 0.16, drawdown_resilience 0.14, volume_con
 0.08, low_beta 0.06, technical_extended 0.06`) needs re-verification against current
 `advisor_engine.py`, not yet done.
 
-`blend_research_components` now lives at `pipeline/advisor_engine.py:846` (shifted from the
+`blend_research_components` lives at `pipeline/advisor_engine.py:846` (shifted from the
 internal audit's stale line 758 — confirms the file has changed materially since that audit).
-Not yet read in full this pass. THG: `score: 81.3`, `base_score: 82.9`, `raw_score: 85.1`,
-`data_coverage: 0.87`. The gap `85.1 → 82.9` and `82.9 → 81.3` (modifiers: `macro_regime
-+1.06`, `insider_activity -2.63`, `total -1.57`) is arithmetically consistent
-(`82.9 - 1.57 = 81.33 → 81.3`), but the `85.1 → 82.9` step (presumably the second coverage/
-confidence shrink the internal audit's §4 describes as "counted twice") is **not yet verified
-against the actual `blend_research_components` body** — I have not read that function's
-current text yet. This is the single most important formula left to verify before the main
-document is trustworthy on the "counted twice" claim, since the audit's version of this claim
-is from before `cd581b5`/`ac24342` and may no longer hold in the same form.
+**Now read in full and verified arithmetically** — see `ARCHITECTURE.md` §4.2 for the
+line-by-line treatment. Summary against THG: `raw_score: 85.1` → `base = round(85.1 ×
+(0.8 + 0.2 × 0.87), 1) = 82.9` (the second coverage shrink, using `data_coverage: 0.87`)
+→ `82.9 + modifiers (macro_regime +1.06, insider_activity −2.63, total −1.57) = 81.33 →
+81.3`, matching the published `score: 81.3` exactly. The "coverage counted twice" claim
+**does hold in current code**: the fundamentals component entering this blend was already
+shrunk once by `0.65 + 0.35 × coverage` inside `_band_valuation_score` (§2 step 6/7 above)
+before `data_coverage_scalar` shrinks the composite again here. Both shrink events verified
+against this row's published numbers.
 
 ## 4. Shadow path (`analysis_v2`, `recommendation_v2`)
 
 Confirmed working and internally consistent for THG:
 
-- `structural.raw_score: 90.5`, `effective_score: 74.7` (note: two slightly different
-  effective_score values appear in the payload — `recommendation_v2.company.structural.
-  effective_score: 74.7` vs `analysis_v2.structural.effective_score: 74.5` — **a genuine
-  0.2-point discrepancy between two copies of what should be the same computed value in the
-  same payload**, not yet explained; flagged as a finding to chase, not yet root-caused).
+- `structural.raw_score: 90.5`, `effective_score: 74.7` in
+  `recommendation_v2.company.structural` vs `74.5` in `analysis_v2.structural` — **a genuine
+  0.2-point discrepancy between two copies of the same computed value in one payload, now
+  root-caused as a rounding-order defect.** The two structural blocks are otherwise
+  byte-identical (same `raw_score`, same `evidence_weight_resolved: 0.61`, same weights,
+  same metric lists — confirmed by direct field-by-field comparison). The producer,
+  `scoring_v2.py:164-166`, computes `confidence = coverage × provenance_reliability` from
+  **unrounded** inputs: `0.3418/0.4066 × 0.72 = 0.60525…`, giving `effective = 50 +
+  0.60525 × (90.5 − 50) = 74.51 → 74.5`, and then publishes the confidence rounded to two
+  decimals (`evidence_weight_resolved: round(confidence, 2) = 0.61`,
+  `scoring_v2.py:188`). The consumer, `recommendation_policy_v2._score_layer`
+  (`recommendation_policy_v2.py:46-62`), **recomputes** the effective score at line 59
+  instead of trusting the layer's own `effective_score` field — and it recomputes from the
+  *rounded published* `evidence_weight_resolved`: `50 + 0.61 × 40.5 = 74.705 → 74.7`. Both
+  arithmetics reproduce the published values exactly. The defect is that a downstream module
+  re-derives a value its input already carries, from lossier (rounded) inputs, so the payload
+  publishes two versions of "the" effective score that can differ by up to ±0.2 (half the
+  0.01 confidence-rounding step × the 40.5-point distance from neutral). Recorded as
+  finding 8 in `ARCHITECTURE.md` §10.2.
 - `structural.evidence_weight_resolved: 0.61`, `coverage: 0.84`.
 - `timeliness.raw_score: null`, `effective_score: null`, `coverage: 0.0` — confirmed no
   fabricated 50.0 (see §0).
@@ -146,33 +167,60 @@ question the brief asks in §8. Not yet traced into the frontend to see how `sta
 `recommendation_v2.company_action` are actually reconciled or juxtaposed on screen —
 UNDETERMINED, next step.
 
-## 5. Open threads before this trace is complete
+## 5. The checkpoint draft's open threads — all resolved
 
-1. Reconcile the two slightly different sets of "suppressed metrics" for THG appearing at
-   `fundamental_detail.suppressed_metrics` (16 items, includes `sales_multiple`, excludes
-   `trailing_revenue_growth`) vs `analysis_v2.applicability.suppressed_metrics` (16 items,
-   includes `trailing_revenue_growth`, excludes `sales_multiple`) — likely two different
-   registries or two different metric-ID alias layers (`ALIASES` in `scoring_v2.py:72-76`
-   maps `revenue_growth → trailing_revenue_growth`, `sales_multiple` has no such alias) but
-   not yet confirmed by reading the code that produces `fundamental_detail.suppressed_metrics`.
-2. Read `blend_research_components` in full to verify or refute the "coverage counted twice"
-   claim against current code (§3 above).
-3. Read `_categories_with_required_gate`, `weighted_available`, `weighted_coverage` in full
-   (currently only located, not read).
-4. Read `advisor_engine.technical_factors` for the market-behavior sub-weights and verify
-   against current `settings.json`.
-5. Root-cause the 74.7 vs 74.5 `effective_score` discrepancy in §4.
-6. Confirm THG's universe/portfolio membership path and run mode (`full` vs `fast`) for this
-   specific artifact.
-7. Trace `data_coverage_components` (`pipeline/data_coverage.py`, confirmed to exist,
-   functions listed but not read: `completeness_component`, `freshness_component`,
-   `peer_sample_component`, `model_agreement_component`, `run_source_reliability`,
-   `historical_calibration_component`, `data_coverage_components`) against THG's
-   `data_coverage_detail.components` (`completeness: 0.87, freshness: null, source_reliability:
-   0.92, peer_sample: 0.35, model_agreement: 0.25, historical_calibration: null`) to get the
-   exact current formula, not the old `confidence.py` formula the internal audit describes
-   (that module no longer exists under that name).
-8. Frontend rendering: how `stance`, `recommendation`, and `recommendation_v2` are surfaced
-   together (or not) on THG's detail page — not yet opened any `src/` component for this.
-9. Floor/recovery-level logic exists in `src/lib/dipWatch.js` (confirmed present by grep, not
-   yet read) — needed for brief §8's NEM floor/recovery example.
+1. **The two different `suppressed_metrics` lists — root-caused, and it is a real defect,
+   not a display artifact.** For THG, `fundamental_detail.suppressed_metrics` contains
+   `sales_multiple` but not `trailing_revenue_growth`; `analysis_v2` (and both structural
+   blocks) contain `trailing_revenue_growth` but not `sales_multiple` (16 items each,
+   otherwise identical — confirmed by set-difference on the live row). Two independent
+   mechanisms produce the divergence, both confirmed by direct read:
+
+   - **Namespace split.** The live path (`scorer.applicability` →
+     `canonical_metrics.suppressed_metrics`, `scorer.py:252`) queries the applicability
+     registry with **legacy** metric IDs; the v2 path first maps IDs through `ALIASES`
+     (`scoring_v2.py:72-76`: `revenue_growth → trailing_revenue_growth`, `earnings_growth →
+     trailing_eps_growth`, `sales_multiple → price_to_sales`) and queries with **canonical**
+     IDs (`scoring_v2.py:103-104`). `applicability_matrix.json`'s
+     `property_casualty_insurer` rule block is keyed `sales_multiple` (legacy namespace,
+     confirmed in the rule-key list) — so the live path finds that rule and suppresses, while
+     the v2 path asks about `price_to_sales`, finds no rule and no registry entry
+     (`metric_registry.json` has no `price_to_sales` entry — confirmed), and falls through
+     to `"applied"` (`canonical_metrics.py:150`), publishing it as merely *missing*
+     (`price_to_sales` appears in v2's `missing_metrics` for THG).
+   - **Fallback asymmetry.** `applicability_for` (`canonical_metrics.py:141-150`, the v2
+     path) has a second suppression source the live path lacks entirely: a metric *with* a
+     registry entry whose `applicability_profiles` does not list the profile is suppressed by
+     default (line 147-149). `trailing_revenue_growth`'s registry entry declares
+     `['general', 'utility', 'commodity_producer', 'pre_profit_biotechnology',
+     'other_pre_profit']` — no insurer profiles — so v2 suppresses it for THG. The live
+     path's `canonical_metrics.suppressed_metrics` (lines 153-172) consults **only**
+     `profile_rules` and never reads `metric_registry.json`, and it queries with the legacy
+     ID `revenue_growth` (which has no registry entry at all) — so the live scorer **scores
+     revenue growth for insurers** (`scorer.py:584`) even though the canonical registry
+     declares it inapplicable. The effect is visible in the published row: legacy `growth`
+     category 86.1 (includes the revenue-growth band score) vs. v2 `growth` category 100.0
+     (excludes it).
+
+   The docstring on `suppressed_metrics` says "One authority now serves both paths"
+   (`canonical_metrics.py:156-162`, describing commit `0e0a9ad`) — both paths do now read
+   the same files, but through **different ID namespaces and different fallback rules**, so
+   they can still disagree metric-by-metric. Recorded as a new finding in
+   `ARCHITECTURE.md` §10.2.
+2. `blend_research_components` — read in full, "coverage counted twice" confirmed against
+   current code and this row's arithmetic (§3 above; `ARCHITECTURE.md` §4.2).
+3. `_categories_with_required_gate`, `weighted_available`, `weighted_coverage` — read in
+   full; documented in `ARCHITECTURE.md` §4.1 steps 4-5. THG's `categories_withheld: {}`
+   is consistent: the P&C-insurer `required_for_score` metrics all resolved for THG.
+4. Market-behavior sub-weights — verified (`advisor_engine.py:53-59`;
+   `ARCHITECTURE.md` §6.4).
+5. 74.7 vs 74.5 — root-caused as a rounding-order defect (§4 above).
+6. Universe membership and run mode — resolved (§1 above: base-universe symbol, fast-mode
+   artifact, 247 polled).
+7. `data_coverage_components` — traced in full against THG's published components
+   (`ARCHITECTURE.md` §7 item 5).
+8. Frontend rendering of `stance` vs `recommendation` vs `recommendation_v2` — covered in
+   `ARCHITECTURE.md` §9.
+9. Floor/recovery mechanism — it is `src/lib/dipWatch.js`, frontend-only, fully documented
+   with all six constants in `ARCHITECTURE.md` §8.3 (and it is *not* the shadow policy's
+   stop-loss machinery, which no published row can currently reach).
