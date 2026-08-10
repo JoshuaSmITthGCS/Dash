@@ -245,7 +245,8 @@ class JobArtifactTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         root = self.directory.name
-        for name, filename in (("FUNDAMENTALS", "fundamentals.jsonl"),
+        for name, filename in (("FUNDAMENTALS_DIR", "fundamentals"),
+                               ("LEGACY_FUNDAMENTALS", "fundamentals.jsonl"),
                                ("MANIFEST", "fundamentals_manifest.json"),
                                ("ENTITY_AUDIT", "entity_audit.json"),
                                ("RESTATEMENTS", "fundamental_restatements.jsonl")):
@@ -279,12 +280,12 @@ class JobArtifactTests(unittest.TestCase):
         self.assertEqual(audit["resolved_map"]["THG"], "0000944695")
         self.assertIn("NOTREAL", audit["unresolved_reasons"])
         # Nothing was fetched, so no observation store exists yet.
-        self.assertFalse(os.path.exists(self.job.FUNDAMENTALS))
+        self.assertEqual(self.job.store().shards(), [])
 
     def test_a_backfill_writes_observations_a_manifest_and_the_audit(self):
         code = self.job.run(["THG"], client=self.client(), resolver=self.resolver())
         self.assertEqual(code, 0)
-        self.assertTrue(os.path.exists(self.job.FUNDAMENTALS))
+        self.assertGreater(self.job.store().stats()["observations"], 0)
         manifest = self.read(self.job.MANIFEST)
         self.assertEqual(manifest["companies_ok"], 1)
         self.assertGreater(manifest["observations_written"], 0)
@@ -470,18 +471,18 @@ class RepairTests(unittest.TestCase):
     def test_repair_reclassifies_and_drops_without_refetching(self):
         import json
         rows = [
-            {"cik": "1", "concept": "revenue", "period_start": "2024-10-01",
+            {"cik": "01", "concept": "revenue", "period_start": "2024-10-01",
              "period_end": "2025-06-30", "unit": "USD", "accession": "a",
-             "filed": "2025-08-01", "period_type": "annual", "value": 293},
-            {"cik": "1", "concept": "shares_basic", "period_start": "2025-01-01",
+             "filed": "2025-08-01", "value": 293},
+            {"cik": "01", "concept": "shares_basic", "period_start": "2025-01-01",
              "period_end": "2025-09-30", "unit": "shares", "accession": "b",
-             "filed": "2025-05-01", "period_type": "annual", "value": 1},
+             "filed": "2025-05-01", "value": 1},
         ]
-        with open(self.job.FUNDAMENTALS, "w", encoding="utf-8") as handle:
-            for row in rows:
-                handle.write(json.dumps(row) + "\n")
-        kept, reclassified, dropped = self.job.repair_store()
-        self.assertEqual((kept, reclassified, dropped), (1, 1, 1))
-        with open(self.job.FUNDAMENTALS, encoding="utf-8") as handle:
-            survivor = json.loads(handle.read().strip())
-        self.assertEqual(survivor["period_type"], "nine_months")
+        self.job.store().write(rows)
+        kept, _, dropped = self.job.repair_store()
+        self.assertEqual((kept, dropped), (1, 1))
+        survivors = self.job.store().load()
+        self.assertEqual(len(survivors), 1)
+        # period_type is recomputed on read rather than stored, so the fix applies without
+        # re-fetching anything.
+        self.assertEqual(survivors[0]["period_type"], "nine_months")

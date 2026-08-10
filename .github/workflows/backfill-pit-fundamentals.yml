@@ -17,7 +17,7 @@ name: Backfill point-in-time fundamentals
 #   pipeline/data/pit/entity_audit.json            ticker -> CIK resolution, every run
 #   pipeline/data/pit/entity_map.json              the SEC ticker map this run resolved against
 #   pipeline/data/pit/fundamentals_manifest.json   per-company coverage, sample and full runs
-#   pipeline/data/pit/fundamentals.jsonl           the observations themselves
+#   pipeline/data/pit/fundamentals/*.jsonl         the observations, sharded by CIK
 #   pipeline/data/pit/fundamental_restatements.jsonl  periods reported more than once
 
 on:
@@ -80,6 +80,11 @@ jobs:
             exit 1
           fi
 
+      # A single-file store projects to 2.2 GB at full-universe scale, past GitHub's 100 MB
+      # per-file limit. Fail before fetching rather than after, if a shard ever approaches it.
+      - name: Guard the store against the file size limit
+        run: PYTHONPATH=pipeline python -m pytest pipeline/tests/test_pit_store.py -q
+
       - name: Backfill
         run: |
           set -o pipefail
@@ -101,8 +106,9 @@ jobs:
             echo '```json'
             cat backfill-summary.json 2>/dev/null || echo '{}'
             echo '```'
-            if [ -f pipeline/data/pit/fundamentals.jsonl ]; then
-              echo "Observations on disk: $(wc -l < pipeline/data/pit/fundamentals.jsonl)"
+            if [ -d pipeline/data/pit/fundamentals ]; then
+              echo "Observations on disk: $(cat pipeline/data/pit/fundamentals/*.jsonl | wc -l)"
+              echo "Shards: $(ls pipeline/data/pit/fundamentals | wc -l), largest $(du -h pipeline/data/pit/fundamentals/*.jsonl | sort -h | tail -1 | cut -f1)"
             fi
             if [ -f pipeline/data/pit/fundamental_restatements.jsonl ]; then
               echo "Restatements recorded: $(wc -l < pipeline/data/pit/fundamental_restatements.jsonl)"

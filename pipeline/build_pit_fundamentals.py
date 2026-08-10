@@ -39,10 +39,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import LOG, STORE_DIR, load_json
 from edgar_entities import EntityResolver
 from edgar_facts import CONCEPT_TAGS, company_observations, restatements
+from pit_fundamentals_store import ShardedStore, dedupe
 from sec_edgar import SecEdgarClient
 
 PIT_DIR = os.path.join(STORE_DIR, "pit")
-FUNDAMENTALS = os.path.join(PIT_DIR, "fundamentals.jsonl")
+# Sharded by CIK. One 2.2 GB file would exceed GitHub's 100 MB per-file limit at
+# full-universe scale and weigh on every clone forever; see pit_fundamentals_store.
+FUNDAMENTALS_DIR = os.path.join(PIT_DIR, "fundamentals")
+LEGACY_FUNDAMENTALS = os.path.join(PIT_DIR, "fundamentals.jsonl")
 MANIFEST = os.path.join(PIT_DIR, "fundamentals_manifest.json")
 # Separate file so an audit-only run and a later backfill do not overwrite each other's
 # report. The entity audit is the thing to read before trusting any fetched history, so it
@@ -57,24 +61,13 @@ def observation_key(row):
             row.get("period_end"), row.get("unit"), row.get("accession"))
 
 
-def existing_keys(path=None):
-    # Resolved at call time, not bound at import. A default argument captures the module
-    # constant once, which makes the resumability check read whatever path existed when this
-    # module was first imported rather than the one actually in use.
-    path = path or FUNDAMENTALS
-    keys = set()
-    if not os.path.exists(path):
-        return keys
-    with open(path, encoding="utf-8") as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                keys.add(observation_key(json.loads(line)))
-            except ValueError:
-                continue
-    return keys
+def store():
+    # Resolved at call time, not bound at import, so a test can redirect the directory.
+    return ShardedStore(FUNDAMENTALS_DIR)
+
+
+def existing_keys():
+    return store().keys()
 
 
 def append_rows(path, rows):
@@ -125,52 +118,62 @@ def published_rows():
             *payload.get("portfolio_coverage", [])]
 
 
-def repair_store(path=None):
-    """Recompute derived fields on an existing store through the current parser.
-
-    ``period_type`` and the filed-before-period-end rejection are pure functions of fields
-    already on every row, so a classifier fix does not need a re-fetch of ~90k observations.
-    Returns ``(kept, reclassified, dropped)``.
-    """
-    from edgar_facts import _period_kind
-
-    path = path or FUNDAMENTALS
-    if not os.path.exists(path):
-        return 0, 0, 0
-    kept, reclassified, dropped = [], 0, 0
-    with open(path, encoding="utf-8") as handle:
+def migrate_legacy_store():
+    """Fold a single-file store into the sharded, deduplicated layout. One-way, idempotent."""
+    if not os.path.exists(LEGACY_FUNDAMENTALS):
+        return 0, 0
+    rows = []
+    with open(LEGACY_FUNDAMENTALS, encoding="utf-8") as handle:
         for line in handle:
             line = line.strip()
-            if not line:
-                continue
-            row = json.loads(line)
-            if row.get("filed") and row.get("period_end") and row["filed"] < row["period_end"]:
-                dropped += 1
-                continue
-            period_type, period_days = _period_kind(
-                {"start": row.get("period_start"), "end": row.get("period_end")})
-            if row.get("period_type") != period_type:
-                reclassified += 1
-            row["period_type"], row["period_days"] = period_type, period_days
-            kept.append(row)
-    temporary = f"{path}.tmp"
-    with open(temporary, "w", encoding="utf-8") as handle:
-        for row in kept:
-            handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
-    os.replace(temporary, path)
+            if line:
+                row = json.loads(line)
+                if row.get("filed") and row.get("period_end") and row["filed"] < row["period_end"]:
+                    continue
+                rows.append(row)
+    written = store().write(rows)
+    os.remove(LEGACY_FUNDAMENTALS)
+    return len(rows), written
+
+
+def repair_store(path=None):
+    """Re-deduplicate and rewrite every shard through the current parser.
+
+    Derived fields are recomputed on read (``pit_fundamentals_store.expand``), so a parser
+    fix needs no re-fetch. Returns ``(kept, reclassified, dropped)`` where ``reclassified``
+    counts rows whose stored identity changed and ``dropped`` counts impossible filing dates.
+    """
+    current = store()
+    kept = dropped = 0
+    for name in current.shards():
+        shard = name.removeprefix("fundamentals-").removesuffix(".jsonl")
+        rows = current.load_compact(shard)
+        usable = [row for row in rows
+                  if not (row.get("filed") and row.get("period_end")
+                          and row["filed"] < row["period_end"])]
+        dropped += len(rows) - len(usable)
+        merged = dedupe(usable)
+        temporary = f"{current.path(shard)}.tmp"
+        with open(temporary, "w", encoding="utf-8") as handle:
+            for row in merged:
+                handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
+        os.replace(temporary, current.path(shard))
+        kept += len(merged)
+    reclassified = 0
     # A store the manifest no longer describes is the same defect one layer up, so record
     # the repair rather than leaving the counts stale.
     if os.path.exists(MANIFEST):
         with open(MANIFEST, encoding="utf-8") as handle:
             manifest = json.load(handle)
-        manifest["observations_total"] = len(kept)
+        manifest["observations_total"] = kept
+        manifest["store"] = current.stats()
         manifest.setdefault("repairs", []).append({
             "repaired_at": datetime.now(timezone.utc).isoformat(),
-            "rows_kept": len(kept), "rows_reclassified": reclassified,
+            "rows_kept": kept, "rows_reclassified": reclassified,
             "rows_dropped_filed_before_period_end": dropped,
         })
         _write_json(MANIFEST, manifest)
-    return len(kept), reclassified, dropped
+    return kept, reclassified, dropped
 
 
 def universe_symbols():
@@ -290,7 +293,7 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
             continue
         for row in rows:
             seen.add(observation_key(row))
-        written += append_rows(FUNDAMENTALS, rows)
+        written += store().write(rows)
         restatement_rows.extend(
             {**entry, "cik": cik, "ticker": ticker} for entry in restatements(rows))
         if index % 25 == 0 or index == len(resolved):
@@ -307,6 +310,7 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
         "companies_failed": len(summaries) - len(ok),
         "observations_written": written,
         "observations_total": len(seen),
+        "store": store().stats(),
         "restatements_found": len(restatement_rows),
         "earliest_period_end": periods[0] if periods else None,
         "concepts_requested": sorted(concepts or CONCEPT_TAGS),
@@ -343,8 +347,16 @@ def main(argv=None):
     parser.add_argument("--audit-only", action="store_true",
                         help="resolve tickers to CIKs and report; fetch no facts")
     parser.add_argument("--repair", action="store_true",
-                        help="recompute derived fields on the existing store; fetch nothing")
+                        help="re-deduplicate the existing store; fetch nothing")
+    parser.add_argument("--migrate-legacy", action="store_true",
+                        help="fold a single-file store into the sharded layout; fetch nothing")
     args = parser.parse_args(argv)
+    if args.migrate_legacy:
+        read, written = migrate_legacy_store()
+        LOG.info(f"Migrated {read} legacy rows into the sharded store ({written} kept)")
+        print(json.dumps({"legacy_rows_read": read, "stored": written,
+                          **store().stats()}, indent=2, default=str))
+        return 0
     if args.repair:
         kept, reclassified, dropped = repair_store()
         LOG.info(f"Repaired the store: {kept} rows kept, {reclassified} reclassified, "

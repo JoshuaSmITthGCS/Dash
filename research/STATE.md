@@ -208,6 +208,35 @@ filers tag only `LiabilitiesAndStockholdersEquity`. Tag heterogeneity is real an
 revenue resolved through `RevenueFromContractWithCustomerExcludingAssessedTax` for 16 filers,
 `Revenues` for 7, `RevenueFromContractWithCustomerIncludingAssessedTax` for 2.
 
+**D-2.12 — The store is sharded and deduplicated because the single file would not fit.**
+The 25-company sample was 89,434 rows in 64.5 MB, projecting to **2.2 GB** for the full
+universe — past GitHub's 100 MB per-file hard limit, and permanent weight on every clone of a
+repository that also serves a website. Three changes, all lossless for every point-in-time
+and restatement question:
+
+- **Deduplicate to what is knowable.** 50.8% of the sample was a later filing repeating a
+  value already filed — a 10-K carries the prior two years as comparatives. Only the *first*
+  filing of a series and any *later filing whose value changed* affect what could have been
+  known on a date, and the second case is a restatement, preserved exactly. Tests assert that
+  `as_of` and `restatements` return identical answers before and after.
+- **Constants to the header.** `source`, `source_taxonomy`, `transformation`,
+  `reliability_tier`, `split_adjusted` and `point_in_time` were identical on all 89,434 rows
+  and cost more than the values. `requested_at`/`observed_at` duplicated `filed`;
+  `period_type`, `period_days`, `amended` and `ticker` are derivable; `source_field` is
+  constant per (company, concept) and lives in the manifest. All are rehydrated on read, so
+  consumers see the same record.
+- **Shard by CIK.** One file per CIK-suffix bucket. Re-fetching one company rewrites one
+  small shard rather than a 2 GB file.
+
+Result: 64.5 MB → **11.2 MB** for the sample, 721 → 255 bytes per row, 82.6% smaller.
+Full universe now projects to **~386 MB across 100 shards, largest ~10 MB** — comfortably
+inside every limit. `test_pit_store.LiveStoreTests` fails the build if any shard approaches
+50 MB, and the workflow runs that test *before* fetching.
+
+**One-time cost already incurred:** the 61.5 MB unsharded `fundamentals.jsonl` is in git
+history from commit `53b15de`. It is gone from the working tree but remains in the pack. Not
+worth a history rewrite of a shared `main` unless clone size becomes a real problem.
+
 **D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
 EV/EBITDA from these observations is a separate step on purpose: the facts should be written
 once and re-derived from as often as the derivation changes. Baking a derivation into the
