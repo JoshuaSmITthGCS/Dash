@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 28,
+  "refreshes_observed": 29,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -4713,6 +4713,253 @@
           ],
           "score_delta": -20.7,
           "confidence_delta": -0.42
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-10T12:27:01.665350+00:00",
+      "current_refresh": "advisor-2026-08-10T15:37:21.567915+00:00",
+      "shared_tickers": 880,
+      "rank_turnover": {
+        "top_40": 0.15,
+        "top_100": 0.15
+      },
+      "tickers_with_availability_driven_change": 27,
+      "tickers_with_availability_driven_change_pct": 0.031,
+      "mean_abs_score_delta": 0.59,
+      "mean_abs_confidence_delta": 0.007,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "BR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 27.5,
+          "confidence_delta": 0.43
+        },
+        {
+          "ticker": "APP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 22.5,
+          "confidence_delta": 0.43
+        },
+        {
+          "ticker": "BMY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 22.5,
+          "confidence_delta": 0.44
+        },
+        {
+          "ticker": "AR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 20.7,
+          "confidence_delta": 0.42
+        },
+        {
+          "ticker": "BBWI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 19.1,
+          "confidence_delta": 0.44
+        },
+        {
+          "ticker": "AVGO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 16.2,
+          "confidence_delta": 0.44
+        },
+        {
+          "ticker": "APO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 15.3,
+          "confidence_delta": 0.41
+        },
+        {
+          "ticker": "AYI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 15.0,
+          "confidence_delta": 0.45
+        },
+        {
+          "ticker": "AIG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "fcf_growth_3y",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 13.9,
+          "confidence_delta": 0.29
+        },
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -9.7,
+          "confidence_delta": 0.03
         }
       ]
     }
