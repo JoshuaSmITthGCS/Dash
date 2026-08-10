@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 27,
+  "refreshes_observed": 28,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -4488,6 +4488,231 @@
           ],
           "score_delta": 17.6,
           "confidence_delta": null
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-10T05:23:37.933120+00:00",
+      "current_refresh": "advisor-2026-08-10T12:27:01.665350+00:00",
+      "shared_tickers": 880,
+      "rank_turnover": {
+        "top_40": 0.25,
+        "top_100": 0.25
+      },
+      "tickers_with_availability_driven_change": 275,
+      "tickers_with_availability_driven_change_pct": 0.312,
+      "mean_abs_score_delta": 2.74,
+      "mean_abs_confidence_delta": 0.028,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 30.3,
+          "confidence_delta": 0.37
+        },
+        {
+          "ticker": "RNR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_book",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 28.6,
+          "confidence_delta": 0.35
+        },
+        {
+          "ticker": "PGR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_book",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 27.5,
+          "confidence_delta": 0.39
+        },
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 27.0,
+          "confidence_delta": 0.32
+        },
+        {
+          "ticker": "JKHY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -24.3,
+          "confidence_delta": -0.43
+        },
+        {
+          "ticker": "TRV",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_book",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 23.8,
+          "confidence_delta": 0.35
+        },
+        {
+          "ticker": "CINF",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_book",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 22.8,
+          "confidence_delta": 0.35
+        },
+        {
+          "ticker": "APP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -22.5,
+          "confidence_delta": -0.43
+        },
+        {
+          "ticker": "FAF",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "debt_to_equity",
+            "fcf_growth_3y",
+            "free_cash_flow_yield",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "peg",
+            "price_to_book",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 21.4,
+          "confidence_delta": 0.39
+        },
+        {
+          "ticker": "AR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -20.7,
+          "confidence_delta": -0.42
         }
       ]
     }
