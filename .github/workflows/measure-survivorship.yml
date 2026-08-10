@@ -1,0 +1,132 @@
+name: Measure survivorship
+
+# Replaces a sentence with a number.
+#
+# Every performance result in research/results/ currently carries the line "biased upward by an
+# amount this pipeline cannot yet quantify". That is honest, and it is also the largest open
+# hole in the research programme: the universe is drawn from the companies that still have a
+# price feed today, so everything that delisted, was acquired, or went to zero between 2016 and
+# now is invisible to every backtest here.
+#
+# SEC's quarterly full indexes list every filing accepted in that quarter, by registrants that
+# have since deregistered as well as by survivors. A CIK filing annual reports in 2017 and
+# nothing since 2020 is a company that left. The current ticker map holds only survivors. The
+# difference is the measurement.
+#
+# What this gives: the attrition rate per cohort year, split between registrants that left by
+# transaction (a delisting or merger form is on file) and those that simply went silent, plus
+# the CIKs concerned. What it does not give: their returns. No price source in this repository
+# serves delisted securities, so the gap ends up bounded in count and not corrected in return
+# — an acquisition ends a filing history above the prevailing price and a bankruptcy ends it
+# near zero, and the mix cannot be inferred from filing records alone.
+#
+# Output, committed to main so it is readable afterwards rather than only in a run log:
+#
+#   pipeline/data/pit/filer_cohorts.json
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: "First year of indexes to read (the price cache starts 2016-08)"
+        required: false
+        default: '2016'
+        type: string
+      silent_after_days:
+        description: "Days without a periodic filing before a registrant counts as departed"
+        required: false
+        default: '540'
+        type: string
+  schedule:
+    # Quarterly, a fortnight after each quarter closes, by which time the index is populated.
+    - cron: '23 7 15 1,4,7,10 *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: survivorship-measurement
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    # Roughly forty quarterly indexes at a few megabytes each, paced by the SEC rate limiter.
+    timeout-minutes: 45
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Verify the SEC user agent is configured
+        run: |
+          if [ -z "${SEC_USER_AGENT}" ]; then
+            echo "::error::SEC_USER_AGENT is not set. Add it as a repository secret, for" \
+                 "example 'ValueSignal research you@example.com'. SEC fair-access policy" \
+                 "requires a declaring User-Agent with a contact address."
+            exit 1
+          fi
+
+      # The index parser is fixed-width and the forms it selects decide the whole measurement,
+      # so it is checked before anything is fetched rather than after.
+      - name: Check the index parser and cohort arithmetic
+        run: PYTHONPATH=pipeline python -m pytest pipeline/tests/test_filer_cohorts.py -q
+
+      - name: Measure
+        run: |
+          set -o pipefail
+          python pipeline/build_filer_cohorts.py \
+            --start-year "${{ inputs.start_year || '2016' }}" \
+            --silent-after-days "${{ inputs.silent_after_days || '540' }}" \
+            | tee cohorts-summary.json
+
+      - name: Summarise into the run log
+        if: always()
+        run: |
+          {
+            echo "### Survivorship measurement"
+            echo '```json'
+            cat cohorts-summary.json 2>/dev/null || echo '{}'
+            echo '```'
+            if [ -f pipeline/data/pit/filer_cohorts.json ]; then
+              echo ""
+              echo "Attrition by cohort year (filers / still filing / absent from today's ticker map):"
+              python - <<'PY'
+          import json
+          data = json.load(open("pipeline/data/pit/filer_cohorts.json"))
+          for year, row in sorted(data["cohorts"].items()):
+              invisible = row["filers"] - row["in_current_ticker_map"]
+              share = 100 * invisible / row["filers"] if row["filers"] else 0
+              print(f"  {year}: {row['filers']:>6} filed, {row['still_filing']:>6} still filing, "
+                    f"{invisible:>6} ({share:.1f}%) invisible to this repository's universe")
+          PY
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the measurement
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A pipeline/data/pit/filer_cohorts.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed; nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(data): measure filer attrition for survivorship correction"
+          # Other jobs write to main on their own schedule, so rebase rather than fail when
+          # two land close together.
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((2 ** attempt))
+          done
+          echo "::error::Could not push the measurement after four attempts."
+          exit 1
