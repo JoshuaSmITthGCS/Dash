@@ -101,7 +101,15 @@ def _fact_rows(companyfacts, taxonomy, tag):
 
 
 def _period_kind(entry):
-    """``instant`` for a balance-sheet fact, else the length of the flow period."""
+    """``instant`` for a balance-sheet fact, else the length of the flow period.
+
+    ``nine_months`` is a separate kind, not a short year. Filers tag year-to-date
+    cumulatives in every 10-Q, so a Q3 filing carries a nine-month figure alongside the
+    quarter. Folding those into ``annual`` put 9,076 of 23,048 supposedly-annual facts --
+    39% -- at three quarters of a year: Apple's nine-month revenue of $293.8B sat labelled
+    as an annual figure against a true full year of $383.3B. Any TTM or annual derivation
+    reading that would have understated by a quarter.
+    """
     start, end = entry.get("start"), entry.get("end")
     if not start:
         return "instant", None
@@ -113,6 +121,8 @@ def _period_kind(entry):
         return "quarter", days
     if days <= 200:
         return "half_year", days
+    if days <= 300:
+        return "nine_months", days
     if days <= 380:
         return "annual", days
     return "duration", days
@@ -140,6 +150,13 @@ def observations_for_concept(companyfacts, concept, *, forms=PERIODIC_FORMS,
                 if not filed or not end or value is None:
                     continue
                 if allowed_forms and form not in allowed_forms:
+                    continue
+                # A fact cannot be filed before the period it reports has ended. Two such
+                # rows appeared in the first live sample (AES share counts tagged with a
+                # period ending five months after the filing date -- a filer tagging error).
+                # Carrying one would make a value readable before it could exist, which is
+                # precisely the look-ahead this module exists to prevent.
+                if filed < end:
                     continue
                 period_type, period_days = _period_kind(entry)
                 observations.append({

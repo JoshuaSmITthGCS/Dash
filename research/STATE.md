@@ -32,7 +32,7 @@ write through... just make it better"), so Phases 1 and 3 were executed without 
 |---|---|---|
 | 0 | Reverse-engineer the system | **COMPLETE** |
 | 1 | Integrity fixes | **COMPLETE** (1.1, 1.2, 1.3 + two extras) |
-| 2 | Point-in-time data integrity | **2.1 verified against live SEC (861/910, 0 ambiguous); 2.2 written, awaiting a `sample` run; 2.4 done; 2.3/2.5 open** |
+| 2 | Point-in-time data integrity | **2.1 + 2.2 verified against live SEC: 25-company sample returned 89,434 observations back to 2010 with 4,247 restatements. 2.4 done. Ready for `full`. 2.3/2.5 open** |
 | 3 | Industry conditioning | **COMPLETE** (3.1, 3.2 partial, 3.3 partial) |
 | 4–10 | Research program | **BLOCKED on Phase 2** |
 | 11 | Deliverables | blocked |
@@ -179,6 +179,34 @@ Three fixes, in order of durability:
 
 The stubs in the backfill tests now use the real method name, so they exercise the surface
 that exists rather than the one I meant to write.
+
+**D-2.11 — The live sample worked, and found two parser bugs the fixtures could not.**
+25 of 25 companies, **89,434 observations**, earliest period end **2010-01-30**, **4,247
+restatements**. Values verified against reality: Apple FY2024 revenue $391.0B filed
+2024-11-01, FY2025 $416.2B filed 2025-10-31 — both exact. The point-in-time property
+demonstrably holds on real data: asked for Apple's annual revenue on 2024-10-31 the store
+returns FY2023 $383.3B; on 2024-11-01, the day the 10-K was accepted, it returns FY2024
+$391.0B.
+
+Two bugs only real filings could surface:
+- **Nine-month year-to-date cumulatives were classified `annual`.** Filers tag YTD figures in
+  every 10-Q, so 9,074 of 23,046 supposedly-annual facts were three quarters of a year.
+  Apple's nine-month $293.8B sat labelled annual against a true year of $383.3B — a
+  derivation reading it would have understated by a quarter. `nine_months` is now its own
+  period type.
+- **Two facts were filed before their period ended** (AES share counts, a filer tagging
+  error). Impossible for an as-reported fact and definitionally look-ahead; now rejected.
+
+Both are pure functions of fields already stored, so `--repair` rewrote the existing 89,436
+rows in place rather than re-fetching: 89,434 kept, 9,074 reclassified, 2 dropped. The
+manifest records the repair.
+
+**Concept coverage across the sample** (missing counts are mostly correct absences, not
+gaps): inventory missing for 13 of 25 and gross_profit for 12 — service and financial
+businesses report neither. `liabilities` missing for 10 is the one worth revisiting; many
+filers tag only `LiabilitiesAndStockholdersEquity`. Tag heterogeneity is real and handled:
+revenue resolved through `RevenueFromContractWithCustomerExcludingAssessedTax` for 16 filers,
+`Revenues` for 7, `RevenueFromContractWithCustomerIncludingAssessedTax` for 2.
 
 **D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
 EV/EBITDA from these observations is a separate step on purpose: the facts should be written

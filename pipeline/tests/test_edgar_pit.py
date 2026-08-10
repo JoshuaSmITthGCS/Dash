@@ -391,3 +391,97 @@ class EmptyPayloadTests(unittest.TestCase):
         self.assertEqual(manifest["companies_ok"], 0)
         self.assertEqual(manifest["companies"][0]["status"], "no_usable_facts")
         self.assertEqual(manifest["companies"][0]["fact_taxonomies"], [])
+
+
+class PeriodClassificationTests(unittest.TestCase):
+    """A nine-month year-to-date cumulative is not a short year.
+
+    Filers tag YTD cumulatives in every 10-Q, so a Q3 filing carries a nine-month figure
+    beside the quarter. Folding those into `annual` put 9,074 of 23,046 supposedly-annual
+    facts at three quarters of a year in the first live sample -- Apple's nine-month revenue
+    of $293.8B labelled annual against a true full year of $383.3B.
+    """
+
+    def facts(self, start, end):
+        return {"facts": {"us-gaap": {"Revenues": {"units": {"USD": [
+            {"start": start, "end": end, "val": 1, "accn": "a", "form": "10-Q",
+             "filed": "2026-01-01"}]}}}}}
+
+    def kind(self, start, end):
+        rows, _ = observations_for_concept(self.facts(start, end), "revenue")
+        return rows[0]["period_type"]
+
+    def test_a_quarter_is_a_quarter(self):
+        self.assertEqual(self.kind("2025-04-01", "2025-06-30"), "quarter")
+
+    def test_six_months_is_a_half_year(self):
+        self.assertEqual(self.kind("2025-01-01", "2025-06-30"), "half_year")
+
+    def test_nine_months_is_its_own_kind_not_an_annual_figure(self):
+        self.assertEqual(self.kind("2024-10-01", "2025-06-30"), "nine_months")
+
+    def test_a_full_year_is_annual(self):
+        self.assertEqual(self.kind("2024-10-01", "2025-09-30"), "annual")
+
+    def test_as_of_can_therefore_ask_for_a_true_annual_figure(self):
+        facts = {"facts": {"us-gaap": {"Revenues": {"units": {"USD": [
+            {"start": "2024-10-01", "end": "2025-06-30", "val": 293, "accn": "a",
+             "form": "10-Q", "filed": "2025-08-01"},
+            {"start": "2024-10-01", "end": "2025-09-30", "val": 383, "accn": "b",
+             "form": "10-K", "filed": "2025-11-01"},
+        ]}}}}}
+        rows, _ = observations_for_concept(facts, "revenue")
+        self.assertEqual(as_of(rows, "2025-12-01", period_type="annual")["value"], 383)
+        self.assertEqual(as_of(rows, "2025-12-01", period_type="nine_months")["value"], 293)
+
+
+class ImpossibleFilingDateTests(unittest.TestCase):
+    """A fact cannot be filed before the period it reports has ended.
+
+    Two such rows appeared in the first live sample: AES share counts tagged with a period
+    ending five months after the filing date. Carrying one makes a value readable before it
+    could exist, which is the exact look-ahead this module prevents.
+    """
+
+    def test_a_fact_filed_before_its_period_ended_is_rejected(self):
+        facts = {"facts": {"us-gaap": {"Revenues": {"units": {"USD": [
+            {"start": "2025-01-01", "end": "2025-09-30", "val": 1, "accn": "a",
+             "form": "10-Q", "filed": "2025-05-01"},
+            {"start": "2025-01-01", "end": "2025-03-31", "val": 2, "accn": "b",
+             "form": "10-Q", "filed": "2025-05-01"},
+        ]}}}}}
+        rows, _ = observations_for_concept(facts, "revenue")
+        self.assertEqual([row["value"] for row in rows], [2])
+
+    def test_a_fact_filed_on_its_period_end_is_kept(self):
+        facts = {"facts": {"us-gaap": {"Revenues": {"units": {"USD": [
+            {"start": "2025-01-01", "end": "2025-03-31", "val": 1, "accn": "a",
+             "form": "10-Q", "filed": "2025-03-31"}]}}}}}
+        rows, _ = observations_for_concept(facts, "revenue")
+        self.assertEqual(len(rows), 1)
+
+
+class RepairTests(unittest.TestCase):
+    """A classifier fix must not require re-fetching 90,000 observations."""
+
+    def setUp(self):
+        JobArtifactTests.setUp(self)
+
+    def test_repair_reclassifies_and_drops_without_refetching(self):
+        import json
+        rows = [
+            {"cik": "1", "concept": "revenue", "period_start": "2024-10-01",
+             "period_end": "2025-06-30", "unit": "USD", "accession": "a",
+             "filed": "2025-08-01", "period_type": "annual", "value": 293},
+            {"cik": "1", "concept": "shares_basic", "period_start": "2025-01-01",
+             "period_end": "2025-09-30", "unit": "shares", "accession": "b",
+             "filed": "2025-05-01", "period_type": "annual", "value": 1},
+        ]
+        with open(self.job.FUNDAMENTALS, "w", encoding="utf-8") as handle:
+            for row in rows:
+                handle.write(json.dumps(row) + "\n")
+        kept, reclassified, dropped = self.job.repair_store()
+        self.assertEqual((kept, reclassified, dropped), (1, 1, 1))
+        with open(self.job.FUNDAMENTALS, encoding="utf-8") as handle:
+            survivor = json.loads(handle.read().strip())
+        self.assertEqual(survivor["period_type"], "nine_months")

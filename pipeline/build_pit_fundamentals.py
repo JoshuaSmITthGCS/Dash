@@ -125,6 +125,54 @@ def published_rows():
             *payload.get("portfolio_coverage", [])]
 
 
+def repair_store(path=None):
+    """Recompute derived fields on an existing store through the current parser.
+
+    ``period_type`` and the filed-before-period-end rejection are pure functions of fields
+    already on every row, so a classifier fix does not need a re-fetch of ~90k observations.
+    Returns ``(kept, reclassified, dropped)``.
+    """
+    from edgar_facts import _period_kind
+
+    path = path or FUNDAMENTALS
+    if not os.path.exists(path):
+        return 0, 0, 0
+    kept, reclassified, dropped = [], 0, 0
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            if row.get("filed") and row.get("period_end") and row["filed"] < row["period_end"]:
+                dropped += 1
+                continue
+            period_type, period_days = _period_kind(
+                {"start": row.get("period_start"), "end": row.get("period_end")})
+            if row.get("period_type") != period_type:
+                reclassified += 1
+            row["period_type"], row["period_days"] = period_type, period_days
+            kept.append(row)
+    temporary = f"{path}.tmp"
+    with open(temporary, "w", encoding="utf-8") as handle:
+        for row in kept:
+            handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
+    os.replace(temporary, path)
+    # A store the manifest no longer describes is the same defect one layer up, so record
+    # the repair rather than leaving the counts stale.
+    if os.path.exists(MANIFEST):
+        with open(MANIFEST, encoding="utf-8") as handle:
+            manifest = json.load(handle)
+        manifest["observations_total"] = len(kept)
+        manifest.setdefault("repairs", []).append({
+            "repaired_at": datetime.now(timezone.utc).isoformat(),
+            "rows_kept": len(kept), "rows_reclassified": reclassified,
+            "rows_dropped_filed_before_period_end": dropped,
+        })
+        _write_json(MANIFEST, manifest)
+    return len(kept), reclassified, dropped
+
+
 def universe_symbols():
     payload = load_json("advisor_universe.json", from_config=True) or {}
     return tuple(dict.fromkeys((*payload.get("symbols", ()), *payload.get("portfolio_symbols", ()))))
@@ -294,7 +342,16 @@ def main(argv=None):
     parser.add_argument("--concepts", help="comma-separated canonical concepts to fetch")
     parser.add_argument("--audit-only", action="store_true",
                         help="resolve tickers to CIKs and report; fetch no facts")
+    parser.add_argument("--repair", action="store_true",
+                        help="recompute derived fields on the existing store; fetch nothing")
     args = parser.parse_args(argv)
+    if args.repair:
+        kept, reclassified, dropped = repair_store()
+        LOG.info(f"Repaired the store: {kept} rows kept, {reclassified} reclassified, "
+                 f"{dropped} dropped as filed-before-period-end")
+        print(json.dumps({"kept": kept, "reclassified": reclassified, "dropped": dropped},
+                         indent=2))
+        return 0
     tickers = tuple(t.strip().upper() for t in args.tickers.split(",")) if args.tickers else None
     concepts = tuple(c.strip() for c in args.concepts.split(",")) if args.concepts else None
     return run(tickers, limit=args.limit, since=args.since, concepts=concepts,
