@@ -153,7 +153,7 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false, info
 }
 
 export default function Portfolio() {
-  const { currentUser, logout } = useAuth()
+  const { currentUser } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
   const { data: etfData } = useData('etfs.json')
   const {
@@ -636,7 +636,6 @@ export default function Portfolio() {
           <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}</button>
           <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
           <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
-          <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
         </div>
       </details>
 

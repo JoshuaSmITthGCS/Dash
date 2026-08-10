@@ -1,21 +1,17 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile,
-  updatePassword as firebaseUpdatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider
-} from 'firebase/auth'
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
-import { auth, db } from './firebase'
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import { auth } from './firebase'
 
 const AuthContext = createContext(null)
 
-// Interactive sign-in/sign-up must not spin forever on a flaky or offline connection - the
-// same principle already applied to the passive auth-state check below (see its comment).
+// Single-user workspace: this is Josh's personal dashboard. The Firebase session is kept
+// only because Firestore's security rules key every document to the account's UID — once
+// the device holds a session it is never surfaced in the UI again.
+export const OWNER_EMAIL = 'jbmsmusic05@gmail.com'
+const JOSH_PROFILE = { displayName: 'Josh', email: OWNER_EMAIL }
+
+// Interactive sign-in must not spin forever on a flaky or offline connection - the same
+// principle already applied to the passive auth-state check below (see its comment).
 const AUTH_REQUEST_TIMEOUT_MS = 15000
 
 const AUTH_ERROR_MESSAGES = {
@@ -24,9 +20,6 @@ const AUTH_ERROR_MESSAGES = {
   'auth/user-not-found': "We couldn't find that account.",
   'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
   'auth/network-request-failed': 'Check your connection and try again.',
-  'auth/weak-password': 'Password is too weak (min 6 characters).',
-  'auth/email-already-in-use': 'An account with that email already exists.',
-  'auth/invalid-email': 'That email address looks invalid.',
 }
 
 function describeAuthError(error) {
@@ -42,112 +35,13 @@ function withTimeout(promise, ms) {
   ])
 }
 
-// Family color themes (auto-assigned by display name)
-export const FAMILY_THEMES = {
-  'Dad': {
-    name: 'Black & Gold',
-    primary: '#000000',
-    accent: '#FFD700',
-    bg: '#0a0a0a',
-    bgCard: '#1a1a1a'
-  },
-  'Jay': {
-    name: 'Black & Red',
-    primary: '#000000',
-    accent: '#FF0000',
-    bg: '#0a0000',
-    bgCard: '#1a0000'
-  },
-  'Mom': {
-    name: 'Crimson & Cream',
-    primary: '#DC143C',
-    accent: '#FFFDD0',
-    bg: '#1a0505',
-    bgCard: '#2a0808'
-  },
-  'default': {
-    name: 'Forest Green & Cream',
-    primary: '#228B22',
-    accent: '#FFFDD0',
-    bg: '#051a05',
-    bgCard: '#082a08'
-  }
-}
-
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)
-  const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Get theme for a user based on display name
-  const getThemeForUser = (displayName) => {
-    return FAMILY_THEMES[displayName] || FAMILY_THEMES['default']
-  }
-
-  // Create user profile in Firestore
-  const createUserProfile = async (user, displayName) => {
-    const theme = getThemeForUser(displayName)
-    const profileData = {
-      uid: user.uid,
-      email: user.email,
-      displayName,
-      colorTheme: theme,
-      darkMode: true, // Default to dark mode
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
-    }
-
-    await setDoc(doc(db, 'users', user.uid), profileData)
-    return profileData
-  }
-
-  // Load user profile from Firestore
-  const loadUserProfile = async (user) => {
-    const docRef = doc(db, 'users', user.uid)
-    const docSnap = await getDoc(docRef)
-
-    if (docSnap.exists()) {
-      const profile = docSnap.data()
-      // Update last login
-      await updateDoc(docRef, {
-        lastLogin: new Date().toISOString()
-      })
-      return profile
-    }
-
-    return null
-  }
-
-  // Switch palettes by flipping one attribute. The full light and dark token sets live in
-  // variables.css, so a theme change can never leave light text sitting on a white card.
-  // Legacy profile colors remain stored for backwards compatibility. Interface appearance
-  // is now owned by PreferencesContext so a profile fetch cannot override System mode.
-  const applyTheme = () => {}
-
-  // Sign up new user
-  const signup = async (email, password, displayName) => {
+  const login = async (password) => {
     try {
-      const result = await withTimeout(createUserWithEmailAndPassword(auth, email, password), AUTH_REQUEST_TIMEOUT_MS)
-      await updateProfile(result.user, { displayName })
-      const profile = await createUserProfile(result.user, displayName)
-      setUserProfile(profile)
-      applyTheme(profile.colorTheme, profile.darkMode)
-      return { success: true, user: result.user }
-    } catch (error) {
-      console.error('Signup error:', error)
-      return { success: false, error: describeAuthError(error) }
-    }
-  }
-
-  // Sign in existing user
-  const login = async (email, password) => {
-    try {
-      const result = await withTimeout(signInWithEmailAndPassword(auth, email, password), AUTH_REQUEST_TIMEOUT_MS)
-      const profile = await loadUserProfile(result.user)
-      if (profile) {
-        setUserProfile(profile)
-        applyTheme(profile.colorTheme, profile.darkMode)
-      }
+      const result = await withTimeout(signInWithEmailAndPassword(auth, OWNER_EMAIL, password), AUTH_REQUEST_TIMEOUT_MS)
       return { success: true, user: result.user }
     } catch (error) {
       console.error('Login error:', error)
@@ -155,110 +49,15 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Log out
-  const logout = async () => {
-    try {
-      await signOut(auth)
-      setUserProfile(null)
-      // Reset to default theme
-      applyTheme(FAMILY_THEMES['default'], true)
-      return { success: true }
-    } catch (error) {
-      console.error('Logout error:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Update user theme
-  const updateTheme = async (newTheme, darkMode) => {
-    if (!currentUser) return
-
-    try {
-      const docRef = doc(db, 'users', currentUser.uid)
-      await updateDoc(docRef, {
-        colorTheme: newTheme,
-        darkMode
-      })
-
-      setUserProfile(prev => ({
-        ...prev,
-        colorTheme: newTheme,
-        darkMode
-      }))
-
-      applyTheme(newTheme, darkMode)
-      return { success: true }
-    } catch (error) {
-      console.error('Theme update error:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Toggle dark/light mode
-  const toggleDarkMode = async () => {
-    if (!currentUser || !userProfile) return
-
-    const newDarkMode = !userProfile.darkMode
-    await updateTheme(userProfile.colorTheme, newDarkMode)
-  }
-
-  // Change password
-  const changePassword = async (currentPassword, newPassword) => {
-    if (!currentUser || !currentUser.email) {
-      return { success: false, error: 'No user logged in' }
-    }
-
-    try {
-      // Re-authenticate first (required by Firebase for password change)
-      const credential = EmailAuthProvider.credential(
-        currentUser.email,
-        currentPassword
-      )
-      await reauthenticateWithCredential(currentUser, credential)
-
-      // Update password
-      await firebaseUpdatePassword(currentUser, newPassword)
-
-      return { success: true, message: 'Password updated successfully!' }
-    } catch (error) {
-      console.error('Password change error:', error)
-      let errorMessage = 'Failed to change password'
-
-      if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Current password is incorrect'
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'New password is too weak (min 6 characters)'
-      }
-
-      return { success: false, error: errorMessage }
-    }
-  }
-
-  // Listen for auth state changes
   useEffect(() => {
     // Auth should never hold the research UI hostage when Firebase is slow or offline.
-    // The observer can still populate the session later; after a short fallback we render the
-    // signed-out state with a recoverable login surface.
+    // The observer can still populate the session later; after a short fallback we render
+    // the signed-out state with a recoverable login surface.
     const fallback = window.setTimeout(() => setLoading(false), 1200)
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user)
       setLoading(false)
       window.clearTimeout(fallback)
-
-      if (user) {
-        try {
-          const profile = await loadUserProfile(user)
-          if (profile) {
-            setUserProfile(profile)
-            applyTheme(profile.colorTheme, profile.darkMode)
-          }
-        } catch (error) {
-          // A profile metadata failure must not invalidate the authenticated Firebase user.
-          console.error('Profile load error:', error)
-        }
-      } else {
-        setUserProfile(null)
-      }
     })
 
     return () => {
@@ -269,15 +68,9 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
-    userProfile,
+    userProfile: JOSH_PROFILE,
     loading,
-    signup,
     login,
-    logout,
-    updateTheme,
-    toggleDarkMode,
-    changePassword,
-    FAMILY_THEMES
   }
 
   return (
