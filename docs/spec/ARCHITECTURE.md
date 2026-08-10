@@ -1,10 +1,17 @@
 # ValueSignal — Architecture Specification
 
-**Status: draft in progress.** Sections 4, 5, 6, 8, and part of 10 are complete and
-independently verified against current code (branch `claude/valuesignal-spec-audit-qf2wni`,
-HEAD as of 2026-08-10, working tree matching commit `e312488`). Sections 1–3, 9, and 12 are
-pending synthesis from a parallel research pass and are marked accordingly below. Do not treat
-this file as finished; it is being assembled incrementally and will be redeployed in place.
+**Status: complete.** All 12 required sections (system overview, data sources, universe
+construction, metric computation, suppression/applicability, scoring weights, confidence/
+coverage, guidance/policy, publication contract, defects, undetermined items, test/validation
+inventory) are written and independently verified against current code across two research
+passes on 2026-08-10 (branches `claude/valuesignal-spec-audit-qf2wni` and
+`claude/valuesignal-architecture-spec-ohb74i`). The second pass resolved every open discrepancy
+flagged by the first (the 74.7/74.5 score gap, the two conflicting `suppressed_metrics` lists,
+the semiconductor profile-confidence defect, all 9 modifier caps, the "~120 vs. 926 universe"
+question) and found 13 further defects not previously catalogued — see §10.2 items 6, 10-18. A
+companion `docs/spec/METRIC_REGISTRY.md` and `docs/spec/registry.json` give the full one-row-
+per-metric registry. §11 lists what remains genuinely unresolved; it is not empty, and should not
+be read as a residual TODO list rather than a real account of this audit's limits.
 
 Every factual claim below carries a `path/to/file.py:line` citation to code read directly in
 this session, not copied from this repository's own internal audit documents
@@ -585,18 +592,44 @@ than pre-judging it.
 
 ### 4.3 Units, periods, adjustments
 
-UNDETERMINED this session: split/dividend adjustment handling in price history
-(`pipeline/fetch_prices.py`, not yet read), and a systematic TTM-vs-annual-vs-quarterly audit
-across all ~29 fundamental metrics. Partial evidence: `canonical_metrics.Observation`
-(lines 43-58) carries `is_ttm: bool = False` and `is_forward: bool = False` fields with
-default-`False` values, and both v2 call sites that construct observations
-(`overview_snapshot`, `yahoo_observations` — not yet opened this session) are reported by the
-internal audit to construct observations without ever setting these fields, compensating with a
-`provider_period_not_supplied` quality flag that (per the same source) nothing in the live
-scoring path reads. **This specific claim is NOT independently re-verified this session** — it
-is repeated from the internal audit with an explicit UNDETERMINED flag, not asserted as
-confirmed current fact. Follow-up needed: open `overview_snapshot`/`yahoo_observations` in
-`canonical_metrics.py` directly.
+**Split/dividend adjustment — resolved.** `pipeline/fetch_prices.py` is the **only**
+price-fetching call site in the pipeline that never passes `auto_adjust` to `yfinance` (both
+`.history()` calls, lines 61 and 248). Every other call site sets it explicitly:
+`auto_adjust=False` in `fetch_advisor.py:363,401`, `fetch_etfs.py:111,149`, `providers.py:
+166-167,210`, `backtest_historical.py:81,119`; `auto_adjust=True, actions=True` in
+`build_etf_comparisons.py:78`, `live_etf_validation.py:25-26`, `live_v2_validation.py:104`. The
+pinned `yfinance==1.5.2`'s own `history()` signature defaults `auto_adjust=True` — so
+`fetch_prices.py`'s two calls silently run **fully split- and dividend-adjusted** by the library
+default, unlike the main advisor-scoring path's `raw_closes`. Both of `fetch_prices.py`'s uses
+feed *return* calculations (30-day momentum, a 90-day forward-return comparison), not price
+levels, so this default is arguably benign per `pit_market.py`'s own stated reasoning about
+adjusted-close ratios being safe for returns — but it is an undocumented reliance on a library
+default that is inconsistent with every other call site's explicit choice in the same codebase.
+
+**TTM/annual/quarterly period convention — partially resolved, refines rather than confirms the
+internal audit's claim.** `canonical_metrics.Observation` (lines 43-58) carries `is_ttm: bool =
+False`/`is_forward: bool = False` defaults, but these are **not uniformly left at default** —
+`canonical_metrics.yahoo_observations` (lines 227-276) explicitly sets `is_forward=True` for
+`forward_pe` and `is_ttm=True` for `price_to_sales`, `return_on_equity`, `profit_margin`,
+`trailing_revenue_growth`, `quarterly_eps_growth`, and the separately-built
+`free_cash_flow_yield` observation — only `debt_to_equity` stays at the default. The actual
+Alpha-Vantage-enriched construction site is `fetch_advisor.overview_snapshot` (lines 579-630,
+**not** `canonical_metrics.py` as an earlier pass in this same document assumed): it sets
+`is_forward=True` only for `forward_pe`; every other field, including the genuinely-quarterly
+`trailing_revenue_growth`/`quarterly_eps_growth`, stays `is_ttm=False` — here the audit's claim
+does hold, but the mismatch is separately compensated by an explicit `"quarterly_not_ttm"`
+quality flag (line 599) alongside `"provider_period_not_supplied"` (line 595).
+`fundamentals_extended.extended_observations` (lines 680-700) hardcodes both flags `False` even
+for statement-derived annual figures, compensating with `"derived_from_annual_statements"`
+(line 698). `rescore.py:55` unconditionally stamps `is_ttm=True` on backfilled legacy-snapshot
+values, tagged `"backfilled_from_legacy_snapshot"`. **What remains true**: none of `is_ttm`,
+`is_forward`, or any of these four quality flags is read anywhere downstream of construction
+(grepped across all of `pipeline/*.py`; the only other reference, `rescore.py:68`, uses them
+purely as dedup-identity keys, not scoring logic) — so the audit's *substantive* conclusion
+("nothing reads the period-mismatch signal") still holds, even though its literal "always
+default-False" claim does not describe current code uniformly. A full metric-by-metric
+TTM/annual/quarterly table for all 32 fundamentals metrics remains incomplete — see
+`docs/spec/METRIC_REGISTRY.md` for per-metric detail and §11 for what's still UNDETERMINED there.
 
 ### 4.4 Winsorization and normalization — two live modes
 
@@ -645,10 +678,16 @@ should be treated as the authoritative, more complete version of this list once 
 | `recommendation_policy_v2.py:40-43` (`effective_score`) | `raw_score` is not a number | `raw = _number(raw_score, 50.0)` — **a literal 50.0 default still exists here** | Yes, but only reached when `raw_score` itself is malformed/non-numeric, not merely absent — a distinct condition from the timeliness-layer case discussed in §0, which now short-circuits *before* this function is called when the layer's `raw_score` is legitimately `None` per `_score_layer` (`recommendation_policy_v2.py:46-62`, which passes `raw = None` through and this function is never invoked with `raw_score=None` for an unresolved layer — confirmed by reading `_score_layer`'s `"effective_score": None if raw is None else effective_score(raw, confidence)` at line 59). **Practical implication: this 50.0 default appears to be dead code for the timeliness/structural layers as currently wired, but I have not proven no other call site passes a non-numeric `raw_score` into it. Flagged as needing a full call-site audit, not resolved this session.** |
 | `recommendation_policy_v2.py:289-291` (`classify_portfolio_fit`) | no `portfolio` supplied | `current_weight → 0.0`, `target_weight → config.default_target_weight (0.03)`, `maximum_weight → config.default_max_weight (0.05)` | Yes — with `current(0.0) < target(0.03)·0.75`, this is always true with no portfolio context supplied, so `classification` is always `"below_target"` for any position-free evaluation. Confirmed still present and confirmed still producing `below_target` for THG (`portfolio_fit_state.classification: "below_target"`), which has no portfolio position. This matches the internal audit's finding and **is not fixed** — this remains a constant for every unpositioned name. |
 | `pipeline/canonical_metrics.py:81-92` (`calculate_peg`) | forward PE, growth, unit, or period-match/definition-known flags fail validation | returns `None` (rejects rather than substitutes) | No default — explicit rejection, confirmed the "opposite of a silent default" pattern |
+| `pipeline/fundamentals_extended.py:163-165` (`derive_roic`, effective tax rate) | computed effective tax rate falls outside `[0, 0.6]` or is unavailable | falls back to the **statutory 0.21 federal rate literal** | Yes — feeds `NOPAT`'s numerator, and therefore `return_on_invested_capital`, weight 0.26 of profitability |
+| `pipeline/fundamentals_extended.py:264-266` (`derive_interest_coverage`) | interest expense is `None` or `\|interest\|<1` and EBIT>0 | imputes `interest_coverage = 99.0` ("no debt service reads as maximum comfort," documented in-code) | Yes — feeds both the financial_health category score and `advisor_engine.action_for`'s `<2x` deterioration test, with two different cutoffs for the same imputed value |
+| `pipeline/fundamentals_extended.py:280-338` (`derive_altman_z`) | sector is in `FINANCIAL_SECTORS` | returns `(None, None)` unconditionally, **regardless of `applicability_matrix.json`'s rules** | A second, code-level suppression path independent of and redundant with the config-driven bank/insurer suppression rules — see §10.2 item 14 |
+| `pipeline/fundamentals_extended.py:374-406` (`derive_piotroski`) | 6-8 of 9 Piotroski tests answer (not all 9) | rescales to `9 × sum(answered)/len(answered)` — full 0-9 scale, no confidence discount reaching the score | Yes — feeds `piotroski_f`, weight 0.45 of accounting_quality, the single highest metric-level weight in the entire fundamentals hierarchy |
+| `pipeline/scorer.py:180-181,254-258` (`TANGIBLE_BOOK_SECTORS`) | `price_to_tangible_book` applicability | hardcoded sector tuple, **not** governed by `applicability_matrix.json` at all | The one metric whose suppression logic lives in code rather than the config registry — see §10.2 item 12 |
 
-**Section 4 is not fully exhaustive yet.** The mechanical sweep in progress (parallel research
-pass) will supersede this table with a fuller one; this table should not be read as the final
-word on silent defaults.
+This table was cross-checked against a second, independent extraction pass (`docs/spec/
+registry.json`'s `defaults` array) and both agree on the entries above; the five imputations in
+this paragraph were newly found in that second pass and were not present in the first draft of
+this document.
 
 ---
 
