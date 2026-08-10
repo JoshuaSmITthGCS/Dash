@@ -197,3 +197,32 @@ class LiveStoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_components_expose_the_levels_the_ratios_were_built_from():
+    """A consumer forming enterprise value or tangible book should not re-derive the TTM.
+
+    ``metrics`` publishes ratios; ``components`` publishes the flows and instants underneath
+    them, on the same point-in-time basis, so a caller can build EV/EBITDA or book value net
+    of goodwill without a second pass over the store.
+    """
+    rows = [
+        flow("revenue", "2023-01-01", "2023-03-31", 100.0, "2023-04-20"),
+        flow("revenue", "2023-04-01", "2023-06-30", 110.0, "2023-07-20"),
+        flow("revenue", "2023-07-01", "2023-09-30", 120.0, "2023-10-20"),
+        flow("revenue", "2023-10-01", "2023-12-31", 130.0, "2024-01-20"),
+        instant("cash", "2023-12-31", 45.0, "2024-01-20"),
+        instant("goodwill", "2023-12-31", 12.0, "2024-01-20"),
+    ]
+    result = derive(rows, "2024-02-01")
+    assert result["components"]["revenue"] == 460.0
+    assert result["components"]["cash"] == 45.0
+    assert result["components"]["goodwill"] == 12.0
+    # A component nothing was filed for stays absent rather than becoming zero.
+    assert result["components"]["inventory"] is None
+
+
+def test_components_respect_the_as_of_date_like_everything_else():
+    rows = [instant("cash", "2023-12-31", 45.0, "2024-01-20")]
+    assert derive(rows, "2024-01-19")["components"]["cash"] is None
+    assert derive(rows, "2024-01-20")["components"]["cash"] == 45.0
