@@ -1104,17 +1104,34 @@ an ongoing dual-name dependency.
    named replacement actually matters to the resulting score, which could mislead a reader of
    the payload (or of `docs/spec/METRIC_REGISTRY.md`, if that document reports `replaced_by`
    without this caveat) into thinking the replacement metric carries more weight than it does.
-6. **Two profiles absent from `business_profiles.json`'s `profiles` object.**
-   `classify_profile` can return `"semiconductor"` or `"other_pre_profit"`, both of which have
-   real suppression rules in `applicability_matrix.json` (confirmed working, e.g. CRUS), but
-   neither appears in `business_profiles.json`'s `profiles` dict, which `scoring_v2.py` reads
-   for `replacement_metrics`/`critical_metrics`. **Severity: not yet established** — I confirmed
-   the gap exists in the config files but did not trace whether `scoring_v2.py`'s fallback for a
-   missing profile entry (`(BUSINESS_PROFILES.get("profiles") or {}).get(profile, {})`, which
-   defaults to an empty dict) causes any visible degradation for a real semiconductor name in
-   the current artifact, or is a harmless dead branch because nothing downstream requires those
-   two profiles to have replacement/critical metrics declared. Flagged for follow-up, not
-   asserted as a confirmed live defect.
+6. **Two profiles absent from `business_profiles.json`'s `profiles` object — now traced to its
+   full live consequence.** `classify_profile` can return `"semiconductor"` or
+   `"other_pre_profit"`, both of which have real suppression rules in
+   `applicability_matrix.json` (confirmed working, e.g. CRUS), but neither appears in
+   `business_profiles.json`'s `profiles` dict, which `scoring_v2.py:241-247` reads for
+   `replacement_metrics`/`critical_metrics`. Live consequences, verified against the published
+   CRUS row side-by-side with THG:
+   - **No score effect.** `required_for_score` reads `applicability_matrix.json`, and weights
+     read `settings.json`; neither consults `business_profiles.json`.
+   - **The v2 applicability contract publishes empty for these profiles.** THG publishes 23
+     declared `replacement_metrics`, 21 of them unavailable, and 3 `critical_data_gaps`; CRUS
+     publishes `[]` / `[]` / `[]` — the "what should we be measuring instead, and what's
+     missing" machinery structurally cannot fire for a semiconductor.
+   - **`profile_confidence` conflates two opposite situations.** The formula
+     (`scoring_v2.py:247`: `0.0 if not critical else (len(critical) − len(critical_gaps)) /
+     len(critical)`) publishes `0.0` for THG because *all three* declared critical metrics are
+     missing, and `0.0` for CRUS because *none were ever declared*. A reader of the payload
+     cannot distinguish "profile contract fully unmet" from "no profile contract exists."
+   - **Latent, not current, scoring divergence.** The live path's tangible-book handling falls
+     back to the sector-string tuple `TANGIBLE_BOOK_SECTORS` (`scorer.py:255-259`) when the
+     profile contract is absent — for CRUS (sector "Technology") this suppresses
+     `price_to_tangible_book`, agreeing with v2's registry-default suppression, and that is
+     the *intended* outcome for asset-light tech. The two paths would diverge only for a
+     semiconductor name carrying a `TANGIBLE_BOOK_SECTORS` sector string ("Industrials" etc.)
+     — no such row exists in the current artifact.
+   **Severity: low today (informational fields only), but it silently disables the
+   critical-gap machinery for two whole profiles and makes `profile_confidence: 0.0`
+   ambiguous.**
 7. **`portfolio_fit: below_target` is a structural constant for every unpositioned name** — this
    item from the internal audit is confirmed **not fixed** (§8.2), unlike its three siblings.
    Severity: low for the *score* (portfolio fit is not an input to the composite score) but
@@ -1223,18 +1240,14 @@ Consolidated from every UNDETERMINED marker above, plus items not yet touched at
 Resolved since the checkpoint draft (and removed from this list): per-modifier caps (§6.5, now
 all directly verified), `ranking_weights` config presence (§6.1, confirmed in `settings.json`),
 the 74.7 vs. 74.5 discrepancy (§10.2 item 8, root-caused), the two `suppressed_metrics`
-lists (§10.2 item 9, root-caused), and the `"replaced"` status question (§5 — real but
-currently invisible, behaviorally identical to `"suppressed"`). Still open:
+lists (§10.2 item 9, root-caused), the `"replaced"` status question (§5 — real but
+currently invisible, behaviorally identical to `"suppressed"`), and the missing
+`semiconductor`/`other_pre_profit` profile entries (§10.2 item 6 — traced to informational
+degradation and an ambiguous `profile_confidence: 0.0`, no current score effect). Still open:
 
 - Full TTM/annual/quarterly period-convention audit across all ~29 fundamental metrics (§4.3).
 - `CrossSectionalNormalizer`'s internal winsorization/tie-handling logic, beyond what's visible
   in one published example row (§4.4).
-- Whether `business_profiles.json`'s missing `semiconductor`/`other_pre_profit` entries cause
-  any visible degradation (§10.2 item 6). Partially narrowed this session: the miss surfaces
-  through `scorer.applicability`'s `profile_contract` lookup (`scorer.py:255-259`), where an
-  absent profile entry means `price_to_tangible_book` is suppressed unless the *sector* string
-  is in `TANGIBLE_BOOK_SECTORS` — a sector-string fallback doing exactly the kind of work the
-  registry was supposed to take over; still not traced to a visibly wrong published number.
 - Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
   session).
 - Everything in §10.4 (audit items not re-verified).
