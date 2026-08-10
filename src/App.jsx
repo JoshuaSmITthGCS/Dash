@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -6,7 +6,6 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
-import PasswordChangeModal from './components/PasswordChangeModal.jsx'
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
@@ -70,27 +69,20 @@ export const MOBILE_NAV = [
 ]
 
 function ProfilePanel() {
-  const { currentUser, userProfile, logout } = useAuth()
-  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const { currentUser, userProfile } = useAuth()
   if (!currentUser) return null
 
   return (
-    <>
-      <div className="profile-panel">
-        <div className="avatar" aria-hidden="true">
-          {(userProfile?.displayName || currentUser.email || 'V').slice(0, 1).toUpperCase()}
-        </div>
-        <div className="profile-copy">
-          <strong>{userProfile?.displayName || 'Investor'}</strong>
-          <span>{userProfile?.colorTheme?.name || 'ValueSignal member'}</span>
-        </div>
-        <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
-        <button className="icon-button" onClick={() => setShowPasswordChange(true)}
-          aria-label="Account settings"><Icon name="user" /></button>
-        <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
+    <div className="profile-panel">
+      <div className="avatar" aria-hidden="true">
+        {(userProfile?.displayName || 'J').slice(0, 1).toUpperCase()}
       </div>
-      {showPasswordChange && <PasswordChangeModal onClose={() => setShowPasswordChange(false)} />}
-    </>
+      <div className="profile-copy">
+        <strong>{userProfile?.displayName || 'Josh'}</strong>
+        <span>ValueSignal member</span>
+      </div>
+      <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
+    </div>
   )
 }
 
