@@ -295,13 +295,24 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                 <div>
                   <div className="sec-label">Fundamental categories</div>
                   <div className="component-scores" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-                    {Object.entries(categories).map(([key, value]) => (
-                      <div key={key}>
-                        <span>{key.replace(/_/g, ' ')}</span>
-                        <b>{value == null ? '–' : Math.round(value)}</b>
-                        <i><em style={{ width: `${value || 0}%` }} /></i>
-                      </div>
-                    ))}
+                    {Object.entries(categories).map(([key, value]) => {
+                      // A category score renormalizes onto whatever metrics resolved, so a
+                      // 90 built from 2 of 8 metrics and one built from all 8 read the same
+                      // without the evidence count published alongside it.
+                      const evidence = stock.fundamental_detail?.category_coverage?.[key]
+                      return (
+                        <div key={key}>
+                          <span>{key.replace(/_/g, ' ')}</span>
+                          <b>{value == null ? '–' : Math.round(value)}</b>
+                          {evidence != null && evidence.metrics_applicable > 0 && (
+                            <small style={{ display: 'block', opacity: 0.65 }}>
+                              {evidence.metrics_used}/{evidence.metrics_applicable} metrics
+                            </small>
+                          )}
+                          <i><em style={{ width: `${value || 0}%` }} /></i>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

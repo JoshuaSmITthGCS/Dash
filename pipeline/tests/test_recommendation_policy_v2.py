@@ -226,3 +226,26 @@ class UnresolvedTimelinessTest(unittest.TestCase):
     def test_a_resolved_timeliness_axis_still_reaches_buy(self):
         result = build_recommendation_v2("TEST", analysis(structural=90, timeliness=90))
         self.assertEqual(result["company"]["matrix_classification"], "buy_candidate")
+
+
+class EffectiveScoreConsistencyTests(unittest.TestCase):
+    """The recommendation payload must carry the analysis layer's effective score, not a
+    near-copy recomputed from the rounded confidence (THG published 74.5 and 74.7 for the
+    same structural layer in one payload)."""
+
+    def test_the_analysis_layers_effective_score_is_preserved(self):
+        from recommendation_policy_v2 import _score_layer
+        layer = {"raw_score": 90.5, "effective_score": 74.5,
+                 "evidence_weight_resolved": 0.61, "coverage": 0.84}
+        self.assertEqual(_score_layer(layer)["effective_score"], 74.5)
+
+    def test_effective_score_is_recomputed_only_when_the_layer_omits_it(self):
+        from recommendation_policy_v2 import _score_layer
+        layer = {"raw_score": 90.5, "evidence_weight_resolved": 0.61, "coverage": 0.84}
+        self.assertEqual(_score_layer(layer)["effective_score"], effective_score(90.5, 0.61))
+
+    def test_an_unresolved_layer_still_publishes_none(self):
+        from recommendation_policy_v2 import _score_layer
+        layer = {"raw_score": None, "effective_score": None,
+                 "evidence_weight_resolved": 0.0, "coverage": 0.0}
+        self.assertIsNone(_score_layer(layer)["effective_score"])

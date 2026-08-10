@@ -38,6 +38,14 @@
     "pre_profit_biotechnology": {
       "replacement_metrics": ["cash_runway_months", "annual_cash_burn", "dilution_rate", "pipeline_stage", "clinical_regulatory_milestones", "revenue_concentration", "partnership_revenue", "binary_event_risk"],
       "critical_metrics": ["cash_runway_months", "annual_cash_burn", "pipeline_stage", "binary_event_risk"]
+    },
+    "semiconductor": {
+      "replacement_metrics": ["gross_margin_cycle", "inventory_cycle"],
+      "critical_metrics": []
+    },
+    "other_pre_profit": {
+      "replacement_metrics": ["gross_margin_and_runway", "cash_runway_months", "annual_cash_burn", "dilution_rate"],
+      "critical_metrics": ["cash_runway_months", "annual_cash_burn"]
     }
   },
   "ticker_overrides": {

@@ -312,3 +312,57 @@ class TimelinessLayerAbsenceTest(unittest.TestCase):
         self.assertEqual(record["inputs_dropped"], ["forward_eps_revision_30d"])
         self.assertEqual(record["weights_effective"], {"earnings_surprise": 1.0})
         self.assertAlmostEqual(record["covered_weight_fraction"], 0.3)
+
+
+class ApplicabilityAuthorityTests(unittest.TestCase):
+    """One applicability authority must give one answer regardless of path or metric-ID namespace."""
+
+    def test_semiconductor_inherits_the_default_declarations(self):
+        # declaration_defaults omitted the semiconductor profile, so every inherited
+        # inventory metric was suppressed for semis on the v2 path (CRUS: 28 of ~30 metrics)
+        # while the champion scored 26 of them. Only the two curated cyclicality rules
+        # should suppress anything for a semiconductor name.
+        from canonical_metrics import suppressed_metrics
+        from scorer import SCORED_METRICS
+        self.assertEqual(suppressed_metrics("semiconductor", SCORED_METRICS),
+                         {"capex_to_depreciation", "inventory_days_trend"})
+
+    def test_explicit_rules_govern_both_metric_id_namespaces(self):
+        # The matrix suppresses sales_multiple for insurers; the v2 path asks about the
+        # canonical id price_to_sales and must get the same answer.
+        self.assertEqual(applicability_for("price_to_sales", "property_casualty_insurer")["status"],
+                         "suppressed")
+
+    def test_registry_declarations_reach_legacy_metric_ids(self):
+        # trailing_revenue_growth's registry declaration excludes insurers; the legacy path
+        # asks about revenue_growth and must get the same answer.
+        self.assertEqual(applicability_for("revenue_growth", "property_casualty_insurer")["status"],
+                         "suppressed")
+
+    def test_required_metrics_are_always_applicable(self):
+        # A metric cannot be simultaneously "required to publish this category" and
+        # "not applicable to this profile". price_to_book for REITs violated this.
+        from canonical_metrics import APPLICABILITY
+        for profile, categories in APPLICABILITY.get("required_for_score", {}).items():
+            if profile.startswith("_"):
+                continue
+            for metrics in categories.values():
+                for metric in metrics:
+                    self.assertEqual(applicability_for(metric, profile)["status"], "applied",
+                                     f"{profile} requires {metric} but does not apply it")
+
+    def test_every_rule_profile_is_declared_in_business_profiles(self):
+        from canonical_metrics import APPLICABILITY, BUSINESS_PROFILES
+        declared = set(BUSINESS_PROFILES.get("profiles", {}))
+        for profile in APPLICABILITY["rules"]:
+            self.assertIn(profile, declared)
+
+    def test_legacy_and_v2_suppression_agree_for_every_profile(self):
+        from canonical_metrics import APPLICABILITY, LEGACY_ALIASES, suppressed_metrics
+        from scorer import SCORED_METRICS
+        for profile in APPLICABILITY["rules"]:
+            legacy = suppressed_metrics(profile, SCORED_METRICS)
+            for metric in SCORED_METRICS:
+                canonical = LEGACY_ALIASES.get(metric, metric)
+                v2_suppressed = applicability_for(canonical, profile)["status"] in ("suppressed", "replaced")
+                self.assertEqual(metric in legacy, v2_suppressed, f"{profile}:{metric}")

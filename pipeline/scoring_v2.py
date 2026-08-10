@@ -11,8 +11,8 @@ becomes a constant again.
 
 from datetime import datetime, timezone
 
-from canonical_metrics import (BUSINESS_PROFILES, METRIC_REGISTRY, applicability_for, calculate_peg,
-                               classify_profile, reconcile)
+from canonical_metrics import (BUSINESS_PROFILES, LEGACY_ALIASES, METRIC_REGISTRY, applicability_for,
+                               calculate_peg, classify_profile, reconcile)
 from layer_health import renormalize
 
 MODEL_VERSION = "structural-timeliness-2.1.0"
@@ -69,11 +69,9 @@ def _observations_are_stale(metric_id, rows):
     return (datetime.now(timezone.utc) - latest).days > ttl
 
 
-ALIASES = {
-    "revenue_growth": "trailing_revenue_growth",
-    "earnings_growth": "trailing_eps_growth",
-    "sales_multiple": "price_to_sales",
-}
+# One alias authority shared with canonical_metrics, so rule lookups under either
+# namespace resolve identically on the legacy and v2 paths.
+ALIASES = LEGACY_ALIASES
 
 
 def build_v2_analysis(snapshot, legacy_parts, observations=None, screen_memberships=None):
