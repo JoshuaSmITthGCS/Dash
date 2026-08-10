@@ -486,17 +486,34 @@ is produced this way).
   and this remains true in current code) a metric's score is not regime-relative.
 - **`cross_sectional`** (challenger, published alongside the champion in
   `score_variants.normalization` — confirmed present in THG's live row):
-  `scorer.py:CrossSectionalNormalizer` (class located at line 296 per earlier reading this
-  session; internals — winsorization percentile, sector-vs-universe selection logic, tie
-  handling — not yet re-read line-by-line this session; UNDETERMINED pending follow-up, though
-  the *behavior* is directly visible in THG's published `score_variants.normalization.
-  fundamental_detail.normalization` block: e.g. `forward_pe` scored at `normalization_scope:
-  "sector"`, `peer_count: 123`, `raw_percentile: 50.8`, `desirability_percentile: 49.2`
-  (multiple mapped via `direction: "lower_is_better"` as `100 - raw_percentile` for
-  `forward_pe`, consistent with a percentile-rank-then-flip scheme); `price_to_book` scored at
-  `normalization_scope: "universe"` with `peer_count: 693`. This confirms a per-metric,
-  per-row choice between sector and universe reference populations is actually exercised in the
-  published challenger data, not merely described in a docstring.
+  `scorer.py:CrossSectionalNormalizer` (class at line 307, **now read in full**). Verified
+  mechanics:
+  - **Winsorization**: each metric's full-universe distribution is clipped at the 1st/99th
+    percentiles (`winsor_lower_percentile: 0.01` / `winsor_upper_percentile: 0.99`,
+    config-overridable via `settings.challengers.cross_sectional_normalization`); the
+    universe-derived bounds are then applied to every *sector* sub-distribution too, so a
+    sector's tails are clipped at universe levels, not sector levels (`_fit`, the shared
+    `winsor()` closure over `lower_bound`/`upper_bound`).
+  - **Sector-vs-universe selection**: per metric, per row — the sector distribution is used
+    iff it holds ≥ `sector_minimum_count` (default 8) eligible observations, else the
+    universe distribution (`score()`, the `len(sector_values) >= self.sector_minimum`
+    branch). This is what THG's published block shows: `forward_pe` scored against 123
+    sector peers, `price_to_book` against 693 universe values.
+  - **Tie handling**: average-rank percentile via `bisect_left`/`bisect_right` —
+    `percentile = 100 × (left + right − 1)/2 / (n − 1)`; a single-value distribution scores
+    50.0.
+  - **Direction**: `lower_is_better` metrics and range metrics flip (`100 − percentile`);
+    range metrics are first transformed to distance-from-configured-ideal
+    (`_range_distance`). Non-positive valuation multiples are excluded from the fit and
+    scored `not_applicable_nonpositive` rather than ranked.
+  - **Fast-mode reproducibility**: `from_published()` restores the exact prior full-refresh
+    fit from the published `normalization_distributions` block, which is how a fast-mode
+    refresh (like the committed artifact) reuses the prior fit rather than refitting on a
+    partial poll.
+  - **Own-history percentile**: valuation multiples only, requires ≥12 observations
+    (`own_history_minimum_observations`) over a 5-year window before publishing a value;
+    below that it publishes `own_history_status: "accumulating"` with the observation count
+    — exactly THG's published state (3 observations, accumulating).
 - **Own-history percentile**: every metric's normalization block in the challenger variant
   carries `own_history_percentile: null`, `own_history_status: "accumulating"`,
   `own_history_observations: 3` (THG, confirmed in `SAMPLE_OUTPUT.json`). This mechanism exists
@@ -1243,11 +1260,10 @@ the 74.7 vs. 74.5 discrepancy (§10.2 item 8, root-caused), the two `suppressed_
 lists (§10.2 item 9, root-caused), the `"replaced"` status question (§5 — real but
 currently invisible, behaviorally identical to `"suppressed"`), and the missing
 `semiconductor`/`other_pre_profit` profile entries (§10.2 item 6 — traced to informational
-degradation and an ambiguous `profile_confidence: 0.0`, no current score effect). Still open:
+degradation and an ambiguous `profile_confidence: 0.0`, no current score effect), and
+`CrossSectionalNormalizer`'s internals (§4.4, now read in full). Still open:
 
 - Full TTM/annual/quarterly period-convention audit across all ~29 fundamental metrics (§4.3).
-- `CrossSectionalNormalizer`'s internal winsorization/tie-handling logic, beyond what's visible
-  in one published example row (§4.4).
 - Split/dividend adjustment handling in price history (`fetch_prices.py`, not opened this
   session).
 - Everything in §10.4 (audit items not re-verified).
