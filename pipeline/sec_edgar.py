@@ -219,11 +219,6 @@ class SecEdgarClient:
             return payload
         return json.loads(payload) if as_json else payload.decode("utf-8", errors="replace")
 
-    def company_facts(self, cik):
-        """Every XBRL fact this filer has ever reported, with per-fact filing dates."""
-        cik = str(cik).zfill(10)
-        return self._get(f"{SEC_DATA}/api/xbrl/companyfacts/CIK{cik}.json", as_json=True)
-
     def ticker_map_rows(self):
         """The raw company_tickers.json rows, for edgar_entities.EntityResolver."""
         payload = self._get(f"{SEC_ROOT}/files/company_tickers.json", as_json=True)
@@ -419,12 +414,25 @@ class SecEdgarClient:
 
     # ---------------- XBRL and full-text search (used by the theme-exposure layer) ----------------
 
+    def company_facts_by_cik(self, cik):
+        """Every XBRL fact this filer has ever reported, keyed by CIK.
+
+        The CIK-keyed entry point, used by the point-in-time backfill. Distinct name from
+        ``company_facts`` below on purpose: a second ``company_facts`` defined later in this
+        class silently shadowed an earlier one, so a CIK went into a ticker lookup, missed,
+        and returned an empty dict that read as a successful fetch -- 25 companies reported
+        "ok" with zero facts. ``test_sec_edgar_contract`` now fails the build on any
+        duplicate method name in this class.
+        """
+        return self._get(f"{SEC_DATA}/api/xbrl/companyfacts/CIK{str(cik).zfill(10)}.json",
+                         as_json=True)
+
     def company_facts(self, ticker):
-        """Every XBRL fact the filer has ever tagged. Large; cache aggressively."""
+        """Every XBRL fact the filer has ever tagged, by ticker. Large; cache aggressively."""
         cik = self.ticker_map().get(ticker.upper())
         if not cik:
             return {}
-        return self._get(f"{SEC_DATA}/api/xbrl/companyfacts/CIK{cik}.json", as_json=True)
+        return self.company_facts_by_cik(cik)
 
     def company_concept(self, ticker, concept, taxonomy="us-gaap"):
         """One XBRL concept's full reported history for one filer."""

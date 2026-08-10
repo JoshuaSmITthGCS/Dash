@@ -260,7 +260,7 @@ class JobArtifactTests(unittest.TestCase):
         class Stub:
             available = True
 
-            def company_facts(self, cik):
+            def company_facts_by_cik(self, cik):
                 return COMPANYFACTS
         return Stub()
 
@@ -312,7 +312,7 @@ class JobArtifactTests(unittest.TestCase):
         class Failing:
             available = True
 
-            def company_facts(self, cik):
+            def company_facts_by_cik(self, cik):
                 raise TimeoutError("SEC did not respond")
 
         code = self.job.run(["THG", "AAPL"], client=Failing(), resolver=self.resolver())
@@ -361,3 +361,33 @@ class UnresolvedClassificationTests(unittest.TestCase):
         buckets = self.classify({"VOO": "x", "WBA": "x", "AEP": "x"})
         self.assertEqual([len(buckets[key]) for key in
                           ("fund", "absent_from_data", "scored_but_unresolved")], [1, 1, 1])
+
+
+class EmptyPayloadTests(unittest.TestCase):
+    """An empty payload is not a successful fetch.
+
+    The first live sample run reported 25 of 25 companies "ok" with zero observations,
+    because a fetched payload and a usable one were the same status. They are now distinct.
+    """
+
+    def setUp(self):
+        JobArtifactTests.setUp(self)
+
+    def resolver(self):
+        return EntityResolver(EntityResolverTests.ROWS, fetched_at="2026-08-09T00:00:00+00:00")
+
+    def test_a_payload_with_no_usable_facts_is_not_reported_ok(self):
+        class Empty:
+            available = True
+
+            def company_facts_by_cik(self, cik):
+                return {"cik": cik, "entityName": "Test Co", "facts": {}}
+
+        import json
+        code = self.job.run(["AAPL"], client=Empty(), resolver=self.resolver())
+        self.assertEqual(code, 0)
+        with open(self.job.MANIFEST, encoding="utf-8") as handle:
+            manifest = json.load(handle)
+        self.assertEqual(manifest["companies_ok"], 0)
+        self.assertEqual(manifest["companies"][0]["status"], "no_usable_facts")
+        self.assertEqual(manifest["companies"][0]["fact_taxonomies"], [])

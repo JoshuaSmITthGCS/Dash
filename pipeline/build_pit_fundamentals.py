@@ -138,12 +138,21 @@ def collect_company(client, resolver, ticker, cik, *, since=None, concepts=None,
     """
     requested_at = datetime.now(timezone.utc).isoformat()
     try:
-        facts = client.company_facts(cik)
+        facts = client.company_facts_by_cik(cik)
     except Exception as error:  # noqa: BLE001 - provider failures are data, not crashes
         return [], {"ticker": ticker, "cik": cik, "status": "fetch_failed",
                     "reason": f"{type(error).__name__}: {error}"[:300]}
     rows, detail = company_observations(
         facts, concepts=concepts, cik=cik, ticker=ticker, requested_at=requested_at)
+    if not detail["resolved_tags"]:
+        # A fetch that returns no usable facts at all is not a success. The first sample run
+        # reported 25/25 "ok" with zero observations, because an empty payload and a fetched
+        # one were the same status. A filer that genuinely tags nothing this model asks for
+        # is worth seeing too -- it means the concept map needs widening for that filer.
+        return [], {"ticker": ticker, "cik": cik, "status": "no_usable_facts",
+                    "entity_name": resolver.entity_name(cik) or facts.get("entityName"),
+                    "fact_taxonomies": sorted((facts.get("facts") or {}).keys()),
+                    "missing_concepts": detail["missing_concepts"]}
     if since:
         rows = [row for row in rows if str(row.get("period_end")) >= since]
     if seen is not None:
@@ -228,7 +237,8 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
                                         since=since, concepts=concepts, seen=seen)
         summaries.append(summary)
         if summary["status"] != "ok":
-            LOG.warn(f"{ticker} ({cik}): {summary['reason']}")
+            LOG.warn(f"{ticker} ({cik}): {summary['status']} "
+                     f"{summary.get('reason') or summary.get('fact_taxonomies') or ''}")
             continue
         for row in rows:
             seen.add(observation_key(row))

@@ -161,6 +161,25 @@ section 10 of the audit described, with a live example.
 published data at all. That is both a wasted-fetch problem and a survivorship signal — those
 names stopped trading and the universe still lists them.
 
+**D-2.10 — The first live `sample` run returned nothing, and the cause was method
+shadowing.** `SecEdgarClient` defined `company_facts` twice: a ticker-keyed one at line ~422
+and the CIK-keyed one I added at ~222. Python keeps the last definition, so the backfill
+passed a CIK into a ticker lookup, missed, and got back `{}` — which the job reported as a
+successful fetch. 25 of 25 companies read "ok" with zero observations. Every unit test passed
+because they all used a stub client with the method name I intended.
+
+Three fixes, in order of durability:
+- The CIK entry point is now `company_facts_by_cik`, and the ticker one delegates to it.
+- `test_sec_edgar_contract.py` walks the AST of every pipeline module and fails the build on
+  any class defining a method twice. It has a self-test so the detector cannot silently stop
+  detecting.
+- An empty payload is no longer a success: `collect_company` returns status
+  `no_usable_facts` with the taxonomies actually present, so "fetched" and "usable" can
+  never again be the same status.
+
+The stubs in the backfill tests now use the real method name, so they exercise the surface
+that exists rather than the one I meant to write.
+
 **D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
 EV/EBITDA from these observations is a separate step on purpose: the facts should be written
 once and re-derived from as often as the derivation changes. Baking a derivation into the
