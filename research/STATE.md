@@ -32,9 +32,9 @@ write through... just make it better"), so Phases 1 and 3 were executed without 
 |---|---|---|
 | 0 | Reverse-engineer the system | **COMPLETE** |
 | 1 | Integrity fixes | **COMPLETE** (1.1, 1.2, 1.3 + two extras) |
-| 2 | Point-in-time data integrity | **2.1 + 2.2 verified against live SEC: 25-company sample returned 89,434 observations back to 2010 with 4,247 restatements. 2.4 done. Ready for `full`. 2.3/2.5 open** |
+| 2 | Point-in-time data integrity | **2.1 + 2.2 COMPLETE. 1,448,995 observations, 860/861 companies, 2010–2026, 117,837 restatements. Derivation layer built. 2.3/2.5 open** |
 | 3 | Industry conditioning | **COMPLETE** (3.1, 3.2 partial, 3.3 partial) |
-| 4–10 | Research program | **BLOCKED on Phase 2** |
+| 4–10 | Research program | **Fundamentals unblocked. Now blocked on survivorship and point-in-time prices — see "Next"** |
 | 11 | Deliverables | blocked |
 
 ## Commits on this branch
@@ -237,6 +237,33 @@ inside every limit. `test_pit_store.LiveStoreTests` fails the build if any shard
 history from commit `53b15de`. It is gone from the working tree but remains in the pack. Not
 worth a history rewrite of a shared `main` unless clone size becomes a real problem.
 
+**D-2.13 — The full backfill is done and the numbers are good.** 1,448,995 observations,
+860 of 861 companies (OZK 404s at `companyfacts`), period ends 2010-01-01 → 2026, evenly
+covered at 63k–99k observations per year, **117,837 restatements** captured. Median filing
+lag **37 days**, p25 31, p75 50 — the real distribution a fixed `report_lag_days` was
+approximating. Store: 352 MB, 100 shards, largest 6.6 MB.
+
+**D-2.14 — `pit_derive` turns filed facts into ratios, and TTM is built from quarters.**
+A naive "latest annual" reading is up to a year stale for eleven months of every year, so
+trailing twelve months sums the four most recent non-overlapping quarters, synthesising Q4
+as `annual - nine_months` for the majority of filers who never tag a standalone fourth
+quarter. The synthesised quarter is invisible until *both* its inputs were filed.
+
+Verified against Apple's real filings: revenue TTM $385.6B on 2024-10-31, $391.0B on
+2024-11-01 (the day the FY2024 10-K was accepted, and the exact figure), $400.4B through
+2025-03-29, $451.4B through 2026-03-28.
+
+One bug this surfaced: SEC period conventions are inconsistent about boundaries — Apple's Q3
+FY2024 ends 2024-06-29 and the quarter after it *starts* on that same date. A `>=` overlap
+test rejected the adjacent quarter, left a hole in the year, and silently fell back to a
+stale annual. Now `>`.
+
+**Universe-wide coverage as of 2025-06-30**: 774 of 860 companies (90%) get a true
+four-quarter TTM, 33 (4%) fall back to the latest annual, 53 (6%) have nothing usable.
+Median derived-metric coverage 95%. Most-often-absent ratios are `gross_margin` (48% — many
+filers report no gross-profit line), `interest_coverage` (27%) and `return_on_invested_capital`
+(26%). Those absences are honest: no ratio is defaulted.
+
 **D-2.8 — The backfill writes raw facts, not derived ratios.** Deriving point-in-time ROIC or
 EV/EBITDA from these observations is a separate step on purpose: the facts should be written
 once and re-derived from as often as the derivation changes. Baking a derivation into the
@@ -300,7 +327,15 @@ pipeline does not ingest. Not faked. See "Next" below.
    restated Yahoo statements over today's survivors.
 2. **Commodity mid-cycle valuation.** Candidate source: FRED PPI series (e.g. `PCU2122`,
    `WPU10`) plus LBMA/COMEX settle prices. Completes Phase 3.3 and makes D-3.4 resolvable.
-3. **Run `FULL_UNIVERSE_RESEARCH=1` once** (needs a price/statement provider, so blocked by
+3. **Point-in-time universe (survivorship).** Now the largest remaining contamination. The
+   860 stored companies and the 910-name universe are today's survivors; 45 configured
+   tickers already no longer trade. SEC's full filer list includes delisted companies, so
+   this is buildable — and until it is, any backtest overstates.
+4. **Point-in-time price adjustment.** `backtest_cache` has raw unadjusted closes for 860
+   tickers from 2016-08, which is the hard part, but no dated split/dividend factor series —
+   so today's adjusted closes embed future corporate actions. Derivable from raw-vs-adjusted.
+   Note prices start 2016 while fundamentals now start 2010: the binding window is 2016+.
+5. **Run `FULL_UNIVERSE_RESEARCH=1` once** (needs a price/statement provider, so blocked by
    B-2). Quality-metric redundancy is currently measurable on 40 rows instead of 877. The
    ordinary path no longer starves outsiders — `enrichment_rotation` rotates 15 in per
    refresh — but one full sweep is still the fastest way to make Phase 5 possible.
