@@ -512,6 +512,33 @@ def weighted_coverage(metrics, cfg, exempt=()):
     return answered / total if total else 0.0
 
 
+def category_coverage(metrics, cfg, exempt=()):
+    """Per-category share of applicable metric weight that resolved, with counts.
+
+    ``weighted_available`` renormalizes silently, so a category score alone cannot say
+    whether it came from the full evidence base or from two surviving metrics. Suppressed
+    metrics are excluded from both sides, matching ``weighted_coverage``.
+    """
+    detail = {}
+    for category, weights in cfg["metric_weights"].items():
+        answered_weight = applicable_weight = 0.0
+        used = applicable = 0
+        for metric, weight in weights.items():
+            if metric in exempt:
+                continue
+            applicable += 1
+            applicable_weight += weight
+            if metrics.get(metric) is not None:
+                used += 1
+                answered_weight += weight
+        detail[category] = {
+            "answered_weight_share": round(answered_weight / applicable_weight, 2) if applicable_weight else None,
+            "metrics_used": used,
+            "metrics_applicable": applicable,
+        }
+    return detail
+
+
 def _categories_with_required_gate(metrics, cfg, profile):
     """Category scores, withholding any category missing a metric it is defined by.
 
@@ -615,6 +642,7 @@ def _band_valuation_score(snap):
     confidence_multiplier = 0.65 + (0.35 * coverage)
     total = round(raw * confidence_multiplier, 1)
     return total, {**metrics, "categories": categories, "coverage": round(coverage, 2),
+                   "category_coverage": category_coverage(metrics, cfg, tuple(suppressed)),
                    "raw_score": round(raw, 1), "sector": sector,
                    "applicability_profile": profile,
                    "suppressed_metrics": sorted(suppressed),
@@ -657,6 +685,7 @@ def _cross_sectional_valuation_score(snap, normalizer):
         **metrics,
         "categories": categories,
         "coverage": round(coverage, 2),
+        "category_coverage": category_coverage(metrics, cfg, tuple(exempt)),
         "raw_score": round(raw, 1),
         "sector": sector,
         "sales_multiple_basis": raw_metadata["sales_multiple_basis"],

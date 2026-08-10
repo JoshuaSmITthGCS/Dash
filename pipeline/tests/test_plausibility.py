@@ -154,9 +154,15 @@ class LivePayloadTests(unittest.TestCase):
         rows = payload.get("research", [])
         flagged = {row["ticker"]: field_violations(row) for row in rows}
         flagged = {ticker: items for ticker, items in flagged.items() if items}
-        # NEM's 128.2% must be caught, and the rules must not reject a large share of a
-        # universe that is mostly fine -- a screen that fires everywhere is not a screen.
-        self.assertIn("NEM", flagged)
+        # Every row carrying an arithmetically impossible margin must be caught, and the
+        # rules must not reject a large share of a universe that is mostly fine -- a screen
+        # that fires everywhere is not a screen. (This used to assert NEM specifically,
+        # which pinned one refresh's data: the assertion went stale as soon as the bad
+        # provider value was corrected upstream.)
+        for row in rows:
+            margin = row.get("profit_margin")
+            if isinstance(margin, (int, float)) and margin > 1.0:
+                self.assertIn(row["ticker"], flagged)
         self.assertLess(len(flagged), len(rows) * 0.5)
 
 

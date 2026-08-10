@@ -94,5 +94,21 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "INCONCLUSIVE"
+  },
+  {
+    "test_id": "C6-applicability-unification",
+    "declared_at": "2026-08-10T20:00:00+00:00",
+    "hypothesis": "The champion and v2 paths resolve metric applicability from the same authority and reach the same answers.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "C7-turnover-walkforward",
+    "declared_at": "2026-08-10T20:15:00+00:00",
+    "hypothesis": "The C4 in-sample turnover-control winners (smooth07, hold6) survive the promotion gates: a walk-forward split, PBO below 0.5, and a deflated Sharpe above 0.95.",
+    "holdout_start": "months 32-60 (one purged)",
+    "number_of_variants_tested": 7,
+    "decision": "ABANDON"
   }
 ]

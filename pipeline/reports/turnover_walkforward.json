@@ -1,0 +1,43 @@
+{
+  "months": 60,
+  "walk_forward": {
+    "train_months": 30,
+    "purged": 1,
+    "in_sample_winner": "buffer15",
+    "train_cagr": {
+      "champion": 0.02876241874341101,
+      "buffer15": 0.051978365389947934,
+      "buffer20": 0.04368412853392756,
+      "hold3": 0.05056036171035183,
+      "hold6": 0.05077077015028997,
+      "smooth07": 0.04329555093936399,
+      "margin5": 0.03363730133224352
+    },
+    "test_cagr": {
+      "champion": 0.1649728573934648,
+      "buffer15": 0.14459529013403216,
+      "buffer20": 0.150815361118243,
+      "hold3": 0.17444646186148471,
+      "hold6": 0.1592023911173801,
+      "smooth07": 0.1699295132956702,
+      "margin5": 0.20499069327601704
+    },
+    "winner_oos_rank": 7,
+    "n_selection_variants": 7
+  },
+  "pbo_cscv": {
+    "6": 0.8,
+    "8": 0.8429
+  },
+  "deflated_sharpe": {
+    "champion": 0.3215,
+    "buffer15": 0.3303,
+    "buffer20": 0.3334,
+    "hold3": 0.3862,
+    "hold6": 0.3482,
+    "smooth07": 0.3509,
+    "margin5": 0.4339
+  },
+  "trials": 43,
+  "interpretation": "Promotion requires the in-sample winner to hold up out-of-sample, PBO below 0.5, and a deflated Sharpe probability above 0.95. A winner that finishes last out-of-sample with PBO above 0.8 is the selection procedure measuring itself."
+}

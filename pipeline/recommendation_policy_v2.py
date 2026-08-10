@@ -53,10 +53,17 @@ def _score_layer(layer):
     layer = layer or {}
     confidence = _clamp(_number(layer.get("evidence_weight_resolved"), 0.0))
     raw = _number(layer.get("raw_score"))
+    # The analysis layer computed its effective score from the unrounded confidence;
+    # recomputing here from the published (rounded) confidence produced a second, slightly
+    # different copy of the same number in one payload (THG: 74.5 vs 74.7). Preserve the
+    # upstream value and recompute only when the layer did not supply one.
+    upstream_effective = _number(layer.get("effective_score"))
     return {
         **layer,
         "raw_score": raw,
-        "effective_score": None if raw is None else effective_score(raw, confidence),
+        "effective_score": (None if raw is None
+                            else upstream_effective if upstream_effective is not None
+                            else effective_score(raw, confidence)),
         "evidence_weight_resolved": round(confidence, 3),
         "coverage": round(_clamp(_number(layer.get("coverage"), 0.0)), 3),
     }

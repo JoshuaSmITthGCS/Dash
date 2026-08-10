@@ -1641,6 +1641,11 @@ def run():
             row["score_variants"]["challenger"] = cross_sectional_challenger(
                 row, context["snapshot"], cross_normalizer,
             )
+        # Stamp the fetch time before the coverage decomposition reads it: it used to be
+        # stamped only after this loop, so freshness_component saw no data_fetched_at and
+        # published null -- with a false "freshness unavailable for this row" limitation --
+        # for every freshly polled row.
+        row.setdefault("data_fetched_at", polled_at)
         row["data_coverage_detail"] = data_coverage_components(
             row, source_reliability=source_reliability_this_run,
         )

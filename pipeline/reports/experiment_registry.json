@@ -13,14 +13,14 @@
     "decision",
     "reason"
   ],
-  "total_experiments": 12,
+  "total_experiments": 14,
   "by_decision": {
-    "ABANDON": 4,
+    "ABANDON": 5,
     "INCONCLUSIVE": 2,
     "KEEP_AS_CHALLENGER": 2,
-    "PROMOTE": 4
+    "PROMOTE": 5
   },
-  "total_variants_tested": 43,
+  "total_variants_tested": 51,
   "experiments": [
     {
       "id": "WO-1",
@@ -360,6 +360,62 @@
       "result": "Blocked. The harness has 0 of 24 periods and the PIT store is three days deep, so every bucket reports insufficient_data with its shortfall named and confidence_detail.historical_calibration stays null.",
       "decision": "INCONCLUSIVE",
       "reason": "The gate is the deliverable: fabricating calibration would convert an admitted unknown into a false claim. Caught one inconsistency in testing -- publishability was gated on adaptive quintiles while confidence.py reads fixed bands, and the two can disagree."
+    },
+    {
+      "id": "C6-applicability-unification",
+      "declared_at": "2026-08-10T20:00:00+00:00",
+      "hypothesis": "The champion and v2 paths resolve metric applicability from the same authority and reach the same answers.",
+      "category": "data_integrity",
+      "configuration": {
+        "files": [
+          "pipeline/canonical_metrics.py",
+          "pipeline/config/metric_registry.json",
+          "pipeline/config/business_profiles.json"
+        ],
+        "change": "suppressed_metrics delegates to applicability_for (explicit matrix rules plus the registry's per-profile declarations), rule and registry lookups resolve under either metric-ID namespace via a shared LEGACY_ALIASES map, and declaration_defaults gained the semiconductor profile (plus profitable_biotechnology/semiconductor additions to the eight explicit registry lists and reit to price_to_book, which required_for_score already declared required)."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {
+        "v2_semiconductor_suppressed_metrics_before": 28,
+        "after": 3,
+        "v2_semiconductor_applicable_weight_before": 0.1304,
+        "applicable_weight_after": 0.9428,
+        "champion_rows_changed_of_880": 21,
+        "max_champion_fundamentals_delta_pp": 1.7
+      },
+      "number_of_variants_tested": 1,
+      "result": "Defect confirmed by direct read: the legacy path checked only explicit rules (an insurer's revenue growth stayed scored against a registry that declares it inapplicable) while the v2 path's price_to_sales alias dodged the explicit sales_multiple rule, and every declaration_defaults-inheriting metric was suppressed for the semiconductor profile because the default list predated it -- CRUS's v2 structural score was computed from 3 metrics while the champion scored 26. The matrix also required price_to_book for REITs while the registry suppressed it.",
+      "decision": "PROMOTE",
+      "reason": "Consistency defect fix, not a new signal: one authority now answers both paths under both namespaces, pinned by tests (required-vs-applicability invariant, per-profile legacy/v2 agreement, semiconductor un-gutting)."
+    },
+    {
+      "id": "C7-turnover-walkforward",
+      "declared_at": "2026-08-10T20:15:00+00:00",
+      "hypothesis": "The C4 in-sample turnover-control winners (smooth07, hold6) survive the promotion gates: a walk-forward split, PBO below 0.5, and a deflated Sharpe above 0.95.",
+      "category": "signal_evidence",
+      "configuration": {
+        "file": "research/turnover_walkforward.py",
+        "runs": "backtest_monthly.py --cache-only --years 5 per selection variant, 860 usable names, 60 monthly rebalances",
+        "walk_forward": "split-half, one purged period at the boundary",
+        "pbo": "CSCV over the [month][variant] return matrix, 6 and 8 splits",
+        "deflated_sharpe_trials": 47
+      },
+      "train_period": "months 1-30 of the cached path",
+      "validation_period": null,
+      "test_period": "months 32-60 (one purged)",
+      "metrics": {
+        "in_sample_winner": "buffer15",
+        "winner_out_of_sample_rank": "7 of 7",
+        "pbo_cscv_8_splits": 0.8429,
+        "pbo_cscv_6_splits": 0.8,
+        "max_deflated_sharpe_probability": 0.4207
+      },
+      "number_of_variants_tested": 7,
+      "result": "Rejected on every gate. The variant chosen on the first half finished last of seven on the second half, PBO is 0.80-0.84 (selection is generating winners at random), and no variant's deflated Sharpe probability reached even half the 0.95 bar. The in-sample ordering also disagrees with the earlier 360-name-cache matrix (smooth07/hold6 led there; hold3/margin5 here), which is noise behavior, not a real effect.",
+      "decision": "ABANDON",
+      "reason": "The C4 challengers' in-sample edge does not survive its own selection process. Promoting smooth07 or hold6 on the earlier evidence would have shipped overfit. Turnover remains a cost problem worth attacking, but not through any of these seven selection rules."
     }
   ]
 }

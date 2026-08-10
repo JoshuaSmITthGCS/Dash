@@ -403,3 +403,34 @@ class RegistryDrivenApplicabilityTests(unittest.TestCase):
         for metric in ("operating_margin_trend", "fcf_growth_3y", "gross_profits_to_assets"):
             self.assertIsNone(parts[metric])
             self.assertIn(metric, parts["suppressed_metrics"])
+
+
+class CategoryCoverageTests(unittest.TestCase):
+    """A category score alone cannot say how much of its evidence base it came from;
+    category_coverage publishes the answered share and counts alongside it."""
+
+    def test_full_coverage_reports_every_applicable_metric_used(self):
+        _, detail = scorer.valuation_score(STRONG_TECH)
+        for category, entry in detail["category_coverage"].items():
+            self.assertEqual(entry["metrics_used"], entry["metrics_applicable"], category)
+            self.assertEqual(entry["answered_weight_share"], 1.0, category)
+
+    def test_missing_metric_lowers_only_its_own_categorys_share(self):
+        snap = {**STRONG_TECH, "ev_to_ebitda": None}
+        _, detail = scorer.valuation_score(snap)
+        full = scorer.valuation_score(STRONG_TECH)[1]["category_coverage"]
+        thinner = detail["category_coverage"]
+        self.assertLess(thinner["valuation"]["answered_weight_share"],
+                        full["valuation"]["answered_weight_share"])
+        self.assertEqual(thinner["valuation"]["metrics_used"],
+                         full["valuation"]["metrics_used"] - 1)
+        self.assertEqual(thinner["profitability"], full["profitability"])
+
+    def test_suppressed_metrics_leave_the_denominator(self):
+        # A suppressed metric is not missing evidence: it must not depress the answered share.
+        insurer = {**STRONG_TECH, "sector": "Financial Services",
+                   "industry": "Insurance - Property & Casualty"}
+        _, detail = scorer.valuation_score(insurer)
+        for category, entry in detail["category_coverage"].items():
+            self.assertLessEqual(entry["metrics_applicable"],
+                                 len(scorer.SETTINGS["fundamentals"]["metric_weights"][category]))
