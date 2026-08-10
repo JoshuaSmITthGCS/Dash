@@ -51,6 +51,8 @@ MINIMUM_CROSS_SECTION = 30
 MINIMUM_PLAUSIBLE_MARKET_CAP = 1e7
 MAXIMUM_PLAUSIBLE_MARKET_CAP = 1e13
 
+DECILES = 10
+
 
 def _rank(values, *, descending=True):
     ordered = sorted((value for value in values.values() if value is not None),
@@ -198,6 +200,37 @@ def summarise(period_returns, periods_per_year, *, costs_bps=0):
     }
 
 
+def _split_into_deciles(ordered):
+    """``ordered`` best-first, cut into ten buckets of as near equal size as it divides."""
+    size, remainder = divmod(len(ordered), DECILES)
+    buckets, cursor = [], 0
+    for index in range(DECILES):
+        width = size + (1 if index < remainder else 0)
+        buckets.append(ordered[cursor:cursor + width])
+        cursor += width
+    return buckets
+
+
+def _monotonicity(returns):
+    """Rank correlation between decile position and realised return, best decile first.
+
+    A factor that works should pay monotonically across the cross-section, not only at the
+    extreme. A top-20 portfolio that beats the market while the deciles below it are flat is
+    a handful of names, and this is what tells the two apart. Computed inline -- Spearman on
+    ten points needs no dependency, and the brief allows no new runtime ones.
+    """
+    values = [value for value in returns if value is not None]
+    if len(values) < DECILES:
+        return None
+    positions = sorted(range(len(values)), key=lambda index: values[index], reverse=True)
+    ranks = [0] * len(values)
+    for rank, index in enumerate(positions):
+        ranks[index] = rank
+    count = len(values)
+    differences = sum((index - rank) ** 2 for index, rank in enumerate(ranks))
+    return 1 - 6 * differences / (count * (count ** 2 - 1))
+
+
 def _share_basis(rows):
     """Split-basis share counts for one company, diluted where filed and basic otherwise.
 
@@ -271,6 +304,7 @@ def run(*, start="2017-01-01", end="2026-06-01", every_days=21, top_n=20,
     membership = []
     coverage = []
     scored = {name: [] for name in names}
+    deciles = {name: [[] for _ in range(DECILES)] for name in names}
 
     for when in rebalance_dates(start, end, every_days=every_days):
         members, diagnostics = universe_as_of(
@@ -323,8 +357,12 @@ def run(*, start="2017-01-01", end="2026-06-01", every_days=21, top_n=20,
             # usable number. Skip the date rather than report the result of that.
             if len(rankable) < MINIMUM_CROSS_SECTION:
                 continue
-            ranked = sorted(rankable, key=lambda ticker: values[ticker],
-                            reverse=True)[:top_n]
+            ordered = sorted(rankable, key=lambda ticker: values[ticker], reverse=True)
+            for index, bucket in enumerate(_split_into_deciles(ordered)):
+                if bucket:
+                    deciles[name][index].append(
+                        statistics.mean(forwards[ticker] for ticker in bucket))
+            ranked = ordered[:top_n]
             realised[name].append(statistics.mean(forwards[ticker] for ticker in ranked))
             selection = set(ranked)
             turnover[name].append(len(selection - held[name]) / max(len(selection), 1))
@@ -341,6 +379,15 @@ def run(*, start="2017-01-01", end="2026-06-01", every_days=21, top_n=20,
                                             if scored[name] else 0)
         summary["rebalances_skipped_thin"] = sum(1 for count in scored[name]
                                                  if count < MINIMUM_CROSS_SECTION)
+        # Deciles carry no trading costs: they are a measurement of whether the factor sorts
+        # the cross-section, not a portfolio anyone would hold.
+        decile_returns = [annualised(bucket, periods_per_year) if bucket else None
+                          for bucket in deciles[name]]
+        summary["decile_cagr"] = decile_returns
+        summary["decile_spread"] = (
+            None if None in (decile_returns[0], decile_returns[-1])
+            else decile_returns[0] - decile_returns[-1])
+        summary["decile_monotonicity"] = _monotonicity(decile_returns)
         results[name] = summary
     return {
         "settings": {"start": start, "end": end, "rebalance_every_days": every_days,
