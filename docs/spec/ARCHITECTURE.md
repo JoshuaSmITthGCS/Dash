@@ -42,27 +42,88 @@ against a live example (THG).
 
 ## 1. System overview
 
-**[PENDING — synthesis from data-sources/runtime-topology research pass. Will draw on
-`docs/spec/FILE_INVENTORY.md`, which is complete and code-grounded: npm scripts, GitHub Actions
-schedules (`refresh-advisor.yml` etc.), and Netlify function endpoints are already documented
-there with citations.]**
+**ValueSignal** is one research module inside a larger personal-finance PWA ("Dash", this
+repository) that also covers portfolio tracking, retirement projection, options-strategy
+screens, and a Congressional/13F trading tracker. ValueSignal specifically is the module that
+scores a universe of equities on a 0-100 "research score" and attaches a HOLD/WATCH/TRIM/SELL
+recommendation, published as `public/data/advisor.json` (25.8 MB as committed, confirmed by
+direct `wc -c` this session) and rendered across 12+ React pages (`Watchlist.jsx`,
+`Dashboard.jsx`, `Picks.jsx`, `Insights.jsx`, `StrategyScreen.jsx`, `PolicyRadar.jsx`,
+`Glossary.jsx`, `OptionsScreen.jsx`, `Diversification.jsx`, `ThemeExposureScreen.jsx`,
+`Finances.jsx`, `Search.jsx`, `Methodology.jsx` — confirmed by grepping `useData('advisor.json')`
+call sites across `src/pages/`).
 
-What's independently confirmed in this session and safe to state now:
+**Full path from a scheduled run to a rendered number:**
 
-- The one function that produces the published research payload is `pipeline/fetch_advisor.py`;
-  its entry point is `run()` (currently starting at line 1313 — this line number has already
-  shifted once during this session's investigation, confirming the file is under active
-  modification; do not trust line numbers from any document older than this session).
-- Two run modes are selected by the `ADVISOR_UNIVERSE_MODE` environment variable
-  (`fetch_advisor.py:1337`, default `"full"`): full mode polls the entire configured universe
-  and refits normalization distributions from scratch; fast mode (confirmed to exist, exact
-  current mechanics not yet re-read this session — see `docs/spec/TRACE_THG.md` §1) reuses a
-  prior fit and only re-polls a rotating subset.
-- Alpha Vantage enrichment is capped at 5 symbols per refresh regardless of universe size
-  (`fetch_advisor.py:1343`, `ALPHA_ENRICH_LIMIT`, clamped `max(0, min(5, ...))`).
-- The published artifact examined throughout this document, `public/data/advisor.json`, carries
-  `generated_at: 2026-08-10T05:23:37Z`, `model_version: 3.2.0`, `schema_version: 6`,
-  `universe_count: 926` (confirmed by direct query against the committed file).
+1. A GitHub Actions workflow fires on a cron schedule or manual dispatch — the primary one is
+   `.github/workflows/refresh-advisor.yml`, `cron: '7 11,12,16,17,19,20 * * 1-5'` (weekdays,
+   ET-market-hours-aligned, ~6×/day), also triggerable via `workflow_dispatch` with modes
+   `data-only` / `full-alpha` / `rescore-only` (per `docs/spec/FILE_INVENTORY.md`, "Runtime
+   topology" — that document's citations were re-used, not re-derived, since it is already
+   code-grounded).
+2. The workflow runs `python pipeline/fetch_advisor.py` (entry point `run()`, currently starting
+   near line 1313 — this line number shifted once already during this session's investigation of
+   an earlier draft, confirming the file is under active modification; do not trust line numbers
+   from any document older than this one), which pulls fundamentals/prices/estimates from Alpha
+   Vantage and Yahoo, scores every name (`pipeline/scorer.py`, `pipeline/advisor_engine.py`,
+   `pipeline/scoring_v2.py`, `pipeline/recommendation_policy_v2.py` — detailed in §4-§8 below),
+   then a chain of further scripts (options-strategy screens, `rescore.py`,
+   `build_quality_value_screen.py`, `build_tactical_screens.py`, `shadow_portfolios.py`,
+   `validate_data.py`, `stability_report.py`, `evaluate_alerts.py`) before the workflow commits
+   the refreshed `public/data/*.json` files back to the repository (chain per
+   `FILE_INVENTORY.md`'s "Runtime topology" section, itself read from `refresh-advisor.yml`
+   directly).
+3. Two run modes are selected by the `ADVISOR_UNIVERSE_MODE` environment variable
+   (`fetch_advisor.py:1337`, default `"full"`): full mode polls the entire configured universe
+   and refits normalization distributions from scratch; fast mode reuses a prior fit and only
+   re-polls a rotating subset (exact rotation mechanics: see §3, UNDETERMINED in that section
+   whether independently re-verified this pass).
+4. Alpha Vantage statement-enrichment calls are capped at 5 symbols per refresh regardless of
+   universe size (`fetch_advisor.py:1343`, `ALPHA_ENRICH_LIMIT`, clamped `max(0, min(5, ...))`)
+   — which symbols get the scarce enrichment slots is itself a scoring-feedback mechanism, see
+   `docs/spec/TRACE_THG.md` §1 (`enrichment_selection.previous_top`).
+5. Committing to `main` is the publish step — there is no separate deploy/build trigger observed
+   this session beyond Netlify's normal git-push-triggered static rebuild (Netlify config/build
+   hooks not independently re-verified this session; UNDETERMINED whether a webhook or polling
+   deploy is in use).
+6. The React app never talks to a database or API for this data at render time: `src/lib/useData.js`
+   (`useData(file)`, confirmed by direct read, fetch call at line 95) does
+   `fetch('${BASE_URL}data/${file}?v=${Date.now()}', { cache: 'no-store' })` — a plain static-file
+   fetch of the committed, deployed JSON with a cache-busting query parameter, not a live query
+   against the pipeline. Every page listed above calls `useData('advisor.json')` and reads fields
+   directly out of the fetched object.
+7. A logged-in user can also trigger an on-demand refresh from the UI (`src/lib/useAdvisorRefresh.js`,
+   read in full this session): this calls the Netlify function `netlify/functions/refresh-data.mjs`,
+   which dispatches the same `refresh-advisor.yml` workflow via the GitHub REST API
+   (admin-authenticated) and polls its run status; the frontend distinguishes a `full`-scope
+   refresh (95-minute timeout, `useAdvisorRefresh.js:10`) from a `fast` one (55 minutes, line 6)
+   and a `rescore`-only reanalysis (5 minutes, line 15, since `pipeline/rescore.py` touches no
+   network and finishes in under a minute per that file's own inline comment). On success the
+   hook calls `reload()`, which re-runs the same static fetch described in point 6 — there is no
+   separate "live" data path; a manual refresh is just a way to make the next static fetch see a
+   newer file.
+
+**Repo layout, purpose of each significant area** (full detail in `docs/spec/FILE_INVENTORY.md`,
+which is already complete and code-grounded — summarized here, not repeated in full):
+
+| Area | Purpose |
+|---|---|
+| `pipeline/*.py` (~100+ modules) | The Python research/scoring engine: data fetch, canonical-metric normalization, scoring (legacy `scorer.py` + shadow `scoring_v2.py`), recommendation policy, screen builders (options strategies, momentum, quality-value, tactical, institutional/Congressional), backtesting, and a substantial internal validation/audit toolkit (`evaluation.py`, `ic_harness.py`, `score_calibration.py`, `bias_report.py`, `stability_report.py`). |
+| `pipeline/sleeves/` | Partial "research contract" sleeve interface — only the value sleeve is implemented; 13 of 14 specified sleeves are intentionally unbuilt (`pipeline/sleeves/__init__.py` docstring, per `FILE_INVENTORY.md`). |
+| `pipeline/validation/` | `ic_harness.py` — prospective, look-ahead-safe information-coefficient validation; `trading_calendar.py`. |
+| `pipeline/tests/` | 111 pytest files, largely one-to-one with `pipeline/*.py` modules (full inventory in §12). |
+| `pipeline/config/*.json` | All tunable configuration: `settings.json` (master weights/thresholds), `advisor_universe.json` (the scored symbol list), `applicability_matrix.json` / `business_profiles.json` (sector suppression rules), `recommendation_policy_v2.json` (shadow policy config), and ~15 more (full list in `FILE_INVENTORY.md`). |
+| `pipeline/schemas/` | Draft 2020-12 JSON Schemas that `validate_data.py` checks every published artifact against. |
+| `research/` | A substantial ad hoc research/audit engagement (own Phase 4-6 factor-return, band-integrity, and out-of-sample candidate-ranking studies) plus prior narrative audit docs (`research/audit/CURRENT_MODEL_AUDIT.md`, `PIPELINE-MAP.md`, `STATE.md`) explicitly marked in `FILE_INVENTORY.md` as **not independently verified** by this document's own passes — see §12. |
+| `public/data/*.json` | The published artifacts the frontend fetches directly: `advisor.json` (this document's primary subject), `etfs.json`, `picks.json`, `trades.json`, `news.json`, `prices.json`, `report.json`, `score-history.json`, `signals.json`, `status.json`, `politicians.json`, plus `etf/`, `factors/`, `screens/`, `validation/` subdirectories. |
+| `netlify/functions/*.mjs` | Three serverless endpoints: `refresh-data.mjs` (dispatches/polls the GitHub Actions refresh), `portfolio-prices.mjs` (Firebase-authenticated live portfolio quotes), `alert-push.mjs` (Web Push delivery for Firestore alert events). |
+| `src/` | React + Vite PWA: `src/pages/` (24 routed pages), `src/components/` (~28 components), `src/lib/` (data-loading hooks, scoring-adjacent client-side logic such as `dipWatch.js`, `recommendation.js`, `schemaMigrations.js`). |
+| `.github/workflows/*.yml` | Eight scheduled/dispatchable workflows: the main hourly-ish research refresh, weekly Congressional-trades collection, monthly 13F collection, twice-daily Marketstack premarket collection, monthly PIT-fundamentals backfill, quarterly survivorship measurement, on-demand mock-data seeding, and CI (`compileall`, `check_ui_weights.py`, `pytest pipeline/tests`, `ic_harness.py --snapshot`, `validate_data.py`). |
+
+The published artifact examined throughout this document, `public/data/advisor.json`, carries
+`generated_at: 2026-08-10T05:23:37Z`, `model_version: 3.2.0`, `schema_version: 6`,
+`universe_count: 926` (confirmed by direct query against the committed file) — see §3 for why
+this figure is much larger than the brief's "~120 names" description and how the two relate.
 
 ---
 
