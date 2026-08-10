@@ -211,6 +211,31 @@ def _split_into_deciles(ordered):
     return buckets
 
 
+def decile_risk(buckets, periods_per_year):
+    """Annualised volatility and Sharpe for each decile's period returns.
+
+    Return alone cannot say whether a factor ranks badly or merely ranks *cautiously*. Every
+    ladder measured so far pays best in its bottom decile, across factors that share no
+    construction -- which is the signature of one common cause rather than eight independent
+    inversions, and the obvious candidate is that low-scoring companies carry more risk and
+    this window paid for risk. If the bottom decile earns its extra return with proportionally
+    more volatility, the factor is de-risking rather than mis-ranking, and those are opposite
+    conclusions.
+    """
+    risk = []
+    for bucket in buckets:
+        if len(bucket) < 2:
+            risk.append(None)
+            continue
+        mean = statistics.mean(bucket)
+        deviation = statistics.pstdev(bucket)
+        risk.append({
+            "volatility_annualised": deviation * (periods_per_year ** 0.5),
+            "sharpe": (mean / deviation * (periods_per_year ** 0.5)) if deviation else None,
+        })
+    return risk
+
+
 def _monotonicity(returns):
     """Rank correlation between decile position and realised return, best decile first.
 
@@ -388,6 +413,7 @@ def run(*, start="2017-01-01", end="2026-06-01", every_days=21, top_n=20,
             None if None in (decile_returns[0], decile_returns[-1])
             else decile_returns[0] - decile_returns[-1])
         summary["decile_monotonicity"] = _monotonicity(decile_returns)
+        summary["decile_risk"] = decile_risk(deciles[name], periods_per_year)
         results[name] = summary
     return {
         "settings": {"start": start, "end": end, "rebalance_every_days": every_days,

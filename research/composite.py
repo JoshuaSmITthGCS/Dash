@@ -49,7 +49,8 @@ from scorer import _band_valuation_score  # noqa: E402
 
 from baselines import (DECILES, MINIMUM_CROSS_SECTION, MAXIMUM_PLAUSIBLE_MARKET_CAP,  # noqa: E402
                        MINIMUM_PLAUSIBLE_MARKET_CAP, TRADING_DAYS, _monotonicity,
-                       _share_basis, _split_into_deciles, annualised, forward_return,
+                       _share_basis, _split_into_deciles, annualised, decile_risk,
+                       forward_return,
                        price_context, summarise)
 
 # Twelve rebalances at 21 sessions is a year, so a year-ago reading is a point already on the
@@ -325,6 +326,7 @@ def run(*, start="2017-01-01", end="2026-06-01", every_days=21, top_n=20, horizo
         summary["decile_spread"] = (None if not ladder or None in (ladder[0], ladder[-1])
                                     else ladder[0] - ladder[-1])
         summary["decile_monotonicity"] = _monotonicity(ladder) if ladder else None
+        summary["decile_risk"] = decile_risk(deciles.get(name, []), periods_per_year)
         results[name] = summary
 
     return {
