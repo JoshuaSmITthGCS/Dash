@@ -1,0 +1,1154 @@
+{
+  "settings": {
+    "start": "2017-01-01",
+    "design_ends": "2021-07-01",
+    "end": "2026-06-01",
+    "rebalance_every_days": 21,
+    "top_n": 20,
+    "holding_days": 21,
+    "costs_bps_per_side": 10,
+    "candidates_considered": 6,
+    "selection_rule": "highest Sharpe-decile monotonicity on the design half, tie-broken by top-decile Sharpe"
+  },
+  "rebalances": {
+    "design": 68,
+    "test": 85
+  },
+  "design": {
+    "live_composite": {
+      "periods": 68,
+      "cagr": 0.24505451199502248,
+      "mean_period_return": 0.02079468828712438,
+      "volatility_annualised": 0.2355955417630999,
+      "sharpe": 1.0591722473951164,
+      "sortino": 1.3531037066429032,
+      "max_drawdown": -0.37324850987638336,
+      "win_rate": 0.6470588235294118,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.2388795339242995,
+        0.2401296691899355,
+        0.25307894136537823,
+        0.24281173995563288,
+        0.27301540275797875,
+        0.3073871879008152,
+        0.32716949053180544,
+        0.3274377986594841,
+        0.3579914350304596,
+        0.34874556954270064
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.2114318511729317,
+          "sharpe": 1.1290260331616786
+        },
+        {
+          "volatility_annualised": 0.20776328929496282,
+          "sharpe": 1.151207052713178
+        },
+        {
+          "volatility_annualised": 0.20088349837702946,
+          "sharpe": 1.2362142372265332
+        },
+        {
+          "volatility_annualised": 0.20301237805696556,
+          "sharpe": 1.1835657219627373
+        },
+        {
+          "volatility_annualised": 0.19466862989870817,
+          "sharpe": 1.3508352718727794
+        },
+        {
+          "volatility_annualised": 0.1841302697614749,
+          "sharpe": 1.5648818342960988
+        },
+        {
+          "volatility_annualised": 0.1912829914595292,
+          "sharpe": 1.5928735014516266
+        },
+        {
+          "volatility_annualised": 0.2176525543820898,
+          "sharpe": 1.4269430470938407
+        },
+        {
+          "volatility_annualised": 0.20455513568162437,
+          "sharpe": 1.617782564660617
+        },
+        {
+          "volatility_annualised": 0.22188927361115526,
+          "sharpe": 1.4759038530832258
+        }
+      ],
+      "decile_monotonicity": -0.9757575757575758,
+      "sharpe_monotonicity": -0.8545454545454545,
+      "average_turnover": 0.19264705882352942
+    },
+    "live_composite_raw_score": {
+      "periods": 68,
+      "cagr": 0.23051384916213702,
+      "mean_period_return": 0.01942626199670843,
+      "volatility_annualised": 0.21639588760233797,
+      "sharpe": 1.0772623571705182,
+      "sortino": 1.291269852516286,
+      "max_drawdown": -0.3462292301892804,
+      "win_rate": 0.6764705882352942,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.2359056974740965,
+        0.2067919636410076,
+        0.24002198965288013,
+        0.2745758011178192,
+        0.30226239780291264,
+        0.2734642580166613,
+        0.36274667836400565,
+        0.355614650339966,
+        0.3229439555355065,
+        0.345470309861756
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.21649892810026233,
+          "sharpe": 1.0979809848754043
+        },
+        {
+          "volatility_annualised": 0.20737804151511638,
+          "sharpe": 1.0193760497974473
+        },
+        {
+          "volatility_annualised": 0.20739600406413305,
+          "sharpe": 1.152888420569599
+        },
+        {
+          "volatility_annualised": 0.20075714569861966,
+          "sharpe": 1.3230139387195983
+        },
+        {
+          "volatility_annualised": 0.1947206093097332,
+          "sharpe": 1.469218258978544
+        },
+        {
+          "volatility_annualised": 0.19848637790257523,
+          "sharpe": 1.3313354841769798
+        },
+        {
+          "volatility_annualised": 0.190561584220304,
+          "sharpe": 1.7400505515326592
+        },
+        {
+          "volatility_annualised": 0.2023012658970782,
+          "sharpe": 1.6223559745451428
+        },
+        {
+          "volatility_annualised": 0.20600346327487826,
+          "sharpe": 1.4793205873434925
+        },
+        {
+          "volatility_annualised": 0.21298234629577675,
+          "sharpe": 1.516528188385068
+        }
+      ],
+      "decile_monotonicity": -0.8424242424242425,
+      "sharpe_monotonicity": -0.8666666666666667,
+      "average_turnover": 0.21470588235294116
+    },
+    "composite_without_valuation": {
+      "periods": 68,
+      "cagr": 0.22977477260835855,
+      "mean_period_return": 0.018993818075550947,
+      "volatility_annualised": 0.19456286717190044,
+      "sharpe": 1.1714764498471026,
+      "sortino": 1.3471815430633705,
+      "max_drawdown": -0.31343010286114625,
+      "win_rate": 0.7205882352941176,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.26731234693835026,
+        0.308428402609517,
+        0.2704389917299739,
+        0.2817374434514188,
+        0.2430546410917087,
+        0.288356201397447,
+        0.26917338516108424,
+        0.3497139928199615,
+        0.3270550800852241,
+        0.3032872855157249
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.18924830575489412,
+          "sharpe": 1.3594087101737486
+        },
+        {
+          "volatility_annualised": 0.17723189583369459,
+          "sharpe": 1.6230211645006372
+        },
+        {
+          "volatility_annualised": 0.1843629967733859,
+          "sharpe": 1.404606080484961
+        },
+        {
+          "volatility_annualised": 0.19239072905230012,
+          "sharpe": 1.4012859341014692
+        },
+        {
+          "volatility_annualised": 0.18526696706954907,
+          "sharpe": 1.2791486346201975
+        },
+        {
+          "volatility_annualised": 0.19694147951646104,
+          "sharpe": 1.3990320238724885
+        },
+        {
+          "volatility_annualised": 0.2104037125323023,
+          "sharpe": 1.2520245263934464
+        },
+        {
+          "volatility_annualised": 0.2222330548417401,
+          "sharpe": 1.4766281342570045
+        },
+        {
+          "volatility_annualised": 0.23327170615305182,
+          "sharpe": 1.3456220970824784
+        },
+        {
+          "volatility_annualised": 0.2481931057084067,
+          "sharpe": 1.2038938781970248
+        }
+      ],
+      "decile_monotonicity": -0.49090909090909096,
+      "sharpe_monotonicity": 0.5151515151515151,
+      "average_turnover": 0.19411764705882353
+    },
+    "momentum_only": {
+      "periods": 68,
+      "cagr": 0.5566184871945519,
+      "mean_period_return": 0.04073198114874284,
+      "volatility_annualised": 0.27863957317207483,
+      "sharpe": 1.7541793084899102,
+      "sortino": 2.4697540701301985,
+      "max_drawdown": -0.3128164738873318,
+      "win_rate": 0.75,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.4130925707809199,
+        0.2962437725933431,
+        0.24931965229794817,
+        0.2430257424243607,
+        0.2326508966388543,
+        0.27077170865458045,
+        0.26241635003693586,
+        0.2738420451113419,
+        0.28199761679278446,
+        0.34644039644228286
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.20874569282035962,
+          "sharpe": 1.7842053555641078
+        },
+        {
+          "volatility_annualised": 0.17586784302021832,
+          "sharpe": 1.5772970779049973
+        },
+        {
+          "volatility_annualised": 0.177819363427021,
+          "sharpe": 1.3519220241938823
+        },
+        {
+          "volatility_annualised": 0.17937913987919102,
+          "sharpe": 1.3153617839067377
+        },
+        {
+          "volatility_annualised": 0.17994934748323035,
+          "sharpe": 1.2638322760877054
+        },
+        {
+          "volatility_annualised": 0.1799471392466898,
+          "sharpe": 1.4368563154049496
+        },
+        {
+          "volatility_annualised": 0.19823641149978077,
+          "sharpe": 1.2864191973854073
+        },
+        {
+          "volatility_annualised": 0.2161845518188589,
+          "sharpe": 1.240400880033033
+        },
+        {
+          "volatility_annualised": 0.25195756221475846,
+          "sharpe": 1.1234219684456095
+        },
+        {
+          "volatility_annualised": 0.36929946715146156,
+          "sharpe": 0.9935593521677941
+        }
+      ],
+      "decile_monotonicity": -0.05454545454545445,
+      "sharpe_monotonicity": 0.9030303030303031,
+      "average_turnover": 0.2713235294117647
+    },
+    "roic_only": {
+      "periods": 68,
+      "cagr": 0.33570479027471145,
+      "mean_period_return": 0.02588545584137381,
+      "volatility_annualised": 0.189719778924277,
+      "sharpe": 1.6372856423181152,
+      "sortino": 2.3663399508802287,
+      "max_drawdown": -0.23928347443014342,
+      "win_rate": 0.75,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.3558729416850035,
+        0.3039075295398721,
+        0.23646855469003558,
+        0.2488132796586877,
+        0.29110792567710075,
+        0.2730343970107345,
+        0.1708139359604126,
+        0.3197945066240526,
+        0.29137844366885624,
+        0.3706070202522591
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1798121487704558,
+          "sharpe": 1.803354166333789
+        },
+        {
+          "volatility_annualised": 0.17978279483817566,
+          "sharpe": 1.5814544398916064
+        },
+        {
+          "volatility_annualised": 0.17671989234368382,
+          "sharpe": 1.3013541348198434
+        },
+        {
+          "volatility_annualised": 0.1998523094848887,
+          "sharpe": 1.2239309232898123
+        },
+        {
+          "volatility_annualised": 0.1976314106470339,
+          "sharpe": 1.4063387191360415
+        },
+        {
+          "volatility_annualised": 0.2152011998878049,
+          "sharpe": 1.2424433379069382
+        },
+        {
+          "volatility_annualised": 0.19173172420862386,
+          "sharpe": 0.9266901326277025
+        },
+        {
+          "volatility_annualised": 0.18284653098055637,
+          "sharpe": 1.6247536828001339
+        },
+        {
+          "volatility_annualised": 0.2153982298440118,
+          "sharpe": 1.3089393325033039
+        },
+        {
+          "volatility_annualised": 0.313543853022668,
+          "sharpe": 1.1712985150088384
+        }
+      ],
+      "decile_monotonicity": -0.1515151515151516,
+      "sharpe_monotonicity": 0.4545454545454546,
+      "average_turnover": 0.08455882352941177
+    },
+    "roic_and_momentum": {
+      "periods": 68,
+      "cagr": 0.4511529854659717,
+      "mean_period_return": 0.033350416774701616,
+      "volatility_annualised": 0.2126937901282463,
+      "sharpe": 1.8816017198015553,
+      "sortino": 2.706171269908136,
+      "max_drawdown": -0.2699075320487212,
+      "win_rate": 0.7647058823529411,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.38162527395764956,
+        0.25661723668746417,
+        0.2547335594036815,
+        0.2738091501447395,
+        0.2911255692553949,
+        0.24940998398695058,
+        0.2577004058781236,
+        0.26450510713272,
+        0.30019768923973467,
+        0.3110146999641614
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.17665615809070978,
+          "sharpe": 1.9415381093437842
+        },
+        {
+          "volatility_annualised": 0.1761691903235196,
+          "sharpe": 1.3973281283292462
+        },
+        {
+          "volatility_annualised": 0.1819362781828639,
+          "sharpe": 1.3495697959611883
+        },
+        {
+          "volatility_annualised": 0.1806986196723903,
+          "sharpe": 1.4425472992296748
+        },
+        {
+          "volatility_annualised": 0.17468783044600492,
+          "sharpe": 1.5654771830629775
+        },
+        {
+          "volatility_annualised": 0.1999624532851764,
+          "sharpe": 1.226106690104657
+        },
+        {
+          "volatility_annualised": 0.19035464930496987,
+          "sharpe": 1.310428369630989
+        },
+        {
+          "volatility_annualised": 0.2146295958384635,
+          "sharpe": 1.2140094885593715
+        },
+        {
+          "volatility_annualised": 0.2374490959020585,
+          "sharpe": 1.2371317831900857
+        },
+        {
+          "volatility_annualised": 0.3537234577747535,
+          "sharpe": 0.946634884397873
+        }
+      ],
+      "decile_monotonicity": -0.17575757575757578,
+      "sharpe_monotonicity": 0.8303030303030303,
+      "average_turnover": 0.21323529411764705
+    },
+    "roic_momentum_gross_profits": {
+      "periods": 68,
+      "cagr": 0.4630607476220243,
+      "mean_period_return": 0.0340852780155881,
+      "volatility_annualised": 0.21476867970977087,
+      "sharpe": 1.9044831711020136,
+      "sortino": 2.6126878413822325,
+      "max_drawdown": -0.2534257468188632,
+      "win_rate": 0.7647058823529411,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.4535835751239561,
+        0.2843603689858669,
+        0.32473166647961516,
+        0.2792743659943271,
+        0.32882281253061807,
+        0.2784280564694037,
+        0.25454394416310655,
+        0.28371522932143534,
+        0.33216502205820064,
+        0.2703297471462516
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.20268125565352094,
+          "sharpe": 1.973677821240611
+        },
+        {
+          "volatility_annualised": 0.1805068542100394,
+          "sharpe": 1.4903248610010553
+        },
+        {
+          "volatility_annualised": 0.1799473511848037,
+          "sharpe": 1.6701467704641573
+        },
+        {
+          "volatility_annualised": 0.197888510853045,
+          "sharpe": 1.3573245488566643
+        },
+        {
+          "volatility_annualised": 0.19227645647715616,
+          "sharpe": 1.591583443743639
+        },
+        {
+          "volatility_annualised": 0.20178122086031552,
+          "sharpe": 1.3315367921394496
+        },
+        {
+          "volatility_annualised": 0.2060804529731118,
+          "sharpe": 1.2133349169608574
+        },
+        {
+          "volatility_annualised": 0.22141720218777294,
+          "sharpe": 1.2519294991027403
+        },
+        {
+          "volatility_annualised": 0.22674738327213229,
+          "sharpe": 1.3922304500839793
+        },
+        {
+          "volatility_annualised": 0.26874688914613165,
+          "sharpe": 1.032375279666996
+        }
+      ],
+      "decile_monotonicity": 0.4545454545454546,
+      "sharpe_monotonicity": 0.793939393939394,
+      "average_turnover": 0.15294117647058825
+    },
+    "roic_momentum_accruals": {
+      "periods": 68,
+      "cagr": 0.3018931988125886,
+      "mean_period_return": 0.023552646554635195,
+      "volatility_annualised": 0.1797660136684147,
+      "sharpe": 1.5722202038531456,
+      "sortino": 1.881658136688456,
+      "max_drawdown": -0.2628604081616466,
+      "win_rate": 0.7352941176470589,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.33099443470184586,
+        0.3047866582635608,
+        0.2742224059327585,
+        0.292666018082419,
+        0.2344926864540411,
+        0.2660290918005508,
+        0.27604107989579507,
+        0.28029408665566713,
+        0.2562519525318123,
+        0.30695372119572073
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1749902602004288,
+          "sharpe": 1.739555207511711
+        },
+        {
+          "volatility_annualised": 0.17801785148147442,
+          "sharpe": 1.6000629182249162
+        },
+        {
+          "volatility_annualised": 0.1924411868738495,
+          "sharpe": 1.3699537862514608
+        },
+        {
+          "volatility_annualised": 0.18599592855987426,
+          "sharpe": 1.487932445052451
+        },
+        {
+          "volatility_annualised": 0.18964778206194746,
+          "sharpe": 1.2177161228988447
+        },
+        {
+          "volatility_annualised": 0.19246594040843154,
+          "sharpe": 1.334372548520611
+        },
+        {
+          "volatility_annualised": 0.19312144145906107,
+          "sharpe": 1.3731032369945326
+        },
+        {
+          "volatility_annualised": 0.2147363155565031,
+          "sharpe": 1.270048447493286
+        },
+        {
+          "volatility_annualised": 0.2784210624693979,
+          "sharpe": 0.9619964830721526
+        },
+        {
+          "volatility_annualised": 0.2617976615819339,
+          "sharpe": 1.1649390680322573
+        }
+      ],
+      "decile_monotonicity": 0.2727272727272727,
+      "sharpe_monotonicity": 0.8424242424242424,
+      "average_turnover": 0.23308823529411765
+    },
+    "equal_weight_universe": {
+      "periods": 68,
+      "cagr": 0.29134026560676163,
+      "mean_period_return": 0.023209656580100126,
+      "volatility_annualised": 0.1992872229608308,
+      "sharpe": 1.397560138694606,
+      "sortino": 1.467687788699349,
+      "max_drawdown": -0.3219186172722954,
+      "win_rate": 0.75,
+      "costs_bps_per_side": 0
+    }
+  },
+  "test": {
+    "live_composite": {
+      "periods": 85,
+      "cagr": 0.1510617847191429,
+      "mean_period_return": 0.013537815071292765,
+      "volatility_annualised": 0.20594909661998806,
+      "sharpe": 0.7888055035039491,
+      "sortino": 1.4412742557603182,
+      "max_drawdown": -0.34344661348430716,
+      "win_rate": 0.5764705882352941,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.0959230988712112,
+        0.0949097091194433,
+        0.10106499727111418,
+        0.09301084127814829,
+        0.08367575316437481,
+        0.07664893894076963,
+        0.09944209657287084,
+        0.08501445131204521,
+        0.11825118020392988,
+        0.11916890828248472
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.17370155926992178,
+          "sharpe": 0.6158196335090431
+        },
+        {
+          "volatility_annualised": 0.1589871512674578,
+          "sharpe": 0.6515471385625579
+        },
+        {
+          "volatility_annualised": 0.16376017535530732,
+          "sharpe": 0.6715546494578744
+        },
+        {
+          "volatility_annualised": 0.15298617817073945,
+          "sharpe": 0.6590111361328232
+        },
+        {
+          "volatility_annualised": 0.16761418951001053,
+          "sharpe": 0.5643488611423738
+        },
+        {
+          "volatility_annualised": 0.16835711143594503,
+          "sharpe": 0.52444982354837
+        },
+        {
+          "volatility_annualised": 0.18046576038348813,
+          "sharpe": 0.617400547149189
+        },
+        {
+          "volatility_annualised": 0.19074053368238428,
+          "sharpe": 0.524740810601841
+        },
+        {
+          "volatility_annualised": 0.18276421099445586,
+          "sharpe": 0.7056920563187525
+        },
+        {
+          "volatility_annualised": 0.21821063022427362,
+          "sharpe": 0.6282537878550725
+        }
+      ],
+      "decile_monotonicity": -0.2848484848484849,
+      "sharpe_monotonicity": 0.042424242424242475,
+      "average_turnover": 0.17
+    },
+    "live_composite_raw_score": {
+      "periods": 85,
+      "cagr": 0.0697256075050845,
+      "mean_period_return": 0.006892452527338733,
+      "volatility_annualised": 0.17459449187229995,
+      "sharpe": 0.47372302207883643,
+      "sortino": 0.8600345832475296,
+      "max_drawdown": -0.35890906080663454,
+      "win_rate": 0.5058823529411764,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.09461365026269486,
+        0.08773483248757508,
+        0.1029698812044133,
+        0.09934351538335684,
+        0.08993941278365347,
+        0.07981874344604822,
+        0.09157474202775129,
+        0.08479952461000773,
+        0.13401611620782772,
+        0.10205768903823453
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.165878564192256,
+          "sharpe": 0.6295103739089707
+        },
+        {
+          "volatility_annualised": 0.1649684740691866,
+          "sharpe": 0.593134958475411
+        },
+        {
+          "volatility_annualised": 0.16443186448899452,
+          "sharpe": 0.6801243405372261
+        },
+        {
+          "volatility_annualised": 0.16668156560450093,
+          "sharpe": 0.653035504220902
+        },
+        {
+          "volatility_annualised": 0.16722020961590964,
+          "sharpe": 0.5999591130472296
+        },
+        {
+          "volatility_annualised": 0.16785352309213164,
+          "sharpe": 0.543112087931804
+        },
+        {
+          "volatility_annualised": 0.17579795025843858,
+          "sharpe": 0.5881959390567885
+        },
+        {
+          "volatility_annualised": 0.18784352494478398,
+          "sharpe": 0.5286829214868783
+        },
+        {
+          "volatility_annualised": 0.18622750433057428,
+          "sharpe": 0.7720664373841898
+        },
+        {
+          "volatility_annualised": 0.21443791542058135,
+          "sharpe": 0.5629690392290446
+        }
+      ],
+      "decile_monotonicity": -0.1393939393939394,
+      "sharpe_monotonicity": 0.34545454545454546,
+      "average_turnover": 0.17941176470588235
+    },
+    "composite_without_valuation": {
+      "periods": 85,
+      "cagr": 0.08486687961597461,
+      "mean_period_return": 0.008148458987719891,
+      "volatility_annualised": 0.17983718245789992,
+      "sharpe": 0.543722418891485,
+      "sortino": 1.0607321300605959,
+      "max_drawdown": -0.2989289055945308,
+      "win_rate": 0.5411764705882353,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.11585534489866278,
+        0.05988283573751785,
+        0.07590148196381397,
+        0.11092431710877615,
+        0.06509362919532591,
+        0.09576734942828513,
+        0.08367021239005323,
+        0.12191432466866603,
+        0.10378353719218336,
+        0.13851846607077278
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.16892701309467367,
+          "sharpe": 0.735624967097163
+        },
+        {
+          "volatility_annualised": 0.16175168194994158,
+          "sharpe": 0.4409929997981089
+        },
+        {
+          "volatility_annualised": 0.1646772959869721,
+          "sharpe": 0.5275128272200592
+        },
+        {
+          "volatility_annualised": 0.1625955820188279,
+          "sharpe": 0.7306037370131483
+        },
+        {
+          "volatility_annualised": 0.16828845207900325,
+          "sharpe": 0.45954223174084435
+        },
+        {
+          "volatility_annualised": 0.17260795519284286,
+          "sharpe": 0.617962955432166
+        },
+        {
+          "volatility_annualised": 0.17195748989695125,
+          "sharpe": 0.5549465964924488
+        },
+        {
+          "volatility_annualised": 0.18436823014211348,
+          "sharpe": 0.7189939885293778
+        },
+        {
+          "volatility_annualised": 0.19387099207194583,
+          "sharpe": 0.608680579576853
+        },
+        {
+          "volatility_annualised": 0.20271647125088438,
+          "sharpe": 0.7443595089585444
+        }
+      ],
+      "decile_monotonicity": -0.46666666666666656,
+      "sharpe_monotonicity": -0.2969696969696969,
+      "average_turnover": 0.17882352941176471
+    },
+    "momentum_only": {
+      "periods": 85,
+      "cagr": 0.4351343769891125,
+      "mean_period_return": 0.03421630072402911,
+      "volatility_annualised": 0.29837958161954126,
+      "sharpe": 1.3760848060035584,
+      "sortino": 2.1880157464570504,
+      "max_drawdown": -0.38672946120175455,
+      "win_rate": 0.7176470588235294,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.25480080387203774,
+        0.11898642925647818,
+        0.13211838126315367,
+        0.08526668910493518,
+        0.09265183668026644,
+        0.06708359117593998,
+        0.08321688911429326,
+        0.047196722750567854,
+        0.04251441430426772,
+        0.044932354574266586
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.22616034151498438,
+          "sharpe": 1.1259620879132608
+        },
+        {
+          "volatility_annualised": 0.1755702298059609,
+          "sharpe": 0.7311457732206188
+        },
+        {
+          "volatility_annualised": 0.15915646597207309,
+          "sharpe": 0.8629613639133397
+        },
+        {
+          "volatility_annualised": 0.15880339883123362,
+          "sharpe": 0.5962373851853607
+        },
+        {
+          "volatility_annualised": 0.15459793633047428,
+          "sharpe": 0.6520359523371302
+        },
+        {
+          "volatility_annualised": 0.16051687991072572,
+          "sharpe": 0.4853315368255417
+        },
+        {
+          "volatility_annualised": 0.16391385348972692,
+          "sharpe": 0.570997730284556
+        },
+        {
+          "volatility_annualised": 0.17397245889210844,
+          "sharpe": 0.3528411245007288
+        },
+        {
+          "volatility_annualised": 0.19185686147308983,
+          "sharpe": 0.3123852875671694
+        },
+        {
+          "volatility_annualised": 0.24767785394178732,
+          "sharpe": 0.3001553350859414
+        }
+      ],
+      "decile_monotonicity": 0.9515151515151515,
+      "sharpe_monotonicity": 0.9636363636363636,
+      "average_turnover": 0.26
+    },
+    "roic_only": {
+      "periods": 85,
+      "cagr": 0.16817663286483087,
+      "mean_period_return": 0.014449376194293697,
+      "volatility_annualised": 0.18497226949823178,
+      "sharpe": 0.9373973450284226,
+      "sortino": 1.9723107084786091,
+      "max_drawdown": -0.38344697579927123,
+      "win_rate": 0.6470588235294118,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.1504685563321666,
+        0.07719590164299417,
+        0.09708582915399733,
+        0.08219460107376886,
+        0.0778009287805339,
+        0.07938040483529041,
+        0.04158445858702442,
+        0.0804892465971152,
+        0.08983838446931669,
+        0.15690641023518892
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.1757071649300552,
+          "sharpe": 0.8896175152402641
+        },
+        {
+          "volatility_annualised": 0.16484378339993105,
+          "sharpe": 0.5347989941067585
+        },
+        {
+          "volatility_annualised": 0.17088160621390636,
+          "sharpe": 0.6296810190052826
+        },
+        {
+          "volatility_annualised": 0.17754638531030148,
+          "sharpe": 0.5346401685757606
+        },
+        {
+          "volatility_annualised": 0.15938574380112647,
+          "sharpe": 0.550627834196674
+        },
+        {
+          "volatility_annualised": 0.15533677426970055,
+          "sharpe": 0.5705736131612805
+        },
+        {
+          "volatility_annualised": 0.16253803930266134,
+          "sharpe": 0.33277738205469853
+        },
+        {
+          "volatility_annualised": 0.1484981142609791,
+          "sharpe": 0.5976349346622016
+        },
+        {
+          "volatility_annualised": 0.17655561649263088,
+          "sharpe": 0.5776850825511146
+        },
+        {
+          "volatility_annualised": 0.24192109704116044,
+          "sharpe": 0.7268722642592338
+        }
+      ],
+      "decile_monotonicity": -0.09090909090909083,
+      "sharpe_monotonicity": -0.030303030303030276,
+      "average_turnover": 0.05764705882352941
+    },
+    "roic_and_momentum": {
+      "periods": 85,
+      "cagr": 0.25964321183475336,
+      "mean_period_return": 0.021626973685715565,
+      "volatility_annualised": 0.23197346856488293,
+      "sharpe": 1.118764511451007,
+      "sortino": 2.016657169021315,
+      "max_drawdown": -0.3761219936251151,
+      "win_rate": 0.6470588235294118,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.19788673520105227,
+        0.11392339959265829,
+        0.11566814361127298,
+        0.08882262075713299,
+        0.10100511717676941,
+        0.092335812073701,
+        0.06273844466218459,
+        0.044381369101439416,
+        0.03500751690351067,
+        0.08040627310520354
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.19133770129370642,
+          "sharpe": 1.046245506305443
+        },
+        {
+          "volatility_annualised": 0.16712254896552736,
+          "sharpe": 0.7317881338565324
+        },
+        {
+          "volatility_annualised": 0.15868932021616827,
+          "sharpe": 0.771556026952266
+        },
+        {
+          "volatility_annualised": 0.1608686355770992,
+          "sharpe": 0.6109932434677214
+        },
+        {
+          "volatility_annualised": 0.16412115051795928,
+          "sharpe": 0.670820991192799
+        },
+        {
+          "volatility_annualised": 0.16329378291084856,
+          "sharpe": 0.6241757972105476
+        },
+        {
+          "volatility_annualised": 0.16537659359420087,
+          "sharpe": 0.45145666511551763
+        },
+        {
+          "volatility_annualised": 0.1642970947367588,
+          "sharpe": 0.34662403167000083
+        },
+        {
+          "volatility_annualised": 0.1743512800529467,
+          "sharpe": 0.2853536048984531
+        },
+        {
+          "volatility_annualised": 0.24033946224750444,
+          "sharpe": 0.44272989884495656
+        }
+      ],
+      "decile_monotonicity": 0.8787878787878788,
+      "sharpe_monotonicity": 0.9151515151515152,
+      "average_turnover": 0.2188235294117647
+    },
+    "roic_momentum_gross_profits": {
+      "periods": 85,
+      "cagr": 0.21941708224848444,
+      "mean_period_return": 0.018479405812793746,
+      "volatility_annualised": 0.209231503603403,
+      "sharpe": 1.0598445546415232,
+      "sortino": 2.1219743614920064,
+      "max_drawdown": -0.3424863576011711,
+      "win_rate": 0.6588235294117647,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.1711624708279611,
+        0.12649909765452794,
+        0.08715593760117968,
+        0.0976791532433503,
+        0.11758186690504369,
+        0.10564946161177557,
+        0.0940003579490476,
+        0.08716070883983429,
+        0.047573445819886206,
+        0.04224799750561825
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.20105087970522906,
+          "sharpe": 0.891177084153073
+        },
+        {
+          "volatility_annualised": 0.18857188474590839,
+          "sharpe": 0.7282199258000195
+        },
+        {
+          "volatility_annualised": 0.17627386038213655,
+          "sharpe": 0.5633281988030245
+        },
+        {
+          "volatility_annualised": 0.17841949499788742,
+          "sharpe": 0.6133059474068627
+        },
+        {
+          "volatility_annualised": 0.1896503697451186,
+          "sharpe": 0.6824939677774302
+        },
+        {
+          "volatility_annualised": 0.18930271583455954,
+          "sharpe": 0.627105554850464
+        },
+        {
+          "volatility_annualised": 0.18248026588271113,
+          "sharpe": 0.5854960879486059
+        },
+        {
+          "volatility_annualised": 0.17098872719969985,
+          "sharpe": 0.5755441025994177
+        },
+        {
+          "volatility_annualised": 0.17624093414064995,
+          "sharpe": 0.35311472108646524
+        },
+        {
+          "volatility_annualised": 0.22026886349573213,
+          "sharpe": 0.2983726262585615
+        }
+      ],
+      "decile_monotonicity": 0.7818181818181819,
+      "sharpe_monotonicity": 0.7818181818181819,
+      "average_turnover": 0.16
+    },
+    "roic_momentum_accruals": {
+      "periods": 85,
+      "cagr": 0.17960692703493653,
+      "mean_period_return": 0.015417500257782882,
+      "volatility_annualised": 0.1941029702717536,
+      "sharpe": 0.9531538998829928,
+      "sortino": 2.035174709537531,
+      "max_drawdown": -0.2822203643666661,
+      "win_rate": 0.6823529411764706,
+      "costs_bps_per_side": 10,
+      "decile_cagr": [
+        0.16974236841949875,
+        0.14332580799401584,
+        0.09945313545310475,
+        0.11867509380029428,
+        0.08590207098593527,
+        0.0690964755660306,
+        0.09657933688042708,
+        0.059165500189458875,
+        0.04530077446293812,
+        0.05094502790135613
+      ],
+      "decile_risk": [
+        {
+          "volatility_annualised": 0.18058997426838394,
+          "sharpe": 0.9636851979787674
+        },
+        {
+          "volatility_annualised": 0.16877451166921875,
+          "sharpe": 0.8823572607618925
+        },
+        {
+          "volatility_annualised": 0.17177366324889298,
+          "sharpe": 0.640062991495442
+        },
+        {
+          "volatility_annualised": 0.16940317361308288,
+          "sharpe": 0.7494349247228796
+        },
+        {
+          "volatility_annualised": 0.15452056843598772,
+          "sharpe": 0.6122499077427553
+        },
+        {
+          "volatility_annualised": 0.1567542670790336,
+          "sharpe": 0.5058344674619555
+        },
+        {
+          "volatility_annualised": 0.1686678382709959,
+          "sharpe": 0.6327605085626694
+        },
+        {
+          "volatility_annualised": 0.16042502278514142,
+          "sharpe": 0.43984139764788543
+        },
+        {
+          "volatility_annualised": 0.19682348813412778,
+          "sharpe": 0.3235587516424531
+        },
+        {
+          "volatility_annualised": 0.2050939105704713,
+          "sharpe": 0.3452981987087557
+        }
+      ],
+      "decile_monotonicity": 0.9393939393939394,
+      "sharpe_monotonicity": 0.9393939393939394,
+      "average_turnover": 0.21294117647058824
+    },
+    "equal_weight_universe": {
+      "periods": 85,
+      "cagr": 0.09822542928942246,
+      "mean_period_return": 0.00903884002389014,
+      "volatility_annualised": 0.1699620789137204,
+      "sharpe": 0.6381781217311622,
+      "sortino": 1.1514972369173238,
+      "max_drawdown": -0.2830378800158384,
+      "win_rate": 0.611764705882353,
+      "costs_bps_per_side": 0
+    }
+  },
+  "selected": {
+    "name": "momentum_only",
+    "reason": "highest Sharpe-decile monotonicity on the design half (+0.90), top-decile Sharpe 1.78"
+  },
+  "verdict": {
+    "candidate": "momentum_only",
+    "test_half_cagr": 0.4351343769891125,
+    "live_composite_cagr": 0.1510617847191429,
+    "universe_cagr": 0.09822542928942246,
+    "test_half_sharpe": 1.3760848060035584,
+    "live_composite_sharpe": 0.7888055035039491,
+    "universe_sharpe": 0.6381781217311622,
+    "beat_live_model": true,
+    "beat_universe": true,
+    "beat_live_model_risk_adjusted": true,
+    "beat_universe_risk_adjusted": true
+  },
+  "limitations": [
+    "One test half, roughly five years and one regime. A candidate that wins here has survived a single honest trial, which is the minimum bar rather than a strong one.",
+    "Survivorship: measured on companies that still have a price feed today, so every level of return is biased upward. The comparison between candidates is far more trustworthy than any of their absolute numbers.",
+    "Selecting on the design half still consumes some of the sample's evidence. The test half is honest about the winner; it is not a fresh sample for the runners-up, whose test numbers are reported for context and should not be mined.",
+    "Costs are a flat 10bps per side and ignore market impact, which the highest turnover candidates would feel most."
+  ]
+}
