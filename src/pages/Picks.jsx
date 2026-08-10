@@ -186,15 +186,29 @@ function ThinEvidenceChip({ row }) {
 // top-ranked companies. Saying so is the honest reading of an empty metric; rendering a
 // missing confidence as "0%" (which the card used to do) reads as a measured zero and is
 // simply wrong.
-function isLightData(row) {
-  return !row.is_etf && !finite(row.confidence)
+// Two categories carry 20% of the score and both need a statement pull: capital allocation
+// and accounting quality. Whether they resolved is the real line between a company measured on
+// the full evidence set and one scored on a fraction of it, and on the 2026-08-09 artifact it
+// separated a median score of 65.2 from 44.4 within the same cohort.
+//
+// This used to test `finite(row.confidence)`. That field was renamed to `data_coverage` during
+// the Phase 1 contract work and the check was missed, so the badge fired on 100% of rows --
+// Newmont, the most completely measured company in the universe, wore it alongside the 727 that
+// genuinely lack the statement metrics. A marker that appears on everything marks nothing, and
+// this is the one marker that would have shown a reader the split.
+const STATEMENT_DERIVED_CATEGORIES = ['capital_allocation', 'accounting_quality']
+
+export function isLightData(row) {
+  if (row.is_etf) return false
+  const categories = row.fundamental_categories || {}
+  return STATEMENT_DERIVED_CATEGORIES.some((name) => !finite(categories[name]))
 }
 
 function LightDataChip({ row }) {
   if (!isLightData(row)) return null
   return (
     <span className="chip screen-chip screen-chip-light-data"
-      title="Scored on the lighter universe data set: price/valuation/analyst inputs only. Price history, data coverage and statement-level metrics are published for the top-ranked companies, so they read as – on this row until it next lands in the published leaderboard.">
+      title="Scored without a statement pull, so capital allocation and accounting quality - 20% of the score between them - did not resolve. The remaining categories are renormalised over whatever did, which is a different measurement from a fully-evidenced row rather than a lower one: these scores are not directly comparable to rows without this tag.">
       Lighter data
     </span>
   )

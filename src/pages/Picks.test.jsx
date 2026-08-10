@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import Picks from './Picks'
+import Picks, { isLightData } from './Picks'
 import { useData } from '../lib/useData'
 import { useAlerts } from '../lib/useAlerts'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
@@ -388,5 +388,46 @@ describe('Picks research page', () => {
     expect(createRule).toHaveBeenCalledWith(expect.objectContaining({
       type: 'price_cross', ticker: 'AAPL', direction: 'below',
     }))
+  })
+})
+
+describe('lighter-data marker', () => {
+  // The badge used to test `finite(row.confidence)`. That field was renamed to `data_coverage`
+  // in the Phase 1 contract work and this check was missed, so it fired on 100% of rows --
+  // including Newmont, the most completely measured company in the universe. A marker that
+  // appears on everything marks nothing, and this is the marker that shows a reader which
+  // rows were scored on a fraction of the evidence.
+  const full = {
+    ticker: 'NEM',
+    fundamental_categories: {
+      valuation: 89, profitability: 96, financial_health: 100,
+      growth: 80, capital_allocation: 100, accounting_quality: 86,
+    },
+  }
+  const thin = {
+    ticker: 'THIN',
+    fundamental_categories: { valuation: 69, profitability: 62, financial_health: 68, growth: 66 },
+  }
+
+  it('does not mark a company measured on the full evidence set', () => {
+    expect(isLightData(full)).toBe(false)
+  })
+
+  it('marks a company scored without a statement pull', () => {
+    expect(isLightData(thin)).toBe(true)
+  })
+
+  it('marks a row missing only one of the two statement categories', () => {
+    expect(isLightData({ ...thin, fundamental_categories: { ...full.fundamental_categories, accounting_quality: null } })).toBe(true)
+  })
+
+  it('does not depend on the renamed coverage field', () => {
+    // Whichever of confidence/data_coverage happens to be present must not change the verdict.
+    expect(isLightData({ ...full, confidence: undefined, data_coverage: 0.89 })).toBe(false)
+    expect(isLightData({ ...thin, confidence: 0.9, data_coverage: 0.9 })).toBe(true)
+  })
+
+  it('never marks an ETF, which is scored by a different model entirely', () => {
+    expect(isLightData({ ticker: 'SPY', is_etf: true })).toBe(false)
   })
 })
