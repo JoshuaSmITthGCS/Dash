@@ -86,7 +86,58 @@ alpha exactly as it did to Round 5's.
 
 ## 2. Task 2: re-runs on the corrected spine, and what happens to Round 5
 
-PLACEHOLDER_SECTION_2
+Producer: `task2_analysis.py`. All variants on the corrected quarterly spine, identical
+cache and calendar, paired noise test against the quarterly base with its threshold
+beside it.
+
+| Variant | TO/mo | CAGR | Max DD | CMA (t) | paired dCAGR / 2SE |
+|---|---|---|---|---|---|
+| Quarterly base (full sleeve) | 24.3% | 20.06% | -28.2% | +0.08 (0.7) | |
+| Fundamentals only | 23.6% | 19.08% | -28.6% | +0.02 (0.2) | -0.59 / 6.22 noise |
+| Stack (buffer 1.5) | **14.3%** | 22.04% | **-26.0%** | -0.02 (-0.2) | +1.31 / 3.20 noise |
+| drop momentum_12_1 | 24.9% | 19.05% | -28.2% | +0.02 (0.2) | **-0.84 / 3.95 noise** |
+| drop risk_adjusted | 25.9% | 20.02% | -27.0% | +0.10 (0.7) | -0.07 / 1.68 noise |
+| drop drawdown_resilience | 24.8% | 20.70% | -28.4% | +0.04 (0.3) | +0.38 / 2.03 noise |
+| drop volume_confirmation | 25.2% | 21.31% | -28.5% | +0.04 (0.3) | +0.98 / 1.71 noise |
+| drop low_beta | 24.5% | 20.26% | -28.2% | +0.06 (0.5) | +0.17 / 1.60 noise |
+| drop technical_extended | 24.7% | 20.32% | -26.4% | +0.07 (0.5) | +0.21 / 1.48 noise |
+| Valuation 2-metric EV block | 24.4% | 19.48% | **-24.8%** | +0.11 (0.6) | -0.63 / 3.63 noise |
+| Valuation single EV/EBITDA | 26.1% | 18.01% | **-24.6%** | +0.04 (0.3) | -1.81 / 3.72 noise |
+
+(drop relative_strength and the slowed variant remain byte-identical no-ops on any
+spine because production `short_horizon_treatment` is `neutral`, established in
+Round 5 and unchanged.)
+
+### Survive, invert, unmeasurable
+
+| Round 5 conclusion | Corrected-spine verdict |
+|---|---|
+| The technical sleeve contributes ~4pp of turnover on the as-filed spine, not the restated 37pp. The restated churn was availability-flicker interaction | **Survives, strengthened.** Quarterly cadence, corrected store: the sleeve adds 0.7pp (24.3 vs 23.6). The cadence-constant comparison in section 1 proves the point independently: the restated system at the same cadence runs 50.6%, so roughly 26pp of the restated turnover was data-artifact churn |
+| momentum_12_1 is the only sub-signal clearing the noise standard, its removal costs -3.86pp against 3.31 | **Inverts. Withdrawn.** On the corrected spine the drop reads -0.84pp against a 3.95 threshold. The Round 5 detection was carried by the tag-thinned early years. No technical sub-signal clears the noise standard on the corrected spine, in either direction |
+| The drawdown-protection trade re-prices to ~1.4pp for 3.8pp of turnover | **Survives, re-priced smaller.** 0.4pp of drawdown for 0.7pp of turnover at quarterly cadence. The sleeve is measurable mostly as nothing |
+| Buffer 1.5 default (turnover down by a third, CAGR inside noise, drawdown not worse) | **Survives on the third spine in a row.** TO 24.3 to 14.3%, CAGR +1.31pp (noise), DD -28.2 to -26.0. The default stands |
+| Round 5 section 1 headline (CAGR 19.70%, alpha +9.09% t 1.93) | **Withdrawn, replaced** by the section 1 table (corrected annual 16.86% / +6.14% t 1.78, corrected quarterly 20.06% / +8.44% t 2.54) |
+| Relative-strength never in the effective champion | Survives (config-level fact, spine-independent) |
+| Any CAGR ranking among similar variants | Unmeasurable, unchanged. Every ablation row above is inside its threshold, and section 6's power annotations give each row its minimum detectable effect |
+
+### The valuation challengers' backtest rows (Task 3 completion)
+
+Both challengers land inside CAGR noise against the incumbent (-0.63 and -1.81pp
+against thresholds ~3.7) and both produce the two best drawdowns of any Round 6
+variant (-24.8% and -24.6% against the base -28.2%). The parsimony case gains a
+risk-shape argument and still loses nothing measurable on return. Both are in the
+harness challenger set. Neither is promoted. The `harness_freeze.json` challenger list
+gains both entries with this round's hashes.
+
+### The deflated estimate, recomputed on the corrected spine (Task 5 update)
+
+At T=59 and the full 30-variant family now on disk: DSR of the corrected quarterly
+base is 0.958 at the frozen N=40 (marginal pass, same fragility caveat as section 5),
+**PBO rises to 0.76**, and the alpha t of 2.54 crosses the conventional hurdle while
+still failing Harvey, Liu, and Zhu's search-adjusted 3.0. The overfitting probability
+got worse as the variant family grew, which is exactly what that instrument is for:
+every additional round of search makes the surviving point estimate less trustworthy,
+and only the prospective clock escapes that arithmetic.
 
 ---
 
@@ -175,7 +226,8 @@ variants (`asfiled_ttm_backtest.py` `_val2` and `_val1`) and their five-year res
 the corrected quarterly spine appear in section 2's table. Neither is promoted. Both
 enter the harness set.
 
-PLACEHOLDER_VAL_BACKTESTS
+Backtest rows for both challengers appear in section 2 (inside CAGR noise, best
+drawdowns of the round).
 
 ---
 
@@ -340,4 +392,29 @@ backtest remains survivorship-biased and section 1 says so on every table.
 
 ## 8. Grades
 
-PLACEHOLDER_GRADES
+**Research artifact: A-, held, with Round 5's headline withdrawal logged against the
+series.** The case for the grade: this round predicted a defect's consequences before
+measuring them (the tag-union coverage cliff), fixed the ingest, re-measured, and
+withdrew its own prior round's headline when the correction moved it. The valuation
+question was answered by decomposition rather than argument, and the answer refuted
+the brief's own premise. The case against: two consecutive rounds have now published
+provisional headline numbers that the following round withdrew, and the discipline
+that catches them is running one round behind the claims. The grade holds at A- only
+because the catching is systematic: pins, manifests, pre-stated noise standards, and
+the withdrawal table are what made the corrections cheap.
+
+**Investment tool: C-, up from D+.** What changed: the champion's data spine is now
+as-filed, tag-complete, TTM-quarterly, and point-in-time pure by test. The
+cadence-constant comparison shows the restated data the product scored on for its
+entire life was costing roughly 26pp of monthly turnover in pure churn and masking
+whatever signal exists. The cost model is literature-grade. Capacity is stated. The
+one positive alpha estimate now carries its own deflation report next to it in the
+model card. What did not change: zero prospective periods have elapsed, the universe
+is still survivorship-biased (the fix is scoped and priced, not bought), PBO is 0.76
+across the search family, and the champion still carries the completeness multipliers
+while the promotion decision sits with ownership. The strongest counter says C- is
+too generous for a product with no forward evidence and a 0.76 overfitting
+probability, and that counter loses on exactly one axis: the instrument the product
+would need to earn any higher grade, the frozen prospective harness, is armed,
+dated, and outside the search that produced the 0.76. The grade above C- is the
+clock's to give, starting 2026-09-01.

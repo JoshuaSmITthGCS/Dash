@@ -23,3 +23,11 @@ pipeline/data/staging/
 # The point-in-time store (pipeline/data/pit/) is deliberately NOT ignored. Scheduled runs
 # happen on ephemeral runners, so committing it back is the only way the history survives -
 # and it cannot be reconstructed later, because the providers only ever serve today.
+
+# Survivorship-round fetch caches: bulk re-downloadable from SEC EDGAR at any time,
+# multi-GB, and not point-in-time-precious (the extracted observations live in the
+# committed PIT store). The precious captures (dead_prices, price_archive) ARE committed.
+research/audit/survivorship/data/companyfacts/
+research/audit/survivorship/data/form_index/
+research/audit/survivorship/data/submissions/
+research/audit/survivorship/data/merged_cache/

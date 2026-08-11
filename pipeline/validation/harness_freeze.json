@@ -24,7 +24,9 @@
     "fixed_feature (imputation + neutral shrink, score_variants.fixed_feature)",
     "multiplier_removal (score_variants.multiplier_removal)",
     "signal_corrections_cumulative (score_variants.challenger)",
-    "rank_buffer_1.5 portfolio layer (portfolio_construction.apply_controls)"
+    "rank_buffer_1.5 portfolio layer (portfolio_construction.apply_controls)",
+    "valuation_2metric_ev_block (asfiled_ttm_backtest.py _val2, Round 6)",
+    "valuation_single_ev_ebitda (asfiled_ttm_backtest.py _val1, Round 6)"
   ],
   "changes_that_reset_the_clock": [
     "any change to champion score semantics: weights, bands, normalization mode, modifier caps, coverage handling, blend formula"
