@@ -39,6 +39,8 @@ const clamp = (value, low = 0, high = 100) => Math.min(high, Math.max(low, value
 
 /** Minimum peer sample before an industry percentile means anything. */
 const MIN_PEER_SAMPLE = 8
+/** Neutral value for a component a `neutralCoverage` model could not resolve - see scoreRow. */
+const NEUTRAL_COMPONENT_VALUE = 50
 
 // ---------------------------------------------------------------------------
 // Peer-relative normalization
@@ -169,12 +171,29 @@ export function thesisBreak(row) {
  * harvest. The honest use of it is therefore suppression: the name stays visible with its
  * reason attached and its score capped, rather than being scored as if the finding were
  * tradable from the long side. Thresholds mirror pipeline/swing_signals.py exactly.
+ *
+ * That published result is about the *level* of short interest, so the level is what
+ * suppresses. Days to cover is short interest divided by average volume, which means an
+ * absolute threshold on it fires on low-turnover names rather than heavily shorted ones -
+ * measured against the pipeline universe, a 5-day line suppressed 20 names whose float short
+ * was 3-7%, a liquidity screen wired in backwards. It now corroborates and never fires alone.
  */
 const SHORT_PERCENT_OF_FLOAT_LIMIT = 0.10
 const DAYS_TO_COVER_LIMIT = 5
 const SHORT_INTEREST_CAP = 45
 /** Below this in average dollar volume, spread cost eats a swing-horizon edge at retail size. */
 const SWING_MIN_DOLLAR_VOLUME = 2e6
+/**
+ * Calendar days of drift window, the client-side stand-in for the pipeline's 60 trading days.
+ * The research rows carry no trading calendar, so this converts at the usual 252/365 ratio.
+ */
+const SWING_DRIFT_WINDOW_DAYS = 87
+
+const calendarDaysSince = (isoDate) => {
+  if (!isoDate) return Infinity
+  const then = Date.parse(isoDate)
+  return Number.isNaN(then) ? Infinity : (Date.now() - then) / 86400000
+}
 
 export function shortInterestSuppressed(row) {
   const shortPercent = row?.short_percent_of_float
@@ -182,9 +201,9 @@ export function shortInterestSuppressed(row) {
   const hits = []
   if (finite(shortPercent) && shortPercent >= SHORT_PERCENT_OF_FLOAT_LIMIT) {
     hits.push(`${(shortPercent * 100).toFixed(1)}% of float is short`)
-  }
-  if (finite(daysToCover) && daysToCover >= DAYS_TO_COVER_LIMIT) {
-    hits.push(`${daysToCover.toFixed(1)} days to cover`)
+    if (finite(daysToCover) && daysToCover >= DAYS_TO_COVER_LIMIT) {
+      hits.push(`${daysToCover.toFixed(1)} days to cover`)
+    }
   }
   return hits.length
     ? `${hits.join(' and ')} – heavily shorted names underperform at roughly this horizon, `
@@ -401,11 +420,27 @@ export const RANKING_MODELS = {
   swing: {
     label: 'Swing setup (2 days–8 weeks)',
     question: 'Is there evidence at the swing horizon, from the signals that survive costs?',
+    // A missing leg scores neutral rather than rescaling the others - see scoreRow. This
+    // model needs it more than any other here: its heaviest leg is an earnings surprise,
+    // which by construction only resolves for names inside an open drift window.
+    neutralCoverage: true,
     components: [
       // Bernard & Thomas 1989/1990: drift in the direction of the surprise over ~60 trading
-      // days, monotone in SUE. The best evidence-to-cost ratio at this horizon; dropped and
-      // renormalized on rows where no surprise history resolved.
-      ['pead', 'Post-earnings drift (surprise)', 0.30, percentileOf((row) => row.earnings_surprise)],
+      // days, monotone in SUE. The best evidence-to-cost ratio at this horizon.
+      //
+      // Reads standardized_unexpected_earnings, not earnings_surprise. The latter is a
+      // four-quarter weighted average of *percent* surprise built for fundamental momentum,
+      // and it resolved on 0 of 839 rows while the Yahoo earnings-dates scrape was down -
+      // so this 30% leg was silently dropped and renormalized away on the whole universe.
+      // The former is the seasonal-random-walk SUE the pipeline reads from the EDGAR
+      // point-in-time store (pipeline/edgar_sue.py), carrying the filing date that opened
+      // its drift window. Past that window the drift is spent and the leg drops.
+      ['pead', 'Post-earnings drift (SUE)', 0.30, (index, row) => {
+        const detail = row.standardized_unexpected_earnings
+        if (!detail || !finite(detail.sue)) return null
+        if (calendarDaysSince(detail.filed) > SWING_DRIFT_WINDOW_DAYS) return null
+        return { value: clamp(50 + detail.sue * 12), level: 'row', sampleSize: null }
+      }],
       // Jegadeesh-Kim-Krische-Lee 2004: the *change* in consensus predicts, the level mostly
       // does not. Every input here is a change over a stated window.
       ['revisions', 'Analyst revision (change)', 0.25, (index, row) => {
@@ -421,9 +456,18 @@ export const RANKING_MODELS = {
       // followed by appreciation over the next month. Measured against the stock's own
       // normal first (volume_ratio_60d), then ranked across peers.
       ['volume', 'High-volume premium', 0.20, percentileOf((row) => technical(row).volume_ratio_60d)],
+      // George-Hwang 2004, scored in the name's own volatility rather than raw. How far a
+      // stock sits below its 52-week high is mostly a statement about how much it moves - a
+      // name at 22% annualized volatility is often within 2% of its high, one at 64% almost
+      // never is - so ranking on raw proximity ranks partly on volatility, a different factor
+      // with its own literature that was never in these weights. Dividing by volatility gives
+      // "how many annual sigmas below the high", which is the ordering the paper expresses.
       ['proximity', '52-week-high proximity', 0.15, (index, row) => {
         const fromHigh = technical(row).pct_from_52w_high
-        return finite(fromHigh) ? { value: clamp(100 + fromHigh * 2), level: 'row', sampleSize: null } : null
+        const volatility = technical(row).annualized_volatility
+        if (!finite(fromHigh)) return null
+        if (!finite(volatility) || volatility <= 0) return null
+        return { value: clamp(50 + (fromHigh / 100 / volatility) * 60), level: 'row', sampleSize: null }
       }],
       // Jegadeesh 1990, reversed - and deliberately the smallest weight. Da-Liu-Schaumburg
       // 2014 cut the risk-adjusted alpha to 0.33%/month at t=1.37, and it is the most
@@ -443,8 +487,8 @@ export const RANKING_MODELS = {
         return 'below the liquidity floor where spread cost eats a swing-horizon edge'
       }
       const legs = [
-        row.earnings_surprise, estimates(row).revision_breadth_30d, estimates(row).eps_revision_30d_pct,
-        detail.volume_ratio_60d, detail.pct_from_52w_high,
+        row.standardized_unexpected_earnings?.sue, estimates(row).revision_breadth_30d,
+        estimates(row).eps_revision_30d_pct, detail.volume_ratio_60d, detail.pct_from_52w_high,
       ].filter(finite)
       // One resolved input is not a composite, and a five-leg model resting on the reversal
       // leg alone is just "sell whatever moved last week".
@@ -530,8 +574,21 @@ export function scoreRow(index, row, modelKey) {
 
   // Renormalize over what applied. A company that cannot report a metric is not scored zero
   // for it - it is scored on the rest, and it pays for the gap in confidence instead.
+  //
+  // Models flagged `neutralCoverage` opt out of that and impute the model's neutral value
+  // for a missing component instead. Renormalizing keeps a partial row centred but gives it
+  // a *wider* scale - fewer components means less cancellation - so partial rows crowd both
+  // tails, and it is the top tail a screen selects from. That is tolerable on a model whose
+  // components are broadly present and intolerable on one whose heaviest component resolves
+  // on part of the universe. Opt-in per model so the frozen research champion's semantics
+  // are untouched (pipeline/validation/harness_freeze.json).
+  const declaredWeight = model.components.reduce((sum, [, , weight]) => sum + weight, 0)
   const appliedWeight = applied.reduce((sum, item) => sum + item.weight, 0)
-  let raw = applied.reduce((sum, item) => sum + item.value * item.weight, 0) / appliedWeight
+  const divisor = model.neutralCoverage ? declaredWeight : appliedWeight
+  const neutral = model.neutralCoverage
+    ? dropped.reduce((sum, item) => sum + NEUTRAL_COMPONENT_VALUE * item.weight, 0)
+    : 0
+  let raw = (applied.reduce((sum, item) => sum + item.value * item.weight, 0) + neutral) / divisor
 
   const cap = model.cap ? model.cap(row) : null
   if (cap && raw > cap.limit) raw = cap.limit
@@ -550,10 +607,10 @@ export function scoreRow(index, row, modelKey) {
       ...item,
       value: Number(item.value.toFixed(1)),
       // Share of the final score this component actually carried, after renormalization.
-      contribution: Number(((item.weight / appliedWeight) * 100).toFixed(1)),
+      contribution: Number(((item.weight / divisor) * 100).toFixed(1)),
     })),
     droppedComponents: dropped,
-    coverage: Number((appliedWeight / model.components.reduce((sum, [, , weight]) => sum + weight, 0)).toFixed(3)),
+    coverage: Number((appliedWeight / declaredWeight).toFixed(3)),
     cap: cap || null,
   }
 }

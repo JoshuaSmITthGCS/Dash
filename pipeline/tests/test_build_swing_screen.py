@@ -78,60 +78,136 @@ def test_reversal_leg_is_cost_gated_out_of_illiquid_names():
     assert "REVERSAL_LEG_COST_GATED" in scored["THIN"]["reason_codes"]
 
 
+def test_52_week_leg_is_scored_in_the_names_own_volatility():
+    """Rule 4: two names equally far below their high must not rank on volatility alone."""
+    quiet = swing_signals.high_52w_drawdown_sigmas([100.0] * 100 + [90.0], volatility=.20)
+    loud = swing_signals.high_52w_drawdown_sigmas([100.0] * 100 + [90.0], volatility=.60)
+
+    # Same 10% drawdown, but it is a far bigger move for the quiet name and the leg says so.
+    assert quiet < loud < 0
+    # Without a volatility reading there is no scale, so no factor rather than a raw ratio.
+    assert swing_signals.high_52w_drawdown_sigmas([100.0] * 100, volatility=None) is None
+    assert swing_signals.high_52w_drawdown_sigmas([100.0] * 100, volatility=0) is None
+
+
 def test_pead_leg_needs_an_open_drift_window():
-    with_surprise = {"earnings_surprise": .08}
-    assert swing_signals.pead_factor(with_surprise) == (.08, "WINDOW_UNKNOWN")
+    surprised = {"sue": 1.8, "basis": "net_income", "filed": "2026-05-01"}
+    assert swing_signals.pead_factor(surprised) == (1.8, "WINDOW_UNKNOWN")
 
-    fresh = {**with_surprise, "evidence": {"news_events": [
-        {"event_types": ["earnings"], "age_trading_days": 3}]}}
-    assert swing_signals.pead_factor(fresh) == (.08, "IN_DRIFT_WINDOW")
+    fresh = {**surprised, "age_trading_days": 3}
+    assert swing_signals.pead_factor(fresh) == (1.8, "IN_DRIFT_WINDOW")
 
-    stale = {**with_surprise, "evidence": {"news_events": [
-        {"event_types": ["earnings"], "age_trading_days": 120}]}}
+    stale = {**surprised, "age_trading_days": 120}
     assert swing_signals.pead_factor(stale) == (None, "DRIFT_WINDOW_CLOSED")
 
-    assert swing_signals.pead_factor({}) == (None, "NO_SURPRISE_HISTORY")
+    assert swing_signals.pead_factor(None) == (None, "NO_SUE_HISTORY")
+    assert swing_signals.pead_factor({}) == (None, "NO_SUE_HISTORY")
 
 
-def test_dropped_legs_renormalize_rather_than_scoring_zero():
-    """A row missing the 30%-weighted PEAD leg is scored on the rest, not marked down for it."""
-    complete = {"ticker": "FULL", "median_dollar_volume_60d": 1e9,
-                "factors": {"earnings_surprise": .05, "return_5d": -5.0, "revision_breadth_30d": .6,
-                            "high_52w_proximity": .95, "volume_ratio_1d_50d": 2.0}}
-    partial = {"ticker": "PART", "median_dollar_volume_60d": 1e9,
-               "factors": {"return_5d": -5.0, "revision_breadth_30d": .6,
-                           "high_52w_proximity": .95, "volume_ratio_1d_50d": 2.0}}
-    neutral = {"ticker": "MID", "median_dollar_volume_60d": 1e9,
-               "factors": {"earnings_surprise": -.05, "return_5d": 5.0, "revision_breadth_30d": -.6,
-                           "high_52w_proximity": .5, "volume_ratio_1d_50d": .5}}
+def test_a_missing_leg_scores_neutral_rather_than_rescaling_the_others():
+    """Rule 5: less evidence must move a row toward neutral, never onto a wider scale.
 
-    scored = {row["ticker"]: row for row in swing_signals.swing_scores([complete, partial, neutral])}
+    Renormalizing to the resolved weight gave partial rows more dispersion than complete
+    ones, so they crowded both tails - and the top tail is the one that gets traded.
+    """
+    def row(ticker, sue=None):
+        factors = {"return_5d": -5.0, "revision_breadth_30d": .6,
+                   "high_52w_drawdown_sigmas": -.2, "volume_ratio_1d_50d": 2.0}
+        if sue is not None:
+            factors["standardized_unexpected_earnings"] = sue
+        return {"ticker": ticker, "median_dollar_volume_60d": 1e9, "factors": factors}
+
+    opposite = {"ticker": "MID", "median_dollar_volume_60d": 1e9,
+                "factors": {"standardized_unexpected_earnings": -2.0, "return_5d": 5.0,
+                            "revision_breadth_30d": -.6, "high_52w_drawdown_sigmas": -2.0,
+                            "volume_ratio_1d_50d": .5}}
+    scored = {r["ticker"]: r for r in
+              swing_signals.swing_scores([row("FULL", sue=2.0), row("PART"), opposite])}
 
     assert scored["PART"]["dropped_legs"] == ["pead_drift"]
     assert scored["PART"]["coverage"] == .7
     assert scored["FULL"]["coverage"] == 1.0
-    # Identical on every leg it could fill, so the missing leg costs coverage, not score.
-    assert scored["PART"]["score"] > 0
+    # Identical on every leg it could fill, so the missing leg pulls PART toward zero.
+    assert 0 < scored["PART"]["score"] < scored["FULL"]["score"]
+    # The pre-rule-5 divisor is still published, and is the wider number it always was.
+    assert scored["PART"]["score_renormalized"] > scored["PART"]["score"]
 
 
-def test_short_interest_suppresses_instead_of_scoring_a_short_leg():
+def test_heavy_tailed_sue_is_ranked_rather_than_clipped():
+    """One firm with a loud quarter must not tie the whole top of a 30%-weight leg."""
+    rows = [{"ticker": f"T{index}", "median_dollar_volume_60d": 1e9,
+             "factors": {"standardized_unexpected_earnings": value}}
+            for index, value in enumerate([-1.0, 0.0, .5, 1.0, 1.5, 2.0, 40.0, 60.0])]
+
+    scored = swing_signals.swing_scores(rows)
+    legs = [row["leg_scores"]["pead_drift"] for row in scored]
+
+    assert len(set(legs)) == len(legs)            # no two names share a clip value
+    assert legs == sorted(legs, reverse=True)     # and the order still tracks the surprise
+
+
+def test_short_interest_needs_the_level_and_never_days_to_cover_alone():
+    """Rule 3: Boehmer-Jones-Zhang is a top-decile *level* result.
+
+    Days to cover is short interest over average volume, so an absolute threshold on it
+    selects low-turnover names. It corroborates and can no longer suppress by itself.
+    """
     tradable = {"price": 50.0, "market_cap": 5e9, "history_sessions": 400,
                 "median_dollar_volume_60d": 1e9}
-    heavy = {**tradable, "ticker": "SHORTED",
-             "short_percent_of_float": .18, "days_to_cover": 9.0,
-             "factors": {"high_52w_proximity": .99, "return_5d": -6.0, "revision_breadth_30d": .5}}
-    clean = {**tradable, "ticker": "CLEAN",
-             "short_percent_of_float": .01, "days_to_cover": 1.0,
-             "factors": {"high_52w_proximity": .98, "return_5d": -5.0, "revision_breadth_30d": .4}}
+    factors = {"high_52w_drawdown_sigmas": -.1, "return_5d": -6.0, "revision_breadth_30d": .5}
+    heavy = {**tradable, "ticker": "SHORTED", "short_percent_of_float": .18,
+             "days_to_cover": 9.0, "factors": factors}
+    # Lightly shorted but slow to trade: the old OR suppressed this, the level rule does not.
+    slow = {**tradable, "ticker": "SLOW", "short_percent_of_float": .04,
+            "days_to_cover": 7.5, "factors": factors}
+    clean = {**tradable, "ticker": "CLEAN", "short_percent_of_float": .01,
+             "days_to_cover": 1.0, "factors": factors}
 
-    scored = {row["ticker"]: row for row in swing_signals.swing_scores([heavy, clean])}
+    scored = {row["ticker"]: row for row in swing_signals.swing_scores([heavy, slow, clean])}
 
     assert scored["SHORTED"]["short_interest"]["suppressed"] is True
     assert "SHORT_INTEREST_SUPPRESSED" in scored["SHORTED"]["reason_codes"]
     assert scored["SHORTED"]["eligibility"] is False
     # Suppression removes eligibility; it never contributes a factor to the composite.
     assert "short_interest" not in scored["SHORTED"]["leg_scores"]
+
+    assert scored["SLOW"]["short_interest"]["suppressed"] is False
+    assert scored["SLOW"]["short_interest"]["corroborating_only"]   # recorded, not acted on
+    assert scored["SLOW"]["eligibility"] is True
     assert scored["CLEAN"]["eligibility"] is True
+
+
+def test_short_interest_level_must_also_clear_the_cross_sections_top_decile():
+    """An absolute floor alone would suppress on a universe where everything is shorted."""
+    tradable = {"price": 50.0, "market_cap": 5e9, "history_sessions": 400,
+                "median_dollar_volume_60d": 1e9,
+                "factors": {"high_52w_drawdown_sigmas": -.1, "revision_breadth_30d": .5}}
+    rows = [{**tradable, "ticker": f"T{index}", "short_percent_of_float": .11 + index / 1000}
+            for index in range(20)]
+
+    scored = {row["ticker"]: row for row in swing_signals.swing_scores(rows)}
+
+    # Every name clears the 10% floor, so only the top decile of the level is suppressed.
+    suppressed = [t for t, row in scored.items() if row["short_interest"]["suppressed"]]
+    assert 0 < len(suppressed) <= 4
+    assert "T19" in suppressed and "T0" not in suppressed
+
+
+def test_capacity_profile_reports_round_trip_cost_and_where_the_book_stops_fitting():
+    rows = [{"ticker": f"T{index}", "price": 50.0, "market_cap": 5e9, "history_sessions": 400,
+             "median_dollar_volume_60d": 3e7,
+             "factors": {"high_52w_drawdown_sigmas": -index / 100, "revision_breadth_30d": index / 20,
+                         "realized_volatility_60d": .35}}
+            for index in range(20)]
+
+    profile = swing_signals.capacity_profile(swing_signals.swing_scores(rows))
+
+    assert profile["book_size"] > 0
+    sizes = profile["by_portfolio_size"]
+    costs = [entry["median_round_trip_bps"] for entry in sizes.values()]
+    assert costs == sorted(costs)          # impact grows with size, never shrinks
+    assert profile["median_position_capacity_at_2pct_adv"] == 600_000.0
+    assert profile["spread_source"] == "liquidity_tiered_proxy_not_measured"
 
 
 def test_membership_uses_hysteresis_so_the_list_does_not_flicker():

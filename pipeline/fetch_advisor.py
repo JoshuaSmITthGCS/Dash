@@ -15,6 +15,7 @@ from canonical_metrics import Observation
 from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
 from edgar_enrichment import merge_edgar_fallback
+from edgar_sue import sue_for
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
@@ -96,6 +97,11 @@ SCREEN_TECHNICAL_FIELDS = (
     # reversal leg. Without this on the tail the leg only ever resolves for the published
     # leaderboard, which is the opposite of what a cross-sectional screen is for.
     "pct_from_52w_high",
+    # ...and that leg is scored in the name's own volatility, not raw, because raw proximity
+    # is mechanically higher for a quiet stock (measured -0.49 against realized volatility
+    # across the universe) and would import an undeclared low-volatility and sector tilt.
+    # See rule 4 in pipeline/swing_signals.py.
+    "annualized_volatility",
     # return_60d/return_252d back a multi-horizon breadth check for rankMomentum's
     # corroboration gate - a 5d/20d pop inside a longer downtrend shouldn't pass as
     # genuine momentum. Keep in sync with src/lib/researchScreens.js.
@@ -246,6 +252,24 @@ def _evidence_summary(evidence):
     }
 
 
+def _screen_sue(row):
+    """Standardized unexpected earnings for a screen row, read from the EDGAR PIT store.
+
+    Published with its announcement date rather than as a bare number: the client-side swing
+    model has to be able to tell an open drift window from a closed one, and the store is the
+    only place the announcement date exists. Costs no network call - the facts are on disk.
+    Carried-forward rows keep whatever they already had rather than re-reading the store.
+    """
+    existing = row.get("standardized_unexpected_earnings")
+    if existing is not None:
+        return existing
+    try:
+        return sue_for(row.get("ticker"), datetime.now(timezone.utc).date().isoformat())
+    except Exception as exc:  # noqa: BLE001 - a missing surprise must not sink the row
+        LOG.warn(f"{row.get('ticker')}: SUE unavailable ({type(exc).__name__}: {exc})")
+        return None
+
+
 def _screen_row(row):
     """Project a full or already-lightweight row into the screen_universe shape.
 
@@ -294,6 +318,13 @@ def _screen_row(row):
         # rankValueTurnarounds, rankAnalystConviction, rankCatalyst) - independent
         # cross-checks against each lens's primary signal, not part of any score.
         "earnings_surprise": row.get("earnings_surprise"),
+        # The swing ranking model's post-earnings-drift leg. Deliberately a separate field
+        # from earnings_surprise above: that one is a four-quarter weighted average of
+        # percent surprise built for fundamental momentum (and 0/839 populated while the
+        # Yahoo earnings-dates scrape is down), this is the most-recent standardized
+        # seasonal surprise PEAD is a claim about, read from the EDGAR point-in-time store.
+        # See edgar_sue.py. The two are not interchangeable and are never blended.
+        "standardized_unexpected_earnings": _screen_sue(row),
         "short_percent_of_float": row.get("short_percent_of_float"),
         "days_to_cover": row.get("days_to_cover"),
         "sector_valuation_percentile": row.get("sector_valuation_percentile"),

@@ -77,6 +77,12 @@ CONCEPT_TAGS = {
                                   "DepreciationAmortizationAndAccretionNet",
                                   "DepreciationAndAmortization"),
     "share_based_compensation": ("ShareBasedCompensation",),
+    # Pre-freeze round: inputs for intangible-adjusted book value (Arnott, Harvey,
+    # Kalesnik, Linnainmaa, FAJ 77(1), 2021, via the Peters-Taylor capitalization).
+    "research_development": ("ResearchAndDevelopmentExpense",
+                             "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"),
+    "sga_expense": ("SellingGeneralAndAdministrativeExpense",
+                    "GeneralAndAdministrativeExpense"),
     "dividends_paid": ("PaymentsOfDividendsCommonStock", "PaymentsOfDividends"),
     "share_repurchases": ("PaymentsForRepurchaseOfCommonStock",),
     "shares_diluted": ("WeightedAverageNumberOfDilutedSharesOutstanding",),

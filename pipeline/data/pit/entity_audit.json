@@ -2,7 +2,7 @@
   "ambiguous_tickers": [],
   "entity_map_fetched_at": "2026-08-09T23:46:46.259997+00:00",
   "entity_map_source": "sec_company_tickers",
-  "generated_at": "2026-08-11T03:39:29.306066+00:00",
+  "generated_at": "2026-08-11T22:09:17.943418+00:00",
   "mode": "backfill",
   "requested": 910,
   "resolved": 861,
@@ -920,14 +920,13 @@
       "ZI"
     ],
     "fund": [
-      "PINC",
       "VGT",
       "VOO"
     ],
     "scored_but_unresolved": [
       {
         "published_name": "American Electric Power Company",
-        "score": 48.2,
+        "score": 48.0,
         "sector": "Utilities",
         "ticker": "AEP"
       },
@@ -936,6 +935,12 @@
         "score": 30.5,
         "sector": "Technology",
         "ticker": "PARA"
+      },
+      {
+        "published_name": "PGIM Securitized Income ETF",
+        "score": 32.5,
+        "sector": null,
+        "ticker": "PINC"
       }
     ]
   },

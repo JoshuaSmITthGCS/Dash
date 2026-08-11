@@ -78,15 +78,65 @@ function EvidencePanel({ data }) {
   )
 }
 
-function LegCell({ leg }) {
+function LegCell({ leg, detail }) {
   if (!leg || !leg.applied) {
-    return <td className="mono num swing-leg-missing" title="Not resolvable on this row – its weight was redistributed across the legs that were, rather than scored as zero.">–</td>
+    return <td className="mono num swing-leg-missing" title="Not resolvable on this row – it contributes nothing at its declared weight, which pulls the composite toward neutral rather than rescaling the legs that did resolve.">–</td>
   }
+  const announced = detail?.pead_announced_on
+    ? ` · announced ${detail.pead_announced_on}, ${detail.pead_age_trading_days} sessions ago`
+    : ''
   return (
     <td className={`mono num${leg.z > 0 ? ' up' : leg.z < 0 ? ' down' : ''}`}
-      title={`${Math.round(leg.weight * 100)}% declared weight · ${(leg.contribution >= 0 ? '+' : '')}${leg.contribution.toFixed(2)} of the composite after renormalization`}>
+      title={`${Math.round(leg.weight * 100)}% declared weight · ${(leg.contribution >= 0 ? '+' : '')}${leg.contribution.toFixed(2)} of the composite${announced}`}>
       {z(leg.z)}
     </td>
+  )
+}
+
+/**
+ * What the traded book costs to turn over, from the same cost model the research score uses.
+ *
+ * The evidence panel above quotes gross, pre-cost effect sizes with a decay haircut beside
+ * them. At a 2-to-40-session horizon the other half of that disclosure is the round trip:
+ * this is the only screen here whose holding period is short enough for cost to be the thing
+ * that decides whether any of it survives.
+ */
+function CostPanel({ model }) {
+  if (!model || model.status) return null
+  const sizes = Object.values(model.by_portfolio_size || {})
+  const dollars = (value) => value >= 1e9 ? `$${value / 1e9}B`
+    : value >= 1e6 ? `$${value / 1e6}M` : `$${(value / 1e3).toFixed(0)}k`
+  return (
+    <section className="card swing-evidence" aria-labelledby="swing-cost-title">
+      <h2 id="swing-cost-title">What it costs to trade</h2>
+      <p>
+        Median <b>round-trip</b> cost for one position in the {model.book_size}-name book above the
+        {' '}{model.entry_percentile}th percentile, at the canonical square-root impact law.
+      </p>
+      <ul className="swing-evidence-list">
+        {sizes.map((size) => (
+          <li key={size.portfolio_value}>
+            <div className="swing-evidence-head">
+              <b>{dollars(size.portfolio_value)} book</b>
+              <span className="swing-evidence-horizon">{dollars(size.position_dollar_value)} per position</span>
+              <span className={`swing-evidence-coverage${size.median_round_trip_bps > model.cost_ceiling_bps ? ' thin' : ''}`}>
+                {size.median_round_trip_bps.toFixed(1)} bps round trip
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="swing-evidence-caveat">
+        {model.first_size_over_ceiling
+          ? `Past ${dollars(model.first_size_over_ceiling)} the median round trip exceeds ${model.cost_ceiling_bps} bps, which is where this book stops fitting.`
+          : `The median round trip stays under ${model.cost_ceiling_bps} bps across every size tested.`}
+        {' '}{model.note}
+      </p>
+      <p className="swing-evidence-cite">
+        Spread is a liquidity-tiered proxy, not a measured spread — no provider used here serves
+        quoted or effective spreads.
+      </p>
+    </section>
   )
 }
 
@@ -145,6 +195,7 @@ export default function SwingScreen() {
       <div className="card etf-state" role="alert"><strong>Screen snapshot unavailable</strong><span>{error.message}</span></div>
     ) : <>
       <EvidencePanel data={data} />
+      <CostPanel model={data?.cost_model} />
 
       <ResponsiveControlPanel label="Filter results" title="Filter results">
         <div className="screen-filters" aria-label="Swing screen filters">
@@ -209,7 +260,8 @@ export default function SwingScreen() {
               <td>{row.sector || '–'}</td>
               <td className="mono num score-cell">{z(row.composite_z)}</td>
               <td className="mono num">{row.percentile == null ? '–' : row.percentile.toFixed(0)}</td>
-              {LEGS.map(([key]) => <LegCell key={key} leg={row.legs?.[key]} />)}
+              {LEGS.map(([key]) => <LegCell key={key} leg={row.legs?.[key]}
+                detail={key === 'pead_drift' ? row.pead_detail : null} />)}
               <td className="mono num">{pct((row.coverage || 0) * 100)}</td>
               <td className="num"><Move pct={row.raw_factors?.return_20d} /></td>
               <td className="mono num">{millions(row.median_dollar_volume_60d)}</td>
@@ -225,9 +277,12 @@ export default function SwingScreen() {
         {' '}Scored {data?.scored_count ?? '–'} names, {data?.eligible_count ?? '–'} eligible,
         {' '}{data?.suppressed_count ?? '–'} suppressed on short interest
         {' '}({data?.published_suppressed_count ?? 0} of them shown here, ranked but ineligible, so the negative
-        screen is visible rather than silent). Each leg is winsorized and z-scored across the cross-section;
-        legs a row cannot fill are dropped and the remaining weights renormalized, which is what the coverage
-        column reports. The reversal leg is not scored at all below
+        screen is visible rather than silent). Each leg is standardized across the cross-section — winsorized
+        and z-scored, except the earnings surprise, whose tail is heavy enough that clipping would tie a
+        block of the universe at one value, so it is ranked instead. A leg a row cannot fill contributes
+        nothing at its declared weight rather than rescaling the legs that did resolve, so a thin row scores
+        nearer neutral and never on a wider scale; that is what the coverage column reports. The reversal leg
+        is not scored at all below
         {' '}{millions(data?.thresholds?.reversal_minimum_dollar_volume)} of median daily dollar volume — at
         swing turnover, spread is the binding cost and reversal is the most cost-constrained of these signals.
         {' '}<InfoTag label="Weights">
@@ -237,6 +292,12 @@ export default function SwingScreen() {
             point-in-time store accumulates observations under one fixed policy. They are not measured
             optima, and no rank-IC, quantile-spread or deflated-Sharpe result backs this composite in this
             system yet — the validation harness is what will test it.
+          </p>
+          <p>
+            This model is registered in the prospective freeze on a clock that starts 2026-09-01 and needs
+            24 monthly periods. Until it reports, read this as a research filter rather than a screen with
+            a record: by effective weight it is 45% technical, and this system's own as-filed measurements
+            found no technical sub-signal clearing its noise standard.
           </p>
         </InfoTag>
         {' '}Rankings are hypotheses for prospective validation, not claims of outperformance, and this is a

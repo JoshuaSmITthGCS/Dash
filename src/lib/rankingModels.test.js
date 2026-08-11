@@ -328,6 +328,11 @@ describe('catalyst model', () => {
 describe('swing setup model', () => {
   const swingRow = (ticker, overrides = {}) => row(ticker, {
     earnings_surprise: 0.05,
+    // The drift leg reads the standardized surprise and its announcement date, not the
+    // four-quarter percent-surprise average above - see edgar_sue.py.
+    standardized_unexpected_earnings: {
+      sue: 1.2, basis: 'net_income', filed: new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10),
+    },
     average_dollar_volume: 5e8,
     short_percent_of_float: 0.02,
     days_to_cover: 1.5,
@@ -337,6 +342,7 @@ describe('swing setup model', () => {
     },
     technical_detail: {
       ...row('x').technical_detail, volume_ratio_60d: 1.6, pct_from_52w_high: -3, return_5d: 1,
+      annualized_volatility: 0.30,
     },
     ...overrides,
   })
@@ -350,7 +356,9 @@ describe('swing setup model', () => {
     // A name up 8% last week scores low on the reversal leg; one near its 52-week high
     // scores high on the continuation leg. Opposite signs, deliberately different windows.
     const hot = swingRow('HOT', {
-      technical_detail: { ...swingRow('x').technical_detail, return_5d: 8, pct_from_52w_high: -1 },
+      technical_detail: {
+        ...swingRow('x').technical_detail, return_5d: 8, pct_from_52w_high: -1,
+      },
     })
     const hotScore = scoreRow(buildPeerIndex([hot, swingRow('B'), swingRow('C')]), hot, 'swing')
     const hotReversal = hotScore.components.find((component) => component.key === 'reversal')
@@ -368,15 +376,43 @@ describe('swing setup model', () => {
     expect(RANKING_MODELS.swing.components.find(([key]) => key === 'pead')[2]).toBe(0.30)
   })
 
-  it('drops the earnings-surprise leg and renormalizes rather than scoring it zero', () => {
-    const withoutSurprise = swingRow('NOSUE', { earnings_surprise: null })
+  it('scores a missing drift leg neutral rather than rescaling the legs that resolved', () => {
+    // Renormalizing keeps a partial row centred but widens its scale, so partial rows crowd
+    // both tails - and a screen selects from the top one. Neutral imputation instead.
+    const withoutSurprise = swingRow('NOSUE', { standardized_unexpected_earnings: null })
     const index = buildPeerIndex([withoutSurprise, swingRow('B'), swingRow('C')])
 
     const scored = scoreRow(index, withoutSurprise, 'swing')
+    const complete = scoreRow(index, index.rows[1], 'swing')
 
     expect(scored.droppedComponents.map((component) => component.key)).toContain('pead')
     expect(scored.coverage).toBeCloseTo(0.7, 5)
-    expect(scored.components.reduce((sum, component) => sum + component.contribution, 0)).toBeCloseTo(100, 1)
+    // The resolved legs carry 70% of the score; the missing 30% sits at neutral, so the
+    // partial row lands between its own resolved evidence and the middle.
+    expect(scored.components.reduce((sum, component) => sum + component.contribution, 0)).toBeCloseTo(70, 1)
+    expect(Math.abs(scored.raw - 50)).toBeLessThan(Math.abs(complete.raw - 50))
+  })
+
+  it('drops the drift leg once the window it is a claim about has closed', () => {
+    const stale = swingRow('STALE', {
+      standardized_unexpected_earnings: { sue: 2.5, basis: 'net_income', filed: '2020-01-15' },
+    })
+    const index = buildPeerIndex([stale, swingRow('B'), swingRow('C')])
+
+    const scored = scoreRow(index, stale, 'swing')
+
+    expect(scored.droppedComponents.map((component) => component.key)).toContain('pead')
+  })
+
+  it('leaves a lightly shorted name alone however slowly it trades', () => {
+    // Days to cover is short interest over volume, so an absolute line on it selects
+    // low-turnover names, not heavily shorted ones. It corroborates and never fires alone.
+    const slow = swingRow('SLOW', { short_percent_of_float: 0.04, days_to_cover: 7.5 })
+
+    expect(shortInterestSuppressed(slow)).toBeNull()
+    expect(shortInterestSuppressed(swingRow('HEAVY', {
+      short_percent_of_float: 0.18, days_to_cover: 7.5,
+    }))).toMatch(/18.0% of float is short and 7.5 days to cover/)
   })
 
   it('suppresses a crowded short instead of scoring a short leg it cannot trade', () => {

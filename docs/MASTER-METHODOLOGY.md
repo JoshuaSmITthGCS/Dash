@@ -580,19 +580,20 @@ percentile rank; a missing metric leaves a fund at a neutral 50 rather than pena
 `pipeline/swing_signals.py::swing_scores` + `pipeline/build_swing_screen.py` →
 `/screens/swing`, and the same five legs and weights as the `swing` ranking model in
 `src/lib/rankingModels.js` (surfaced on `/research` as *Model: Swing setup*). Every leg is
-winsorized and cross-sectionally z-scored; the composite is the weighted mean over the legs
-that resolved, with the rest of the weight renormalized rather than scored as zero.
+standardized cross-sectionally — winsorized and z-scored, except the earnings surprise, which
+is rank-normalized (see rule 4 below); the composite is the weighted sum at declared weights,
+with an unresolved leg contributing zero rather than rescaling the legs that did resolve.
 
 | Leg | Weight | Direction | Evidence |
 |---|---:|---|---|
 | Post-earnings drift (SUE) | 30% | Continuation of the surprise | Bernard & Thomas (*JAR* 1989; *JAE* 1990) — drift over ~60 trading days, monotone in SUE |
 | Analyst revision (change, not level) | 25% | Direction of the revision | Jegadeesh, Kim, Krische & Lee (*JF* 2004); Womack (*JF* 1996) |
 | High-volume return premium | 20% | Continuation | Gervais, Kaniel & Mingelgrin (*JF* 2001) |
-| 52-week-high proximity | 15% | Continuation | George & Hwang (*JF* 2004) |
+| 52-week-high proximity | 15% | Continuation | George & Hwang (*JF* 2004) — scored in the name's own volatility, see rule 4 |
 | Prior-week reversal | 10% | Contrarian | Jegadeesh (*JF* 1990); Da, Liu & Schaumburg (*MS* 2014) |
 
-Three design rules, all enforced in code and covered by
-`pipeline/tests/test_build_swing_screen.py`:
+Five design rules, all enforced in code and covered by
+`pipeline/tests/test_build_swing_screen.py` and `pipeline/tests/test_edgar_sue.py`:
 
 1. **The sign flip is handled explicitly.** The same raw trailing return predicts reversal at
    2-10 days and continuation at 3-12 months, so the contrarian leg reads only `return_5d`,
@@ -602,18 +603,59 @@ Three design rules, all enforced in code and covered by
 2. **Cost gating is part of the model.** The reversal leg is not scored at all below $25M
    median daily dollar volume (reason code `REVERSAL_LEG_COST_GATED`) — it is a
    liquidity-provision premium and the most capacity-constrained of the five.
-3. **Short interest is a negative screen, never a leg.** ≥10% of float short or ≥5 days to
-   cover suppresses the row out of eligibility (`SHORT_INTEREST_SUPPRESSED`, Boehmer, Jones &
-   Zhang *JF* 2008). Suppressed names stay published and ranked so the screen is visible
-   rather than silent; a long-only book cannot harvest the short leg.
+3. **Short interest is a negative screen, never a leg.** Boehmer, Jones & Zhang (*JF* 2008) is
+   a top-decile *level* result, so suppression requires ≥10% of float short **and** top-decile
+   standing in the current cross-section (`SHORT_INTEREST_SUPPRESSED`). Days to cover is short
+   interest over average volume, so an absolute threshold on it selects low-turnover names
+   rather than heavily-shorted ones — measured on this universe, a 5-day line suppressed 20
+   names whose float short was 3-7%, a liquidity screen wired in backwards. It now corroborates
+   and never suppresses alone. Suppressed names stay published and ranked so the screen is
+   visible rather than silent; a long-only book cannot harvest the short leg.
+4. **The 52-week-high leg is measured in the name's own volatility, and SUE is ranked.** Raw
+   price/52-week-high is mechanically higher for a quiet stock — measured at −0.49 against
+   60-day realized volatility across this universe, with median proximity falling monotonically
+   from 0.94 in the quietest volatility quintile to 0.73 in the loudest — so scoring it raw
+   imports an undeclared low-volatility and sector tilt. The scored subfactor is the log
+   drawdown from the high divided by annualized volatility. Separately, the seasonal-difference
+   SUE is heavy-tailed by construction, so it is rank-normalized rather than winsorized: at a
+   5%/95% clip on a 30%-weight leg, 5% of the universe shared one identical value and 12 of the
+   top 15 rows sat on it. Bernard & Thomas report drift monotone in the SUE *decile*, so
+   ranking is also closer to the published construct.
+5. **A missing leg contributes nothing; it does not rescale the others.** Renormalizing to the
+   resolved weight keeps a partial row centred but gives it a wider scale, so partial rows are
+   over-represented in both tails — and the top tail is what gets traded. This is the same
+   coverage-score coupling Round 4 measured at Spearman 0.554 on the research score and fixed
+   with neutral imputation (`scorer.py` mode `fixed_feature`). Unresolved legs score 0, the
+   cross-sectional mean of a z-score, and the divisor is the declared total. `swing.json`
+   publishes the old renormalized value as `composite_z_renormalized` for comparison.
+
+The PEAD leg reads standardized unexpected earnings from the EDGAR point-in-time store
+(`pipeline/edgar_sue.py`), not the advisor snapshot's `earnings_surprise`. That field was
+0/839 populated — it depends on yfinance's `earnings_dates` scrape — and is in any case a
+four-quarter weighted average of *percent* surprise built for fundamental momentum, not the
+most-recent standardized surprise PEAD is a claim about. The replacement is the seasonal
+random walk with drift (Foster 1977; Foster, Olsen & Shevlin 1984), computed from as-filed
+quarterly net income (split-immune, unlike as-filed EPS) and standardized by the firm's own
+prior eight seasonal differences. Drift windows are anchored on the SEC filing date, which
+lags the earnings release by days and so understates window age; Form 8-K Item 2.02 carries
+the true announcement date and is the next increment. Leg coverage went 0% → 84.7%.
 
 Eligibility gates otherwise mirror the momentum screen ($5 price, $300M cap, $2M 60-day median
 dollar volume, 253 sessions) plus a 35% minimum signal coverage, and membership uses the same
 90/75 entry/exit hysteresis. The published file carries the weights, per-leg citations and
-gross effect sizes, per-leg coverage across the universe, the applied thresholds, and the
-McLean & Pontiff (*JF* 2016) 26%/58% decay haircut. The weights are frozen starting priors
-ordered by evidence quality, not measured optima — no rank-IC, quantile-spread or deflated
-Sharpe result backs this composite yet; the validation harness (§9) is what will test it.
+gross effect sizes, per-leg coverage across the universe, the applied thresholds, the
+McLean & Pontiff (*JF* 2016) 26%/58% decay haircut, and a `cost_model` block giving the median
+round-trip cost of the traded book at four portfolio sizes under the canonical square-root
+impact law (`costs.py`). Annual drag is that times the number of round trips a year, which no
+backtest has yet produced. The weights are frozen starting priors ordered by evidence quality,
+not measured optima — no rank-IC, quantile-spread or deflated Sharpe result backs this
+composite yet. It is registered in `pipeline/validation/harness_freeze.json` under
+`additional_models` on a prospective clock starting 2026-09-01, and until that clock reports it
+is a research filter rather than a screen with a record: by effective weight it is 45%
+technical, and Rounds 5-6 found no technical sub-signal clearing the noise standard on the
+as-filed spine. The freeze entry also records the open questions the clock must answer,
+including the book's undeclared sector tilt (3.4x Energy, 0.0x Utilities in the top decile once
+PEAD is live).
 
 Deliberately absent, because they do not survive data-snooping correction and costs in US
 single-stock data: RSI 70/30 thresholds, MACD crossovers, Bollinger-band signals as standalone

@@ -17,7 +17,7 @@ Five legs, in descending order of published evidence at this horizon:
   high_52w_proximity    nearness to the 52-week high, George & Hwang (2004)
   short_term_reversal   prior-week return, reversed, Jegadeesh (1990) - cost-gated
 
-Three rules this file exists to enforce.
+Five rules this file exists to enforce.
 
 1. **The sign flip is handled explicitly.** The same raw trailing return predicts reversal
    at 2-10 days and continuation at 3-12 months. Feeding one "past return" factor across the
@@ -33,17 +33,39 @@ Three rules this file exists to enforce.
 
 3. **Short interest is a negative screen, never a leg.** Boehmer-Jones-Zhang (2008) is a
    short-side result and this book is long-only, so heavily-shorted names are suppressed out
-   of eligibility with a reason code instead of contributing a factor.
+   of eligibility with a reason code instead of contributing a factor. Because that result is
+   about the *level* of short interest in the top decile, suppression requires the level -
+   days-to-cover corroborates it and can never fire alone. Days to cover is short interest
+   over average volume, so an absolute threshold on it fires on low-turnover names rather
+   than heavily-shorted ones, and that is a liquidity screen wired in backwards.
 
-Legs a row cannot fill are dropped and the remaining weights renormalized, exactly as the
-ranking models do client-side; the row pays for the gap in published `coverage`, not in a
-fabricated middling score. Nothing here fetches: every input is the committed advisor
-snapshot plus the on-disk backtest cache, so the screen is re-derivable from the repository.
+4. **The 52-week-high leg is measured in the name's own volatility.** Raw price/52-week-high
+   is mechanically higher for a quiet stock: a name at 22% annualized volatility is often
+   within 2% of its high, one at 64% almost never is. Scored raw, the leg is half a momentum
+   signal and half an inverse-volatility bet nobody declared, and it drags a sector tilt
+   (REITs, utilities, staples) behind it. The scored subfactor is therefore the drawdown from
+   the high expressed in annualized sigmas, which is George & Hwang's ranking with the
+   volatility component divided out. Raw proximity stays published as context.
+
+5. **A missing leg contributes nothing; it does not rescale the others.** Renormalizing to
+   the weight that resolved keeps a partial row's score on the same 0-centred scale but gives
+   it a *wider* one - fewer legs means less cancellation, so partial rows are over-represented
+   in both tails, and it is the top tail that gets traded. This is the coverage-score coupling
+   Round 4 measured at Spearman 0.554 on the research score and fixed with neutral imputation
+   (scorer.py mode ``fixed_feature``). The same fix applies here: an unresolved leg scores 0,
+   the cross-sectional mean of a z-score, and the weighted sum divides by the *declared* total.
+   Less evidence therefore means a score nearer neutral, never a noisier one. The old
+   renormalized value is published beside it as ``composite_z_renormalized`` so the change
+   stays auditable against anything computed before it.
+
+Nothing here fetches: every input is the committed advisor snapshot, the on-disk backtest
+cache and the EDGAR point-in-time store, so the screen is re-derivable from the repository.
 """
 
 from __future__ import annotations
 
 import math
+from statistics import NormalDist
 
 from research_screens_v2 import winsorize, zscores
 
@@ -61,11 +83,12 @@ SWING_WEIGHTS = {
 # The subfactors each leg averages, after each is winsorized and z-scored across the
 # cross-section. `negate` flags the ones whose published direction is contrarian.
 SWING_SUBFACTORS = {
-    "pead_drift": (("earnings_surprise", False),),
+    "pead_drift": (("standardized_unexpected_earnings", False),),
     "analyst_revision": (("revision_breadth_30d", False), ("eps_revision_30d_pct", False),
                          ("net_upgrades_90d", False), ("target_change_30d_pct", False)),
     "high_volume_premium": (("volume_ratio_1d_50d", False), ("volume_ratio_5d_50d", False)),
-    "high_52w_proximity": (("high_52w_proximity", False),),
+    # Rule 4: the drawdown from the high in the name's own sigmas, not raw proximity.
+    "high_52w_proximity": (("high_52w_drawdown_sigmas", False),),
     # The one leg whose sign is reversed: last week's winners are next week's laggards.
     "short_term_reversal": (("return_5d", True),),
 }
@@ -83,7 +106,11 @@ SWING_EVIDENCE = {
         "effect": "CARs drift with the surprise over ~60 trading days, monotone in SUE; "
                   "25-30% of the drift lands in the 3-day window around the next announcement",
         "caveat": "Strongest in small and illiquid names, which is where spreads are widest. "
-                  "Coverage here depends on reported surprise history being resolvable for the row.",
+                  "SUE is the seasonal-random-walk-with-drift construct (Foster 1977; Foster, "
+                  "Olsen & Shevlin 1984) computed from as-filed quarterly net income in the "
+                  "EDGAR point-in-time store, standardized by the firm's own history of "
+                  "seasonal differences. Drift windows are anchored on the SEC filing date, "
+                  "which lags the earnings release by days and so understates window age.",
     },
     "analyst_revision": {
         "label": "Analyst revision (change, not level)",
@@ -115,7 +142,10 @@ SWING_EVIDENCE = {
         "effect": "US spread ~0.45%/month; international 0.60-0.94%/month, and the forecast "
                   "returns do not reverse in the long run",
         "caveat": "This is the momentum family accessed inside an 8-week ceiling. It carries no "
-                  "recent-month return, which is what keeps it from cancelling the reversal leg.",
+                  "recent-month return, which is what keeps it from cancelling the reversal leg. "
+                  "Scored as the drawdown from the high in annualized sigmas rather than as raw "
+                  "proximity: raw proximity correlates -0.49 with realized volatility across this "
+                  "universe and would import an undeclared low-volatility and sector tilt.",
     },
     "short_term_reversal": {
         "label": "Short-term reversal (prior week, reversed)",
@@ -144,7 +174,12 @@ SHORT_INTEREST_EVIDENCE = {
               "heavily shorted by institutions)",
     "caveat": "Asquith-Pathak-Ritter's larger equal-weighted figure is microcap-driven and "
               "insignificant value-weighted. The short-sale-cost literature conflicts on whether "
-              "the short leg survives borrow fees at all; suppression sidesteps that question.",
+              "the short leg survives borrow fees at all; suppression sidesteps that question. "
+              "The published result is about the top decile of short interest *level*, so "
+              "suppression requires both an absolute floor on percent of float and top-decile "
+              "standing in this cross-section. Days to cover is short interest over average "
+              "volume and an absolute threshold on it fires on low-turnover names rather than "
+              "heavily-shorted ones, so it corroborates and never suppresses alone.",
 }
 
 # McLean & Pontiff (Journal of Finance 2016) over 97 predictors: 26% lower out of sample, 58%
@@ -160,6 +195,29 @@ HOLDING_HORIZON = {"minimum_trading_days": 2, "maximum_trading_days": 40,
                    "note": "Legs peak at different points inside this window; the composite is "
                            "ranked daily and is not a hold-to-target instruction."}
 
+# Portfolio sizes the published cost block is evaluated at, and the round-trip cost that marks
+# the point where the book stops fitting. The ceiling matches the figure the research score's
+# capacity was quoted against in Round 5 (~$13M at 50bps/yr) so the two are comparable.
+PORTFOLIO_SIZES_FOR_COSTS = (100_000, 1_000_000, 10_000_000, 50_000_000, 250_000_000,
+                             1_000_000_000)
+CAPACITY_COST_CEILING_BPS = 50.0
+
+# Subfactors standardized by cross-sectional rank rather than by winsorized z-score.
+#
+# The seasonal-difference SUE is heavy-tailed by construction: it is a difference of earnings
+# divided by the standard deviation of eight previous differences, so a firm with a quiet
+# history and one loud quarter scores in the tens. Winsorizing that at the 5th and 95th
+# percentiles and z-scoring puts every name above the 95th on one identical value - which,
+# on a 30%-weight leg, hands the same head start to 5% of the universe and leaves the other
+# legs to break the tie. Measured on this universe before the change: 12 of the top 15 rows
+# sat on the cap.
+#
+# Ranking is also what the literature does. Bernard & Thomas form portfolios on SUE deciles
+# and report drift monotone *in the rank*, not linear in the scaled surprise, so a
+# rank-to-normal-score transform is closer to the published construct than the raw z is.
+# Applied only here: the other subfactors are bounded ratios without this tail.
+RANK_NORMALIZED_SUBFACTORS = {"standardized_unexpected_earnings"}
+
 # Eligibility gates, deliberately the same shape and defaults as the momentum screen's so the
 # two screens exclude the same names for the same stated reasons.
 DEFAULT_CONFIG = {
@@ -172,8 +230,11 @@ DEFAULT_CONFIG = {
     "minimum_coverage": .35,
     # The reversal leg is only scored where spread cost plausibly leaves something behind.
     "reversal_minimum_dollar_volume": 25_000_000,
-    # Negative screen thresholds. Short interest above either line suppresses the row.
+    # Negative screen. Rule 3: Boehmer-Jones-Zhang is a top-decile *level* result, so a row is
+    # suppressed only when it clears the absolute floor AND stands in the top decile of this
+    # cross-section. Days to cover is recorded and reported but cannot suppress on its own.
     "short_percent_of_float_limit": .10,
+    "short_percent_of_float_percentile": 90,
     "days_to_cover_limit": 5.0,
     # PEAD drift is a claim about a *recent* announcement. Past this the drift window has
     # closed and the leg is dropped rather than carried on a stale surprise.
@@ -202,12 +263,35 @@ def high_52w_proximity(closes, window=252):
     Deliberately *not* a return: the whole point of this factor is that it forecasts as well
     as past-return momentum without carrying a recent-month return that would fight the
     reversal leg.
+
+    Published as context, not scored - see `high_52w_drawdown_sigmas` and rule 4.
     """
     series = [close for close in (closes or [])[-window:] if _finite(close) and close > 0]
     if len(series) < 60:
         return None
     peak = max(series)
     return series[-1] / peak if peak else None
+
+
+def high_52w_drawdown_sigmas(closes, volatility, window=252):
+    """Log drawdown from the 52-week high, divided by the name's annualized volatility.
+
+    Rule 4. Raw proximity is not comparable across the cross-section, because how far a stock
+    sits below its own high is mostly a statement about how much it moves: over this universe
+    raw proximity correlates -0.49 with 60-day realized volatility, and median proximity falls
+    monotonically from 0.94 in the quietest volatility quintile to 0.73 in the loudest. Ranking
+    on it cross-sectionally therefore ranks partly on volatility, which is a different factor
+    with its own literature and was never in the declared weights.
+
+    Dividing the log drawdown by annualized volatility puts every name on the same scale -
+    "how many annual sigmas below its 52-week high" - which is the ordering George & Hwang's
+    ranking is trying to express. Zero is at the high; more negative is further below it, so
+    higher is still better and the leg's sign is unchanged.
+    """
+    proximity = high_52w_proximity(closes, window)
+    if proximity is None or not _finite(volatility) or volatility <= 0:
+        return None
+    return math.log(proximity) / volatility
 
 
 def volume_surge(volumes, recent=1, reference=50):
@@ -244,84 +328,142 @@ def realized_volatility(closes, window=60):
     return math.sqrt(variance) * math.sqrt(252)
 
 
-def earnings_event_age(row):
-    """Trading days since this row's freshest dated earnings event, or None if undated.
+def pead_factor(sue=None, config=None):
+    """The SUE leg: standardized unexpected earnings, gated to an open drift window.
 
-    The advisor snapshot carries dated news events with their event types; an earnings event
-    is the only announcement date available on disk. Used to decide whether the drift window
-    is still open, never to score direction.
-    """
-    events = ((row.get("evidence") or {}).get("news_events")
-              or (row.get("evidence_summary") or {}).get("news_events") or [])
-    ages = [event.get("age_trading_days") for event in events
-            if isinstance(event, dict) and "earnings" in (event.get("event_types") or [])
-            and _finite(event.get("age_trading_days"))]
-    return min(ages) if ages else None
+    `sue` is the dict edgar_sue.sue_for produces from the EDGAR point-in-time store - the
+    standardized seasonal surprise plus the filing date that opened its drift window. It
+    replaces the advisor snapshot's `earnings_surprise` field, which resolved on 0 of 839
+    rows and which was in any case a four-quarter weighted average of *percent* surprise
+    built for fundamental-momentum scoring, not the most-recent standardized surprise PEAD
+    is a claim about. The two constructs are not interchangeable and are not blended.
 
-
-def pead_factor(row, config=None):
-    """The SUE leg: the row's published earnings surprise, gated to an open drift window.
-
-    Returns (value, status). `status` is published per row so a dropped leg always says
-    which of the three reasons applied - no surprise resolved, the window has closed, or the
-    announcement date is unknown and the surprise is being used anyway.
+    Returns (value, status). `status` is published per row so a dropped leg always says which
+    reason applied - no SUE resolvable, the window has closed, or the announcement is undated
+    and the surprise is being used anyway.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
-    surprise = row.get("earnings_surprise")
-    if not _finite(surprise):
-        return None, "NO_SURPRISE_HISTORY"
-    age = earnings_event_age(row)
-    if age is None:
-        return float(surprise), "WINDOW_UNKNOWN"
+    value = (sue or {}).get("sue")
+    if not _finite(value):
+        return None, "NO_SUE_HISTORY"
+    age = (sue or {}).get("age_trading_days")
+    if not _finite(age):
+        return float(value), "WINDOW_UNKNOWN"
     if age > config["pead_window_trading_days"]:
         return None, "DRIFT_WINDOW_CLOSED"
-    return float(surprise), "IN_DRIFT_WINDOW"
+    return float(value), "IN_DRIFT_WINDOW"
 
 
-def swing_factors(row, closes=None, volumes=None, config=None):
+def swing_factors(row, closes=None, volumes=None, config=None, sue=None):
     """Every raw subfactor for one row, before any cross-sectional ranking.
 
     Price and volume subfactors come from the cached daily series; revision subfactors come
-    from the row's own published `estimate_detail`. Anything unresolvable stays None so the
-    leg it belongs to is dropped rather than filled with a neutral value.
+    from the row's own published `estimate_detail`; the surprise comes from the EDGAR
+    point-in-time store via `sue`. Anything unresolvable stays None, and the leg it belongs to
+    scores 0 - the cross-sectional mean - rather than rescaling the legs that did resolve.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     estimates = row.get("estimate_detail") or {}
-    surprise, pead_status = pead_factor(row, config)
+    surprise, pead_status = pead_factor(sue, config)
+    volatility = realized_volatility(closes)
     return {
-        "earnings_surprise": surprise,
+        "standardized_unexpected_earnings": surprise,
         "pead_status": pead_status,
+        "pead_basis": (sue or {}).get("basis"),
+        "pead_period_end": (sue or {}).get("period_end"),
+        "pead_announced_on": (sue or {}).get("filed"),
+        "pead_age_trading_days": (sue or {}).get("age_trading_days"),
         "revision_breadth_30d": estimates.get("revision_breadth_30d"),
         "eps_revision_30d_pct": estimates.get("eps_revision_30d_pct"),
         "net_upgrades_90d": estimates.get("net_upgrades_90d"),
         "target_change_30d_pct": estimates.get("target_change_30d_pct"),
         "volume_ratio_1d_50d": volume_surge(volumes, recent=1),
         "volume_ratio_5d_50d": volume_surge(volumes, recent=5),
+        # The scored 52-week subfactor (rule 4); raw proximity rides along as context.
+        "high_52w_drawdown_sigmas": high_52w_drawdown_sigmas(closes, volatility),
         "high_52w_proximity": high_52w_proximity(closes),
         "return_5d": trailing_return(closes, 5),
-        # Context, published but never scored: see realized_volatility's docstring.
-        "realized_volatility_60d": realized_volatility(closes),
+        # Normalization and cost input, never direction: see realized_volatility's docstring.
+        "realized_volatility_60d": volatility,
         "return_20d": trailing_return(closes, 20),
     }
 
 
-def short_interest_flag(row, config=None):
-    """Whether the negative screen fires on this row, and on which of the two measures."""
+def short_interest_decile(rows, config=None):
+    """The cross-sectional short-interest level that marks the top decile, or None.
+
+    Boehmer-Jones-Zhang compare the most heavily shorted decile against the rest, so "heavily
+    shorted" has to be read off the cross-section rather than fixed in advance. Returned
+    separately so `short_interest_flag` stays a pure function of one row plus this threshold.
+    """
+    config = {**DEFAULT_CONFIG, **(config or {})}
+    levels = sorted(row.get("short_percent_of_float") for row in rows
+                    if _finite(row.get("short_percent_of_float")))
+    if not levels:
+        return None
+    index = int((len(levels) - 1) * config["short_percent_of_float_percentile"] / 100)
+    return levels[index]
+
+
+def short_interest_flag(row, config=None, decile_threshold=None):
+    """Whether the negative screen fires on this row, and on what evidence.
+
+    Rule 3. Suppression requires the *level* of short interest to clear both the absolute
+    floor and the cross-sectional top decile, which is the population Boehmer-Jones-Zhang
+    measure. Days to cover is short interest divided by average volume, so an absolute
+    threshold on it selects low-turnover names rather than heavily-shorted ones: against this
+    universe a 5.0-day line suppressed 20 names whose float short was 3-7%, a liquidity screen
+    wired in backwards and pointed at exactly the quiet names the 52-week leg selects. It is
+    now recorded as corroboration and can never suppress on its own.
+    """
     config = {**DEFAULT_CONFIG, **(config or {})}
     short_pct = row.get("short_percent_of_float")
     days = row.get("days_to_cover")
-    hits = []
-    if _finite(short_pct) and short_pct >= config["short_percent_of_float_limit"]:
-        hits.append(f"{short_pct * 100:.1f}% of float short")
-    if _finite(days) and days >= config["days_to_cover_limit"]:
-        hits.append(f"{days:.1f} days to cover")
-    return {"suppressed": bool(hits), "reasons": hits,
+    floor = config["short_percent_of_float_limit"]
+    level_hit = (_finite(short_pct) and short_pct >= floor
+                 and (decile_threshold is None or short_pct >= decile_threshold))
+    reasons, corroboration = [], []
+    if level_hit:
+        reasons.append(f"{short_pct * 100:.1f}% of float short")
+        if _finite(days) and days >= config["days_to_cover_limit"]:
+            reasons.append(f"{days:.1f} days to cover")
+    elif _finite(days) and days >= config["days_to_cover_limit"]:
+        corroboration.append(f"{days:.1f} days to cover, short interest below the suppression level")
+    return {"suppressed": bool(reasons), "reasons": reasons,
+            "corroborating_only": corroboration,
             "short_percent_of_float": short_pct if _finite(short_pct) else None,
-            "days_to_cover": days if _finite(days) else None}
+            "days_to_cover": days if _finite(days) else None,
+            "decile_threshold": decile_threshold}
+
+
+def rank_normal_scores(values):
+    """Cross-sectional rank mapped onto a standard normal, preserving None.
+
+    For a heavy-tailed subfactor this is what winsorize-then-z is trying and failing to be:
+    it is monotone in the raw value, ties nothing at a clip point, and lands on the same
+    roughly-unit scale the z-scored subfactors use so the weights still mean what they say.
+    """
+    present = sorted((value, index) for index, value in enumerate(values) if value is not None)
+    if not present:
+        return [None] * len(values)
+    if len(present) == 1:
+        scores = [None] * len(values)
+        scores[present[0][1]] = 0.0
+        return scores
+    normal = NormalDist()
+    scores = [None] * len(values)
+    for rank, (_value, index) in enumerate(present):
+        scores[index] = normal.inv_cdf((rank + 0.5) / len(present))
+    return scores
 
 
 def _standardized_subfactors(rows, config):
-    """{subfactor: [z or None per row]}, winsorized first so one outlier cannot set the scale."""
+    """{subfactor: [standardized value or None per row]}.
+
+    Winsorized-then-z for the bounded subfactors, so one outlier cannot set the scale;
+    rank-to-normal for the ones in RANK_NORMALIZED_SUBFACTORS, whose tails are heavy enough
+    that clipping would tie a large block of the cross-section at one value.
+    """
     standardized = {}
     for leg, subfactors in SWING_SUBFACTORS.items():
         for name, negate in subfactors:
@@ -337,7 +479,8 @@ def _standardized_subfactors(rows, config):
                     raw.append(None)
                     continue
                 raw.append(-float(value) if negate else float(value))
-            standardized[name] = zscores(winsorize(raw))
+            standardized[name] = (rank_normal_scores(raw) if name in RANK_NORMALIZED_SUBFACTORS
+                                  else zscores(winsorize(raw)))
     return standardized
 
 
@@ -376,10 +519,10 @@ def _gate_reasons(row, coverage, config):
 def swing_scores(rows, current_members=None, config=None):
     """Score and rank the cross-section. One row in, one scored row out - nothing is dropped.
 
-    Each leg is standardized across the universe, averaged into a composite over the weight
-    that actually resolved, and ranked among eligible rows only. Suppressed (heavily shorted)
-    and gated rows keep their score and their percentile stays None, so the file always says
-    what it saw rather than quietly shortening.
+    Each leg is standardized across the universe, combined at its declared weight with
+    unresolved legs contributing zero (rule 5), and ranked among eligible rows only.
+    Suppressed (heavily shorted) and gated rows keep their score and their percentile stays
+    None, so the file always says what it saw rather than quietly shortening.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     current_members = current_members or {}
@@ -387,17 +530,24 @@ def swing_scores(rows, current_members=None, config=None):
     standardized = _standardized_subfactors(rows, config)
     total_weight = sum(SWING_WEIGHTS.values())
 
+    decile_threshold = short_interest_decile(rows, config)
+
     output = []
     for index, row in enumerate(rows):
         legs = _leg_values(index, standardized)
         applied = {leg: value for leg, value in legs.items() if value is not None}
         applied_weight = sum(SWING_WEIGHTS[leg] for leg in applied)
         coverage = applied_weight / total_weight if total_weight else 0
-        score = (sum(SWING_WEIGHTS[leg] * value for leg, value in applied.items()) / applied_weight
-                 if applied_weight else 0.0)
-        contributions = {leg: (SWING_WEIGHTS[leg] * value / applied_weight) if applied_weight else 0.0
+        # Rule 5: an unresolved leg contributes 0 - the cross-sectional mean of a z-score -
+        # and the divisor is the *declared* total weight, not the resolved weight. A partial
+        # row therefore lands nearer neutral instead of on a wider scale that would push it
+        # into both tails. `composite_z_renormalized` keeps the old divisor for comparison.
+        weighted = sum(SWING_WEIGHTS[leg] * value for leg, value in applied.items())
+        score = weighted / total_weight if total_weight else 0.0
+        renormalized = weighted / applied_weight if applied_weight else 0.0
+        contributions = {leg: (SWING_WEIGHTS[leg] * value / total_weight) if total_weight else 0.0
                          for leg, value in applied.items()}
-        short_interest = short_interest_flag(row, config)
+        short_interest = short_interest_flag(row, config, decile_threshold)
         reasons = _gate_reasons(row, coverage, config)
         dropped = [leg for leg in SWING_WEIGHTS if leg not in applied]
         if "short_term_reversal" in dropped and not _reversal_tradable(row, config):
@@ -407,6 +557,7 @@ def swing_scores(rows, current_members=None, config=None):
         output.append({
             **row,
             "score": score,
+            "score_renormalized": renormalized,
             "leg_scores": legs,
             "leg_contributions": contributions,
             "dropped_legs": dropped,
@@ -436,6 +587,83 @@ def swing_scores(rows, current_members=None, config=None):
             row["current_membership"] = percentile >= entry
 
     return sorted(output, key=lambda row: (row["eligibility"], row["score"]), reverse=True)
+
+
+def cost_profile(row, position_dollar_value, scenario="base"):
+    """Round-trip cost in basis points for one position, from the shared cost model.
+
+    One-way costs.estimate_cost_bps doubled: entering and leaving are both trades, and at a
+    2-to-40-session horizon the round trip is the unit that matters. Volatility is the same
+    60-day realized figure the 52-week leg normalizes by, so the cost model and the signal
+    cannot silently disagree about how much a name moves.
+    """
+    from costs import estimate_cost_bps
+
+    one_way = estimate_cost_bps(
+        median_dollar_volume_60d=row.get("median_dollar_volume_60d"),
+        annualized_volatility=(row.get("factors") or {}).get("realized_volatility_60d"),
+        trade_dollar_value=position_dollar_value, scenario=scenario)
+    return {**one_way, "round_trip_bps": round(one_way["total_bps"] * 2, 2),
+            "position_dollar_value": position_dollar_value}
+
+
+def capacity_profile(scored, config=None, portfolio_sizes=PORTFOLIO_SIZES_FOR_COSTS,
+                     scenario="base"):
+    """What the entry-percentile book costs to trade, and where it stops fitting.
+
+    The screen ranks a cross-section but the thing that gets traded is the book above
+    `entry_percentile`, held for somewhere inside a 2-to-40-session window. Published gross
+    effect sizes with a McLean-Pontiff haircut beside them are still gross of *this*, and a
+    2-to-40-session horizon turns over an order of magnitude faster than the monthly research
+    score - so this block reports the median round-trip cost of that book at several portfolio
+    sizes, and the size at which the median round trip passes CAPACITY_COST_CEILING_BPS.
+
+    Turnover is the missing multiplier and is deliberately not invented here: annual drag is
+    round-trip cost times the number of round trips a year, and that number is a measurement
+    the prospective harness has to produce, not an assumption this file gets to make.
+    """
+    config = {**DEFAULT_CONFIG, **(config or {})}
+    book = [row for row in scored
+            if row.get("eligibility") and (row.get("percentile") or 0) >= config["entry_percentile"]]
+    if not book:
+        return {"status": "no_book_at_entry_percentile"}
+
+    def median_round_trip(portfolio_value):
+        per_position = portfolio_value / len(book)
+        costs = sorted(cost_profile(row, per_position, scenario)["round_trip_bps"] for row in book)
+        return costs[len(costs) // 2]
+
+    by_size = {f"{int(size):d}": {"portfolio_value": size,
+                                  "position_dollar_value": round(size / len(book), 2),
+                                  "median_round_trip_bps": median_round_trip(size)}
+               for size in portfolio_sizes}
+    capacity = next((size for size in portfolio_sizes
+                     if median_round_trip(size) > CAPACITY_COST_CEILING_BPS), None)
+    return {
+        "book_size": len(book),
+        "entry_percentile": config["entry_percentile"],
+        "scenario": scenario,
+        "by_portfolio_size": by_size,
+        "cost_ceiling_bps": CAPACITY_COST_CEILING_BPS,
+        "first_size_over_ceiling": capacity,
+        "median_position_capacity_at_2pct_adv": _median_position_capacity(book),
+        "note": ("Round-trip (two-way) cost per position at the canonical square-root impact "
+                 "law, costs.py IMPACT_SCENARIOS['base']. Annual drag is this times the number "
+                 "of round trips a year, which this screen has not yet measured - the 2-to-40 "
+                 "session horizon implies materially more than the monthly research score's "
+                 "24-50% turnover, and the prospective harness is what will pin it down."),
+        "spread_source": "liquidity_tiered_proxy_not_measured",
+    }
+
+
+def _median_position_capacity(book):
+    """Median largest position the 2%-of-ADV participation cap allows across the book."""
+    from costs import max_trade_for_adv_participation
+
+    sizes = sorted(value for value in
+                   (max_trade_for_adv_participation(row.get("median_dollar_volume_60d"))
+                    for row in book) if value)
+    return sizes[len(sizes) // 2] if sizes else None
 
 
 def leg_coverage(scored):

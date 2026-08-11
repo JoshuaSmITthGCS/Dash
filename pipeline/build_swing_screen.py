@@ -16,15 +16,17 @@ resolved on 90%, and the page has to be able to say which it is showing.
 from datetime import datetime, timezone
 
 from common import LOG, load_json, save_json
+from edgar_sue import ANNOUNCEMENT_ANCHOR_NOTE, announcement_age_trading_days, sue_for
 from peer_groups import peer_group
 from screen_inputs import (backtest_entry, latest_observations, median_dollar_volume,
                            universe_rows, with_current_price)
 from swing_signals import (DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
                            SHORT_INTEREST_EVIDENCE, SWING_EVIDENCE, SWING_SUBFACTORS,
-                           SWING_WEIGHTS, leg_coverage, swing_factors, swing_scores)
+                           SWING_WEIGHTS, capacity_profile, leg_coverage, swing_factors,
+                           swing_scores)
 
-SCHEMA_VERSION = "1.0.0"
-MODEL_VERSION = "swing-v1.0.0"
+SCHEMA_VERSION = "1.1.0"
+MODEL_VERSION = "swing-v1.1.0"
 CONFIG_VERSION = "screens-v2.0.0"
 OUTPUT = "screens/swing.json"
 # Same ranked-head convention as the quality-value and tactical screens: publish the head
@@ -47,10 +49,25 @@ def publishable(scored):
     return sorted(keep, key=lambda row: row["score"], reverse=True)[:PUBLISH_LIMIT]
 
 
-def build_rows(universe, entry_for=None, observations=None):
+def resolve_sue(ticker, as_of, sessions, sue_for=sue_for):
+    """The row's standardized unexpected earnings, with its drift window aged in sessions.
+
+    Reads the EDGAR point-in-time store rather than the advisor snapshot's `earnings_surprise`
+    field, which is 0/839 populated and is in any case a different construct - see
+    edgar_sue's module docstring. Ages the window on the ticker's own trading calendar so a
+    holiday or a stale cache cannot quietly reopen a closed window.
+    """
+    sue = sue_for(ticker, as_of)
+    if not sue:
+        return None
+    return {**sue, "age_trading_days": announcement_age_trading_days(sue.get("filed"), sessions)}
+
+
+def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_resolver=resolve_sue):
     """One pre-score row per ticker: its context, plus every raw swing subfactor."""
     entry_for = entry_for or backtest_entry
     observations = observations if observations is not None else latest_observations()
+    as_of = as_of or datetime.now(timezone.utc).date().isoformat()
     rows = []
     for row in universe:
         ticker = row.get("ticker")
@@ -64,6 +81,7 @@ def build_rows(universe, entry_for=None, observations=None):
         closes, volumes = entry.get("closes") or [], entry.get("volumes") or []
         if not closes:
             continue
+        sue = sue_resolver(ticker, as_of, entry.get("dates") or [])
         group_id, group_label = peer_group(row)
         rows.append({
             "ticker": ticker, "name": row.get("name"), "sector": row.get("sector"),
@@ -76,7 +94,7 @@ def build_rows(universe, entry_for=None, observations=None):
             "data_coverage": row.get("data_coverage"),
             "short_percent_of_float": row.get("short_percent_of_float") or observed.get("short_percent_of_float"),
             "days_to_cover": row.get("days_to_cover") or observed.get("days_to_cover"),
-            "factors": swing_factors(row, closes=closes, volumes=volumes),
+            "factors": swing_factors(row, closes=closes, volumes=volumes, sue=sue),
         })
     return rows
 
@@ -102,6 +120,9 @@ def to_result(rank, row):
         "current_membership": bool(row.get("current_membership")),
         "percentile": round(row["percentile"], 2) if row.get("percentile") is not None else None,
         "composite_z": round(row["score"], 4),
+        # The pre-rule-5 divisor, published for comparison against anything computed before
+        # neutral imputation replaced renormalization. Never ranked on.
+        "composite_z_renormalized": round(row.get("score_renormalized", 0.0), 4),
         "coverage": row.get("coverage"),
         # Same key the shared screen table reads on every other screen, so a row here is
         # legible beside a momentum or quality-value row without special casing.
@@ -121,8 +142,11 @@ def to_result(rank, row):
         "reversal_cost_gated": row.get("reversal_cost_gated", False),
         "short_interest": row.get("short_interest"),
         "pead_status": factors.get("pead_status"),
+        "pead_detail": {key: factors.get(key) for key in
+                        ("pead_basis", "pead_period_end", "pead_announced_on",
+                         "pead_age_trading_days") if factors.get(key) is not None},
         "raw_factors": {key: _rounded(value) for key, value in factors.items()
-                        if key != "pead_status" and value is not None},
+                        if not key.startswith("pead_") and value is not None},
         "reason_codes": row.get("reason_codes", []),
     }
 
@@ -141,6 +165,18 @@ def payload(results, scored, generated_at):
         "decay_haircut": DECAY_HAIRCUT,
         "thresholds": DEFAULT_CONFIG,
         "leg_coverage": leg_coverage(scored),
+        "pead_source": {
+            "store": "pipeline/data/pit/fundamentals (EDGAR as-filed XBRL)",
+            "construct": "seasonal random walk with drift, standardized by the firm's own "
+                         "history of seasonal differences (Foster 1977; Foster, Olsen & "
+                         "Shevlin 1984; Bernard & Thomas 1989, 1990)",
+            "announcement_anchor": "sec_filing_date",
+            "announcement_anchor_note": ANNOUNCEMENT_ANCHOR_NOTE,
+            "replaces": "advisor snapshot earnings_surprise (0/839 populated, and a "
+                        "four-quarter weighted average of percent surprise rather than the "
+                        "most-recent standardized surprise PEAD is a claim about)",
+        },
+        "cost_model": capacity_profile(scored),
         "scored_count": len(scored),
         "eligible_count": sum(1 for row in scored if row["eligibility"]),
         "suppressed_count": sum(1 for row in scored
@@ -151,9 +187,13 @@ def payload(results, scored, generated_at):
         "coverage_note": (
             "Cross-sectional ranks over the scored universe, recomputed every refresh. Effect "
             "sizes quoted per leg are the published gross, pre-cost, pre-decay figures; apply "
-            "the McLean-Pontiff haircuts before reading them as live expectations. Legs a row "
-            "cannot fill are dropped and the remaining weights renormalized, so read `coverage` "
-            "beside every score."),
+            "the McLean-Pontiff haircuts before reading them as live expectations, and read "
+            "`cost_model` for what the traded book costs to turn over. A leg a row cannot fill "
+            "contributes zero at its declared weight rather than rescaling the legs that did "
+            "resolve, so a thin row scores nearer neutral, never wider - read `coverage` beside "
+            "every score. This model has no out-of-sample record: it is registered in "
+            "pipeline/validation/harness_freeze.json on the prospective clock that starts "
+            "2026-09-01 and should be read as a research filter until that clock reports."),
         "results": results,
     }
 

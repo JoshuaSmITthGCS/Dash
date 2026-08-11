@@ -63,5 +63,27 @@
     "at_24_periods": "ICIR <= 0 or net-of-cost spread <= 0: abandon the residual-alpha claim, reposition the product as descriptive analytics",
     "gray_zone": "0 < ICIR < 0.2: extend once by 12 months, then apply the same rule with no second extension"
   },
+  "additional_models": [
+    {
+      "model": "swing-v1.1.0",
+      "registered_at": "2026-08-11",
+      "definition": "pipeline/swing_signals.py five-leg swing-horizon composite (PEAD/SUE .30, analyst revision .25, high-volume premium .20, 52-week-high proximity .15, short-term reversal .10), scored per swing_signals.SWING_WEIGHTS with neutral imputation of unresolved legs, published to public/data/screens/swing.json",
+      "why_registered": "It has no out-of-sample record of any kind. It was built from published effect sizes and shipped as a screen without a backtest, a deflated Sharpe, a PBO estimate or a cost model, in a repository where the research score carries all four. Rounds 5 and 6 measured that no technical sub-signal clears the noise standard on the as-filed spine, and by effective weight this model is 45% technical (volume, 52-week high, reversal). Until this clock reports, it is a research filter and the app says so.",
+      "weights_are": "declared priors ordered by evidence quality at this horizon, frozen before any measurement on this universe - explicitly not fitted optima and not claims of expected return",
+      "clock_start": "2026-09-01",
+      "expected_completion_at_monthly_frequency": "2028-09-01",
+      "measured_against": "the same promotion_criteria_champion_or_challenger above, with the horizon-appropriate change that the IC is measured at the 2-to-40-session holding window rather than monthly",
+      "open_questions_the_clock_must_answer": [
+        "realized turnover, which no backtest has yet produced - the published cost_model reports round-trip cost per position but annual drag needs the number of round trips a year",
+        "whether the analyst-revision leg carries the composite on its own once PEAD is live (pre-fix, with PEAD dead, revision was the highest-rho leg at +0.591)",
+        "whether the short-term-reversal leg survives at all in its naive form: Da-Liu-Schaumburg's surviving construct is residual reversal after removing the analyst-revision-explained component, and Nagel conditions the payoff on VIX; this implementation runs raw prior-week return at a flat weight, which is the one configuration both cited papers argue against",
+        "whether the book needs sector neutralization: with PEAD live the top decile runs 3.4x Energy and 0.0x Utilities against the universe, an undeclared sector bet that has moved rather than disappeared since the volatility normalization removed the earlier REIT/utility tilt"
+      ],
+      "changes_that_reset_this_clock": [
+        "any change to leg weights, subfactor definitions, standardization, coverage handling or the negative screen"
+      ]
+    }
+  ],
+  "hash_scope": "freeze_hash covers the champion registration and its criteria only; additional_models entries carry their own clock and are appended without rehashing the champion.",
   "freeze_hash": "f0b649bf9e642d9a389ab9c333b0e5d090aa80e01806a4856351f2ac491bfe43"
 }

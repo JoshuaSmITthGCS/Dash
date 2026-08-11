@@ -88,7 +88,10 @@ describe('SwingScreen', () => {
 
     const missing = container.querySelector('.swing-leg-missing')
     expect(missing).toHaveTextContent('–')
-    expect(missing.getAttribute('title')).toMatch(/redistributed/)
+    // A missing leg contributes nothing at its declared weight - it does not rescale the
+    // legs that resolved, which would put a thin row on a wider scale than a complete one.
+    expect(missing.getAttribute('title')).toMatch(/contributes nothing at its declared weight/)
+    expect(missing.getAttribute('title')).toMatch(/rather than rescaling/)
   })
 
   it('states each leg’s citation, horizon and how much of the universe it resolved on', () => {
