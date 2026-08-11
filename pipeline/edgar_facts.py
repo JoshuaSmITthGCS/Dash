@@ -57,6 +57,9 @@ CONCEPT_TAGS = {
     "current_liabilities": ("LiabilitiesCurrent",),
     "equity": ("StockholdersEquity",
                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"),
+    # Round 6: unblocks Altman Z, whose retained-earnings input capped as-filed coverage
+    # at 66% through Round 5 (docs/AUDIT-ROUND-5-FINDINGS.md section 1).
+    "retained_earnings": ("RetainedEarningsAccumulatedDeficit",),
     "cash": ("CashAndCashEquivalentsAtCarryingValue",
              "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"),
     "inventory": ("InventoryNet",),
@@ -138,6 +141,15 @@ def observations_for_concept(companyfacts, concept, *, forms=PERIODIC_FORMS,
     """
     requested_at = requested_at or datetime.now(timezone.utc).isoformat()
     allowed_forms = set(forms or ())
+    # Round 5 fix: observations are UNIONED across every matching tag, not taken from the
+    # first tag that has any rows. Returning on first match silently discarded a filer's
+    # entire pre-2018 history whenever it switched tags (ASC 606 moved most issuers from
+    # Revenues / SalesRevenueNet to RevenueFromContractWithCustomer* in 2018), which is
+    # exactly the coverage cliff the Round 5 as-filed backtest measured: revenue visible
+    # for 1% of names in 2011 and 10% in 2014 despite the legacy tags being listed here.
+    # Tag order remains a priority order: for the same (period, filing) the earlier tag
+    # wins, later tags only contribute periods the earlier ones did not cover.
+    merged, seen, primary_tag = [], set(), None
     for tag in CONCEPT_TAGS.get(concept, ()):
         for taxonomy in ("us-gaap", "ifrs-full", "dei"):
             rows = _fact_rows(companyfacts, taxonomy, tag)
@@ -190,9 +202,17 @@ def observations_for_concept(companyfacts, concept, *, forms=PERIODIC_FORMS,
                     "reliability_tier": "regulatory_primary",
                     "point_in_time": True,
                 })
-            if observations:
-                observations.sort(key=lambda row: (row["period_end"], row["filed"]))
-                return observations, tag
+            if observations and primary_tag is None:
+                primary_tag = tag
+            for row in observations:
+                key = (row["unit"], row["period_start"], row["period_end"], row["filed"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append(row)
+    if merged:
+        merged.sort(key=lambda row: (row["period_end"], row["filed"]))
+        return merged, primary_tag
     return [], None
 
 

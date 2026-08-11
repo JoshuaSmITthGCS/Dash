@@ -699,11 +699,99 @@ def _cross_sectional_valuation_score(snap, normalizer):
     }
 
 
+NEUTRAL_SCORE = 50.0
+
+
+def _fixed_feature_valuation_score(snap, normalizer):
+    """Challenger: every applicable metric carries its full intended weight for every name.
+
+    Round 4 measured Spearman(coverage, final score) at +0.44 even after statement
+    enrichment restored 82% mean coverage, which fired the pre-committed decision rule:
+    renormalizing weights over whichever metrics resolve, then multiplying by
+    completeness, makes the score substantially a ranking of data availability. The
+    field's construction (Jensen-Kelly-Pedersen JF 2023, Freyberger et al. RFS 2025,
+    Bryzgalova et al. RFS 2025, Chen-McCoy JFE 2024) scores every name on the same
+    metric vector and imputes what is missing to the neutral cross-sectional value.
+
+    This mode does exactly that on the cross-sectional percentile scale, where the
+    neutral value is the center of the distribution by construction:
+      observed metric   -> its (sector-conditional) winsorized percentile
+      applicable + missing -> imputed at NEUTRAL_SCORE, flagged ``imputed``
+      suppressed        -> leaves the vector entirely (never imputed)
+    No completeness multiplier touches the score. Coverage ships as a diagnostic and a
+    publication-gate input only (settings.json data_health.min_publication_coverage).
+    """
+    if not snap or snap.get("is_etf"):
+        return None, {}
+    if normalizer is None:
+        raise ValueError("fixed_feature mode requires a fitted CrossSectionalNormalizer")
+    cfg = SETTINGS["fundamentals"]
+    raw_metrics, raw_metadata = raw_fundamental_metrics(snap)
+    sector = raw_metadata["sector"]
+    suppressed = set(raw_metadata["suppressed_metrics"])
+    suppressed.update(metric for metric in VALUATION_MULTIPLES
+                      if isinstance(raw_metrics.get(metric), (int, float))
+                      and raw_metrics[metric] <= 0)
+    metrics, normalization, imputed = {}, {}, []
+    for metric, raw in raw_metrics.items():
+        if metric in suppressed:
+            metrics[metric] = None
+            normalization[metric] = {"status": "suppressed_not_applicable"}
+            continue
+        score, detail = normalizer.score(metric, raw, sector, snap.get("ticker"))
+        if score is None:
+            metrics[metric] = NEUTRAL_SCORE
+            normalization[metric] = {**detail, "status": "imputed",
+                                     "imputed_value": NEUTRAL_SCORE}
+            imputed.append(metric)
+        else:
+            metrics[metric] = score
+            normalization[metric] = detail
+    observed_w = imputed_w = suppressed_w = 0.0
+    for category, weights in cfg["metric_weights"].items():
+        category_weight = cfg["category_weights"].get(category, 0)
+        for metric, weight in weights.items():
+            share = category_weight * weight
+            if metric in suppressed:
+                suppressed_w += share
+            elif metric in imputed:
+                imputed_w += share
+            else:
+                observed_w += share
+    applicable = observed_w + imputed_w
+    categories, blocked = _categories_with_required_gate(
+        metrics, cfg, raw_metadata["applicability_profile"])
+    raw = weighted_available(categories, cfg["category_weights"])
+    coverage = observed_w / applicable if applicable else 0.0
+    if raw is None:
+        return None, {}
+    return round(raw, 1), {
+        **metrics,
+        "categories": categories,
+        "coverage": round(coverage, 2),
+        "observed_weight_fraction": round(observed_w, 4),
+        "imputed_weight_fraction": round(imputed_w, 4),
+        "suppressed_weight_fraction": round(suppressed_w, 4),
+        "imputed_metrics": sorted(imputed),
+        "raw_score": round(raw, 1),
+        "sector": sector,
+        "applicability_profile": raw_metadata["applicability_profile"],
+        "suppressed_metrics": sorted(suppressed),
+        "categories_withheld": blocked,
+        "sales_multiple_basis": raw_metadata["sales_multiple_basis"],
+        "normalization_mode": "fixed_feature",
+        "normalization": normalization,
+    }
+
+
 def valuation_score(snap, *, mode=None, normalizer=None):
     """Score fundamentals using the configured champion or an explicit challenger mode.
 
     ``bands`` preserves the production champion. ``cross_sectional`` requires a normalizer
     fitted once on the complete refresh universe so every row uses the same distributions.
+    ``fixed_feature`` additionally imputes applicable-but-missing metrics at the neutral
+    percentile so every name is scored on the same intended weight vector, with no
+    completeness multiplier (the Round 4 imputation challenger).
     """
     selected = mode or SETTINGS.get("normalization_mode", "bands")
     if selected == "bands":
@@ -713,6 +801,8 @@ def valuation_score(snap, *, mode=None, normalizer=None):
         return score, detail
     if selected == "cross_sectional":
         return _cross_sectional_valuation_score(snap, normalizer)
+    if selected == "fixed_feature":
+        return _fixed_feature_valuation_score(snap, normalizer)
     raise ValueError(f"unsupported normalization mode: {selected}")
 
 

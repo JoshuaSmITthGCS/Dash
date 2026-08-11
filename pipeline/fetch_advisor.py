@@ -13,6 +13,8 @@ from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
 from data_coverage import data_coverage_components, run_source_reliability
+from data_health import publication_gate, statement_health
+from edgar_enrichment import merge_edgar_fallback
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
@@ -509,15 +511,18 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
     ROIC, Piotroski, Altman-Z, and the other statement-only metrics were available. Fetching
     them separately lets a company enrich on whatever half of the data actually came back.
     """
+    as_of_today = datetime.now(timezone.utc).date().isoformat()
     if ticker_obj is None:
-        return {}
+        return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
+                                    diagnostics=diagnostics)
     try:
         inputs = extended_inputs(ticker_obj)
     except Exception as exc:  # noqa: BLE001 - extended_inputs already guards each statement call
         LOG.warn(f"{symbol}: statement frames unavailable ({type(exc).__name__}: {exc})")
         if diagnostics is not None:
             diagnostics["statement_fetch_failed"] += 1
-        return {}
+        return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
+                                    diagnostics=diagnostics)
     try:
         info = ticker_obj.info or {}
     except Exception as exc:  # noqa: BLE001
@@ -537,10 +542,12 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
         LOG.warn(f"{symbol}: extended fundamentals derivation failed ({type(exc).__name__}: {exc})")
         if diagnostics is not None:
             diagnostics["derivation_failed"] += 1
-        return {}
+        return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
+                                    diagnostics=diagnostics)
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
-    return result
+    return merge_edgar_fallback(symbol, result, snapshot, as_of=as_of_today,
+                                diagnostics=diagnostics)
 
 
 def yahoo_options_volatility(ticker_obj, price, closes):
@@ -1649,6 +1656,14 @@ def run():
         row["data_coverage_detail"] = data_coverage_components(
             row, source_reliability=source_reliability_this_run,
         )
+        # Round 4 coverage floor: a name scored on too little of the intended metric
+        # weight keeps its diagnostics and challengers, but its champion score is not
+        # published as a ranked stance (docs/AUDIT-ROUND-4-FINDINGS.md, Task 6).
+        publishable, gate_reason = publication_gate(
+            (row.get("fundamental_detail") or {}).get("coverage"), SETTINGS)
+        row["publication_gate"] = {"published": publishable, "reason": gate_reason}
+        if not publishable:
+            row["stance"] = "INSUFFICIENT DATA"
         # Every row in `research` was polled during this run by construction (carried-forward
         # rows join `screen_universe` later and keep their older stamp), so the poll time is
         # simply now. The next fast refresh reads it to decide what has waited longest.
@@ -1768,6 +1783,8 @@ def run():
         "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
+        "statement_health": statement_health(
+            [row.get("fundamental_detail") or {} for row in research], SETTINGS),
         "universe_mode": universe_mode, "polled_count": len(refresh_symbols),
         "enrichment_selection": {
             "previous_top": list(incumbents),

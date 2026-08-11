@@ -1,0 +1,76 @@
+{
+  "pinned_to": {
+    "pit_refresh_id": "advisor-2026-08-10T17:22:04.440901+00:00",
+    "pit_file_sha256_prefix": "54f86b3e9bf861a4",
+    "price_cache_tree_sha256_prefix": "9b41dfbfef494699",
+    "settings_sha256_prefix": "43b83641fdd479ec",
+    "factor_files_sha256_prefix": {"fama_french_5_monthly.zip": "cbc3724812132654", "momentum_monthly.zip": "f405ee2d47a5c75c"},
+    "universe_size": 880,
+    "factor_vintage_last_month": "2026-06"
+  },
+  "statement_coverage": {
+    "before_raw_input_presence_mean_key15": 0.49,
+    "after_edgar_batch_mean_key15": 0.82,
+    "per_metric_before_after_pct": {
+      "ev_to_ebitda": [47, 74], "ev_to_ebit": [45, 76], "ev_to_fcf": [50, 80],
+      "return_on_invested_capital": [49, 82], "gross_profits_to_assets": [45, 71],
+      "piotroski_f": [55, 93], "net_buyback_yield": [56, 96], "accruals_ratio": [55, 95],
+      "asset_growth": [55, 99], "stock_comp_to_revenue": [48, 84],
+      "interest_coverage": [49, 81], "cash_conversion": [51, 85],
+      "fcf_growth_3y": [45, 76], "altman_z": [44, 66], "price_to_tangible_book": [38, 71]
+    },
+    "names_with_at_least_one_filled_metric": 858
+  },
+  "coverage_score_correlation": {
+    "production_at_outage_coverage": 0.554,
+    "production_at_restored_coverage": 0.514,
+    "fixed_feature_no_shrink": 0.186,
+    "fixed_feature_shrink_50": 0.168,
+    "fixed_feature_shrink_sector_mean": 0.165,
+    "n": 875,
+    "decision_rule": "above +0.20 at restored coverage means design defect: FIRED at +0.514 production"
+  },
+  "financials_gap_points_and_p": {
+    "production": [2.8, 0.032],
+    "fixed_feature": [0.3, 0.637],
+    "fixed_feature_sector_shrink": [0.2, 0.482]
+  },
+  "rank_stability_production_vs_fixed_feature": {
+    "spearman": 0.782, "mean_abs_rank_shift": 125.2,
+    "movers_gt_25": 724, "movers_gt_50": 599, "max_shift": 599
+  },
+  "turnover_monthly_mean": {
+    "committed_2026_08_03_cache": 0.643,
+    "baseline_2026_08_10_cache": 0.506,
+    "cross_sectional_per_month_refit": 0.494,
+    "fundamentals_only": 0.122,
+    "no_modifiers": 0.493,
+    "rank_buffer_1_25": 0.443,
+    "rank_buffer_1_5": 0.395,
+    "rank_buffer_2_0": 0.337
+  },
+  "backtest_cagr_maxdd_cost": {
+    "baseline": [0.1259, -0.190, 3715],
+    "cross_sectional": [0.1161, -0.190, 3563],
+    "rank_buffer_1_25": [0.1285, -0.189, 3294],
+    "rank_buffer_1_5": [0.1260, -0.184, 3035],
+    "rank_buffer_2_0": [0.1237, -0.198, 2595],
+    "fundamentals_only": [0.1417, -0.267, null]
+  },
+  "alpha_reconciliation_bridge_pp": {
+    "published_value_series_hac3_geometric": -2.57,
+    "estimator_change": -0.03,
+    "return_construction": 1.97,
+    "cache_state": 1.06,
+    "round3_locked_gross_hac6_arithmetic": 0.43,
+    "monthly_return_diff_same_artifact_bps": {"mean": 141, "median": 112, "max": 505}
+  },
+  "characteristic_tilts_spearman": {
+    "log_mcap": [0.013, 876], "book_to_market": [0.152, 830],
+    "gross_prof_assets": [0.152, 400], "profit_margin": [0.270, 874],
+    "asset_growth": [-0.030, 488], "mom_12_1": [0.253, 859]
+  },
+  "regression_mde_58_months": {
+    "CMA_full_model_se": 0.300, "detectable_50pct_power": 0.59, "detectable_80pct_power": 0.84
+  }
+}

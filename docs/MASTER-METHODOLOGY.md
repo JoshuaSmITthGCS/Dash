@@ -325,9 +325,12 @@ most recent month that runs *against* momentum; the skip-month removes it. A fal
 60-day return (reduced coverage) applies for names without a full year of history.
 
 Configurable treatment of `relative_strength` (`short_horizon_treatment`, currently
-`legacy_momentum` in production): `legacy_momentum` (keep as-is), `neutral` (drop and
-renormalize remaining six weights, challenger), `reversal` (invert at reduced weight,
-challenger).
+**`neutral` in production** — the live champion drops `relative_strength` entirely and
+renormalizes the remaining six weights, so the 16% raw weight in the table above never
+reaches the effective score; verified against `settings.json` in Round 5 after an
+ablation dropping the signal proved byte-identical to the baseline): `legacy_momentum`
+(keep as-is), `neutral` (drop and renormalize, champion), `reversal` (invert at reduced
+weight, challenger).
 
 ---
 
@@ -405,6 +408,16 @@ filing timestamps and raw (not sector-residual) returns (`docs/ALGORITHM-RESEARC
 - Six-factor regression (Newey-West, 58 months): annualized alpha **−2.57%**, |t| = 0.437.
   Significant loadings are market (6.50), size (2.06), momentum (2.50) — **not** the value and
   profitability the score is mostly built from.
+  **Reproducibility status (Round 4, docs/AUDIT-ROUND-4-FINDINGS.md):** this estimate is
+  reproducible to the digit, but it is a statement about one construction on one cache
+  state (net-of-cost portfolio value path, 2026-08-03 price cache). The same strategy
+  re-measured as gross locked-pick returns on the 2026-08-10 cache gives **+0.43%**
+  (t 0.09). The three-point gap decomposes as +1.97pp return construction (costs plus
+  cash drag) and +1.06pp cache state. Historical alpha is currently under reproducibility
+  reconciliation: nominally comparable runs produce materially different point estimates,
+  neither statistically distinguishable from zero. No historical alpha figure from this
+  repository is authoritative without its experiment manifest
+  (`pipeline/validation/experiment_manifest.py`).
 - Against 14 tradeable style/size ETFs: **none beaten with statistically significant alpha**
   (largest |t| = 1.11). VTV returns more at lower volatility with a shallower drawdown.
 - Regime-dependent: **+10.3pp** annualized vs. SPY in bear markets/falling rates, **−16.9pp** in
@@ -413,10 +426,33 @@ filing timestamps and raw (not sector-residual) returns (`docs/ALGORITHM-RESEARC
 **Current classification: B — a transparent factor tilt with no demonstrated residual alpha.**
 Do not present SPY outperformance as this model's objective.
 
+**Capacity (Round 6):** under the canonical square-root impact law (now the base
+scenario of `pipeline/costs.py`), the buffered strategy carries roughly **$13M at a
+50bps/yr impact budget, $50M at 100bps, and $200M at 200bps**. The pre-Round-6 cost
+model understated impact by more than an order of magnitude at scale and survives only
+as the labeled optimistic scenario. This is a personal-account-scale instrument and the
+retrospective multiple-testing battery (deflated Sharpe 0.95 marginal, PBO 0.69, HLZ
+t>3 failed, docs/AUDIT-ROUND-6-FINDINGS.md section 5) means its one positive alpha
+estimate is not evidence of alpha after accounting for the search that produced it.
+
+**Ranking-integrity disclosure (Round 5):** restoring statement enrichment alone, with no
+methodology change, reordered the published board at rank correlation 0.820 with a mean
+absolute shift of 114 ranks (Round 4, pinned refresh `advisor-2026-08-10T17:22:04`).
+Every ranking published between 2026-08-06 and the enrichment recovery was substantially
+a map of data availability, not of the methodology. The publication coverage floor and
+statement-health states (`pipeline/data_health.py`) exist to make any recurrence visible
+and non-publishable.
+
 **Transaction costs** (`pipeline/costs.py`, `docs/TRANSACTION-COSTS.md`): `half_spread + fees +
 volatility_scaled_impact`, three scenarios, labeled (not measured) spread proxy. At the realized
 64.9% monthly turnover, the published 10bps flat cost model costs 78bps/year — 7.0% of gross
 return.
+**Reproducibility status (Round 4):** the 64.9% figure is pinned to the 2026-08-03 cache.
+The identical script and flags on the 2026-08-10 cache produce 50.6%, and the two runs'
+picks diverge 55% at the very first rebalance, because the provider serves restated data
+keyed to today. Treat any turnover figure as cache-pinned. Round 4's decomposition on the
+2026-08-10 cache: fundamentals only 12.2pp, technical component +37.1pp, modifiers +1.3pp,
+news 0.0pp.
 
 Full detail: `docs/MODEL-CARD.md`, `docs/LIMITATIONS.md`, `docs/VALIDATION-METHODOLOGY.md`.
 

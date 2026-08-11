@@ -939,6 +939,79 @@ def cross_sectional_challenger(row, snapshot, normalizer):
     }
 
 
+def fixed_feature_challenger(row, snapshot, normalizer, config):
+    """The Round 4 imputation challenger: fixed feature vector, neutral shrinkage.
+
+    Fundamentals come from ``valuation_score(mode="fixed_feature")`` (same intended
+    metric vector for every applicable name, missing metrics imputed at the neutral
+    percentile, no completeness multiplier). The blend then applies exactly one
+    coverage-aware transform: ``shrink_research_components`` pulls toward the neutral
+    prior instead of scaling toward zero, so thin evidence widens uncertainty without
+    pushing a name down the ranking. Coverage ships as a diagnostic only.
+    """
+    fundamental, detail = valuation_score(
+        snapshot, mode="fixed_feature", normalizer=normalizer,
+    )
+    components = {**row.get("components", {}), "fundamentals": fundamental}
+    blended = shrink_research_components(
+        components,
+        {
+            "fundamentals": detail.get("coverage", 0.0),
+            "market_behavior": (row.get("technical_detail") or {}).get("coverage", 0.0),
+            "news_sentiment": (row.get("sentiment_detail") or {}).get("coverage", 0.0),
+        },
+        config,
+        (row.get("modifiers") or {}).get("total", 0.0),
+    )
+    return {
+        "variant": "fixed_feature_imputation_neutral_shrink",
+        "normalization_mode": "fixed_feature",
+        **blended,
+        "components": components,
+        "fundamental_categories": detail.get("categories", {}),
+        "fundamental_detail": detail,
+        "observed_weight_fraction": detail.get("observed_weight_fraction"),
+        "imputed_weight_fraction": detail.get("imputed_weight_fraction"),
+        "suppressed_weight_fraction": detail.get("suppressed_weight_fraction"),
+        "normalized_metric_scores": normalized_metric_scores(detail),
+    }
+
+
+def multiplier_removal_variant(row):
+    """Defect-fix variant: the champion with its two completeness multipliers removed.
+
+    Round 5 Task 2 unbundles this from the imputation construction. Everything else is
+    the production champion unchanged: band normalization, within-block renormalization
+    over resolved metrics, the same modifiers. The only difference is that the score is
+    no longer multiplied by completeness, twice, on the way out
+    (scorer.py fundamentals ``0.65 + 0.35 * coverage`` and the blend
+    ``0.8 + 0.2 * data_coverage``). No published construction applies either multiplier
+    (Jensen-Kelly-Pedersen JF 78(5) 2023, Freyberger et al. RFS 38(3) 2025,
+    Bryzgalova et al. RFS 38(3) 2025, Chen-McCoy JFE 153 2024), so this is a bug
+    removal, promotable on defect grounds, distinct from the imputation challenger that
+    stays behind the prospective harness.
+    """
+    raw_fundamental = (row.get("fundamental_detail") or {}).get(
+        "raw_score", (row.get("components") or {}).get("fundamentals"))
+    components = {**(row.get("components") or {}), "fundamentals": raw_fundamental}
+    weights = RANKING_WEIGHTS
+    available = [(components[key], weights[key]) for key in weights
+                 if components.get(key) is not None]
+    raw = sum(value * weight for value, weight in available) / sum(
+        weight for _, weight in available) if available else 0.0
+    modifier_points = (row.get("modifiers") or {}).get("total", 0.0)
+    return {
+        "variant": "bands_no_completeness_multipliers",
+        "normalization_mode": row.get("score_variants", {}).get("champion", {}).get(
+            "normalization_mode", "bands"),
+        "raw_score": round(raw, 1),
+        "base_score": round(raw, 1),
+        "score": round(clamp(raw + modifier_points), 1),
+        "data_coverage": row.get("data_coverage"),
+        "components": components,
+    }
+
+
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
                                macro_regime=None, insider_activity=None, concentration_risk=None,
                                geographic_exposure=None, institutional_ownership=None,
@@ -1028,6 +1101,8 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "confidence_shrinkage": shrinkage,
         "modifier_recalibration": modifier_recalibration,
         "challenger": challenger,
+        "fixed_feature": fixed_feature_challenger(row, snapshot, normalizer, config),
+        "multiplier_removal": multiplier_removal_variant(row),
     }
 
 

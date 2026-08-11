@@ -486,8 +486,35 @@ def main():
         benchmark, plans[0]["execution_date"], args.initial_capital,
         args.transaction_cost_bps,
     )
+    from validation.experiment_manifest import build_manifest
+    manifest = build_manifest(
+        strategy=f"appeal-top{args.top_n}-monthly",
+        start_date=plans[0]["signal_date"], end_date=plans[-1]["signal_date"],
+        normalization_mode=str(__import__("scorer").SETTINGS.get("normalization_mode")),
+        scoring_mode="champion",
+        rebalance_frequency="monthly",
+        universe_tickers=list(universe_data),
+        execution_assumptions={"execution": "next SPY trading-day close after signal",
+                               "weighting": "appeal score proportional",
+                               "report_lag_days": args.report_lag_days},
+        cost_model={"transaction_cost_bps_one_way": args.transaction_cost_bps,
+                    "cost_model": args.cost_model, "cost_scenario": args.cost_scenario},
+        price_cache_dir=args.cache_dir,
+        factor_files=[path for path in (
+            os.path.join(HERE, "data", "factors", "fama_french_5_monthly.zip"),
+            os.path.join(HERE, "data", "factors", "momentum_monthly.zip"),
+        ) if os.path.exists(path)],
+        calendar=[p["signal_date"] for p in plans],
+        extra={"turnover_controls": {
+            "rank_buffer": args.rank_buffer,
+            "minimum_holding_months": args.min_holding_months,
+            "score_smoothing_alpha": args.score_smoothing,
+            "replacement_margin": args.replacement_margin,
+        }},
+    )
     result = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
+        "experiment_manifest": manifest,
         "method": {
             "signal": "Dash appeal score at month-end adjusted close",
             "execution": "next SPY trading-day close after signal",

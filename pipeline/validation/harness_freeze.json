@@ -1,0 +1,65 @@
+{
+  "purpose": "Round 5 Task 5: start the prospective clock. The IC harness has observed 0 of 24 required monthly periods. This file freezes what the clock measures.",
+  "frozen_at": "2026-08-11",
+  "harness_start_date": "2026-09-01",
+  "expected_completion_at_monthly_frequency": "2028-09-01",
+  "champion": {
+    "variant": "bands_champion",
+    "definition": "production score as of this commit: band normalization, within-block renormalization, both completeness multipliers, blend advisor_engine.py::blend_research_components, modifier stack",
+    "config_hash": "d18a100f0b7ef91f157c07608533fde5219b022784b508b9db1d9a5f8c924dd9",
+    "scorer_hash": "43dd37eba0718dd9f75df7146378c49638f276d7e554056a216bb44e4774cb3b",
+    "advisor_engine_hash": "8dde7bf5ccdb8ebf288f528613ece814e6da625edacca4a6eab7d599396396c2",
+    "universe_hash": "093504377aad5a1972eed9ea7218ef9df13627bb31217efc539f306f3bc234a8",
+    "git_commit": "1b053056817f04698afc10eaf3ab866ece1dd4bf"
+  },
+  "pending_decision": {
+    "recommended_promotion": "multiplier_removal (defect fix, Round 5 Task 2)",
+    "clock_cost_of_promoting_now": "zero, no periods have accrued",
+    "clock_cost_of_promoting_later": "all periods accrued to that date",
+    "disclosed_side_effect": "financials-vs-rest gap widens from +2.8 to +7.9 points because the multipliers partially masked suppression-renormalization inflation, see AUDIT-ROUND-5-FINDINGS.md Task 2",
+    "decision_status": "HOLD recorded 2026-08-11 pending ownership response",
+    "accrued_cost_per_month_of_holding": "one month of prospective clock forfeited if promoted later, plus one further month of the champion ranking with Spearman(coverage, score) +0.51 and the 1.87x identical-evidence spread"
+  },
+  "challengers": [
+    "fixed_feature (imputation + neutral shrink, score_variants.fixed_feature)",
+    "multiplier_removal (score_variants.multiplier_removal)",
+    "signal_corrections_cumulative (score_variants.challenger)",
+    "rank_buffer_1.5 portfolio layer (portfolio_construction.apply_controls)"
+  ],
+  "changes_that_reset_the_clock": [
+    "any change to champion score semantics: weights, bands, normalization mode, modifier caps, coverage handling, blend formula"
+  ],
+  "changes_that_do_not_reset": [
+    "data-provider fixes restoring intended inputs (statement enrichment, EDGAR fallback), proven score-identical on a frozen snapshot by regression test",
+    "new challengers or shadow outputs",
+    "UI, docs, publication gates that withhold rather than alter scores"
+  ],
+  "trial_count_for_deflated_statistics": {
+    "backtest_variants_r3": 5,
+    "backtest_variants_r4": 3,
+    "backtest_variants_r5": 12,
+    "turnover_control_sweep_pre_r3": 4,
+    "scoring_variants": 7,
+    "regression_constructions": 4,
+    "total_enumerated": 35,
+    "dsr_trial_count_used": 40
+  },
+  "promotion_criteria_champion_or_challenger": {
+    "minimum_periods": 24,
+    "mean_spearman_ic": "> 0",
+    "icir": ">= 0.5",
+    "ic_t_stat": ">= 2.4 (0.5 * sqrt(24))",
+    "net_of_cost_top_minus_bottom_quintile_spread": "> 0 at canonical square-root impact",
+    "deflated_sharpe": ">= 0.95 probability at N=40 trials (Bailey and Lopez de Prado, JPM 40(5), 2014)",
+    "pbo": "<= 0.50 via CSCV when enough periods exist"
+  },
+  "real_money_criteria": {
+    "all_promotion_criteria": true,
+    "additional": "12 further monthly periods (36 total) with ICIR >= 0.3 and net-of-cost six-factor alpha t >= 2 over the combined prospective record"
+  },
+  "abandonment_criteria": {
+    "at_24_periods": "ICIR <= 0 or net-of-cost spread <= 0: abandon the residual-alpha claim, reposition the product as descriptive analytics",
+    "gray_zone": "0 < ICIR < 0.2: extend once by 12 months, then apply the same rule with no second extension"
+  },
+  "freeze_hash": "f0b649bf9e642d9a389ab9c333b0e5d090aa80e01806a4856351f2ac491bfe43"
+}

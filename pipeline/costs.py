@@ -29,14 +29,25 @@ SPREAD_PROXY_BPS_BY_LIQUIDITY_TIER = {
 }
 
 # Market-impact scaling: impact grows with a name's own realized volatility and with how
-# large the trade is relative to its own liquidity (participation rate). The functional form
-# (impact proportional to volatility * sqrt(participation)) follows the standard square-root
-# market-impact heuristic used across the execution literature; the specific proportionality
-# constant below is a labeled research default, not a fitted or measured value.
+# large the trade is relative to its own liquidity (participation rate). The functional
+# form (impact proportional to volatility * sqrt(participation)) follows the standard
+# square-root market-impact law of the execution literature.
+#
+# Round 6 recalibration (docs/AUDIT-ROUND-6-FINDINGS.md, Task 4). The previous base
+# coefficient of 15 implied 4.5bps of impact at 100% ADV participation for a 30%-vol
+# name, which Round 5 measured as 15 to 40 times below the canonical law. The canonical
+# form is impact of order DAILY volatility times sqrt(participation): with volatility
+# supplied annualized, the equivalent coefficient is 1e4/sqrt(252) ~ 630. That is now the
+# base scenario. The old base of 15 survives only as the clearly-labeled optimistic
+# scenario, because every net-of-cost figure published in audit Rounds 3 through 5 used
+# it and comparability requires it to stay computable.
 IMPACT_SCENARIOS = {
-    "optimistic": {"spread_multiplier": 0.5, "impact_coefficient": 5.0},
-    "base": {"spread_multiplier": 1.0, "impact_coefficient": 15.0},
-    "stress": {"spread_multiplier": 2.0, "impact_coefficient": 40.0},
+    "optimistic": {"spread_multiplier": 0.5, "impact_coefficient": 15.0,
+                   "label": "pre-Round-6 base, retained for comparability, understates impact by an order of magnitude at scale"},
+    "base": {"spread_multiplier": 1.0, "impact_coefficient": 630.0,
+             "label": "canonical square-root law, daily volatility times sqrt(participation)"},
+    "stress": {"spread_multiplier": 2.0, "impact_coefficient": 1260.0,
+               "label": "2x canonical"},
 }
 
 

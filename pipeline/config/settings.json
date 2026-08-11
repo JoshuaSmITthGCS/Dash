@@ -1440,5 +1440,23 @@
       "steps down": -0.35,
       "resigns": -0.35
     }
+  },
+  "data_health": {
+    "_comment": "Round 4 provider-health monitoring and publication gate (docs/AUDIT-ROUND-4-FINDINGS.md). Statement coverage is measured per refresh against monitored_metrics; below degraded_below the refresh is labeled degraded, below critical_below critical, and the run manifest carries the state. min_publication_coverage is the per-name floor: a research score computed from less than this fraction of intended fundamentals weight publishes as INSUFFICIENT DATA rather than a ranked stance, because Round 3 item 4 measured identical evidence scoring up to 1.87x apart on data availability alone.",
+    "monitored_metrics": [
+      "ev_to_ebitda",
+      "ev_to_ebit",
+      "return_on_invested_capital",
+      "gross_profits_to_assets",
+      "piotroski_f",
+      "net_buyback_yield",
+      "altman_z",
+      "stock_comp_to_revenue",
+      "accruals_ratio"
+    ],
+    "expected_statement_coverage": 0.7,
+    "degraded_below": 0.5,
+    "critical_below": 0.3,
+    "min_publication_coverage": 0.35
   }
 }

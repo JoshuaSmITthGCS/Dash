@@ -356,6 +356,13 @@ brief correctly identified as the wrong yardstick:
 
 1. **Six-factor regression:** annualized alpha −2.57%, Newey-West |t| = 0.437. Inside the
    brief's own "no residual alpha" band, not the ambiguous middle.
+   *Round 4 reconciliation (docs/AUDIT-ROUND-4-FINDINGS.md): reproducible exactly, but
+   construction- and cache-pinned. Gross locked-pick returns on the 2026-08-10 cache give
+   +0.43% (t 0.09): +1.97pp from return construction (costs, cash drag), +1.06pp from
+   cache drift. Historical alpha estimates from this repository are under reproducibility
+   reconciliation and none is authoritative without an experiment manifest. The same
+   applies to the 64.9% turnover figure below (50.6% on the 2026-08-10 cache, first-month
+   pick overlap between the two caches only 45%).*
 2. **Fourteen tradeable benchmarks:** none beaten with significant alpha; largest |t| = 1.11.
    VTV dominates the strategy on return, volatility and drawdown simultaneously.
 3. **Regime attribution:** the return pattern is a coherent duration-and-defensiveness profile,
