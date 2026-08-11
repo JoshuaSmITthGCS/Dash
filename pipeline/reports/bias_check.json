@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-10T22:36:30.519348+00:00",
+  "generated_at": "2026-08-11T12:14:36.323368+00:00",
   "comparison": "old_double_confidence_penalty_vs_new_single_shrinkage_challenger",
-  "comparable_universe_count": 201,
+  "comparable_universe_count": 878,
   "path_definitions": {
     "old_double_penalty": "Band-normalized fundamentals are coverage-multiplied, then the final evidence blend is confidence-multiplied again.",
     "new_single_shrinkage": "The challenger starts from raw category evidence and applies one confidence pull toward the configured neutral target before bounded modifiers."
@@ -9,44 +9,44 @@
   "correlations": {
     "log_market_cap": {
       "old_double_penalty": {
-        "count": 199,
-        "pearson": 0.103195,
-        "spearman": 0.089345
+        "count": 876,
+        "pearson": 0.037113,
+        "spearman": -0.00789
       },
       "new_single_shrinkage": {
-        "count": 199,
-        "pearson": -0.00442,
-        "spearman": -0.011323
+        "count": 876,
+        "pearson": -0.193335,
+        "spearman": -0.24355
       }
     },
     "data_coverage": {
       "old_double_penalty": {
-        "count": 201,
-        "pearson": 0.821624,
-        "spearman": 0.676688
+        "count": 878,
+        "pearson": 0.76775,
+        "spearman": 0.573768
       },
       "new_single_shrinkage": {
-        "count": 201,
-        "pearson": 0.33138,
-        "spearman": 0.376896
+        "count": 878,
+        "pearson": 0.180069,
+        "spearman": 0.132396
       }
     },
     "analyst_coverage_count": {
       "old_double_penalty": {
         "count": 148,
-        "pearson": 0.091894,
-        "spearman": 0.05221
+        "pearson": -0.030779,
+        "spearman": -0.093174
       },
       "new_single_shrinkage": {
         "count": 148,
-        "pearson": 0.025135,
-        "spearman": 0.018087
+        "pearson": -0.052018,
+        "spearman": -0.103876
       }
     }
   },
   "market_cap_correlation_absolute_drop": {
-    "pearson": true,
-    "spearman": true,
-    "passed": true
+    "pearson": false,
+    "spearman": false,
+    "passed": false
   }
 }
