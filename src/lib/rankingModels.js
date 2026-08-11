@@ -1,5 +1,5 @@
 /**
- * Nine ranking models, one per question, instead of one score wearing nine hats.
+ * Ten ranking models, one per question, instead of one score wearing ten hats.
  *
  * The design this replaces asked a single fundamentals-first score to serve long-term
  * investing, short-term catalysts, reversals and trend following at once, and then re-sorted
@@ -155,6 +155,41 @@ export function thesisBreak(row) {
     reason: `recent negative ${hit.replace(/_/g, ' ')} news (${detail.dominant_event || 'material event'})`
       + ' – the decline may be price discovery rather than an overreaction',
   }
+}
+
+// ---------------------------------------------------------------------------
+// Swing-horizon negative screen
+// ---------------------------------------------------------------------------
+
+/**
+ * Short interest is a negative screen here, never a leg.
+ *
+ * Boehmer, Jones and Zhang (2008) find heavily shorted names underperform lightly shorted by
+ * ~1.16% over the following 20 trading days - a short-side result a long-only book cannot
+ * harvest. The honest use of it is therefore suppression: the name stays visible with its
+ * reason attached and its score capped, rather than being scored as if the finding were
+ * tradable from the long side. Thresholds mirror pipeline/swing_signals.py exactly.
+ */
+const SHORT_PERCENT_OF_FLOAT_LIMIT = 0.10
+const DAYS_TO_COVER_LIMIT = 5
+const SHORT_INTEREST_CAP = 45
+/** Below this in average dollar volume, spread cost eats a swing-horizon edge at retail size. */
+const SWING_MIN_DOLLAR_VOLUME = 2e6
+
+export function shortInterestSuppressed(row) {
+  const shortPercent = row?.short_percent_of_float
+  const daysToCover = row?.days_to_cover
+  const hits = []
+  if (finite(shortPercent) && shortPercent >= SHORT_PERCENT_OF_FLOAT_LIMIT) {
+    hits.push(`${(shortPercent * 100).toFixed(1)}% of float is short`)
+  }
+  if (finite(daysToCover) && daysToCover >= DAYS_TO_COVER_LIMIT) {
+    hits.push(`${daysToCover.toFixed(1)} days to cover`)
+  }
+  return hits.length
+    ? `${hits.join(' and ')} – heavily shorted names underperform at roughly this horizon, `
+      + 'and a long-only book cannot take the other side of that'
+    : null
 }
 
 // ---------------------------------------------------------------------------
@@ -349,6 +384,79 @@ export const RANKING_MODELS = {
       const hasLevel = finite(row.analyst_rating) || finite(row.analyst_target_upside)
       if (!hasChange && !hasLevel) return 'no rating, target or revision history'
       return null
+    },
+  },
+
+  // The swing-horizon layer, 2 trading days to 8 weeks. Same five legs, same declared
+  // weights and same negative screen as the published screen at /screens/swing
+  // (pipeline/swing_signals.py) - this is that model read off the advisor row so the
+  // research list can be ranked by it directly, not a second opinion about swing setups.
+  //
+  // The one thing this model exists to get right is the sign flip: the same raw trailing
+  // return predicts reversal at 2-10 days and continuation at 3-12 months. So the
+  // contrarian leg reads only the last five sessions, the continuation leg is 52-week-high
+  // proximity (George-Hwang, which carries no recent-month return at all), and no trailing
+  // return is read twice. A single "past return" factor spanning the whole window averages
+  // to noise.
+  swing: {
+    label: 'Swing setup (2 days–8 weeks)',
+    question: 'Is there evidence at the swing horizon, from the signals that survive costs?',
+    components: [
+      // Bernard & Thomas 1989/1990: drift in the direction of the surprise over ~60 trading
+      // days, monotone in SUE. The best evidence-to-cost ratio at this horizon; dropped and
+      // renormalized on rows where no surprise history resolved.
+      ['pead', 'Post-earnings drift (surprise)', 0.30, percentileOf((row) => row.earnings_surprise)],
+      // Jegadeesh-Kim-Krische-Lee 2004: the *change* in consensus predicts, the level mostly
+      // does not. Every input here is a change over a stated window.
+      ['revisions', 'Analyst revision (change)', 0.25, (index, row) => {
+        const detail = estimates(row)
+        const legs = []
+        if (finite(detail.revision_breadth_30d)) legs.push(clamp(50 + detail.revision_breadth_30d * 50))
+        if (finite(detail.eps_revision_30d_pct)) legs.push(clamp(50 + detail.eps_revision_30d_pct * 200))
+        if (finite(detail.net_upgrades_90d)) legs.push(clamp(50 + detail.net_upgrades_90d * 6))
+        if (finite(detail.target_change_30d_pct)) legs.push(clamp(50 + detail.target_change_30d_pct * 200))
+        return legs.length ? { value: legs.reduce((a, b) => a + b, 0) / legs.length, level: 'row', sampleSize: null } : null
+      }],
+      // Gervais-Kaniel-Mingelgrin 2001: unusually high volume over a day or a week is
+      // followed by appreciation over the next month. Measured against the stock's own
+      // normal first (volume_ratio_60d), then ranked across peers.
+      ['volume', 'High-volume premium', 0.20, percentileOf((row) => technical(row).volume_ratio_60d)],
+      ['proximity', '52-week-high proximity', 0.15, (index, row) => {
+        const fromHigh = technical(row).pct_from_52w_high
+        return finite(fromHigh) ? { value: clamp(100 + fromHigh * 2), level: 'row', sampleSize: null } : null
+      }],
+      // Jegadeesh 1990, reversed - and deliberately the smallest weight. Da-Liu-Schaumburg
+      // 2014 cut the risk-adjusted alpha to 0.33%/month at t=1.37, and it is the most
+      // cost-constrained strategy in Frazzini-Israel-Moskowitz, so the gate below refuses to
+      // score it at all outside liquid names.
+      ['reversal', 'Prior-week reversal', 0.10, (index, row) => {
+        const week = technical(row).return_5d
+        return finite(week) ? { value: clamp(50 - week * 5), level: 'row', sampleSize: null } : null
+      }],
+    ],
+    gate: (row) => {
+      const detail = technical(row)
+      if (!finite(detail.return_5d)) return 'no recent return history'
+      // Spread, not market impact, is the binding cost at retail size - and it is worst in
+      // exactly the small illiquid names where the published effect sizes are largest.
+      if (finite(row.average_dollar_volume) && row.average_dollar_volume < SWING_MIN_DOLLAR_VOLUME) {
+        return 'below the liquidity floor where spread cost eats a swing-horizon edge'
+      }
+      const legs = [
+        row.earnings_surprise, estimates(row).revision_breadth_30d, estimates(row).eps_revision_30d_pct,
+        detail.volume_ratio_60d, detail.pct_from_52w_high,
+      ].filter(finite)
+      // One resolved input is not a composite, and a five-leg model resting on the reversal
+      // leg alone is just "sell whatever moved last week".
+      if (legs.length < 2) return 'fewer than two swing-horizon signals resolved on this row'
+      return null
+    },
+    // Boehmer-Jones-Zhang 2008 is a short-side result and this book is long-only, so heavy
+    // short interest suppresses rather than scoring a leg - the same negative-screen
+    // treatment /screens/swing applies, expressed as the cap this framework already has.
+    cap: (row) => {
+      const flagged = shortInterestSuppressed(row)
+      return flagged ? { limit: SHORT_INTEREST_CAP, label: 'Crowded short', reason: flagged } : null
     },
   },
 

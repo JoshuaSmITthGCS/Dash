@@ -91,6 +91,11 @@ SCREEN_TECHNICAL_FIELDS = (
     "return_5d", "return_20d", "momentum_12_1", "momentum_12_1_pct", "risk_adjusted",
     "relative_strength", "relative_strength_20d", "volume_confirmation",
     "pct_above_52w_low", "drawdown_60d", "volume_ratio_60d",
+    # The swing model's continuation leg is 52-week-high proximity (George-Hwang), the one
+    # momentum-family measure that carries no recent-month return and so cannot cancel its
+    # reversal leg. Without this on the tail the leg only ever resolves for the published
+    # leaderboard, which is the opposite of what a cross-sectional screen is for.
+    "pct_from_52w_high",
     # return_60d/return_252d back a multi-horizon breadth check for rankMomentum's
     # corroboration gate - a 5d/20d pop inside a longer downtrend shouldn't pass as
     # genuine momentum. Keep in sync with src/lib/researchScreens.js.

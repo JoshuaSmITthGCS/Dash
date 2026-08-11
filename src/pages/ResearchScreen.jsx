@@ -10,6 +10,7 @@ import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 // strategies live on the sub-nav that page renders (OPTIONS_NAV), so the top-level row
 // stays short enough to scan on a phone.
 export const SCREEN_NAV = [
+  ['/screens/swing', 'Swing signals'],
   ['/screens/fast-growth', 'Fast growth'],
   ['/screens/options', 'Options'],
   ['/screens/momentum', 'Momentum'], ['/screens/quality-value', 'Quality at valuation lows'],

@@ -22,6 +22,7 @@ const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
 const Finances = lazy(() => import('./pages/Finances.jsx'))
 const Planning = lazy(() => import('./pages/Planning.jsx'))
 const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
+const SwingScreen = lazy(() => import('./pages/SwingScreen.jsx'))
 const FastGrowthScreen = lazy(() => import('./pages/FastGrowthScreen.jsx'))
 const OptionsScreen = lazy(() => import('./pages/OptionsScreen.jsx'))
 const StrategyScreen = lazy(() => import('./pages/StrategyScreen.jsx'))
@@ -51,7 +52,10 @@ const NAV = [
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
   { to: '/planning', label: 'Planning', icon: 'finances', requireAuth: true },
-  { to: '/screens/momentum', label: 'Screens', icon: 'research' },
+  // The screens tab lands on the swing screen: it is the widest-horizon-coverage screen in
+  // the rail and the one most often opened cold. Every other screen is one tap away on the
+  // rail that page renders.
+  { to: '/screens/swing', label: 'Screens', icon: 'research' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
@@ -65,7 +69,7 @@ export const MOBILE_NAV = [
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/planning', label: 'Planning', icon: 'finances' },
-  { to: '/screens/momentum', label: 'Screens', icon: 'market' },
+  { to: '/screens/swing', label: 'Screens', icon: 'market' },
 ]
 
 function ProfilePanel() {
@@ -149,6 +153,10 @@ function AppContent() {
           <Route path="/portfolio/insights" element={currentUser ? <Insights /> : <Dashboard />} />
           <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
           <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
+          {/* Its own page rather than the shared ResearchScreen table: the swing composite
+              publishes five separately-cited legs, their per-row coverage, and a negative
+              screen whose hits stay visible - none of which the generic screen row carries. */}
+          <Route path="/screens/swing" element={<SwingScreen />} />
           <Route path="/screens/fast-growth" element={<FastGrowthScreen />} />
           {/* Options is one tab in the screens rail; each strategy is a sub-tab beneath it. */}
           <Route path="/screens/options" element={<OptionsScreen />} />

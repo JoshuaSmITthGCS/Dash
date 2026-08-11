@@ -88,6 +88,7 @@ Source of truth: `src/App.jsx` (`NAV` and `MOBILE_NAV` arrays, `<Routes>` block)
 | `/portfolio/insights` | `Insights.jsx` | **Yes** | Portfolio-level factor and risk insights |
 | `/finances` | `Finances.jsx` | **Yes** | Net worth / account tracking |
 | `/planning` | `Planning.jsx` | **Yes** (or dev-only `?preview`) | Monte Carlo retirement/goal projection (5,000-path block resampling) |
+| `/screens/swing` | `SwingScreen.jsx` (`screens/swing.json`) | No | Swing-horizon composite, 2 days–8 weeks — scoring doc §10.7. The `Screens` nav entry lands here |
 | `/screens/fast-growth` | `FastGrowthScreen.jsx` | No | Fast-growth candidate screen |
 | `/screens/momentum` | `ResearchScreen.jsx` (`screens/momentum.json`) | No | Standalone cross-sectional Momentum screen — see scoring doc §4 |
 | `/screens/quality-value` | `ResearchScreen.jsx` (`screens/quality-value.json`) | No | Cheap-vs-own-history + quality screen — scoring doc §6 |
