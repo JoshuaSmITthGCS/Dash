@@ -18,7 +18,69 @@ Producers committed under `research/audit/round6/`.
 
 ## 1. Task 1: the corrected spine
 
-PLACEHOLDER_SECTION_1
+Producers: `pipeline/build_pit_fundamentals.py` (re-ingest under the fixed
+`observations_for_concept`), `task1_coverage_after.py`, `asfiled_ttm_backtest.py`,
+`pipeline/tests/test_asfiled_backtest.py` (seven tests, including TTM visibility).
+
+### The re-ingest
+
+The tag-union re-ingest processed all 861 mapped CIKs in 34 minutes and grew the store
+from 1,448,995 to **1,751,058 rows on disk (+302,063)**, logging 70,514 restatements,
+with periods reaching back to 1980. The added rows are exactly the history the first-tag
+defect had discarded, plus the newly ingested retained-earnings concept (49,798 rows).
+
+### Coverage by year, republished (share of 859 mapped names, visible each Jan 1)
+
+| Year | revenue | net income | op income | assets | equity | OCF | capex | D&A | retained earnings |
+|---|---|---|---|---|---|---|---|---|---|
+| 2011 | 0.27 (was 0.01) | 0.32 | 0.22 | 0.59 | 0.59 | 0.32 | 0.27 | 0.22 | 0.56 |
+| 2014 | 0.68 (was 0.10) | 0.76 | 0.59 | 0.80 | 0.80 | 0.77 | 0.68 | 0.64 | 0.76 |
+| 2017 | 0.76 (was 0.11) | 0.85 | 0.68 | 0.87 | 0.87 | 0.85 | 0.77 | 0.73 | 0.84 |
+| 2020 | 0.89 | 0.92 | 0.75 | 0.93 | 0.93 | 0.91 | 0.84 | 0.80 | 0.90 |
+| 2023 | 0.95 | 0.98 | 0.80 | 0.98 | 0.98 | 0.97 | 0.90 | 0.86 | 0.95 |
+| 2026 | 0.97 | 1.00 | 0.83 | 1.00 | 0.99 | 0.99 | 0.91 | 0.89 | 0.97 |
+
+The income columns now track the balance-column baseline instead of sitting an order of
+magnitude below it. The residual 2011-2014 thinness is the genuine XBRL tagging era, not
+the defect. The usable as-filed window widens from 2021-2026 to roughly 2015-2026 for
+income-derived metrics.
+
+**Retained earnings and Altman.** Post-ingest, Altman Z resolves for **701 of 876 names
+(80%)** on the pinned snapshot, against the 66% cap Round 5 recorded. The remaining gap
+is names lacking the tag or a compatible variant's inputs, not a missing concept.
+
+### The cadence-constant comparison
+
+Producer: `task2_analysis.py`. Same cache, same calendar, same estimator (HAC6,
+arithmetic, n 58) on every row.
+
+| Run | TO/mo | CAGR | Max DD | Six-factor alpha | RMW | MOM |
+|---|---|---|---|---|---|---|
+| Restated TTM quarterly (R4 baseline) | 50.6% | 12.59% | -19.0% | +0.43%/yr (t 0.09) | +0.22 (t 1.1) | +0.32 (t 2.0) |
+| **As-filed TTM quarterly (corrected spine)** | **24.3%** | **20.06%** | **-28.2%** | **+8.44%/yr (t 2.54)** | +0.31 (t 2.1) | +0.02 (t 0.2) |
+| As-filed annual (corrected store) | 22.4% | 16.86% | -28.4% | +6.14%/yr (t 1.78) | +0.51 (t 3.4) | -0.04 (t -0.3) |
+| As-filed annual (R5, pre-correction, withdrawn) | 22.2% | 19.70% | -27.8% | +9.09%/yr (t 1.93) | +0.40 (t 2.5) | -0.04 (t -0.3) |
+
+Which delta is which:
+
+1. **Restatement bias, isolated** (row 1 vs row 2, cadence constant): +7.61pp paired
+   CAGR (2 SE threshold 12.85pp, a Class B power row), alpha +0.43 to +8.44%/yr with
+   the t-statistic moving from 0.09 to 2.54, turnover halving from 50.6% to 24.3%, and
+   mean pick overlap of **10 percent**. The restated and as-filed systems hold
+   different portfolios almost everywhere, and the restated system's extra 26pp of
+   monthly turnover is restatement-and-availability churn, not signal.
+2. **Cadence, isolated** (row 2 vs row 3, spine constant): quarterly adds 1.9pp of
+   turnover and +3.20pp CAGR against annual. Round 6's premise that cadence carried
+   much of Round 5's delta is measured small on the turnover axis and material on the
+   return axis.
+3. **The tag-union correction, isolated** (row 3 vs row 4): Round 5's annual headline
+   falls from 19.70% to 16.86% CAGR and its alpha from +9.09 (t 1.93) to +6.14
+   (t 1.78) on the corrected store. Round 5 section 1 numbers are **withdrawn and
+   replaced** by rows 2 and 3 of this table. Its provisionality flag was correct.
+
+The three-way table's own caveats stand on every row: survivorship-biased universe,
+one five-year window, and the multiple-testing battery of section 5 applies to row 2's
+alpha exactly as it did to Round 5's.
 
 ---
 
@@ -30,7 +92,90 @@ PLACEHOLDER_SECTION_2
 
 ## 3. Task 3: the valuation block, reopened
 
-PLACEHOLDER_SECTION_3
+Producer: `task3_valuation_study.py` plus the per-category decomposition committed in
+the same directory. All on the pinned refresh with EDGAR-augmented raw metrics, post
+re-ingest.
+
+### 3.1 The constituents carry value exposure
+
+Raw metric vs value proxies, Spearman (a negative sign for a multiple IS value
+exposure, and the -1.00 diagonal cells are the proxy correlating with its own inverse,
+reported for scale):
+
+| Metric | vs book-to-market | vs earnings yield | vs EBITDA/EV |
+|---|---|---|---|
+| ev_to_ebitda | -0.52 (n 636) | -0.65 (n 671) | (own inverse) |
+| ev_to_ebit | -0.37 (n 639) | -0.73 (n 676) | -0.87 (n 639) |
+| ev_to_fcf | -0.39 (n 691) | -0.56 (n 730) | -0.59 (n 599) |
+| forward_pe | -0.53 (n 816) | -0.68 (n 860) | -0.61 (n 670) |
+| **peg** | **-0.09 (n 762)** | **-0.07 (n 800)** | **-0.05 (n 627)** |
+| price_to_sales | -0.45 (n 825) | -0.47 (n 863) | -0.60 (n 670) |
+| price_to_book | (own inverse) | -0.47 (n 820) | -0.52 (n 636) |
+| price_to_tangible_book | -0.79 (n 610) | -0.48 (n 604) | -0.52 (n 457) |
+
+Seven of eight metrics carry strong value exposure. PEG carries none, on any proxy,
+which independently confirms the config's own skepticism about it.
+
+### 3.2 The aggregation is NOT the defect
+
+Valuation category score vs the proxies:
+
+| Construction | vs B/M | vs earnings yield | vs EBITDA/EV |
+|---|---|---|---|
+| Band mode category | +0.51 (n 828) | +0.65 (n 865) | +0.88 (n 672) |
+| Band mode, sector-demeaned ranks | +0.52 (n 827) | | |
+| Fixed-feature category | +0.52 (n 828) | +0.55 (n 865) | +0.82 (n 672) |
+| Fixed-feature, complete cases only (imputed weight <= 10%) | +0.58 (n 545) | | |
+
+The category preserves its constituents' exposure under both normalizations. The
+imputation-shrinkage attenuation Round 5 characterized is real and small here: +0.58
+complete-case against +0.52 overall, roughly 0.06 of rank correlation, nowhere near
+enough to explain a missing tilt.
+
+### 3.3 Where the value tilt actually dies: the blend, by design
+
+Category scores vs book-to-market, with category weights:
+
+| Category | Weight | vs B/M |
+|---|---|---|
+| Valuation | 0.28 | **+0.508** (p 1e-55, n 828) |
+| Profitability | 0.26 | **-0.362** (p 4e-27, n 828) |
+| Growth | 0.11 | -0.342 (p 4e-24, n 827) |
+| Financial health | 0.15 | -0.220 (p 5e-10, n 785) |
+| Capital allocation | 0.10 | +0.052 (p 0.10, n 827) |
+| Accounting quality | 0.10 | -0.025 (p 0.50, n 823) |
+| **Fundamentals composite** | | **-0.114** (p 1e-3, n 828) |
+
+The diagnosis Round 6's brief proposed is refuted, and the finding is larger. The
+valuation block works exactly as configured. Its +0.51 value exposure at 28 percent
+weight is arithmetically cancelled by the anti-value exposure of the quality half of
+the model (profitability, growth, and balance-sheet strength together carry 52 percent
+of weight at -0.22 to -0.36 each), which is the classic value-quality anticorrelation
+(Novy-Marx, Journal of Financial Economics 108(1), 2013: profitable firms trade at
+premium multiples). The composite is not "a profitability tilt wearing a
+valuation-weighted config." It is a quality-at-reasonable-price blend whose net value
+exposure is slightly negative (-0.11) at full coverage, and no valuation-block redesign
+can change that while the category weights stand. The decision this creates is
+ownership's, not construction's: if the product intends value exposure, the weights
+cannot deliver it. If it intends QARP, the current profile is QARP and the methodology
+page should say the words.
+
+### 3.4 Challenger blocks, defined and entered
+
+| Block | vs B/M | vs earnings yield | vs EBITDA/EV |
+|---|---|---|---|
+| Eight-metric incumbent | +0.57 (n 828) | +0.61 (n 864) | +0.81 (n 672) |
+| Two-metric EV block (EBITDA 60 / FCF 40) | +0.41 (n 762) | +0.52 (n 802) | +0.84 (n 672) |
+| Single-metric EV/EBITDA | +0.45 (n 636) | +0.54 (n 671) | +0.90 (n 672) |
+
+On pure value-exposure grounds the incumbent block is not weaker than the challengers
+(it contains the book metrics directly), and the challengers' case rests on parsimony
+and redundancy, not on lost exposure. Both challengers are implemented as backtest
+variants (`asfiled_ttm_backtest.py` `_val2` and `_val1`) and their five-year results on
+the corrected quarterly spine appear in section 2's table. Neither is promoted. Both
+enter the harness set.
+
+PLACEHOLDER_VAL_BACKTESTS
 
 ---
 
