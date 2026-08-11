@@ -206,6 +206,12 @@ jobs:
         # cache's closes and statements, and the point-in-time observation store - so it runs
         # on the rescore path too, and costs no provider requests either way.
         run: python pipeline/build_quality_value_screen.py || echo "::warning::Quality-value screen build failed; keeping previous quality-value.json"
+      - name: Build the swing-horizon screen
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Same disk-only inputs as the quality-value screen above (the advisor snapshot plus
+        # the backtest cache's closes and volumes), so it runs on the rescore path too and
+        # costs no provider requests.
+        run: python pipeline/build_swing_screen.py || echo "::warning::Swing screen build failed; keeping previous swing.json"
       - name: Build the earnings-timeliness and structural-tactical screens
         if: steps.refresh_window.outputs.should_run == 'true'
         # Must precede shadow_portfolios.py, which selects a sleeve from structural-tactical.json.

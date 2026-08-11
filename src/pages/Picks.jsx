@@ -30,7 +30,7 @@ import { useAlerts } from '../lib/useAlerts.js'
 // the order changes.
 //
 // A RANKING MODEL (research, fundamentals, sector valuation, catalyst, momentum, reversal,
-// value turnaround, analyst conviction, peer read-through) is a separate scoring model with
+// value turnaround, analyst conviction, swing setup, peer read-through) is a separate scoring model with
 // its own declared composition, not an ordering of one universal score - see
 // src/lib/rankingModels.js. It scans the whole scored universe, keeps only the names that
 // clear its own gate, scores them against sector peers, shrinks each score by that model's
@@ -160,9 +160,11 @@ function ThinEvidenceChip({ row }) {
   // the setup may be price discovery rather than opportunity; low mode confidence means the
   // model could not read enough of what it needs on this row.
   if (result.cap) {
+    // Models declare their own cap label where "thesis risk" would misdescribe it - the
+    // swing model's cap is crowded short interest, not a broken thesis.
     return (
       <span className="chip screen-chip screen-chip-thin-evidence" title={result.cap.reason}>
-        Thesis risk
+        {result.cap.label || 'Thesis risk'}
       </span>
     )
   }
@@ -805,7 +807,7 @@ export default function Picks() {
           ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
           : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
         : 'No companies match those filters.'} />}
-      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The nine ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data coverage”, “% of my portfolio” and “Most undervalued” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data coverage – it restates the same score on a smaller scale, not a separate opinion. “Most undervalued” blends how cheap a row is against its peers with how much growth the numbers show, each ranked against its own pool. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score; each bucket states why underneath it. The “double down” toggle above the split controls whether tickers you already hold can win a bucket at all. Rankings do not imply suitability or portfolio allocation.</div>
+      <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The {Object.keys(RANKING_MODELS).length} ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data coverage”, “% of my portfolio” and “Most undervalued” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data coverage – it restates the same score on a smaller scale, not a separate opinion. “Most undervalued” blends how cheap a row is against its peers with how much growth the numbers show, each ranked against its own pool. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score; each bucket states why underneath it. The “double down” toggle above the split controls whether tickers you already hold can win a bucket at all. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
   )

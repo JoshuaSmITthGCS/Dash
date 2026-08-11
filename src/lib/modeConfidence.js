@@ -86,6 +86,19 @@ export const MODE_INPUTS = {
     }],
     ['expectation change', 0.25, (row) => Math.min(1, (evidence(row).expectation_inputs_resolved || 0) / 3)],
   ],
+  // The swing layer reads five legs at once, and which of them resolved is the whole story
+  // on a row: a swing score built only from last week's return and a volume ratio is a very
+  // different claim from one that also has a surprise and a revision behind it.
+  swing: [
+    ['earnings surprise', 0.3, (row) => has(row.earnings_surprise)],
+    ['revision history', 0.25, (row) => (
+      has(estimates(row).revision_breadth_30d) * 0.4 + has(estimates(row).eps_revision_30d_pct) * 0.4
+      + has(estimates(row).target_change_30d_pct) * 0.2
+    )],
+    ['volume history', 0.2, (row) => has(technical(row).volume_ratio_60d) || has(technical(row).volume_confirmation)],
+    ['52-week range', 0.15, (row) => has(technical(row).pct_from_52w_high)],
+    ['recent returns', 0.1, (row) => has(technical(row).return_5d)],
+  ],
   analystConviction: [
     ['revision history', 0.45, (row) => (
       has(estimates(row).revision_breadth_30d) * 0.5 + has(estimates(row).eps_revision_30d_pct) * 0.5

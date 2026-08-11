@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   RANKING_MODELS, buildPeerIndex, isRankingModel, modelCoverage, modelReason, moderationScore,
-  peerPercentile, rankByModel, scoreRow, thesisBreak,
+  peerPercentile, rankByModel, scoreRow, shortInterestSuppressed, thesisBreak,
 } from './rankingModels'
 import { modeConfidence } from './modeConfidence'
 
@@ -322,6 +322,103 @@ describe('catalyst model', () => {
     const ranked = rankByModel([mediocre, compounder], 'catalyst', 20)
 
     expect(ranked.map((item) => item.ticker)).toEqual(['MEDIOCRE'])
+  })
+})
+
+describe('swing setup model', () => {
+  const swingRow = (ticker, overrides = {}) => row(ticker, {
+    earnings_surprise: 0.05,
+    average_dollar_volume: 5e8,
+    short_percent_of_float: 0.02,
+    days_to_cover: 1.5,
+    estimate_detail: {
+      revision_breadth_30d: 0.4, eps_revision_30d_pct: 0.05, net_upgrades_90d: 2,
+      target_change_30d_pct: 0.03,
+    },
+    technical_detail: {
+      ...row('x').technical_detail, volume_ratio_60d: 1.6, pct_from_52w_high: -3, return_5d: 1,
+    },
+    ...overrides,
+  })
+
+  it('reads the prior week as contrarian and 52-week proximity as continuation', () => {
+    const index = buildPeerIndex([swingRow('A'), swingRow('B'), swingRow('C')])
+    const [scored] = [scoreRow(index, index.rows[0], 'swing')]
+    const reversal = scored.components.find((component) => component.key === 'reversal')
+    const proximity = scored.components.find((component) => component.key === 'proximity')
+
+    // A name up 8% last week scores low on the reversal leg; one near its 52-week high
+    // scores high on the continuation leg. Opposite signs, deliberately different windows.
+    const hot = swingRow('HOT', {
+      technical_detail: { ...swingRow('x').technical_detail, return_5d: 8, pct_from_52w_high: -1 },
+    })
+    const hotScore = scoreRow(buildPeerIndex([hot, swingRow('B'), swingRow('C')]), hot, 'swing')
+    const hotReversal = hotScore.components.find((component) => component.key === 'reversal')
+    const hotProximity = hotScore.components.find((component) => component.key === 'proximity')
+
+    expect(hotReversal.value).toBeLessThan(reversal.value)
+    expect(hotProximity.value).toBeGreaterThan(proximity.value)
+  })
+
+  it('never reads the same trailing return in two legs', () => {
+    // The sign flip is the whole trap: one raw return used twice cancels itself out.
+    const readers = RANKING_MODELS.swing.components.map(([key]) => key)
+    expect(readers).toEqual(['pead', 'revisions', 'volume', 'proximity', 'reversal'])
+    expect(RANKING_MODELS.swing.components.find(([key]) => key === 'reversal')[2]).toBe(0.10)
+    expect(RANKING_MODELS.swing.components.find(([key]) => key === 'pead')[2]).toBe(0.30)
+  })
+
+  it('drops the earnings-surprise leg and renormalizes rather than scoring it zero', () => {
+    const withoutSurprise = swingRow('NOSUE', { earnings_surprise: null })
+    const index = buildPeerIndex([withoutSurprise, swingRow('B'), swingRow('C')])
+
+    const scored = scoreRow(index, withoutSurprise, 'swing')
+
+    expect(scored.droppedComponents.map((component) => component.key)).toContain('pead')
+    expect(scored.coverage).toBeCloseTo(0.7, 5)
+    expect(scored.components.reduce((sum, component) => sum + component.contribution, 0)).toBeCloseTo(100, 1)
+  })
+
+  it('suppresses a crowded short instead of scoring a short leg it cannot trade', () => {
+    const crowded = swingRow('CROWD', { short_percent_of_float: 0.18, days_to_cover: 9 })
+    const index = buildPeerIndex([crowded, swingRow('B'), swingRow('C')])
+
+    const scored = scoreRow(index, crowded, 'swing')
+
+    expect(scored.cap.label).toBe('Crowded short')
+    expect(scored.cap.reason).toMatch(/18.0% of float is short and 9.0 days to cover/)
+    expect(scored.raw).toBeLessThanOrEqual(45)
+    expect(shortInterestSuppressed(swingRow('CLEAN'))).toBeNull()
+  })
+
+  it('refuses names too illiquid for the spread to leave anything behind', () => {
+    const thin = swingRow('THIN', { average_dollar_volume: 4e5 })
+    const index = buildPeerIndex([thin, swingRow('B'), swingRow('C')])
+
+    expect(scoreRow(index, thin, 'swing')).toBeNull()
+    expect(modelCoverage([thin], 'swing').binding.reason).toMatch(/liquidity floor/)
+  })
+
+  it('refuses a composite resting on a single resolved input', () => {
+    const bare = row('BARE', {
+      earnings_surprise: null, estimate_detail: {},
+      technical_detail: { return_5d: 2 },
+    })
+    const index = buildPeerIndex([bare, swingRow('B'), swingRow('C')])
+
+    expect(scoreRow(index, bare, 'swing')).toBeNull()
+    expect(modelCoverage([bare], 'swing').binding.reason).toMatch(/fewer than two/)
+  })
+
+  it('measures confidence from the legs that actually resolved', () => {
+    const full = modeConfidence(swingRow('FULL'), 'swing')
+    const priceOnly = modeConfidence(swingRow('THIN', {
+      earnings_surprise: null, estimate_detail: {},
+    }), 'swing')
+
+    expect(full.percent).toBe(100)
+    expect(priceOnly.percent).toBeLessThan(50)
+    expect(priceOnly.weakest[0].label).toBe('earnings surprise')
   })
 })
 

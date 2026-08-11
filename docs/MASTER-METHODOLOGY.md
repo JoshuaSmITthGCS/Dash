@@ -35,7 +35,8 @@ state" (§9) before treating any number here as predictive.
     - 10.4 [Tactical (earnings-timeliness) screen score](#104-tactical-earnings-timeliness-screen-score)
     - 10.5 [Quality-value screen score](#105-quality-value-screen-score)
     - 10.6 [ETF composite score](#106-etf-composite-score)
-    - 10.7 [Watchlist quality score](#107-watchlist-quality-score)
+    - 10.7 [Swing-horizon composite (2 trading days – 8 weeks)](#107-swing-horizon-composite-2-trading-days--8-weeks)
+    - 10.8 [Watchlist quality score](#108-watchlist-quality-score)
 11. [MarketPulse — the macro backdrop](#11-marketpulse--the-macro-backdrop)
 12. [Stance, guidance, and recommendation policy](#12-stance-guidance-and-recommendation-policy)
 13. [Where every score is displayed in the app](#13-where-every-score-is-displayed-in-the-app)
@@ -574,7 +575,52 @@ Peer groups: broad-market/growth/value/small-cap/mid-cap all share `equity_broad
 `equity_thematic`; bonds → `fixed_income`; commodity/crypto get their own groups. Ties share a
 percentile rank; a missing metric leaves a fund at a neutral 50 rather than penalizing it.
 
-### 10.7 Watchlist quality score
+### 10.7 Swing-horizon composite (2 trading days – 8 weeks)
+
+`pipeline/swing_signals.py::swing_scores` + `pipeline/build_swing_screen.py` →
+`/screens/swing`, and the same five legs and weights as the `swing` ranking model in
+`src/lib/rankingModels.js` (surfaced on `/research` as *Model: Swing setup*). Every leg is
+winsorized and cross-sectionally z-scored; the composite is the weighted mean over the legs
+that resolved, with the rest of the weight renormalized rather than scored as zero.
+
+| Leg | Weight | Direction | Evidence |
+|---|---:|---|---|
+| Post-earnings drift (SUE) | 30% | Continuation of the surprise | Bernard & Thomas (*JAR* 1989; *JAE* 1990) — drift over ~60 trading days, monotone in SUE |
+| Analyst revision (change, not level) | 25% | Direction of the revision | Jegadeesh, Kim, Krische & Lee (*JF* 2004); Womack (*JF* 1996) |
+| High-volume return premium | 20% | Continuation | Gervais, Kaniel & Mingelgrin (*JF* 2001) |
+| 52-week-high proximity | 15% | Continuation | George & Hwang (*JF* 2004) |
+| Prior-week reversal | 10% | Contrarian | Jegadeesh (*JF* 1990); Da, Liu & Schaumburg (*MS* 2014) |
+
+Three design rules, all enforced in code and covered by
+`pipeline/tests/test_build_swing_screen.py`:
+
+1. **The sign flip is handled explicitly.** The same raw trailing return predicts reversal at
+   2-10 days and continuation at 3-12 months, so the contrarian leg reads only `return_5d`,
+   the continuation leg is 52-week-high proximity (a price/high ratio carrying no recent-month
+   return), and no trailing return is read by two legs. A single "past return" factor spanning
+   the whole window would average to noise.
+2. **Cost gating is part of the model.** The reversal leg is not scored at all below $25M
+   median daily dollar volume (reason code `REVERSAL_LEG_COST_GATED`) — it is a
+   liquidity-provision premium and the most capacity-constrained of the five.
+3. **Short interest is a negative screen, never a leg.** ≥10% of float short or ≥5 days to
+   cover suppresses the row out of eligibility (`SHORT_INTEREST_SUPPRESSED`, Boehmer, Jones &
+   Zhang *JF* 2008). Suppressed names stay published and ranked so the screen is visible
+   rather than silent; a long-only book cannot harvest the short leg.
+
+Eligibility gates otherwise mirror the momentum screen ($5 price, $300M cap, $2M 60-day median
+dollar volume, 253 sessions) plus a 35% minimum signal coverage, and membership uses the same
+90/75 entry/exit hysteresis. The published file carries the weights, per-leg citations and
+gross effect sizes, per-leg coverage across the universe, the applied thresholds, and the
+McLean & Pontiff (*JF* 2016) 26%/58% decay haircut. The weights are frozen starting priors
+ordered by evidence quality, not measured optima — no rank-IC, quantile-spread or deflated
+Sharpe result backs this composite yet; the validation harness (§9) is what will test it.
+
+Deliberately absent, because they do not survive data-snooping correction and costs in US
+single-stock data: RSI 70/30 thresholds, MACD crossovers, Bollinger-band signals as standalone
+alpha, VWAP as multi-day alpha, OBV, and candlestick/chart patterns (Sullivan, Timmermann &
+White *JF* 1999; Bajgrowicz & Scaillet *JFE* 2012; Marshall, Young & Rose *JBF* 2006).
+
+### 10.8 Watchlist quality score
 
 `pipeline/config/settings.json::watchlist_setup`. Weighted blend of four continuous subscores,
 using smooth sigmoid transitions around configured centers (not hard cutoffs):
@@ -652,6 +698,7 @@ low confidence.
 | Research score | `/`, `/research`, `/search`, stock detail sheets | `Dashboard.jsx`, `Picks.jsx`, `ScoreExplainability.jsx` (waterfall attribution via `pipeline/explainability.py`), `ScoreBandView.jsx`, `ResearchRadarChart.jsx` |
 | Structural / Timeliness (v2) | `/screens/validation` (shadow diagnostics) | `LiveValidation.jsx` |
 | Momentum screen | `/screens/momentum` | `ResearchScreen.jsx` |
+| Swing-horizon composite | `/screens/swing`, and as the *Swing setup* ranking model on `/research` | `SwingScreen.jsx`, `Picks.jsx` (`rankingModels.js`) |
 | Tactical / structural-tactical matrix | `/screens/earnings`, `/screens/matrix` | `ResearchScreen.jsx` |
 | Quality-value screen | `/screens/quality-value` | `ResearchScreen.jsx` |
 | Political score | `/screens/politics` | `CongressTrades.jsx` |
@@ -666,12 +713,14 @@ low confidence.
 
 These are cross-sectional screens over the configured screen universe (926 names) — distinct
 from the per-stock research score (§3). Top-level navigation order (`SCREEN_NAV`,
-`src/pages/ResearchScreen.jsx:12-22`): Fast growth, Options, Momentum, Quality at valuation
-lows, Earnings timeliness, Structural vs tactical, Early session, Shadow portfolios, Live
-validation, Politics trade alert, Institutional accumulation, Theme exposure.
+`src/pages/ResearchScreen.jsx`): Swing signals, Fast growth, Options, Momentum, Quality at
+valuation lows, Earnings timeliness, Structural vs tactical, Early session, Shadow portfolios,
+Live validation, Politics trade alert, Institutional accumulation, Theme exposure. The
+`Screens` entry in the primary nav lands on `/screens/swing`.
 
 | Route | Data file | What it ranks |
 |---|---|---|
+| `/screens/swing` | `screens/swing.json` | §10.7 — the swing-horizon composite (2 trading days to 8 weeks) |
 | `/screens/fast-growth` | `report.json` (client-computed, see below) | Two client-side sub-screens: Breakouts and Emerging growth |
 | `/screens/options` and 7 sub-strategies | `screens/options.json` + 6 more, see §15 | Multi-day options ideas per mechanism |
 | `/screens/momentum` | `screens/momentum.json` | §10.3 — 12-1/12-7/6-1 momentum, 52w proximity, industry-relative momentum |
@@ -849,7 +898,7 @@ goal, not a separately-implemented calculation path.
 | `/research` | Stock and ETF research library — the research score (§3) and ETF composite (§10.6) in one browsable/filterable library |
 | `/search` | Cross-dataset ticker/company discovery across portfolio, published research, watchlist, and the covered universe |
 | `/market` | MarketPulse news feed — company news/sentiment plus filing labels; see §11. Explicitly framed as "supporting evidence – not a substitute for earnings, cash flow, or balance-sheet quality" |
-| `/watchlist` | §10.7 — watchlist quality score and setup-aware guidance |
+| `/watchlist` | §10.8 — watchlist quality score and setup-aware guidance |
 | `/methodology` | Plain-language explanation of the research score, reading live weights from `advisor.json.methodology` so it cannot drift from the config that actually produced them |
 | `/glossary` | Product and model terminology reference |
 | `/settings` | Theme, motion, privacy, benchmark, and planning preferences |
