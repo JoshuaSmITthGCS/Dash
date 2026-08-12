@@ -360,6 +360,38 @@ def test_the_collector_only_takes_the_results_of_operations_item():
     assert collect_earnings_releases.has_results_item(None) is False
 
 
+def test_the_collector_reports_what_the_store_already_covers(tmp_path):
+    """A scheduled run has to be able to say whether the drift leg came back."""
+    releases = tmp_path / "earnings_releases.jsonl"
+    releases.write_text("\n".join(json.dumps(row) for row in [
+        {"cik": "0000000001", "release_datetime": "2035-01-20T16:05:00-05:00",
+         "accession": "A", "form": "8-K", "items": "2.02"},
+        {"cik": "0000000001", "release_datetime": "2035-04-21T16:05:00-04:00",
+         "accession": "B", "form": "8-K", "items": "2.02"},
+    ]) + "\n", encoding="utf-8")
+
+    summary = collect_earnings_releases.report(
+        {"AAA": "0000000001", "BBB": "0000000002"}, path=str(releases))
+
+    assert summary["universe_companies"] == 2
+    assert summary["companies_with_a_release"] == 1
+    assert summary["company_coverage"] == .5
+    assert summary["total_releases"] == 2
+    assert summary["most_recent_release"] == "2035-04-21"
+    # Company coverage is not leg coverage, and the report says so rather than being read as one.
+    assert "not leg coverage" in summary["note"]
+
+
+def test_an_empty_store_reports_zero_rather_than_failing(tmp_path):
+    empty = tmp_path / "earnings_releases.jsonl"
+    empty.write_text("", encoding="utf-8")
+
+    summary = collect_earnings_releases.report({"AAA": "0000000001"}, path=str(empty))
+
+    assert summary["company_coverage"] == 0.0
+    assert summary["most_recent_release"] is None
+
+
 def test_the_collector_prefers_the_acceptance_timestamp_over_the_event_date():
     submissions = {"filings": {"recent": {
         "accessionNumber": ["0000000001-36-000001", "0000000001-36-000002"],

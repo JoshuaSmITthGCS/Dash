@@ -324,6 +324,63 @@ clean across 93 files, and no registered result files exist, which is the correc
 
 ---
 
+## Measured effect on the published screen
+
+Run on the live 860-name cross-section, comparing against the `swing.json` committed
+2026-08-11. The published artifact was not overwritten.
+
+| Comparison | Book churn | Top 10 kept | Median rank move |
+|---|---|---|---|
+| Everything except the anchor | 0.9% | 10/10 | 8 places |
+| The anchor alone | 27.3% | 4/10 | 43 places |
+| Net, as shipped | 28.1% | 4/10 | 62 places |
+
+Almost the entire prediction change is the drift leg going dark, and that is an operational
+state rather than a modelling result: see the deployment note below.
+
+The other amendments measured as close to inert on this cross-section, which is worth stating
+plainly because it is the less flattering answer.
+
+- **Renormalization changed the top decile by exactly nothing.** Same 82 names, same size,
+  liquidity and volatility distributions. The reason is in the coverage histogram: 710 of 860
+  rows resolved all five legs and 148 resolved four, so the renormalization factor is nearly
+  constant across rows and the transform is close to a monotone rescale. The undeclared size
+  and liquidity tilt the amendment targets is real as a mechanism and is not binding on this
+  universe today. The fix stays, as a guard against the coverage dispersion that a partly
+  populated release store will create, but it is currently prophylactic.
+- **The legs-resolved floor** excludes one row. Zero under the old anchor.
+- **The sector cap** made zero trims. The largest sector holds 18 of 82 and the cap allows 24.
+  The 3.4x Energy tilt recorded as an open question shows here as Energy at 12 of 82, or 15%.
+
+The cost model is the change that most affects a decision. Removing the participation clamp
+raised every quoted round trip, and most at the top: the $1B book went from 100.3 to 128.7 bps
+per position, understated by 28%. The 50 bps ceiling still first breaches at a $250M book, but
+the participation cap now rejects 5 of 82 positions there and 45 of 82 at $1B, so the old $1B
+figure was an average over positions half of which could not be put on. Curve consistency
+passes at 1.2% maximum deviation.
+
+## Deployment note: the drift leg is dark until the release store is collected
+
+`pead_drift` coverage is 0.0% until `pipeline/data/pit/earnings_releases.jsonl` exists. All 850
+rows with a resolvable surprise report `RELEASE_DATE_UNRESOLVED`, because the store has not
+been built. The composite is currently a four-leg model with weights renormalized to
+.357 / .286 / .214 / .143.
+
+`.github/workflows/collect-earnings-releases.yml` builds the store from Form 8-K Item 2.02 by
+way of the EDGAR submissions API, weekly and on demand, scoped to the configured universe of
+860 companies rather than the eight thousand filers in the SEC ticker map. It requires the
+`SEC_USER_AGENT` secret the point-in-time backfill already uses, and commits the store back to
+main because scheduled runs happen on ephemeral runners.
+
+Run it before publishing a screen, or the published file is a different model from the
+registered one. The job reports company coverage before and after, and states on every run that
+company coverage is not leg coverage: a company with releases on disk still needs its most
+recent fiscal period to have one inside the lag band before the leg scores it, which the screen
+build reports as `pead_anchor_diagnostic`.
+
+What the job buys is a working, correctly dated leg. It is not evidence that the screen
+predicts anything, and it does not move the prospective clock.
+
 ## Files added
 
 ```
@@ -341,6 +398,7 @@ pipeline/validation/register_swing_v2_hypotheses.py one-shot registration, idemp
 pipeline/validate_documentation_claims.py           the CI gate
 pipeline/diagnostics/__init__.py
 pipeline/diagnostics/renormalization_shift.py       the 1.4 before/after diagnostic
+.github/workflows/collect-earnings-releases.yml     weekly release-store collection
 ```
 
 ## Files changed

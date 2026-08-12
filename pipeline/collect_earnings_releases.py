@@ -137,10 +137,59 @@ def collect(client, entity_map, *, path=RELEASES_PATH, limit=None, since=None):
             "failed": failed[:20], "failed_count": len(failed), "store": path}
 
 
-def _entity_map():
+def _entity_map(*, whole_ticker_map=False):
+    """{ticker: cik} for the companies worth collecting.
+
+    Scoped to the configured universe by default, the same list
+    pipeline/build_pit_fundamentals.py backfills. The SEC ticker map carries about eight
+    thousand filers and the screen scores under a thousand of them, so collecting the whole
+    map spends roughly nine times the SEC's rate budget to anchor drift windows for companies
+    this pipeline never ranks. ``--whole-ticker-map`` opts into that deliberately.
+    """
     from edgar_sue import _ticker_to_cik  # noqa: PLC0415 - avoids a module-level import cycle
 
-    return _ticker_to_cik()
+    resolved = _ticker_to_cik()
+    if whole_ticker_map:
+        return resolved
+    from build_pit_fundamentals import universe_symbols  # noqa: PLC0415
+
+    symbols = universe_symbols()
+    scoped = {symbol: resolved[symbol.upper()] for symbol in symbols
+              if resolved.get(symbol.upper())}
+    return scoped or resolved
+
+
+def report(entity_map, *, path=RELEASES_PATH):
+    """How much of the universe the store can now anchor, without scoring anything.
+
+    The question a scheduled run has to answer is whether the drift leg came back, and this
+    answers the part of it that lives in the store: how many universe companies have at least
+    one Item 2.02 release on disk, and how fresh the newest one is. It deliberately stops
+    short of a coverage figure for the leg itself, because that also depends on whether each
+    company's *most recent fiscal period* has a release inside the lag band, which needs the
+    fundamentals store and the price cache the screen build reads.
+    """
+    from earnings_release import _releases_by_cik, reset_cache  # noqa: PLC0415
+
+    reset_cache()
+    by_cik = _releases_by_cik(path)
+    universe = {str(cik).zfill(10) for cik in entity_map.values()}
+    covered = universe & set(by_cik)
+    records = [record for cik in covered for record in by_cik[cik]]
+    latest = max((record["release_date"] for record in records), default=None)
+    per_company = sorted(len(by_cik[cik]) for cik in covered)
+    return {
+        "universe_companies": len(universe),
+        "companies_with_a_release": len(covered),
+        "company_coverage": round(len(covered) / len(universe), 4) if universe else None,
+        "total_releases": len(records),
+        "median_releases_per_company": per_company[len(per_company) // 2] if per_company else 0,
+        "most_recent_release": latest,
+        "store": path,
+        "note": ("Company coverage is not leg coverage. The drift leg also needs the "
+                 "company's most recent fiscal period to have a release inside the lag band, "
+                 "which the screen build reports as pead_anchor_diagnostic."),
+    }
 
 
 def main(argv=None):
@@ -150,14 +199,23 @@ def main(argv=None):
     parser.add_argument("--since", default=None,
                         help="drop releases before this ISO date")
     parser.add_argument("--out", default=RELEASES_PATH)
+    parser.add_argument("--report", action="store_true",
+                        help="print what the store already covers and fetch nothing")
+    parser.add_argument("--whole-ticker-map", action="store_true",
+                        help="collect every filer in the SEC ticker map, not just the "
+                             "configured universe")
     args = parser.parse_args(argv)
 
-    entity_map = _entity_map()
+    entity_map = _entity_map(whole_ticker_map=args.whole_ticker_map)
     if not entity_map:
         LOG.warn("No EDGAR entity map on disk, nothing to collect")
         return 1
+    if args.report:
+        print(json.dumps(report(entity_map, path=args.out), indent=2))
+        return 0
     summary = collect(SecEdgarClient(), entity_map, path=args.out, limit=args.limit,
                       since=args.since)
+    summary["coverage"] = report(entity_map, path=args.out)
     print(json.dumps(summary, indent=2))
     return 0
 
