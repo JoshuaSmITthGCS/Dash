@@ -621,13 +621,30 @@ Five design rules, all enforced in code and covered by
    5%/95% clip on a 30%-weight leg, 5% of the universe shared one identical value and 12 of the
    top 15 rows sat on it. Bernard & Thomas report drift monotone in the SUE *decile*, so
    ranking is also closer to the published construct.
-5. **A missing leg contributes nothing; it does not rescale the others.** Renormalizing to the
-   resolved weight keeps a partial row centred but gives it a wider scale, so partial rows are
-   over-represented in both tails — and the top tail is what gets traded. This is the same
-   coverage-score coupling Round 4 measured at Spearman 0.554 on the research score and fixed
-   with neutral imputation (`scorer.py` mode `fixed_feature`). Unresolved legs score 0, the
-   cross-sectional mean of a z-score, and the divisor is the declared total. `swing.json`
-   publishes the old renormalized value as `composite_z_renormalized` for comparison.
+5. **A missing leg rescales the legs that resolved, and a row too thin to rescale is
+   excluded.** Amended 2026-08-12 (`SA-2026-08-12-04`), reversing the previous rule. Scoring an
+   unresolved leg as 0 and dividing by the declared total pulls every thin row toward the
+   cross-sectional mean, and thinness is not random: coverage tracks size and liquidity, so the
+   rule muted exactly the high-idiosyncratic-volatility, low-liquidity names where McLean &
+   Pontiff (*JF* 2016) measure decay to be worst. That is an undeclared size and liquidity tilt
+   inside a rule that presented itself as conservative. Declared weights are now renormalized
+   across the legs that resolved. The wider-scale problem the old rule was written against is
+   handled by a floor instead: a row resolving fewer than three of five legs is excluded from
+   the ranked output entirely rather than scored near neutral and left in. `swing.json`
+   publishes `legs_resolved` beside `coverage`, and the superseded zero-filled value as
+   `composite_z_zero_filled`. This reverses the direction Round 4 took on the research score
+   (`scorer.py` mode `fixed_feature`), and the two are compatible only because this one is
+   paired with a hard floor; the tension is recorded in the freeze file rather than left to be
+   rediscovered. `pipeline/diagnostics/renormalization_shift.py` measures the resulting size
+   and liquidity shift in the top decile.
+6. **The ranked book carries a declared sector cap.** Amended 2026-08-12
+   (`SA-2026-08-12-07`). Four of the five legs are continuation signals and continuation
+   clusters by sector, so without a cap the head of the ranking is a mega-cap technology and
+   communication-services bet wearing a five-leg label. A configurable cap, defaulting to 30%
+   of the ranked book per GICS sector, is applied after ranking by trimming the lowest-scoring
+   names in the over-represented sector, so the constraint costs the book its weakest
+   expressions of the crowded view rather than reshuffling the ranking. Every trim is logged
+   and trimmed rows stay published with `SECTOR_CONCENTRATION_CAP` attached.
 
 The PEAD leg reads standardized unexpected earnings from the EDGAR point-in-time store
 (`pipeline/edgar_sue.py`), not the advisor snapshot's `earnings_surprise`. That field was
@@ -636,26 +653,54 @@ four-quarter weighted average of *percent* surprise built for fundamental moment
 most-recent standardized surprise PEAD is a claim about. The replacement is the seasonal
 random walk with drift (Foster 1977; Foster, Olsen & Shevlin 1984), computed from as-filed
 quarterly net income (split-immune, unlike as-filed EPS) and standardized by the firm's own
-prior eight seasonal differences. Drift windows are anchored on the SEC filing date, which
-lags the earnings release by days and so understates window age; Form 8-K Item 2.02 carries
-the true announcement date and is the next increment. Leg coverage went 0% → 84.7%.
+prior eight seasonal differences. The drift term is published per row, so the with-drift form
+is verifiable from the output rather than asserted. Drift windows are anchored on the earnings
+*release* datetime from Form 8-K Item 2.02 (`SA-2026-08-12-02`), which is a different filing
+from the 10-Q and arrives on the release day; the filing-date anchor it replaces understated
+window age in one direction every time. A period with no resolvable release datetime scores
+nothing on this leg and is never carried on the filing date, and the coverage that costs is
+published per run as `pead_anchor_diagnostic` with the delta against the pre-amendment 84.7%
+surfaced explicitly. Leg coverage went 0% → 84.7% when the store replaced the advisor field,
+and the re-anchoring can only lower it from there.
 
 Eligibility gates otherwise mirror the momentum screen ($5 price, $300M cap, $2M 60-day median
 dollar volume, 253 sessions) plus a 35% minimum signal coverage, and membership uses the same
 90/75 entry/exit hysteresis. The published file carries the weights, per-leg citations and
 gross effect sizes, per-leg coverage across the universe, the applied thresholds, the
-McLean & Pontiff (*JF* 2016) 26%/58% decay haircut, and a `cost_model` block giving the median
-round-trip cost of the traded book at four portfolio sizes under the canonical square-root
-impact law (`costs.py`). Annual drag is that times the number of round trips a year, which no
-backtest has yet produced. The weights are frozen starting priors ordered by evidence quality,
+McLean & Pontiff (*JF* 2016) 26%/58% decay haircut applied to all five legs, and a `cost_model`
+block giving the median round-trip cost **per position** at several **book** sizes under the
+canonical square-root impact law (`costs.py`). The two sizes are labelled separately because
+the capacity conclusion is the ratio between them. A participation cap of at most 10% of
+trailing 20-day ADV per round trip, defaulting to 5%, rejects positions it cannot price rather
+than quoting them (`SA-2026-08-12-06`), and the published points are checked against the
+square-root law rather than trusted because one function produced them. The spread term is a
+liquidity-tiered proxy, not a measured quoted spread and not an effective spread. Annual drag
+is the round-trip cost times the number of round trips a year, which no backtest has yet
+produced. The weights are frozen starting priors ordered by evidence quality,
 not measured optima — no rank-IC, quantile-spread or deflated Sharpe result backs this
 composite yet. It is registered in `pipeline/validation/harness_freeze.json` under
 `additional_models` on a prospective clock starting 2026-09-01, and until that clock reports it
 is a research filter rather than a screen with a record: by effective weight it is 45%
 technical, and Rounds 5-6 found no technical sub-signal clearing the noise standard on the
-as-filed spine. The freeze entry also records the open questions the clock must answer,
-including the book's undeclared sector tilt (3.4x Energy, 0.0x Utilities in the top decile once
-PEAD is live).
+as-filed spine. The freeze entry also records the open questions the clock must answer. Two of
+them were turned into registered comparisons on 2026-08-12 rather than left open: the
+short-term reversal leg now runs as three variants (`A` frozen baseline, `B` reversal removed
+with its 10% redistributed proportionally, `C` reversal residualized against the industry
+return and the other four legs), and the sector tilt is now bounded by a declared 30% cap. All
+three reversal variants run forward from 2026-09-01 and none is chosen on historical data.
+
+An **entry-timing overlay** (`pipeline/overlay/entry_timing.py`) sits beside the composite and
+is off by default. It gates names the composite has already selected and never influences a
+score or a rank: RSI and MACD appear nowhere in `swing_signals.py`. Its momentum toggles are
+mutually exclusive, because RSI, MACD and moving-average slope are transforms of the same
+recent price series and reading them as independent confirmations triple-counts one factor. The
+registered ablation is five cells (`O-0` through `O-4`) and that is the entire test budget. The
+acceptance rule was written into the freeze file on 2026-08-12, before any result existed: a
+variant is adopted only if it improves net-of-cost deflated Sharpe over the control by at least
+0.10 **and** clears t > 3.0 (Harvey, Liu & Zhu, *RFS* 29(1), 2016), the hurdle raised from the
+usual 2.0 because Sullivan, Timmermann & White (*JF* 1999) show the best in-sample technical
+rule loses its significance once the universe of rules tried is corrected for. Otherwise the
+overlay stays off permanently and the momentum-turn code is deleted rather than left dormant.
 
 Deliberately absent, because they do not survive data-snooping correction and costs in US
 single-stock data: RSI 70/30 thresholds, MACD crossovers, Bollinger-band signals as standalone

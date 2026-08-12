@@ -20,10 +20,11 @@ from edgar_sue import ANNOUNCEMENT_ANCHOR_NOTE, announcement_age_trading_days, s
 from peer_groups import peer_group
 from screen_inputs import (backtest_entry, latest_observations, median_dollar_volume,
                            universe_rows, with_current_price)
-from swing_signals import (DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
+from swing_signals import (BASELINE_VARIANT, DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
                            SHORT_INTEREST_EVIDENCE, SWING_EVIDENCE, SWING_SUBFACTORS,
-                           SWING_WEIGHTS, capacity_profile, leg_coverage, swing_factors,
-                           swing_scores)
+                           SWING_VARIANTS, SWING_WEIGHTS, capacity_profile, leg_coverage,
+                           legs_resolved_distribution, pead_anchor_diagnostic, sector_cap_log,
+                           swing_factors, swing_scores, trailing_dollar_volume)
 
 SCHEMA_VERSION = "1.1.0"
 MODEL_VERSION = "swing-v1.1.0"
@@ -56,11 +57,17 @@ def resolve_sue(ticker, as_of, sessions, sue_for=sue_for):
     field, which is 0/839 populated and is in any case a different construct - see
     edgar_sue's module docstring. Ages the window on the ticker's own trading calendar so a
     holiday or a stale cache cannot quietly reopen a closed window.
+
+    Spec amendment SA-2026-08-12-02: the window is aged from the earnings *release* datetime,
+    which comes from Form 8-K Item 2.02 and is independent of the 10-Q filing date. A row
+    whose release does not resolve gets no age, and pead_factor drops it. Nothing here
+    substitutes the filing date for the missing anchor.
     """
     sue = sue_for(ticker, as_of)
     if not sue:
         return None
-    return {**sue, "age_trading_days": announcement_age_trading_days(sue.get("filed"), sessions)}
+    return {**sue, "age_trading_days": announcement_age_trading_days(
+        sue.get("release_datetime"), sessions)}
 
 
 def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_resolver=resolve_sue):
@@ -89,6 +96,10 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
             "price": row.get("price") or closes[-1],
             "market_cap": row.get("market_cap") or observed.get("market_cap"),
             "median_dollar_volume_60d": median_dollar_volume(closes, volumes),
+            # The participation cap reads a trailing 20-session mean, not the 60-day median
+            # the eligibility screens use. See swing_signals.trailing_dollar_volume for why
+            # the two are kept apart rather than one standing in for the other.
+            "adv_20d_dollar_volume": trailing_dollar_volume(closes, volumes),
             "history_sessions": len(closes),
             "structural_score": row.get("score"),
             "data_coverage": row.get("data_coverage"),
@@ -120,10 +131,14 @@ def to_result(rank, row):
         "current_membership": bool(row.get("current_membership")),
         "percentile": round(row["percentile"], 2) if row.get("percentile") is not None else None,
         "composite_z": round(row["score"], 4),
-        # The pre-rule-5 divisor, published for comparison against anything computed before
-        # neutral imputation replaced renormalization. Never ranked on.
-        "composite_z_renormalized": round(row.get("score_renormalized", 0.0), 4),
+        # The zero-filled divisor superseded by spec amendment SA-2026-08-12-04, published for
+        # comparison against anything computed before renormalization returned. Never ranked on.
+        "composite_z_zero_filled": round(row.get("score_zero_filled", 0.0), 4),
         "coverage": row.get("coverage"),
+        "legs_resolved": row.get("legs_resolved"),
+        "legs_declared": row.get("legs_declared"),
+        "sector_capped": bool(row.get("sector_capped")),
+        "sector_trim": row.get("sector_trim"),
         # Same key the shared screen table reads on every other screen, so a row here is
         # legible beside a momentum or quality-value row without special casing.
         "structural_score": row.get("structural_score"),
@@ -135,6 +150,11 @@ def to_result(rank, row):
         "legs": {leg: {
             "z": None if legs.get(leg) is None else round(legs[leg], 4),
             "weight": SWING_WEIGHTS[leg],
+            "declared_weight": SWING_WEIGHTS[leg],
+            # What the leg was actually worth on this row after renormalizing across the legs
+            # that resolved. Equal to the declared weight only on a full row.
+            "effective_weight": (round(SWING_WEIGHTS[leg] * (row.get("renormalization_factor") or 0), 4)
+                                 if legs.get(leg) is not None else 0.0),
             "contribution": round(contributions.get(leg, 0.0), 4),
             "applied": legs.get(leg) is not None,
         } for leg in SWING_WEIGHTS},
@@ -144,6 +164,9 @@ def to_result(rank, row):
         "pead_status": factors.get("pead_status"),
         "pead_detail": {key: factors.get(key) for key in
                         ("pead_basis", "pead_period_end", "pead_announced_on",
+                         "pead_release_datetime", "pead_release_source",
+                         "pead_release_precision", "pead_anchor_status", "pead_filed",
+                         "pead_expectation_model", "pead_drift_term",
                          "pead_age_trading_days") if factors.get(key) is not None},
         "raw_factors": {key: _rounded(value) for key, value in factors.items()
                         if not key.startswith("pead_") and value is not None},
@@ -165,12 +188,28 @@ def payload(results, scored, generated_at):
         "decay_haircut": DECAY_HAIRCUT,
         "thresholds": DEFAULT_CONFIG,
         "leg_coverage": leg_coverage(scored),
+        "legs_resolved": legs_resolved_distribution(scored),
+        "pead_anchor_diagnostic": pead_anchor_diagnostic(scored),
+        "sector_concentration": {
+            "cap": DEFAULT_CONFIG["sector_concentration_cap"],
+            "applied": "after ranking, by trimming the lowest-scoring names in the "
+                       "over-represented sector",
+            "trims": sector_cap_log(scored),
+            "trimmed_count": len(sector_cap_log(scored)),
+        },
+        "registered_variants": {key: {"id": spec["id"], "label": spec["label"],
+                                      "weights": spec["weights"],
+                                      "is_frozen_baseline": spec["is_frozen_baseline"]}
+                                for key, spec in SWING_VARIANTS.items()},
+        "published_variant": BASELINE_VARIANT,
         "pead_source": {
             "store": "pipeline/data/pit/fundamentals (EDGAR as-filed XBRL)",
             "construct": "seasonal random walk with drift, standardized by the firm's own "
                          "history of seasonal differences (Foster 1977; Foster, Olsen & "
                          "Shevlin 1984; Bernard & Thomas 1989, 1990)",
-            "announcement_anchor": "sec_filing_date",
+            "announcement_anchor": "earnings_release_datetime_8k_item_202",
+            "announcement_anchor_store": "pipeline/data/pit/earnings_releases.jsonl "
+                                         "(EDGAR Form 8-K Item 2.02)",
             "announcement_anchor_note": ANNOUNCEMENT_ANCHOR_NOTE,
             "replaces": "advisor snapshot earnings_surprise (0/839 populated, and a "
                         "four-quarter weighted average of percent surprise rather than the "
@@ -189,11 +228,12 @@ def payload(results, scored, generated_at):
             "sizes quoted per leg are the published gross, pre-cost, pre-decay figures; apply "
             "the McLean-Pontiff haircuts before reading them as live expectations, and read "
             "`cost_model` for what the traded book costs to turn over. A leg a row cannot fill "
-            "contributes zero at its declared weight rather than rescaling the legs that did "
-            "resolve, so a thin row scores nearer neutral, never wider - read `coverage` beside "
-            "every score. This model has no out-of-sample record: it is registered in "
-            "pipeline/validation/harness_freeze.json on the prospective clock that starts "
-            "2026-09-01 and should be read as a research filter until that clock reports."),
+            "is renormalized away and the legs that did resolve carry their declared weight, "
+            "so read `coverage` and `legs_resolved` beside every score; a row resolving fewer "
+            "than three of five legs is excluded from the ranking entirely. This model has no "
+            "out-of-sample record: it is registered in pipeline/validation/harness_freeze.json "
+            "on the prospective clock that starts 2026-09-01 and should be read as a research "
+            "filter until that clock reports."),
         "results": results,
     }
 

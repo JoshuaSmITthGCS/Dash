@@ -22,6 +22,12 @@ DEFAULT_FEES_BPS = 0.0  # most US equity trades: exchange/broker fees are effect
 # elsewhere (settings.json modifiers.liquidity; research_screens_v2.py's
 # minimum_median_dollar_volume_60d) -- not a measured spread. Values widen as liquidity
 # thins, which is directionally correct even though the exact bps are not empirical.
+SPREAD_CAVEAT = (
+    "The spread term is a liquidity-tiered proxy. It is not a measured quoted spread and it is "
+    "not an effective spread. No provider in this pipeline serves either, so the tier values "
+    "below are a conservative ordering rather than an empirical measurement, and every cost "
+    "figure derived from them inherits that limitation.")
+
 SPREAD_PROXY_BPS_BY_LIQUIDITY_TIER = {
     "liquid": 2.0,      # >= thin_dollar_volume ($25M/day, settings.json modifiers.liquidity)
     "thin": 8.0,        # between illiquid and thin thresholds ($5M-$25M/day)
@@ -87,10 +93,23 @@ def estimate_cost_bps(*, median_dollar_volume_60d, annualized_volatility=None,
     spread_bps = SPREAD_PROXY_BPS_BY_LIQUIDITY_TIER.get(tier, SPREAD_PROXY_BPS_BY_LIQUIDITY_TIER["illiquid"])
     half_spread_bps = (spread_bps / 2) * params["spread_multiplier"]
 
+    # Spec amendment SA-2026-08-12-06. Participation is no longer clamped at 100% of ADV.
+    #
+    # The clamp was a silent inconsistency in the published cost curve: past one day's volume
+    # the quoted impact stopped rising with size, so the round-trip figures quoted across
+    # portfolio sizes did not all sit on the same square-root law, and the largest of them
+    # understated cost by exactly the amount the clamp removed. Two figures under one heading
+    # obeying two different models is worse than one figure the reader knows is extrapolated.
+    #
+    # The law is therefore applied as written at every size, and ``beyond_measured_domain``
+    # marks the region where it is an extrapolation rather than a calibration. Nothing should
+    # be traded there anyway: participation_check rejects a position over the cap long before
+    # this point, which is the control that makes the extrapolated region unreachable rather
+    # than merely disclosed.
     impact_bps = 0.0
     participation = None
     if annualized_volatility is not None and trade_dollar_value and median_dollar_volume_60d:
-        participation = min(1.0, trade_dollar_value / median_dollar_volume_60d)
+        participation = trade_dollar_value / median_dollar_volume_60d
         impact_bps = params["impact_coefficient"] * annualized_volatility * (participation ** 0.5)
 
     total_bps = round(half_spread_bps + fees_bps + impact_bps, 2)
@@ -102,7 +121,16 @@ def estimate_cost_bps(*, median_dollar_volume_60d, annualized_volatility=None,
         "impact_bps": round(impact_bps, 2),
         "liquidity_tier": tier,
         "participation_rate": round(participation, 4) if participation is not None else None,
+        # True where the position exceeds the participation ceiling, which is where the
+        # square-root law is being extrapolated past the order flow it was estimated on.
+        "beyond_measured_domain": bool(participation is not None
+                                       and participation > MAX_ADV_PARTICIPATION_CEILING),
         "spread_source": "liquidity_tiered_proxy_not_measured",
+        "spread_caveat": SPREAD_CAVEAT,
+        # trade_dollar_value is one trade in one name. It is never a book size. A caller that
+        # passes a whole portfolio here gets the cost of trading that portfolio as a single
+        # position, which is a different and much larger number than the cost of the book.
+        "size_basis": "single_position_one_way_trade",
     }
 
 
@@ -123,11 +151,66 @@ def cost_scenarios(*, median_dollar_volume_60d, annualized_volatility=None,
     }
 
 
-def max_trade_for_adv_participation(median_dollar_volume_60d, max_participation=0.02):
-    """The largest one-way trade this model will size before ADV participation itself
-    becomes the binding constraint, per the research contract's default cap (2% of 20-day
-    ADV -- the research contract cites 60-day median dollar volume, used consistently here).
+# Spec amendment SA-2026-08-12-06. Share of trailing 20-day ADV a single round trip may take.
+# The default is deliberately well inside the ceiling: the square-root impact law is estimated
+# on institutional order flow at low single-digit participation, and quoting a cost at 40% of
+# a day's volume extrapolates the law far past where anyone measured it. The ceiling is a hard
+# stop, not a suggestion -- a configured cap above it raises rather than clamping, because a
+# silently clamped cap reads as if the requested size was accepted.
+DEFAULT_MAX_ADV_PARTICIPATION = 0.05
+MAX_ADV_PARTICIPATION_CEILING = 0.10
+
+
+def participation_check(*, trade_dollar_value, adv_20d_dollar_volume,
+                        max_participation=DEFAULT_MAX_ADV_PARTICIPATION,
+                        ceiling=MAX_ADV_PARTICIPATION_CEILING,
+                        adv_source="trailing_20d_mean_dollar_volume"):
+    """Whether one round trip fits inside the ADV participation cap.
+
+    Returns the participation rate, the cap it was measured against, whether it breaches, and
+    the largest position that would not. A breaching position is reported as untradable. It is
+    not quoted with a cost, because the cost model cannot price it: the impact term saturates
+    participation at 100% of ADV, so past the cap the quoted number stops rising with size and
+    would understate the true cost of a position nobody can actually put on.
+
+    ``adv_20d_dollar_volume`` is the trailing 20-session mean, which is the window the cap is
+    written against. ``adv_source`` records what actually answered, so a row that fell back to
+    a 60-day median is identifiable rather than presented as if it were the 20-day figure.
     """
-    if not median_dollar_volume_60d:
+    if max_participation is None or max_participation <= 0:
+        raise ValueError("max_participation must be a positive share of ADV")
+    if max_participation > ceiling:
+        raise ValueError(
+            f"max_participation {max_participation} exceeds the hard ceiling {ceiling}. "
+            "The cap is a constraint on the impact model's domain of validity, so it is "
+            "raised by amending the ceiling deliberately, never by passing a larger value.")
+    if not adv_20d_dollar_volume or not trade_dollar_value:
+        return {"participation_rate": None, "max_participation": max_participation,
+                "ceiling": ceiling, "breaches_cap": False, "max_position_dollar_value": None,
+                "adv_20d_dollar_volume": adv_20d_dollar_volume, "adv_source": adv_source,
+                "status": "unknown_participation_no_adv_or_no_size"}
+    rate = trade_dollar_value / adv_20d_dollar_volume
+    return {
+        "participation_rate": round(rate, 6),
+        "max_participation": max_participation,
+        "ceiling": ceiling,
+        "breaches_cap": rate > max_participation,
+        "max_position_dollar_value": round(adv_20d_dollar_volume * max_participation, 2),
+        "adv_20d_dollar_volume": adv_20d_dollar_volume,
+        "adv_source": adv_source,
+        "status": "over_cap" if rate > max_participation else "within_cap",
+    }
+
+
+def max_trade_for_adv_participation(adv_dollar_volume,
+                                    max_participation=DEFAULT_MAX_ADV_PARTICIPATION):
+    """The largest one-way trade the participation cap allows against this name's ADV.
+
+    The cap is written against trailing 20-day ADV. Callers that can only supply a 60-day
+    median dollar volume get an answer computed against that instead and are responsible for
+    labelling which one they passed -- ``participation_check`` carries an ``adv_source`` field
+    for exactly that.
+    """
+    if not adv_dollar_volume:
         return None
-    return round(median_dollar_volume_60d * max_participation, 2)
+    return round(adv_dollar_volume * max_participation, 2)

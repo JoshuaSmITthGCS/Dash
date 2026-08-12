@@ -91,8 +91,8 @@ def test_52_week_leg_is_scored_in_the_names_own_volatility():
 
 
 def test_pead_leg_needs_an_open_drift_window():
-    surprised = {"sue": 1.8, "basis": "net_income", "filed": "2026-05-01"}
-    assert swing_signals.pead_factor(surprised) == (1.8, "WINDOW_UNKNOWN")
+    surprised = {"sue": 1.8, "basis": "net_income", "filed": "2026-05-15",
+                 "release_datetime": "2026-05-01T16:05:00-05:00"}
 
     fresh = {**surprised, "age_trading_days": 3}
     assert swing_signals.pead_factor(fresh) == (1.8, "IN_DRIFT_WINDOW")
@@ -100,15 +100,48 @@ def test_pead_leg_needs_an_open_drift_window():
     stale = {**surprised, "age_trading_days": 120}
     assert swing_signals.pead_factor(stale) == (None, "DRIFT_WINDOW_CLOSED")
 
+    # An anchored surprise whose age could not be counted is not scored on an unknown window.
+    assert swing_signals.pead_factor(surprised) == (None, "WINDOW_UNKNOWN")
+
     assert swing_signals.pead_factor(None) == (None, "NO_SUE_HISTORY")
     assert swing_signals.pead_factor({}) == (None, "NO_SUE_HISTORY")
 
 
-def test_a_missing_leg_scores_neutral_rather_than_rescaling_the_others():
-    """Rule 5: less evidence must move a row toward neutral, never onto a wider scale.
+def test_pead_leg_refuses_to_fall_back_to_the_filing_date():
+    """Spec amendment SA-2026-08-12-02: the filing date is provenance, never an anchor.
 
-    Renormalizing to the resolved weight gave partial rows more dispersion than complete
-    ones, so they crowded both tails - and the top tail is the one that gets traded.
+    A 10-Q lands days after the press release that carried the number, so anchoring on it
+    reports every drift window as younger than it is, and always in the same direction. At a
+    2-to-10-session hold that error is a large fraction of the window, so a row with no
+    release datetime scores nothing here rather than scoring on a date known to be wrong.
+    """
+    unanchored = {"sue": 2.4, "basis": "net_income", "filed": "2026-05-15",
+                  "release_datetime": None, "age_trading_days": 2}
+
+    assert swing_signals.pead_factor(unanchored) == (None, "RELEASE_DATE_UNRESOLVED")
+
+
+def test_pead_anchor_diagnostic_quotes_the_coverage_the_re_anchoring_cost():
+    scored = [{"factors": {"pead_status": status}} for status in
+              ["IN_DRIFT_WINDOW"] * 4 + ["RELEASE_DATE_UNRESOLVED"] * 5 + ["NO_SUE_HISTORY"]]
+
+    diagnostic = swing_signals.pead_anchor_diagnostic(scored)
+
+    assert diagnostic["rows_without_a_release_datetime"] == 5
+    assert diagnostic["pead_coverage_now"] == .4
+    assert diagnostic["coverage_dropped_below_reference"] is True
+    # The delta is surfaced explicitly rather than left to be inferred from a smaller number.
+    assert diagnostic["coverage_delta"] == round(.4 - .85, 4)
+
+
+def test_a_missing_leg_is_renormalized_away_rather_than_zero_filled():
+    """Rule 5 as amended (SA-2026-08-12-04).
+
+    Zero-filling a missing leg pulled every thin row toward the cross-sectional mean, and
+    thinness tracks size and liquidity, so the old rule ran an undeclared tilt that muted the
+    high-idiosyncratic-volatility names where McLean & Pontiff (Journal of Finance 2016)
+    measure decay to be worst. A leg that resolves now carries the influence its declared
+    weight promises regardless of what else is missing.
     """
     def row(ticker, sue=None):
         factors = {"return_5d": -5.0, "revision_breadth_30d": .6,
@@ -126,11 +159,46 @@ def test_a_missing_leg_scores_neutral_rather_than_rescaling_the_others():
 
     assert scored["PART"]["dropped_legs"] == ["pead_drift"]
     assert scored["PART"]["coverage"] == .7
+    assert scored["PART"]["legs_resolved"] == 4
     assert scored["FULL"]["coverage"] == 1.0
-    # Identical on every leg it could fill, so the missing leg pulls PART toward zero.
-    assert 0 < scored["PART"]["score"] < scored["FULL"]["score"]
-    # The pre-rule-5 divisor is still published, and is the wider number it always was.
-    assert scored["PART"]["score_renormalized"] > scored["PART"]["score"]
+    assert scored["FULL"]["legs_resolved"] == 5
+    # PART and FULL agree on every leg PART could fill, so PART is no longer dragged toward
+    # neutral by the leg it could not fill.
+    assert scored["PART"]["score"] > 0
+    assert scored["PART"]["score"] > scored["PART"]["score_zero_filled"]
+    # The four legs PART resolved now sum to the full weight between them.
+    assert round(sum(scored["PART"]["leg_contributions"].values()), 6) == \
+        round(scored["PART"]["score"], 6)
+    assert round(scored["PART"]["renormalization_factor"], 4) == round(1 / .7, 4)
+
+
+def test_a_row_too_thin_to_renormalize_is_excluded_from_the_ranking():
+    """The floor that makes renormalization safe: three of five legs, or no rank at all.
+
+    Renormalizing a two-leg row puts it on the same centre as a five-leg row but not on the
+    same dispersion, and it is the top tail that gets traded. The old rule handled that by
+    muting thin rows; this one handles it by removing them and saying so.
+    """
+    tradable = {"price": 50.0, "market_cap": 5e9, "history_sessions": 400,
+                "median_dollar_volume_60d": 1e9}
+    thin = {**tradable, "ticker": "THIN",
+            "factors": {"return_5d": -4.0, "revision_breadth_30d": .5}}
+    thick = {**tradable, "ticker": "THICK",
+             "factors": {"return_5d": -4.0, "revision_breadth_30d": .5,
+                         "volume_ratio_1d_50d": 2.0, "high_52w_drawdown_sigmas": -.2}}
+
+    scored = {row["ticker"]: row for row in swing_signals.swing_scores([thin, thick])}
+
+    assert scored["THIN"]["legs_resolved"] == 2
+    assert "INSUFFICIENT_LEGS_RESOLVED" in scored["THIN"]["reason_codes"]
+    assert scored["THIN"]["eligibility"] is False
+    assert scored["THIN"]["percentile"] is None
+    assert scored["THICK"]["legs_resolved"] == 4
+    assert scored["THICK"]["eligibility"] is True
+
+    distribution = swing_signals.legs_resolved_distribution([thin_row for thin_row in scored.values()])
+    assert distribution["rows_excluded_below_floor"] == 1
+    assert distribution["minimum_legs_resolved"] == 3
 
 
 def test_heavy_tailed_sue_is_ranked_rather_than_clipped():
@@ -193,27 +261,67 @@ def test_short_interest_level_must_also_clear_the_cross_sections_top_decile():
     assert "T19" in suppressed and "T0" not in suppressed
 
 
-def test_capacity_profile_reports_round_trip_cost_and_where_the_book_stops_fitting():
-    rows = [{"ticker": f"T{index}", "price": 50.0, "market_cap": 5e9, "history_sessions": 400,
-             "median_dollar_volume_60d": 3e7,
-             "factors": {"high_52w_drawdown_sigmas": -index / 100, "revision_breadth_30d": index / 20,
+def costed_rows(count=20, sectors=None):
+    sectors = sectors or ["Technology"] * count
+    return [{"ticker": f"T{index}", "price": 50.0, "market_cap": 5e9, "history_sessions": 400,
+             "median_dollar_volume_60d": 3e7, "adv_20d_dollar_volume": 3e7,
+             "sector": sectors[index],
+             "factors": {"high_52w_drawdown_sigmas": -index / 100,
+                         "revision_breadth_30d": index / 20,
+                         "volume_ratio_1d_50d": 1 + index / 20,
                          "realized_volatility_60d": .35}}
-            for index in range(20)]
+            for index in range(count)]
 
-    profile = swing_signals.capacity_profile(swing_signals.swing_scores(rows))
+
+def test_capacity_profile_reports_round_trip_cost_and_where_the_book_stops_fitting():
+    profile = swing_signals.capacity_profile(swing_signals.swing_scores(costed_rows()))
 
     assert profile["book_size"] > 0
-    sizes = profile["by_portfolio_size"]
-    costs = [entry["median_round_trip_bps"] for entry in sizes.values()]
+    sizes = profile["by_book_dollar_value"]
+    costs = [entry["median_position_round_trip_bps"] for entry in sizes.values()]
     assert costs == sorted(costs)          # impact grows with size, never shrinks
-    assert profile["median_position_capacity_at_2pct_adv"] == 600_000.0
+    # Book size and position size are separate numbers and both are labelled as such.
+    for entry in sizes.values():
+        assert entry["position_dollar_value"] == round(
+            entry["book_dollar_value"] / entry["positions_held"], 2)
+    assert profile["median_position_capacity_at_participation_cap"] == 1_500_000.0
     assert profile["spread_source"] == "liquidity_tiered_proxy_not_measured"
+    assert "not a measured quoted spread" in profile["spread_caveat"]
+
+
+def test_every_quoted_cost_point_sits_on_one_square_root_curve():
+    """Spec amendment SA-2026-08-12-06: one heading, one cost model.
+
+    Quoting a set of round-trip figures that do not satisfy the square-root law means the
+    capacity conclusion depends on which point a reader happens to take.
+    """
+    profile = swing_signals.capacity_profile(swing_signals.swing_scores(costed_rows()))
+
+    consistency = profile["curve_consistency"]
+    assert consistency["status"] == "consistent"
+    assert consistency["max_relative_deviation"] <= consistency["tolerance"]
+
+
+def test_a_position_breaching_the_participation_cap_is_not_scored_tradable():
+    row = {"ticker": "TIGHT", "median_dollar_volume_60d": 1e7, "adv_20d_dollar_volume": 1e7,
+           "factors": {"realized_volatility_60d": .35}}
+
+    inside = swing_signals.cost_profile(row, 400_000)     # 4% of ADV, under the 5% default
+    outside = swing_signals.cost_profile(row, 900_000)    # 9% of ADV, over it
+
+    assert inside["tradable"] is True
+    assert inside["participation"]["status"] == "within_cap"
+    assert outside["tradable"] is False
+    assert outside["participation"]["breaches_cap"] is True
+    assert outside["participation"]["max_position_dollar_value"] == 500_000.0
+    assert outside["participation"]["adv_source"] == "trailing_20d_mean_dollar_volume"
 
 
 def test_membership_uses_hysteresis_so_the_list_does_not_flicker():
     rows = [{"ticker": f"T{index}", "median_dollar_volume_60d": 1e9,
              "price": 50, "market_cap": 5e9, "history_sessions": 400,
-             "factors": {"high_52w_proximity": .5 + index / 100, "return_5d": -index,
+             "factors": {"high_52w_drawdown_sigmas": -1 + index / 100, "return_5d": -index,
+                         "volume_ratio_1d_50d": 1 + index / 20,
                          "revision_breadth_30d": index / 20}}
             for index in range(20)]
 
@@ -225,6 +333,215 @@ def test_membership_uses_hysteresis_so_the_list_does_not_flicker():
                if row["percentile"] is not None and 75 <= row["percentile"] < 90)
     assert fresh[mid]["current_membership"] is False   # not high enough to enter
     assert held[mid]["current_membership"] is True     # but high enough to stay
+
+
+# ---------------------------------------------------------------------------
+# The analyst revision leg's sign (spec amendment SA-2026-08-12-01)
+# ---------------------------------------------------------------------------
+
+def revision_row(ticker, *, breadth, magnitude, upgrades, target_change):
+    """One row carrying only revision inputs, plus enough other legs to stay rankable."""
+    return {"ticker": ticker, "median_dollar_volume_60d": 1e9, "sector": "Technology",
+            "price": 50.0, "market_cap": 5e9, "history_sessions": 400,
+            "factors": {"revision_breadth_30d": breadth, "eps_revision_30d_pct": magnitude,
+                        "net_upgrades_90d": upgrades, "target_change_30d_pct": target_change,
+                        "volume_ratio_1d_50d": 1.0, "high_52w_drawdown_sigmas": -.5}}
+
+
+def test_rising_consensus_scores_positive_on_the_revision_leg():
+    """Three consecutive quarters of rising consensus EPS must map to a positive leg score.
+
+    The whole chain is under test here, not one function: the raw consensus input, the
+    differencing that turns a level into a change, the standardization, the sign convention in
+    SWING_SUBFACTORS, and the direction of the cross-sectional rank. An inversion anywhere in
+    it inverts the leg, and an inverted 25%-weight leg is a screen that systematically buys
+    the names analysts are cutting.
+    """
+    # A firm whose consensus EPS ran 4.80 -> 5.10 -> 5.45 -> 5.72 over four quarters: breadth
+    # of revisions net upward, magnitude positive, more upgrades than downgrades, target up.
+    # Sat in a cross-section wide enough that winsorization has room to work, since a
+    # three-name universe clips its own extremes onto the middle name and would hide a tie.
+    rising = revision_row("RISING", breadth=.75, magnitude=.062, upgrades=6, target_change=8.4)
+    flat = revision_row("FLAT", breadth=0.0, magnitude=0.0, upgrades=0, target_change=0.0)
+    falling = revision_row("FALLING", breadth=-.75, magnitude=-.062, upgrades=-6,
+                           target_change=-8.4)
+    filler = [revision_row(f"F{index}", breadth=(index - 9) / 30, magnitude=(index - 9) / 500,
+                           upgrades=index - 9, target_change=(index - 9) / 3)
+              for index in range(19)]
+
+    scored = {row["ticker"]: row
+              for row in swing_signals.swing_scores([rising, flat, falling] + filler)}
+
+    assert scored["RISING"]["leg_scores"]["analyst_revision"] > 0
+    assert scored["FALLING"]["leg_scores"]["analyst_revision"] < 0
+    assert (scored["RISING"]["leg_scores"]["analyst_revision"]
+            > scored["FLAT"]["leg_scores"]["analyst_revision"]
+            > scored["FALLING"]["leg_scores"]["analyst_revision"])
+    # And the sign survives into the composite rank, which is the thing actually traded.
+    assert scored["RISING"]["score"] > scored["FALLING"]["score"]
+
+
+def test_falling_consensus_scores_negative_on_every_revision_subfactor_alone():
+    """The mirror case, one subfactor at a time, so a single inverted input cannot hide.
+
+    Averaging four subfactors into one leg means three correct signs can mask a fourth that
+    is backwards. Each is therefore driven on its own.
+    """
+    subfactors = ("revision_breadth_30d", "eps_revision_30d_pct", "net_upgrades_90d",
+                  "target_change_30d_pct")
+    for name in subfactors:
+        rows = [{"ticker": f"T{index}", "median_dollar_volume_60d": 1e9,
+                 "factors": {name: (index - 10) / 10, "volume_ratio_1d_50d": 1.0,
+                             "high_52w_drawdown_sigmas": -.5}}
+                for index in range(21)]
+
+        scored = {row["ticker"]: row for row in swing_signals.swing_scores(rows)}
+
+        assert scored["T20"]["leg_scores"]["analyst_revision"] > 0, name
+        assert abs(scored["T10"]["leg_scores"]["analyst_revision"]) < 1e-9, name
+        assert scored["T0"]["leg_scores"]["analyst_revision"] < 0, name
+
+
+def test_the_revision_leg_declares_its_long_only_asymmetry_as_a_warning():
+    """Womack (Journal of Finance 1996) measures the effect concentrated on the sell side.
+
+    New sells drift -9.1% over six months against new buys at +2.4%. A long-only book cannot
+    harvest the larger half, so this leg's 0.25 weight must never be read as a claim on the
+    full published spread. The disclosure is machine-readable metadata rather than prose so a
+    downstream artifact cannot quote the weight without it.
+    """
+    evidence = swing_signals.SWING_EVIDENCE["analyst_revision"]
+    warnings = {warning["code"]: warning for warning in evidence["warnings"]}
+
+    assert "LONG_ONLY_ASYMMETRY" in warnings
+    warning = warnings["LONG_ONLY_ASYMMETRY"]
+    assert warning["capturable_side_effect_pct"] == 2.4
+    assert warning["unreachable_side_effect_pct"] == -9.1
+    assert "Womack" in warning["citation"] and "1996" in warning["citation"]
+    assert evidence["sign_convention"] == "rising consensus scores positive"
+
+
+# ---------------------------------------------------------------------------
+# Sector concentration (spec amendment SA-2026-08-12-07)
+# ---------------------------------------------------------------------------
+
+def test_the_sector_cap_trims_the_lowest_scoring_names_in_the_crowded_sector():
+    """Four of five legs are continuation signals and continuation clusters by sector.
+
+    Without the cap the top of this ranking is a mega-cap technology bet wearing a five-leg
+    label. The trim removes the weakest expressions of the crowded view, never the strongest,
+    because the ranking is still the model's opinion and the cap is a constraint on top of it.
+    """
+    rows = costed_rows(20, sectors=["Technology"] * 16 + ["Energy", "Utilities",
+                                                          "Healthcare", "Financials"])
+    scored = swing_signals.swing_scores(rows, config={"entry_percentile": 0})
+
+    trims = swing_signals.sector_cap_log(scored)
+    book = swing_signals.book_rows(scored, {"entry_percentile": 0})
+    held_tech = [row for row in book if row["sector"] == "Technology"]
+
+    assert trims, "a 16-of-20 technology book must be trimmed at a 30% cap"
+    assert len(held_tech) <= max(1, int(.30 * len(book)))
+    assert all(trim["sector"] == "Technology" for trim in trims)
+    # The trimmed names are the lowest-scoring technology names, not an arbitrary selection.
+    trimmed_scores = [trim["score"] for trim in trims]
+    assert max(trimmed_scores) <= min(row["score"] for row in held_tech)
+    # Every trim is logged with what it was measured against.
+    assert all(trim["cap"] == .30 and trim["book_size_before"] for trim in trims)
+
+
+def test_a_capped_name_stays_published_with_its_reason_rather_than_disappearing():
+    rows = costed_rows(20, sectors=["Technology"] * 16 + ["Energy", "Utilities",
+                                                          "Healthcare", "Financials"])
+    scored = {row["ticker"]: row for row in
+              swing_signals.swing_scores(rows, config={"entry_percentile": 0})}
+
+    capped = [row for row in scored.values() if row["sector_capped"]]
+
+    assert capped
+    for row in capped:
+        assert "SECTOR_CONCENTRATION_CAP" in row["reason_codes"]
+        assert row["current_membership"] is False
+        assert row["sector_trim"]["ticker"] == row["ticker"]
+
+
+def test_the_sector_cap_always_leaves_one_name_per_sector():
+    """On a book of three a 30% cap is otherwise unsatisfiable and would trim to nothing."""
+    rows = costed_rows(3, sectors=["Technology", "Technology", "Energy"])
+
+    scored = swing_signals.swing_scores(rows, config={"entry_percentile": 0})
+    book = swing_signals.book_rows(scored, {"entry_percentile": 0})
+
+    assert len(book) >= 2
+    assert {row["sector"] for row in book} == {"Technology", "Energy"}
+
+
+# ---------------------------------------------------------------------------
+# Registered reversal variants (spec amendment SA-2026-08-12-08)
+# ---------------------------------------------------------------------------
+
+def test_variant_a_is_the_frozen_baseline_and_is_unchanged():
+    assert swing_signals.BASELINE_VARIANT == "A"
+    assert swing_signals.SWING_VARIANTS["A"]["is_frozen_baseline"] is True
+    assert swing_signals.variant_weights("A") == swing_signals.SWING_WEIGHTS
+    assert swing_signals.SWING_WEIGHTS["short_term_reversal"] == .10
+
+
+def test_variant_b_drops_reversal_and_redistributes_its_weight_proportionally():
+    weights = swing_signals.variant_weights("B")
+
+    assert "short_term_reversal" not in weights
+    assert round(sum(weights.values()), 9) == 1.0
+    # Proportional, so the evidence ordering among the four survivors is unchanged.
+    assert round(weights["pead_drift"], 6) == round(.30 / .90, 6)
+    assert round(weights["analyst_revision"], 6) == round(.25 / .90, 6)
+    ratio_before = swing_signals.SWING_WEIGHTS["pead_drift"] / swing_signals.SWING_WEIGHTS["analyst_revision"]
+    assert round(weights["pead_drift"] / weights["analyst_revision"], 9) == round(ratio_before, 9)
+
+
+def test_variant_c_scores_a_residualized_reversal_at_the_same_weight():
+    weights = swing_signals.variant_weights("C")
+    assert weights == swing_signals.SWING_WEIGHTS
+    assert swing_signals.variant_subfactors("C")["short_term_reversal"] == \
+        (("residual_return_5d", True),)
+
+
+def test_the_residual_reversal_removes_the_industry_and_other_leg_components():
+    """Da, Liu & Schaumburg (Management Science 2014): the residual is what survives.
+
+    Build a cross-section where the prior-week return is entirely explained by the sector's
+    own move. The raw leg scores that as reversal; the residualized leg must score close to
+    nothing, because there is nothing left after the industry return is removed.
+    """
+    rows = []
+    for index in range(24):
+        sector = "Technology" if index % 2 else "Energy"
+        sector_move = 6.0 if sector == "Technology" else -6.0
+        rows.append({"ticker": f"T{index}", "median_dollar_volume_60d": 1e9, "sector": sector,
+                     "price": 50.0, "market_cap": 5e9, "history_sessions": 400,
+                     # Deliberately not collinear with one another, so the regression has four
+                     # genuinely separate controls rather than one repeated three times.
+                     "factors": {"return_5d": sector_move,
+                                 "revision_breadth_30d": (index * 7 % 11) / 11,
+                                 "volume_ratio_1d_50d": 1 + (index * 5 % 7) / 7,
+                                 "high_52w_drawdown_sigmas": -(index * 3 % 13) / 13}})
+
+    raw = swing_signals.swing_scores(rows, variant="A")
+    residual = swing_signals.swing_scores(rows, variant="C")
+
+    raw_legs = [row["leg_scores"]["short_term_reversal"] for row in raw]
+    residual_legs = [row["leg_scores"]["short_term_reversal"] for row in residual]
+
+    assert max(abs(value) for value in raw_legs) > 0.5
+    # Everything the raw leg saw was the sector move, so the residual leg has nothing to say.
+    assert max(abs(value) for value in residual_legs) < 1e-6
+
+
+def test_an_unregistered_variant_raises_rather_than_silently_falling_back():
+    import pytest
+
+    with pytest.raises(ValueError, match="unregistered swing variant"):
+        swing_signals.swing_scores([], variant="D")
 
 
 # ---------------------------------------------------------------------------

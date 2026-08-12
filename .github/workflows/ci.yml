@@ -28,6 +28,12 @@ jobs:
       - run: PYTHONPATH=pipeline python -m pytest pipeline/tests -q
       - run: python pipeline/validation/ic_harness.py --snapshot public/data/advisor.json
       - run: python pipeline/validate_data.py
+      # Fails the build when a generated report, README or published artifact claims
+      # validation this repository cannot support. The swing model has no out-of-sample
+      # record, its prospective clock starts 2026-09-01, and every effect size it quotes is a
+      # published gross figure before costs and before decay. Documentation drifts toward
+      # confidence on its own, so the defence has to run on every change rather than at review.
+      - run: PYTHONPATH=pipeline python pipeline/validate_documentation_claims.py
 
   site:
     runs-on: ubuntu-latest
