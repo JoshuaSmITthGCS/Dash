@@ -8,6 +8,29 @@ recall the outline automatically; this file is the authoritative repo-side recor
 **If you only read one section, read section 7 (What's next).** Sections 1-6 are
 state; section 7 is the work.
 
+**Update, same day, later session:** items 1 and 2 below are done (commits
+`307e0882`, `a05fc1ad`, `a16b84d4` on main). Two things worth knowing before reading
+further:
+
+- **A parallel, independently-registered swing-reversal / entry-timing-overlay round
+  landed on main while this handoff sat uncommitted** (12 commits, PR #79 merged
+  2026-08-12), including its own edit to `harness_freeze.json`'s trial count. The two
+  were reconciled by addition, not by picking one: true `total_enumerated` is **50**
+  (base 35 + 5 pre-freeze + 2 survivorship-reconstruction + 3 swing-reversal + 5
+  entry-timing-overlay), `dsr_trial_count_used` is 50, and the promotion-criteria text
+  that still said "N=40" (stale, pre-dating even the 42-trial round) was corrected to
+  match. If you're reading `harness_freeze.json` fresh, that reconciliation is already
+  in place — don't re-derive it.
+- **Item 2 turned out to be bigger than one CLI flag.** `price_archive.py`'s own
+  docstring promised a `run_daily()` that didn't exist — only the zero-network
+  historical `seed_from_disk()` was ever built. Running just `seed` on a schedule would
+  have made `archive_health()` report healthy forever while never capturing a single
+  new day's price. `run_daily()` is now implemented (live universe at zero extra
+  network cost + recently-delisted names within the measured ~365-day retention
+  window), tested, and wired into `refresh-advisor.yml` on the once-daily full sweep
+  only. `archive_health()` is now published in `advisor.json` beside
+  `statement_health`.
+
 ---
 
 ## 1. Where the project stands
@@ -118,19 +141,20 @@ push).
    patch modules before importing backtest_monthly (which executes main() at import in
    the round6 driver: stub it with a fake module first, see preFreeze_backtests.py).
 
-## 7. What's next (none started, in priority order)
+## 7. What's next (in priority order)
 
-**Do first, small and concrete:**
+**Done:**
 
-1. **Commit the two open files** (`pipeline/validation/harness_freeze.json`,
-   `docs/PRE-FREEZE-SIGNALS.md`, plus this handoff). Push with the sandbox disabled
-   (gotcha 6.1).
-2. **Wire the price archive into the daily schedule.** One job line running
-   `python pipeline/price_archive.py seed` after each refresh, then surface
-   `archive_health()` in the advisor payload beside `statement_health`
-   (pipeline/fetch_advisor.py already imports data_health there). Until this is wired,
-   a silent schedule gap re-opens the survivorship hole the archive exists to close.
-   This is the only engineering item with a real cost to delay.
+1. ~~Commit the two open files~~ — done, `307e0882`.
+2. ~~Wire the price archive into the daily schedule~~ — done, `a16b84d4`. Built the
+   missing `run_daily()` (not just the seed wiring originally scoped — see the update
+   note at the top of this file), added `pipeline/tests/test_price_archive.py`
+   coverage for it, and staged `pipeline/data/price_archive/` in the refresh
+   workflow's commit allowlist so runs actually persist past the ephemeral runner.
+   **Not yet verified**: the step hasn't executed in a real scheduled run yet (next
+   07:00 ET full sweep will be the first). Check `archive_health()` in the next
+   published `advisor.json` and `pipeline/data/price_archive/archive_manifest.json`
+   for a `run_daily` entry to confirm it actually ran rather than just parsing.
 
 **Decisions that belong to the owner, sitting in the freeze file:**
 
