@@ -327,28 +327,42 @@ clean across 93 files, and no registered result files exist, which is the correc
 ## Measured effect on the published screen
 
 Run on the live 860-name cross-section, comparing against the `swing.json` committed
-2026-08-11. The published artifact was not overwritten.
+2026-08-11. The published artifact was not overwritten. Measured after the Form 8-K Item 2.02
+store was collected, which matters: an earlier version of this section was measured with the
+store absent and reported a 28.1% book churn. That figure described a screen whose drift leg
+was dark, not the effect of the amendments, and it is corrected here.
 
 | Comparison | Book churn | Top 10 kept | Median rank move |
 |---|---|---|---|
-| Everything except the anchor | 0.9% | 10/10 | 8 places |
-| The anchor alone | 27.3% | 4/10 | 43 places |
-| Net, as shipped | 28.1% | 4/10 | 62 places |
+| All eight amendments, store present | **1.9%** | 10/10 | 7 places |
+| Drift leg dark against drift leg live | 28.1% | 4/10 | 43 places |
 
-Almost the entire prediction change is the drift leg going dark, and that is an operational
-state rather than a modelling result: see the deployment note below.
+**All eight amendments together move the screen by about two percent.** Same top ten in the
+same order, one name into the traded book and one out, median rank move of seven places across
+the published three hundred. The second row is not a property of the amendments; it is the cost
+of publishing before the release store exists, and it is why the deployment note below matters.
 
-The other amendments measured as close to inert on this cross-section, which is worth stating
-plainly because it is the less flattering answer.
+The amendments measured as close to inert on this cross-section, which is worth stating plainly
+because it is the less flattering answer.
 
+- **The re-anchoring moves the median drift window by about one day, not by several.** Across
+  the 298 published rows carrying both dates, the 10-Q lagged the earnings release by a median
+  of 0 to 1 calendar days and a 75th percentile of 2. Most issuers release after the close and
+  file the periodic report the next morning: Amazon released its June quarter at 20:06 on
+  2026-07-30 and filed the 10-Q on 07-31. The mean lag is 3.6 days because the distribution has
+  a real tail, with 24% of rows at three days or more and 21% at seven or more, running out to
+  40. So the defect was real and it was smaller in the median than the amendment's rationale
+  implied. It costs 1.9 points of leg coverage, 84.7% to 83.1%, which is 9 rows with no
+  resolvable release and a handful more whose windows correctly read as closed once dated from
+  the release rather than the filing.
 - **Renormalization changed the top decile by exactly nothing.** Same 82 names, same size,
-  liquidity and volatility distributions. The reason is in the coverage histogram: 710 of 860
-  rows resolved all five legs and 148 resolved four, so the renormalization factor is nearly
+  liquidity and volatility distributions. The reason is in the coverage histogram: 698 of 860
+  rows resolve all five legs and 159 resolve four, so the renormalization factor is nearly
   constant across rows and the transform is close to a monotone rescale. The undeclared size
   and liquidity tilt the amendment targets is real as a mechanism and is not binding on this
-  universe today. The fix stays, as a guard against the coverage dispersion that a partly
-  populated release store will create, but it is currently prophylactic.
-- **The legs-resolved floor** excludes one row. Zero under the old anchor.
+  universe today. The fix stays, as a guard against the coverage dispersion a thinner release
+  store would create, but it is currently prophylactic.
+- **The legs-resolved floor** excludes zero rows with the store present.
 - **The sector cap** made zero trims. The largest sector holds 18 of 82 and the cap allows 24.
   The 3.4x Energy tilt recorded as an open question shows here as Energy at 12 of 82, or 15%.
 
@@ -361,10 +375,18 @@ passes at 1.2% maximum deviation.
 
 ## Deployment note: the drift leg is dark until the release store is collected
 
-`pead_drift` coverage is 0.0% until `pipeline/data/pit/earnings_releases.jsonl` exists. All 850
-rows with a resolvable surprise report `RELEASE_DATE_UNRESOLVED`, because the store has not
-been built. The composite is currently a four-leg model with weights renormalized to
-.357 / .286 / .214 / .143.
+**Status: collected 2026-08-12.** The store holds 33,103 Item 2.02 records covering 851 of the
+860 universe companies, a median of 41 releases each, and `pead_drift` coverage is 83.1%. The
+anchor is a minute-accurate EDGAR acceptance timestamp on 298 of the 300 published rows.
+
+The rest of this note stands as the operating rule, because the failure mode recurs on any
+fresh clone or any universe expansion.
+
+Without `pipeline/data/pit/earnings_releases.jsonl`, `pead_drift` coverage is 0.0%: every row
+with a resolvable surprise reports `RELEASE_DATE_UNRESOLVED`, and the composite silently
+becomes a four-leg model with weights renormalized to .357 / .286 / .214 / .143. That state
+moves the traded book by 28% against the same screen with the leg live, so it is not a
+cosmetic difference.
 
 `.github/workflows/collect-earnings-releases.yml` builds the store from Form 8-K Item 2.02 by
 way of the EDGAR submissions API, weekly and on demand, scoped to the configured universe of

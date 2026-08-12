@@ -141,6 +141,11 @@ def _releases_by_cik(path=RELEASES_PATH):
             "accession": row.get("accession"),
             "form": row.get("form"),
             "items": row.get("items"),
+            # Carried through from the collector, which records whether the anchor came from
+            # an EDGAR acceptance timestamp or only from the 8-K item date. Dropping it here
+            # made every published row report no precision at all, which hides the difference
+            # between a minute-accurate anchor and a date-only one.
+            "precision": row.get("precision"),
             "source": row.get("source") or ANNOUNCEMENT_ANCHOR,
         })
     for records in by_cik.values():

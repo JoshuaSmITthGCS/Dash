@@ -382,6 +382,33 @@ def test_the_collector_reports_what_the_store_already_covers(tmp_path):
     assert "not leg coverage" in summary["note"]
 
 
+def test_the_anchors_precision_survives_the_round_trip_to_the_store(tmp_path):
+    """A minute-accurate anchor and a date-only one must stay distinguishable on the row.
+
+    The collector records which of the two answered. Dropping that on the way back out made
+    every published row report no precision at all, which is exactly the kind of silent gap
+    the point-in-time store exists to prevent.
+    """
+    releases = tmp_path / "earnings_releases.jsonl"
+    releases.write_text("\n".join(json.dumps(row) for row in [
+        {"cik": "0000000001", "release_datetime": "2035-01-20T16:05:31-05:00",
+         "accession": "A", "form": "8-K", "items": "2.02",
+         "precision": "acceptance_timestamp"},
+        {"cik": "0000000002", "release_datetime": "2035-01-21",
+         "accession": "B", "form": "8-K", "items": "2.02",
+         "precision": "event_date_only"},
+    ]) + "\n", encoding="utf-8")
+    earnings_release.reset_cache()
+
+    accurate = earnings_release.release_for_period("0000000001", "2034-12-31", "2035-12-31",
+                                                   path=str(releases))
+    coarse = earnings_release.release_for_period("0000000002", "2034-12-31", "2035-12-31",
+                                                 path=str(releases))
+
+    assert accurate["precision"] == "acceptance_timestamp"
+    assert coarse["precision"] == "event_date_only"
+
+
 def test_an_empty_store_reports_zero_rather_than_failing(tmp_path):
     empty = tmp_path / "earnings_releases.jsonl"
     empty.write_text("", encoding="utf-8")
