@@ -30,6 +30,14 @@ export function performanceMetricTone(key, value) {
   return 'neutral'
 }
 
+/** A short-horizon move only earns a colour once it clears its own noise floor. Inside the
+ * floor it tones neutral at zero; with no reading at all it stays null so the tile reads as
+ * unavailable rather than as a flat week. */
+function shortTermTone(window) {
+  if (!window?.available) return null
+  return window.beyondNoise ? window.excessPct : 0
+}
+
 /** `toneValue` lets a lower-is-better metric colour itself correctly without inverting what
  * it displays - the day counts below are better when small, and every tone bound in config
  * is read as higher-is-better. */
@@ -40,19 +48,24 @@ function Metric({ name, label, value, format, note, toneValue }) {
 }
 
 /**
- * Two panels of six rather than one long strip, and the split is the point: the first answers
- * "what did this portfolio do to me", the second answers "how did it do against the index".
- * Information ratio sits in the second because it is a benchmark measure, not a standalone
- * risk one. Six tiles each also lands both grids exactly on their column count at every
- * breakpoint.
+ * Three panels of six rather than one long strip, split by the question each answers: what
+ * this portfolio did to you, how it did against the index over quarters and years, and what
+ * it has done in the last few days and weeks. Information ratio sits in the second because
+ * it is a benchmark measure, not a standalone risk one; active share sits in the third
+ * because it needs no history at all. Six tiles each also lands every grid exactly on its
+ * column count at all three breakpoints.
  */
 export default function PerformanceMetrics({
   metrics, benchmarkLabel = 'benchmark', riskFree,
   acceleration = null, capture = null, batting = null, underwater = null,
+  shortTerm = null, risk = null,
 }) {
   const captureNote = (side) => (capture?.available
     ? `${capture.observations[side]} ${side} periods · index ${side === 'up' ? '+' : ''}${capture[`${side}BenchmarkPct`].toFixed(1)}%`
     : capture?.reason || 'Needs history on both sides of the market')
+  const windowOf = (days) => shortTerm?.windows?.find((row) => row.days === days) || null
+  const week = windowOf(7)
+  const month = windowOf(30)
   return (
     <>
       <section className="performance-metrics" aria-labelledby="standard-performance-title">
@@ -85,7 +98,13 @@ export default function PerformanceMetrics({
         <div>
           {/* Level, then change: information ratio says how far ahead, acceleration says
               whether the gap is still widening. See src/lib/portfolioAcceleration.js. */}
-          <Metric name="informationRatio" label="Information ratio" value={metrics?.informationRatio} format={ratio} note={`Excess return per unit of tracking risk`} />
+          {/* Tracking error is the information ratio's own denominator, so it belongs in
+              this tile rather than in one of its own. The Diversification page reports the
+              same quantity built from holdings covariance instead of the value series. */}
+          <Metric name="informationRatio" label="Information ratio" value={metrics?.informationRatio} format={ratio}
+            note={risk?.trackingErrorPct != null
+              ? `Excess return per unit of tracking risk · ${risk.trackingErrorPct.toFixed(1)}% tracking error`
+              : 'Excess return per unit of tracking risk'} />
           <Metric
             name="acceleration"
             label="Acceleration"
@@ -121,8 +140,79 @@ export default function PerformanceMetrics({
           />
         </div>
       </section>
+
+      {/* Everything above is gated behind quarters or years of history, correctly so for
+          what it claims. This panel answers days and weeks, and answers them for an account
+          too new for any of it. The price of a short window is noise, so each reading is
+          published beside the noise floor that says whether it is a result or a wobble. */}
+      <section className="performance-metrics" aria-labelledby="short-term-view-title">
+        <header>
+          <div><span className="eyebrow">Fast reads</span><h2 id="short-term-view-title">Short-term view</h2></div>
+          <small>{shortTerm?.available ? shortTerm.methodology : shortTerm?.reason}</small>
+        </header>
+        <div>
+          <Metric
+            name="shortTermExcessPct"
+            label="Past week vs index"
+            value={week?.available ? week.excessPct : null}
+            toneValue={shortTermTone(week)}
+            format={signedPercent}
+            note={week?.available
+              ? `You ${signedPercent(week.portfolioPct)} · index ${signedPercent(week.benchmarkPct)}`
+              : week?.reason || 'Not enough history yet'}
+          />
+          <Metric
+            name="shortTermExcessPct"
+            label="Past month vs index"
+            value={month?.available ? month.excessPct : null}
+            toneValue={shortTermTone(month)}
+            format={signedPercent}
+            note={month?.available
+              ? `You ${signedPercent(month.portfolioPct)} · index ${signedPercent(month.benchmarkPct)}`
+              : month?.reason || 'Not enough history yet'}
+          />
+          {/* The tile that keeps the two beside it honest. */}
+          <Metric
+            name="noiseFloor"
+            label="Noise floor (month)"
+            value={month?.available ? month.noiseFloorPct : null}
+            format={(value) => `±${Math.abs(value).toFixed(1)}%`}
+            note={month?.available ? shortTermVerdict(month) : 'Needs a tracking-noise estimate'}
+          />
+          <Metric
+            name="streak"
+            label="Current streak"
+            value={shortTerm?.available ? shortTerm.streak.observations : null}
+            format={(value) => `${Math.round(value)}`}
+            note={shortTerm?.available
+              ? `Periods ${shortTerm.streak.direction} of the index, spanning ${shortTerm.streak.days}d`
+              : 'Needs two overlapping observations'}
+          />
+          <Metric
+            name="recentTrackingRisk"
+            label="Recent tracking risk"
+            value={shortTerm?.available ? shortTerm.recentTrackingRiskPct : null}
+            format={percent}
+            note={shortTerm?.baselineTrackingRiskPct != null
+              ? `Last 30 days annualized · ${shortTerm.baselineTrackingRiskPct.toFixed(1)}% baseline`
+              : 'How far this portfolio moves independently of the index'}
+          />
+          {/* Needs no history at all - it is a fact about today's weights - which is why it
+              belongs in the panel for readings that work immediately. */}
+          <Metric
+            name="activeShare"
+            label="Active share"
+            value={risk?.activeSharePct ?? null}
+            format={percent}
+            note={risk?.activeSharePct != null
+              ? 'Share of the book that differs from the index right now'
+              : 'Needs benchmark constituent coverage'}
+          />
+        </div>
+      </section>
     </>
   )
 }
 import modelSettings from '../../pipeline/config/settings.json'
 import { accelerationLabel } from '../lib/portfolioAcceleration.js'
+import { shortTermVerdict } from '../lib/portfolioShortTermView.js'

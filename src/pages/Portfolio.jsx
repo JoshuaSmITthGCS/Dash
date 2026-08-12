@@ -43,6 +43,7 @@ import {
   diversificationScore,
   performanceMetrics,
   portfolioReturnSummary,
+  portfolioRiskDecomposition,
   portfolioScore,
   resilienceIndex,
   riskFreeAnnualRate,
@@ -52,6 +53,7 @@ import {
 } from '../lib/portfolioAnalytics.js'
 import { portfolioAcceleration } from '../lib/portfolioAcceleration.js'
 import { battingAverage, captureRatios } from '../lib/portfolioBenchmarkComparison.js'
+import { shortTermView } from '../lib/portfolioShortTermView.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
@@ -312,6 +314,18 @@ export default function Portfolio() {
   const scoreCapture = captureRatios(scoreHoldingsSeries, benchmarkSeries)
   const scoreBatting = battingAverage(scoreHoldingsSeries, benchmarkSeries)
   const scoreUnderwater = underwaterProfile(scoreHoldingsSeries)
+  // Deliberately the FULL series, not the live-tracking slice the ratios above may use: the
+  // short-term panel exists to answer the last week and month, and it needs the baseline
+  // history behind them to know what this portfolio's normal wobble even is.
+  const scoreShortTerm = shortTermView(scoreHoldingsSeriesFull, benchmarkSeries)
+  // The same call the Diversification page makes, for the same numbers - tracking error and
+  // active share are computed once in portfolioRiskDecomposition and read in both places
+  // rather than reimplemented here.
+  const scoreRisk = portfolioRiskDecomposition(portfolioPositions, {
+    benchmarkHistory,
+    benchmarkWeights: (etfData?.etfs || []).find((row) => row.ticker === 'SPY')?.top_holdings,
+    etfs: etfData?.etfs || [],
+  })
   const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
   const overallScore = portfolioScore({
     diversification: scoreDiversification,
@@ -618,7 +632,8 @@ export default function Portfolio() {
         <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
       </div>
       <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree}
-        acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater} />
+        acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
+        shortTerm={scoreShortTerm} risk={scoreRisk} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">

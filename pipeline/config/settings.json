@@ -170,6 +170,14 @@
       "minimum_intervals_per_side": 8,
       "minimum_months": 6
     },
+    "short_term_view": {
+      "_comment": "Fast benchmark-relative reads (src/lib/portfolioShortTermView.js) for the horizons the quarter- and year-scale measures cannot speak to, and for accounts too new for them. Short windows are mostly noise, so every window is published beside a noise floor - one standard error of this portfolio's own tracking noise over a window of that length - and a reading inside the floor is labelled as such rather than reported as a result. Windows report independently: three weeks of history answers the week and honestly declines the month. Beta for the adjustment is fitted over baseline_days rather than the short window itself, so a one-week reading is not adjusted by a one-week beta; below minimum_intervals_for_beta the excess falls back to a plain difference and says so.",
+      "window_days": [7, 30],
+      "minimum_intervals": 3,
+      "minimum_intervals_for_beta": 20,
+      "baseline_days": 180,
+      "tracking_risk_days": 30
+    },
     "performance_metric_tones": {
       "acceleration": {
         "good_min": 1.0,
@@ -182,6 +190,11 @@
       "battingAveragePct": {
         "good_min": 55.0,
         "bad_max": 45.0
+      },
+      "shortTermExcessPct": {
+        "_comment": "Deliberately wide. A short-horizon excess return is mostly noise, and colouring a +0.4% week green would tell the reader it means something. The tile only takes a tone once the move clears its own noise floor, and these bounds keep even that conservative.",
+        "good_min": 2.0,
+        "bad_max": -2.0
       },
       "longestUnderwaterDays": {
         "_comment": "Fewer days underwater is better, and tone bounds are read as higher-is-better, so the tile passes the negated day count as its tone value: two months or less underwater reads good, nine months or more reads bad. Up and down capture carry no bounds on purpose - neither is good or bad without the other half, which is what captureSpread scores.",

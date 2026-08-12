@@ -72,6 +72,12 @@ describe('comparison panel', () => {
     expect(tile.className).toBe('metric-tone-negative')
   })
 
+  it('carries tracking error in the information ratio tile, being its denominator', () => {
+    render(<PerformanceMetrics metrics={metrics} risk={{ trackingErrorPct: 6.2, activeSharePct: 91.4 }} />)
+    expect(tileFor('Information ratio')).toHaveTextContent('6.2% tracking error')
+    expect(tileFor('Active share')).toHaveTextContent('91.4%')
+  })
+
   it('says why each measure is unavailable instead of showing a neutral zero', () => {
     render(<PerformanceMetrics metrics={metrics}
       acceleration={{ available: false, acceleration: null, reason: 'Needs 189 days of overlapping history; 40 available.' }}
@@ -81,5 +87,52 @@ describe('comparison panel', () => {
     expect(tileFor('Up capture')).toHaveTextContent('this window has 30 up and 2 down')
     expect(tileFor('Batting average')).toHaveTextContent('2 available')
     expect(tileFor('Capture spread')).toHaveTextContent('Unavailable')
+  })
+})
+
+describe('short-term panel', () => {
+  const metrics = { available: true, observations: 60 }
+  const shortTerm = {
+    available: true,
+    methodology: 'Excess is beta-adjusted at 0.84, fitted over the trailing 180 days.',
+    windows: [
+      { days: 7, available: true, excessPct: 2.6, portfolioPct: 3.1, benchmarkPct: 0.5, noiseFloorPct: 1.2, beyondNoise: true },
+      { days: 30, available: true, excessPct: 0.4, portfolioPct: 4.0, benchmarkPct: 3.6, noiseFloorPct: 2.4, beyondNoise: false },
+    ],
+    streak: { direction: 'ahead', observations: 4, days: 9 },
+    recentTrackingRiskPct: 8.3, baselineTrackingRiskPct: 6.1,
+  }
+  const tileFor = (label) => screen.getByText(label).closest('article')
+
+  it('reports the week and month against the index with the noise floor beside them', () => {
+    render(<PerformanceMetrics metrics={metrics} shortTerm={shortTerm} />)
+    expect(screen.getByRole('heading', { name: 'Short-term view' })).toBeInTheDocument()
+    expect(tileFor('Past week vs index')).toHaveTextContent('+2.6%')
+    expect(tileFor('Past week vs index')).toHaveTextContent('You +3.1% · index +0.5%')
+    expect(tileFor('Noise floor (month)')).toHaveTextContent('±2.4%')
+    expect(tileFor('Current streak')).toHaveTextContent('Periods ahead of the index, spanning 9d')
+    expect(tileFor('Recent tracking risk')).toHaveTextContent('6.1% baseline')
+  })
+
+  it('only colours a move that cleared its own noise floor', () => {
+    render(<PerformanceMetrics metrics={metrics} shortTerm={shortTerm} />)
+    // +2.6% beat a 1.2% floor, so it earns a colour.
+    expect(tileFor('Past week vs index').className).toBe('metric-tone-positive')
+    // +0.4% against a 2.4% floor is the ordinary wobble, and must not read as a win.
+    expect(tileFor('Past month vs index').className).toBe('metric-tone-neutral')
+    expect(tileFor('Noise floor (month)')).toHaveTextContent('Inside this portfolio’s normal wobble')
+  })
+
+  it('declines a single window without taking the panel down with it', () => {
+    render(<PerformanceMetrics metrics={metrics} shortTerm={{
+      ...shortTerm,
+      windows: [
+        { days: 7, available: true, excessPct: 1.0, portfolioPct: 1.2, benchmarkPct: 0.2, noiseFloorPct: 1.4, beyondNoise: false },
+        { days: 30, available: false, reason: '2 of 3 observations so far' },
+      ],
+    }} />)
+    expect(tileFor('Past week vs index')).toHaveTextContent('+1.0%')
+    expect(tileFor('Past month vs index')).toHaveTextContent('2 of 3 observations so far')
+    expect(tileFor('Past month vs index').className).toBe('metric-tone-unavailable')
   })
 })
