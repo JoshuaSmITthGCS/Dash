@@ -26,7 +26,12 @@
     "signal_corrections_cumulative (score_variants.challenger)",
     "rank_buffer_1.5 portfolio layer (portfolio_construction.apply_controls)",
     "valuation_2metric_ev_block (asfiled_ttm_backtest.py _val2, Round 6)",
-    "valuation_single_ev_ebitda (asfiled_ttm_backtest.py _val1, Round 6)"
+    "valuation_single_ev_ebitda (asfiled_ttm_backtest.py _val1, Round 6)",
+    "orthogonal_value_quality (AFP RAS 24(1) 2019 residualization, preFreeze_backtests.py orthogonal, 714cf3dc7409359f)",
+    "max_exclusion_screen (Bali-Cakici-Whitelaw JFE 99(2) 2011 top-5-daily top-decile exclusion, preFreeze_backtests.py max_screen, 714cf3dc7409359f)",
+    "net_issuance_capital_allocation (Pontiff-Woodgate JF 63(2) 2008 log 12m share change replacing buyback yield, preFreeze_backtests.py net_issuance, 714cf3dc7409359f)",
+    "parsimony_equal_weight_6 (DeMiguel-Garlappi-Uppal RFS 22(5) 2009, 6 signals 1/N sector-conditional ranks, preFreeze_backtests.py parsimony, 714cf3dc7409359f)",
+    "intangible_adjusted_book (Arnott-Harvey-Kalesnik-Linnainmaa FAJ 77(1) 2021 via Peters-Taylor capitals, preFreeze_backtests.py intangible_book, 714cf3dc7409359f)"
   ],
   "changes_that_reset_the_clock": [
     "any change to champion score semantics: weights, bands, normalization mode, modifier caps, coverage handling, blend formula"
@@ -45,9 +50,11 @@
     "regression_constructions": 4,
     "swing_reversal_variants_2026_08_12": 3,
     "entry_timing_overlay_variants_2026_08_12": 5,
-    "total_enumerated": 43,
-    "dsr_trial_count_used": 48,
-    "note": "Registered before any of the 2026-08-12 variants ran. The count is read from pipeline/validation/hypothesis_log.jsonl, which is append-only and timestamped, rather than recalled. Every variant counts, including the ones that will be abandoned: dropping the losers from the trial count is what turns a deflated statistic back into an undeflated one."
+    "survivorship_reconstruction_runs": 2,
+    "pre_freeze_construction_runs": 5,
+    "total_enumerated": 50,
+    "dsr_trial_count_used": 50,
+    "note": "Registered before any of the 2026-08-12 variants ran. The count is read from pipeline/validation/hypothesis_log.jsonl, which is append-only and timestamped, rather than recalled. Every variant counts, including the ones that will be abandoned: dropping the losers from the trial count is what turns a deflated statistic back into an undeflated one. This total is the union of two independently-registered 2026-08-12 additions merged after the fact: the swing-reversal/entry-timing-overlay families (base 35 + 3 + 5 = 43) and the pre-freeze construction round (35 + 5 pre-freeze signals + 2 survivorship-reconstruction runs = 42). Combined without double-counting the shared base of 35, the true total is 50."
   },
   "promotion_criteria_champion_or_challenger": {
     "minimum_periods": 24,
@@ -264,6 +271,7 @@
       "hypothesis_log": "pipeline/validation/hypothesis_log.jsonl, append-only and timestamped, so the multiple-testing count is auditable rather than remembered"
     }
   },
-  "hash_scope": "freeze_hash covers the champion registration and its criteria only; additional_models entries, spec_amendments, swing_reversal_variants and entry_timing_overlay carry their own clocks and are appended without rehashing the champion.",
-  "freeze_hash": "f0b649bf9e642d9a389ab9c333b0e5d090aa80e01806a4856351f2ac491bfe43"
+  "hash_scope": "freeze_hash covers the champion registration and its criteria only; additional_models entries, spec_amendments, swing_reversal_variants, entry_timing_overlay and the pre-freeze challenger set carry their own clocks and are appended without rehashing the champion.",
+  "freeze_hash": "f0b649bf9e642d9a389ab9c333b0e5d090aa80e01806a4856351f2ac491bfe43",
+  "pre_freeze_entry_date": "2026-08-11"
 }
