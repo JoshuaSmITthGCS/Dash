@@ -67,6 +67,12 @@ jobs:
       SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history, because the commit step rebases onto main. This job runs for tens of
+          # minutes and main is written by several other scheduled jobs, so it will routinely
+          # find main has moved by the time it is ready to push. A shallow clone can rebase,
+          # but fragilely; refresh-advisor.yml already fetches full depth for the same reason.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -137,17 +143,48 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Commit the store
+        id: commit
         if: inputs.scope != 'report-only'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "valuesignal-data-bot"
+          git config user.email "actions@users.noreply.github.com"
           git add pipeline/data/pit/earnings_releases.jsonl
           if git diff --cached --quiet; then
             echo "No new releases to commit."
             exit 0
           fi
           RECORDS=$(wc -l < pipeline/data/pit/earnings_releases.jsonl)
-          git commit -m "Earnings release store: ${RECORDS} Item 2.02 records on disk" \
+          git commit -m "chore(data): earnings release store, ${RECORDS} Item 2.02 records" \
                      -m "Scheduled collection. Anchors the swing screen's drift leg on the" \
                      -m "earnings release datetime rather than the 10-Q filing date."
-          git push
+          # Rebase and retry rather than pushing once. This job runs for tens of minutes while
+          # several other scheduled jobs write to main, so losing the race is the normal case,
+          # not an exception -- the first run of this workflow collected 33,103 records and
+          # then threw all of them away on a rejected push. Only this workflow writes the
+          # store and the concurrency group serialises it, so the rebase cannot conflict on
+          # that file; a failure here means main moved, and the answer is to move with it.
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "Push attempt ${attempt} lost a race with another writer, retrying."
+            sleep $((attempt * 15))
+          done
+          echo "::error::Could not push the store after 5 attempts. The collected records are" \
+               "uploaded as the 'earnings-release-store' artifact on this run, so the fetch" \
+               "does not have to be repeated. Download it, commit it manually, or rerun."
+          exit 1
+
+      # A failed push used to discard tens of minutes of SEC fetching, because the runner is
+      # ephemeral and the store exists nowhere else. The retry loop above should make that
+      # unreachable, but the artifact costs nothing and makes the failure recoverable instead
+      # of merely diagnosable.
+      - name: Preserve the store when the push could not land
+        if: failure() && steps.commit.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: earnings-release-store
+          path: pipeline/data/pit/earnings_releases.jsonl
+          retention-days: 14
