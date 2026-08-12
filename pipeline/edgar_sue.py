@@ -39,11 +39,18 @@ for a surprise: the market reacted to the number as originally announced, on the
 originally announced. Comparatives republished in later filings are excluded by requiring the
 originating filing to land within ANNOUNCEMENT_MAX_LAG_DAYS of the period end.
 
-Known limitation, deliberately not papered over: the anchor is the 10-Q/10-K *filing* date,
-which lags the earnings press release by days, and PEAD's strongest drift is in exactly those
-days. The true announcement date lives in Form 8-K Item 2.02, reachable with the same EDGAR
-form-index crawler the survivorship reconstruction already uses. Until that is wired, the age
-of a drift window is understated and `announcement_anchor` says so on every row.
+**The drift anchor** (amended 2026-08-12, spec amendment SA-2026-08-12-02). Drift windows are
+anchored on the earnings *release* datetime from Form 8-K Item 2.02, read from the
+point-in-time store earnings_release.py maintains. They are no longer anchored on the 10-Q or
+10-K filing date. A periodic report lands days after the press release that carried the
+number, so a filing-date anchor reports every window as younger than it is, and at a
+2-to-10-session holding period a multi-day error is a large fraction of the window.
+
+A period whose release datetime does not resolve is marked unresolved for the drift leg. The
+filing date stays on the row as ``filed``, for provenance, and is never substituted for the
+anchor. Trading a stale drift window because the anchor was quietly wrong is a worse outcome
+than not trading the leg at all, and the coverage this costs is reported as its own
+diagnostic rather than absorbed.
 """
 
 from __future__ import annotations
@@ -54,6 +61,8 @@ import os
 from datetime import date
 from functools import lru_cache
 
+from earnings_release import (ANNOUNCEMENT_ANCHOR_NOTE as RELEASE_ANCHOR_NOTE,
+                              RELEASES_PATH, release_for_period)
 from pit_fundamentals_store import ShardedStore, shard_for
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -82,11 +91,16 @@ SUE_MIN_HISTORY = 4
 PRIMARY_BASIS = "net_income"
 FALLBACK_BASIS = "eps_diluted"
 
-ANNOUNCEMENT_ANCHOR = "sec_filing_date"
-ANNOUNCEMENT_ANCHOR_NOTE = (
-    "Drift windows are anchored on the 10-Q/10-K filing date, which lags the earnings press "
-    "release by several days; window age is therefore understated. Form 8-K Item 2.02 carries "
-    "the true announcement date and is the next increment.")
+ANNOUNCEMENT_ANCHOR = "earnings_release_datetime_8k_item_202"
+ANNOUNCEMENT_ANCHOR_NOTE = RELEASE_ANCHOR_NOTE
+
+# The anchor the leg used before spec amendment SA-2026-08-12-02, kept as a label so a row
+# written under the old rule stays identifiable and so the migration diagnostic can name it.
+SUPERSEDED_ANNOUNCEMENT_ANCHOR = "sec_filing_date"
+
+# Status a row carries when its fiscal period has no resolvable release datetime. The PEAD
+# leg drops these rows. It does not fall back to the filing date.
+RELEASE_UNRESOLVED_STATUS = "RELEASE_DATE_UNRESOLVED"
 
 
 def _days_between(start, end):
@@ -206,6 +220,23 @@ def _seasonal_differences(series):
 
 
 def _sue_from_series(series, basis):
+    """SUE under the seasonal random walk **with drift**, and the pieces it was built from.
+
+    The expectation model is not a bare year-over-year difference. Foster (The Accounting
+    Review 1977) and Foster, Olsen & Shevlin (The Accounting Review 1984) specify
+
+        E[x_t] = x_{t-4} + delta        delta estimated from the firm's own history
+        SUE    = (x_t - E[x_t]) / sd(d_{t-1..t-k}),   d_i = x_i - x_{i-4}
+
+    so the surprise is what the firm did beyond its own trend, and it is scaled by the
+    standard deviation of that firm's history of seasonal differences. ``drift`` on the
+    returned dict is delta, published so the with-drift form is verifiable from the output
+    rather than asserted in a comment.
+
+    Dropping delta would make a firm growing earnings steadily register a positive surprise
+    every single quarter, which is a growth signal wearing a surprise's name. That failure
+    mode is pinned by a test in pipeline/tests/test_edgar_sue.py.
+    """
     differences = _seasonal_differences(series)
     if len(differences) < SUE_MIN_HISTORY + 1:
         return None
@@ -213,27 +244,61 @@ def _sue_from_series(series, basis):
     history = [difference for _pe, _f, difference in differences[-(SUE_TARGET_HISTORY + 1):-1]]
     if len(history) < SUE_MIN_HISTORY:
         return None
-    mean = sum(history) / len(history)
-    variance = sum((value - mean) ** 2 for value in history) / (len(history) - 1)
+    drift = sum(history) / len(history)
+    variance = sum((value - drift) ** 2 for value in history) / (len(history) - 1)
     scale = math.sqrt(variance)
     if not scale or not math.isfinite(scale):
         # A firm whose seasonal differences never move has no scale to standardize against;
         # dividing by ~0 would manufacture the largest surprise in the cross-section.
         return None
-    value = (latest - mean) / scale
+    value = (latest - drift) / scale
     if not math.isfinite(value):
         return None
     return {"sue": value, "basis": basis, "period_end": period_end, "filed": filed,
+            "expectation_model": "seasonal_random_walk_with_drift",
+            "drift": drift, "seasonal_difference": latest, "scale": scale,
             "history_quarters": len(history), "derived_quarters": sum(1 for q in series if q["derived"]),
             "announcement_anchor": ANNOUNCEMENT_ANCHOR}
 
 
-def sue_for(symbol, as_of, *, cik=None):
+def attach_release_anchor(result, as_of, *, cik, releases_path=RELEASES_PATH):
+    """Stamp a SUE row with its earnings release datetime, or mark it unresolved.
+
+    Spec amendment SA-2026-08-12-02. The release datetime comes from Form 8-K Item 2.02 by
+    way of earnings_release.py, which is a different filing from the 10-Q that produced the
+    number. When no release resolves, ``release_datetime`` stays None, ``anchor_status``
+    says so, and the PEAD leg drops the row. The filing date remains on the row as provenance
+    and is never promoted into the anchor.
+    """
+    release = release_for_period(cik, result.get("period_end"), as_of,
+                                 path=releases_path)
+    if not release:
+        return {**result, "release_datetime": None, "release_date": None,
+                "release_source": None, "release_precision": None,
+                "anchor_status": RELEASE_UNRESOLVED_STATUS,
+                "announcement_anchor": ANNOUNCEMENT_ANCHOR,
+                "superseded_anchor": SUPERSEDED_ANNOUNCEMENT_ANCHOR}
+    return {**result,
+            "release_datetime": release["release_datetime"],
+            "release_date": release["release_date"],
+            "release_source": release.get("source"),
+            "release_precision": release.get("precision"),
+            "release_accession": release.get("accession"),
+            "anchor_status": "RELEASE_DATE_RESOLVED",
+            "announcement_anchor": ANNOUNCEMENT_ANCHOR,
+            "superseded_anchor": SUPERSEDED_ANNOUNCEMENT_ANCHOR}
+
+
+def sue_for(symbol, as_of, *, cik=None, releases_path=RELEASES_PATH):
     """Standardized unexpected earnings for one ticker as of a date, or None.
 
     Tries net income first and diluted EPS only if net income cannot produce a full history,
     so the split-exposed basis is a fallback rather than a silent equal partner. ``basis`` on
     the returned dict always says which one answered.
+
+    Every returned row carries its release anchor, resolved or not. A row is still returned
+    when the release datetime is missing, because the surprise itself is real and the caller
+    needs to be able to count how many rows the anchor requirement costs.
     """
     cik = cik or _ticker_to_cik().get(str(symbol).upper())
     if not cik:
@@ -242,17 +307,24 @@ def sue_for(symbol, as_of, *, cik=None):
         series = quarterly_series(cik, basis, as_of)
         result = _sue_from_series(series, basis) if series else None
         if result:
-            return result
+            return attach_release_anchor(result, as_of, cik=cik, releases_path=releases_path)
     return None
 
 
-def announcement_age_trading_days(filed, sessions):
-    """Sessions elapsed since ``filed``, counted on the name's own trading calendar.
+def announcement_age_trading_days(anchor, sessions):
+    """Sessions elapsed since ``anchor``, counted on the name's own trading calendar.
 
-    ``sessions`` is the cached date series for the ticker. Counting real sessions rather than
-    scaling calendar days keeps the drift window honest across holidays and around the gap
-    between the last cached session and the run date.
+    ``anchor`` is the earnings release datetime, so a release accepted after the close on a
+    session does not count that session as drift: the comparison is on the calendar date of
+    the release and sessions strictly after it. ``sessions`` is the cached date series for
+    the ticker, so real trading days are counted rather than calendar days scaled by a
+    factor, which keeps the window honest across holidays and across the gap between the last
+    cached session and the run date.
+
+    Returns None when the anchor is missing. The caller must treat that as unresolved rather
+    than as a zero-age window.
     """
-    if not filed or not sessions:
+    if not anchor or not sessions:
         return None
-    return sum(1 for session in sessions if session and session > filed)
+    anchor_date = str(anchor)[:10]
+    return sum(1 for session in sessions if session and str(session)[:10] > anchor_date)

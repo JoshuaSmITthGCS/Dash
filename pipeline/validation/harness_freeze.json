@@ -43,8 +43,11 @@
     "turnover_control_sweep_pre_r3": 4,
     "scoring_variants": 7,
     "regression_constructions": 4,
-    "total_enumerated": 35,
-    "dsr_trial_count_used": 40
+    "swing_reversal_variants_2026_08_12": 3,
+    "entry_timing_overlay_variants_2026_08_12": 5,
+    "total_enumerated": 43,
+    "dsr_trial_count_used": 48,
+    "note": "Registered before any of the 2026-08-12 variants ran. The count is read from pipeline/validation/hypothesis_log.jsonl, which is append-only and timestamped, rather than recalled. Every variant counts, including the ones that will be abandoned: dropping the losers from the trial count is what turns a deflated statistic back into an undeflated one."
   },
   "promotion_criteria_champion_or_challenger": {
     "minimum_periods": 24,
@@ -81,9 +84,186 @@
       ],
       "changes_that_reset_this_clock": [
         "any change to leg weights, subfactor definitions, standardization, coverage handling or the negative screen"
-      ]
+      ],
+      "amended_by": {
+        "date": "2026-08-12",
+        "amendments": ["SA-2026-08-12-01", "SA-2026-08-12-02", "SA-2026-08-12-03",
+                       "SA-2026-08-12-04", "SA-2026-08-12-05", "SA-2026-08-12-06",
+                       "SA-2026-08-12-07", "SA-2026-08-12-08"],
+        "clock_reset": true,
+        "reset_by": ["SA-2026-08-12-02", "SA-2026-08-12-04"],
+        "clock_cost_of_the_reset": "zero. The clock starts 2026-09-01 and had accrued none of its 24 required periods on the amendment date, which is why all eight amendments landed together rather than being staged.",
+        "clock_start_after_reset": "2026-09-01",
+        "definition_after_amendments": "pipeline/swing_signals.py five-leg swing-horizon composite (PEAD/SUE .30, analyst revision .25, high-volume premium .20, 52-week-high proximity .15, short-term reversal .10), scored per swing_signals.SWING_WEIGHTS with per-row renormalization across resolved legs, a three-of-five legs-resolved floor, PEAD drift windows anchored on the Form 8-K Item 2.02 release datetime, and a 30% GICS sector cap applied after ranking. Published to public/data/screens/swing.json as registered variant swing-reversal-A."
+      },
+      "open_questions_answered_by_amendment": {
+        "reversal_leg_in_its_naive_form": "SA-2026-08-12-08 turns this from an open question into a registered three-way comparison (swing-reversal-A/B/C) rather than leaving the leg unexamined.",
+        "sector_neutralization": "SA-2026-08-12-07 applies a declared 30% cap. This is a cap rather than neutralization, and whether it helps is still for the clock to report."
+      }
     }
   ],
-  "hash_scope": "freeze_hash covers the champion registration and its criteria only; additional_models entries carry their own clock and are appended without rehashing the champion.",
+  "spec_amendments": {
+    "purpose": "Dated corrections to the registered swing-v1.1.0 specification. Each entry is a defect fix to the model as specified, not a new feature and not a tuned parameter. No threshold here was chosen by looking at an outcome. Amendments that change score semantics reset the swing model's prospective clock, and each entry says whether it does.",
+    "amended_at": "2026-08-12",
+    "clock_status_after_amendments": "The swing-v1.1.0 clock had accrued zero of its required periods on this date, because it starts 2026-09-01. Every amendment below therefore costs nothing in forfeited prospective record, which is the reason for making all of them now rather than staging them.",
+    "amendments": [
+      {
+        "id": "SA-2026-08-12-01",
+        "date": "2026-08-12",
+        "title": "Analyst revision leg: sign audited end to end, long-only asymmetry declared",
+        "rationale": "The leg's sign was audited across the raw consensus input, the differencing, the standardization and the cross-sectional rank, and rising consensus maps to a positive score at every step. Regression tests now pin that, per subfactor as well as per leg. The published effect is asymmetric and concentrates on the downgrade side (Womack, Journal of Finance 1996: new sells -9.1% over six months, new buys +2.4%), which a long-only book cannot harvest, so the leg now carries a machine-readable LONG_ONLY_ASYMMETRY warning and its 0.25 weight must not be read as a claim on the full published spread.",
+        "resets_clock": false,
+        "reset_reason": "No score semantics changed. The sign was already correct and the amendment adds metadata plus tests."
+      },
+      {
+        "id": "SA-2026-08-12-02",
+        "date": "2026-08-12",
+        "title": "PEAD drift windows re-anchored on the earnings release datetime",
+        "rationale": "Windows were anchored on the 10-Q or 10-K filing date, which lags the earnings press release by days and understates window age in one direction every time. At a 2-to-10-session hold that is a large fraction of the window. The anchor is now the Form 8-K Item 2.02 release datetime, sourced independently of the periodic filing and stored point-in-time in pipeline/data/pit/earnings_releases.jsonl. A period with no resolvable release datetime is unresolved for the leg and is never carried on the filing date. Coverage loss is published as pead_anchor_diagnostic on every run and the delta against the pre-amendment 85% is surfaced explicitly when coverage falls below it.",
+        "resets_clock": true,
+        "reset_reason": "Coverage handling and the drift-window gate both changed, which is a change to score semantics under changes_that_reset_this_clock."
+      },
+      {
+        "id": "SA-2026-08-12-03",
+        "date": "2026-08-12",
+        "title": "SUE confirmed as the seasonal random walk with drift",
+        "rationale": "Audited against Foster (The Accounting Review 1977) and Foster, Olsen & Shevlin (The Accounting Review 1984). The expectation model already included the drift term estimated from the firm's own history and standardized by the standard deviation of that firm's seasonal differences. The drift term is now published on every row as an output field so the with-drift form is verifiable rather than asserted, and tests pin both the reduction and the failure mode a bare year-over-year difference would produce, which is a steady compounder registering a large positive surprise every quarter.",
+        "resets_clock": false,
+        "reset_reason": "The construct was already correct. The amendment adds an output field and tests."
+      },
+      {
+        "id": "SA-2026-08-12-04",
+        "date": "2026-08-12",
+        "title": "Zero-fill replaced with per-row renormalization, plus a legs-resolved floor",
+        "rationale": "An unresolved leg previously contributed zero at its declared weight, which pulls thin rows toward the cross-sectional mean. Thinness is not random: coverage tracks size and liquidity, so the rule muted exactly the high-idiosyncratic-volatility, low-liquidity names where McLean & Pontiff (Journal of Finance 2016) measure post-publication decay to be worst. That is an undeclared size and liquidity tilt inside a rule presented as conservative. Weights are now renormalized across the legs that resolved. The wider-dispersion problem the old rule was written against is handled directly instead, by excluding any row resolving fewer than three of five legs from the ranked output. coverage stays published, legs_resolved is published beside it, and the superseded value rides along as composite_z_zero_filled. The before/after size and liquidity shift in the top decile is measured by pipeline/diagnostics/renormalization_shift.py.",
+        "resets_clock": true,
+        "reset_reason": "Coverage handling changed, which is a change to score semantics under changes_that_reset_this_clock.",
+        "acknowledged_tension": "This reverses the neutral-imputation direction Round 4 took on the research score (scorer.py mode fixed_feature), which was adopted to break a coverage-score coupling measured at Spearman 0.554. The two decisions are compatible only because this one is paired with a hard legs-resolved floor and that one was not. If the prospective clock shows coverage-score coupling returning on the swing model, this amendment is the first thing to look at."
+      },
+      {
+        "id": "SA-2026-08-12-05",
+        "date": "2026-08-12",
+        "title": "McLean-Pontiff decay constants verified repository-wide",
+        "rationale": "Swept the repository for competing decay figures. The constants were already 26% lower out of sample and 58% lower post-publication and no competing figure was found in pipeline, src, docs, research or scripts. All five legs rest on published results, so all five take the post-publication figure; that list is now enumerated on DECAY_HAIRCUT rather than implied, and pipeline/tests/test_swing_decay_constants.py fails if a leg is added without it or if any file in the repository quotes a different figure.",
+        "resets_clock": false,
+        "reset_reason": "Disclosure only. The haircut is published beside the effect sizes and is never applied as a multiplier to a cross-sectional rank."
+      },
+      {
+        "id": "SA-2026-08-12-06",
+        "date": "2026-08-12",
+        "title": "Cost model reconciled to one curve, participation cap added",
+        "rationale": "Auditing the published round-trip points against the canonical square-root law found one real inconsistency: estimate_cost_bps clamped participation at 100% of ADV, so past one day's volume the quoted impact stopped rising with size and the largest quoted points sat off the curve, understating cost by exactly the amount the clamp removed. The clamp is gone and the law is now applied at every size, with beyond_measured_domain marking the extrapolated region. Book size and position size are labelled separately everywhere, since the capacity conclusion is the ratio between them. A participation cap of at most 10% of trailing 20-day ADV per round trip, defaulting to 5%, now rejects breaching positions rather than scoring them tradable, and a configured cap above the ceiling raises rather than clamping. Curve consistency is asserted in the published output and in a test. The liquidity-tiered spread proxy caveat is now attached to every returned estimate rather than only to the module docstring.",
+        "resets_clock": false,
+        "reset_reason": "The cost model reports on the book; it does not enter a score or a rank."
+      },
+      {
+        "id": "SA-2026-08-12-07",
+        "date": "2026-08-12",
+        "title": "Sector concentration cap on the ranked book",
+        "rationale": "Four of the five legs are continuation signals and continuation clusters by sector, so the top of the ranking concentrates in mega-cap technology and communication services. A sector bet arrived at by accident cannot be reasoned about; a declared constraint can. A configurable cap, defaulting to 30% of the ranked book per GICS sector, is applied after ranking by trimming the lowest-scoring names in the over-represented sector, so the constraint costs the book its weakest expressions of the crowded view rather than reshuffling the ranking. Every trim is logged with the sector, the score, the book size and the cap it was measured against. A sector always keeps at least one name, since on a small book the cap is otherwise unsatisfiable.",
+        "resets_clock": false,
+        "reset_reason": "Applied after ranking as a portfolio constraint. Scores and percentiles are unchanged, and trimmed rows stay published with their reason attached.",
+        "answers_open_question": "Addresses the fourth open question on swing-v1.1.0: whether the book needs sector neutralization. This is a cap, not neutralization, and the clock still has to report whether it helps."
+      },
+      {
+        "id": "SA-2026-08-12-08",
+        "date": "2026-08-12",
+        "title": "Short-term reversal demoted to a three-way registered variant comparison",
+        "rationale": "Raw weekly reversal is a liquidity-provision return earned overnight (Nagel, NBER w17653, 2012), while continuation over the same week is earned intraday and with the opposite sign (Lou, Polk & Skouras, Journal of Financial Economics 2019). Only the residual component survives in modern samples (Da, Liu & Schaumburg, Management Science 2014). It is also the only contrarian element in a composite that is otherwise four-fifths continuation. That is an argument for a measurement, not a deletion, so the leg is neither kept unexamined nor removed unilaterally: three variants run forward together and none is chosen on historical data.",
+        "resets_clock": false,
+        "reset_reason": "Variant A is the frozen baseline and is unchanged. B and C are new challengers, which changes_that_do_not_reset already covers."
+      }
+    ]
+  },
+  "swing_reversal_variants": {
+    "registered_at": "2026-08-12T00:00:00+00:00",
+    "family": "swing_reversal",
+    "clock_start": "2026-09-01",
+    "expected_completion_at_monthly_frequency": "2028-09-01",
+    "selection_rule": "All three run forward from 2026-09-01. No winner is picked on historical data. Any comparison between them uses the deflated Sharpe ratio at the trial count in trial_count_for_deflated_statistics, and clears the Harvey-Liu-Zhu t > 3.0 hurdle, before it is treated as evidence of anything.",
+    "variants": [
+      {
+        "variant_id": "swing-reversal-A",
+        "cell": "A",
+        "is_frozen_baseline": true,
+        "definition": "The frozen swing-v1.1.0 baseline. Raw prior-week return, reversed, at 10% weight, cost-gated to names above the reversal minimum dollar volume.",
+        "weights": {"pead_drift": 0.30, "analyst_revision": 0.25, "high_volume_premium": 0.20, "high_52w_proximity": 0.15, "short_term_reversal": 0.10}
+      },
+      {
+        "variant_id": "swing-reversal-B",
+        "cell": "B",
+        "is_frozen_baseline": false,
+        "definition": "Reversal leg removed. Its 10% is redistributed proportionally across the four continuation legs, so the evidence ordering among the survivors is unchanged.",
+        "weights": {"pead_drift": 0.3333333333333333, "analyst_revision": 0.2777777777777778, "high_volume_premium": 0.2222222222222222, "high_52w_proximity": 0.16666666666666666}
+      },
+      {
+        "variant_id": "swing-reversal-C",
+        "cell": "C",
+        "is_frozen_baseline": false,
+        "definition": "Reversal leg replaced with a residualized reversal at the same 10%: the prior-week return orthogonalized by one cross-sectional OLS against a constant, the row's own sector mean prior-week return, and the four continuation leg z-scores. The residual is what the leg scores. This is the construct Da, Liu & Schaumburg (Management Science 2014) find survives in modern samples.",
+        "weights": {"pead_drift": 0.30, "analyst_revision": 0.25, "high_volume_premium": 0.20, "high_52w_proximity": 0.15, "short_term_reversal": 0.10}
+      }
+    ]
+  },
+  "entry_timing_overlay": {
+    "registered_at": "2026-08-12T00:00:00+00:00",
+    "family": "entry_timing_overlay",
+    "clock_start": "2026-09-01",
+    "expected_completion_at_monthly_frequency": "2028-09-01",
+    "what_it_tests": "Whether a momentum-turn filter, applied only to names the composite has already selected, improves entry timing by enough to beat its own cost. It is a timing gate and not a scoring leg: RSI and MACD do not enter the composite, do not influence rank, and appear nowhere in pipeline/swing_signals.py.",
+    "why_the_budget_is_five_cells": "RSI, MACD and moving-average slope are all transforms of the same recent price series, so treating them as independent confirmations triple-counts one factor. The modes are therefore mutually exclusive and each combination is its own registered variant. Sullivan, Timmermann & White (Journal of Finance 1999) show the best in-sample technical rule loses significance once the universe of rules tried is corrected for, so every added cell raises the correction applied to all of them. Five is the entire budget. A sixth requires documenting what is being given up.",
+    "variants": [
+      {"variant_id": "O-0", "trend_gate": false, "momentum_mode": "off", "volume_gate": false, "label": "control: the composite's own entry, no overlay"},
+      {"variant_id": "O-1", "trend_gate": true, "momentum_mode": "off", "volume_gate": false, "label": "trend gate only"},
+      {"variant_id": "O-2", "trend_gate": true, "momentum_mode": "off", "volume_gate": true, "label": "trend gate and volume gate, no momentum mode"},
+      {"variant_id": "O-3", "trend_gate": true, "momentum_mode": "rsi_change", "volume_gate": true, "label": "trend gate, RSI change and inflection through its own trailing median, volume gate"},
+      {"variant_id": "O-4", "trend_gate": true, "momentum_mode": "macd_hist_slope", "volume_gate": true, "label": "trend gate, MACD histogram slope turning positive while still negative, volume gate"}
+    ],
+    "frozen_parameters": {
+      "trend_gate": {"ema_fast": 10, "ema_slope_lookback": 3, "require_close_above": 20},
+      "momentum_turn": {"rsi_period": 14, "rsi_change_lookback": 3, "rsi_median_lookback": 60, "macd_fast": 12, "macd_slow": 26, "macd_signal": 9},
+      "volume_gate": {"rvol_lookback": 20, "rvol_threshold": 1.5},
+      "max_defer_sessions": 3,
+      "note": "No parameter here may change after this registration. Changing one creates a new variant id and consumes a further cell of the test budget. pipeline/overlay/entry_timing.py refuses a config that disagrees with its own registered variant id."
+    },
+    "what_is_deliberately_not_implemented": [
+      "Any fixed RSI level rule (RSI < 25, RSI < 30, or similar) as a primary trigger. The level-threshold family is the most heavily data-snooped surface in the indicator literature and a fixed level is chosen on the same sample it is then evaluated on. rsi_change scores the change and the inflection through the name's own trailing median instead.",
+      "The MACD signal-line crossover as a trigger. It is later than the histogram-slope turn by construction. It is measured against the implemented trigger, in sessions elapsed and in forward return over the holding window, rather than being run as a competing rule.",
+      "Any additive combination of RSI and MACD. There is no such mode and the config loader raises on one."
+    ],
+    "reported_per_variant": [
+      "net-of-cost return",
+      "Sharpe ratio",
+      "deflated Sharpe ratio",
+      "maximum drawdown",
+      "turnover",
+      "average holding period",
+      "hit rate",
+      "average sessions deferred",
+      "the counterfactual cost of deferral, as a distribution"
+    ],
+    "acceptance_rule": {
+      "written_before_results_exist": true,
+      "written_at": "2026-08-12T00:00:00+00:00",
+      "rule": "An overlay variant is adopted only if it improves net-of-cost deflated Sharpe ratio over O-0 by at least the registered margin AND its improvement clears t > 3.0. Both conditions, not either.",
+      "minimum_deflated_sharpe_improvement_over_O_0": 0.10,
+      "margin_justification": "Registered in advance and deliberately not derived from any measurement on this universe. It is set at the level below which an overlay's operational cost, in extra decisions per refresh and in the deferral tracking it requires, is not worth carrying regardless of statistical significance.",
+      "t_hurdle": 3.0,
+      "t_hurdle_citation": "Harvey, Liu & Zhu, Review of Financial Studies 29(1), 2016",
+      "data_snooping_citation": "Sullivan, Timmermann & White, Journal of Finance 1999",
+      "minimum_periods": 24,
+      "pbo_maximum": 0.50,
+      "outcome_if_not_met": "The overlay stays off permanently and the momentum-turn code is deleted rather than left dormant. Dormant code is a standing invitation to re-run the comparison with one parameter moved, which is the mechanism the whole registration exists to block.",
+      "no_winner_is_chosen_on_historical_data": true
+    },
+    "statistical_requirements": {
+      "deflated_sharpe": "pipeline/validation/deflated_sharpe.py, Bailey and Lopez de Prado, Journal of Portfolio Management 40(5), 2014",
+      "pbo": "pipeline/validation/deflated_sharpe.py, CSCV per Bailey, Borwein, Lopez de Prado and Zhu, Notices of the American Mathematical Society 61(5), 2014",
+      "cross_validation": "purged and embargoed, pipeline/validation/labeling.py. Overlapping forward windows at a 2-to-10-session horizon leak badly without both.",
+      "labels": "triple-barrier, upper and lower barriers at multiples of the name's own ATR, vertical barrier at 10 sessions, each label weighted by the reciprocal of its overlap count so overlapping windows do not inflate the effective sample size",
+      "hypothesis_log": "pipeline/validation/hypothesis_log.jsonl, append-only and timestamped, so the multiple-testing count is auditable rather than remembered"
+    }
+  },
+  "hash_scope": "freeze_hash covers the champion registration and its criteria only; additional_models entries, spec_amendments, swing_reversal_variants and entry_timing_overlay carry their own clocks and are appended without rehashing the champion.",
   "freeze_hash": "f0b649bf9e642d9a389ab9c333b0e5d090aa80e01806a4856351f2ac491bfe43"
 }
