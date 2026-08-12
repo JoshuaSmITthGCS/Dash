@@ -62,7 +62,7 @@
     "icir": ">= 0.5",
     "ic_t_stat": ">= 2.4 (0.5 * sqrt(24))",
     "net_of_cost_top_minus_bottom_quintile_spread": "> 0 at canonical square-root impact",
-    "deflated_sharpe": ">= 0.95 probability at N=40 trials (Bailey and Lopez de Prado, JPM 40(5), 2014)",
+    "deflated_sharpe": ">= 0.95 probability at N=50 trials, per trial_count_for_deflated_statistics.dsr_trial_count_used (Bailey and Lopez de Prado, JPM 40(5), 2014)",
     "pbo": "<= 0.50 via CSCV when enough periods exist"
   },
   "real_money_criteria": {
