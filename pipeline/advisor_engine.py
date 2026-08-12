@@ -15,9 +15,10 @@ from datetime import timedelta
 from insider_signal import score_insider_activity
 from concentration_risk import score_concentration_risk
 from geographic_exposure import score_geographic_concentration
-from risk_metrics import (annualized_volatility, beta_vs_benchmark, daily_returns,
-                          drawdown_score, low_beta_score, max_drawdown, momentum_12_1,
-                          ratio_to_score, sharpe_ratio, sortino_ratio)
+from risk_metrics import (acceleration_score, annualized_volatility, beta_vs_benchmark,
+                          daily_returns, drawdown_score, low_beta_score, max_drawdown,
+                          momentum_12_1, ratio_to_score, relative_acceleration,
+                          sharpe_ratio, sortino_ratio)
 from scorer import SETTINGS, valuation_score
 from news_intelligence import weighted_sentiment
 from recommendation_policy_v2 import build_recommendation_v2
@@ -57,6 +58,17 @@ DEFAULT_TECHNICAL_WEIGHTS = {
 }
 TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weights"),
                              DEFAULT_TECHNICAL_WEIGHTS)
+
+# Relative acceleration is measured and published for every scored name but carries no
+# ranking weight: it is absent from TECHNICAL_WEIGHTS above and so cannot reach the blend.
+# That is deliberate. The audit's finding against relative_strength_20d was that a signal
+# was drawing 16% of market behaviour on no evidence of its own; adding a second
+# market-relative term to the blend on nothing but a plausible mechanism would repeat the
+# mistake in the opposite direction. It is published so the validation harness can measure
+# it prospectively, and promoted to a weight only if that measurement supports one.
+DEFAULT_RELATIVE_ACCELERATION = {"leg_days": 63, "skip_days": 5, "scoring_span": 1.0}
+RELATIVE_ACCELERATION = _weights((SETTINGS.get("market_behavior") or {}).get("relative_acceleration"),
+                                 DEFAULT_RELATIVE_ACCELERATION)
 NEWS_INTELLIGENCE = SETTINGS["news_intelligence"]
 SENTIMENT_WINDOW_DAYS = int(NEWS_INTELLIGENCE["window_days"])
 FUNDAMENTAL_METRIC_NAMES = {
@@ -138,6 +150,17 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
     if benchmark_closes and len(benchmark_closes) >= 21:
         bench_ret = (benchmark_closes[-1] / benchmark_closes[-21] - 1) * 100
         relative = ret_20 - bench_ret
+    # Second derivative of the market-relative path: is this name beating the market by more
+    # than it recently was? Beta is deliberately left for relative_acceleration to estimate
+    # from the same daily window it measures on rather than passed in from ``extended``,
+    # which may carry a provider beta fitted over a different frequency and horizon -
+    # residualizing a 6-month daily window against a 5-year monthly beta would subtract the
+    # wrong amount of market.
+    acceleration = relative_acceleration(
+        closes, benchmark_closes,
+        leg=int(RELATIVE_ACCELERATION["leg_days"]),
+        skip=int(RELATIVE_ACCELERATION["skip_days"]),
+    ) if benchmark_closes else None
     confirmation = volume_confirmation(closes, volumes)
     from_high = extended.get("pct_from_52w_high")
     above_low = extended.get("pct_above_52w_low")
@@ -195,6 +218,12 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         "max_drawdown_252d": drawdown_252,
         "sharpe_ratio": sharpe, "sortino_ratio": sortino,
         "relative_strength_20d": round(relative, 2) if relative is not None else None,
+        # Measured, published, and unweighted - see RELATIVE_ACCELERATION above for why.
+        "relative_acceleration": acceleration["acceleration"] if acceleration else None,
+        "relative_acceleration_score": acceleration_score(
+            acceleration["acceleration"], span=RELATIVE_ACCELERATION["scoring_span"],
+        ) if acceleration else None,
+        "relative_acceleration_detail": acceleration,
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
         "pct_above_52w_low": above_low, "beta": beta,
         "technical_extended_detail": technical_extended_detail,

@@ -814,6 +814,74 @@ export function diversificationScore(positions = [], options = {}) {
 }
 
 export function maximumDrawdown(values = []) { let peak = null; let worst = 0; values.filter(finite).forEach((raw) => { const value = Number(raw); peak = peak == null ? value : Math.max(peak, value); if (peak) worst = Math.min(worst, (value / peak - 1) * 100) }); return values.length > 1 ? worst : null }
+/**
+ * How long the portfolio has spent below its own high-water mark, in calendar days.
+ *
+ * maximumDrawdown answers how deep the hole was. It does not answer how long you were in
+ * it, and those are different experiences of the same number: a 20% fall recovered in three
+ * weeks and a 20% fall you sat underwater in for fourteen months are not the same portfolio
+ * to hold. Duration is also the part people underestimate in advance and feel most acutely
+ * at the time.
+ *
+ * Takes dates alongside values because the series is not guaranteed to be evenly spaced -
+ * counting observations would report a ragged grid's sparse stretches as short ones.
+ */
+export function underwaterProfile(series) {
+  const rows = (series?.dates || [])
+    .map((date, index) => ({ date: String(date).slice(0, 10), value: Number(series.values?.[index]) }))
+    .filter((row) => finite(row.value) && row.value > 0 && Number.isFinite(Date.parse(row.date)))
+    .sort((left, right) => left.date.localeCompare(right.date))
+  if (rows.length < 2) return { available: false, reason: 'Two dated portfolio values are required.' }
+
+  const dayGap = (from, to) => Math.round((Date.parse(to) - Date.parse(from)) / 86400000)
+  let peak = rows[0]
+  let peakOfWorst = null
+  let worst = 0
+  let longestUnderwaterDays = 0
+  let recoveryDaysForWorst = null
+  let currentSpellStart = null
+
+  rows.forEach((row) => {
+    if (row.value >= peak.value) {
+      if (currentSpellStart) {
+        longestUnderwaterDays = Math.max(longestUnderwaterDays, dayGap(currentSpellStart.date, row.date))
+        // Only the deepest fall's recovery time is reported; a portfolio has many small
+        // dips and one of them being slow to mend is not the fact worth surfacing.
+        if (peakOfWorst && currentSpellStart.date === peakOfWorst.date) {
+          recoveryDaysForWorst = dayGap(currentSpellStart.date, row.date)
+        }
+        currentSpellStart = null
+      }
+      peak = row
+      return
+    }
+    if (!currentSpellStart) currentSpellStart = peak
+    const depth = (row.value / peak.value - 1) * 100
+    if (depth < worst) {
+      worst = depth
+      peakOfWorst = peak
+      recoveryDaysForWorst = null
+    }
+  })
+
+  const last = rows.at(-1)
+  const currentUnderwaterDays = currentSpellStart ? dayGap(currentSpellStart.date, last.date) : 0
+  return {
+    available: true,
+    longestUnderwaterDays: Math.max(longestUnderwaterDays, currentUnderwaterDays),
+    currentUnderwaterDays,
+    currentDrawdownPct: (last.value / peak.value - 1) * 100,
+    deepestDrawdownPct: worst,
+    // Null while the deepest fall has not been recovered yet - which is itself the answer,
+    // and must not be shown as a zero-day recovery.
+    recoveryDaysForDeepest: recoveryDaysForWorst,
+    stillUnderwater: Boolean(currentSpellStart),
+    highWaterDate: peak.date,
+    observations: rows.length,
+    reason: null,
+  }
+}
+
 export function annualizedVolatility(values = []) { const returns = values.slice(1).map((value, index) => finite(value) && finite(values[index]) && values[index] ? Number(value) / Number(values[index]) - 1 : null).filter(finite); if (returns.length < 2) return null; const mean = returns.reduce((a, b) => a + b, 0) / returns.length; const variance = returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (returns.length - 1); return Math.sqrt(variance) * Math.sqrt(analyticsConfig.trading_days_per_year) * 100 }
 
 export function resilienceIndex(values = [], diversification = null) {

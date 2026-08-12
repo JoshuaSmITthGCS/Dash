@@ -43,12 +43,17 @@ import {
   diversificationScore,
   performanceMetrics,
   portfolioReturnSummary,
+  portfolioRiskDecomposition,
   portfolioScore,
   resilienceIndex,
   riskFreeAnnualRate,
   selectPeriod,
   sliceSeriesFrom,
+  underwaterProfile,
 } from '../lib/portfolioAnalytics.js'
+import { portfolioAcceleration } from '../lib/portfolioAcceleration.js'
+import { battingAverage, captureRatios } from '../lib/portfolioBenchmarkComparison.js'
+import { shortTermView } from '../lib/portfolioShortTermView.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
@@ -295,6 +300,32 @@ export default function Portfolio() {
   const scoreResilience = resilienceIndex(scoreComparable?.left.values || scorePortfolioPeriod?.values || [], scoreDiversification)
   const riskFree = riskFreeAnnualRate(data)
   const scorePerformance = performanceMetrics(scoreComparable?.left, scoreComparable?.right, riskFree.annualPct)
+  // Fed the unclipped holdings series rather than scoreComparable's one-year slice: the
+  // reading needs two full quarters plus the skipped week, and clipping first would leave it
+  // measuring the tail of its own window. No flows are passed because this series is today's
+  // share counts applied to historical closes - deposits and withdrawals never enter it.
+  const benchmarkSeries = benchmarkHistory?.dates
+    ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes }
+    : null
+  const scoreAcceleration = portfolioAcceleration(scoreHoldingsSeries, benchmarkSeries)
+  // Capture and batting average read the same unclipped series for the same reason: both
+  // need the market to have gone both ways, and a one-year slice of a bull run may not
+  // contain enough down periods to answer with.
+  const scoreCapture = captureRatios(scoreHoldingsSeries, benchmarkSeries)
+  const scoreBatting = battingAverage(scoreHoldingsSeries, benchmarkSeries)
+  const scoreUnderwater = underwaterProfile(scoreHoldingsSeries)
+  // Deliberately the FULL series, not the live-tracking slice the ratios above may use: the
+  // short-term panel exists to answer the last week and month, and it needs the baseline
+  // history behind them to know what this portfolio's normal wobble even is.
+  const scoreShortTerm = shortTermView(scoreHoldingsSeriesFull, benchmarkSeries)
+  // The same call the Diversification page makes, for the same numbers - tracking error and
+  // active share are computed once in portfolioRiskDecomposition and read in both places
+  // rather than reimplemented here.
+  const scoreRisk = portfolioRiskDecomposition(portfolioPositions, {
+    benchmarkHistory,
+    benchmarkWeights: (etfData?.etfs || []).find((row) => row.ticker === 'SPY')?.top_holdings,
+    etfs: etfData?.etfs || [],
+  })
   const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
   const overallScore = portfolioScore({
     diversification: scoreDiversification,
@@ -600,7 +631,9 @@ export default function Portfolio() {
         <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span></div>
         <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
       </div>
-      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
+      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree}
+        acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
+        shortTerm={scoreShortTerm} risk={scoreRisk} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">

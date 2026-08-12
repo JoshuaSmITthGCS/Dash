@@ -159,7 +159,48 @@
   "portfolio_analytics": {
     "trading_days_per_year": 252,
     "performance_minimum_observations": 20,
+    "acceleration": {
+      "_comment": "Portfolio-level acceleration against the benchmark (src/lib/portfolioAcceleration.js): beta-adjusted excess return over the most recent leg_days, less the same over the leg_days before it, divided by the portfolio's own tracking noise. Beta-adjusting is what separates a portfolio that outran the index from one the index carried; dividing by tracking noise makes the reading comparable across a concentrated book and a diversified one. leg_days is a calendar quarter rather than 63 trading sessions because the portfolio value series is not guaranteed to be daily. skip_days drops the last week, where short-term reversal lives. Same measure as market_behavior.relative_acceleration, which does this per company on daily closes.",
+      "leg_days": 91,
+      "skip_days": 7,
+      "minimum_intervals_per_leg": 6
+    },
+    "benchmark_comparison": {
+      "_comment": "Up/down capture and batting average (src/lib/portfolioBenchmarkComparison.js). Capture splits the record by which way the index went, because a single blended ratio cannot distinguish a portfolio that wins by keeping up in rallies from one that wins by losing less in selloffs - opposite portfolios with the same Sharpe. Batting average is bucketed by calendar month rather than by observation: a hit rate is meaningless without a stated cadence, and monthly makes it independent of how densely the value series happens to be sampled.",
+      "minimum_intervals_per_side": 8,
+      "minimum_months": 6
+    },
+    "short_term_view": {
+      "_comment": "Fast benchmark-relative reads (src/lib/portfolioShortTermView.js) for the horizons the quarter- and year-scale measures cannot speak to, and for accounts too new for them. Short windows are mostly noise, so every window is published beside a noise floor - one standard error of this portfolio's own tracking noise over a window of that length - and a reading inside the floor is labelled as such rather than reported as a result. Windows report independently: three weeks of history answers the week and honestly declines the month. Beta for the adjustment is fitted over baseline_days rather than the short window itself, so a one-week reading is not adjusted by a one-week beta; below minimum_intervals_for_beta the excess falls back to a plain difference and says so.",
+      "window_days": [7, 30],
+      "minimum_intervals": 3,
+      "minimum_intervals_for_beta": 20,
+      "baseline_days": 180,
+      "tracking_risk_days": 30
+    },
     "performance_metric_tones": {
+      "acceleration": {
+        "good_min": 1.0,
+        "bad_max": -1.0
+      },
+      "captureSpread": {
+        "good_min": 10.0,
+        "bad_max": -10.0
+      },
+      "battingAveragePct": {
+        "good_min": 55.0,
+        "bad_max": 45.0
+      },
+      "shortTermExcessPct": {
+        "_comment": "Deliberately wide. A short-horizon excess return is mostly noise, and colouring a +0.4% week green would tell the reader it means something. The tile only takes a tone once the move clears its own noise floor, and these bounds keep even that conservative.",
+        "good_min": 2.0,
+        "bad_max": -2.0
+      },
+      "longestUnderwaterDays": {
+        "_comment": "Fewer days underwater is better, and tone bounds are read as higher-is-better, so the tile passes the negated day count as its tone value: two months or less underwater reads good, nine months or more reads bad. Up and down capture carry no bounds on purpose - neither is good or bad without the other half, which is what captureSpread scores.",
+        "good_min": -60.0,
+        "bad_max": -270.0
+      },
       "informationRatio": {
         "good_min": 0.25,
         "bad_max": -0.25
@@ -1305,6 +1346,12 @@
       "volume_confirmation": 0.08,
       "low_beta": 0.06,
       "technical_extended": 0.06
+    },
+    "relative_acceleration": {
+      "_comment": "Whether a name's market-relative pace is picking up: cumulative beta-adjusted excess return over the most recent leg_days sessions, minus the same over the leg immediately before it, divided by its own standard error (risk_metrics.relative_acceleration). Beta-adjusting is what makes it genuinely market-relative rather than a relabelled own-return - a raw stock-minus-index difference subtracts the same scalar from every row and cannot change a cross-sectional ranking, which is the section 6 audit finding against relative_strength above. skip_days drops the most recent week because that is where short-term reversal lives, the same reason momentum_12_1 skips a month. This block has NO entry in weights and does not reach the score: it is published for the validation harness to measure prospectively, and should only be promoted to a weight if that measurement supports one. Basis: Gettleman & Marks (2006) on acceleration, Blitz-Huij-Martens (2011) on residual construction.",
+      "leg_days": 63,
+      "skip_days": 5,
+      "scoring_span": 1.0
     }
   },
   "evidence_events": {

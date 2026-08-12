@@ -408,6 +408,17 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
               <Kpi label="Volatility" value={technical.annualized_volatility ? `${technical.annualized_volatility.toFixed(0)}%` : '–'} />
               <Kpi label="Vs SPY (20d)" value={signed(technical.relative_strength_20d)} color={moveColor(technical.relative_strength_20d)} />
               <Kpi label="Beta" value={technical.beta != null ? technical.beta.toFixed(2) : '–'} />
+              {/* Level versus change: "Vs SPY (20d)" is how far ahead this name is, this is
+                  whether that lead is still widening. Shown in standard errors, not percent -
+                  see risk_metrics.relative_acceleration. */}
+              <Kpi
+                label="Accel vs market"
+                value={signed(technical.relative_acceleration, 2, 'σ')}
+                note={technical.relative_acceleration_detail
+                  ? `${signed(technical.relative_acceleration_detail.recent_excess_pct)} this quarter vs ${signed(technical.relative_acceleration_detail.prior_excess_pct)} last, market-adjusted`
+                  : 'Needs two quarters of history against the index'}
+                color={moveColor(technical.relative_acceleration)}
+              />
             </div>
             </>}
           </div>

@@ -135,6 +135,105 @@ def tracking_error(returns, benchmark_returns, minimum_observations=20):
     return round(sqrt(max(0.0, variance)) * sqrt(TRADING_DAYS) * 100, 3)
 
 
+def excess_returns(returns, benchmark_returns, beta=None, minimum_observations=20):
+    """Market-relative daily returns: ``r_stock - beta * r_market``.
+
+    The beta term is what makes this genuinely *relative to the market* rather than a
+    relabelled own-return. A raw ``r_stock - r_market`` difference subtracts the same
+    benchmark number from every stock on a given day, and subtracting a constant cannot
+    change a cross-sectional ranking - that is exactly the degeneracy the model audit found
+    in ``relative_strength_20d`` (rho = +1.00 against ``return_20d`` across 877 published
+    rows; see research/audit/CURRENT_MODEL_AUDIT.md section 6, and the reason that term is
+    excluded from the live blend by ``short_horizon_treatment: neutral``).
+
+    Scaling the market leg by each name's own beta breaks the degeneracy: a 1.6-beta name
+    has to beat a 1.6x market move to read positive while a 0.4-beta name only has to beat
+    0.4x of it, so the benchmark contribution differs row by row. This is the residual
+    construction behind residual momentum (Blitz, Huij & Martens 2011), applied here to the
+    market factor alone rather than a full factor model.
+
+    Returns ``(excess_series, beta)``, or ``(None, None)`` when beta cannot be estimated -
+    a flat or too-short benchmark. Beta is never defaulted to 1.0: assuming a beta is
+    assuming the answer, and an unmeasurable name is better reported as unmeasured.
+    """
+    overlap = min(len(returns), len(benchmark_returns))
+    if overlap < minimum_observations:
+        return None, None
+    series, benchmark = returns[-overlap:], benchmark_returns[-overlap:]
+    if beta is None:
+        beta = beta_vs_benchmark(series, benchmark, minimum_observations)
+    if beta is None:
+        return None, None
+    return [value - beta * market for value, market in zip(series, benchmark)], beta
+
+
+def relative_acceleration(closes, benchmark_closes, *, leg=63, skip=5, beta=None):
+    """Whether a stock's market-relative pace is increasing or decreasing.
+
+    Momentum asks whether a stock has been beating the market. Acceleration asks the
+    second-derivative question: whether it is beating the market by *more than it recently
+    was*. Gettleman & Marks (2006, "Acceleration Strategies") document that the change in
+    momentum carries cross-sectional information beyond the level of momentum. That result
+    is nowhere near as heavily replicated as 12-1 momentum itself, which is why this
+    function is a published measurement rather than a scoring weight - see
+    ``advisor_engine.technical_factors``.
+
+    Construction:
+
+    * daily **beta-adjusted** excess returns against the benchmark (``excess_returns``), so
+      the reading is not a monotone transform of the stock's own return;
+    * the most recent ``skip`` sessions are dropped, because the last week is where
+      short-term reversal lives - the same reason ``momentum_12_1`` skips a whole month;
+    * two adjacent ``leg``-session windows: cumulative excess over the recent leg minus
+      cumulative excess over the leg immediately before it;
+    * that difference divided by its own standard error, so a reading means the same thing
+      on a quiet utility and on a 90%-volatility biotech. Two sums of ``leg`` daily excess
+      returns have standard error ``sd * sqrt(2 * leg)``.
+
+    The returned ``acceleration`` is therefore a t-statistic, not a percentage: +1 means
+    the pickup is one standard error of noise, not one percent. ``acceleration_pct`` keeps
+    the raw percentage-point pickup for anyone who wants the magnitude.
+
+    Returns None when there is not enough overlapping history for both legs plus the skip.
+    """
+    if leg < 2 or skip < 0:
+        raise ValueError("relative_acceleration needs leg >= 2 and skip >= 0")
+    returns = daily_returns(closes)
+    benchmark_returns = daily_returns(benchmark_closes or [])
+    overlap = min(len(returns), len(benchmark_returns))
+    if overlap < 2 * leg + skip:
+        return None
+    # Everything the reading uses lives inside the 2*leg sessions ending ``skip`` sessions
+    # ago - beta included. Fitting beta on the full history instead would let the skipped
+    # week back in through the beta estimate, and the point of skipping it is that it does
+    # not inform the measurement.
+    series = returns[-overlap:]
+    benchmark = benchmark_returns[-overlap:]
+    if skip:
+        series, benchmark = series[:-skip], benchmark[:-skip]
+    sample, beta = excess_returns(series[-2 * leg:], benchmark[-2 * leg:], beta)
+    if sample is None:
+        return None
+    recent, prior = sample[leg:], sample[:leg]
+    recent_excess, prior_excess = sum(recent), sum(prior)
+    difference = recent_excess - prior_excess
+    mean = sum(sample) / len(sample)
+    variance = sum((value - mean) ** 2 for value in sample) / len(sample)
+    if variance <= NEAR_ZERO_VARIANCE:
+        return None
+    standard_error = sqrt(variance) * sqrt(2 * leg)
+    return {
+        "acceleration": round(difference / standard_error, 2),
+        "acceleration_pct": round(difference * 100, 2),
+        "recent_excess_pct": round(recent_excess * 100, 2),
+        "prior_excess_pct": round(prior_excess * 100, 2),
+        "beta": round(beta, 2),
+        "leg_days": leg,
+        "skip_days": skip,
+        "observations": len(sample),
+    }
+
+
 def ratio_to_score(value, *, neutral=0.0, span=1.5, floor=0.0, ceiling=100.0):
     """Map an unbounded risk-adjusted ratio onto 0-100 without inventing thresholds.
 
@@ -147,6 +246,17 @@ def ratio_to_score(value, *, neutral=0.0, span=1.5, floor=0.0, ceiling=100.0):
     excess = (value - neutral) / span
     score = 50.0 * (1 + excess / (1 + abs(excess)))
     return round(max(floor, min(ceiling, score)), 1)
+
+
+def acceleration_score(t_statistic, *, span=1.0):
+    """Map a ``relative_acceleration`` t-statistic onto 0-100, on the same saturating curve
+    Sharpe and Sortino are scored with.
+
+    ``span=1.0`` means one standard error of pickup scores 75 and one standard error of
+    deceleration scores 25. Saturating rather than clipping keeps one violent quarter from
+    pinning the reading at 100 and hiding everything behind it.
+    """
+    return ratio_to_score(t_statistic, neutral=0.0, span=span)
 
 
 def low_beta_score(beta, *, ideal=0.85, tolerance=0.55):
