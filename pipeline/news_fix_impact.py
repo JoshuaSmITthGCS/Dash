@@ -65,7 +65,7 @@ def reconstruct_score(row):
     unavailable = _news_was_unavailable(row)
     if unavailable:
         components["news_sentiment"] = None
-    blend = blend_research_components(components, coverage)
+    blend = blend_research_components(components, coverage, apply_coverage_multiplier=False)
     total = (row.get("modifiers") or {}).get("total", 0.0)
     score = round(clamp(blend["base_score"] + total), 1)
     return {
@@ -87,7 +87,7 @@ def recompute_row(row):
         components_pre["news_sentiment"] = 50.0  # the neutral_score constant this fix removed
     coverage = _coverage(row)
     total = (row.get("modifiers") or {}).get("total", 0.0)
-    blend_pre = blend_research_components(components_pre, coverage)
+    blend_pre = blend_research_components(components_pre, coverage, apply_coverage_multiplier=False)
     before = {
         "raw_score": blend_pre["raw_score"], "base_score": blend_pre["base_score"],
         "data_coverage": blend_pre["data_coverage"],

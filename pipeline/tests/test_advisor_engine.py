@@ -5,10 +5,10 @@ from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challenger_modifiers, 
-                            build_research, concentration_risk_modifier, 
-                            congressional_buying_modifier, geographic_concentration_modifier, 
-                            insider_modifier, institutional_ownership_modifier, 
+from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challenger_modifiers,
+                            blend_research_components, build_research, concentration_risk_modifier,
+                            congressional_buying_modifier, geographic_concentration_modifier,
+                            insider_modifier, institutional_ownership_modifier,
                             macro_regime_modifier, sentiment_score, shrink_research_components,
                             TECHNICAL_WEIGHTS, technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
@@ -390,6 +390,29 @@ class SentimentWindowTests(unittest.TestCase):
             1,
         )
         self.assertEqual(row["raw_score"], expected_raw)
+
+    def test_champion_carries_no_completeness_multiplier(self):
+        """Round 5 Task 2, promoted to champion 2026-08-12: no published construction
+        multiplies a positively-oriented composite by completeness. components["fundamentals"]
+        must be the pre-multiplier scorer.py raw_score, base_score must equal raw_score (no
+        second multiplier in the blend), and two rows with identical component scores but
+        different coverage must score identically.
+        """
+        snap = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+                "peg": 1.1, "forward_pe": 22, "price_to_sales": 5, "return_on_equity": 0.18}
+        closes = [100 + index * 0.2 for index in range(300)]
+        row = build_research("TEST", snap, closes, closes, [])
+        self.assertEqual(row["components"]["fundamentals"], row["fundamental_detail"]["raw_score"])
+        self.assertEqual(row["base_score"], row["raw_score"])
+
+        components = {"fundamentals": 60.0, "market_behavior": 55.0, "news_sentiment": 45.0}
+        thin = blend_research_components(components, {
+            "fundamentals": 0.2, "market_behavior": 0.2, "news_sentiment": 0.2,
+        }, apply_coverage_multiplier=False)
+        full = blend_research_components(components, {
+            "fundamentals": 1.0, "market_behavior": 1.0, "news_sentiment": 1.0,
+        }, apply_coverage_multiplier=False)
+        self.assertEqual(thin["base_score"], full["base_score"])
 
     def test_filing_and_commentary_are_labelled_in_weight_detail(self):
         now = datetime(2026, 8, 2, tzinfo=timezone.utc)

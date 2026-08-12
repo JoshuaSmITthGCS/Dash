@@ -83,13 +83,18 @@ def rescore_row(row, peer_context):
         row["rescored"] = False
         _rebuild_v2(row, row.get("fundamental_detail") or {})
         return row
-    components = {**(row.get("components") or {}), "fundamentals": fundamental}
+    # Champion formula promoted 2026-08-12 (Round 5 Task 2): the fundamentals component
+    # is pre-multiplier, and the blend below carries no coverage multiplier either - see
+    # advisor_engine.blend_research_components' docstring. build_research and rescore_row
+    # must stay in lockstep or a rescore-only refresh silently regresses the fix.
+    raw_fundamental = fundamental_detail.get("raw_score", fundamental)
+    components = {**(row.get("components") or {}), "fundamentals": raw_fundamental}
     coverage = {
         "fundamentals": fundamental_detail.get("coverage", 0.0),
         "market_behavior": (row.get("technical_detail") or {}).get("coverage", 0.0),
         "news_sentiment": (row.get("sentiment_detail") or {}).get("coverage", 0.0),
     }
-    blended = blend_research_components(components, coverage)
+    blended = blend_research_components(components, coverage, apply_coverage_multiplier=False)
     score, modifiers = apply_modifiers(
         blended["base_score"], row, row,
         sector_percentile=row["sector_valuation_percentile"],

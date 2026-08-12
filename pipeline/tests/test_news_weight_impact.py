@@ -44,11 +44,14 @@ class NewsWeightImpactTests(unittest.TestCase):
                          score_row(covered, drop_unavailable_news=False))
 
     def test_rows_whose_published_score_cannot_be_reproduced_are_excluded(self):
-        """A delta computed from a blend we cannot reproduce is not evidence."""
-        trimmed = row()
-        trimmed.pop("fundamental_detail")
-        trimmed.pop("technical_detail")
-        section = compare_section([trimmed])
+        """A delta computed from a blend we cannot reproduce is not evidence.
+
+        The realistic case post-promotion (Round 5 Task 2, 2026-08-12): a row's stored
+        score still carries the old coverage multiplier and has not been rescored yet.
+        """
+        stale = row()
+        stale["score"] = round(stale["score"] * 0.85, 1)  # simulate the retired multiplier
+        section = compare_section([stale])
         self.assertEqual(section["names"], 0)
         self.assertEqual(section["excluded_unreproducible_blend"], 1)
         self.assertEqual(section["status"], "no_row_reproduces_its_published_score")

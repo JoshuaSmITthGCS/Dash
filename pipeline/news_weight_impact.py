@@ -63,15 +63,17 @@ def score_row(row, *, drop_unavailable_news):
     if drop_unavailable_news and not _has_real_coverage(row):
         components["news_sentiment"] = None
     blended = blend_research_components(components, _coverage(row),
-                                        modifier_points=_modifier_points(row))
+                                        modifier_points=_modifier_points(row),
+                                        apply_coverage_multiplier=False)
     return blended["score"]
 
 
 # The reconstruction must reproduce the published score before its delta means anything.
-# Rows that carry components but not the per-component ``coverage`` blocks (screen_universe
-# publishes a trimmed row shape) cannot reproduce the confidence multiplier, so their
-# recomputed "before" score is not the score that shipped. Those rows are excluded and
-# counted rather than silently averaged in.
+# The champion no longer applies a coverage multiplier (Round 5 Task 2, promoted
+# 2026-08-12), so a row's per-component coverage blocks are no longer required to
+# reproduce it. A row still fails reconstruction if its stored score predates that
+# promotion, or if its modifiers/components changed since publish. Those rows are
+# excluded and counted rather than silently averaged in.
 RECONSTRUCTION_TOLERANCE = 0.15
 
 
@@ -100,8 +102,10 @@ def compare_section(rows):
             "names": 0,
             "excluded_unreproducible_blend": len(unreproducible),
             "status": "no_row_reproduces_its_published_score",
-            "reason": ("rows in this section do not publish the per-component coverage blocks "
-                       "the champion's confidence multiplier is computed from"),
+            "reason": ("rows in this section carry a stored score this reconstruction "
+                       "cannot reach from their current components and modifiers - most "
+                       "often a score published before the champion dropped its coverage "
+                       "multiplier (Round 5 Task 2, 2026-08-12) and not yet rescored"),
         }
 
     before_rank = {row["ticker"]: index for index, row in
