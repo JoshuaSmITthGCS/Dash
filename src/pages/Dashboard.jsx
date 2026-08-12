@@ -34,6 +34,7 @@ import {
 } from '../lib/portfolioPerformance.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 import { applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
@@ -44,11 +45,9 @@ import { useAdvisorRefresh } from '../lib/useAdvisorRefresh.js'
 import { aggregateThemeExposure } from '../lib/factorAnalytics.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
+import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
 
 const PERIODS = ['1D', '1W', '1M', '3M', 'YTD', '1Y', 'All']
-// See the matching constant in Portfolio.jsx: when it's held, evaluate risk/performance
-// stats only since live tracking actually started, not the full backtested-basket history.
-const LIVE_TRACKING_START = '2026-07-20'
 const BENCHMARK_STYLES = [
   { color: 'var(--series-benchmark)', dashPattern: '7 5' },
   { color: 'var(--series-benchmark-2)', dashPattern: '3 4' },
@@ -243,7 +242,8 @@ export default function Dashboard() {
   const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
   // Standard-measures/score inputs only -- kept separate from holdingsSeries (used above for
   // the performance chart) so this toggle affects risk/ratio stats without changing the chart.
-  const scoreHoldingsSeries = sinceLiveTrackingOnly ? sliceSeriesFrom(holdingsSeries, LIVE_TRACKING_START) : holdingsSeries
+  const liveHoldingsSeries = sliceSeriesFrom(holdingsSeries, LIVE_TRACKING_START)
+  const scoreHoldingsSeries = sinceLiveTrackingOnly ? liveHoldingsSeries : holdingsSeries
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreComparison = compareBenchmarkSeries(scorePortfolioPeriod, selectedBenchmarkSeries.slice(0, 1))
   const resilience = resilienceIndex(scoreComparison?.portfolio.values || scorePortfolioPeriod?.values || [], diversification)
@@ -438,8 +438,8 @@ export default function Dashboard() {
       <DashboardWidget id="metric-grid" widgets={preferences.widgets}>
       <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest. ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown and ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>The portfolio score remains provisional whenever a component is missing. Standard performance statistics are reported separately and are not converted into a grade.</p></details>}</section>
 
-      <div className="settings-row" style={{ marginBottom: 14 }}>
-        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span></div>
+      <div className="settings-row live-tracking-setting" style={{ marginBottom: 14 }}>
+        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span>{sinceLiveTrackingOnly && <LiveTrackingCountdown dates={liveHoldingsSeries?.dates} />}</div>
         <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
       </div>
       <PerformanceMetrics metrics={performance} benchmarkLabel={preferences.defaultBenchmark} riskFree={riskFree} />

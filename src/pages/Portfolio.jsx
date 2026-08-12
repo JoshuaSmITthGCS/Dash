@@ -56,7 +56,9 @@ import { battingAverage, captureRatios } from '../lib/portfolioBenchmarkComparis
 import { shortTermView } from '../lib/portfolioShortTermView.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
+import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
 
 const money = (value, digits = 0) =>
   value == null ? '–' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
@@ -71,8 +73,6 @@ const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--po
 // in this account actually began. The switch below lets those stats be evaluated only since
 // that date instead, so ratios reflect the strategy actually being run, not a hypothetical
 // basket replayed further back than the account existed.
-const LIVE_TRACKING_START = '2026-07-20'
-
 // Cost basis is stored per share everywhere downstream (totalCost = shares * costBasis), but
 // that's easy to enter wrong: a $200 total investment typed into a bare "Cost Basis" field
 // reads as $200/share, inflating cost basis by the share count. Letting the form accept
@@ -292,7 +292,8 @@ export default function Portfolio() {
     : null
   const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory, { benchmarkQuote })
   const scoreHoldingsSeriesFull = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
-  const scoreHoldingsSeries = sinceLiveTrackingOnly ? sliceSeriesFrom(scoreHoldingsSeriesFull, LIVE_TRACKING_START) : scoreHoldingsSeriesFull
+  const liveHoldingsSeries = sliceSeriesFrom(scoreHoldingsSeriesFull, LIVE_TRACKING_START)
+  const scoreHoldingsSeries = sinceLiveTrackingOnly ? liveHoldingsSeries : scoreHoldingsSeriesFull
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
   const scoreComparable = alignSeries(scorePortfolioPeriod, scoreBenchmarkPeriod, scorePortfolioPeriod?.period)
@@ -627,8 +628,8 @@ export default function Portfolio() {
 
       <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
 
-      <div className="settings-row" style={{ marginBottom: 14 }}>
-        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span></div>
+      <div className="settings-row live-tracking-setting" style={{ marginBottom: 14 }}>
+        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span>{sinceLiveTrackingOnly && <LiveTrackingCountdown dates={liveHoldingsSeries?.dates} />}</div>
         <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
       </div>
       <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree}
