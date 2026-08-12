@@ -31,6 +31,41 @@ further:
   only. `archive_health()` is now published in `advisor.json` beside
   `statement_health`.
 
+**Update, 2026-08-12, later session still: the swing model got its first backtest.**
+`swing-v1.1.0` (registered 2026-08-11) shipped with no out-of-sample record of any
+kind — see `harness_freeze.json`'s own `why_registered` for that model. A new session
+built one: `pipeline/backtest_swing.py`, a point-in-time-safe historical walk-forward
+that reuses `swing_signals.swing_scores()` directly (not a reimplementation) across all
+three registered reversal variants, `pipeline/validation/labeling.py`'s triple-barrier
+labels (that module existed, purpose-built for this horizon, and nothing used it until
+now) for forward outcomes, and `pipeline/evaluation.py`'s IC/ICIR/deflated-Sharpe engine
+for grading. Full detail is now recorded in `harness_freeze.json`'s
+`additional_models[swing-v1.1.0].historical_diagnostic` block — read that first, it is
+the authoritative record. In short:
+
+- **Only 4 of 5 legs are measurable.** `analyst_revision` needs historical estimate-
+  revision data that does not exist (`pipeline/data/estimates` is forward-collection-
+  only, 8 tickers / 9 days old on the run date). Excluded and disclosed, not silently
+  dropped — `leg_coverage.analyst_revision` reads 0.0 throughout by construction.
+- **A real bug was caught mid-round**: `pipeline/data/backtest_cache` carries no
+  `sector` field at all (`None` for every one of 860 tickers), which had silently
+  zeroed variant C's residualized-reversal leg and collapsed the sector concentration
+  cap to one undifferentiated bucket. Fixed by joining the live universe snapshot's
+  current sector as the source (itself an approximation, disclosed in the output).
+  First run (buggy) and the corrected re-run both completed; only the corrected
+  numbers are published.
+- **Headline result, 3 years / 74 non-overlapping periods / 860 tickers**: all three
+  registered variants (A raw reversal, B reversal dropped, C residualized reversal)
+  show a mean rank IC that is slightly negative and statistically indistinguishable
+  from zero (t -0.77 to -0.99), and deflated Sharpe well under the 0.95 gate (0.09 to
+  0.31). No variant shows a usable signal on this partial slice. This does not
+  override, accelerate, or substitute for the prospective clock (starts 2026-09-01,
+  still the sole promotion authority) — it is a supplementary historical read, and no
+  weight was tuned or variant chosen from it.
+- New test file `pipeline/tests/test_backtest_swing.py` (9 tests, including a dedicated
+  no-lookahead regression test); full suite 1,853 passed as of this update (up from
+  1,844).
+
 ---
 
 ## 1. Where the project stands

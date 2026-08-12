@@ -106,6 +106,18 @@
       "open_questions_answered_by_amendment": {
         "reversal_leg_in_its_naive_form": "SA-2026-08-12-08 turns this from an open question into a registered three-way comparison (swing-reversal-A/B/C) rather than leaving the leg unexamined.",
         "sector_neutralization": "SA-2026-08-12-07 applies a declared 30% cap. This is a cap rather than neutralization, and whether it helps is still for the clock to report."
+      },
+      "historical_diagnostic": {
+        "run_at": "2026-08-12",
+        "script": "pipeline/backtest_swing.py",
+        "results": "pipeline/backtest_swing_results.json",
+        "authority": "Descriptive only. Does NOT start, satisfy, substitute for, or shorten the prospective clock above, which remains the sole promotion authority for swing-v1.1.0. No variant was chosen, dropped, or tuned from these numbers.",
+        "method": "Walk-forward over real point-in-time data: pead_drift from edgar_sue.sue_for (as-filed EDGAR, already PIT-safe), high_volume_premium/high_52w_proximity/short_term_reversal from pipeline/data/backtest_cache sliced to each historical date, forward outcomes from pipeline/validation/labeling.py triple-barrier labels (ATR-scaled, 10-session vertical barrier). 3 years, weekly rebalance, 74 non-overlapping graded periods (purged to the label horizon), 860-ticker universe.",
+        "leg_coverage_caveat": "4 of 5 legs only. analyst_revision is excluded: pipeline/data/estimates is FORWARD_COLLECTION_ONLY (estimate_snapshots.py) and had 8 tickers / 9 days of history on the run date, nowhere near reconstructable. leg_coverage.analyst_revision reads 0.0 for every variant in the published results by construction, not by omission.",
+        "other_disclosed_approximations": "market-cap gate disabled (no PIT share-count series in the cache), short-interest negative screen inert (no historical series), current GICS sector labels applied retroactively (backtest_cache itself carries no sector field at all - joined from the live universe snapshot instead), current-cache-membership survivorship bias.",
+        "headline_result": "All three registered reversal variants show a mean rank IC that is slightly NEGATIVE and statistically indistinguishable from zero: A -0.0082 (t -0.80), B -0.0075 (t -0.77), C -0.0104 (t -0.99) - none clears even the conventional |t|>2 bar, let alone this repository's own Harvey-Liu-Zhu |t|>3 hurdle. Net-of-cost deflated Sharpe probability (trials=3, the swing_reversal family's own registered count) is 0.10 (A), 0.31 (B), 0.09 (C), all far under the 0.95 promotion gate. Cross-variant PBO 0.0 at only 74 periods / 3 variants, a low-power reading, not a precise one.",
+        "relation_to_open_questions": "Gives a preliminary, non-authoritative read on open_questions_the_clock_must_answer's third item (whether short-term-reversal survives in its naive form): on this partial, 4-leg historical slice, none of A/B/C shows a usable signal, so there is no visible case for preferring one reversal treatment over another yet. The clock, not this backtest, still has to answer it.",
+        "note": "Consistent with Rounds 5/6's finding that no technical sub-signal clears the noise standard on the as-filed research-score spine - this is the same result, independently reached, on a different model and a different (partial) data slice."
       }
     }
   ],
