@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace,
+  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -282,5 +282,54 @@ describe('covariance shrinkage', () => {
   it('handles an empty or missing matrix without throwing', () => {
     expect(shrinkCovarianceMatrix([])).toEqual([])
     expect(shrinkCovarianceMatrix(null)).toBeNull()
+  })
+})
+
+describe('underwaterProfile', () => {
+  // A fall, a long crawl back, a new high, then a second shallower fall it is still in.
+  const dates = []
+  const values = []
+  const add = (day, value) => { dates.push(new Date(Date.parse('2025-01-01T00:00:00Z') + day * 86400000).toISOString().slice(0, 10)); values.push(value) }
+  add(0, 100); add(30, 120); add(60, 90); add(200, 110); add(300, 121); add(330, 112); add(360, 115)
+  const series = { dates, values }
+
+  it('reports how long the portfolio sat below its high, not just how deep it went', () => {
+    const reading = underwaterProfile(series)
+    expect(reading.available).toBe(true)
+    // Peak on day 30, back above it on day 300: 270 days underwater. Counting the four
+    // observations in between would have called it a four-day dip.
+    expect(reading.longestUnderwaterDays).toBe(270)
+    expect(reading.deepestDrawdownPct).toBeCloseTo(-25, 5)
+    expect(reading.recoveryDaysForDeepest).toBe(270)
+  })
+
+  it('measures the current spell from the high-water mark, not the last observation', () => {
+    const reading = underwaterProfile(series)
+    expect(reading.stillUnderwater).toBe(true)
+    expect(reading.highWaterDate).toBe(dates[4])
+    expect(reading.currentUnderwaterDays).toBe(60)
+    expect(reading.currentDrawdownPct).toBeCloseTo((115 / 121 - 1) * 100, 5)
+  })
+
+  it('leaves recovery null while the deepest fall has not been recovered', () => {
+    // Null is the answer here. A zero would read as "recovered immediately".
+    const sinking = { dates: dates.slice(0, 3), values: [100, 120, 90] }
+    const reading = underwaterProfile(sinking)
+    expect(reading.recoveryDaysForDeepest).toBeNull()
+    expect(reading.stillUnderwater).toBe(true)
+    expect(reading.longestUnderwaterDays).toBe(30)
+  })
+
+  it('reports zero days underwater for a portfolio at its high', () => {
+    const climbing = { dates: dates.slice(0, 3), values: [100, 110, 130] }
+    const reading = underwaterProfile(climbing)
+    expect(reading.stillUnderwater).toBe(false)
+    expect(reading.currentUnderwaterDays).toBe(0)
+    expect(reading.currentDrawdownPct).toBe(0)
+  })
+
+  it('needs two dated values before it will answer', () => {
+    expect(underwaterProfile(null).available).toBe(false)
+    expect(underwaterProfile({ dates: ['2025-01-01'], values: [100] }).available).toBe(false)
   })
 })

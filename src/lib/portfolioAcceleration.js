@@ -39,66 +39,11 @@
  * the headline and `accelerationPct` as the quantity that is sampling-proof.
  */
 import modelSettings from '../../pipeline/config/settings.json'
+import { alignedIntervals, DAY_MS, finite, isoDay } from './portfolioSeriesMath.js'
 
 const config = modelSettings.portfolio_analytics.acceleration
-const DAY_MS = 86400000
 
-const finite = (value) => value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
 const unavailable = (reason) => ({ available: false, acceleration: null, reason })
-const dayOf = (date) => Date.parse(`${String(date).slice(0, 10)}T00:00:00Z`)
-
-/**
- * Net settled external cash landing in (after, upTo]. Deposits raise the account's value
- * without the strategy having earned anything, so leaving them in would read a payday as
- * blistering acceleration. Withdrawals do the reverse.
- */
-function netFlowBetween(flows, after, upTo) {
-  return flows.reduce((sum, flow) => {
-    const when = dayOf(flow?.effectiveDate || flow?.date)
-    if (!Number.isFinite(when) || when <= after || when > upTo) return sum
-    const amount = Number(flow.amount)
-    if (!finite(amount)) return sum
-    const withdrawal = String(flow.type || '').includes('withdraw')
-    return sum + (withdrawal ? -Math.abs(amount) : Math.abs(amount))
-  }, 0)
-}
-
-/**
- * Consecutive log returns for the portfolio and the benchmark over their shared dates, each
- * tagged with how many calendar days it spans. Intervals, not observations, because the
- * spacing is not guaranteed to be uniform and a 30-day gap is not one day's worth of risk.
- */
-function alignedIntervals(portfolioSeries, benchmarkSeries, flows) {
-  const benchmarkByDate = new Map()
-  ;(benchmarkSeries?.dates || []).forEach((date, index) => {
-    const value = benchmarkSeries.values?.[index]
-    if (finite(value) && Number(value) > 0) benchmarkByDate.set(String(date).slice(0, 10), Number(value))
-  })
-  const shared = (portfolioSeries?.dates || [])
-    .map((date, index) => ({ date: String(date).slice(0, 10), value: portfolioSeries.values?.[index] }))
-    .filter((row) => finite(row.value) && Number(row.value) > 0 && benchmarkByDate.has(row.date))
-    .sort((left, right) => left.date.localeCompare(right.date))
-
-  const intervals = []
-  for (let index = 1; index < shared.length; index += 1) {
-    const from = shared[index - 1]
-    const to = shared[index]
-    const start = dayOf(from.date)
-    const end = dayOf(to.date)
-    const days = (end - start) / DAY_MS
-    if (!Number.isFinite(days) || days <= 0) continue
-    const endValue = Number(to.value) - netFlowBetween(flows, start, end)
-    if (!(endValue > 0)) continue
-    intervals.push({
-      endDate: to.date,
-      end,
-      days,
-      portfolio: Math.log(endValue / Number(from.value)),
-      benchmark: Math.log(benchmarkByDate.get(to.date) / benchmarkByDate.get(from.date)),
-    })
-  }
-  return intervals
-}
 
 /**
  * Beta of the portfolio against the benchmark, fitted on the same intervals the reading is
@@ -198,12 +143,12 @@ export function portfolioAcceleration(portfolioSeries, benchmarkSeries, options 
     skipDays,
     observations: { recent: recentRows.length, prior: priorRows.length },
     window: {
-      priorStart: new Date(priorStart).toISOString().slice(0, 10),
-      legBoundary: new Date(legBoundary).toISOString().slice(0, 10),
-      measuredEnd: new Date(measuredEnd).toISOString().slice(0, 10),
+      priorStart: isoDay(priorStart),
+      legBoundary: isoDay(legBoundary),
+      measuredEnd: isoDay(measuredEnd),
     },
     flowsApplied: flows.length,
-    methodology: `Beta-adjusted excess return over the ${legDays} days to ${new Date(measuredEnd).toISOString().slice(0, 10)}, less the same over the ${legDays} days before it, divided by this portfolio's own tracking noise. The most recent ${skipDays} days are excluded. Beta measured at ${beta.toFixed(2)}.`,
+    methodology: `Beta-adjusted excess return over the ${legDays} days to ${isoDay(measuredEnd)}, less the same over the ${legDays} days before it, divided by this portfolio's own tracking noise. The most recent ${skipDays} days are excluded. Beta measured at ${beta.toFixed(2)}.`,
     reason: null,
   }
 }

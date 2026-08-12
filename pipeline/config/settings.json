@@ -165,10 +165,28 @@
       "skip_days": 7,
       "minimum_intervals_per_leg": 6
     },
+    "benchmark_comparison": {
+      "_comment": "Up/down capture and batting average (src/lib/portfolioBenchmarkComparison.js). Capture splits the record by which way the index went, because a single blended ratio cannot distinguish a portfolio that wins by keeping up in rallies from one that wins by losing less in selloffs - opposite portfolios with the same Sharpe. Batting average is bucketed by calendar month rather than by observation: a hit rate is meaningless without a stated cadence, and monthly makes it independent of how densely the value series happens to be sampled.",
+      "minimum_intervals_per_side": 8,
+      "minimum_months": 6
+    },
     "performance_metric_tones": {
       "acceleration": {
         "good_min": 1.0,
         "bad_max": -1.0
+      },
+      "captureSpread": {
+        "good_min": 10.0,
+        "bad_max": -10.0
+      },
+      "battingAveragePct": {
+        "good_min": 55.0,
+        "bad_max": 45.0
+      },
+      "longestUnderwaterDays": {
+        "_comment": "Fewer days underwater is better, and tone bounds are read as higher-is-better, so the tile passes the negated day count as its tone value: two months or less underwater reads good, nine months or more reads bad. Up and down capture carry no bounds on purpose - neither is good or bad without the other half, which is what captureSpread scores.",
+        "good_min": -60.0,
+        "bad_max": -270.0
       },
       "informationRatio": {
         "good_min": 0.25,
