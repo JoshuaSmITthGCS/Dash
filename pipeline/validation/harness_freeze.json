@@ -5,24 +5,26 @@
   "expected_completion_at_monthly_frequency": "2028-09-01",
   "champion": {
     "variant": "bands_champion",
-    "definition": "production score as of this commit: band normalization, within-block renormalization, both completeness multipliers, blend advisor_engine.py::blend_research_components, modifier stack",
+    "definition": "production score as of this commit: band normalization, within-block renormalization, no completeness multiplier (removed 2026-08-12, see pending_decision below), blend advisor_engine.py::blend_research_components, modifier stack",
     "config_hash": "d18a100f0b7ef91f157c07608533fde5219b022784b508b9db1d9a5f8c924dd9",
     "scorer_hash": "43dd37eba0718dd9f75df7146378c49638f276d7e554056a216bb44e4774cb3b",
-    "advisor_engine_hash": "8dde7bf5ccdb8ebf288f528613ece814e6da625edacca4a6eab7d599396396c2",
+    "advisor_engine_hash": "8f9d0a846438309f87e114b5e368beac18e481e6b5bede4035fe521c03a14e3a",
     "universe_hash": "093504377aad5a1972eed9ea7218ef9df13627bb31217efc539f306f3bc234a8",
-    "git_commit": "1b053056817f04698afc10eaf3ab866ece1dd4bf"
+    "git_commit": "6ba916b6750edd3955707afe8c8cfc285b1eeab1",
+    "note": "scorer_hash is unchanged from the pre-promotion freeze: scorer.py's confidence_multiplier calculation was left in place (other non-champion callers of valuation_score still use its 'total' return value). The fix is entirely in how build_research/rescore_row consume that output - they now read raw_score instead of total, and blend_research_components no longer re-multiplies by data_coverage. config_hash is carried over unverified against current settings.json; it was already stale before this promotion from unrelated config changes across Rounds 5-6 and is not re-derived here."
   },
   "pending_decision": {
     "recommended_promotion": "multiplier_removal (defect fix, Round 5 Task 2)",
     "clock_cost_of_promoting_now": "zero, no periods have accrued",
     "clock_cost_of_promoting_later": "all periods accrued to that date",
     "disclosed_side_effect": "financials-vs-rest gap widens from +2.8 to +7.9 points because the multipliers partially masked suppression-renormalization inflation, see AUDIT-ROUND-5-FINDINGS.md Task 2",
-    "decision_status": "HOLD recorded 2026-08-11 pending ownership response",
-    "accrued_cost_per_month_of_holding": "one month of prospective clock forfeited if promoted later, plus one further month of the champion ranking with Spearman(coverage, score) +0.51 and the 1.87x identical-evidence spread"
+    "decision_status": "PROMOTED 2026-08-12, ownership approved (\"riskier but still safe\" against the alternative of holding), zero clock cost since harness_start_date had not arrived",
+    "promoted_commits": ["0338d005ccda3ec128b5217eebc7addd5a761373 (advisor_engine.py: blend_research_components + build_research)",
+                          "6ba916b6750edd3955707afe8c8cfc285b1eeab1 (rescore_row, news_fix_impact.py, news_weight_impact.py brought into lockstep; multiplier_removal_variant retired as redundant)"],
+    "accrued_cost_per_month_of_holding": "moot as of promotion: this recorded the cost of NOT promoting before 2026-09-01, which no longer applies"
   },
   "challengers": [
     "fixed_feature (imputation + neutral shrink, score_variants.fixed_feature)",
-    "multiplier_removal (score_variants.multiplier_removal)",
     "signal_corrections_cumulative (score_variants.challenger)",
     "rank_buffer_1.5 portfolio layer (portfolio_construction.apply_controls)",
     "valuation_2metric_ev_block (asfiled_ttm_backtest.py _val2, Round 6)",
