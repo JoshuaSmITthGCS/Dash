@@ -159,7 +159,17 @@
   "portfolio_analytics": {
     "trading_days_per_year": 252,
     "performance_minimum_observations": 20,
+    "acceleration": {
+      "_comment": "Portfolio-level acceleration against the benchmark (src/lib/portfolioAcceleration.js): beta-adjusted excess return over the most recent leg_days, less the same over the leg_days before it, divided by the portfolio's own tracking noise. Beta-adjusting is what separates a portfolio that outran the index from one the index carried; dividing by tracking noise makes the reading comparable across a concentrated book and a diversified one. leg_days is a calendar quarter rather than 63 trading sessions because the portfolio value series is not guaranteed to be daily. skip_days drops the last week, where short-term reversal lives. Same measure as market_behavior.relative_acceleration, which does this per company on daily closes.",
+      "leg_days": 91,
+      "skip_days": 7,
+      "minimum_intervals_per_leg": 6
+    },
     "performance_metric_tones": {
+      "acceleration": {
+        "good_min": 1.0,
+        "bad_max": -1.0
+      },
       "informationRatio": {
         "good_min": 0.25,
         "bad_max": -0.25

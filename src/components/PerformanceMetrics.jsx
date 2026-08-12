@@ -21,11 +21,26 @@ function Metric({ name, label, value, format, note }) {
   return <article className={`metric-tone-${tone}`}><span>{label}</span><strong>{glyph && <i aria-hidden="true">{glyph}</i>}{format(value)}</strong><small>{note}</small></article>
 }
 
-export default function PerformanceMetrics({ metrics, benchmarkLabel = 'benchmark', riskFree }) {
+function sigma(value) {
+  return value == null || !Number.isFinite(value) ? 'Unavailable' : `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}σ`
+}
+
+export default function PerformanceMetrics({ metrics, benchmarkLabel = 'benchmark', riskFree, acceleration = null }) {
   return (
     <section className="performance-metrics" aria-labelledby="standard-performance-title">
       <header><div><span className="eyebrow">Standard measures</span><h2 id="standard-performance-title">Risk and performance</h2></div><small>{metrics?.available ? `${metrics.observations} daily returns` : metrics?.reason}</small></header>
       <div>
+        {/* Every other tile here reports a level. This one reports the change in it: whether
+            the gap against the benchmark is still widening. See src/lib/portfolioAcceleration.js. */}
+        <Metric
+          name="acceleration"
+          label={`Acceleration vs ${benchmarkLabel}`}
+          value={acceleration?.available ? acceleration.acceleration : null}
+          format={sigma}
+          note={acceleration?.available
+            ? `${accelerationLabel(acceleration)} · ${acceleration.recentExcessPct >= 0 ? '+' : '−'}${Math.abs(acceleration.recentExcessPct).toFixed(1)}% this quarter vs ${acceleration.priorExcessPct >= 0 ? '+' : '−'}${Math.abs(acceleration.priorExcessPct).toFixed(1)}% last, beta-adjusted`
+            : acceleration?.reason || 'Needs two quarters against the benchmark'}
+        />
         <Metric name="informationRatio" label="Information ratio" value={metrics?.informationRatio} format={ratio} note={`Versus ${benchmarkLabel}`} />
         <Metric name="sharpe" label="Sharpe ratio" value={metrics?.sharpe} format={ratio} note={`${riskFree?.fallback ? 'Configured fallback' : riskFree?.series} ${riskFree?.annualPct?.toFixed(2) ?? '0.00'}%`} />
         <Metric name="sortino" label="Sortino ratio" value={metrics?.sortino} format={ratio} note="Downside risk only" />
@@ -37,3 +52,4 @@ export default function PerformanceMetrics({ metrics, benchmarkLabel = 'benchmar
   )
 }
 import modelSettings from '../../pipeline/config/settings.json'
+import { accelerationLabel } from '../lib/portfolioAcceleration.js'

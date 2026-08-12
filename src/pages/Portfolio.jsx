@@ -49,6 +49,7 @@ import {
   selectPeriod,
   sliceSeriesFrom,
 } from '../lib/portfolioAnalytics.js'
+import { portfolioAcceleration } from '../lib/portfolioAcceleration.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
@@ -295,6 +296,14 @@ export default function Portfolio() {
   const scoreResilience = resilienceIndex(scoreComparable?.left.values || scorePortfolioPeriod?.values || [], scoreDiversification)
   const riskFree = riskFreeAnnualRate(data)
   const scorePerformance = performanceMetrics(scoreComparable?.left, scoreComparable?.right, riskFree.annualPct)
+  // Fed the unclipped holdings series rather than scoreComparable's one-year slice: the
+  // reading needs two full quarters plus the skipped week, and clipping first would leave it
+  // measuring the tail of its own window. No flows are passed because this series is today's
+  // share counts applied to historical closes - deposits and withdrawals never enter it.
+  const scoreAcceleration = portfolioAcceleration(
+    scoreHoldingsSeries,
+    benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null,
+  )
   const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
   const overallScore = portfolioScore({
     diversification: scoreDiversification,
@@ -600,7 +609,7 @@ export default function Portfolio() {
         <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span></div>
         <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
       </div>
-      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
+      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} acceleration={scoreAcceleration} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">
