@@ -204,6 +204,42 @@ def build_feature_registry():
             "references": [],
             "version": "1.0.0",
         }
+    # Measured and published by advisor_engine.technical_factors, weighted by nothing. It is
+    # registered anyway so the feature inventory covers what the pipeline actually computes,
+    # and so the "does not rank" claim is recorded somewhere a reader can check rather than
+    # being an absence they have to infer.
+    entries["relative_acceleration"] = {
+        "feature_id": "relative_acceleration",
+        "family": "momentum",
+        "usage": ["explanation"],
+        "not_used_for": ["ranking", "hard_filter"],
+        "classification_gap": (
+            "Published on every scored row but absent from market_behavior.weights, so it "
+            "contributes nothing to the composite score. Promotion to a ranking weight "
+            "requires prospective out-of-sample evidence from the validation harness, which "
+            "has not accumulated yet."
+        ),
+        "direction": "higher_is_better",
+        "unit": "t_statistic",
+        "target_horizons": [63, 126],
+        "availability_lag": "same-session (price-derived), lagged by skip_days",
+        "missingness_policy": (
+            "unavailable when fewer than 2*leg_days + skip_days overlapping sessions exist "
+            "with the benchmark, or when beta cannot be estimated -- never defaulted to a "
+            "beta of 1.0; see risk_metrics.excess_returns"
+        ),
+        "economic_rationale": (
+            "Change in a stock's beta-adjusted excess-return pace against the market, "
+            "standardized by its own tracking noise. Beta-adjustment is what makes it "
+            "market-relative rather than rank-identical to the raw return, which is the "
+            "defect audit section 6 found in relative_strength_20d."
+        ),
+        "references": [
+            "Gettleman & Marks (2006), Acceleration Strategies",
+            "Blitz, Huij & Martens (2011), Residual Momentum",
+        ],
+        "version": "1.0.0",
+    }
     for factor_id, (family, description) in TECHNICAL_EXTENDED_SUBINDICATORS.items():
         entries[factor_id] = {
             "feature_id": factor_id,

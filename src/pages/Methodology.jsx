@@ -80,6 +80,16 @@ export default function Methodology() {
           decay with age, low-confidence entity matches are discarded, syndicated copies
           count once, and source-of-record filings are labelled separately from commentary.
         </p>
+        <p className="body-copy">
+          Acceleration versus the market is measured on every name and shown on the company
+          detail view, but it is deliberately not part of the blend above. It asks whether a
+          stock’s lead over the index is widening rather than how large that lead is, and it
+          subtracts the move the stock’s own beta says the market handed it – without that
+          adjustment, a “relative” reading is only the raw return wearing a different label.
+          It stays unweighted until prospective evidence shows it predicts something; a signal
+          earning weight on a plausible story alone is the mistake this model has already made
+          once.
+        </p>
       </section>
       <section className="card card-pad">
         <div className="sec-label">Guardrails</div>

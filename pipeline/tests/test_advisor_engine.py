@@ -9,8 +9,8 @@ from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challe
                             build_research, concentration_risk_modifier, 
                             congressional_buying_modifier, geographic_concentration_modifier, 
                             insider_modifier, institutional_ownership_modifier, 
-                            macro_regime_modifier, sentiment_score, shrink_research_components, 
-                            technical_factors, technical_score_from_parts)
+                            macro_regime_modifier, sentiment_score, shrink_research_components,
+                            TECHNICAL_WEIGHTS, technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -49,6 +49,47 @@ class AdvisorEngineTests(unittest.TestCase):
         self.assertGreater(score, 50)
         self.assertGreater(detail["relative_strength_20d"], 0)
         self.assertEqual(detail["coverage"], 1.0)
+
+    def test_relative_acceleration_is_published_on_the_technical_block(self):
+        # A stock whose daily lead over the benchmark widens over the most recent quarter.
+        # Built return-by-return: a smooth exponential benchmark has zero return variance,
+        # which leaves beta - and so the whole measurement - genuinely undefined.
+        sessions = 320
+        boundary = sessions - 63 - 5
+        market = [0.0004 + (0.006 if step % 2 else -0.006) for step in range(sessions)]
+        noise = [0.004 if step % 3 else -0.008 for step in range(sessions)]
+        stock = [value + (0.0005 if step < boundary else 0.0025) + shake
+                 for step, (value, shake) in enumerate(zip(market, noise))]
+        benchmark, closes = [100.0], [100.0]
+        for index in range(sessions):
+            benchmark.append(benchmark[-1] * (1 + market[index]))
+            closes.append(closes[-1] * (1 + stock[index]))
+        _score, detail = technical_factors(closes, benchmark, [1_000_000.0] * len(closes))
+        self.assertGreater(detail["relative_acceleration"], 0)
+        self.assertGreater(detail["relative_acceleration_score"], 50)
+        self.assertEqual(detail["relative_acceleration_detail"]["observations"], 126)
+
+    def test_relative_acceleration_carries_no_ranking_weight(self):
+        """It is measured and published, not scored. The audit's finding against
+        relative_strength_20d was a market-relative term drawing 16% of market behaviour on
+        no evidence of its own; adding a second one on a plausible mechanism alone would
+        repeat that mistake. Promotion needs prospective evidence first."""
+        self.assertNotIn("relative_acceleration", TECHNICAL_WEIGHTS)
+        parts = {"momentum_12_1": 60.0, "risk_adjusted": 55.0, "relative_acceleration": 99.0}
+        with_it, _ = technical_score_from_parts(parts, "neutral")
+        without_it, _ = technical_score_from_parts(
+            {key: value for key, value in parts.items() if key != "relative_acceleration"},
+            "neutral")
+        self.assertEqual(with_it, without_it)
+
+    def test_relative_acceleration_is_absent_rather_than_neutral_without_a_benchmark(self):
+        closes = [100 + index * 0.4 for index in range(300)]
+        _score, detail = technical_factors(closes, None, [1_000_000.0] * 300)
+        self.assertIsNone(detail["relative_acceleration"])
+        self.assertIsNone(detail["relative_acceleration_score"])
+        # Too little history for two 63-session legs plus the skip.
+        _short_score, short = technical_factors(closes[:120], closes[:120], None)
+        self.assertIsNone(short["relative_acceleration"])
 
     def test_max_drawdown_and_volume_confirmation_are_scored(self):
         rising = [100 + index for index in range(300)]

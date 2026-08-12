@@ -78,6 +78,146 @@ class TrackingTests(unittest.TestCase):
                            rm.tracking_error(fund, index))
 
 
+def path(daily_returns_series, start=100.0):
+    """Build a close series whose daily returns are exactly the ones given."""
+    closes = [start]
+    for value in daily_returns_series:
+        closes.append(closes[-1] * (1 + value))
+    return closes
+
+
+class RelativeAccelerationTests(unittest.TestCase):
+    """Fixtures here are built return-by-return rather than as prices, because the thing
+    under test is a property of the return series and the price path is only its integral.
+
+    Every stock fixture carries idiosyncratic noise. A stock whose excess return is a pure
+    noiseless step has zero residual dispersion, which makes the t-statistic's denominator
+    zero and the measurement genuinely undefined - the function returns None for it, which
+    is correct behaviour and useless as a fixture.
+    """
+
+    # 63-session legs plus a 5-session skip is 131 daily returns, so 132 closes minimum.
+    LEG, SKIP = 63, 5
+    SESSIONS = 200
+
+    def setUp(self):
+        # The last measured session is SKIP back from the end; the recent leg starts LEG
+        # before that. Anything indexed at or after this boundary is "the recent leg".
+        self.boundary = self.SESSIONS - self.LEG - self.SKIP
+        self.market_returns = [0.0004 + (0.006 if step % 2 else -0.006)
+                               for step in range(self.SESSIONS)]
+        self.market = path(self.market_returns)
+        # Period 3 against the market's period 2, so it is close to uncorrelated with it
+        # and beta comes back at roughly the exposure the fixture was built with.
+        self.noise = [0.004 if step % 3 else -0.008 for step in range(self.SESSIONS)]
+
+    def stock(self, beta=1.0, prior_edge=0.0, recent_edge=0.0):
+        """A stock with a given market exposure and a daily excess edge that changes
+        between the prior leg and the recent one."""
+        return path([beta * market + (prior_edge if step < self.boundary else recent_edge) + noise
+                     for step, (market, noise)
+                     in enumerate(zip(self.market_returns, self.noise))])
+
+    def reading(self, closes, benchmark=None):
+        return rm.relative_acceleration(closes, self.market if benchmark is None else benchmark,
+                                        leg=self.LEG, skip=self.SKIP)
+
+    def test_a_stock_pulling_away_faster_reads_positive(self):
+        reading = self.reading(self.stock(prior_edge=0.0005, recent_edge=0.0025))
+        self.assertGreater(reading["acceleration"], 0)
+        self.assertGreater(reading["recent_excess_pct"], reading["prior_excess_pct"])
+        self.assertEqual(reading["observations"], 2 * self.LEG)
+
+    def test_a_stock_losing_its_edge_reads_negative(self):
+        reading = self.reading(self.stock(prior_edge=0.0025, recent_edge=0.0002))
+        self.assertLess(reading["acceleration"], 0)
+        self.assertLess(reading["recent_excess_pct"], reading["prior_excess_pct"])
+
+    def test_a_steady_outperformer_is_not_accelerating(self):
+        # Beating the market by the same amount every day is momentum, not acceleration.
+        # This is the distinction the measure exists to draw.
+        steady = self.stock(prior_edge=0.001, recent_edge=0.001)
+        self.assertAlmostEqual(self.reading(steady)["acceleration"], 0.0, places=1)
+
+    def test_the_skipped_window_is_excluded(self):
+        # A violent last week must not register: it lives inside skip_days, where
+        # short-term reversal does, for the same reason momentum_12_1 skips a month.
+        calm = self.stock(prior_edge=0.001, recent_edge=0.001)
+        spiked = list(calm[:-self.SKIP]) + [close * 1.08 for close in calm[-self.SKIP:]]
+        self.assertEqual(self.reading(calm)["acceleration"],
+                         self.reading(spiked)["acceleration"])
+
+    def test_market_driven_acceleration_is_stripped_out(self):
+        """The audit-section-6 degeneracy check, run as a test.
+
+        ``relative_strength_20d`` subtracts the same benchmark number from every row, so its
+        cross-sectional ranking is identical to the raw return's - it cannot tell a stock
+        that outran the market from one the market carried. Put both in an *accelerating*
+        market: a beta-2 name that added nothing of its own has accelerated in raw price
+        terms without beating anything, while a near-market-neutral name with a genuine
+        idiosyncratic pickup has. A raw difference ranks them the same way it ranks their
+        own returns; this measure must not.
+        """
+        accelerating = [(0.0002 if step < self.boundary else 0.0018)
+                        + (0.006 if step % 2 else -0.006) for step in range(self.SESSIONS)]
+        market = path(accelerating)
+        rider = path([2 * value + noise for value, noise in zip(accelerating, self.noise)])
+        mover = path([0.2 * value + (0.0002 if step < self.boundary else 0.0018) + noise
+                      for step, (value, noise) in enumerate(zip(accelerating, self.noise))])
+
+        # Both raw price paths sped up: each earned more over the recent leg than the prior
+        # one, which is all a raw own-return acceleration would see.
+        for closes in (rider, mover):
+            measured = closes[:len(closes) - self.SKIP]
+            recent = measured[-1] / measured[-1 - self.LEG]
+            prior = measured[-1 - self.LEG] / measured[-1 - 2 * self.LEG]
+            self.assertGreater(recent, prior)
+
+        rider_reading = self.reading(rider, market)
+        mover_reading = self.reading(mover, market)
+        self.assertGreater(rider_reading["beta"], mover_reading["beta"])
+        # Only one of them accelerated independently of the market.
+        self.assertLess(abs(rider_reading["acceleration"]), 1.0)
+        self.assertGreater(mover_reading["acceleration"], rider_reading["acceleration"] + 1.0)
+
+    def test_unavailable_rather_than_guessed_when_the_measurement_cannot_be_made(self):
+        stock = self.stock(prior_edge=0.0005, recent_edge=0.0025)
+        self.assertIsNone(self.reading(stock[:80]))
+        self.assertIsNone(rm.relative_acceleration(stock, None, leg=self.LEG, skip=self.SKIP))
+        # A benchmark that never moves has no beta, so there is no market to be relative to.
+        self.assertIsNone(self.reading(stock, path([0.0] * self.SESSIONS)))
+
+    def test_excess_returns_never_default_beta_to_one(self):
+        returns = [0.01, -0.005] * 30
+        series, beta = rm.excess_returns(returns, [0.0] * 60)
+        self.assertIsNone(series)
+        self.assertIsNone(beta)
+
+    def test_the_reading_is_scale_free_across_volatility_regimes(self):
+        """A quiet utility and a loud biotech with the same pickup *in units of their own
+        noise* must read the same. Without that, the measure would just rank volatility."""
+        shape = [0.0005 if step < self.boundary else 0.0025 for step in range(self.SESSIONS)]
+        quiet = path([market + move + noise for market, move, noise
+                      in zip(self.market_returns, shape, self.noise)])
+        loud = path([market + 4 * move + 4 * noise for market, move, noise
+                     in zip(self.market_returns, shape, self.noise)])
+        quiet_reading, loud_reading = self.reading(quiet), self.reading(loud)
+        # Four times the raw pickup in percentage points...
+        self.assertGreater(loud_reading["acceleration_pct"],
+                           quiet_reading["acceleration_pct"] * 2)
+        # ...and the same reading once each is measured against its own noise.
+        self.assertAlmostEqual(loud_reading["acceleration"], quiet_reading["acceleration"],
+                               places=1)
+
+    def test_the_score_maps_a_pickup_above_neutral_and_a_fade_below(self):
+        self.assertEqual(rm.acceleration_score(0.0), 50.0)
+        self.assertGreater(rm.acceleration_score(1.0), 70)
+        self.assertLess(rm.acceleration_score(-1.0), 30)
+        self.assertIsNone(rm.acceleration_score(None))
+        # Saturating, not clipping: one violent quarter cannot pin the reading at 100.
+        self.assertLess(rm.acceleration_score(40.0), 100.0)
+
+
 class ScoreMappingTests(unittest.TestCase):
     def test_ratio_to_score_saturates_instead_of_clipping(self):
         self.assertEqual(rm.ratio_to_score(0.0), 50.0)

@@ -1305,6 +1305,12 @@
       "volume_confirmation": 0.08,
       "low_beta": 0.06,
       "technical_extended": 0.06
+    },
+    "relative_acceleration": {
+      "_comment": "Whether a name's market-relative pace is picking up: cumulative beta-adjusted excess return over the most recent leg_days sessions, minus the same over the leg immediately before it, divided by its own standard error (risk_metrics.relative_acceleration). Beta-adjusting is what makes it genuinely market-relative rather than a relabelled own-return - a raw stock-minus-index difference subtracts the same scalar from every row and cannot change a cross-sectional ranking, which is the section 6 audit finding against relative_strength above. skip_days drops the most recent week because that is where short-term reversal lives, the same reason momentum_12_1 skips a month. This block has NO entry in weights and does not reach the score: it is published for the validation harness to measure prospectively, and should only be promoted to a weight if that measurement supports one. Basis: Gettleman & Marks (2006) on acceleration, Blitz-Huij-Martens (2011) on residual construction.",
+      "leg_days": 63,
+      "skip_days": 5,
+      "scoring_span": 1.0
     }
   },
   "evidence_events": {
