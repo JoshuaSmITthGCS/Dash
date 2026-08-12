@@ -14,6 +14,7 @@ from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
 from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
+from price_archive import archive_health
 from edgar_enrichment import merge_edgar_fallback
 from edgar_sue import sue_for
 from providers import YahooAdapter
@@ -1821,6 +1822,7 @@ def run():
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
         "statement_health": statement_health(
             [row.get("fundamental_detail") or {} for row in research], SETTINGS),
+        "price_archive_health": archive_health(),
         "universe_mode": universe_mode, "polled_count": len(refresh_symbols),
         "enrichment_selection": {
             "previous_top": list(incumbents),

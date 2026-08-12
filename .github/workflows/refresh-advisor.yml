@@ -113,6 +113,7 @@ jobs:
           fi
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
           echo "is_rescore=$is_rescore" >> "$GITHUB_OUTPUT"
+          echo "universe_mode=$universe_mode" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
@@ -151,6 +152,13 @@ jobs:
         # Reads the same on-disk Yahoo price cache the previous step just warmed - no new
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
+      - name: Archive today's closes (survivorship price archive)
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true' && steps.refresh_window.outputs.universe_mode == 'full'
+        # Only on the once-daily full sweep, not the fast top-100 refreshes: the live
+        # universe leg is free (same warmed cache as the Momentum screen above), but the
+        # recently-delisted leg makes real Yahoo calls by design (see price_archive.py
+        # DELISTING_RETENTION_DAYS), and that cost shouldn't be paid three times a day.
+        run: python pipeline/price_archive.py daily || echo "::warning::Price archive run failed; archive_health will reflect the gap"
       - name: Build multi-day options, covered-call, cash-secured-put, and short-term-trades screens from one shared chain fetch per ticker
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # build_options_strategies.py fetches ONE option chain per ticker (both mechanisms
@@ -248,6 +256,10 @@ jobs:
           git add --all pipeline/data/pit 2>/dev/null || true
           git add --all pipeline/data/estimates 2>/dev/null || true
           git add --all pipeline/data/factors 2>/dev/null || true
+          # Same ephemeral-runner reasoning: a delisted name's terminal prices are only
+          # ever fetchable while it's still young enough to resolve (price_archive.py),
+          # so this run's archive additions must be committed or they're gone for good.
+          git add --all pipeline/data/price_archive 2>/dev/null || true
           # fetch_advisor.py also appends prospective validation snapshots and rewrites
           # normalization audit artifacts outside pipeline/data/. Leaving either tracked
           # output unstaged makes the pull --rebase below reject the otherwise valid
