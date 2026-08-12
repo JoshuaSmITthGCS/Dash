@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 39,
+  "refreshes_observed": 40,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -7639,6 +7639,219 @@
           ],
           "score_delta": -20.2,
           "confidence_delta": -0.45
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-12T12:20:33.394123+00:00",
+      "current_refresh": "advisor-2026-08-12T17:21:10.045087+00:00",
+      "shared_tickers": 881,
+      "rank_turnover": {
+        "top_40": 0.275,
+        "top_100": 0.275
+      },
+      "tickers_with_availability_driven_change": 20,
+      "tickers_with_availability_driven_change_pct": 0.023,
+      "mean_abs_score_delta": 2.04,
+      "mean_abs_confidence_delta": 0.004,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "APP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 25.9,
+          "confidence_delta": 0.43
+        },
+        {
+          "ticker": "BBWI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 25.7,
+          "confidence_delta": 0.44
+        },
+        {
+          "ticker": "AMP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "interest_coverage",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 24.6,
+          "confidence_delta": 0.31
+        },
+        {
+          "ticker": "AMH",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "sales_multiple"
+          ],
+          "score_delta": 23.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 23.3,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "AR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 23.1,
+          "confidence_delta": 0.42
+        },
+        {
+          "ticker": "AVGO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 18.2,
+          "confidence_delta": 0.44
+        },
+        {
+          "ticker": "AYI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 16.8,
+          "confidence_delta": 0.45
+        },
+        {
+          "ticker": "ALLY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "net_buyback_yield",
+            "piotroski_f",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 16.7,
+          "confidence_delta": 0.13
+        },
+        {
+          "ticker": "BBY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 15.8,
+          "confidence_delta": -0.05
         }
       ]
     }
