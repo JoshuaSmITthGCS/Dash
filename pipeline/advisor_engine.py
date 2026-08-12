@@ -872,13 +872,20 @@ def data_coverage_scalar(coverage):
     )
 
 
-def blend_research_components(components, coverage, modifier_points=0.0, weights=None):
-    """Return the legacy evidence blend, the coverage pull, and the bounded final score.
+def blend_research_components(components, coverage, modifier_points=0.0, weights=None,
+                              apply_coverage_multiplier=True):
+    """Return the evidence blend, the coverage pull, and the bounded final score.
 
-    Formula for the current champion is ``raw = sum(score_i * weight_i) / sum(weight_i)``
-    over available components, then ``base = raw * (0.8 + 0.2 * data_coverage)`` and
-    ``final = clamp(base + modifier_points)``. Keeping this in one function lets a
-    challenger replace one component without changing any other part of the comparison.
+    ``raw = sum(score_i * weight_i) / sum(weight_i)`` over available components. The
+    champion (``build_research``) calls this with ``apply_coverage_multiplier=False``:
+    Round 5 Task 2 found no published construction multiplies a positively-oriented
+    composite by completeness (Jensen-Kelly-Pedersen JF 78(5) 2023, Freyberger et al.
+    RFS 38(3) 2025, Bryzgalova et al. RFS 38(3) 2025, Chen-McCoy JFE 153 2024), so
+    ``base = raw`` there, and ``multiplier_removal_variant`` - which unbundled and
+    isolated exactly this - was promoted to champion 2026-08-12. The
+    ``base = raw * (0.8 + 0.2 * data_coverage)`` multiplier stays the default for the
+    other challengers built on this function, each of which is deliberately isolating
+    one different change against the pre-fix blend it was measured against.
     """
     weights = weights or RANKING_WEIGHTS
     available = [(components[key], weights[key]) for key in weights
@@ -887,7 +894,8 @@ def blend_research_components(components, coverage, modifier_points=0.0, weights
         weight for _, weight in available
     ) if available else 0.0
     data_coverage = data_coverage_scalar(coverage)
-    base = round(raw * (0.8 + data_coverage * 0.2), 1)
+    multiplier = (0.8 + data_coverage * 0.2) if apply_coverage_multiplier else 1.0
+    base = round(raw * multiplier, 1)
     return {
         "raw_score": round(raw, 1),
         "base_score": base,
@@ -1006,41 +1014,6 @@ def fixed_feature_challenger(row, snapshot, normalizer, config):
     }
 
 
-def multiplier_removal_variant(row):
-    """Defect-fix variant: the champion with its two completeness multipliers removed.
-
-    Round 5 Task 2 unbundles this from the imputation construction. Everything else is
-    the production champion unchanged: band normalization, within-block renormalization
-    over resolved metrics, the same modifiers. The only difference is that the score is
-    no longer multiplied by completeness, twice, on the way out
-    (scorer.py fundamentals ``0.65 + 0.35 * coverage`` and the blend
-    ``0.8 + 0.2 * data_coverage``). No published construction applies either multiplier
-    (Jensen-Kelly-Pedersen JF 78(5) 2023, Freyberger et al. RFS 38(3) 2025,
-    Bryzgalova et al. RFS 38(3) 2025, Chen-McCoy JFE 153 2024), so this is a bug
-    removal, promotable on defect grounds, distinct from the imputation challenger that
-    stays behind the prospective harness.
-    """
-    raw_fundamental = (row.get("fundamental_detail") or {}).get(
-        "raw_score", (row.get("components") or {}).get("fundamentals"))
-    components = {**(row.get("components") or {}), "fundamentals": raw_fundamental}
-    weights = RANKING_WEIGHTS
-    available = [(components[key], weights[key]) for key in weights
-                 if components.get(key) is not None]
-    raw = sum(value * weight for value, weight in available) / sum(
-        weight for _, weight in available) if available else 0.0
-    modifier_points = (row.get("modifiers") or {}).get("total", 0.0)
-    return {
-        "variant": "bands_no_completeness_multipliers",
-        "normalization_mode": row.get("score_variants", {}).get("champion", {}).get(
-            "normalization_mode", "bands"),
-        "raw_score": round(raw, 1),
-        "base_score": round(raw, 1),
-        "score": round(clamp(raw + modifier_points), 1),
-        "data_coverage": row.get("data_coverage"),
-        "components": components,
-    }
-
-
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
                                macro_regime=None, insider_activity=None, concentration_risk=None,
                                geographic_exposure=None, institutional_ownership=None,
@@ -1131,7 +1104,8 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "modifier_recalibration": modifier_recalibration,
         "challenger": challenger,
         "fixed_feature": fixed_feature_challenger(row, snapshot, normalizer, config),
-        "multiplier_removal": multiplier_removal_variant(row),
+        # multiplier_removal_variant was retired 2026-08-12: promoted to champion (see
+        # blend_research_components' docstring), so it would now always equal it exactly.
     }
 
 
@@ -1202,13 +1176,18 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
     sentiment, sentiment_parts = sentiment_score(news_items, symbol)
-    components = {"fundamentals": fundamental, "market_behavior": technical, "news_sentiment": sentiment}
+    # Promoted 2026-08-12 (Round 5 Task 2, pipeline/validation/harness_freeze.json
+    # pending_decision): the champion's fundamentals component is the pre-multiplier
+    # score, and the blend below carries no coverage multiplier either. See
+    # blend_research_components' docstring for the citations.
+    raw_fundamental = fundamental_parts.get("raw_score", fundamental)
+    components = {"fundamentals": raw_fundamental, "market_behavior": technical, "news_sentiment": sentiment}
     fundamental_coverage = fundamental_parts.get("coverage", 0.0)
     blended = blend_research_components(components, {
         "fundamentals": fundamental_coverage,
         "market_behavior": technical_parts.get("coverage", 0),
         "news_sentiment": sentiment_parts.get("coverage", 0),
-    })
+    }, apply_coverage_multiplier=False)
     data_coverage, base, raw_score = blended["data_coverage"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
                                        insider_activity, institutional_ownership,
