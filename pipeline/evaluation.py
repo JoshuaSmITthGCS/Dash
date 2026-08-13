@@ -35,7 +35,7 @@ import json
 import os
 from datetime import datetime, timezone
 from itertools import combinations
-from math import erf, exp, sqrt
+from math import ceil, erf, exp, sqrt
 from statistics import NormalDist
 
 from common import LOG, STORE_DIR, save_json
@@ -211,6 +211,47 @@ def deflated_sharpe_ratio(observed_sharpe, *, observations, trials=1, skew=0.0,
     return round(_norm_cdf(statistic), 4)
 
 
+def probabilistic_sharpe_ratio(observed_sharpe, *, observations, benchmark_sharpe=0.0,
+                               skew=0.0, kurtosis=3.0):
+    """Probability the true Sharpe exceeds ``benchmark_sharpe`` given this sample.
+
+    Bailey & Lopez de Prado (2012). The deflated Sharpe above asks whether a result survives
+    the *search* that produced it; this asks the prior question - whether a single track
+    record is long enough to distinguish its Sharpe from the benchmark at all. Non-normality
+    enters through the standard error: negative skew and fat tails widen it, which is why a
+    strategy that sells tail risk needs a longer record to prove the same Sharpe.
+
+    Sharpe figures are per-observation, not annualized.
+    """
+    if observed_sharpe is None or observations < 3:
+        return None
+    variance = 1 - skew * observed_sharpe + ((kurtosis - 1) / 4) * observed_sharpe ** 2
+    if variance <= 0:
+        return None
+    statistic = ((observed_sharpe - benchmark_sharpe) * sqrt(observations - 1)) / sqrt(variance)
+    return round(_norm_cdf(statistic), 4)
+
+
+def minimum_track_record_length(observed_sharpe, *, benchmark_sharpe=0.0, skew=0.0,
+                                kurtosis=3.0, confidence=0.95):
+    """Observations needed before the observed Sharpe is distinguishable from the benchmark.
+
+    The inverse of the probabilistic Sharpe: instead of "how confident am I now", it answers
+    "how long until the claim is defensible". Reporting this next to a young track record is
+    the honest alternative to reporting the Sharpe as though the sample size were adequate.
+
+    Returns None when the observed Sharpe does not exceed the benchmark - no amount of
+    additional data makes a claim that is not there.
+    """
+    if observed_sharpe is None or observed_sharpe <= benchmark_sharpe:
+        return None
+    variance = 1 - skew * observed_sharpe + ((kurtosis - 1) / 4) * observed_sharpe ** 2
+    if variance <= 0:
+        return None
+    quantile = NormalDist().inv_cdf(confidence)
+    return int(ceil(1 + variance * (quantile / (observed_sharpe - benchmark_sharpe)) ** 2))
+
+
 def probability_of_backtest_overfitting(performance_matrix, *, splits=8):
     """PBO via combinatorially-symmetric cross-validation.
 
@@ -264,6 +305,232 @@ def probability_of_backtest_overfitting(performance_matrix, *, splits=8):
         if relative_rank <= 0.5:
             below_median += 1
     return round(below_median / total, 4) if total else None
+
+
+# ---------------- leg diagnostics ----------------
+#
+# A composite score with five legs and hand-assigned weights is five claims, not one. These
+# functions test each claim separately: whether a leg predicts anything on its own, what the
+# composite loses when the leg is removed, and whether two legs are really the same leg
+# wearing different labels. None of this needs live data - it runs on any scored panel with
+# forward returns attached.
+
+
+def composite_score(leg_scores, weights):
+    """Weighted blend of leg scores, renormalized over whichever legs are present.
+
+    Renormalization matters for the drop-one test: removing a leg must reweight the
+    survivors rather than shrink every score toward zero, or the "damage" measured is
+    arithmetic rather than informational.
+    """
+    usable = {leg: weight for leg, weight in weights.items()
+              if weight and leg_scores.get(leg) is not None}
+    total = sum(usable.values())
+    if not total:
+        return None
+    return sum(leg_scores[leg] * weight for leg, weight in usable.items()) / total
+
+
+def _period_ic(period, score_of):
+    """Cross-sectional rank IC for one period under an arbitrary score function."""
+    forwards = period.get("forward_returns") or {}
+    pairs = [(score_of(ticker), forwards[ticker]) for ticker in forwards
+             if score_of(ticker) is not None and forwards[ticker] is not None]
+    if len(pairs) < 5:
+        return None
+    return rank_ic([pair[0] for pair in pairs], [pair[1] for pair in pairs])
+
+
+def per_leg_ic(periods, legs=None, *, periods_per_year=12):
+    """Standalone rank IC of every leg, so dead weight becomes visible.
+
+    ``periods`` carry ``leg_scores`` as ``{ticker: {leg: score}}``. A leg whose own IC sits
+    at zero is not contributing prediction; it is contributing weight.
+    """
+    legs = list(legs or sorted({leg for period in periods
+                                for scores in (period.get("leg_scores") or {}).values()
+                                for leg in scores}))
+    output = {}
+    for leg in legs:
+        series = [_period_ic(period, lambda ticker, leg=leg, period=period:
+                             ((period.get("leg_scores") or {}).get(ticker) or {}).get(leg))
+                  for period in periods]
+        output[leg] = ic_summary(series, periods_per_year)
+    return output
+
+
+def drop_one_leg_delta_ic(periods, weights, *, periods_per_year=12):
+    """Marginal IC contribution of each leg: full composite IC minus the IC without it.
+
+    This is the test that says whether assigned weights are defensible. A leg with a
+    negative delta is actively hurting the composite - the blend predicts better once it is
+    gone - and no amount of intuition about why the leg *should* work survives that.
+    """
+    def scores_for(period, active):
+        return lambda ticker: composite_score(
+            (period.get("leg_scores") or {}).get(ticker) or {}, active)
+
+    full_series = [_period_ic(period, scores_for(period, weights)) for period in periods]
+    full = ic_summary(full_series, periods_per_year)
+    deltas = {}
+    for leg in weights:
+        remaining = {name: weight for name, weight in weights.items() if name != leg}
+        if not remaining:
+            continue
+        without = ic_summary([_period_ic(period, scores_for(period, remaining))
+                              for period in periods], periods_per_year)
+        both_present = full["mean_ic"] is not None and without["mean_ic"] is not None
+        deltas[leg] = {
+            "weight": weights[leg],
+            "mean_ic_without_leg": without["mean_ic"],
+            "delta_ic": round(full["mean_ic"] - without["mean_ic"], 4) if both_present else None,
+            "hurts_composite": bool(both_present and full["mean_ic"] < without["mean_ic"]),
+        }
+    return {"composite": full, "legs": deltas}
+
+
+def leg_correlation_matrix(periods, legs=None):
+    """Average cross-sectional Spearman correlation between every pair of legs.
+
+    Two legs correlated above roughly 0.7 are one leg counted twice, which quietly doubles
+    its weight in the composite and overstates how many independent bets are being made.
+    """
+    legs = list(legs or sorted({leg for period in periods
+                                for scores in (period.get("leg_scores") or {}).values()
+                                for leg in scores}))
+    matrix = {left: {} for left in legs}
+    redundant = []
+    for left in legs:
+        for right in legs:
+            values = []
+            for period in periods:
+                leg_scores = period.get("leg_scores") or {}
+                pairs = [(scores.get(left), scores.get(right)) for scores in leg_scores.values()
+                         if scores.get(left) is not None and scores.get(right) is not None]
+                if len(pairs) < 5:
+                    continue
+                correlation = pearson(rank([pair[0] for pair in pairs]),
+                                      rank([pair[1] for pair in pairs]))
+                if correlation is not None:
+                    values.append(correlation)
+            average = round(sum(values) / len(values), 4) if values else None
+            matrix[left][right] = average
+            if left < right and average is not None and average >= 0.7:
+                redundant.append({"legs": [left, right], "correlation": average})
+    return {"legs": legs, "matrix": matrix, "redundant_pairs": redundant}
+
+
+def rank_autocorrelation(periods):
+    """Spearman correlation of composite score ranks between consecutive periods.
+
+    Turnover is decided here, before any trade is placed: a score that reshuffles its own
+    ranking every period will produce turnover no execution improvement can rescue. High
+    autocorrelation means the same names keep being chosen; low means the cost line is going
+    to eat whatever the signal earns.
+    """
+    values = []
+    for previous, current in zip(periods, periods[1:]):
+        before, after = previous.get("scores") or {}, current.get("scores") or {}
+        common = [ticker for ticker in before if ticker in after
+                  and before[ticker] is not None and after[ticker] is not None]
+        if len(common) < 5:
+            continue
+        correlation = pearson(rank([before[ticker] for ticker in common]),
+                              rank([after[ticker] for ticker in common]))
+        if correlation is not None:
+            values.append(round(correlation, 4))
+    if not values:
+        return {"periods": 0, "mean_autocorrelation": None, "series": []}
+    mean = sum(values) / len(values)
+    return {"periods": len(values), "mean_autocorrelation": round(mean, 4),
+            "implied_period_turnover": round(1 - mean, 4), "series": values}
+
+
+# ---------------- horizon and cost economics ----------------
+
+def ic_decay_curve(periods, horizons, *, periods_per_year=12):
+    """Mean IC at each forward horizon, from periods carrying returns for several horizons.
+
+    Where the edge lives is a different question from whether it exists. A signal whose IC
+    peaks at 63 days and is noise at 1 day cannot be traded daily; one that decays by day 5
+    cannot survive the cost of getting in.
+    """
+    curve = {}
+    for label in horizons:
+        series = []
+        for period in periods:
+            forwards = (period.get("forward_returns_by_horizon") or {}).get(label) or {}
+            series.append(_period_ic({"forward_returns": forwards},
+                                     lambda ticker, period=period: (period.get("scores") or {}).get(ticker)))
+        curve[label] = ic_summary(series, periods_per_year)
+    present = {label: summary["mean_ic"] for label, summary in curve.items()
+               if summary["mean_ic"] is not None}
+    return {
+        "horizons": curve,
+        "peak_horizon": max(present, key=present.get) if present else None,
+    }
+
+
+def effective_breadth(weights):
+    """Inverse Herfindahl of a weight vector: how many equally-sized bets this really is.
+
+    Twenty positions with one of them at 40% is not twenty bets. Reported alongside the
+    top-10 concentration because the two disagree in exactly the cases worth noticing.
+    """
+    values = [float(weight) for weight in weights if weight is not None and float(weight) > 0]
+    total = sum(values)
+    if not total:
+        return None
+    shares = [value / total for value in values]
+    return round(1 / sum(share * share for share in shares), 2)
+
+
+def breakeven_gross_alpha(annual_turnover, round_trip_cost_bps):
+    """Gross alpha the signal must produce annually just to cover its own trading.
+
+    ``annual_turnover`` is one-way turnover per year expressed as a fraction of the
+    portfolio (1.0 = the book replaced once). Printed next to the expected return the IC
+    implies, this settles the strategy's viability arithmetically: if breakeven exceeds
+    expected gross alpha, no amount of signal work fixes it, because the signal is already
+    assumed.
+    """
+    if annual_turnover is None or round_trip_cost_bps is None:
+        return None
+    return round(annual_turnover * round_trip_cost_bps / 100, 3)
+
+
+def alpha_cost_crossover(spread_by_horizon, *, round_trip_cost_bps, trading_days_by_horizon,
+                         trading_days_per_year=252):
+    """Where the gross quantile spread starts to outrun the cost of harvesting it.
+
+    Each horizon is annualized on its own rebalance frequency: a 1-day spread is worth 252
+    of itself a year but also pays the round trip 252 times. The crossover is the shortest
+    horizon whose annualized spread survives its own annualized cost - the number that
+    decides how often this signal can be traded at all.
+    """
+    rows = []
+    for label, spread in spread_by_horizon.items():
+        days = trading_days_by_horizon.get(label)
+        if spread is None or not days:
+            continue
+        rebalances = trading_days_per_year / days
+        gross = spread * rebalances
+        cost = round_trip_cost_bps / 10_000 * rebalances
+        rows.append({
+            "horizon": label,
+            "trading_days": days,
+            "rebalances_per_year": round(rebalances, 2),
+            "gross_annualized_spread": round(gross, 4),
+            "annualized_cost": round(cost, 4),
+            "net_annualized_spread": round(gross - cost, 4),
+        })
+    rows.sort(key=lambda row: row["trading_days"])
+    profitable = [row for row in rows if row["net_annualized_spread"] > 0]
+    return {
+        "rows": rows,
+        "crossover_horizon": profitable[0]["horizon"] if profitable else None,
+        "round_trip_cost_bps": round_trip_cost_bps,
+    }
 
 
 # ---------------- walk-forward driver ----------------

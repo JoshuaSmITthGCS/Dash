@@ -38,6 +38,46 @@ Run against the real committed store, this diagnosed the Phase 1 enrichment bug 
 dominant cause of the rank churn the user reported — see `docs/BASELINE-2026-08-06.md` and
 `docs/CHANGELOG-QUANT-UPGRADE.md`.
 
+## Signal metrics, split by sample requirement (`pipeline/signal_metrics.py`)
+
+Publishes `public/data/validation/signal_metrics.json`, read by the signal-quality panel on
+the portfolio page. Every metric carries an explicit `requires_live_sample` flag, because the
+two halves of a monitoring suite have completely different readiness dates and mixing them
+makes a working report look like an empty one.
+
+**Needs no live sample (computable today on backtest data).** Rank IC at 1/5/21/63 trading
+days and the decay curve across them; IC-IR; per-leg IC; drop-one-leg ΔIC against the assigned
+weights; the leg correlation matrix and its redundancy flags; quantile spread and
+monotonicity; score autocorrelation (turnover implied before any trade); FF5 + momentum
+loadings; effective N and top-10 weight; rolling 60-day beta and its swing; breakeven gross
+alpha; the alpha-versus-cost crossover horizon; percent of ADV; and the four overfitting
+statistics — deflated Sharpe, probabilistic Sharpe, minimum track record length, and PBO via
+CSCV.
+
+**Needs a live sample.** Implementation shortfall, fill rate and unpositioned signals; the
+distribution-shape family (Omega, Ulcer, Martin, CVaR-95, skew, excess kurtosis, tail ratio,
+gain-to-pain); and the drift alarms (rolling live IC versus backtest IC, feature PSI,
+live-versus-backtest return divergence, data-quality counters, position reconciliation). Each
+reports its own observation counter against the sample it needs. The distribution family also
+publishes a `backtest_reference` value, labeled in the UI as not a live reading, so the wiring
+is demonstrably working before the sample exists.
+
+Metrics whose input is missing publish a status and the reason rather than a value. Group A
+depends on a scored cross-section panel, which `backtest_monthly.py --panel-out` writes
+alongside the equity curve: one row per rebalance per ticker with the composite score, the
+pre-modifier leg scores, and forward returns at each graded horizon. Without that panel the
+group reports `awaiting_input` and names the command, because the alternative — grading
+today's scores against today's returns — is look-ahead, not evidence.
+
+Kill thresholds are stated in the artifact rather than left to interpretation: mean IC below
+0.02, IC-IR below 0.3, leg correlation above 0.7, a negative drop-one delta, non-monotonic
+quantiles, PBO above 0.5, deflated or probabilistic Sharpe below 0.95. A breached threshold
+surfaces on the metric and in the group and page counters.
+
+PBO currently runs across the optimizer's holdout folds. CSCV wants at least eight blocks and
+the optimizer writes three, so the result publishes as `provisional` with the block count
+attached — directional, not final.
+
 ## Promotion gates
 
 A challenger may replace the champion only when (per the original upgrade brief, none of

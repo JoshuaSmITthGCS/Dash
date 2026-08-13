@@ -15,16 +15,34 @@ export function performanceMetricTone(key, value) {
   return 'neutral'
 }
 
+/**
+ * The two numbers worth keeping visible while the panel is closed. Sharpe is the headline
+ * risk-adjusted read and drawdown is the one that describes what holding it felt like;
+ * collapsing the section should cost the reader neither.
+ */
+export function collapsedSummary(metrics) {
+  if (!metrics?.available) return metrics?.reason || 'Unavailable'
+  return `Sharpe ${ratio(metrics.sharpe)} · Max drawdown ${percent(metrics.maxDrawdown)}`
+}
+
 function Metric({ name, label, value, format, note }) {
   const tone = performanceMetricTone(name, value)
   const glyph = tone === 'positive' ? '▲' : tone === 'negative' ? '▼' : tone === 'neutral' ? '●' : ''
   return <article className={`metric-tone-${tone}`}><span>{label}</span><strong>{glyph && <i aria-hidden="true">{glyph}</i>}{format(value)}</strong><small>{note}</small></article>
 }
 
-export default function PerformanceMetrics({ metrics, benchmarkLabel = 'benchmark', riskFree }) {
+/**
+ * Collapsed by default. These six are the slowest-moving numbers on the page - a Sharpe
+ * ratio does not change meaningfully between visits, and at this sample length it cannot -
+ * so they no longer hold the vertical space that signal-quality metrics need.
+ */
+export default function PerformanceMetrics({ metrics, benchmarkLabel = 'benchmark', riskFree, defaultOpen = false }) {
   return (
-    <section className="performance-metrics" aria-labelledby="standard-performance-title">
-      <header><div><span className="eyebrow">Standard measures</span><h2 id="standard-performance-title">Risk and performance</h2></div><small>{metrics?.available ? `${metrics.observations} daily returns` : metrics?.reason}</small></header>
+    <details className="performance-metrics" open={defaultOpen}>
+      <summary aria-label="Standard risk and performance measures">
+        <div><span className="eyebrow">Standard measures</span><h2 id="standard-performance-title">Risk and performance</h2></div>
+        <div className="performance-metrics-preview"><b>{collapsedSummary(metrics)}</b><small>{metrics?.available ? `${metrics.observations} daily returns` : ''}</small></div>
+      </summary>
       <div>
         <Metric name="informationRatio" label="Information ratio" value={metrics?.informationRatio} format={ratio} note={`Versus ${benchmarkLabel}`} />
         <Metric name="sharpe" label="Sharpe ratio" value={metrics?.sharpe} format={ratio} note={`${riskFree?.fallback ? 'Configured fallback' : riskFree?.series} ${riskFree?.annualPct?.toFixed(2) ?? '0.00'}%`} />
@@ -33,7 +51,7 @@ export default function PerformanceMetrics({ metrics, benchmarkLabel = 'benchmar
         <Metric name="maxDrawdown" label="Maximum drawdown" value={metrics?.maxDrawdown} format={percent} note="Worst peak decline" />
         <Metric name="currentDrawdown" label="Current drawdown" value={metrics?.currentDrawdown} format={percent} note="From high-water mark" />
       </div>
-    </section>
+    </details>
   )
 }
 import modelSettings from '../../pipeline/config/settings.json'

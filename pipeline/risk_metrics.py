@@ -135,6 +135,148 @@ def tracking_error(returns, benchmark_returns, minimum_observations=20):
     return round(sqrt(max(0.0, variance)) * sqrt(TRADING_DAYS) * 100, 3)
 
 
+# ---------------- distribution shape ----------------
+#
+# Sharpe and Sortino compress a return distribution into one number by assuming the parts
+# that matter are captured by a mean and a deviation. The measures below do not: they read
+# the shape of the distribution directly - how deep and how long the underwater periods run,
+# what the worst tail actually costs, and how asymmetric the gains are against the losses.
+#
+# Every one of them needs a lot of observations before it says anything. Skew and kurtosis
+# are the worst offenders: their sampling error is enormous on short samples, and a reading
+# taken over a few weeks is a description of that few weeks, not of the strategy. Each
+# function therefore takes an explicit ``minimum_observations`` and returns None below it
+# rather than producing a confident-looking number nobody should read.
+
+# Roughly six months of daily observations. Below this the shape statistics are dominated by
+# whatever regime happened to be running, so callers should treat any reading as decorative.
+DISTRIBUTION_MINIMUM_OBSERVATIONS = 120
+
+
+def omega_ratio(returns, threshold=0.0, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Probability-weighted gains over losses relative to a threshold return.
+
+    Keating & Shadwick (2002). Unlike Sharpe, Omega uses the whole distribution rather than
+    its first two moments, so it distinguishes two series with identical mean and variance
+    but different tails. ``threshold`` is the per-period return an investor could have had
+    instead - the risk-free rate (DFF) per period, not zero, when the question is whether
+    the strategy beat cash.
+    """
+    if len(returns) < minimum_observations:
+        return None
+    gains = sum(max(0.0, value - threshold) for value in returns)
+    losses = sum(max(0.0, threshold - value) for value in returns)
+    if losses <= 0:
+        return None
+    return round(gains / losses, 3)
+
+
+def ulcer_index(closes, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Root-mean-square drawdown from the running high-water mark, in percent.
+
+    Martin & McCann (1989). Maximum drawdown reports the single worst moment; the Ulcer
+    Index reports how much of the period was spent underwater and how deeply, which is much
+    closer to what an investor actually experiences.
+    """
+    if len(closes) < minimum_observations:
+        return None
+    peak, squares = closes[0], []
+    for close in closes:
+        peak = max(peak, close)
+        if peak:
+            squares.append((100.0 * (close / peak - 1)) ** 2)
+    if not squares:
+        return None
+    return round(sqrt(sum(squares) / len(squares)), 3)
+
+
+def martin_ratio(returns, closes, risk_free_annual=0.0,
+                 minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Annualized excess return per unit of Ulcer Index - Sharpe with drawdown as the risk.
+
+    Also called the ulcer performance index. Useful precisely where Sharpe misleads: a
+    strategy whose volatility is mostly upside scores well here and poorly on Sharpe.
+    """
+    ulcer = ulcer_index(closes, minimum_observations)
+    if ulcer is None or ulcer <= 0 or len(returns) < minimum_observations:
+        return None
+    annualized = (sum(returns) / len(returns)) * TRADING_DAYS * 100
+    return round((annualized - risk_free_annual * 100) / ulcer, 3)
+
+
+def conditional_value_at_risk(returns, confidence=0.95,
+                              minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Mean return of the worst ``1 - confidence`` tail, in percent. Historical, not fitted.
+
+    CVaR answers "when it goes wrong, how wrong", which VaR does not: VaR is a threshold and
+    says nothing about what lies beyond it. No distributional assumption is imposed - the
+    empirical tail is used as observed, because assuming normality is how tail risk gets
+    understated in exactly the periods it matters.
+    """
+    if len(returns) < minimum_observations or not 0 < confidence < 1:
+        return None
+    ordered = sorted(returns)
+    tail_size = max(1, int(round(len(ordered) * (1 - confidence))))
+    tail = ordered[:tail_size]
+    return round(sum(tail) / len(tail) * 100, 3)
+
+
+def skewness(returns, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Sample skew of the return distribution. Negative means the losses are the fat side."""
+    count = len(returns)
+    if count < minimum_observations:
+        return None
+    mean = sum(returns) / count
+    variance = sum((value - mean) ** 2 for value in returns) / count
+    if variance <= NEAR_ZERO_VARIANCE:
+        return None
+    third = sum((value - mean) ** 3 for value in returns) / count
+    return round(third / variance ** 1.5, 3)
+
+
+def excess_kurtosis(returns, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Sample kurtosis less the 3.0 of a normal distribution. Positive means fat tails."""
+    count = len(returns)
+    if count < minimum_observations:
+        return None
+    mean = sum(returns) / count
+    variance = sum((value - mean) ** 2 for value in returns) / count
+    if variance <= NEAR_ZERO_VARIANCE:
+        return None
+    fourth = sum((value - mean) ** 4 for value in returns) / count
+    return round(fourth / variance ** 2 - 3.0, 3)
+
+
+def tail_ratio(returns, percentile=0.05, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Best-tail magnitude over worst-tail magnitude at a symmetric percentile.
+
+    Above 1.0 the good tail is larger than the bad one. This is the asymmetry question
+    stripped of any distributional assumption.
+    """
+    if len(returns) < minimum_observations or not 0 < percentile < 0.5:
+        return None
+    ordered = sorted(returns)
+    index = max(0, int(round(len(ordered) * percentile)) - 1)
+    upper, lower = ordered[len(ordered) - 1 - index], ordered[index]
+    if lower >= 0 or upper <= 0:
+        return None
+    return round(abs(upper) / abs(lower), 3)
+
+
+def gain_to_pain(returns, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Sum of returns over the absolute sum of the negative ones (Schwager).
+
+    A ratio of 1.0 means every unit of loss taken was matched by one unit of net gain. It is
+    much harder to flatter with leverage than Sharpe is.
+    """
+    if len(returns) < minimum_observations:
+        return None
+    pain = sum(abs(value) for value in returns if value < 0)
+    if pain <= 0:
+        return None
+    return round(sum(returns) / pain, 3)
+
+
 def ratio_to_score(value, *, neutral=0.0, span=1.5, floor=0.0, ceiling=100.0):
     """Map an unbounded risk-adjusted ratio onto 0-100 without inventing thresholds.
 

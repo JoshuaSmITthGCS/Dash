@@ -49,6 +49,7 @@ import {
 import { FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from '../lib/referenceCashFlows.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import SignalMetricsPanel from '../components/SignalMetricsPanel.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 const money = (value, digits = 0) =>
@@ -143,6 +144,7 @@ export default function Portfolio() {
   const { currentUser, logout } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
   const { data: etfData } = useData('etfs.json')
+  const { data: signalMetrics, error: signalMetricsError } = useData('validation/signal_metrics.json')
   const {
     positions,
     loading: portfolioLoading,
@@ -540,6 +542,8 @@ export default function Portfolio() {
       <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
 
       <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
+
+      <SignalMetricsPanel report={signalMetrics} error={signalMetricsError} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">
