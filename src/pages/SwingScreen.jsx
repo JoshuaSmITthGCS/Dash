@@ -7,25 +7,31 @@ import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import InfoTag from '../components/InfoTag.jsx'
 
-// Column order matches the declared weights in pipeline/swing_signals.py, heaviest leg
-// first, so the table reads in the same order the composite is built.
-const LEGS = [
-  ['pead_drift', 'PEAD'],
-  ['analyst_revision', 'Revision'],
-  ['high_volume_premium', 'Volume'],
-  ['high_52w_proximity', '52w prox.'],
-  ['short_term_reversal', 'Reversal'],
-]
-
 // Every leg any book can carry, including the announcement return the horizon tiers added and
 // which no single-book weight vector declares.
+//
+// Named for what they measure rather than for the literature they come from. "PEAD" and
+// "52w prox." are precise and unreadable, and a column header nobody can parse is information
+// that is technically present and practically absent. The paper name and the citation stay one
+// tap away in the evidence panel, so nothing is lost by leading with the plain word.
 const LEG_LABELS = {
-  announcement_return: 'Announce.',
-  pead_drift: 'PEAD',
-  analyst_revision: 'Revision',
+  announcement_return: 'Reaction',
+  pead_drift: 'Earnings',
+  analyst_revision: 'Revisions',
   high_volume_premium: 'Volume',
-  high_52w_proximity: '52w prox.',
-  short_term_reversal: 'Reversal',
+  high_52w_proximity: '52w high',
+  short_term_reversal: 'Pullback',
+}
+
+// The same legs written out, for the one-name-per-row "what is driving this" column where
+// there is room for the full phrase.
+const LEG_PHRASES = {
+  announcement_return: 'Earnings reaction',
+  pead_drift: 'Earnings surprise',
+  analyst_revision: 'Analyst revisions',
+  high_volume_premium: 'Volume spike',
+  high_52w_proximity: 'Near 52-week high',
+  short_term_reversal: 'Recent pullback',
 }
 
 // Order legs by declared weight, heaviest first, so each tier's table reads in the order its
@@ -34,11 +40,104 @@ const legsFor = (weights) => Object.entries(weights || {})
   .sort(([leftKey, left], [rightKey, right]) => right - left || leftKey.localeCompare(rightKey))
   .map(([key]) => [key, LEG_LABELS[key] || key])
 
+// The single-book fallback for a snapshot published before the horizon split, in the declared
+// weight order of that book. Derived from LEG_LABELS rather than spelling the labels a second
+// time, so renaming a column cannot rename it on one path and not the other.
+const LEGS = legsFor({
+  pead_drift: .30, analyst_revision: .25, high_volume_premium: .20,
+  high_52w_proximity: .15, short_term_reversal: .10,
+})
+
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'
 const z = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}`
 const pct = (value) => value == null ? '–' : `${Number(value).toFixed(0)}%`
 const millions = (value) => value == null ? '–' : `$${(Number(value) / 1e6).toFixed(0)}M`
 const bps = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`
+
+/**
+ * Where a row stands, in one word, from what the screen already published.
+ *
+ * Nothing here is a new judgement. It restates eligibility, book membership and the cost
+ * arithmetic that were already on the row as separate numeric columns a reader had to combine
+ * in their head. The combination is the part people get wrong: a name at the top of the
+ * composite whose round trip exceeds its expected alpha reads as the best idea on the page and
+ * is the worst, and no amount of staring at two adjacent numbers makes that jump out.
+ */
+// Sort order for the verdict column: best standing first when sorted descending.
+const VERDICT_ORDER = { 'In book': 3, Ranked: 2, 'Cost eats it': 1, 'Screened out': 0, 'Held out': 0 }
+
+function verdictFor(row) {
+  if (!row.eligibility) {
+    const why = (row.reason_codes || []).join(', ')
+    if (row.short_interest?.suppressed) {
+      return { label: 'Screened out', tone: 'cool', title: `Heavily shorted. ${why}` }
+    }
+    return { label: 'Held out', tone: 'cool', title: why || 'Did not clear this tier’s gates' }
+  }
+  const edge = row.economics_net_edge_bps
+  if (edge != null && edge <= 0) {
+    return {
+      label: 'Cost eats it', tone: 'watch',
+      title: `Ranks here, but one round trip costs ${row.economics_round_trip_bps} bps against `
+        + `${row.economics_expected_alpha_bps} bps of assumed alpha over the whole hold.`,
+    }
+  }
+  if (row.current_membership) {
+    return { label: 'In book', tone: 'high', title: 'Ranks above this tier’s entry percentile and its expected alpha covers its round trip.' }
+  }
+  return { label: 'Ranked', tone: 'neutral', title: 'Eligible and scored, but below this tier’s entry percentile.' }
+}
+
+// Percentile in words. The composite is a rank of a rank, so a reader who treats its z as
+// cardinal is over-reading it; a five-step word scale is closer to what the number can carry.
+// The z and the percentile both stay on the row for anyone who wants them.
+function strengthFor(percentile) {
+  if (percentile == null) return { label: '–', tone: 'none', width: 0 }
+  if (percentile >= 95) return { label: 'Very strong', tone: 'high', width: 100 }
+  if (percentile >= 85) return { label: 'Strong', tone: 'high', width: 78 }
+  if (percentile >= 65) return { label: 'Moderate', tone: 'neutral', width: 55 }
+  if (percentile >= 40) return { label: 'Weak', tone: 'neutral', width: 32 }
+  return { label: 'Very weak', tone: 'cool', width: 14 }
+}
+
+// Which leg is actually carrying the row. `contribution` is already published per leg, so this
+// reads the answer rather than recomputing it.
+function topDriver(row) {
+  const entries = Object.entries(row.legs || {})
+    .filter(([, leg]) => leg?.applied && leg.contribution > 0)
+    .sort(([, left], [, right]) => right.contribution - left.contribution)
+  if (!entries.length) return { label: '–', title: 'No leg is contributing positively to this row.' }
+  const [key, leg] = entries[0]
+  const share = entries.reduce((total, [, item]) => total + item.contribution, 0)
+  return {
+    label: LEG_PHRASES[key] || key,
+    title: `${LEG_PHRASES[key] || key} contributes ${leg.contribution.toFixed(2)} of the composite`
+      + `${share ? `, ${Math.round(100 * leg.contribution / share)}% of everything pushing this row up` : ''}.`,
+  }
+}
+
+/**
+ * The tier, in one sentence, before any number.
+ *
+ * The panel below it carries six statistics and the table carries a dozen columns. Neither
+ * answers "should I be looking at this list at all", which is the first question and the one
+ * the numbers only answer once you have combined three of them.
+ */
+function TierHeadline({ tier }) {
+  if (!tier) return null
+  const clears = tier.book_clearing_cost
+  const total = tier.book_count
+  const none = total > 0 && clears === 0
+  return (
+    <p className={`swing-headline${none ? ' is-warning' : ''}`} role="note">
+      Hold about <b>{tier.target_hold_sessions} trading {tier.target_hold_sessions === 1 ? 'session' : 'sessions'}</b>.
+      {' '}<b>{total}</b> {total === 1 ? 'name qualifies' : 'names qualify'} today.
+      {total === 0 ? ' Nothing clears this tier’s gates right now.' : none
+        ? ` None of them is expected to earn more than it costs to trade at this speed, so read this as a ranking rather than a shortlist.`
+        : ` ${clears} of ${total} are expected to earn more than they cost to trade.`}
+    </p>
+  )
+}
 
 /**
  * The three horizon books, and what each one costs to run.
@@ -304,6 +403,7 @@ export default function SwingScreen() {
   })
   const [tierKey, setTierKey] = useState(null)
   const [sort, setSort] = useState({ key: 'rank', dir: 'asc' })
+  const [view, setView] = useState('simple')
 
   // A published snapshot from before the horizon split has no `tiers`, so the single-book path
   // stays live rather than the page breaking on an older file.
@@ -338,34 +438,136 @@ export default function SwingScreen() {
   // Every column the table can sort on, with the accessor beside the label so the two cannot
   // drift apart. `defaultDir` is the direction that answers the question the column is usually
   // asked: best first for a score, cheapest first for a cost.
+  //
+  // `full` marks the columns that only appear in the detailed view. Nothing is removed by the
+  // simple view, it is deferred: the plain columns are derived from the numeric ones, so the
+  // simple table answers "which of these is worth my attention" and the full table answers
+  // "why", which are different questions asked at different moments.
   const columns = useMemo(() => [
-    { key: 'rank', label: 'Rank', get: (row) => row.rank, defaultDir: 'asc' },
-    { key: 'ticker', label: 'Ticker', get: (row) => row.ticker, defaultDir: 'asc' },
-    { key: 'sector', label: 'Sector', get: (row) => row.sector, defaultDir: 'asc' },
-    { key: 'composite_z', label: 'Composite', get: (row) => row.composite_z, defaultDir: 'desc', num: true },
-    { key: 'percentile', label: 'Percentile', get: (row) => row.percentile, defaultDir: 'desc', num: true },
-    ...legs.map(([key, label]) => ({
-      key: `leg:${key}`, label, num: true, defaultDir: 'desc',
-      get: (row) => row.legs?.[key]?.applied ? row.legs[key].z : null,
-    })),
+    {
+      key: 'rank', label: 'Rank', get: (row) => row.rank, defaultDir: 'asc',
+      cell: (row) => <td key="rank">#{row.rank}</td>,
+    },
+    {
+      key: 'ticker', label: 'Ticker', get: (row) => row.ticker, defaultDir: 'asc',
+      cell: (row) => (
+        <td key="ticker"><b>{row.ticker}</b><span className="swing-row-name">{row.name}</span></td>
+      ),
+    },
+    {
+      key: 'verdict', label: 'Verdict', defaultDir: 'desc',
+      hint: 'Where this row stands once ranking, eligibility and cost are combined.',
+      get: (row) => VERDICT_ORDER[verdictFor(row).label] ?? -1,
+      cell: (row) => {
+        const verdict = verdictFor(row)
+        return (
+          <td key="verdict">
+            <span className={`tier ${verdict.tone}`} title={verdict.title}>{verdict.label}</span>
+          </td>
+        )
+      },
+    },
+    {
+      key: 'percentile', label: 'Signal', defaultDir: 'desc', num: true,
+      hint: 'Rank within this tier, in words. The exact percentile and composite z stay on the row.',
+      get: (row) => row.percentile,
+      cell: (row) => {
+        const strength = strengthFor(row.percentile)
+        return (
+          <td key="percentile" className="swing-strength-cell"
+            title={`${row.percentile == null ? 'unranked' : `${row.percentile.toFixed(0)}th percentile`} in this tier · composite ${z(row.composite_z)}`}>
+            <span className={`swing-strength-label ${strength.tone}`}>{strength.label}</span>
+            <span className="swing-strength-track" aria-hidden="true">
+              <span className={`swing-strength-fill ${strength.tone}`} style={{ width: `${strength.width}%` }} />
+            </span>
+          </td>
+        )
+      },
+    },
+    {
+      key: 'driver', label: 'Driven by', defaultDir: 'asc',
+      hint: 'The leg contributing most to this row’s score.',
+      get: (row) => topDriver(row).label,
+      cell: (row) => {
+        const driver = topDriver(row)
+        return <td key="driver" className="swing-driver" title={driver.title}>{driver.label}</td>
+      },
+    },
     ...(tier ? [
       {
-        key: 'net_edge', label: 'Net edge', num: true, defaultDir: 'desc',
-        hint: 'Assumed gross alpha over one holding period, less one round trip. '
+        key: 'net_edge', label: 'Edge after cost', num: true, defaultDir: 'desc',
+        hint: 'Assumed gross alpha over one holding period, less one round trip, in basis points. '
           + 'Negative means the trade costs more than the tier assumes it earns.',
         get: (row) => row.economics_net_edge_bps,
+        cell: (row) => (
+          <td key="net_edge" className={`mono num${row.economics_clears_cost ? ' up' : ' down'}`}
+            title={`${row.economics_expected_alpha_bps} bps assumed alpha over ${tier.target_hold_sessions} sessions, less ${row.economics_round_trip_bps} bps round trip`}>
+            {bps(row.economics_net_edge_bps)}
+          </td>
+        ),
       },
       {
-        key: 'round_trip', label: 'Round trip', num: true, defaultDir: 'asc',
+        key: 'round_trip', label: 'Cost to trade', num: true, defaultDir: 'asc', full: true,
         hint: 'Estimated cost in bps of buying and selling this name at this book size. '
           + 'The spread term is a liquidity-tiered proxy, not a measured spread.',
         get: (row) => row.economics_round_trip_bps,
+        cell: (row) => (
+          <td key="round_trip" className="mono num"
+            title={`${row.economics_liquidity_tier || 'unknown'} liquidity tier at ${millions(row.economics_position_dollars)} per position`}>
+            {row.economics_round_trip_bps == null ? '–' : row.economics_round_trip_bps.toFixed(1)}
+          </td>
+        ),
       },
     ] : []),
-    { key: 'coverage', label: 'Coverage', get: (row) => row.coverage, defaultDir: 'desc', num: true },
-    { key: 'return_20d', label: '20-day', get: (row) => row.raw_factors?.return_20d, defaultDir: 'desc', num: true },
-    { key: 'liquidity', label: 'Liquidity', get: (row) => row.median_dollar_volume_60d, defaultDir: 'desc', num: true },
+    {
+      key: 'sector', label: 'Sector', get: (row) => row.sector, defaultDir: 'asc', full: true,
+      cell: (row) => <td key="sector">{row.sector || '–'}</td>,
+    },
+    {
+      key: 'composite_z', label: 'Composite', get: (row) => row.composite_z, defaultDir: 'desc',
+      num: true, full: true,
+      cell: (row) => <td key="composite_z" className="mono num score-cell">{z(row.composite_z)}</td>,
+    },
+    ...legs.map(([key, label]) => ({
+      key: `leg:${key}`, label, num: true, defaultDir: 'desc', full: true,
+      hint: `${LEG_PHRASES[key] || label}: standardized score for this leg across the tier.`,
+      get: (row) => row.legs?.[key]?.applied ? row.legs[key].z : null,
+      cell: (row) => <LegCell key={key} leg={row.legs?.[key]}
+        detail={key === 'pead_drift' ? row.pead_detail : null} />,
+    })),
+    {
+      key: 'coverage', label: 'Data', get: (row) => row.coverage, defaultDir: 'desc',
+      num: true, full: true,
+      hint: 'Share of this tier’s declared weight that actually resolved on this row.',
+      cell: (row) => <td key="coverage" className="mono num">{pct((row.coverage || 0) * 100)}</td>,
+    },
+    {
+      key: 'return_20d', label: '20-day', get: (row) => row.raw_factors?.return_20d,
+      defaultDir: 'desc', num: true,
+      cell: (row) => <td key="return_20d" className="num"><Move pct={row.raw_factors?.return_20d} /></td>,
+    },
+    {
+      key: 'liquidity', label: 'Liquidity', get: (row) => row.median_dollar_volume_60d,
+      defaultDir: 'desc', num: true, full: true,
+      cell: (row) => <td key="liquidity" className="mono num">{millions(row.median_dollar_volume_60d)}</td>,
+    },
+    {
+      key: 'short_interest', label: 'Short interest', full: true,
+      get: (row) => row.short_interest?.short_percent_of_float ?? null, defaultDir: 'desc',
+      cell: (row) => (
+        <td key="short_interest" className={row.short_interest?.suppressed ? 'swing-suppressed-cell' : ''}>
+          {shortInterestLabel(row)}
+        </td>
+      ),
+    },
+    {
+      key: 'flags', label: 'Flags', full: true,
+      get: (row) => (row.reason_codes || []).join(', '), defaultDir: 'asc',
+      cell: (row) => <td key="flags">{(row.reason_codes || []).join(', ') || '–'}</td>,
+    },
   ], [legs, tier])
+
+  const shown = view === 'full' ? columns : columns.filter((column) => !column.full)
 
   const onSort = (key) => setSort((current) => current.key === key
     ? { key, dir: current.dir === 'asc' ? 'desc' : 'asc' }
@@ -382,14 +584,9 @@ export default function SwingScreen() {
         <h1 className="page-title">Swing <span className="accent">signals</span></h1>
         <p className="page-sub">
           {tiers ? <>
-            Three separately-specified books, not one composite sorted three ways. Each horizon carries
-            only the legs whose documented payoff lands inside its own holding window, at its own weights,
-            behind its own liquidity floor, against its own cost budget — so switching horizon changes
-            which columns exist, not just which names are on top. The 3-day book is event-triggered: a
-            name enters it only in the sessions after it reports. Short interest is a negative screen,
-            not a leg. RSI 70/30, MACD crossovers, Bollinger signals, VWAP, OBV and candlestick patterns
-            are deliberately absent — none of them survive data-snooping correction and costs in US
-            single-stock data.
+            Three separate books, one per holding period. Each carries only the signals that pay off
+            inside its own window, so switching horizon changes which columns exist, not just which
+            names are on top.
           </> : <>
             The five signals with real peer-reviewed support at the swing horizon, ranked cross-sectionally
             and combined into one composite: post-earnings drift, the change in analyst consensus, the
@@ -400,7 +597,7 @@ export default function SwingScreen() {
           </>}
         </p>
       </div>
-      <div className="result-count"><strong>{rows.length}</strong><span>results</span></div>
+      <div className="result-count"><strong>{rows.length}</strong><span>rows shown</span></div>
     </div>
 
     {loading ? <Loading /> : error ? (
@@ -408,10 +605,42 @@ export default function SwingScreen() {
     ) : <>
       {tiers ? <>
         <TierSwitcher tiers={tiers} order={tierOrder} active={activeKey} onSelect={setTierKey} />
-        <TierEconomics tier={tier} alpha={data?.alpha_assumption} />
+        <TierHeadline tier={tier} />
       </> : null}
-      <EvidencePanel data={data} legs={legs} tier={tier} />
-      <CostPanel model={data?.cost_model} />
+
+      {/* Everything that explains the model rather than the names. It was three cards deep
+          before the first row, which put the method between the reader and the answer. It is
+          all still here, one click away, because a screen that hides its evidence is worse
+          than one that leads with it. */}
+      <details className="card swing-method">
+        <summary>
+          <b>How this works</b>
+          <span>
+            {tier
+              ? `The ${tier.label} book, what each leg rests on, and what it costs to trade.`
+              : 'What each leg rests on, and what the book costs to trade.'}
+          </span>
+        </summary>
+        <div className="swing-method-body">
+          {tiers ? (
+            <p className="swing-method-intro">
+              Each horizon carries only the legs whose documented payoff lands inside its own
+              holding window, at its own weights, behind its own liquidity floor, against its own
+              cost budget. The 3-day book is event-triggered: a name enters it only in the sessions
+              after it reports. Short interest is a negative screen, not a leg. RSI 70/30, MACD
+              crossovers, Bollinger signals, VWAP, OBV and candlestick patterns are deliberately
+              absent — none of them survive data-snooping correction and costs in US single-stock
+              data.
+            </p>
+          ) : null}
+          <TierEconomics tier={tier} alpha={data?.alpha_assumption} />
+          <EvidencePanel data={data} legs={legs} tier={tier} />
+          <CostPanel model={data?.cost_model} />
+          {/* The methodology note. It was sitting between the filters and the table, which is
+              the one place on the page a reader has to scroll past to reach an answer. */}
+          {data?.coverage_note ? <p className="disclaimer" role="note">{data.coverage_note}</p> : null}
+        </div>
+      </details>
 
       <ResponsiveControlPanel label="Filter results" title="Filter results">
         <div className="screen-filters" aria-label="Swing screen filters">
@@ -434,8 +663,6 @@ export default function SwingScreen() {
           </select></label>
         </div>
       </ResponsiveControlPanel>
-
-      {data?.coverage_note ? <p className="disclaimer" role="note">{data.coverage_note}</p> : null}
 
       {data?.status === 'unavailable' ? (
         <Empty note={`Unavailable: ${data.reason_code}`} />
@@ -461,37 +688,35 @@ export default function SwingScreen() {
             { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
           ]} />
 
+        <div className="swing-view-toggle">
+          <span id="swing-view-label">Columns</span>
+          <div role="group" aria-labelledby="swing-view-label">
+            <button type="button" aria-pressed={view === 'simple'}
+              className={view === 'simple' ? 'is-active' : ''} onClick={() => setView('simple')}>
+              Simple
+            </button>
+            <button type="button" aria-pressed={view === 'full'}
+              className={view === 'full' ? 'is-active' : ''} onClick={() => setView('full')}>
+              Every number
+            </button>
+          </div>
+          <span className="swing-view-note">
+            {view === 'simple'
+              ? 'Showing the columns that decide whether a name is worth a look. Nothing is discarded.'
+              : 'Every published field, including each leg’s standardized score.'}
+          </span>
+        </div>
+
         <div className="research-table card"><table>
           <thead><tr>
-            {columns.map((column) => (
+            {shown.map((column) => (
               <SortHeader key={column.key} column={column} sort={sort} onSort={onSort}
                 className={column.num ? 'num' : undefined} />
             ))}
-            <th scope="col">Short interest</th><th scope="col">Flags</th>
           </tr></thead>
           <tbody>{rows.map((row) => (
             <tr key={row.ticker} className={row.short_interest?.suppressed ? 'swing-row-suppressed' : ''}>
-              <td>#{row.rank}</td>
-              <td><b>{row.ticker}</b><span className="swing-row-name">{row.name}</span></td>
-              <td>{row.sector || '–'}</td>
-              <td className="mono num score-cell">{z(row.composite_z)}</td>
-              <td className="mono num">{row.percentile == null ? '–' : row.percentile.toFixed(0)}</td>
-              {legs.map(([key]) => <LegCell key={key} leg={row.legs?.[key]}
-                detail={key === 'pead_drift' ? row.pead_detail : null} />)}
-              {tier ? <>
-                <td className={`mono num${row.economics_clears_cost ? ' up' : ' down'}`}
-                  title={`${row.economics_expected_alpha_bps} bps assumed alpha over ${tier.target_hold_sessions} sessions, less ${row.economics_round_trip_bps} bps round trip`}>
-                  {bps(row.economics_net_edge_bps)}
-                </td>
-                <td className="mono num" title={`${row.economics_liquidity_tier || 'unknown'} liquidity tier at ${millions(row.economics_position_dollars)} per position`}>
-                  {row.economics_round_trip_bps == null ? '–' : row.economics_round_trip_bps.toFixed(1)}
-                </td>
-              </> : null}
-              <td className="mono num">{pct((row.coverage || 0) * 100)}</td>
-              <td className="num"><Move pct={row.raw_factors?.return_20d} /></td>
-              <td className="mono num">{millions(row.median_dollar_volume_60d)}</td>
-              <td className={row.short_interest?.suppressed ? 'swing-suppressed-cell' : ''}>{shortInterestLabel(row)}</td>
-              <td>{(row.reason_codes || []).join(', ') || '–'}</td>
+              {shown.map((column) => column.cell(row))}
             </tr>
           ))}</tbody>
         </table></div>

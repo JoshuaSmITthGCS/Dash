@@ -658,11 +658,14 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
     surprise, pead_status = pead_factor(sue, config)
     volatility = realized_volatility(closes)
     age = (sue or {}).get("age_trading_days")
-    ear = announcement_return(closes, age, market_returns)
-    if ear is not None and _finite(age) and age > config["announcement_window_max_age"]:
-        ear = None
+    # Deliberately ungated here. The window this leg is allowed to look back over is a *tier*
+    # decision, not a factor decision: the 3-day book wants an announcement from this week and
+    # the 13-week book wants the whole drift window. Factors are built once per row and shared
+    # across all three tiers, so gating at this point would silently apply one tier's window to
+    # every tier. The gate lives in _standardized_subfactors, which runs per tier with that
+    # tier's config. Raw factors stay raw.
     return {
-        "announcement_return": ear,
+        "announcement_return": announcement_return(closes, age, market_returns),
         "announcement_age_sessions": age if _finite(age) else None,
         "abnormal_turnover_1d": abnormal_turnover(volumes, recent=1),
         "abnormal_turnover_5d": abnormal_turnover(volumes, recent=5),
@@ -894,6 +897,27 @@ def _raw_column(rows, name, negate, config, *, cost_gate=False, values=None):
     return raw
 
 
+def _announcement_window_gated(rows, config):
+    """announcement_return, nulled on rows whose announcement is older than this tier allows.
+
+    Applied here rather than in swing_factors because the factors are built once and scored
+    three times. A 3-day book asking for an announcement from this week and a 13-week book
+    asking for the whole drift window are reading the same stored number through different
+    windows, and gating at factor time would apply whichever config built the row to all three.
+    Ranked cross-sectionally afterwards, so a name gated out is not part of the distribution the
+    names inside the window are measured against, which is the same treatment the cost-gated
+    reversal leg gets.
+    """
+    limit = config["announcement_window_max_age"]
+    values = []
+    for row in rows:
+        factors = row.get("factors") or {}
+        age = factors.get("announcement_age_sessions")
+        stale = _finite(age) and age > limit
+        values.append(None if stale else factors.get("announcement_return"))
+    return values
+
+
 def _standardized_subfactors(rows, config, subfactors_by_leg=None):
     """{subfactor: [standardized value or None per row]}.
 
@@ -910,7 +934,10 @@ def _standardized_subfactors(rows, config, subfactors_by_leg=None):
         if leg == "short_term_reversal":
             continue
         for name, negate in subfactors:
-            standardized[name] = _standardize(name, _raw_column(rows, name, negate, config))
+            values = (_announcement_window_gated(rows, config)
+                      if name == "announcement_return" else None)
+            standardized[name] = _standardize(
+                name, _raw_column(rows, name, negate, config, values=values))
 
     reversal = subfactors_by_leg.get("short_term_reversal")
     if reversal:

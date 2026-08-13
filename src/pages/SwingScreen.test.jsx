@@ -67,6 +67,12 @@ const payload = (overrides = {}) => ({
 
 const renderScreen = () => render(<MemoryRouter><SwingScreen /></MemoryRouter>)
 
+// The table defaults to the plain columns. The per-leg scores, the composite z and the
+// liquidity and short-interest detail are all still published, one click away, and these two
+// helpers are how the tests reach them.
+const showEveryNumber = () => fireEvent.click(screen.getByRole('button', { name: 'Every number' }))
+const openMethod = () => { screen.getByText('How this works').closest('details').open = true }
+
 describe('SwingScreen', () => {
   it('ranks rows with every leg shown separately rather than one opaque score', () => {
     useData.mockReturnValue({ data: payload(), loading: false, error: null })
@@ -75,8 +81,11 @@ describe('SwingScreen', () => {
 
     expect(screen.getByRole('heading', { name: /Swing signals/ })).toBeVisible()
     expect(screen.getAllByText('AAA').length).toBeGreaterThan(0)
-    expect(screen.getByRole('columnheader', { name: 'Revision' })).toBeVisible()
-    expect(screen.getByRole('columnheader', { name: 'Reversal' })).toBeVisible()
+
+    showEveryNumber()
+
+    expect(screen.getByRole('columnheader', { name: 'Revisions' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'Pullback' })).toBeVisible()
     expect(screen.getAllByText('+1.90').length).toBeGreaterThan(0)
     expect(screen.getAllByText('-0.40').length).toBeGreaterThan(0)
   })
@@ -85,6 +94,7 @@ describe('SwingScreen', () => {
     useData.mockReturnValue({ data: payload(), loading: false, error: null })
 
     const { container } = renderScreen()
+    showEveryNumber()
 
     const missing = container.querySelector('.swing-leg-missing')
     expect(missing).toHaveTextContent('–')
@@ -98,6 +108,7 @@ describe('SwingScreen', () => {
     useData.mockReturnValue({ data: payload(), loading: false, error: null })
 
     renderScreen()
+    openMethod()
 
     expect(screen.getByText(/Bernard & Thomas/)).toBeVisible()
     expect(screen.getByText('1-8 weeks · continuation of the surprise')).toBeVisible()
@@ -110,6 +121,7 @@ describe('SwingScreen', () => {
     useData.mockReturnValue({ data: payload(), loading: false, error: null })
 
     renderScreen()
+    openMethod()
 
     expect(screen.getByText(/58% lower after publication/)).toBeVisible()
     expect(screen.getByText(/McLean & Pontiff 2016/)).toBeVisible()
@@ -124,6 +136,7 @@ describe('SwingScreen', () => {
     useData.mockReturnValue({ data: payload({ results: [row(), suppressed] }), loading: false, error: null })
 
     const { container } = renderScreen()
+    showEveryNumber()
 
     expect(screen.getAllByText(/14.6% of float short/).length).toBeGreaterThan(0)
     expect(screen.getAllByText('SHORT_INTEREST_SUPPRESSED').length).toBeGreaterThan(0)
@@ -239,15 +252,16 @@ describe('SwingScreen horizon tiers', () => {
   it('switching horizon changes which legs exist, not just the row order', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
-    // The slow book has a PEAD column and no reversal column.
-    expect(screen.getByRole('columnheader', { name: 'PEAD' })).toBeVisible()
-    expect(screen.queryByRole('columnheader', { name: 'Reversal' })).toBeNull()
+    showEveryNumber()
+    // The slow book has an earnings column and no pullback column.
+    expect(screen.getByRole('columnheader', { name: 'Earnings' })).toBeVisible()
+    expect(screen.queryByRole('columnheader', { name: 'Pullback' })).toBeNull()
 
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
 
-    // The fast book has a reversal column and no PEAD column: its payoff has not landed yet.
-    expect(screen.getByRole('columnheader', { name: 'Reversal' })).toBeVisible()
-    expect(screen.queryByRole('columnheader', { name: 'PEAD' })).toBeNull()
+    // The fast book has a pullback column and no earnings column: its payoff has not landed yet.
+    expect(screen.getByRole('columnheader', { name: 'Pullback' })).toBeVisible()
+    expect(screen.queryByRole('columnheader', { name: 'Earnings' })).toBeNull()
     expect(screen.getAllByText('FAST').length).toBeGreaterThan(0)
     expect(screen.queryByText('SLOW')).toBeNull()
   })
@@ -256,6 +270,7 @@ describe('SwingScreen horizon tiers', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    openMethod()
     expect(screen.getByText(/costs more to round trip than the tier assumes it earns/)).toBeVisible()
     expect(screen.getByText('0/12')).toBeVisible()
   })
@@ -263,6 +278,7 @@ describe('SwingScreen horizon tiers', () => {
   it('labels the alpha figure every net-edge number depends on as an assumption', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
+    openMethod()
     expect(screen.getByText(/an assumption, not a measurement/)).toBeVisible()
   })
 
@@ -270,6 +286,7 @@ describe('SwingScreen horizon tiers', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    openMethod()
     expect(screen.getByText('100% of its payoff lands in this window')).toBeVisible()
     // The volume leg pays only a fifth of its total this fast, and is flagged for it.
     expect(screen.getByText('20% of its payoff lands in this window')).toHaveClass('thin')
@@ -279,6 +296,7 @@ describe('SwingScreen horizon tiers', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    openMethod()
     expect(screen.getByText(/640 names are ranked but held out today/)).toBeVisible()
   })
 })
@@ -293,6 +311,7 @@ describe('SwingScreen sorting', () => {
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
     expect(tickers(container)).toEqual(['FAST', 'CHEAP'])
 
+    showEveryNumber()
     fireEvent.click(screen.getByRole('button', { name: /Composite/ }))
     expect(tickers(container)).toEqual(['FAST', 'CHEAP'])
     fireEvent.click(screen.getByRole('button', { name: /Composite/ }))
@@ -304,7 +323,7 @@ describe('SwingScreen sorting', () => {
     const { container } = renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Net edge/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Edge after cost/ }))
 
     // Best net edge first, so the one name that clears its cost is on top even though it
     // ranks second on the composite.
@@ -314,6 +333,7 @@ describe('SwingScreen sorting', () => {
   it('marks the sorted column for assistive technology without changing its name', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
+    showEveryNumber()
     const header = screen.getByRole('columnheader', { name: 'Composite' })
     expect(header).toHaveAttribute('aria-sort', 'none')
     fireEvent.click(screen.getByRole('button', { name: /Composite/ }))
@@ -329,9 +349,116 @@ describe('SwingScreen sorting', () => {
     useData.mockReturnValue({ data, loading: false, error: null })
     const { container } = renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    showEveryNumber()
 
-    fireEvent.click(screen.getByRole('button', { name: /Round trip/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Cost to trade/ }))
 
     expect(tickers(container)).toEqual(['KNOWN', 'UNKNOWN'])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Readability: the plain-language layer over the same numbers
+// ---------------------------------------------------------------------------
+
+describe('SwingScreen readability', () => {
+  it('answers "is this list worth looking at" before showing any number', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.getByText(/65 trading sessions/)).toBeVisible()
+    expect(screen.getByText(/82 of 82 are expected to earn more than they cost to trade/)).toBeVisible()
+  })
+
+  it('warns in words, not arithmetic, when nothing in a book clears its cost', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(screen.getByText(/None of them is expected to earn more than it costs to trade/)).toBeVisible()
+  })
+
+  it('states a verdict per row rather than leaving the reader to combine three columns', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    // FAST tops the composite and does not clear its cost. That is the reading error the
+    // verdict exists to prevent, so it must be stated on the row and not inferred.
+    expect(screen.getAllByText('Cost eats it').length).toBeGreaterThan(0)
+    expect(screen.getByText('Cost eats it').getAttribute('title')).toMatch(/one round trip costs/)
+  })
+
+  it('marks a screened-out name as such with its reason attached', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('SHORTED', {
+      rank: 1, eligibility: false, current_membership: false, percentile: null,
+      short_interest: { suppressed: true, reasons: ['14.6% of float short'] },
+      reason_codes: ['SHORT_INTEREST_SUPPRESSED'],
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    const verdict = screen.getByText('Screened out')
+    expect(verdict).toBeVisible()
+    expect(verdict.getAttribute('title')).toMatch(/Heavily shorted/)
+  })
+
+  it('says how strong a signal is in words, keeping the exact number one hover away', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('TOP', { rank: 1, percentile: 99.1, composite_z: 1.42 })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    const strength = screen.getByText('Very strong')
+    expect(strength).toBeVisible()
+    expect(strength.closest('td').getAttribute('title')).toMatch(/99th percentile/)
+    expect(strength.closest('td').getAttribute('title')).toMatch(/composite \+1\.42/)
+  })
+
+  it('names the leg actually carrying each row', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    // announcement_return contributes 1.5 * 0.5, the largest of the three.
+    expect(screen.getAllByText('Earnings reaction').length).toBeGreaterThan(0)
+  })
+
+  it('defers the dense columns without discarding them', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.queryByRole('columnheader', { name: 'Composite' })).toBeNull()
+    expect(screen.queryByRole('columnheader', { name: 'Liquidity' })).toBeNull()
+
+    showEveryNumber()
+
+    expect(screen.getByRole('columnheader', { name: 'Composite' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'Liquidity' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'Short interest' })).toBeVisible()
+  })
+
+  it('keeps the verdict and signal columns in both views', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    showEveryNumber()
+    expect(screen.getByRole('columnheader', { name: 'Verdict' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'Signal' })).toBeVisible()
+  })
+
+  it('keeps every header and cell aligned when the column set changes', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    const { container } = renderScreen()
+    const widths = () => [
+      container.querySelectorAll('thead th').length,
+      ...[...container.querySelectorAll('tbody tr')].map((tr) => tr.children.length),
+    ]
+    expect(new Set(widths()).size).toBe(1)
+    showEveryNumber()
+    expect(new Set(widths()).size).toBe(1)
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(new Set(widths()).size).toBe(1)
+  })
+
+  it('leaves the method available rather than removing it', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.getByText('How this works')).toBeVisible()
+    openMethod()
+    expect(screen.getByText(/Brandt, Kishore, Santa-Clara & Venkatachalam/)).toBeVisible()
   })
 })

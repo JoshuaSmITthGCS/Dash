@@ -36,7 +36,11 @@ def tier_universe(count=120):
         entry = cache_entry(count=400, drift=1.0005)
         entry["volumes"] = varied_volumes(spike=3.5 if index % 4 == 0 else 1.0)
         if index % 3 == 0:
-            age = 1 + (index % 4)
+            # Announcement ages have to straddle every tier's window or the fixture cannot
+            # tell a working gate from a broken one. Roughly half are inside the fast book's
+            # five sessions and half are stale to it but still open to the slow book, which is
+            # the distribution a real cross-section mid-quarter actually has.
+            age = 1 + (index % 4) if index % 6 == 0 else 18 + (index % 25)
             jump = 1 + (.09 if index % 6 == 0 else -.06)
             entry["closes"][-(age + 1):] = [close * jump for close in entry["closes"][-(age + 1):]]
             sues[ticker] = {"sue": (index % 9) - 4, "basis": "as_filed",
@@ -83,22 +87,47 @@ def test_announcement_return_is_abnormal_not_raw():
     assert swing_signals.announcement_return(closes, 1, market) == pytest.approx(0.0, abs=1e-9)
 
 
-def test_announcement_return_is_dropped_once_its_tier_window_closes():
-    closes = [100.0] * 300
-    closes[-4] = closes[-3] = closes[-2] = closes[-1] = 108.0
-    sue = {"sue": 1.0, "release_datetime": "2026-08-01T12:00:00Z", "age_trading_days": 3}
-    fast = swing_signals.swing_factors({}, closes=closes, volumes=[1e6] * 300, sue=sue,
-                                       config=tiers.tier_config("F"))
-    slow = swing_signals.swing_factors({}, closes=closes, volumes=[1e6] * 300, sue=sue,
-                                       config=tiers.tier_config("S"))
-    assert fast["announcement_return"] is not None
-    assert slow["announcement_return"] is not None
+def test_the_announcement_window_is_a_tier_decision_not_a_factor_decision():
+    """Regression: the gate must run per tier, on the scored cross-section.
 
-    stale = {**sue, "age_trading_days": 30}
-    assert swing_signals.swing_factors({}, closes=closes, volumes=[1e6] * 300, sue=stale,
-                                       config=tiers.tier_config("F"))["announcement_return"] is None
-    assert swing_signals.swing_factors({}, closes=closes, volumes=[1e6] * 300, sue=stale,
-                                       config=tiers.tier_config("S"))["announcement_return"] is not None
+    Factors are built once per row and scored three times. Gating inside swing_factors applied
+    whichever config happened to build the row to all three tiers, which silently ran the 3-day
+    book's five-session event window at the default sixty and made the fast tier's whole
+    event-trigger design a no-op. Caught only on the real universe: the fast tier's
+    announcement leg resolved on 83% of names, which no five-session window can do.
+
+    So this asserts through score_tier, not through swing_factors.
+    """
+    rows = scored_rows()
+    ages = [(row.get("factors") or {}).get("announcement_age_sessions") for row in rows]
+    assert any(age is not None and age > 5 for age in ages), "fixture has no stale announcements"
+
+    fast = tiers.score_tier(rows, "F")
+    slow = tiers.score_tier(rows, "S")
+
+    # Read the age off each scored row rather than zipping against the input order:
+    # score_tier returns the cross-section sorted by score, not in the order it was given.
+    fast_limit = tiers.tier_config("F")["announcement_window_max_age"]
+    for row in fast:
+        age = (row.get("factors") or {}).get("announcement_age_sessions")
+        if age is not None and age > fast_limit:
+            assert row["leg_scores"]["announcement_return"] is None, row["ticker"]
+
+    # The same rows, read through the slow tier's wider window, still resolve.
+    resolved_slow = sum(1 for row in slow if row["leg_scores"]["announcement_return"] is not None)
+    resolved_fast = sum(1 for row in fast if row["leg_scores"]["announcement_return"] is not None)
+    assert resolved_slow > resolved_fast
+
+
+def test_raw_announcement_return_is_stored_ungated():
+    """The stored factor is the measurement. The window is applied when it is read."""
+    closes = [100.0] * 300
+    closes[-32] = closes[-31] = 108.0
+    sue = {"sue": 1.0, "release_datetime": "2026-08-01T12:00:00Z", "age_trading_days": 30}
+    factors = swing_signals.swing_factors({}, closes=closes, volumes=[1e6] * 300, sue=sue,
+                                          config=tiers.tier_config("F"))
+    assert factors["announcement_return"] is not None
+    assert factors["announcement_age_sessions"] == 30
 
 
 # ---------------------------------------------------------------------------
