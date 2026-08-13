@@ -177,6 +177,7 @@ describe('SwingScreen', () => {
 const tierRow = (ticker, overrides = {}) => ({
   ...row(),
   ticker, name: `${ticker} Inc`,
+  trend: { state: 'rising', label: 'Trending up', range_position_52w: 0.72, above_ma20: true, above_ma60: true },
   legs: {
     announcement_return: leg(1.5, true, 0.5),
     high_volume_premium: leg(0.9, true, 0.3),
@@ -220,8 +221,8 @@ const tieredPayload = (overrides = {}) => payload({
       break_even_alpha_bps_per_month: 30.8,
       note: 'Event-triggered rather than a standing cross-sectional rank.',
       results: [
-        tierRow('FAST', { rank: 1, composite_z: 2.1, economics_net_edge_bps: -3.1, economics_round_trip_bps: 4.4, economics_clears_cost: false, economics_expected_alpha_bps: 1.26 }),
-        tierRow('CHEAP', { rank: 2, composite_z: 1.2, economics_net_edge_bps: 0.4, economics_round_trip_bps: 0.9, economics_clears_cost: true, economics_expected_alpha_bps: 1.26 }),
+        tierRow('FAST', { rank: 1, composite_z: 2.1, economics_net_edge_bps: -3.1, economics_predicted_upside_pct: -0.031, economics_round_trip_bps: 4.4, economics_clears_cost: false, economics_expected_alpha_bps: 1.26 }),
+        tierRow('CHEAP', { rank: 2, composite_z: 1.2, economics_net_edge_bps: 0.4, economics_predicted_upside_pct: 0.004, economics_round_trip_bps: 0.9, economics_clears_cost: true, economics_expected_alpha_bps: 1.26 }),
       ],
     },
     S: {
@@ -234,7 +235,7 @@ const tieredPayload = (overrides = {}) => payload({
       median_net_edge_bps: 13.5, book_clearing_cost: 82, book_count: 82,
       break_even_alpha_bps_per_month: 1.7,
       note: 'The only tier whose cost budget is comfortable.',
-      results: [tierRow('SLOW', { rank: 1, economics_net_edge_bps: 13.5, economics_round_trip_bps: 3.2, economics_clears_cost: true, economics_expected_alpha_bps: 16.76 })],
+      results: [tierRow('SLOW', { rank: 1, economics_net_edge_bps: 13.5, economics_predicted_upside_pct: 0.135, economics_round_trip_bps: 3.2, economics_clears_cost: true, economics_expected_alpha_bps: 16.76 })],
     },
   },
   ...overrides,
@@ -318,12 +319,12 @@ describe('SwingScreen sorting', () => {
     expect(tickers(container)).toEqual(['CHEAP', 'FAST'])
   })
 
-  it('sorts on net edge, which is the column that decides whether a name is worth trading', () => {
+  it('sorts on upside, which is the column that decides whether a name is worth trading', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     const { container } = renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
 
-    fireEvent.click(screen.getByRole('button', { name: /Edge after cost/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Upside/ }))
 
     // Best net edge first, so the one name that clears its cost is on top even though it
     // ranks second on the composite.
@@ -343,8 +344,8 @@ describe('SwingScreen sorting', () => {
   it('sorts rows with no cost estimate last rather than treating them as cheapest', () => {
     const data = tieredPayload()
     data.tiers.F.results = [
-      tierRow('KNOWN', { rank: 1, economics_round_trip_bps: 5.0, economics_net_edge_bps: -3.7 }),
-      tierRow('UNKNOWN', { rank: 2, economics_round_trip_bps: null, economics_net_edge_bps: null }),
+      tierRow('KNOWN', { rank: 1, economics_round_trip_bps: 5.0, economics_net_edge_bps: -3.7, economics_predicted_upside_pct: -0.037000000000000005 }),
+      tierRow('UNKNOWN', { rank: 2, economics_round_trip_bps: null, economics_net_edge_bps: null, economics_predicted_upside_pct: null }),
     ]
     useData.mockReturnValue({ data, loading: false, error: null })
     const { container } = renderScreen()
@@ -405,6 +406,7 @@ describe('SwingScreen readability', () => {
     data.tiers.S.results = [tierRow('TOP', { rank: 1, percentile: 99.1, composite_z: 1.42 })]
     useData.mockReturnValue({ data, loading: false, error: null })
     renderScreen()
+    showEveryNumber()
     const strength = screen.getByText('Very strong')
     expect(strength).toBeVisible()
     expect(strength.closest('td').getAttribute('title')).toMatch(/99th percentile/)
@@ -437,7 +439,7 @@ describe('SwingScreen readability', () => {
     renderScreen()
     showEveryNumber()
     expect(screen.getByRole('columnheader', { name: 'Verdict' })).toBeVisible()
-    expect(screen.getByRole('columnheader', { name: 'Signal' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'Upside' })).toBeVisible()
   })
 
   it('keeps every header and cell aligned when the column set changes', () => {
@@ -460,5 +462,77 @@ describe('SwingScreen readability', () => {
     expect(screen.getByText('How this works')).toBeVisible()
     openMethod()
     expect(screen.getByText(/Brandt, Kishore, Santa-Clara & Venkatachalam/)).toBeVisible()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Predicted upside and price position
+// ---------------------------------------------------------------------------
+
+describe('SwingScreen upside and trend', () => {
+  it('leads with a per-name upside in percent rather than a basis-point edge', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('AAA', {
+      rank: 1, economics_predicted_upside_pct: 0.48, economics_round_trip_bps: 4.54,
+      economics_expected_alpha_bps: 52.3, economics_clears_cost: true,
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    expect(screen.getByRole('columnheader', { name: 'Upside' })).toBeVisible()
+    expect(screen.getByText('+0.48%')).toBeVisible()
+  })
+
+  it('says the upside is versus the universe and not a price forecast', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('AAA', {
+      rank: 1, economics_predicted_upside_pct: 0.48, economics_round_trip_bps: 4.54,
+      economics_expected_alpha_bps: 52.3, economics_clears_cost: true,
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    expect(screen.getByText('+0.48%').getAttribute('title')).toMatch(/Versus the universe, not a total return/)
+  })
+
+  it('shows a negative upside as negative rather than hiding it', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    const { container } = renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(screen.getByText('-0.03%')).toBeVisible()
+    expect(container.querySelector('td.down')).toBeTruthy()
+  })
+
+  it('says where the price sits in its own range', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.getByRole('columnheader', { name: 'Trend' })).toBeVisible()
+    const cell = screen.getAllByText('Trending up')[0]
+    expect(cell.getAttribute('title')).toMatch(/72% of the way up its 52-week range/)
+    expect(cell.getAttribute('title')).toMatch(/above the 20-session average/)
+  })
+
+  it('sorts by where the price sits, so peaks and bottoms can be found', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [
+      tierRow('LOW', { rank: 1, trend: { state: 'at_low', label: 'At 52-week low', range_position_52w: 0.01, above_ma20: false, above_ma60: false } }),
+      tierRow('HIGH', { rank: 2, trend: { state: 'at_high', label: 'At 52-week high', range_position_52w: 0.99, above_ma20: true, above_ma60: true } }),
+    ]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    const { container } = renderScreen()
+    const tickers = () => [...container.querySelectorAll('tbody tr td:nth-child(2) b')].map((n) => n.textContent)
+
+    fireEvent.click(screen.getByRole('button', { name: /Trend/ }))
+
+    expect(tickers()).toEqual(['HIGH', 'LOW'])
+    fireEvent.click(screen.getByRole('button', { name: /Trend/ }))
+    expect(tickers()).toEqual(['LOW', 'HIGH'])
+  })
+
+  it('tolerates a row with no trend rather than breaking the table', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('NOHIST', { rank: 1, trend: null })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    const { container } = renderScreen()
+    expect(container.querySelectorAll('thead th').length)
+      .toBe(container.querySelector('tbody tr').children.length)
   })
 })

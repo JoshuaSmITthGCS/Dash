@@ -444,6 +444,101 @@ def high_52w_drawdown_sigmas(closes, volatility, window=252):
     return math.log(proximity) / volatility
 
 
+def range_position_52w(closes, window=252):
+    """Where the latest close sits in its own 52-week range, 0 at the low and 1 at the high.
+
+    Published as context beside `high_52w_proximity`, never scored. Proximity divides by the
+    high alone, so a name that has halved and a name that never rose look different there and
+    identical here. This is the statistic that answers "is it at the top or the bottom of its
+    range", which proximity only half answers.
+    """
+    series = [close for close in (closes or [])[-window:] if _finite(close) and close > 0]
+    if len(series) < 60:
+        return None
+    peak, trough = max(series), min(series)
+    span = peak - trough
+    return (series[-1] - trough) / span if span > 0 else None
+
+
+def _moving_average(closes, window):
+    series = [close for close in (closes or [])[-window:] if _finite(close) and close > 0]
+    return sum(series) / len(series) if len(series) >= window else None
+
+
+# The published labels, so the screen and any downstream artifact name these states identically.
+TREND_STATES = {
+    "at_high": "At 52-week high",
+    "rising": "Trending up",
+    "turning_up": "Turning up off the low",
+    "range_bound": "Range-bound",
+    "falling": "Trending down",
+    "at_low": "At 52-week low",
+}
+
+TREND_NOTE = (
+    "Where the price is, not a forecast of where it goes. This is descriptive context published "
+    "beside the score and it is never a scoring leg: the trend-following technical canon (RSI "
+    "70/30, MACD crossovers, Bollinger signals) has weak-to-no support in US single-stock data "
+    "once data snooping and costs are accounted for, which is why none of it is weighted here. "
+    "It is published because where a name sits in its own range changes how a reader should read "
+    "the same score, not because it adds one.")
+
+
+# A 52-week range narrower than this is not a range worth being at the top or bottom of. A
+# name oscillating three percent around one level is technically at its 52-week high most
+# weeks, and saying so is true and useless: it reads as a breakout to anyone scanning the
+# column. Below this span the extremes are suppressed and the row falls through to the
+# trending cases, which describe such a name correctly.
+MINIMUM_MEANINGFUL_52W_RANGE = .15
+
+
+def trend_state(closes, window=252):
+    """Descriptive price position: at its high, trending, range-bound, or at its low.
+
+    Never a signal. See TREND_NOTE. The states are resolved in a deliberate order, because a
+    name can satisfy more than one and the more specific fact is the more useful one:
+
+    1. Sitting at the extremes of a *meaningfully wide* 52-week range, which is the single most
+       salient fact about a price and the one a reader most often wants stated outright.
+    2. Down in the bottom fifth of the range but back above its 20-session average, which is a
+       different situation from sitting at the low and from simply trending up, and is the one
+       a swing reader most often wants separated out.
+    3. Above or below both the 20 and 60-session averages, the ordinary trending cases.
+    4. Anything else, which is range-bound rather than trending.
+    """
+    position = range_position_52w(closes, window)
+    if position is None:
+        return None
+    short, long = _moving_average(closes, 20), _moving_average(closes, 60)
+    price = closes[-1]
+    above_short = short is not None and price > short
+    above_long = long is not None and price > long
+
+    series = [close for close in closes[-window:] if _finite(close) and close > 0]
+    trough = min(series)
+    wide = trough > 0 and (max(series) - trough) / trough >= MINIMUM_MEANINGFUL_52W_RANGE
+
+    if wide and position >= .97:
+        state = "at_high"
+    elif wide and position <= .03 and not above_short:
+        state = "at_low"
+    elif position <= .20 and above_short:
+        state = "turning_up"
+    elif above_short and above_long:
+        state = "rising"
+    elif not above_short and not above_long:
+        state = "falling"
+    else:
+        state = "range_bound"
+    return {
+        "state": state,
+        "label": TREND_STATES[state],
+        "range_position_52w": round(position, 4),
+        "above_ma20": above_short,
+        "above_ma60": above_long,
+    }
+
+
 def volume_surge(volumes, recent=1, reference=50):
     """Recent volume against its own trailing reference average.
 
@@ -693,6 +788,9 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
         # The scored 52-week subfactor (rule 4); raw proximity rides along as context.
         "high_52w_drawdown_sigmas": high_52w_drawdown_sigmas(closes, volatility),
         "high_52w_proximity": high_52w_proximity(closes),
+        # Descriptive only, never scored. See TREND_NOTE.
+        "range_position_52w": range_position_52w(closes),
+        "trend": trend_state(closes),
         "return_5d": trailing_return(closes, 5),
         # Normalization and cost input, never direction: see realized_volatility's docstring.
         "realized_volatility_60d": volatility,

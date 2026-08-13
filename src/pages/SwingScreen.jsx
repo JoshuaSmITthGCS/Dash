@@ -53,6 +53,16 @@ const z = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(va
 const pct = (value) => value == null ? '–' : `${Number(value).toFixed(0)}%`
 const millions = (value) => value == null ? '–' : `$${(Number(value) / 1e6).toFixed(0)}M`
 const bps = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`
+const upside = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`
+
+// Trend is descriptive, so it is toned by where the price sits rather than by whether that is
+// good news. "At 52-week low" is not a sell and "At 52-week high" is not a buy: the score
+// column is where the opinion lives, and colouring these as verdicts would quietly turn a
+// context column into a second, unweighted signal.
+const TREND_TONE = {
+  at_high: 'high', rising: 'high', turning_up: 'neutral',
+  range_bound: 'neutral', falling: 'cool', at_low: 'cool',
+}
 
 /**
  * Where a row stands, in one word, from what the screen already published.
@@ -74,12 +84,12 @@ function verdictFor(row) {
     }
     return { label: 'Held out', tone: 'cool', title: why || 'Did not clear this tier’s gates' }
   }
-  const edge = row.economics_net_edge_bps
+  const edge = row.economics_predicted_upside_pct
   if (edge != null && edge <= 0) {
     return {
       label: 'Cost eats it', tone: 'watch',
       title: `Ranks here, but one round trip costs ${row.economics_round_trip_bps} bps against `
-        + `${row.economics_expected_alpha_bps} bps of assumed alpha over the whole hold.`,
+        + `${row.economics_expected_alpha_bps} bps of implied alpha over the whole hold.`,
     }
   }
   if (row.current_membership) {
@@ -468,7 +478,7 @@ export default function SwingScreen() {
       },
     },
     {
-      key: 'percentile', label: 'Signal', defaultDir: 'desc', num: true,
+      key: 'percentile', label: 'Signal', defaultDir: 'desc', num: true, full: true,
       hint: 'Rank within this tier, in words. The exact percentile and composite z stay on the row.',
       get: (row) => row.percentile,
       cell: (row) => {
@@ -495,14 +505,15 @@ export default function SwingScreen() {
     },
     ...(tier ? [
       {
-        key: 'net_edge', label: 'Edge after cost', num: true, defaultDir: 'desc',
-        hint: 'Assumed gross alpha over one holding period, less one round trip, in basis points. '
-          + 'Negative means the trade costs more than the tier assumes it earns.',
-        get: (row) => row.economics_net_edge_bps,
+        key: 'upside', label: 'Upside', num: true, defaultDir: 'desc',
+        hint: 'What this tier’s alpha assumption implies for this row over one holding period, '
+          + 'after its own round-trip cost, measured against the universe. An assumption '
+          + 'shared out by score, not a forecast of the price.',
+        get: (row) => row.economics_predicted_upside_pct,
         cell: (row) => (
-          <td key="net_edge" className={`mono num${row.economics_clears_cost ? ' up' : ' down'}`}
-            title={`${row.economics_expected_alpha_bps} bps assumed alpha over ${tier.target_hold_sessions} sessions, less ${row.economics_round_trip_bps} bps round trip`}>
-            {bps(row.economics_net_edge_bps)}
+          <td key="upside" className={`mono num${row.economics_clears_cost ? ' up' : ' down'}`}
+            title={`${row.economics_expected_alpha_bps} bps implied alpha over ${tier.target_hold_sessions} sessions, less ${row.economics_round_trip_bps} bps round trip. Versus the universe, not a total return.`}>
+            {upside(row.economics_predicted_upside_pct)}
           </td>
         ),
       },
@@ -519,6 +530,24 @@ export default function SwingScreen() {
         ),
       },
     ] : []),
+    {
+      key: 'trend', label: 'Trend', defaultDir: 'desc',
+      hint: 'Where the price sits in its own 52-week range. Descriptive context, never a '
+        + 'scoring leg.',
+      get: (row) => row.trend?.range_position_52w ?? null,
+      cell: (row) => {
+        const trend = row.trend
+        if (!trend) return <td key="trend" className="swing-trend">–</td>
+        return (
+          <td key="trend" className={`swing-trend ${TREND_TONE[trend.state] || 'neutral'}`}
+            title={`${Math.round(trend.range_position_52w * 100)}% of the way up its 52-week range`
+              + ` · ${trend.above_ma20 ? 'above' : 'below'} the 20-session average`
+              + ` · ${trend.above_ma60 ? 'above' : 'below'} the 60-session average`}>
+            {trend.label}
+          </td>
+        )
+      },
+    },
     {
       key: 'sector', label: 'Sector', get: (row) => row.sector, defaultDir: 'asc', full: true,
       cell: (row) => <td key="sector">{row.sector || '–'}</td>,
@@ -543,7 +572,7 @@ export default function SwingScreen() {
     },
     {
       key: 'return_20d', label: '20-day', get: (row) => row.raw_factors?.return_20d,
-      defaultDir: 'desc', num: true,
+      defaultDir: 'desc', num: true, full: true,
       cell: (row) => <td key="return_20d" className="num"><Move pct={row.raw_factors?.return_20d} /></td>,
     },
     {

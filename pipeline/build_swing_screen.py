@@ -24,12 +24,12 @@ from swing_signals import (BASELINE_VARIANT, DECAY_HAIRCUT, DEFAULT_CONFIG, HOLD
                            SHORT_INTEREST_EVIDENCE, SWING_EVIDENCE, SWING_SUBFACTORS,
                            SWING_VARIANTS, SWING_WEIGHTS, capacity_profile, leg_coverage,
                            legs_resolved_distribution, pead_anchor_diagnostic, sector_cap_log,
-                           swing_factors, swing_scores, trailing_dollar_volume,
-                           universe_daily_returns)
+                           TREND_NOTE, TREND_STATES, swing_factors, swing_scores,
+                           trailing_dollar_volume, universe_daily_returns)
 from swing_tiers import (ALPHA_NOTE, ANNOUNCEMENT_EVIDENCE, ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
                          DECAY_CAPTURE, DECAY_CAPTURE_NOTE, DEFAULT_BOOK_DOLLARS, TIER_ORDER,
-                         TIER_SPECS, score_tier, tier_config, tier_evidence, tier_spec,
-                         tier_summary)
+                         TIER_SPECS, UPSIDE_NOTE, score_tier, tier_config, tier_evidence,
+                         tier_spec, tier_summary)
 
 SCHEMA_VERSION = "1.1.0"
 MODEL_VERSION = "swing-v1.1.0"
@@ -189,6 +189,9 @@ def to_result(rank, row, weights=None):
         "dropped_legs": row.get("dropped_legs", []),
         "reversal_cost_gated": row.get("reversal_cost_gated", False),
         "short_interest": row.get("short_interest"),
+        # Descriptive price position, never a scoring leg. See swing_signals.TREND_NOTE.
+        "trend": factors.get("trend"),
+        "range_position_52w": _rounded(factors.get("range_position_52w")),
         "pead_status": factors.get("pead_status"),
         "pead_detail": {key: factors.get(key) for key in
                         ("pead_basis", "pead_period_end", "pead_announced_on",
@@ -245,7 +248,10 @@ def payload(results, scored, generated_at, tiers=None):
         "alpha_assumption": {
             "gross_bps_per_month": ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
             "note": ALPHA_NOTE,
+            "upside_note": UPSIDE_NOTE,
         },
+        "trend_states": TREND_STATES,
+        "trend_note": TREND_NOTE,
         "schema_version": SCHEMA_VERSION, "model_version": MODEL_VERSION,
         "config_version": CONFIG_VERSION, "generated_at": generated_at,
         "status": "success",

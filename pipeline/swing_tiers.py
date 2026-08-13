@@ -46,6 +46,8 @@ The expected-alpha figures the cost columns are measured against are **assumptio
 measurements**, and they are published as such in every payload. See ALPHA_NOTE.
 """
 
+import math
+
 from swing_signals import (DEFAULT_CONFIG, SWING_EVIDENCE, SWING_SUBFACTORS, book_rows,
                            swing_scores)
 
@@ -246,18 +248,55 @@ def position_dollars(tier, book_dollars=DEFAULT_BOOK_DOLLARS):
     return book_dollars / tier_spec(tier)["book_size_names"]
 
 
+UPSIDE_NOTE = (
+    "Predicted upside is what the tier's alpha assumption implies for this row, not a forecast "
+    "of the price. It is the tier's assumed gross alpha shared out across the book in "
+    "proportion to each row's composite score, less that row's own round-trip cost, over one "
+    "holding period, measured against the universe rather than as a total return. Three things "
+    "it inherits and cannot escape: the 8.8bps/month assumption in ALPHA_NOTE, which is a "
+    "convention and not a measurement, the linear alpha-in-score model, which is the standard "
+    "approximation and not an estimated relationship, and a spread proxy that is not a measured "
+    "spread. This model has no out-of-sample record. Read the number as a cost-aware ranking "
+    "with a scale attached, never as an expected return.")
+
+
+def alpha_scale(scored, config, tier, alpha_bps_per_month=ASSUMED_GROSS_ALPHA_BPS_PER_MONTH):
+    """Basis points of assumed alpha per unit of composite score.
+
+    Calibrated so the *book's* mean row carries exactly the tier's assumed alpha, which keeps
+    the per-row numbers anchored to the one figure this report is willing to defend rather than
+    inventing a second assumption to sit beside it. Rows above the book mean get more and rows
+    below get less, linearly, which is the standard alpha_i = a * z_i approximation.
+
+    Returns None when the book has no positive mean score to calibrate against, and the caller
+    falls back to the flat tier figure rather than dividing by something near zero.
+    """
+    book = book_rows(scored, config)
+    scores = [row["score"] for row in book
+              if isinstance(row.get("score"), (int, float)) and math.isfinite(row["score"])]
+    mean = sum(scores) / len(scores) if scores else 0
+    if mean <= 0:
+        return None
+    return expected_alpha_bps(tier, alpha_bps_per_month) / mean
+
+
 def row_economics(row, tier, book_dollars=DEFAULT_BOOK_DOLLARS, scenario="base",
-                  alpha_bps_per_month=ASSUMED_GROSS_ALPHA_BPS_PER_MONTH):
-    """What one round trip in this name costs, against what the tier expects to earn on it.
+                  alpha_bps_per_month=ASSUMED_GROSS_ALPHA_BPS_PER_MONTH, alpha_bps=None):
+    """What one round trip in this name costs, against what the tier implies it earns.
 
     The round trip is two one-way costs at the tier's own position size, from the same
     half-spread-plus-impact model the rest of the pipeline uses. The spread term inside it is a
     liquidity-tiered proxy rather than a measured effective spread, and that limitation is
     carried on the row as `spread_source` rather than left in a docstring.
 
-    `net_edge_bps` is the sort key that matters. Negative means the round trip costs more than
-    the tier's assumed alpha over its whole holding period, which is a name to skip regardless
-    of where it ranks on the composite.
+    ``alpha_bps`` is this row's share of the tier's assumed alpha, from alpha_scale. Passed in
+    rather than computed here because the calibration needs the whole book. Omitted, every row
+    falls back to the flat tier figure, which is the right degradation for a caller holding one
+    row and no cross-section, and `alpha_basis` says which of the two happened.
+
+    `predicted_upside_pct` is the sort key that matters, and `net_edge_bps` is the same quantity
+    in basis points. Negative means the round trip costs more than the tier implies this name
+    earns over its whole holding period, which is a name to skip regardless of where it ranks.
     """
     from costs import estimate_cost_bps
 
@@ -267,16 +306,21 @@ def row_economics(row, tier, book_dollars=DEFAULT_BOOK_DOLLARS, scenario="base",
         trade_dollar_value=position_dollars(tier, book_dollars),
         scenario=scenario)
     round_trip = round(one_way["total_bps"] * 2, 2)
-    alpha = expected_alpha_bps(tier, alpha_bps_per_month)
+    scaled = alpha_bps is not None and math.isfinite(alpha_bps)
+    alpha = alpha_bps if scaled else expected_alpha_bps(tier, alpha_bps_per_month)
+    net = alpha - round_trip
     return {
         "round_trip_bps": round_trip,
         "one_way_bps": one_way["total_bps"],
         "spread_source": one_way.get("spread_source"),
         "liquidity_tier": one_way.get("liquidity_tier"),
         "expected_alpha_bps": round(alpha, 2),
-        "net_edge_bps": round(alpha - round_trip, 2),
+        "alpha_basis": "scaled_by_composite_score" if scaled else "tier_flat",
+        "net_edge_bps": round(net, 2),
+        # The same number as a percent, which is the unit the page leads with.
+        "predicted_upside_pct": round(net / 100, 3),
         "cost_ratio": round(round_trip / alpha, 3) if alpha else None,
-        "clears_cost": round_trip < alpha,
+        "clears_cost": net > 0,
         "position_dollars": round(position_dollars(tier, book_dollars), 2),
         "book_dollars": book_dollars,
     }
@@ -305,8 +349,6 @@ def score_tier(rows, tier, current_members=None, config=None,
     for row in scored:
         row["tier"] = tier
         row["tier_id"] = spec["id"]
-        row["economics"] = row_economics(row, tier, book_dollars,
-                                         alpha_bps_per_month=alpha_bps_per_month)
         if spec["required_legs"] and not _required_legs_resolved(row, spec):
             row["eligibility"] = False
             row["current_membership"] = False
@@ -317,6 +359,16 @@ def score_tier(rows, tier, current_members=None, config=None,
     # part of. Redo the three in order.
     if spec["required_legs"]:
         _regate(scored, resolved)
+
+    # Economics last, and deliberately so. The per-row alpha is calibrated against the book's
+    # mean score, and on an event-gated tier the book is not settled until the trigger gate and
+    # the re-cap above have run. Calibrating before them would anchor every predicted upside in
+    # the fast book to a cross-section several times larger than the one it ends up in.
+    scale = alpha_scale(scored, resolved, tier, alpha_bps_per_month)
+    for row in scored:
+        row["economics"] = row_economics(
+            row, tier, book_dollars, alpha_bps_per_month=alpha_bps_per_month,
+            alpha_bps=(scale * row["score"]) if scale is not None else None)
     return scored
 
 

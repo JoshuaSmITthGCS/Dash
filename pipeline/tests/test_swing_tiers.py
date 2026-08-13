@@ -7,6 +7,7 @@ below fail loudly if that ever becomes true.
 """
 
 import math
+import random
 
 import pytest
 
@@ -29,33 +30,50 @@ def varied_volumes(count=400, base=3_000_000.0, spike=1.0):
     return series
 
 
-def tier_universe(count=120):
+def tier_universe(count=300):
+    """A synthetic cross-section, seeded so it is deterministic but not self-correlated.
+
+    Sector, announcement timing and the sign of the announcement move are drawn independently.
+    An earlier version derived all three from the same index modulus, which meant every name
+    that jumped upward was also Technology: the top of every book was one sector, the 30%
+    concentration cap trimmed it to a single row, and two tests about how alpha varies across a
+    book had nothing to vary over. A fixture whose variables are secretly the same variable
+    hides exactly the behaviour it is meant to exercise.
+    """
+    rng = random.Random(20260813)
     universe, entries, sues = [], {}, {}
     for index in range(count):
         ticker = f"T{index:03d}"
         entry = cache_entry(count=400, drift=1.0005)
-        entry["volumes"] = varied_volumes(spike=3.5 if index % 4 == 0 else 1.0)
-        if index % 3 == 0:
+        entry["volumes"] = varied_volumes(spike=3.5 if rng.random() < .25 else 1.0)
+        if rng.random() < .34:
             # Announcement ages have to straddle every tier's window or the fixture cannot
             # tell a working gate from a broken one. Roughly half are inside the fast book's
             # five sessions and half are stale to it but still open to the slow book, which is
             # the distribution a real cross-section mid-quarter actually has.
-            age = 1 + (index % 4) if index % 6 == 0 else 18 + (index % 25)
-            jump = 1 + (.09 if index % 6 == 0 else -.06)
+            age = rng.randint(1, 4) if rng.random() < .5 else rng.randint(18, 42)
+            jump = 1 + rng.uniform(-.08, .10)
             entry["closes"][-(age + 1):] = [close * jump for close in entry["closes"][-(age + 1):]]
-            sues[ticker] = {"sue": (index % 9) - 4, "basis": "as_filed",
+            sues[ticker] = {"sue": rng.uniform(-4, 4), "basis": "as_filed",
                             "release_datetime": "2026-08-01T12:00:00Z", "age_trading_days": age,
                             "period_end": "2026-06-30", "release_date": "2026-08-01"}
         row = universe_row(ticker)
-        row["market_cap"] = 1e9 * (1 + index % 40)
-        row["sector"] = SECTORS[index % len(SECTORS)]
+        row["market_cap"] = 1e9 * rng.randint(1, 40)
+        row["sector"] = rng.choice(SECTORS)
         universe.append(row)
         entries[ticker] = entry
     return universe, entries, sues
 
 
-def scored_rows():
-    universe, entries, sues = tier_universe()
+def scored_rows(count=300):
+    """A cross-section wide enough that each tier's book has real members.
+
+    At 120 names the entry percentile and the sector cap left every book with a single row,
+    which quietly made "does alpha vary by row" untestable and let the mean-calibration test
+    pass by skipping. A fixture that cannot exhibit the behaviour under test is not a cheaper
+    fixture, it is an absent one.
+    """
+    universe, entries, sues = tier_universe(count)
     return builder.build_rows(universe, entry_for=entries_for(entries), observations={},
                               as_of="2026-08-13", sue_resolver=lambda ticker, *_: sues.get(ticker))
 
@@ -352,3 +370,119 @@ def test_the_trigger_gate_does_not_compound_sector_trims():
     scored = tiers.score_tier(scored_rows(), "F")
     for row in scored:
         assert row["reason_codes"].count("SECTOR_CONCENTRATION_CAP") <= 1
+
+
+# ---------------------------------------------------------------------------
+# Trend state: descriptive price position, never a signal
+# ---------------------------------------------------------------------------
+
+def _path(fn, count=300):
+    return [fn(index) for index in range(count)]
+
+
+def test_trend_state_names_the_obvious_shapes():
+    cases = {
+        "at_high": _path(lambda i: 100 * (1.002 ** i)),
+        "at_low": _path(lambda i: 200 * (0.998 ** i)),
+    }
+    for expected, series in cases.items():
+        assert swing_signals.trend_state(series)["state"] == expected, expected
+
+
+def test_a_narrow_range_is_not_a_52_week_high():
+    """A name oscillating 3% around one level is at its 52-week high most weeks.
+
+    Saying so is true and useless: in a column being scanned it reads as a breakout. Below
+    MINIMUM_MEANINGFUL_52W_RANGE the extremes are suppressed and the row falls through to the
+    trending cases, which describe such a name correctly.
+    """
+    narrow = _path(lambda i: 100 + 3 * math.sin(i / 9))
+    wide = _path(lambda i: 100 + 30 * math.sin(i / 9))
+    assert swing_signals.range_position_52w(narrow) > .97
+    assert swing_signals.trend_state(narrow)["state"] != "at_high"
+    # Same shape, meaningful amplitude, and the label is now the useful one.
+    assert swing_signals.range_position_52w(wide) > .97
+    assert swing_signals.trend_state(wide)["state"] == "at_high"
+
+
+def test_a_bounce_off_the_low_is_separated_from_both_the_low_and_a_plain_uptrend():
+    series = _path(lambda i: 200 * (0.997 ** i))
+    series = series[:-15] + [series[-15] * (1.012 ** step) for step in range(1, 16)]
+    state = swing_signals.trend_state(series)
+    assert state["state"] == "turning_up"
+    assert state["label"] == "Turning up off the low"
+
+
+def test_trend_state_needs_history_and_says_so():
+    assert swing_signals.trend_state([100.0] * 30) is None
+    assert swing_signals.range_position_52w([100.0] * 30) is None
+
+
+def test_trend_is_never_a_scoring_leg():
+    """The whole technical canon is excluded from the weights. This must not smuggle it back."""
+    scored = tiers.score_tier(scored_rows(), "S")
+    for tier in tiers.TIER_ORDER:
+        weights = tiers.tier_spec(tier)["weights"]
+        assert "trend" not in weights
+        assert "range_position_52w" not in weights
+        for subfactors in tiers.tier_subfactors(tier).values():
+            names = [name for name, _ in subfactors]
+            assert "range_position_52w" not in names
+            assert "trend" not in names
+    # And it is not readable as a subfactor on any row's leg scores.
+    assert all("trend" not in (row.get("leg_scores") or {}) for row in scored)
+
+
+# ---------------------------------------------------------------------------
+# Predicted upside
+# ---------------------------------------------------------------------------
+
+def test_predicted_upside_varies_by_row_rather_than_being_a_tier_constant():
+    scored = tiers.score_tier(scored_rows(), "S")
+    book = [row for row in scored if row.get("current_membership")]
+    assert len(book) > 2
+    alphas = {row["economics"]["expected_alpha_bps"] for row in book}
+    assert len(alphas) > 1, "every row carries the same alpha, so it is not scaled by score"
+    assert all(row["economics"]["alpha_basis"] == "scaled_by_composite_score" for row in book)
+
+
+def test_a_higher_scoring_row_carries_more_implied_alpha():
+    scored = tiers.score_tier(scored_rows(), "S")
+    book = sorted((row for row in scored if row.get("current_membership")),
+                  key=lambda row: row["score"])
+    assert (book[-1]["economics"]["expected_alpha_bps"]
+            > book[0]["economics"]["expected_alpha_bps"])
+
+
+def test_the_books_mean_row_carries_the_tiers_assumed_alpha():
+    """The calibration anchor: per-row numbers must not invent a second assumption."""
+    for tier in tiers.TIER_ORDER:
+        scored = tiers.score_tier(scored_rows(), tier)
+        book = [row for row in scored if row.get("current_membership")]
+        assert len(book) >= 2, f"tier {tier} book too small to check the calibration against"
+        mean = sum(row["economics"]["expected_alpha_bps"] for row in book) / len(book)
+        assert mean == pytest.approx(tiers.expected_alpha_bps(tier), rel=.02), tier
+
+
+def test_upside_is_net_of_that_rows_own_cost():
+    scored = tiers.score_tier(scored_rows(), "S")
+    row = next(row for row in scored if row.get("current_membership"))
+    economics = row["economics"]
+    assert economics["net_edge_bps"] == pytest.approx(
+        economics["expected_alpha_bps"] - economics["round_trip_bps"])
+    assert economics["predicted_upside_pct"] == pytest.approx(economics["net_edge_bps"] / 100, abs=.005)
+    assert economics["clears_cost"] is (economics["predicted_upside_pct"] > 0)
+
+
+def test_upside_falls_back_to_the_flat_figure_without_a_cross_section():
+    """One row and no book cannot calibrate, and must say so rather than guess."""
+    scored = tiers.score_tier(scored_rows(), "S")
+    economics = tiers.row_economics(scored[0], "S")
+    assert economics["alpha_basis"] == "tier_flat"
+    assert economics["expected_alpha_bps"] == pytest.approx(tiers.expected_alpha_bps("S"), abs=.01)
+
+
+def test_the_upside_note_refuses_the_word_forecast():
+    """It is a shared-out assumption. The page must never let it read as a price forecast."""
+    assert "not a forecast" in tiers.UPSIDE_NOTE.lower()
+    assert "no out-of-sample record" in tiers.UPSIDE_NOTE.lower()
