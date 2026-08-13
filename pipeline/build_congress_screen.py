@@ -39,7 +39,8 @@ import re
 from datetime import date, datetime, timedelta, timezone
 
 from common import LOG, STORE_DIR, load_json, save_json
-from congress_trades import CongressTradesClient, CongressTradesError
+from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
+                             StockWatcherClient)
 
 CONGRESS_DIR = os.path.join(STORE_DIR, "congress")
 TRADES = "trades.jsonl"
@@ -55,6 +56,10 @@ CLUSTER_WINDOW_DAYS = 14
 SAME_SECTOR_WINDOW_DAYS = 90
 SAME_SECTOR_MINIMUM_COUNT = 3
 BUY_SELL_FLIP_WINDOW_DAYS = 60
+# Small-cap boundary. A member's first-ever trade in a name (NOVEL_TICKER) is a much
+# stronger tell when the name is a small, unfamiliar company than when it's a mega-cap
+# most portfolios already hold - EXTRAORDINARY_BUY requires both, not either alone.
+OBSCURE_MARKET_CAP_CEILING = 2_000_000_000
 
 
 def _path():
@@ -124,12 +129,12 @@ def _date_gap_days(a, b):
         return None
 
 
-def _is_buy(transaction_type):
+def is_buy(transaction_type):
     lowered = str(transaction_type or "").lower()
     return "purchase" in lowered or "buy" in lowered
 
 
-def _is_sell(transaction_type):
+def is_sell(transaction_type):
     lowered = str(transaction_type or "").lower()
     return "sale" in lowered or "sell" in lowered
 
@@ -145,6 +150,18 @@ def sector_by_ticker():
         ticker, sector = row.get("ticker"), row.get("sector")
         if ticker and sector:
             lookup[ticker] = sector
+    return lookup
+
+
+def market_cap_by_ticker():
+    """Market cap, reused as-is from the main research pipeline - same coverage caveat
+    as ``sector_by_ticker``: only tickers inside the actively-scored stock universe."""
+    payload = load_json("advisor.json") or {}
+    lookup = {}
+    for row in (*payload.get("research", []), *payload.get("portfolio_coverage", [])):
+        ticker, market_cap = row.get("ticker"), row.get("market_cap")
+        if ticker and market_cap is not None:
+            lookup[ticker] = market_cap
     return lookup
 
 
@@ -200,13 +217,13 @@ def buy_sell_flip_keys(rows):
     flagged = set()
     for trades in by_rep_symbol.values():
         for row in trades:
-            row_buy, row_sell = _is_buy(row.get("transaction_type")), _is_sell(row.get("transaction_type"))
+            row_buy, row_sell = is_buy(row.get("transaction_type")), is_sell(row.get("transaction_type"))
             if not (row_buy or row_sell):
                 continue
             for other in trades:
                 if other is row:
                     continue
-                other_buy, other_sell = _is_buy(other.get("transaction_type")), _is_sell(other.get("transaction_type"))
+                other_buy, other_sell = is_buy(other.get("transaction_type")), is_sell(other.get("transaction_type"))
                 opposite = (row_buy and other_sell) or (row_sell and other_buy)
                 gap = _date_gap_days(row["transaction_date"], other["transaction_date"])
                 if opposite and gap is not None and gap <= BUY_SELL_FLIP_WINDOW_DAYS:
@@ -247,7 +264,7 @@ def relational_flags(rows):
     return by_key
 
 
-def classify(trade, *, trade_counts, history_days, relational=None):
+def classify(trade, *, trade_counts, history_days, relational=None, market_cap_lookup=None):
     flags = list((relational or {}).get(_trade_key(trade), []))
     filing_delay = _days_between(trade.get("transaction_date"), trade.get("disclosure_date"))
     if filing_delay is not None and filing_delay > LATE_FILING_DAYS:
@@ -260,6 +277,14 @@ def classify(trade, *, trade_counts, history_days, relational=None):
     amount_lower, amount_upper = parse_amount_bounds(trade.get("amount"))
     if amount_lower is not None and amount_lower >= CONCENTRATED_SIZE_FLOOR:
         flags.append("CONCENTRATED_SIZE")
+    # A member's first-ever trade in a small, unfamiliar company - not just a large
+    # dollar figure, and not just novelty in isolation (a first-ever trade in a mega-cap
+    # everyone already holds is not unusual). Buys only: a rare sell of an obscure name
+    # carries none of the "how would they know about this" signal a buy does.
+    market_cap = (market_cap_lookup or {}).get(trade.get("symbol"))
+    if ("NOVEL_TICKER" in flags and is_buy(trade.get("transaction_type"))
+            and market_cap is not None and market_cap < OBSCURE_MARKET_CAP_CEILING):
+        flags.append("EXTRAORDINARY_BUY")
     return {
         **trade,
         "amount_lower": amount_lower, "amount_upper": amount_upper,
@@ -273,7 +298,7 @@ def is_equity_purchase(row):
     """A plain stock buy - excludes options (already their own flag) and bonds/munis,
     which have no meaningful daily price series to measure against."""
     asset_type = str(row.get("asset_type") or "").lower()
-    return bool(row.get("symbol")) and _is_buy(row.get("transaction_type")) \
+    return bool(row.get("symbol")) and is_buy(row.get("transaction_type")) \
         and "stock" in asset_type and "option" not in asset_type
 
 
@@ -346,49 +371,160 @@ def build_results(rows, *, as_of=None):
             trade_counts[representative] = trade_counts.get(representative, 0) + 1
 
     relational = relational_flags(rows)
+    market_cap_lookup = market_cap_by_ticker()
     window = [row for row in rows if (row.get("disclosure_date") or "") >= cutoff]
-    classified = [classify(row, trade_counts=trade_counts, history_days=history_days, relational=relational)
+    classified = [classify(row, trade_counts=trade_counts, history_days=history_days,
+                          relational=relational, market_cap_lookup=market_cap_lookup)
                  for row in window]
     classified.sort(key=lambda row: row.get("disclosure_date") or "", reverse=True)
     return classified, history_days
 
 
-def run():
+def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient,
+            efd_factory=SenateEfdClient):
+    """Every disclosure any available source will give up, recording why anything that failed did.
+
+    A failed fetch used to be logged and then forgotten, so a run where the provider refused
+    every request published exactly what a genuinely quiet week publishes: zero disclosures
+    under a "success" status, which the page reads out as "no disclosures collected yet". The
+    two are not the same thing and the difference is the whole story, so the failures come back
+    with the rows and end up in the published payload.
+
+    Two independent sources rather than one, because neither is dependable alone. FMP answers
+    the Congressional endpoints with HTTP 402 unless the key's plan covers them - a billing
+    boundary no retry gets past - while the public house/senate mirrors need no key at all.
+    They are attempted independently and pooled rather than tried in priority order, since
+    they do not cover the same rows: FMP returns a recent page, the mirrors carry full
+    history. ``append_new_trades`` already keys on the disclosure identity, so a row arriving
+    from both is recorded once.
+
+    Returns ``(fmp_client, rows, failures, counts)``. ``fmp_client`` is None when no key is
+    configured - it is the only source that can price a purchase, so the caller needs to know
+    whether the performance column is reachable. ``counts`` carries how many usable rows each
+    source produced, so a mirror that silently changes its column names reads as zero from
+    that source rather than as a quiet Congress.
+    """
+    rows, failures, counts = [], [], {}
+
+    fmp_client = None
     try:
-        client = CongressTradesClient()
+        fmp_client = fmp_factory()
     except CongressTradesError as exc:
-        LOG.warn(f"Congress trades collection skipped: {exc}")
-        return None
+        # Not fatal any more: the keyless mirrors are a complete source of disclosures on
+        # their own, so a missing or unentitled key costs the price-performance column
+        # rather than the screen.
+        failures.append(f"fmp-client: {exc}")
+        LOG.warn(f"Congress trades: FMP unavailable ({exc})")
 
-    fetched = []
-    for fetch in (client.senate_latest, client.house_latest):
+    if fmp_client is not None:
+        for name, fetch in (("fmp-senate", fmp_client.senate_latest),
+                            ("fmp-house", fmp_client.house_latest)):
+            try:
+                fetched = fetch()
+            except CongressTradesError as exc:
+                failures.append(f"{name}: {exc}")
+                LOG.warn(f"Congress trades fetch failed ({name}: {exc})")
+                continue
+            rows.extend(fetched)
+            counts[name] = len(fetched)
+
+    mirror_client = mirror_factory()
+    sources = [("mirror-senate", mirror_client.senate_latest),
+               ("mirror-house", mirror_client.house_latest)]
+    if efd_factory is not None:
+        # The Senate's own system, added after both community mirrors were withdrawn and
+        # started answering 403 to everything. One chamber only - the House Clerk publishes
+        # its periodic transaction reports as scanned PDFs with no machine-readable
+        # transactions - so this narrows the gap rather than closing it.
+        sources.insert(0, ("senate-efd",
+                           lambda: efd_factory().fetch(since_days=PUBLISH_WINDOW_DAYS)))
+
+    for name, fetch in sources:
         try:
-            fetched.extend(fetch())
-        except CongressTradesError as exc:
-            LOG.warn(f"Congress trades fetch failed ({type(exc).__name__}: {exc})")
+            fetched, seen = fetch()
+        # Broad on purpose: these sources are HTML and third-party JSON, so a shape change
+        # raises whatever the parser raises. One source failing has to cost that source's
+        # coverage and be reported, never take down a run the other sources could publish.
+        except Exception as exc:  # noqa: BLE001
+            reason = exc if isinstance(exc, CongressTradesError) else f"{type(exc).__name__}: {exc}"
+            failures.append(f"{name}: {reason}")
+            LOG.warn(f"Congress trades fetch failed ({name}: {reason})")
+            continue
+        rows.extend(fetched)
+        counts[name] = len(fetched)
+        if seen and not fetched:
+            # Rows arrived and none survived normalization: the dataset is reachable but no
+            # longer shaped the way this reads it. A different problem from an unreachable
+            # source, and one that has to be said out loud rather than averaged into a total.
+            failures.append(f"{name}: read {seen} row(s), none usable - the dataset's "
+                            "columns may have changed")
+    return fmp_client, rows, failures, counts
 
-    added = append_new_trades(fetched)
+
+def publication_status(results, stored, failures):
+    """Say which of the three "no rows" situations this is, or that there are rows.
+
+    With more than one source, "there are rows" splits in two: every source answered, or some
+    did and the rest failed. The second still publishes real disclosures - it just publishes
+    fewer than it should, which the page has to be able to say.
+    """
+    if results:
+        return ("partial", "SOME_SOURCES_UNAVAILABLE") if failures else ("success", None)
+    if failures:
+        return "unavailable", "CONGRESS_DISCLOSURE_FEED_UNAVAILABLE"
+    if not stored:
+        return "unavailable", "NO_DISCLOSURES_COLLECTED_YET"
+    return "unavailable", "NO_DISCLOSURES_IN_PUBLISH_WINDOW"
+
+
+def run():
+    # Passed explicitly rather than relying on collect()'s defaults: a default argument is
+    # bound at import, so a test (or any caller) swapping the module-level client would be
+    # silently ignored and reach the real provider instead.
+    fmp_client, fetched, failures, source_counts = collect(
+        CongressTradesClient, StockWatcherClient, SenateEfdClient)
+    stored_before = _read_all()
+    if not fetched and not stored_before:
+        # Nothing reachable and nothing ever collected is what a local or offline environment
+        # looks like, not a finding about Congress - and publishing an empty screen from one
+        # would overwrite whatever the last real run left behind. Once history exists, a run
+        # that collects nothing does publish, so a genuine feed outage is still reported.
+        LOG.warn("Congress trades collection skipped: no source returned rows and nothing is "
+                 f"stored yet ({'; '.join(failures) or 'no failures reported'})")
+        return None
+    added = append_new_trades(fetched) if fetched else 0
     LOG.info(f"Congress trades: +{added} new disclosure(s) recorded")
 
     generated_at = datetime.now(timezone.utc)
-    results, history_days = build_results(_read_all(), as_of=generated_at)
+    stored = _read_all()
+    results, history_days = build_results(stored, as_of=generated_at)
 
-    performance = compute_price_performance(results, client)
+    # Price history costs one request per symbol, so it is only worth asking for when the
+    # client is alive and there is something to measure. It is FMP-only and has no keyless
+    # substitute, so a run without an entitled key still publishes every disclosure - just
+    # without the "since purchase" column.
+    performance = compute_price_performance(results, fmp_client) if fmp_client and results else {}
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
+    status, reason_code = publication_status(results, stored, failures)
     payload = {
-        "schema_version": "1.0.0", "model_version": "congress-trades-v1.1.0",
-        "generated_at": generated_at.isoformat(), "status": "success",
+        "schema_version": "1.1.0", "model_version": "congress-trades-v1.2.0",
+        "generated_at": generated_at.isoformat(), "status": status,
+        **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
         "late_filing_threshold_days": LATE_FILING_DAYS,
         "rare_trader_minimum_history_days": RARE_TRADER_MINIMUM_HISTORY_DAYS,
         "concentrated_size_floor": CONCENTRATED_SIZE_FLOOR,
+        "collection": {"disclosures_fetched": len(fetched), "new_disclosures": added,
+                       "disclosures_stored": len(stored), "failures": failures,
+                       "source_counts": source_counts},
         "summary": summary_stats(results),
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)
-    LOG.info(f"Congress trades screen: {len(results)} disclosure(s) published, {history_days}d of history")
+    LOG.info(f"Congress trades screen: {len(results)} disclosure(s) published ({status}), "
+             f"{history_days}d of history")
     return payload
 
 

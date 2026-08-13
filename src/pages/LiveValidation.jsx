@@ -1,7 +1,9 @@
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import SignalMetricsPanel from '../components/SignalMetricsPanel.jsx'
+import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
+import InfoTag from '../components/InfoTag.jsx'
 
 const title = (value = '') => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 const pct = (value) => value == null ? '–' : `${Math.round(Number(value) * 100)}%`
@@ -23,8 +25,8 @@ function TickerValidation({ row }) {
     </header>
     {row.provider_status === 'error' ? <div role="alert"><b>{row.reason_code}</b><p>{row.message}</p></div> : <>
       <div className="shadow-layers">
-        <div className="shadow-layer"><span>Structural</span><strong>{score(structural.effective_score)}</strong><small>{pct(structural.confidence)} confidence · {pct(structural.coverage)} coverage</small></div>
-        <div className="shadow-layer"><span>Timeliness</span><strong>{score(timeliness.effective_score)}</strong><small>{pct(timeliness.confidence)} confidence · {title(timeliness.classification)}</small></div>
+        <div className="shadow-layer"><span>Structural</span><strong>{score(structural.effective_score)}</strong><small>{pct(structural.evidence_weight_resolved)} of evidence weight resolved · {pct(structural.coverage)} data coverage</small></div>
+        <div className="shadow-layer"><span>Timeliness</span><strong>{score(timeliness.effective_score)}</strong><small>{timeliness.effective_score == null ? 'not measured' : `${pct(timeliness.evidence_weight_resolved)} of evidence weight resolved`} · {title(timeliness.classification)}</small></div>
         <div className="shadow-layer"><span>Company evidence</span><strong>{row.company_action?.display_label || title(row.company_action?.label)}</strong><small>{(row.company_action?.reason_codes || []).map(title).join(' · ')}</small></div>
         <div className="shadow-layer"><span>Position rule</span><strong>{row.position_action?.display_label || title(row.position_action?.label)}</strong><small>{(row.position_action?.reason_codes || []).map(title).join(' · ') || 'No position supplied'}</small></div>
       </div>
@@ -78,7 +80,14 @@ function VariantValidation({ name, horizons = {} }) {
         </dl>
       </section>)}
     </div>
-    <div className="ic-chart-head"><b>1M quintiles</b><span>{oneMonth.bucket_returns?.['5']?.monotonic ? 'Monotonic' : oneMonth.periods_accumulated ? 'Not monotonic' : 'Accumulating'}</span></div>
+    <div className="ic-chart-head"><b>1M quintiles
+      <InfoTag label="1M quintiles">
+        <strong>1-month quintile returns</strong>
+        <p>Splits scored companies into five equal-size groups (quintiles) by this variant's score,
+          then shows each group's mean forward 1-month return. A useful model shows a monotonic
+          staircase - Q5 (highest score) beating Q1 (lowest) - not a flat or reversed pattern.</p>
+      </InfoTag>
+    </b><span>{oneMonth.bucket_returns?.['5']?.monotonic ? 'Monotonic' : oneMonth.periods_accumulated ? 'Not monotonic' : 'Accumulating'}</span></div>
     <BucketChart summary={oneMonth} />
   </article>
 }
@@ -100,12 +109,14 @@ function ICValidation({ data, error }) {
 export default function LiveValidation() {
   const { data, loading, error } = useData('validation/live_v2_validation.json')
   const { data: icData, loading: icLoading, error: icError } = useData('validation/ic_validation.json')
+  const { data: evidence, error: evidenceError } = useData('validation/research_evidence.json')
   const { data: signalMetrics, loading: signalLoading, error: signalError } = useData('validation/signal_metrics.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   return <><ScreenNavigation />
     <div className="page-head"><div><span className="eyebrow">Controlled staging refresh</span><h1 className="page-title">Live v2 validation</h1>
       <p className="page-sub">Provider lineage, applicability, confidence gates, and independent decision layers. This view never replaces production output.</p></div></div>
     <SignalMetricsPanel report={signalMetrics} error={signalError} />
+    <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
       : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>

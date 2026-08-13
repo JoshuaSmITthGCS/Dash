@@ -18,6 +18,7 @@ import {
 import { Loading, Empty } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
+import InfoTag from '../components/InfoTag.jsx'
 
 const moveColor = (value) => value == null ? 'var(--text-faint)' : value >= 0 ? 'var(--up)' : 'var(--down)'
 
@@ -127,7 +128,14 @@ export default function Insights() {
     </section>
 
     <section className="report-section" aria-labelledby="vs-market-title">
-      <header className="section-heading"><div><span className="eyebrow">Same dollars, different destination</span><h2 id="vs-market-title">You vs. {benchmarkLabel}</h2></div></header>
+      <header className="section-heading"><div><span className="eyebrow">Same dollars, different destination</span><h2 id="vs-market-title">You vs. {benchmarkLabel}
+        <InfoTag label={`You vs. ${benchmarkLabel}`}>
+          <strong>You vs. {benchmarkLabel}</strong>
+          <p>Applies your actual deposit and withdrawal history to {benchmarkLabel} instead of your
+            real holdings - "same dollars, same timing, different destination." This isolates security
+            selection from your saving behavior, unlike a simple return percentage comparison.</p>
+        </InfoTag>
+      </h2></div></header>
       {chartAligned
         ? <GrowthChart
             dates={chartAligned.dates}

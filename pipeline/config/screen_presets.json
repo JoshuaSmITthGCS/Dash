@@ -147,11 +147,11 @@
       "ranking": ["revision_breadth", "revision_magnitude", "surprise", "guidance", "post_earnings_drift"],
       "hard_filters": [],
       "risk_controls": [],
-      "sort": "not defined",
-      "rebalance": "not defined",
-      "implementation_status": "specification_only",
-      "implemented_in": null,
-      "note": "The catalyst family (TACTICAL_WEIGHTS, research_screens_v2.py) defines these exact factors and is registered in feature_registry.json, but estimate data only covers a small ticker subset via collect_estimates.py -- a dedicated ranking function has not been written."
+      "sort": "swing_scores() composite z, descending",
+      "rebalance": "matches the refresh cadence (see research_contract.json execution_assumptions)",
+      "implementation_status": "wired",
+      "implemented_in": "pipeline/swing_signals.py swing_scores() + pipeline/build_swing_screen.py -> public/data/screens/swing.json, surfaced at /screens/swing and as the 'swing' ranking model in src/lib/rankingModels.js",
+      "note": "The revision legs (breadth, magnitude, net upgrades, target change) resolve for nearly the whole scored universe. The post-earnings-drift leg is implemented and weighted highest but only scores rows where an earnings surprise resolved and its drift window is still open -- the published file reports that coverage per leg in leg_coverage. There is still no separate guidance factor; guidance reaches the score only through the catalyst family elsewhere."
     },
     "insider_cluster_buying": {
       "name": "Insider Cluster Buying",

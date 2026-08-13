@@ -535,13 +535,29 @@ def alpha_cost_crossover(spread_by_horizon, *, round_trip_cost_bps, trading_days
 
 # ---------------- walk-forward driver ----------------
 
-def walk_forward(periods, *, quantiles=5, periods_per_year=12):
+def walk_forward(periods, *, quantiles=5, periods_per_year=12, purge_periods=0, embargo_periods=0):
     """Evaluate a scored universe period by period.
 
     ``periods`` is a sequence of ``{"date", "scores": {ticker: score},
     "forward_returns": {ticker: return}}``. Each period is scored against the returns that
     followed it and nothing else, so there is no way for a later observation to leak in.
+
+    ``embargo_periods`` drops that many periods off the *end* of the series - a period whose
+    forward-return window is this recent may not be the full label horizon yet, so grading it
+    would score against a partially-realized outcome. ``purge_periods`` keeps only every
+    ``(purge_periods + 1)``-th period; with a label that spans ``purge_periods + 1`` periods
+    (e.g. a 63-session/~3-month label against monthly periods, purge_periods=2), adjacent
+    periods' forward-return windows overlap, and grading every one of them would feed
+    pseudo-replicated (not independent) observations into the IC series and inflate its
+    apparent statistical significance. Both default to 0 (every period graded, none
+    dropped), which reproduces the exact prior behavior;
+    ``validation_framework.DEFAULT_LABEL_OVERLAP_PERIODS`` is the recommended value for
+    monthly periods graded against the primary 3M horizon.
     """
+    if embargo_periods:
+        periods = periods[:len(periods) - embargo_periods] if embargo_periods < len(periods) else []
+    if purge_periods:
+        periods = periods[::purge_periods + 1]
     ic_series, spreads, rows = [], [], []
     for period in periods:
         scores = period.get("scores") or {}

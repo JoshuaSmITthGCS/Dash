@@ -1,11 +1,24 @@
-"""Explainable, fundamentals-first research scoring. No political inputs."""
+"""Explainable, fundamentals-first research scoring.
+
+One deliberate, explicit exception to what was previously an unqualified "no political
+inputs" rule: ``congressional_buying_modifier`` scores disclosed Congressional stock
+purchases, reward-only, on explicit instruction. It does not claim political protection
+from failure ("Congress wouldn't let this stock fail") - that framing was raised and
+declined; see the module's own docstring in ``congress_signal.py`` and TODO.md for what
+it does score and the evidentiary basis (Ziobrowski et al.) it rests on. Every other
+modifier in this file remains free of political inputs; this is a scoped exception, not a
+reversal of the principle.
+"""
 
 from datetime import timedelta
 
 from insider_signal import score_insider_activity
-from risk_metrics import (annualized_volatility, beta_vs_benchmark, daily_returns,
-                          drawdown_score, low_beta_score, max_drawdown, momentum_12_1,
-                          ratio_to_score, sharpe_ratio, sortino_ratio)
+from concentration_risk import score_concentration_risk
+from geographic_exposure import score_geographic_concentration
+from risk_metrics import (acceleration_score, annualized_volatility, beta_vs_benchmark,
+                          daily_returns, drawdown_score, low_beta_score, max_drawdown,
+                          momentum_12_1, ratio_to_score, relative_acceleration,
+                          sharpe_ratio, sortino_ratio)
 from scorer import SETTINGS, valuation_score
 from news_intelligence import weighted_sentiment
 from recommendation_policy_v2 import build_recommendation_v2
@@ -45,6 +58,17 @@ DEFAULT_TECHNICAL_WEIGHTS = {
 }
 TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weights"),
                              DEFAULT_TECHNICAL_WEIGHTS)
+
+# Relative acceleration is measured and published for every scored name but carries no
+# ranking weight: it is absent from TECHNICAL_WEIGHTS above and so cannot reach the blend.
+# That is deliberate. The audit's finding against relative_strength_20d was that a signal
+# was drawing 16% of market behaviour on no evidence of its own; adding a second
+# market-relative term to the blend on nothing but a plausible mechanism would repeat the
+# mistake in the opposite direction. It is published so the validation harness can measure
+# it prospectively, and promoted to a weight only if that measurement supports one.
+DEFAULT_RELATIVE_ACCELERATION = {"leg_days": 63, "skip_days": 5, "scoring_span": 1.0}
+RELATIVE_ACCELERATION = _weights((SETTINGS.get("market_behavior") or {}).get("relative_acceleration"),
+                                 DEFAULT_RELATIVE_ACCELERATION)
 NEWS_INTELLIGENCE = SETTINGS["news_intelligence"]
 SENTIMENT_WINDOW_DAYS = int(NEWS_INTELLIGENCE["window_days"])
 FUNDAMENTAL_METRIC_NAMES = {
@@ -126,6 +150,17 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
     if benchmark_closes and len(benchmark_closes) >= 21:
         bench_ret = (benchmark_closes[-1] / benchmark_closes[-21] - 1) * 100
         relative = ret_20 - bench_ret
+    # Second derivative of the market-relative path: is this name beating the market by more
+    # than it recently was? Beta is deliberately left for relative_acceleration to estimate
+    # from the same daily window it measures on rather than passed in from ``extended``,
+    # which may carry a provider beta fitted over a different frequency and horizon -
+    # residualizing a 6-month daily window against a 5-year monthly beta would subtract the
+    # wrong amount of market.
+    acceleration = relative_acceleration(
+        closes, benchmark_closes,
+        leg=int(RELATIVE_ACCELERATION["leg_days"]),
+        skip=int(RELATIVE_ACCELERATION["skip_days"]),
+    ) if benchmark_closes else None
     confirmation = volume_confirmation(closes, volumes)
     from_high = extended.get("pct_from_52w_high")
     above_low = extended.get("pct_above_52w_low")
@@ -183,6 +218,12 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         "max_drawdown_252d": drawdown_252,
         "sharpe_ratio": sharpe, "sortino_ratio": sortino,
         "relative_strength_20d": round(relative, 2) if relative is not None else None,
+        # Measured, published, and unweighted - see RELATIVE_ACCELERATION above for why.
+        "relative_acceleration": acceleration["acceleration"] if acceleration else None,
+        "relative_acceleration_score": acceleration_score(
+            acceleration["acceleration"], span=RELATIVE_ACCELERATION["scoring_span"],
+        ) if acceleration else None,
+        "relative_acceleration_detail": acceleration,
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
         "pct_above_52w_low": above_low, "beta": beta,
         "technical_extended_detail": technical_extended_detail,
@@ -293,6 +334,126 @@ def insider_modifier(insider_activity):
     return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
 
 
+def institutional_ownership_modifier(institutional_ownership):
+    """Reward or penalize breadth of curated active-manager 13F accumulation/distribution.
+
+    Two-sided, like insider activity: corroborated buying across several curated active
+    managers is constructive, corroborated selling is not. Unlike the two concentration
+    modifiers below, this reads an already-decayed magnitude -
+    ``fetch_advisor.collect_institutional_signals`` computes ``days_since_filed`` from the
+    published screen's ``as_of`` date and calls
+    ``institutional_ownership.score_institutional_ownership`` with it, so a filing near
+    ``max_age_days`` old contributes close to nothing here even though its breadth count
+    would otherwise look identical to a fresh one. This adapter only re-clamps to the
+    configured cap.
+
+    Residual bias not fixed by decay: coverage is still restricted to publicly traded,
+    ``style: active`` managers (see ``pipeline/config/institutional_managers.json``),
+    which mitigates but does not eliminate oversampling the largest passive indexers.
+    """
+    if not institutional_ownership or institutional_ownership.get("score_points") is None:
+        return 0.0, None
+    points = institutional_ownership["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("institutional_13f", {})
+    cap = cfg.get("max_points", 3.0)
+    floor = -cfg.get("max_penalty", 2.0)
+    notes = institutional_ownership.get("notes") or []
+    return round(max(floor, min(cap, points)), 2), ("; ".join(notes) or None)
+
+
+def congressional_buying_modifier(congressional_activity):
+    """Reward disclosed Congressional stock purchases, per explicit instruction.
+
+    Reward-only - never penalizes a sale or the absence of buying, since neither carries
+    the "how would they know about this" information content a purchase might. Reads an
+    already-scored summary from ``congress_signal.score_congressional_buying`` (via
+    ``fetch_advisor.collect_congressional_signals``, which reads the weekly-published
+    congress screen rather than fetching live) and only re-clamps to the configured cap -
+    see this module's own top docstring for the "no political inputs" exception this is,
+    and ``congress_signal.py`` for the breadth/freshness/extraordinary-purchase scoring
+    and its evidentiary basis.
+    """
+    if not congressional_activity or congressional_activity.get("score_points") is None:
+        return 0.0, None
+    points = congressional_activity["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("congressional_buying", {})
+    cap = cfg.get("max_points", 4.0)
+    notes = congressional_activity.get("notes") or []
+    return round(max(0.0, min(cap, points)), 2), ("; ".join(notes) or None)
+
+
+def concentration_risk_modifier(concentration):
+    """Penalize revenue concentrated in a single named customer (ASC 280).
+
+    The scoring itself lives in ``concentration_risk`` (largest disclosed customer share,
+    tiered warning/severe penalty). Like ``insider_modifier``, this adapter accepts either
+    a raw list of disclosed percentages or an already-scored summary, so the pipeline can
+    compute it once per filing and reuse it. Penalty-only: this is a known, uncompensated
+    risk, not a bet on a direction.
+
+    Now in the champion path. The objection that kept it out -- that a penalty-only modifier
+    firing only on tagged filers rewards companies that simply never tagged the concept --
+    is answered by ``concentration_risk.summarize`` separating "filing read, nothing
+    disclosed" from "no filing read". ASC 280-10-50-42 requires naming any customer at or
+    above 10% of consolidated revenue, so a read filing with no such tag is affirmative
+    evidence of diversified revenue. A row whose filing could not be read carries
+    ``measured: False`` and is scored nothing at all rather than being credited with safety
+    it has not demonstrated.
+    """
+    if not concentration or concentration.get("measured") is False:
+        return 0.0, None
+    cfg = MODIFIERS.get("customer_concentration_risk", {})
+    if concentration.get("score_points") is not None:
+        points = concentration["score_points"]
+        notes = concentration.get("notes") or []
+    else:
+        percentages = concentration.get("percentages") or []
+        if not percentages:
+            return 0.0, None
+        points, detail = score_concentration_risk(percentages, config=cfg)
+        notes = detail.get("notes") or []
+    if not points:
+        return 0.0, None
+    floor = -cfg.get("max_penalty", 3.0)
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
+def geographic_concentration_modifier(geographic_exposure):
+    """Penalize revenue concentrated in a single non-domestic geography.
+
+    Same shape as ``concentration_risk_modifier``, scored by ``geographic_exposure``:
+    penalty-only, and only for concentration in one country, not international revenue in
+    general - see that module's docstring for why the two are not the same claim.
+
+    Also challenger-only, for a second reason beyond untested tagging coverage: revenue
+    tagged against a geography frequently reflects shipping destination or the
+    contracting entity rather than end demand - a contract manufacturer can book
+    enormous "China" revenue that is really an assembly step, not Chinese consumer
+    exposure. The tag needs spot-checking against real filings before this penalizes a
+    live score. See TODO.md.
+    """
+    if not geographic_exposure:
+        return 0.0, None
+    cfg = MODIFIERS.get("geographic_concentration", {})
+    if geographic_exposure.get("score_points") is not None:
+        points = geographic_exposure["score_points"]
+        notes = geographic_exposure.get("notes") or []
+    else:
+        shares = geographic_exposure.get("shares") or {}
+        if not shares:
+            return 0.0, None
+        points, detail = score_geographic_concentration(shares, config=cfg)
+        notes = detail.get("notes") or []
+    if not points:
+        return 0.0, None
+    floor = -cfg.get("max_penalty", 2.0)
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
 def liquidity_modifier(extended):
     """Penalize names you cannot exit without moving the price."""
     cfg = MODIFIERS.get("liquidity", {})
@@ -331,17 +492,27 @@ def expectations_modifier(extended):
 
 
 def sector_percentile_modifier(percentile):
-    """Reward being cheap *for its own sector*, which absolute multiples cannot express."""
+    """Reward being cheap *for its own peer group*, at the resolution the sample supports.
+
+    The input is a peer tier midpoint from ``peer_groups.TIER_MIDPOINTS``, not a measured
+    percentile, so this awards three discrete outcomes: the full cap for the cheapest third,
+    the full penalty for the most expensive third, nothing for the middle. Scaling
+    continuously off the old spurious percentile produced points like ``+2.08`` from a
+    ranking whose real resolution was one third -- see
+    ``research/audit/CURRENT_MODEL_AUDIT.md`` section 2. Coarse evidence, coarse effect.
+
+    Peer groups below ``peer_groups.MINIMUM_VALID_PEERS`` publish no tier at all, so they
+    arrive here as ``None`` and earn nothing rather than a degraded estimate.
+    """
     cfg = MODIFIERS.get("sector_valuation_percentile", {})
     cap = cfg.get("max_points", 3.0)
     if percentile is None:
         return 0.0, None
-    points = round((percentile - 50) / 50 * cap, 2)
-    if abs(points) < 0.5:
-        return 0.0, None
-    if points > 0:
-        return points, f"Valuation cheaper than {percentile:.0f}% of its canonical peers"
-    return points, f"Valuation richer than {100 - percentile:.0f}% of its canonical peers"
+    if percentile >= 66.7:
+        return round(cap, 2), "Valuation in the cheapest third of its canonical peer group"
+    if percentile <= 33.3:
+        return round(-cap, 2), "Valuation in the most expensive third of its canonical peer group"
+    return 0.0, None
 
 
 def macro_regime_modifier(snapshot, macro_regime):
@@ -371,8 +542,20 @@ def macro_regime_modifier(snapshot, macro_regime):
 
 
 def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
-                    insider_activity=None):
-    """Blend the bounded refinements onto the evidence score and explain every one."""
+                    insider_activity=None, institutional_ownership=None,
+                    congressional_activity=None, concentration_risk=None):
+    """Blend the bounded refinements onto the evidence score and explain every one.
+
+    ``customer_concentration_risk`` is in the champion path as of Phase 3.3 -- see
+    ``concentration_risk_modifier`` for how the tagging-coverage objection is answered.
+    ``geographic_concentration`` remains challenger-only for the separate reason given on
+    ``geographic_concentration_modifier``: revenue tagged by geography often reflects
+    shipping destination or contracting entity rather than end demand, which is a
+    correctness problem rather than a coverage one. ``institutional_13f`` is in the champion
+    path with lag decay baked into its input - see ``institutional_ownership_modifier``.
+    ``congressional_buying`` is this file's one scoped exception to "no political
+    inputs" - see the module docstring.
+    """
     applied = {}
     notes = []
     for name, (points, note) in {
@@ -382,6 +565,13 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         "expectations": expectations_modifier(extended),
         "macro_regime": macro_regime_modifier(snapshot, macro_regime),
         "insider_activity": insider_modifier(insider_activity),
+        "institutional_13f": institutional_ownership_modifier(institutional_ownership),
+        "congressional_buying": congressional_buying_modifier(congressional_activity),
+        # Phase 3.3: a disclosed single-customer revenue share is an uncompensated risk the
+        # live score has to carry, not a shadow-only observation. Cirrus Logic disclosed
+        # roughly 91% of net sales from one end customer in FY2026 and the published score
+        # reflected none of it.
+        "customer_concentration_risk": concentration_risk_modifier(concentration_risk),
     }.items():
         if points:
             applied[name] = points
@@ -398,12 +588,20 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
 
 def apply_challenger_modifiers(base, snapshot, extended, config, sector_percentile=None,
                                short_interest_rank=None, macro_regime=None,
-                               insider_activity=None):
+                               insider_activity=None, concentration_risk=None,
+                               geographic_exposure=None, institutional_ownership=None,
+                               congressional_activity=None):
     """Apply fractionally allocated modifiers under the configured combined cap.
 
     Each individual maximum is ``combined_cap * configured_fraction``. The final sum is
     clamped once to plus or minus ``combined_cap`` so changing one allocation never changes
     another modifier's implicit scale.
+
+    ``concentration_risk``/``geographic_exposure`` are scored here and nowhere else in the
+    live score (shadow mode) until their tagging coverage has been measured - see
+    ``apply_modifiers``. ``institutional_ownership``/``congressional_activity`` are scored
+    here too, in addition to the champion path, so their challenger variants stay
+    comparable to every other modifier.
     """
     cap = float(config["modifier_cap"])
     fractions = config["modifier_fractions"]
@@ -472,6 +670,45 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
     if insider_note:
         notes.append(insider_note.replace(";", ","))
 
+    concentration_points, concentration_note = concentration_risk_modifier(concentration_risk)
+    if concentration_points:
+        old_cap = MODIFIERS.get("customer_concentration_risk", {}).get("max_penalty")
+        applied["customer_concentration_risk"] = round(
+            concentration_points / old_cap * cap * fractions["customer_concentration_risk"], 2
+        )
+    if concentration_note:
+        notes.append(concentration_note.replace(";", ","))
+
+    geographic_points, geographic_note = geographic_concentration_modifier(geographic_exposure)
+    if geographic_points:
+        old_cap = MODIFIERS.get("geographic_concentration", {}).get("max_penalty")
+        applied["geographic_concentration"] = round(
+            geographic_points / old_cap * cap * fractions["geographic_concentration"], 2
+        )
+    if geographic_note:
+        notes.append(geographic_note.replace(";", ","))
+
+    institutional_points, institutional_note = institutional_ownership_modifier(institutional_ownership)
+    if institutional_points:
+        fraction_key = ("institutional_13f_positive" if institutional_points > 0
+                        else "institutional_13f_negative")
+        old_key = "max_points" if institutional_points > 0 else "max_penalty"
+        old_cap = MODIFIERS.get("institutional_13f", {}).get(old_key)
+        applied["institutional_13f"] = round(
+            institutional_points / old_cap * cap * fractions[fraction_key], 2
+        )
+    if institutional_note:
+        notes.append(institutional_note.replace(";", ","))
+
+    congressional_points, congressional_note = congressional_buying_modifier(congressional_activity)
+    if congressional_points:
+        old_cap = MODIFIERS.get("congressional_buying", {}).get("max_points")
+        applied["congressional_buying"] = round(
+            congressional_points / old_cap * cap * fractions["congressional_buying"], 2
+        )
+    if congressional_note:
+        notes.append(congressional_note.replace(";", ","))
+
     uncapped_total = round(sum(applied.values()), 2)
     total = round(max(-cap, min(cap, uncapped_total)), 2)
     if total != uncapped_total:
@@ -489,60 +726,106 @@ def apply_challenger_modifiers(base, snapshot, extended, config, sector_percenti
 
 # ---------------- action guidance ----------------
 
+def _reading(source, key):
+    """A metric's value only when it was actually measured.
+
+    Every deterioration test below used ``(source.get(key) or fallback)``, which silently
+    turned "we have no interest-coverage figure" into 99x and "we have no drawdown figure"
+    into 0%. Both read as "no concern", so the entire guidance engine failed *open*: a
+    company with missing data could never be told to TRIM or SELL, and a genuine 0.0 reading
+    was indistinguishable from an absent one because ``or`` triggers on falsiness, not on
+    None. Missing evidence must be visible as missing. See
+    ``research/audit/CURRENT_MODEL_AUDIT.md`` section 7a.
+    """
+    value = (source or {}).get(key)
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
 def action_for(score, stance, fundamental_parts, technical_parts, extended, sentiment_parts):
     """Sell / trim / watch guidance that requires two independent factors to agree.
 
     Price alone never triggers an action. Neither does one bad headline. The rule is the
     same one a disciplined holder would use: the business, the chart, and the narrative
     have to corroborate each other before anyone touches a position.
+
+    Every test is None-safe by construction (see ``_reading``): a metric that was never
+    measured neither triggers a concern nor suppresses one, and the inputs that could not be
+    evaluated are reported in ``unmeasured`` so a reader can see what the verdict did not
+    consider. Whether 2-of-3 is the right rule at all is a Phase 9 question; this only stops
+    it from being decided by absent data.
     """
     categories = fundamental_parts.get("categories", {})
     concerns = {}
+    unmeasured = []
 
     fundamental_reasons = []
     for key, label in (("profitability", "profitability"), ("financial_health", "balance-sheet health"),
                        ("accounting_quality", "accounting quality"), ("growth", "growth")):
         value = categories.get(key)
-        if value is not None and value < 45:
+        if value is None:
+            unmeasured.append(f"fundamentals.{key}")
+        elif value < 45:
             fundamental_reasons.append(f"{label} score {value:.0f}/100")
-    if (extended.get("interest_coverage") or 99) < 2:
-        fundamental_reasons.append(f"interest coverage only {extended['interest_coverage']:.1f}x")
-    if (extended.get("accruals_ratio") or 0) > 0.10:
+    coverage = _reading(extended, "interest_coverage")
+    if coverage is None:
+        unmeasured.append("fundamentals.interest_coverage")
+    elif coverage < 2:
+        fundamental_reasons.append(f"interest coverage only {coverage:.1f}x")
+    accruals = _reading(extended, "accruals_ratio")
+    if accruals is None:
+        unmeasured.append("fundamentals.accruals_ratio")
+    elif accruals > 0.10:
         fundamental_reasons.append("earnings running well ahead of cash flow")
     if fundamental_reasons:
         concerns["fundamentals"] = fundamental_reasons
 
     technical_reasons = []
-    if (technical_parts.get("max_drawdown_252d") or 0) < -30:
-        technical_reasons.append(f"{abs(technical_parts['max_drawdown_252d']):.0f}% peak-to-trough fall this year")
-    if (technical_parts.get("relative_strength_20d") or 0) < -10:
-        technical_reasons.append(f"trailing SPY by {abs(technical_parts['relative_strength_20d']):.0f} points over 20 days")
-    if (technical_parts.get("return_60d") or 0) < -15 and (technical_parts.get("return_20d") or 0) < 0:
+    drawdown = _reading(technical_parts, "max_drawdown_252d")
+    if drawdown is None:
+        unmeasured.append("market_behavior.max_drawdown_252d")
+    elif drawdown < -30:
+        technical_reasons.append(f"{abs(drawdown):.0f}% peak-to-trough fall this year")
+    relative = _reading(technical_parts, "relative_strength_20d")
+    if relative is None:
+        unmeasured.append("market_behavior.relative_strength_20d")
+    elif relative < -10:
+        technical_reasons.append(f"trailing SPY by {abs(relative):.0f} points over 20 days")
+    return_60 = _reading(technical_parts, "return_60d")
+    return_20 = _reading(technical_parts, "return_20d")
+    if return_60 is None or return_20 is None:
+        unmeasured.append("market_behavior.sustained_decline")
+    elif return_60 < -15 and return_20 < 0:
         technical_reasons.append("sustained decline across 20- and 60-day windows")
     if technical_reasons:
         concerns["market_behavior"] = technical_reasons
 
     sentiment_reasons = []
-    average = sentiment_parts.get("average")
-    if average is not None and average < -0.15 and sentiment_parts.get("article_count", 0) >= 3:
-        sentiment_reasons.append(f"{sentiment_parts['article_count']} articles averaging negative coverage")
-    if (extended.get("short_percent_of_float") or 0) >= 0.15:
-        sentiment_reasons.append(f"{extended['short_percent_of_float'] * 100:.0f}% of float sold short")
+    average = _reading(sentiment_parts, "average")
+    article_count = _reading(sentiment_parts, "article_count") or 0
+    if average is None:
+        unmeasured.append("positioning.news_sentiment")
+    elif average < -0.15 and article_count >= 3:
+        sentiment_reasons.append(f"{article_count:.0f} articles averaging negative coverage")
+    short_float = _reading(extended, "short_percent_of_float")
+    if short_float is None:
+        unmeasured.append("positioning.short_percent_of_float")
+    elif short_float >= 0.15:
+        sentiment_reasons.append(f"{short_float * 100:.0f}% of float sold short")
     if sentiment_reasons:
         concerns["positioning"] = sentiment_reasons
 
     agreement = len(concerns)
     reasons = [reason for group in concerns.values() for reason in group]
     if agreement >= 2 and score < 45:
-        action, trim, confidence = "SELL", 100, "high"
+        action, trim, strength = "SELL", 100, "high"
     elif agreement >= 2:
-        action, trim, confidence = "TRIM", 33 if agreement == 2 else 50, "moderate"
+        action, trim, strength = "TRIM", 33 if agreement == 2 else 50, "moderate"
     elif agreement == 1:
-        action, trim, confidence = "WATCH", 0, "moderate"
+        action, trim, strength = "WATCH", 0, "moderate"
     elif stance in ("ATTRACTIVE", "PROMISING"):
-        action, trim, confidence = "HOLD", 0, "high"
+        action, trim, strength = "HOLD", 0, "high"
     else:
-        action, trim, confidence = "HOLD", 0, "moderate"
+        action, trim, strength = "HOLD", 0, "moderate"
 
     summary = {
         "SELL": "Two or more independent factors have broken down. Exiting and redeploying is the disciplined response.",
@@ -550,13 +833,16 @@ def action_for(score, stance, fundamental_parts, technical_parts, extended, sent
         "WATCH": "One factor has deteriorated. Not enough to act on alone - monitor for a second confirmation.",
         "HOLD": "No multi-factor deterioration. Position stands on its current evidence.",
     }[action]
-    return {"action": action, "suggested_trim_pct": trim, "confidence": confidence,
+    return {"action": action, "suggested_trim_pct": trim, "agreement_strength": strength,
             "agreement_count": agreement, "reasons": reasons[:5], "summary": summary,
+            # What the verdict could not evaluate. A HOLD backed by six unmeasured inputs and
+            # a HOLD backed by six measured ones are different claims and must look different.
+            "unmeasured_inputs": unmeasured,
             "factors": {name: group for name, group in concerns.items()}}
 
 
-def stance_for(score, confidence):
-    if confidence < 0.45:
+def stance_for(score, data_coverage):
+    if data_coverage < 0.45:
         return "INSUFFICIENT DATA"
     if score >= 75:
         return "ATTRACTIVE"
@@ -567,13 +853,39 @@ def stance_for(score, confidence):
     return "CAUTION"
 
 
-def blend_research_components(components, coverage, modifier_points=0.0, weights=None):
-    """Return the legacy evidence blend, confidence pull, and bounded final score.
+def data_coverage_scalar(coverage):
+    """Weighted share of the three components' evidence that actually resolved.
 
-    Formula for the current champion is ``raw = sum(score_i * weight_i) / sum(weight_i)``
-    over available components, then ``base = raw * (0.8 + 0.2 * confidence)`` and
-    ``final = clamp(base + modifier_points)``. Keeping this in one function lets a
-    challenger replace one component without changing any other part of the comparison.
+    This is a completeness ratio and nothing more. It carries no statistical property of the
+    signal -- no dispersion, no realised error, no out-of-sample hit rate -- so it is named
+    for what it measures. It was previously published as ``confidence``, which invited every
+    consumer to read it as reliability and, in the frontend, to gate position sizing on it.
+    A real confidence metric, validated against realised prediction error, is Phase 8 work
+    and does not exist yet; its absence is the correct state until then. See
+    ``research/audit/CURRENT_MODEL_AUDIT.md`` section 4.
+    """
+    return round(
+        0.65 * coverage.get("fundamentals", 0.0)
+        + 0.25 * coverage.get("market_behavior", 0.0)
+        + 0.10 * coverage.get("news_sentiment", 0.0),
+        2,
+    )
+
+
+def blend_research_components(components, coverage, modifier_points=0.0, weights=None,
+                              apply_coverage_multiplier=True):
+    """Return the evidence blend, the coverage pull, and the bounded final score.
+
+    ``raw = sum(score_i * weight_i) / sum(weight_i)`` over available components. The
+    champion (``build_research``) calls this with ``apply_coverage_multiplier=False``:
+    Round 5 Task 2 found no published construction multiplies a positively-oriented
+    composite by completeness (Jensen-Kelly-Pedersen JF 78(5) 2023, Freyberger et al.
+    RFS 38(3) 2025, Bryzgalova et al. RFS 38(3) 2025, Chen-McCoy JFE 153 2024), so
+    ``base = raw`` there, and ``multiplier_removal_variant`` - which unbundled and
+    isolated exactly this - was promoted to champion 2026-08-12. The
+    ``base = raw * (0.8 + 0.2 * data_coverage)`` multiplier stays the default for the
+    other challengers built on this function, each of which is deliberately isolating
+    one different change against the pre-fix blend it was measured against.
     """
     weights = weights or RANKING_WEIGHTS
     available = [(components[key], weights[key]) for key in weights
@@ -581,28 +893,24 @@ def blend_research_components(components, coverage, modifier_points=0.0, weights
     raw = sum(value * weight for value, weight in available) / sum(
         weight for _, weight in available
     ) if available else 0.0
-    confidence = round(
-        0.65 * coverage.get("fundamentals", 0.0)
-        + 0.25 * coverage.get("market_behavior", 0.0)
-        + 0.10 * coverage.get("news_sentiment", 0.0),
-        2,
-    )
-    base = round(raw * (0.8 + confidence * 0.2), 1)
+    data_coverage = data_coverage_scalar(coverage)
+    multiplier = (0.8 + data_coverage * 0.2) if apply_coverage_multiplier else 1.0
+    base = round(raw * multiplier, 1)
     return {
         "raw_score": round(raw, 1),
         "base_score": base,
         "score": round(clamp(base + modifier_points), 1),
-        "confidence": confidence,
+        "data_coverage": data_coverage,
     }
 
 
 def shrink_research_components(components, coverage, config, modifier_points=0.0,
                                weights=None):
-    """Apply one confidence shrinkage toward a configurable neutral prior.
+    """Apply one data-coverage shrinkage toward a configurable neutral prior.
 
     Formula: ``effective = target + strength * (raw - target)``, where
-    ``strength = 1 - max_pull * (1 - confidence)``. At the default maximum pull of one,
-    strength equals confidence exactly and missing evidence moves a score toward neutral.
+    ``strength = 1 - max_pull * (1 - data_coverage)``. At the default maximum pull of one,
+    strength equals data coverage exactly and missing evidence moves a score toward neutral.
     """
     weights = weights or RANKING_WEIGHTS
     available = [(components[key], weights[key]) for key in weights
@@ -610,20 +918,15 @@ def shrink_research_components(components, coverage, config, modifier_points=0.0
     raw = sum(value * weight for value, weight in available) / sum(
         weight for _, weight in available
     ) if available else config["shrinkage_target"]
-    confidence = round(
-        0.65 * coverage.get("fundamentals", 0.0)
-        + 0.25 * coverage.get("market_behavior", 0.0)
-        + 0.10 * coverage.get("news_sentiment", 0.0),
-        2,
-    )
-    strength = clamp(1 - config["shrinkage_max_pull"] * (1 - confidence), 0.0, 1.0)
+    data_coverage = data_coverage_scalar(coverage)
+    strength = clamp(1 - config["shrinkage_max_pull"] * (1 - data_coverage), 0.0, 1.0)
     target = config["shrinkage_target"]
     base = round(target + strength * (raw - target), 1)
     return {
         "raw_score": round(raw, 1),
         "base_score": base,
         "score": round(clamp(base + modifier_points), 1),
-        "confidence": confidence,
+        "data_coverage": data_coverage,
         "shrinkage_strength": round(strength, 3),
         "shrinkage_target": target,
     }
@@ -673,8 +976,48 @@ def cross_sectional_challenger(row, snapshot, normalizer):
     }
 
 
+def fixed_feature_challenger(row, snapshot, normalizer, config):
+    """The Round 4 imputation challenger: fixed feature vector, neutral shrinkage.
+
+    Fundamentals come from ``valuation_score(mode="fixed_feature")`` (same intended
+    metric vector for every applicable name, missing metrics imputed at the neutral
+    percentile, no completeness multiplier). The blend then applies exactly one
+    coverage-aware transform: ``shrink_research_components`` pulls toward the neutral
+    prior instead of scaling toward zero, so thin evidence widens uncertainty without
+    pushing a name down the ranking. Coverage ships as a diagnostic only.
+    """
+    fundamental, detail = valuation_score(
+        snapshot, mode="fixed_feature", normalizer=normalizer,
+    )
+    components = {**row.get("components", {}), "fundamentals": fundamental}
+    blended = shrink_research_components(
+        components,
+        {
+            "fundamentals": detail.get("coverage", 0.0),
+            "market_behavior": (row.get("technical_detail") or {}).get("coverage", 0.0),
+            "news_sentiment": (row.get("sentiment_detail") or {}).get("coverage", 0.0),
+        },
+        config,
+        (row.get("modifiers") or {}).get("total", 0.0),
+    )
+    return {
+        "variant": "fixed_feature_imputation_neutral_shrink",
+        "normalization_mode": "fixed_feature",
+        **blended,
+        "components": components,
+        "fundamental_categories": detail.get("categories", {}),
+        "fundamental_detail": detail,
+        "observed_weight_fraction": detail.get("observed_weight_fraction"),
+        "imputed_weight_fraction": detail.get("imputed_weight_fraction"),
+        "suppressed_weight_fraction": detail.get("suppressed_weight_fraction"),
+        "normalized_metric_scores": normalized_metric_scores(detail),
+    }
+
+
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
-                               macro_regime=None, insider_activity=None):
+                               macro_regime=None, insider_activity=None, concentration_risk=None,
+                               geographic_exposure=None, institutional_ownership=None,
+                               congressional_activity=None):
     """Build isolated signal edits plus the cumulative challenger beside the champion."""
     normalization = cross_sectional_challenger(row, snapshot, normalizer)
     champion_components = row.get("components") or {}
@@ -717,13 +1060,14 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
     modifier_score, modifier_detail = apply_challenger_modifiers(
         row.get("base_score", 0.0), snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
-        macro_regime, insider_activity,
+        macro_regime, insider_activity, concentration_risk, geographic_exposure,
+        institutional_ownership, congressional_activity,
     )
     modifier_recalibration = {
         "variant": "fractional_modifier_cap",
         "score": modifier_score,
         "base_score": row.get("base_score"),
-        "confidence": row.get("confidence"),
+        "data_coverage": row.get("data_coverage"),
         "modifiers": modifier_detail,
     }
 
@@ -738,7 +1082,8 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
     final_score, final_modifiers = apply_challenger_modifiers(
         final_base["base_score"], snapshot, snapshot, config,
         row.get("sector_valuation_percentile"), short_interest_rank,
-        macro_regime, insider_activity,
+        macro_regime, insider_activity, concentration_risk, geographic_exposure,
+        institutional_ownership, congressional_activity,
     )
     challenger = {
         "variant": "signal_corrections_cumulative",
@@ -758,6 +1103,9 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "confidence_shrinkage": shrinkage,
         "modifier_recalibration": modifier_recalibration,
         "challenger": challenger,
+        "fixed_feature": fixed_feature_challenger(row, snapshot, normalizer, config),
+        # multiplier_removal_variant was retired 2026-08-12: promoted to champion (see
+        # blend_research_components' docstring), so it would now always equal it exactly.
     }
 
 
@@ -799,13 +1147,18 @@ def build_evidence(categories, technical_parts, extended):
     if dso is not None and dso > 0.15:
         risks.append(f"Receivable days up {dso * 100:.0f}% year over year")
 
-    if (technical_parts.get("max_drawdown_252d") or 0) < -25:
-        risks.append(f"Fell {abs(technical_parts['max_drawdown_252d']):.0f}% peak-to-trough over the past year")
-    elif technical_parts.get("drawdown_60d", 0) < -10:
-        risks.append(f"Down {abs(technical_parts['drawdown_60d']):.1f}% from its 60-day high")
-    if (technical_parts.get("relative_strength_20d") or 0) > 3:
+    # Same None-safety as action_for: an unmeasured drawdown is not a small one.
+    drawdown_252 = _reading(technical_parts, "max_drawdown_252d")
+    drawdown_60 = _reading(technical_parts, "drawdown_60d")
+    if drawdown_252 is not None and drawdown_252 < -25:
+        risks.append(f"Fell {abs(drawdown_252):.0f}% peak-to-trough over the past year")
+    elif drawdown_60 is not None and drawdown_60 < -10:
+        risks.append(f"Down {abs(drawdown_60):.1f}% from its 60-day high")
+    relative_20 = _reading(technical_parts, "relative_strength_20d")
+    if relative_20 is not None and relative_20 > 3:
         strengths.append("Outperforming SPY over 20 trading days")
-    if (technical_parts.get("volume_ratio_60d") or 0) >= 1.3:
+    volume_ratio = _reading(technical_parts, "volume_ratio_60d")
+    if volume_ratio is not None and volume_ratio >= 1.3:
         strengths.append("Advances are carrying heavier volume than declines")
 
     if not strengths:
@@ -817,23 +1170,30 @@ def build_evidence(categories, technical_parts, extended):
 
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
                    volumes=None, extended=None, sector_percentile=None, macro_regime=None,
-                   insider_activity=None):
+                   insider_activity=None, institutional_ownership=None,
+                   congressional_activity=None, concentration_risk=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
     sentiment, sentiment_parts = sentiment_score(news_items, symbol)
-    components = {"fundamentals": fundamental, "market_behavior": technical, "news_sentiment": sentiment}
+    # Promoted 2026-08-12 (Round 5 Task 2, pipeline/validation/harness_freeze.json
+    # pending_decision): the champion's fundamentals component is the pre-multiplier
+    # score, and the blend below carries no coverage multiplier either. See
+    # blend_research_components' docstring for the citations.
+    raw_fundamental = fundamental_parts.get("raw_score", fundamental)
+    components = {"fundamentals": raw_fundamental, "market_behavior": technical, "news_sentiment": sentiment}
     fundamental_coverage = fundamental_parts.get("coverage", 0.0)
     blended = blend_research_components(components, {
         "fundamentals": fundamental_coverage,
         "market_behavior": technical_parts.get("coverage", 0),
         "news_sentiment": sentiment_parts.get("coverage", 0),
-    })
-    confidence, base, raw_score = blended["confidence"], blended["base_score"], blended["raw_score"]
+    }, apply_coverage_multiplier=False)
+    data_coverage, base, raw_score = blended["data_coverage"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
-                                       insider_activity)
+                                       insider_activity, institutional_ownership,
+                                       congressional_activity, concentration_risk)
     categories = fundamental_parts.get("categories", {})
-    stance = stance_for(score, confidence)
+    stance = stance_for(score, data_coverage)
     strengths, risks = build_evidence(categories, technical_parts, extended)
     analysis_v2 = build_v2_analysis(snapshot, fundamental_parts)
     recommendation_v2 = build_recommendation_v2(
@@ -845,10 +1205,11 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     )
     return {
         **snapshot, "score": score, "base_score": base, "raw_score": raw_score, "stance": stance,
-        "confidence": confidence,
+        "data_coverage": data_coverage,
         "components": components, "fundamental_categories": categories,
         "fundamental_detail": fundamental_parts, "technical_detail": technical_parts,
         "sentiment_detail": sentiment_parts, "modifiers": modifiers,
+        "news_available": sentiment_parts.get("news_available", False),
         "sector_valuation_percentile": sector_percentile,
         "recommendation": action_for(score, stance, fundamental_parts, technical_parts,
                                      extended, sentiment_parts),

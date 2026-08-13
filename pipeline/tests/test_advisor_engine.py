@@ -5,10 +5,12 @@ from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, apply_challenger_modifiers,
-                            build_research, insider_modifier, macro_regime_modifier,
-                            sentiment_score, shrink_research_components, technical_factors,
-                            technical_score_from_parts)
+from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challenger_modifiers,
+                            blend_research_components, build_research, concentration_risk_modifier,
+                            congressional_buying_modifier, geographic_concentration_modifier,
+                            insider_modifier, institutional_ownership_modifier,
+                            macro_regime_modifier, sentiment_score, shrink_research_components,
+                            TECHNICAL_WEIGHTS, technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -48,6 +50,47 @@ class AdvisorEngineTests(unittest.TestCase):
         self.assertGreater(detail["relative_strength_20d"], 0)
         self.assertEqual(detail["coverage"], 1.0)
 
+    def test_relative_acceleration_is_published_on_the_technical_block(self):
+        # A stock whose daily lead over the benchmark widens over the most recent quarter.
+        # Built return-by-return: a smooth exponential benchmark has zero return variance,
+        # which leaves beta - and so the whole measurement - genuinely undefined.
+        sessions = 320
+        boundary = sessions - 63 - 5
+        market = [0.0004 + (0.006 if step % 2 else -0.006) for step in range(sessions)]
+        noise = [0.004 if step % 3 else -0.008 for step in range(sessions)]
+        stock = [value + (0.0005 if step < boundary else 0.0025) + shake
+                 for step, (value, shake) in enumerate(zip(market, noise))]
+        benchmark, closes = [100.0], [100.0]
+        for index in range(sessions):
+            benchmark.append(benchmark[-1] * (1 + market[index]))
+            closes.append(closes[-1] * (1 + stock[index]))
+        _score, detail = technical_factors(closes, benchmark, [1_000_000.0] * len(closes))
+        self.assertGreater(detail["relative_acceleration"], 0)
+        self.assertGreater(detail["relative_acceleration_score"], 50)
+        self.assertEqual(detail["relative_acceleration_detail"]["observations"], 126)
+
+    def test_relative_acceleration_carries_no_ranking_weight(self):
+        """It is measured and published, not scored. The audit's finding against
+        relative_strength_20d was a market-relative term drawing 16% of market behaviour on
+        no evidence of its own; adding a second one on a plausible mechanism alone would
+        repeat that mistake. Promotion needs prospective evidence first."""
+        self.assertNotIn("relative_acceleration", TECHNICAL_WEIGHTS)
+        parts = {"momentum_12_1": 60.0, "risk_adjusted": 55.0, "relative_acceleration": 99.0}
+        with_it, _ = technical_score_from_parts(parts, "neutral")
+        without_it, _ = technical_score_from_parts(
+            {key: value for key, value in parts.items() if key != "relative_acceleration"},
+            "neutral")
+        self.assertEqual(with_it, without_it)
+
+    def test_relative_acceleration_is_absent_rather_than_neutral_without_a_benchmark(self):
+        closes = [100 + index * 0.4 for index in range(300)]
+        _score, detail = technical_factors(closes, None, [1_000_000.0] * 300)
+        self.assertIsNone(detail["relative_acceleration"])
+        self.assertIsNone(detail["relative_acceleration_score"])
+        # Too little history for two 63-session legs plus the skip.
+        _short_score, short = technical_factors(closes[:120], closes[:120], None)
+        self.assertIsNone(short["relative_acceleration"])
+
     def test_max_drawdown_and_volume_confirmation_are_scored(self):
         rising = [100 + index for index in range(300)]
         broken = [100 + index for index in range(150)] + [250 - index * 1.2 for index in range(150)]
@@ -79,7 +122,7 @@ class AdvisorEngineTests(unittest.TestCase):
         self.assertGreater(row["components"]["fundamentals"], 75)
         self.assertIn(row["stance"], ("ATTRACTIVE", "PROMISING"))
         self.assertTrue(any("valuation" in item.lower() for item in row["strengths"]))
-        self.assertGreater(row["confidence"], 0.8)
+        self.assertGreater(row["data_coverage"], 0.8)
         self.assertEqual(row["recommendation"]["action"], "HOLD")
 
     def test_two_factors_are_required_before_any_trim(self):
@@ -120,7 +163,7 @@ class AdvisorEngineTests(unittest.TestCase):
     def test_missing_evidence_lowers_confidence(self):
         sparse = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False, "forward_pe": 20}
         row = build_research("TEST", sparse, [100 + i for i in range(100)], None, [])
-        self.assertLess(row["confidence"], 0.5)
+        self.assertLess(row["data_coverage"], 0.5)
 
     def test_macro_is_sector_sensitive_and_capped(self):
         regime = {
@@ -284,10 +327,14 @@ class SentimentWindowTests(unittest.TestCase):
         self.assertEqual(detail["article_count"], 1)
         self.assertGreater(score, 50)
 
-    def test_no_coverage_reads_neutral_with_zero_confidence(self):
+    def test_no_coverage_is_reported_unavailable_not_neutral(self):
+        # A component with no evidence must not silently read as "neutral" - that fabricates
+        # a data point. blend_research_components renormalizes over the components that
+        # remain, rather than anchoring the blend on a manufactured 50.0.
         score, detail = sentiment_score([], "TEST")
-        self.assertEqual(score, 50.0)
+        self.assertIsNone(score)
         self.assertEqual(detail["coverage"], 0.0)
+        self.assertFalse(detail["news_available"])
 
     def test_nine_syndicated_copies_count_as_one_article(self):
         now = datetime(2026, 8, 2, tzinfo=timezone.utc)
@@ -322,8 +369,50 @@ class SentimentWindowTests(unittest.TestCase):
         score, detail = sentiment_score([article], "TEST",
                                         now=datetime(2026, 8, 2, tzinfo=timezone.utc))
 
-        self.assertEqual(score, 50.0)
+        self.assertIsNone(score)
+        self.assertFalse(detail["news_available"])
         self.assertEqual(detail["discarded_low_confidence"], 1)
+
+    def test_unavailable_news_is_excluded_from_the_blend_not_treated_as_neutral(self):
+        # A row with zero cleared news coverage must renormalize fundamentals/market_behavior
+        # to fill the full weight, not silently blend in a manufactured 50.0 news score.
+        snap = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+                "peg": 1.1, "forward_pe": 22, "price_to_sales": 5, "return_on_equity": 0.18}
+        closes = [100 + index * 0.2 for index in range(300)]
+        row = build_research("TEST", snap, closes, closes, [])
+        self.assertIsNone(row["components"]["news_sentiment"])
+        self.assertFalse(row["news_available"])
+        self.assertFalse(row["sentiment_detail"]["news_available"])
+        expected_raw = round(
+            (row["components"]["fundamentals"] * RANKING_WEIGHTS["fundamentals"]
+             + row["components"]["market_behavior"] * RANKING_WEIGHTS["market_behavior"])
+            / (RANKING_WEIGHTS["fundamentals"] + RANKING_WEIGHTS["market_behavior"]),
+            1,
+        )
+        self.assertEqual(row["raw_score"], expected_raw)
+
+    def test_champion_carries_no_completeness_multiplier(self):
+        """Round 5 Task 2, promoted to champion 2026-08-12: no published construction
+        multiplies a positively-oriented composite by completeness. components["fundamentals"]
+        must be the pre-multiplier scorer.py raw_score, base_score must equal raw_score (no
+        second multiplier in the blend), and two rows with identical component scores but
+        different coverage must score identically.
+        """
+        snap = {"ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+                "peg": 1.1, "forward_pe": 22, "price_to_sales": 5, "return_on_equity": 0.18}
+        closes = [100 + index * 0.2 for index in range(300)]
+        row = build_research("TEST", snap, closes, closes, [])
+        self.assertEqual(row["components"]["fundamentals"], row["fundamental_detail"]["raw_score"])
+        self.assertEqual(row["base_score"], row["raw_score"])
+
+        components = {"fundamentals": 60.0, "market_behavior": 55.0, "news_sentiment": 45.0}
+        thin = blend_research_components(components, {
+            "fundamentals": 0.2, "market_behavior": 0.2, "news_sentiment": 0.2,
+        }, apply_coverage_multiplier=False)
+        full = blend_research_components(components, {
+            "fundamentals": 1.0, "market_behavior": 1.0, "news_sentiment": 1.0,
+        }, apply_coverage_multiplier=False)
+        self.assertEqual(thin["base_score"], full["base_score"])
 
     def test_filing_and_commentary_are_labelled_in_weight_detail(self):
         now = datetime(2026, 8, 2, tzinfo=timezone.utc)
@@ -379,5 +468,290 @@ class InsiderModifierTests(unittest.TestCase):
         self.assertLessEqual(points, MODIFIERS.get("insider_activity", {}).get("max_points", 5.0))
 
 
+class ConcentrationRiskModifierTests(unittest.TestCase):
+    def test_a_severe_disclosed_customer_share_penalizes_the_score(self):
+        points, note = concentration_risk_modifier({"percentages": [0.35]})
+        self.assertLess(points, 0.0)
+        self.assertIn("customer", note.lower())
+
+    def test_a_precomputed_summary_is_read_directly(self):
+        points, note = concentration_risk_modifier(
+            {"score_points": -2.0, "notes": ["largest named customer is 35% of revenue"]})
+        self.assertEqual(points, -2.0)
+        self.assertIn("35%", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(concentration_risk_modifier(None), (0.0, None))
+        self.assertEqual(concentration_risk_modifier({"percentages": []}), (0.0, None))
+
+    def test_points_never_exceed_the_configured_penalty(self):
+        points, _ = concentration_risk_modifier({"percentages": [0.99]})
+        self.assertGreaterEqual(
+            points, -MODIFIERS.get("customer_concentration_risk", {}).get("max_penalty", 3.0))
+
+
+class GeographicConcentrationModifierTests(unittest.TestCase):
+    def test_a_severe_single_country_share_penalizes_the_score(self):
+        points, note = geographic_concentration_modifier({"shares": {"us": 0.4, "cn": 0.6}})
+        self.assertLess(points, 0.0)
+        self.assertIn("geograph", note.lower())
+
+    def test_diversified_international_revenue_with_no_single_country_dominant_is_neutral(self):
+        points, note = geographic_concentration_modifier(
+            {"shares": {"us": 0.4, "cn": 0.2, "de": 0.2, "jp": 0.2}})
+        self.assertEqual(points, 0.0)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(geographic_concentration_modifier(None), (0.0, None))
+        self.assertEqual(geographic_concentration_modifier({"shares": {}}), (0.0, None))
+
+
+class CustomerConcentrationEntersTheLiveScoreTests(unittest.TestCase):
+    """Phase 3.3: a disclosed single-customer revenue share moves the champion score.
+
+    It was shadow-only because a penalty-only modifier that fires only on tagged filers
+    rewards companies that never tagged the concept. That objection is answered by
+    separating "filing read, nothing disclosed" from "no filing read" -- ASC 280-10-50-42
+    requires naming any customer at or above 10% of consolidated revenue, so a read filing
+    with no such tag is affirmative evidence of diversified revenue.
+
+    Geographic concentration stays challenger-only for a different reason: revenue tagged
+    against a geography often reflects shipping destination rather than end demand.
+    """
+
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def row(self, **kwargs):
+        return build_research("TEST", self.snapshot, self.closes, self.closes, [], **kwargs)
+
+    def test_a_disclosed_severe_concentration_lowers_the_published_score(self):
+        baseline = self.row()
+        concentrated = self.row(concentration_risk={"measured": True, "percentages": [0.91]})
+        self.assertLess(concentrated["score"], baseline["score"])
+        self.assertIn("customer_concentration_risk", concentrated["modifiers"]["applied"])
+
+    def test_a_read_filing_with_no_disclosure_is_not_penalised(self):
+        baseline = self.row()
+        diversified = self.row(concentration_risk={"measured": True, "percentages": []})
+        self.assertEqual(diversified["score"], baseline["score"])
+
+    def test_an_unread_filing_scores_nothing_rather_than_crediting_safety(self):
+        baseline = self.row()
+        unknown = self.row(concentration_risk={"measured": False, "percentages": []})
+        self.assertEqual(unknown["score"], baseline["score"])
+        self.assertNotIn("customer_concentration_risk", unknown["modifiers"]["applied"])
+
+    def test_the_penalty_scales_with_the_disclosed_share(self):
+        warning = self.row(concentration_risk={"measured": True, "percentages": [0.18]})
+        severe = self.row(concentration_risk={"measured": True, "percentages": [0.91]})
+        self.assertLess(severe["score"], warning["score"])
+
+    def test_geographic_concentration_remains_outside_the_champion_path(self):
+        with self.assertRaises(TypeError):
+            build_research("TEST", self.snapshot, self.closes, self.closes, [],
+                           geographic_exposure={"shares": {"China": 0.8}})
+
+
+class ChallengerOnlyShadowModeTests(unittest.TestCase):
+    """The two concentration modifiers DO move the challenger score - that is the whole
+    point of shadow mode: measurable, but not yet risking the live champion score."""
+
+    def setUp(self):
+        self.config = SETTINGS["challengers"]["signal_corrections"]
+
+    def test_severe_customer_concentration_lowers_the_challenger_score_only(self):
+        baseline, _ = apply_challenger_modifiers(70.0, {}, {}, self.config)
+        concentrated, _ = apply_challenger_modifiers(
+            70.0, {}, {}, self.config, concentration_risk={"percentages": [0.40]})
+        self.assertLess(concentrated, baseline)
+
+    def test_severe_geographic_concentration_lowers_the_challenger_score_only(self):
+        baseline, _ = apply_challenger_modifiers(70.0, {}, {}, self.config)
+        concentrated, _ = apply_challenger_modifiers(
+            70.0, {}, {}, self.config,
+            geographic_exposure={"shares": {"us": 0.3, "cn": 0.7}})
+        self.assertLess(concentrated, baseline)
+
+
+class InstitutionalOwnershipModifierTests(unittest.TestCase):
+    def test_a_precomputed_positive_summary_lifts_the_score(self):
+        points, note = institutional_ownership_modifier(
+            {"score_points": 1.5, "notes": ["3 curated institutional manager(s) added a position"]})
+        self.assertEqual(points, 1.5)
+        self.assertIn("added", note)
+
+    def test_a_precomputed_negative_summary_penalizes_the_score(self):
+        points, _ = institutional_ownership_modifier({"score_points": -1.0, "notes": []})
+        self.assertEqual(points, -1.0)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(institutional_ownership_modifier(None), (0.0, None))
+        self.assertEqual(institutional_ownership_modifier({}), (0.0, None))
+
+    def test_points_respect_the_configured_caps(self):
+        points, _ = institutional_ownership_modifier({"score_points": 999.0, "notes": []})
+        self.assertLessEqual(points, MODIFIERS.get("institutional_13f", {}).get("max_points", 3.0))
+
+
+class BuildResearchWiresInstitutionalOwnershipIntoTheChampionScoreTests(unittest.TestCase):
+    """Unlike concentration_risk/geographic_exposure, institutional_ownership IS back in
+    the champion path (with lag decay baked into its input upstream) - this is the
+    end-to-end proof it actually moves row["score"], not just a display field."""
+
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_corroborated_accumulation_raises_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        accumulating = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            institutional_ownership={"score_points": 2.0, "notes": []},
+        )["score"]
+        self.assertGreater(accumulating, baseline)
+
+    def test_a_stale_filing_moves_the_score_less_than_a_fresh_one(self):
+        # The decay itself lives in institutional_ownership.score_institutional_ownership,
+        # applied before this reaches build_research - this just confirms a smaller
+        # score_points input (as a decayed one would be) produces a smaller effect.
+        fresh = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            institutional_ownership={"score_points": 2.0, "notes": []},
+        )["score"]
+        stale = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            institutional_ownership={"score_points": 0.2, "notes": []},
+        )["score"]
+        self.assertGreater(fresh, stale)
+
+
+class CongressionalBuyingModifierTests(unittest.TestCase):
+    def test_a_precomputed_positive_summary_lifts_the_score(self):
+        points, note = congressional_buying_modifier(
+            {"score_points": 1.5, "notes": ["2 member(s) disclosed a purchase"]})
+        self.assertEqual(points, 1.5)
+        self.assertIn("purchase", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(congressional_buying_modifier(None), (0.0, None))
+        self.assertEqual(congressional_buying_modifier({}), (0.0, None))
+
+    def test_points_are_never_negative_even_if_the_input_somehow_is(self):
+        points, _ = congressional_buying_modifier({"score_points": -5.0, "notes": []})
+        self.assertGreaterEqual(points, 0.0)
+
+    def test_points_respect_the_configured_cap(self):
+        points, _ = congressional_buying_modifier({"score_points": 999.0, "notes": []})
+        self.assertLessEqual(points, MODIFIERS.get("congressional_buying", {}).get("max_points", 4.0))
+
+
+class BuildResearchWiresCongressionalBuyingIntoTheChampionScoreTests(unittest.TestCase):
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_disclosed_congressional_buying_raises_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        bought = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            congressional_activity={"score_points": 2.0, "notes": []},
+        )["score"]
+        self.assertGreater(bought, baseline)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+class DeteriorationFailsClosedTest(unittest.TestCase):
+    """Missing data must never read as "no concern".
+
+    Every test in action_for used `(source.get(key) or fallback)`, so an absent interest
+    coverage became 99x and an absent drawdown became 0%. The guidance engine failed open:
+    a company with no data could not be told to TRIM or SELL. See
+    research/audit/CURRENT_MODEL_AUDIT.md section 7a.
+    """
+
+    def guidance(self, *, technical=None, extended=None, sentiment=None, categories=None):
+        return action_for(
+            70, "PROMISING",
+            {"categories": categories if categories is not None else {}},
+            technical or {}, extended or {}, sentiment or {},
+        )
+
+    def test_absent_metrics_raise_no_concern_and_are_reported_as_unmeasured(self):
+        result = self.guidance()
+        self.assertEqual(result["agreement_count"], 0)
+        self.assertIn("fundamentals.interest_coverage", result["unmeasured_inputs"])
+        self.assertIn("market_behavior.max_drawdown_252d", result["unmeasured_inputs"])
+        self.assertIn("positioning.short_percent_of_float", result["unmeasured_inputs"])
+
+    def test_a_measured_zero_is_not_treated_as_missing(self):
+        """`or` triggers on falsiness: a real 0.0 was indistinguishable from absent."""
+        result = self.guidance(extended={"accruals_ratio": 0.0, "interest_coverage": 0.0})
+        self.assertNotIn("fundamentals.accruals_ratio", result["unmeasured_inputs"])
+        self.assertNotIn("fundamentals.interest_coverage", result["unmeasured_inputs"])
+        # 0.0x interest coverage is a real, severe reading and must flag.
+        self.assertIn("fundamentals", result["factors"])
+
+    def test_measured_deterioration_still_triggers(self):
+        result = self.guidance(
+            categories={"profitability": 20.0, "financial_health": 30.0,
+                        "accounting_quality": 40.0, "growth": 35.0},
+            technical={"max_drawdown_252d": -45.0, "relative_strength_20d": -22.0,
+                       "return_60d": -3.0, "return_20d": -1.0},
+            extended={"interest_coverage": 1.1, "accruals_ratio": 0.2,
+                      "short_percent_of_float": 0.2},
+            sentiment={"average": -0.4, "article_count": 6},
+        )
+        self.assertEqual(result["agreement_count"], 3)
+        self.assertEqual(result["action"], "TRIM")
+        self.assertEqual(result["unmeasured_inputs"], [])
+
+    def test_an_unmeasured_input_cannot_suppress_a_measured_one(self):
+        """Absent 60d return used to coerce to 0 and pass the < -15 test silently."""
+        result = self.guidance(technical={"return_20d": -5.0})
+        self.assertIn("market_behavior.sustained_decline", result["unmeasured_inputs"])
+        self.assertNotIn("market_behavior", result["factors"])
+
+
+class ShortHorizonRelativeStrengthTest(unittest.TestCase):
+    """relative_strength_20d is ret_20d minus a benchmark return identical for every row,
+    so it cannot change a cross-sectional ranking. The champion no longer weights it."""
+
+    PARTS = {"momentum_12_1": 60.0, "risk_adjusted": 55.0, "relative_strength": 90.0,
+             "drawdown_resilience": 70.0, "volume_confirmation": 50.0, "low_beta": 40.0,
+             "technical_extended": 45.0}
+
+    def test_the_champion_treatment_excludes_it(self):
+        self.assertEqual(SETTINGS.get("short_horizon_treatment"), "neutral")
+
+    def test_neutral_drops_the_term_and_renormalizes(self):
+        score, detail = technical_score_from_parts(self.PARTS, "neutral")
+        self.assertNotIn("relative_strength", detail["weights"])
+        # The configured sub-weights sum to 1.06, not 1.0; the blend normalizes by the
+        # weights that answered, so the absolute total is not load-bearing. What matters is
+        # that relative_strength's 0.16 is gone.
+        self.assertAlmostEqual(sum(detail["weights"].values()), 0.90, places=6)
+        legacy, _ = technical_score_from_parts(self.PARTS, "legacy_momentum")
+        self.assertNotEqual(score, legacy)

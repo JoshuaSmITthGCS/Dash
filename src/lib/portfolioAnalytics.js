@@ -68,6 +68,21 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
   return { dates: rows.map((row) => row.date), values: rows.map((row) => row.value), coverage: rows.map((row) => row.coveragePct), methodology: 'Current quantities applied to historical daily closes. This is not actual historical account value.' }
 }
 
+/** Drops every observation before cutoffDate, keeping a series' own shape intact. Used to let
+ * risk/performance stats be evaluated only since a given date (e.g. when live tracking
+ * actually started), instead of over the full backtested-basket history. */
+export function sliceSeriesFrom(series, cutoffDate) {
+  if (!series?.dates?.length || !cutoffDate) return series
+  const startIndex = series.dates.findIndex((date) => date >= cutoffDate)
+  if (startIndex < 0) return null
+  return {
+    ...series,
+    dates: series.dates.slice(startIndex),
+    values: series.values ? series.values.slice(startIndex) : undefined,
+    coverage: series.coverage ? series.coverage.slice(startIndex) : undefined,
+  }
+}
+
 export function selectPeriod(series, period = '1M') {
   if (!series?.dates?.length || !series?.values?.length) return null
   const days = PERIOD_DAYS[period] ?? null
@@ -161,11 +176,21 @@ export function intradayPortfolioHigh(points = []) {
   return { value: Number(high.value), timestamp: high.timestamp || high.recordedAt, belowHigh: Number(high.value) - current, observations: usable.length }
 }
 
+// 'external_contribution' is logged automatically when a new position is added and the
+// purchase is flagged as funded by money outside the tracked account (see the Add Position
+// form) -- it counts toward net invested capital exactly like a deposit, without touching
+// the tracked uninvested-cash balance, since the money never sat in that bucket. Without
+// this, buying a new holding outright looked identical to organic investment gain: the
+// account's tracked value jumped by the purchase amount with no offsetting contribution, so
+// Modified Dietz (and the contribution-adjusted gain below) credited the strategy for money
+// that was simply deposited and immediately spent.
+const CONTRIBUTION_TYPES = ['deposit', 'external_contribution']
+
 export function netInvestedCapital(transactions) {
   if (!Array.isArray(transactions) || !transactions.length) return { available: false, value: null, reason: 'Complete contribution and withdrawal history is unavailable.' }
-  const external = transactions.filter((row) => ['deposit', 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))
+  const external = transactions.filter((row) => [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))
   if (!external.length || external.some((row) => !(row.effectiveDate || row.date))) return { available: false, value: null, reason: 'Complete dated external cash flows are unavailable.' }
-  const deposits = external.filter((row) => row.type === 'deposit').reduce((sum, row) => sum + Number(row.amount), 0)
+  const deposits = external.filter((row) => CONTRIBUTION_TYPES.includes(row.type)).reduce((sum, row) => sum + Number(row.amount), 0)
   const withdrawals = external.filter((row) => row.type === 'withdrawal').reduce((sum, row) => sum + Number(row.amount), 0)
   return { available: true, value: deposits - withdrawals, deposits, withdrawals, count: external.length, reason: 'External deposits minus external withdrawals.' }
 }
@@ -218,7 +243,7 @@ function settledExternalFlows(transactions = [], startDate = null, endDate = nul
   const end = endDate == null ? null : Date.parse(endDate)
   return transactions.filter((row) => {
     const date = Date.parse(row.effectiveDate || row.date)
-    return ['deposit', 'withdrawal'].includes(row.type)
+    return [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type)
       && finite(row.amount)
       && !['pending', 'processing'].includes(row.status)
       && Number.isFinite(date)
@@ -226,7 +251,7 @@ function settledExternalFlows(transactions = [], startDate = null, endDate = nul
       && (end == null || date <= end)
   }).map((row) => ({
     date: row.effectiveDate || row.date,
-    amount: (row.type === 'deposit' ? 1 : -1) * Number(row.amount),
+    amount: (CONTRIBUTION_TYPES.includes(row.type) ? 1 : -1) * Number(row.amount),
     type: row.type,
   })).sort((left, right) => left.date.localeCompare(right.date))
 }
@@ -329,6 +354,25 @@ export function moneyWeightedAccountReturn(snapshots = [], transactions = [], hi
     flowCount: external.length,
     methodology: result.available ? 'Annualized XIRR from recorded account values and settled external cash flows.' : undefined,
   }
+}
+
+/**
+ * Converts a realized return over an arbitrary span into an annual rate: (1+r)^(365/days) - 1.
+ * `minimumDays` rejects spans too short to extrapolate responsibly -- the same 30-day floor
+ * used elsewhere in this file (see moneyWeightedAccountReturn/solveXirr) before a short
+ * account history is stretched into an annual figure. A handful of days of noise compounded
+ * to a full year produces a wildly overstated (or understated) rate.
+ */
+export function annualizeReturnPct(returnPct, startDate, endDate, minimumDays = 0) {
+  const start = Date.parse(startDate)
+  const end = Date.parse(endDate)
+  if (!finite(returnPct) || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+  const elapsedDays = (end - start) / 86400000
+  if (elapsedDays < minimumDays) return null
+  const growth = 1 + Number(returnPct) / 100
+  if (growth <= 0) return null
+  const annualized = growth ** (365 / elapsedDays) - 1
+  return Number.isFinite(annualized) ? annualized * 100 : null
 }
 
 export function portfolioReturnSummary(snapshots = [], transactions = [], historyComplete = false) {
@@ -770,6 +814,74 @@ export function diversificationScore(positions = [], options = {}) {
 }
 
 export function maximumDrawdown(values = []) { let peak = null; let worst = 0; values.filter(finite).forEach((raw) => { const value = Number(raw); peak = peak == null ? value : Math.max(peak, value); if (peak) worst = Math.min(worst, (value / peak - 1) * 100) }); return values.length > 1 ? worst : null }
+/**
+ * How long the portfolio has spent below its own high-water mark, in calendar days.
+ *
+ * maximumDrawdown answers how deep the hole was. It does not answer how long you were in
+ * it, and those are different experiences of the same number: a 20% fall recovered in three
+ * weeks and a 20% fall you sat underwater in for fourteen months are not the same portfolio
+ * to hold. Duration is also the part people underestimate in advance and feel most acutely
+ * at the time.
+ *
+ * Takes dates alongside values because the series is not guaranteed to be evenly spaced -
+ * counting observations would report a ragged grid's sparse stretches as short ones.
+ */
+export function underwaterProfile(series) {
+  const rows = (series?.dates || [])
+    .map((date, index) => ({ date: String(date).slice(0, 10), value: Number(series.values?.[index]) }))
+    .filter((row) => finite(row.value) && row.value > 0 && Number.isFinite(Date.parse(row.date)))
+    .sort((left, right) => left.date.localeCompare(right.date))
+  if (rows.length < 2) return { available: false, reason: 'Two dated portfolio values are required.' }
+
+  const dayGap = (from, to) => Math.round((Date.parse(to) - Date.parse(from)) / 86400000)
+  let peak = rows[0]
+  let peakOfWorst = null
+  let worst = 0
+  let longestUnderwaterDays = 0
+  let recoveryDaysForWorst = null
+  let currentSpellStart = null
+
+  rows.forEach((row) => {
+    if (row.value >= peak.value) {
+      if (currentSpellStart) {
+        longestUnderwaterDays = Math.max(longestUnderwaterDays, dayGap(currentSpellStart.date, row.date))
+        // Only the deepest fall's recovery time is reported; a portfolio has many small
+        // dips and one of them being slow to mend is not the fact worth surfacing.
+        if (peakOfWorst && currentSpellStart.date === peakOfWorst.date) {
+          recoveryDaysForWorst = dayGap(currentSpellStart.date, row.date)
+        }
+        currentSpellStart = null
+      }
+      peak = row
+      return
+    }
+    if (!currentSpellStart) currentSpellStart = peak
+    const depth = (row.value / peak.value - 1) * 100
+    if (depth < worst) {
+      worst = depth
+      peakOfWorst = peak
+      recoveryDaysForWorst = null
+    }
+  })
+
+  const last = rows.at(-1)
+  const currentUnderwaterDays = currentSpellStart ? dayGap(currentSpellStart.date, last.date) : 0
+  return {
+    available: true,
+    longestUnderwaterDays: Math.max(longestUnderwaterDays, currentUnderwaterDays),
+    currentUnderwaterDays,
+    currentDrawdownPct: (last.value / peak.value - 1) * 100,
+    deepestDrawdownPct: worst,
+    // Null while the deepest fall has not been recovered yet - which is itself the answer,
+    // and must not be shown as a zero-day recovery.
+    recoveryDaysForDeepest: recoveryDaysForWorst,
+    stillUnderwater: Boolean(currentSpellStart),
+    highWaterDate: peak.date,
+    observations: rows.length,
+    reason: null,
+  }
+}
+
 export function annualizedVolatility(values = []) { const returns = values.slice(1).map((value, index) => finite(value) && finite(values[index]) && values[index] ? Number(value) / Number(values[index]) - 1 : null).filter(finite); if (returns.length < 2) return null; const mean = returns.reduce((a, b) => a + b, 0) / returns.length; const variance = returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (returns.length - 1); return Math.sqrt(variance) * Math.sqrt(analyticsConfig.trading_days_per_year) * 100 }
 
 export function resilienceIndex(values = [], diversification = null) {

@@ -16,6 +16,10 @@ const MODIFIERS = [
   ['liquidity', 'Liquidity', 'A name you cannot exit without moving the price carries a real cost that fundamentals never show.'],
   ['expectations', 'Analyst expectations', 'Consensus is used only when the published minimum analyst coverage is present.'],
   ['macro_regime', 'Macro regime', 'FRED rates, inflation, labor, and yield-curve conditions are weighted by sector sensitivity and never replace company evidence.'],
+  ['institutional_13f', 'Institutional 13F', 'A curated set of publicly traded, actively managed 13F filers – index funds and private-equity managers are excluded, since their position changes track index membership or take-private deals rather than conviction. Decayed by filing lag: a position disclosed 45+ days ago carries less weight than a fresh one.'],
+  ['congressional_buying', 'Congressional buying', 'Reward-only. Disclosed Congressional stock purchases score a mild positive; a member’s first-ever trade in a company under a $2B market cap scores an additional bonus. Sales and non-buying never penalize.'],
+  ['customer_concentration_risk', 'Customer concentration (shadow only)', 'ASC 280 customer-concentration disclosures, penalty-only. Not yet part of the published score – shown here, and in the challenger comparison, while tagging coverage across the scored universe is being measured.'],
+  ['geographic_concentration', 'Geographic concentration (shadow only)', 'Revenue concentrated in a single non-domestic country, penalty-only. Not yet part of the published score, for the same reason as customer concentration – coverage and tag accuracy are still being checked against real filings.'],
 ]
 
 const percent = (value) => typeof value === 'number' ? Math.round(value * 100) : null
@@ -48,9 +52,11 @@ export default function Methodology() {
     implied_vs_realized_volatility: { status: 'opt_in', source: 'Option chains + calculated returns', note: 'Enable options requests in the pipeline.' },
     analyst_revision_trends: { status: 'provider_required', note: 'Point-in-time estimate history is not supplied by the current providers.' },
     guidance_beat_miss_history: { status: 'provider_required', note: 'Requires contemporaneous consensus snapshots.' },
-    backlog_growth: { status: 'filing_parser_required', note: 'Backlog is issuer-specific and non-GAAP.' },
-    institutional_13f_changes: { status: 'mapping_required', source: 'SEC EDGAR', note: 'Reliable CUSIP-to-ticker mapping is still required.' },
-    fx_exposure: { status: 'filing_parser_required', source: 'SEC filings', note: 'Requires issuer-specific filing text normalization.' },
+    backlog_growth: { status: 'available', source: 'SEC EDGAR XBRL', note: 'Remaining performance obligation, read from dimensional XBRL contexts.' },
+    institutional_13f_changes: { status: 'available', source: 'SEC EDGAR Form 13F-HR + OpenFIGI', note: 'Curated, publicly traded, actively managed filers only; decayed by filing lag.' },
+    congressional_buying: { status: 'available', source: 'STOCK Act disclosures', note: 'Reward-only; disclosed purchases, with a bonus for a first-ever trade in a small company.' },
+    customer_concentration_risk: { status: 'shadow_only', source: 'SEC EDGAR XBRL', note: 'ASC 280 customer concentration. Challenger-only pending tagging-coverage measurement.' },
+    fx_exposure: { status: 'shadow_only', source: 'SEC EDGAR XBRL', note: 'Single-country revenue concentration. Challenger-only pending measurement.' },
   }
   return <>
     <div className="page-head"><div>
@@ -73,6 +79,16 @@ export default function Methodology() {
           volatility punished. News sentiment is a small tilt, not a component. Articles
           decay with age, low-confidence entity matches are discarded, syndicated copies
           count once, and source-of-record filings are labelled separately from commentary.
+        </p>
+        <p className="body-copy">
+          Acceleration versus the market is measured on every name and shown on the company
+          detail view, but it is deliberately not part of the blend above. It asks whether a
+          stock’s lead over the index is widening rather than how large that lead is, and it
+          subtracts the move the stock’s own beta says the market handed it – without that
+          adjustment, a “relative” reading is only the raw return wearing a different label.
+          It stays unweighted until prospective evidence shows it predicts something; a signal
+          earning weight on a plausible story alone is the mistake this model has already made
+          once.
         </p>
       </section>
       <section className="card card-pad">
@@ -116,9 +132,9 @@ export default function Methodology() {
         </p>
         <ul className="method-list">
           <li>Fundamentals are recorded point-in-time on every run, with restatements kept in a separate revision log, so future backtests can score on what was actually known at the time.</li>
-          <li>Universe membership is snapshotted too, delisted names included, so a backtest cannot quietly run on survivors only.</li>
-          <li>Results are deflated for the number of configurations tried. Test enough weightings and one looks good by construction; the significance bar is raised to account for that.</li>
-          <li>A change ships only if it improves out-of-sample performance after that deflation, regardless of how good it looks in sample.</li>
+          <li>Universe membership is snapshotted on every run, additions and removals recorded, so that in time a backtest cannot quietly run on survivors only. <strong>That protection is not yet in force.</strong> The log holds eight days and has recorded no removals, so any backtest run today still runs on the companies that exist today, and its returns are biased upward by an amount not yet measured. Companies that delisted before the log started cannot be recovered from it at all.</li>
+          <li>Results are deflated for the number of configurations tried. Test enough weightings and one looks good by construction, so the bar rises with the count: a deflated Sharpe ratio corrects for selection across trials and for non-normal returns, and the significance hurdle is a t-statistic of 3 rather than 2.</li>
+          <li>A change ships only if it improves out-of-sample performance after that deflation, regardless of how good it looks in sample. The harness runs on every build and grades only scores recorded before their forward returns existed — it never reconstructs history from today’s fundamentals. It currently reports <em>accumulating</em> at every horizon, short of the 24 periods it requires, so it has not yet had the evidence to pass or fail anything.</li>
         </ul>
       </section>
     </div>

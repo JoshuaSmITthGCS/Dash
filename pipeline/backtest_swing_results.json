@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0.0",
+  "model": "swing-v1.1.0",
+  "measured_legs": [
+    "pead_drift",
+    "high_volume_premium",
+    "high_52w_proximity",
+    "short_term_reversal"
+  ],
+  "excluded_legs": [
+    "analyst_revision"
+  ],
+  "data_window": {
+    "years_requested": 3.0,
+    "rebalance_cadence_sessions": 5,
+    "vertical_barrier_sessions": 10,
+    "graded_period_stride": 2,
+    "periods_scanned": 150,
+    "periods_used": 150,
+    "graded_periods": 74,
+    "first_graded_date": "2023-08-14",
+    "last_graded_date": "2026-07-14",
+    "universe_size": 860
+  },
+  "variants": {
+    "A": {
+      "variant_id": "swing-reversal-A",
+      "label": "Frozen baseline: raw prior-week reversal at 10%",
+      "graded_periods": 74,
+      "weekly_periods": 148,
+      "leg_coverage": {
+        "pead_drift": 0.8586,
+        "analyst_revision": 0.0,
+        "high_volume_premium": 1.0,
+        "high_52w_proximity": 1.0,
+        "short_term_reversal": 0.931
+      },
+      "ic": {
+        "periods": 74,
+        "mean_ic": -0.0082,
+        "ic_std": 0.0879,
+        "icir": -0.469,
+        "t_stat": -0.804,
+        "hit_rate": 0.5,
+        "meaningful": false,
+        "clears_multiple_testing_bar": false
+      },
+      "monotonic_periods": 5,
+      "mean_quantile_spread_gross": -0.0003,
+      "mean_quantile_spread_net_of_cost": -0.0005,
+      "mean_round_trip_cost_bps": 2.0,
+      "spread_sharpe_per_period_gross": -0.031,
+      "spread_sharpe_per_period_net_of_cost": -0.048,
+      "deflated_sharpe_probability_gross": 0.1332,
+      "deflated_sharpe_probability_net_of_cost": 0.1044,
+      "trials_considered": 3,
+      "mean_weekly_top_percentile_book_turnover": 0.5478,
+      "illustrative_annualized_turnover": 27.6074
+    },
+    "B": {
+      "variant_id": "swing-reversal-B",
+      "label": "Reversal leg removed, its 10% redistributed proportionally across the four continuation legs",
+      "graded_periods": 74,
+      "weekly_periods": 148,
+      "leg_coverage": {
+        "pead_drift": 0.8586,
+        "analyst_revision": 0.0,
+        "high_volume_premium": 1.0,
+        "high_52w_proximity": 1.0
+      },
+      "ic": {
+        "periods": 74,
+        "mean_ic": -0.0075,
+        "ic_std": 0.084,
+        "icir": -0.447,
+        "t_stat": -0.765,
+        "hit_rate": 0.486,
+        "meaningful": false,
+        "clears_multiple_testing_bar": false
+      },
+      "monotonic_periods": 5,
+      "mean_quantile_spread_gross": 0.0007,
+      "mean_quantile_spread_net_of_cost": 0.0004,
+      "mean_round_trip_cost_bps": 2.46,
+      "spread_sharpe_per_period_gross": 0.064,
+      "spread_sharpe_per_period_net_of_cost": 0.042,
+      "deflated_sharpe_probability_gross": 0.3821,
+      "deflated_sharpe_probability_net_of_cost": 0.3126,
+      "trials_considered": 3,
+      "mean_weekly_top_percentile_book_turnover": 0.483,
+      "illustrative_annualized_turnover": 24.3443
+    },
+    "C": {
+      "variant_id": "swing-reversal-C",
+      "label": "Reversal leg replaced with residualized reversal at the same 10%: prior-week return orthogonalized against the industry return and the composite's other four legs",
+      "graded_periods": 74,
+      "weekly_periods": 148,
+      "leg_coverage": {
+        "pead_drift": 0.8586,
+        "analyst_revision": 0.0,
+        "high_volume_premium": 1.0,
+        "high_52w_proximity": 1.0,
+        "short_term_reversal": 0.931
+      },
+      "ic": {
+        "periods": 74,
+        "mean_ic": -0.0104,
+        "ic_std": 0.0902,
+        "icir": -0.58,
+        "t_stat": -0.994,
+        "hit_rate": 0.473,
+        "meaningful": false,
+        "clears_multiple_testing_bar": false
+      },
+      "monotonic_periods": 4,
+      "mean_quantile_spread_gross": -0.0004,
+      "mean_quantile_spread_net_of_cost": -0.0006,
+      "mean_round_trip_cost_bps": 2.0,
+      "spread_sharpe_per_period_gross": -0.042,
+      "spread_sharpe_per_period_net_of_cost": -0.061,
+      "deflated_sharpe_probability_gross": 0.114,
+      "deflated_sharpe_probability_net_of_cost": 0.086,
+      "trials_considered": 3,
+      "mean_weekly_top_percentile_book_turnover": 0.5421,
+      "illustrative_annualized_turnover": 27.3221
+    }
+  },
+  "probability_of_backtest_overfitting": 0.0,
+  "limitations": {
+    "analyst_revision_leg": "8 tickers, 360 point-in-time observations, 20260803T052915 to 20260812T061422 (pipeline/estimate_snapshots.py, collection_status FORWARD_COLLECTION_ONLY -- no history exists before collection began, so the analyst_revision leg cannot be reconstructed for any date this backtest walks).",
+    "market_cap_gate": "Disabled (minimum_market_cap=0 in this backtest's config). pipeline/data/backtest_cache does not track historical share counts, and applying today's share count to a historical price would be an unlabeled approximation rather than a measurement.",
+    "short_interest_screen": "Inert throughout: no historical short-interest-of-float or days-to-cover series exists, so the negative screen never suppresses a name here. Every eligible name in this report would additionally have faced that screen live.",
+    "sector_labels": "The CURRENT GICS sector is applied at every historical date (no point-in-time sector history in the cache). Affects the sector concentration cap and variant C's residualization.",
+    "universe": "pipeline/data/backtest_cache's present ticker list walked backward - the same current-constituent survivorship bias backtest_monthly.py already discloses for its own universe.",
+    "authority": "Supplementary historical measurement of the three already-registered swing-reversal variants (harness_freeze.json swing_reversal_variants, SA-2026-08-12-08). Does not replace, accelerate, or substitute for the prospective clock starting 2026-09-01, which remains the sole promotion authority. No new variant is introduced and no weight is tuned on these numbers."
+  }
+}

@@ -12,9 +12,26 @@ import { useAlerts } from '../lib/useAlerts.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import SetupQualityBreakdown from '../components/SetupQualityBreakdown.jsx'
+import InfoTag from '../components/InfoTag.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
+import { STRATEGY_LENSES, rankByLens, lensReason } from '../lib/researchScreens.js'
 
 const SETTINGS_KEY = 'valuesignal.watchlistSizing'
+const FILTER_SETTINGS_KEY = 'valuesignal.watchlistFilterSort'
+
+// Same registry Picks.jsx's strategy lenses draw from - momentum, reversal, and the rest are
+// independent screens run over the same universe in parallel, each with their own qualifying
+// bar. A watchlist ticker can clear more than one at once, so filtering is OR-across-selected,
+// not a single ranked list.
+const LENS_KEYS = Object.keys(STRATEGY_LENSES)
+
+const SORTS = {
+  recent: ['Recently added', null, 'The order you added names to this watchlist, newest first.'],
+  setup: ['Best buy for the price (setup quality)', (a, b) => (b.guidance?.setupScore ?? -1) - (a.guidance?.setupScore ?? -1),
+    'The same Setup quality score shown on each card: thesis, published research score, data coverage, and current guidance action, combined. A name with no published research sorts to the bottom.'],
+  upside: ['Highest upside to price target', (a, b) => (b.guidance?.targetUpside ?? -Infinity) - (a.guidance?.targetUpside ?? -Infinity),
+    'Analyst consensus target price versus the current price, as a percent. A name with no usable target sorts to the bottom.'],
+}
 
 function PriceTargetEditor({ item, suggested, onSave, onCreateAlert, alertBusy }) {
   const [dip, setDip] = useState(item.dipPrice ?? '')
@@ -84,15 +101,35 @@ function PriceTargetEditor({ item, suggested, onSave, onCreateAlert, alertBusy }
 export default function Watchlist() {
   const { data, loading, reload } = useData('advisor.json')
   const { preferences } = usePreferences()
-  const { currentUser } = useAuth()
+  const { currentUser, authError, retryAuth } = useAuth()
   const watchlist = useWatchlist()
   const { createRule } = useAlerts()
   const [input, setInput] = useState('')
   const [sizing, setSizing] = useState({ budget: '', maxPositionPct: '5' })
   const [alertBusyTicker, setAlertBusyTicker] = useState('')
   const [alertNotice, setAlertNotice] = useState(null)
+  const [activeFilters, setActiveFilters] = useState([])
+  const [sortBy, setSortBy] = useState('recent')
+  // Mobile cards default to a thin head + compact stat grid so more names are visible at
+  // once for comparison; the chart, full setup breakdown, and price-target editor sit behind
+  // a per-card expand toggle. Desktop always shows everything, same as before this existed.
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia?.('(max-width: 900px)').matches ?? false)
+  const [expandedTickers, setExpandedTickers] = useState(() => new Set())
   const tickers = watchlist.items.map((item) => item.ticker)
   const refresh = useAdvisorRefresh(data?.generated_at, reload, tickers)
+
+  useEffect(() => {
+    const query = window.matchMedia?.('(max-width: 900px)')
+    if (!query) return undefined
+    const update = (event) => setIsMobile(event.matches)
+    query.addEventListener?.('change', update)
+    return () => query.removeEventListener?.('change', update)
+  }, [])
+  const toggleExpanded = (ticker) => setExpandedTickers((current) => {
+    const next = new Set(current)
+    if (next.has(ticker)) next.delete(ticker); else next.add(ticker)
+    return next
+  })
 
   useEffect(() => {
     try {
@@ -101,10 +138,26 @@ export default function Watchlist() {
     } catch {
       // Invalid local sizing settings fall back to a blank budget and 5% cap.
     }
+    try {
+      const savedFilterSort = JSON.parse(localStorage.getItem(FILTER_SETTINGS_KEY))
+      if (savedFilterSort?.filters) setActiveFilters(savedFilterSort.filters.filter((key) => LENS_KEYS.includes(key)))
+      if (savedFilterSort?.sort && SORTS[savedFilterSort.sort]) setSortBy(savedFilterSort.sort)
+    } catch {
+      // Invalid local filter/sort settings fall back to no filter and recency order.
+    }
   }, [])
   const saveSizing = (next) => {
     setSizing(next)
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(next))
+  }
+  const saveFilterSort = (next) => {
+    setActiveFilters(next.filters)
+    setSortBy(next.sort)
+    localStorage.setItem(FILTER_SETTINGS_KEY, JSON.stringify(next))
+  }
+  const toggleFilter = (key) => {
+    const next = activeFilters.includes(key) ? activeFilters.filter((item) => item !== key) : [...activeFilters, key]
+    saveFilterSort({ filters: next, sort: sortBy })
   }
   const add = async () => {
     const value = input.trim().toUpperCase()
@@ -117,7 +170,7 @@ export default function Watchlist() {
     return (
       <div className="page-head"><div><span className="eyebrow">Saved research</span>
         <h1 className="page-title">My <span className="accent">watchlist</span></h1>
-        <p className="page-sub">Sign in to save a watchlist that syncs across your devices.</p></div></div>
+        <p className="page-sub">{authError || 'Firebase is connecting to your solo workspace.'}</p><button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button></div></div>
     )
   }
 
@@ -132,6 +185,27 @@ export default function Watchlist() {
   const sizingModeLabel = preferences.watchlistSizingMode === 'inverse-volatility'
     ? 'Equal risk by volatility'
     : 'Capped maximum'
+
+  // Each lens is run over just the watched names (not the full universe) so membership
+  // reflects "does this saved name currently clear this screen's bar," not a top-N cutoff
+  // meant for browsing hundreds of companies.
+  const lensMatches = Object.fromEntries(LENS_KEYS.map((key) => [
+    key, new Map(rankByLens(watchRows, key, watchRows.length).map((row) => [row.ticker, row])),
+  ]))
+  const decorated = watchlist.items.map((item) => {
+    const ticker = item.ticker
+    const row = byTicker[ticker]
+    const guidance = row ? watchlistGuidance(row, budget, maxPositionPct, {
+      sizingMode: preferences.watchlistSizingMode,
+      volatilityAllocation: volatilityAllocations[ticker],
+    }) : null
+    const matchedLensKeys = LENS_KEYS.filter((key) => lensMatches[key].has(ticker))
+    return { item, ticker, row, guidance, matchedLensKeys }
+  })
+  const visibleItems = activeFilters.length
+    ? decorated.filter((entry) => entry.matchedLensKeys.some((key) => activeFilters.includes(key)))
+    : decorated
+  const sortedItems = SORTS[sortBy][1] ? visibleItems.slice().sort(SORTS[sortBy][1]) : visibleItems
 
   const handleCreateDipAlert = async (item, dipPrice) => {
     setAlertBusyTicker(item.ticker)
@@ -158,7 +232,7 @@ export default function Watchlist() {
             <Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />
             {refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}
           </button>
-          <div className="result-count"><strong>{tickers.length}</strong><span>saved</span></div>
+          <div className="result-count"><strong>{sortedItems.length}</strong><span>{activeFilters.length ? `of ${tickers.length} shown` : 'saved'}</span></div>
         </div>
       </div>
       <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
@@ -191,14 +265,32 @@ export default function Watchlist() {
             value={sizing.maxPositionPct} onChange={(event) => saveSizing({ ...sizing, maxPositionPct: event.target.value })} />
         </label>
       </div>
+      <div className="watchlist-toolbar">
+        <div className="watchlist-filter-chips" role="group" aria-label="Filter by research screen">
+          <button type="button" className={`chip button-chip watchlist-filter-chip${activeFilters.length === 0 ? ' active' : ''}`}
+            onClick={() => saveFilterSort({ filters: [], sort: sortBy })}>All</button>
+          {LENS_KEYS.map((key) => (
+            <button key={key} type="button"
+              className={`chip button-chip watchlist-filter-chip${activeFilters.includes(key) ? ' active' : ''}`}
+              onClick={() => toggleFilter(key)}>
+              {STRATEGY_LENSES[key].label} ({lensMatches[key].size})
+            </button>
+          ))}
+        </div>
+        <span className="sort-with-info">
+          <label><span className="sr-only">Sort watchlist</span>
+            <select value={sortBy} onChange={(event) => saveFilterSort({ filters: activeFilters, sort: event.target.value })}>
+              {Object.keys(SORTS).map((key) => <option key={key} value={key}>Sort: {SORTS[key][0]}</option>)}
+            </select>
+          </label>
+          <InfoTag label={SORTS[sortBy][0]}>
+            <strong>{SORTS[sortBy][0]}</strong>
+            <p>{SORTS[sortBy][2]}</p>
+          </InfoTag>
+        </span>
+      </div>
       <div className="watchlist-grid">
-        {watchlist.items.map((item) => {
-          const ticker = item.ticker
-          const row = byTicker[ticker]
-          const guidance = watchlistGuidance(row, budget, maxPositionPct, {
-            sizingMode: preferences.watchlistSizingMode,
-            volatilityAllocation: volatilityAllocations[ticker],
-          })
+        {sortedItems.map(({ item, ticker, row, guidance, matchedLensKeys }) => {
           const suggested = row ? suggestPriceTargets(row) : { dipBuy: null, goodBuy: null }
           return (
             <article className="watchlist-card" key={ticker}>
@@ -208,38 +300,73 @@ export default function Watchlist() {
                 <button className="icon-button danger" onClick={() => watchlist.removeTicker(ticker)}
                   aria-label={`Remove ${ticker} from watchlist`}><Icon name="close" /></button>
               </div>
+              {matchedLensKeys.length > 0 && (
+                <div className="watchlist-card-tags">
+                  {matchedLensKeys.map((key) => (
+                    <span key={key} className={`chip screen-chip screen-chip-${key.toLowerCase()}`}
+                      title={lensReason(lensMatches[key].get(ticker), key) || STRATEGY_LENSES[key].label}>
+                      {STRATEGY_LENSES[key].label}
+                    </span>
+                  ))}
+                </div>
+              )}
               {row ? (
                 <>
-                  <Sparkline values={row.history?.closes || row.history?.growth || []} label={`${ticker} trend`} height={92} />
-                  <small className="as-of-line">As of {row.history?.dates?.at(-1) || row.data_as_of || 'the latest published close'}</small>
-                  <div className="watchlist-stats">
-                    <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : 'Unavailable'}</b></div>
-                    <div><span>Setup quality</span><b>{guidance.setupScore.toFixed(0)}</b></div>
-                    <div><span>Score</span><b>{row.score}</b></div>
-                  </div>
-                  <SetupQualityBreakdown guidance={guidance} compact />
-                  <div className="watchlist-plan">
-                    <div>
-                      <span>Yahoo consensus target</span>
-                      <b>{guidance.target ? `$${guidance.target.toFixed(2)}` : 'Unavailable'}</b>
-                      <small>{guidance.targetUpside == null
-                        ? 'Yahoo did not publish a usable target'
-                        : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '–'} analysts`}</small>
+                  {isMobile && (
+                    <div className="watchlist-compact-grid">
+                      <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : '–'}</b></div>
+                      <div><span>Setup</span><b>{guidance.setupScore.toFixed(0)}</b></div>
+                      <div><span>Score</span><b>{row.score}</b></div>
+                      <div><span>Upside</span><b>{guidance.targetUpside == null ? '–'
+                        : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}%`}</b></div>
+                      <div><span>Max size</span><b>{guidance.allocation > 0
+                        ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b></div>
+                      <div><span>Dip target</span><b>{item.dipPrice != null ? `$${Number(item.dipPrice).toFixed(2)}` : 'Not set'}</b></div>
                     </div>
-                    <div>
-                      <span>{guidance.sizingMode === 'inverse-volatility' ? 'Equal-risk maximum' : 'Capped maximum'}</span>
-                      <b>{guidance.allocation > 0 ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b>
-                      <small>{guidance.shares > 0
-                        ? guidance.sizingFallback
-                          ? `Up to ${guidance.shares} shares with capped fallback`
-                          : `Up to ${guidance.shares} shares${guidance.annualizedVolatility == null ? '' : ` at ${guidance.annualizedVolatility.toFixed(0)}% volatility`}`
-                        : guidance.hardBlocked ? 'Sizing blocked by published evidence' : 'Enter a budget above'}</small>
+                  )}
+                  {isMobile && (
+                    <button type="button" className="expand-button" aria-expanded={expandedTickers.has(ticker)}
+                      onClick={() => toggleExpanded(ticker)}>
+                      {expandedTickers.has(ticker) ? 'Hide chart & price targets' : 'Show chart, setup breakdown & price targets'}
+                      <Icon name="chevron" size={17} className={expandedTickers.has(ticker) ? 'rotated' : ''} />
+                    </button>
+                  )}
+                  {(!isMobile || expandedTickers.has(ticker)) && (
+                    <div className={isMobile ? 'research-expanded' : undefined}>
+                      <Sparkline values={row.history?.closes || row.history?.growth || []} label={`${ticker} trend`} height={92} />
+                      <small className="as-of-line">As of {row.history?.dates?.at(-1) || row.data_as_of || 'the latest published close'}</small>
+                      {!isMobile && (
+                        <div className="watchlist-stats">
+                          <div><span>Price</span><b>{row.price ? `$${row.price.toFixed(2)}` : 'Unavailable'}</b></div>
+                          <div><span>Setup quality</span><b>{guidance.setupScore.toFixed(0)}</b></div>
+                          <div><span>Score</span><b>{row.score}</b></div>
+                        </div>
+                      )}
+                      <SetupQualityBreakdown guidance={guidance} compact />
+                      <div className="watchlist-plan">
+                        <div>
+                          <span>Yahoo consensus target</span>
+                          <b>{guidance.target ? `$${guidance.target.toFixed(2)}` : 'Unavailable'}</b>
+                          <small>{guidance.targetUpside == null
+                            ? 'Yahoo did not publish a usable target'
+                            : `${guidance.targetUpside >= 0 ? '+' : ''}${guidance.targetUpside.toFixed(1)}% · ${guidance.analystCount || '–'} analysts`}</small>
+                        </div>
+                        <div>
+                          <span>{guidance.sizingMode === 'inverse-volatility' ? 'Equal-risk maximum' : 'Capped maximum'}</span>
+                          <b>{guidance.allocation > 0 ? `$${guidance.allocation.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '$0'}</b>
+                          <small>{guidance.shares > 0
+                            ? guidance.sizingFallback
+                              ? `Up to ${guidance.shares} shares with capped fallback`
+                              : `Up to ${guidance.shares} shares${guidance.annualizedVolatility == null ? '' : ` at ${guidance.annualizedVolatility.toFixed(0)}% volatility`}`
+                            : guidance.hardBlocked ? 'Sizing blocked by published evidence' : 'Enter a budget above'}</small>
+                        </div>
+                      </div>
+                      <PriceTargetEditor item={item} suggested={suggested}
+                        onSave={(updates) => watchlist.updateTargets(ticker, updates)}
+                        onCreateAlert={(dipPrice) => handleCreateDipAlert(item, dipPrice)}
+                        alertBusy={alertBusyTicker === ticker} />
                     </div>
-                  </div>
-                  <PriceTargetEditor item={item} suggested={suggested}
-                    onSave={(updates) => watchlist.updateTargets(ticker, updates)}
-                    onCreateAlert={(dipPrice) => handleCreateDipAlert(item, dipPrice)}
-                    alertBusy={alertBusyTicker === ticker} />
+                  )}
                 </>
               ) : <div className="inline-empty">This ticker is saved, but no current quote or research record was published. It will populate after a successful pipeline refresh that covers it.</div>}
             </article>
@@ -247,6 +374,14 @@ export default function Watchlist() {
         })}
       </div>
       {!tickers.length && <div className="empty-state"><Icon name="watchlist" size={30} /><h2>Your watchlist is empty</h2><p>Add a ticker above to start a focused research list.</p></div>}
+      {Boolean(tickers.length) && !sortedItems.length && (
+        <div className="empty-state">
+          <Icon name="watchlist" size={30} />
+          <h2>No saved names match this filter</h2>
+          <p>None of your watchlist tickers currently clear the selected research screen(s).</p>
+          <button className="secondary-button" onClick={() => saveFilterSort({ filters: [], sort: sortBy })}>Clear filters</button>
+        </div>
+      )}
     </>
   )
 }

@@ -151,7 +151,7 @@ def momentum_correlation_diagnostics(rows, fields=None, threshold=.80, family_ca
 
 def winsorize(values, lower=.05, upper=.95):
     finite = sorted(value for value in values if value is not None and math.isfinite(value))
-    if not finite: return []
+    if not finite: return [None] * len(values)
     lo = finite[min(len(finite) - 1, int((len(finite) - 1) * lower))]
     hi = finite[min(len(finite) - 1, int((len(finite) - 1) * upper))]
     return [None if value is None else min(hi, max(lo, value)) for value in values]

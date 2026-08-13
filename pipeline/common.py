@@ -5,6 +5,7 @@ No external dependencies beyond `requests` (and stdlib). Keeps every script cons
 
 import json
 import hashlib
+import math
 import os
 import subprocess
 import tempfile
@@ -141,6 +142,24 @@ def versioned_artifact(obj):
     return artifact
 
 
+def _json_safe(value):
+    """Replace non-finite floats with JSON's explicit missing-value marker.
+
+    Python's encoder otherwise writes Infinity/NaN even though neither token is valid JSON.
+    Browsers reject the entire research snapshot when one upstream ratio is non-finite, so
+    clean recursively and keep ``allow_nan=False`` as a final publication guard.
+    """
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_json_safe(item) for item in value)
+    return value
+
+
 def save_json(name, obj, to_config=False, to_store=False):
     """Atomically write JSON so readers never observe a partially-written payload."""
     base = STORE_DIR if to_store else (CONFIG_DIR if to_config else DATA_DIR)
@@ -152,7 +171,7 @@ def save_json(name, obj, to_config=False, to_store=False):
     fd, tmp = tempfile.mkstemp(prefix=f".{os.path.basename(name)}.", dir=directory, text=True)
     try:
         with os.fdopen(fd, "w") as f:
-            json.dump(obj, f, indent=2, default=str)
+            json.dump(_json_safe(obj), f, indent=2, default=str, allow_nan=False)
             f.write("\n")
         os.replace(tmp, path)
     finally:

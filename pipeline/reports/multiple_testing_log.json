@@ -1,0 +1,114 @@
+[
+  {
+    "test_id": "WO-1",
+    "declared_at": "2026-08-07T05:29:54+00:00",
+    "hypothesis": "run_manifest.score_distribution reports the champion score shown in the UI and used for ranking, not a shadow scoring variant.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "WO-2",
+    "declared_at": "2026-08-07T05:43:04+00:00",
+    "hypothesis": "The insider (SEC Form 4) layer is dark because SEC_USER_AGENT is unset, and unavailable insider evidence is read as neutral rather than absent.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "WO-3",
+    "declared_at": "2026-08-07T05:43:29+00:00",
+    "hypothesis": "ic_harness.py and backtest_monthly.py price every trade at a flat 10bps, ignoring costs.py's liquidity- and volatility-aware cost model entirely.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "WO-4",
+    "declared_at": "2026-08-07T08:54:31+00:00",
+    "hypothesis": "After controlling for the six standard factors (market, size, value, profitability, investment, momentum), ValueSignal's realized return stream shows residual alpha.",
+    "holdout_start": "2021-09 to 2026-06 (n=58 months; full-sample regression, no walk-forward split)",
+    "number_of_variants_tested": 1,
+    "decision": "ABANDON"
+  },
+  {
+    "test_id": "WO-5",
+    "declared_at": "2026-08-07T09:21:38+00:00",
+    "hypothesis": "Band/quantization artifacts (a metric crossing a scoring-band boundary on a small raw move) are the primary driver of the backtest's 64.9%-per-month rank churn.",
+    "holdout_start": "pipeline/pit_store, 2 days deep, 4 refresh-to-refresh transitions",
+    "number_of_variants_tested": 1,
+    "decision": "ABANDON"
+  },
+  {
+    "test_id": "A1-NEWS-NEUTRAL",
+    "declared_at": "2026-08-07T00:00:00+00:00",
+    "hypothesis": "news_intelligence.py::weighted_sentiment returning the configured neutral_score (50.0) for zero-coverage names, instead of signaling unavailability, distorts published scores for the 373 of 374 screen-universe names with no cleared news coverage.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "A3-FULL-UNIVERSE-ENRICHMENT",
+    "declared_at": "2026-08-07T00:00:00+00:00",
+    "hypothesis": "Seeding statement enrichment from the prior refresh's top 20 + 5 challengers (select_enrichment_priority) starves the model of statement-derived metrics for names a weaker prior model never surfaced, biasing which names can ever earn a high capital_allocation/accounting_quality score.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "INCONCLUSIVE"
+  },
+  {
+    "test_id": "C1-benchmark-suite",
+    "declared_at": "2026-08-07T14:20:00+00:00",
+    "hypothesis": "The strategy delivers something a liquid, tradeable style ETF could not -- a blunter bar than the academic factor model, and the one a user of this product actually faces.",
+    "holdout_start": "2021-09..2026-07",
+    "number_of_variants_tested": 14,
+    "decision": "ABANDON"
+  },
+  {
+    "test_id": "C2-strategy-diagnostics-and-regimes",
+    "declared_at": "2026-08-07T14:05:00+00:00",
+    "hypothesis": "The strategy's edge is stable across market-direction, volatility and rate regimes.",
+    "holdout_start": "2021-09..2026-07",
+    "number_of_variants_tested": 3,
+    "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "C3-cost-sensitivity-at-realized-turnover",
+    "declared_at": "2026-08-07T14:12:00+00:00",
+    "hypothesis": "A realistic tiered cost model gives up more than 200bps a year relative to the published flat 10bps.",
+    "holdout_start": "2021-08..2026-07",
+    "number_of_variants_tested": 9,
+    "decision": "INCONCLUSIVE"
+  },
+  {
+    "test_id": "C4-turnover-controls",
+    "declared_at": "2026-08-07T14:35:00+00:00",
+    "hypothesis": "Rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise rather than information.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 10,
+    "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "C5-score-calibration",
+    "declared_at": "2026-08-07T14:50:00+00:00",
+    "hypothesis": "Score buckets carry a measurable historical outcome distribution that can give a 0-100 score empirical meaning.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "INCONCLUSIVE"
+  },
+  {
+    "test_id": "C6-applicability-unification",
+    "declared_at": "2026-08-10T20:00:00+00:00",
+    "hypothesis": "The champion and v2 paths resolve metric applicability from the same authority and reach the same answers.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "C7-turnover-walkforward",
+    "declared_at": "2026-08-10T20:15:00+00:00",
+    "hypothesis": "The C4 in-sample turnover-control winners (smooth07, hold6) survive the promotion gates: a walk-forward split, PBO below 0.5, and a deflated Sharpe above 0.95.",
+    "holdout_start": "months 32-60 (one purged)",
+    "number_of_variants_tested": 7,
+    "decision": "ABANDON"
+  }
+]

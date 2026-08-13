@@ -21,9 +21,9 @@
   ],
   "properties": {
     "schema_version": {
-      "_comment": "Integer, additive-only. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js); writers never rename or remove a field.",
+      "_comment": "Integer. Readers migrate N->N+1 at load time (src/lib/schemaMigrations.js). Schema 6 is the one renaming exception to additive-only: `confidence` became `data_coverage` and the v2 layers' `confidence` became `evidence_weight_resolved`, because the name asserted reliability that a completeness ratio does not carry. advisorV5ToV6 carries old payloads across; pipeline/migrate_advisor_v2.assert_contract stops a payload being stamped with a version it does not satisfy.",
       "type": "integer",
-      "const": 5
+      "const": 6
     },
     "model_version": {
       "type": "string",
@@ -31,12 +31,29 @@
     },
     "model_metadata": {
       "type": "object",
-      "required": ["semantic_version", "git_commit_sha", "config_hash", "generated_at"],
+      "required": [
+        "semantic_version",
+        "git_commit_sha",
+        "config_hash",
+        "generated_at"
+      ],
       "properties": {
-        "semantic_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
-        "git_commit_sha": {"type": "string", "minLength": 7},
-        "config_hash": {"type": "string", "minLength": 12},
-        "generated_at": {"type": "string", "format": "date-time"}
+        "semantic_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "git_commit_sha": {
+          "type": "string",
+          "minLength": 7
+        },
+        "config_hash": {
+          "type": "string",
+          "minLength": 12
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "generated_at": {
@@ -71,13 +88,13 @@
           "name",
           "score",
           "stance",
-          "confidence",
           "components",
           "analysis_v2",
           "strengths",
           "risks",
           "history",
-          "hypothetical"
+          "hypothetical",
+          "data_coverage"
         ],
         "properties": {
           "ticker": {
@@ -92,11 +109,6 @@
             "type": "number",
             "minimum": 0,
             "maximum": 100
-          },
-          "confidence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
           },
           "stance": {
             "enum": [
@@ -129,7 +141,10 @@
                 "maximum": 100
               },
               "news_sentiment": {
-                "type": "number",
+                "type": [
+                  "number",
+                  "null"
+                ],
                 "minimum": 0,
                 "maximum": 100
               }
@@ -149,24 +164,69 @@
               "articles"
             ],
             "properties": {
-              "article_count": {"type": "integer", "minimum": 0},
-              "raw_article_count": {"type": "integer", "minimum": 0},
-              "coverage": {"type": "number", "minimum": 0, "maximum": 1},
-              "window_days": {"type": "integer", "minimum": 1},
-              "full_coverage_article_count": {"type": "integer", "minimum": 6},
-              "syndicated_copies_removed": {"type": "integer", "minimum": 0},
-              "discarded_low_confidence": {"type": "integer", "minimum": 0},
-              "weighting_method": {"enum": ["recency_source_filing_entity_novelty"]},
+              "article_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "raw_article_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "coverage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "window_days": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "full_coverage_article_count": {
+                "type": "integer",
+                "minimum": 6
+              },
+              "syndicated_copies_removed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "discarded_low_confidence": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "weighting_method": {
+                "enum": [
+                  "recency_source_filing_entity_novelty"
+                ]
+              },
               "articles": {
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": ["content_type", "source_quality_tier", "entity_confidence", "composite_weight"],
+                  "required": [
+                    "content_type",
+                    "source_quality_tier",
+                    "entity_confidence",
+                    "composite_weight"
+                  ],
                   "properties": {
-                    "content_type": {"enum": ["filing", "commentary"]},
-                    "source_quality_tier": {"type": "string"},
-                    "entity_confidence": {"type": "number", "minimum": 0, "maximum": 1},
-                    "composite_weight": {"type": "number", "minimum": 0}
+                    "content_type": {
+                      "enum": [
+                        "filing",
+                        "commentary"
+                      ]
+                    },
+                    "source_quality_tier": {
+                      "type": "string"
+                    },
+                    "entity_confidence": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "composite_weight": {
+                      "type": "number",
+                      "minimum": 0
+                    }
                   },
                   "additionalProperties": true
                 }
@@ -331,22 +391,59 @@
           },
           "analysis_v2": {
             "type": "object",
-            "required": ["model_version", "applicability_profile", "structural", "timeliness", "company_classification", "screen_memberships", "position_action", "metric_status"],
+            "required": [
+              "model_version",
+              "applicability_profile",
+              "structural",
+              "timeliness",
+              "company_classification",
+              "screen_memberships",
+              "position_action",
+              "metric_status"
+            ],
             "properties": {
-              "applicability_profile": { "type": "string" },
-              "company_classification": { "type": "string" },
-              "structural": { "$ref": "#/$defs/scoreOutput" },
-              "timeliness": { "$ref": "#/$defs/scoreOutput" },
-              "screen_memberships": { "type": "array", "items": { "type": "string" } },
-              "position_action": { "type": ["object", "null"] },
-              "metric_status": { "type": "object" }
+              "applicability_profile": {
+                "type": "string"
+              },
+              "company_classification": {
+                "type": "string"
+              },
+              "structural": {
+                "$ref": "#/$defs/scoreOutput"
+              },
+              "timeliness": {
+                "$ref": "#/$defs/scoreOutput"
+              },
+              "screen_memberships": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "position_action": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "metric_status": {
+                "type": "object"
+              }
             }
           },
           "recommendation_v2": {
             "type": "object",
             "description": "Shadow-only decision-v2.0.0 output; legacy recommendation remains active."
           },
-          "valuation_percentile": { "$ref": "#/$defs/peerPercentile" }
+          "valuation_percentile": {
+            "$ref": "#/$defs/peerPercentile"
+          },
+          "data_coverage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "_comment": "Share of the evidence this model intended to use that actually resolved. Not a reliability score and not a probability of a price move."
+          }
         },
         "additionalProperties": true
       }
@@ -619,6 +716,15 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "candidate_source": {
+                      "_comment": "How this row entered theme scoring: already a published leader, a portfolio holding, or a sector/peer-group neighbour of the theme's seed tickers surfaced before it clears the published leaderboard.",
+                      "enum": [
+                        "published_leader",
+                        "portfolio",
+                        "sector_peer",
+                        null
+                      ]
                     }
                   },
                   "additionalProperties": true
@@ -667,40 +773,157 @@
     },
     "run_manifest": {
       "type": "object",
-      "required": ["run_id", "generated_at", "data_cutoff", "code_commit_hash", "config_hash", "schema_version", "model_version", "universe_version", "provider_status", "cache", "stale_field_count", "provider_conflict_count", "score_distribution", "rejected_at_each_step"]
+      "required": [
+        "run_id",
+        "generated_at",
+        "data_cutoff",
+        "code_commit_hash",
+        "config_hash",
+        "schema_version",
+        "model_version",
+        "universe_version",
+        "provider_status",
+        "cache",
+        "stale_field_count",
+        "provider_conflict_count",
+        "score_distribution",
+        "rejected_at_each_step"
+      ]
     }
   },
   "additionalProperties": true,
   "$defs": {
     "scoreOutput": {
       "type": "object",
-      "required": ["raw_score", "effective_score", "confidence", "coverage", "available_weight", "applicable_weight", "stale_weight", "conflicted_weight", "missing_metrics", "suppressed_metrics", "stale_metrics", "provider_conflicts", "classification"],
+      "required": [
+        "raw_score",
+        "effective_score",
+        "coverage",
+        "available_weight",
+        "applicable_weight",
+        "stale_weight",
+        "conflicted_weight",
+        "missing_metrics",
+        "suppressed_metrics",
+        "stale_metrics",
+        "provider_conflicts",
+        "classification",
+        "evidence_weight_resolved"
+      ],
       "properties": {
-        "raw_score": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-        "effective_score": { "type": "number", "minimum": 0, "maximum": 100 },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
-        "available_weight": { "type": "number", "minimum": 0 },
-        "applicable_weight": { "type": "number", "minimum": 0 },
-        "stale_weight": { "type": "number", "minimum": 0 },
-        "conflicted_weight": { "type": "number", "minimum": 0 },
-        "missing_metrics": { "type": "array", "items": { "type": "string" } },
-        "suppressed_metrics": { "type": "array", "items": { "type": "string" } },
-        "stale_metrics": { "type": "array", "items": { "type": "string" } },
-        "provider_conflicts": { "type": "array", "items": { "type": "string" } },
-        "classification": { "type": "string" }
+        "raw_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "effective_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "available_weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "applicable_weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "stale_weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "conflicted_weight": {
+          "type": "number",
+          "minimum": 0
+        },
+        "missing_metrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "suppressed_metrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stale_metrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "provider_conflicts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "classification": {
+          "type": "string"
+        },
+        "evidence_weight_resolved": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       }
     },
     "peerPercentile": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "properties": {
-        "value": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
-        "display_value": { "type": ["number", "null"], "minimum": 0, "maximum": 99 },
-        "peer_group_id": { "type": "string" },
-        "peer_count_total": { "type": "integer", "minimum": 0 },
-        "peer_count_with_valid_data": { "type": "integer", "minimum": 0 },
-        "minimum_peer_count": { "type": "integer", "minimum": 1 },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "display_value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 99
+        },
+        "peer_group_id": {
+          "type": "string"
+        },
+        "peer_count_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peer_count_with_valid_data": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum_peer_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       }
     }
   }

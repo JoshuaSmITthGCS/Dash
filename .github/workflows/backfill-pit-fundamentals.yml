@@ -1,0 +1,147 @@
+name: Backfill point-in-time fundamentals
+
+# Reconstructs as-reported fundamentals from SEC EDGAR XBRL, keyed by CIK and stamped with
+# the date each filing was actually accepted. This is the substrate the research program in
+# research/STATE.md Phases 4-10 needs and does not have: the point-in-time store currently
+# holds a handful of days, and every other fundamental source in this repository is restated,
+# which cannot be corrected after the fact.
+#
+# Start with `audit-only` to see how many of the ~910 universe tickers resolve to a CIK and
+# which are ambiguous. Then run `sample` (25 companies) to confirm the shape of what lands.
+# Then run `full`. The job is append-only and resumable: re-running skips observations it
+# already holds, so an interrupted or rate-limited run picks up where it stopped.
+#
+# Every run commits its report to main, audit-only included, so the outcome is reviewable
+# afterwards rather than only in a log that scrolls away:
+#
+#   pipeline/data/pit/entity_audit.json            ticker -> CIK resolution, every run
+#   pipeline/data/pit/entity_map.json              the SEC ticker map this run resolved against
+#   pipeline/data/pit/fundamentals_manifest.json   per-company coverage, sample and full runs
+#   pipeline/data/pit/fundamentals/*.jsonl         the observations, sharded by CIK
+#   pipeline/data/pit/fundamental_restatements.jsonl  periods reported more than once
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: How much to fetch
+        required: true
+        default: audit-only
+        type: choice
+        options:
+          - audit-only     # resolve tickers to CIKs, fetch no facts
+          - sample         # first 25 companies
+          - full           # the whole universe
+      since:
+        description: "Drop periods ending before this date (blank = all history)"
+        required: false
+        default: '2010-01-01'
+        type: string
+  schedule:
+    # Monthly. Filings arrive continuously but a company files at most quarterly, so a daily
+    # sweep would re-read ~900 unchanged companyfacts documents to find nothing. Minute 11
+    # rather than 0: GitHub documents scheduled events as most likely to be dropped on the hour.
+    - cron: '11 6 3 * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pit-fundamentals-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    # A full sweep is ~910 companyfacts documents at 9 requests/second, and several of them
+    # are tens of megabytes. Most of the wall time is deliberate rate-limit pacing.
+    timeout-minutes: 120
+    env:
+      # SEC fair-access policy requires a User-Agent naming a real contact address. The job
+      # refuses to fetch anything without one rather than sending an anonymous request.
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Verify the SEC user agent is configured
+        run: |
+          if [ -z "${SEC_USER_AGENT}" ]; then
+            echo "::error::SEC_USER_AGENT is not set. Add it as a repository secret, for" \
+                 "example 'ValueSignal research you@example.com'. SEC fair-access policy" \
+                 "requires a declaring User-Agent with a contact address."
+            exit 1
+          fi
+
+      # A single-file store projects to 2.2 GB at full-universe scale, past GitHub's 100 MB
+      # per-file limit. Fail before fetching rather than after, if a shard ever approaches it.
+      - name: Guard the store against the file size limit
+        run: PYTHONPATH=pipeline python -m pytest pipeline/tests/test_pit_store.py -q
+
+      - name: Backfill
+        run: |
+          set -o pipefail
+          case "${{ inputs.scope || 'full' }}" in
+            audit-only) ARGS="--audit-only" ;;
+            sample)     ARGS="--limit 25" ;;
+            *)          ARGS="" ;;
+          esac
+          SINCE="${{ inputs.since }}"
+          if [ -n "${SINCE}" ]; then ARGS="${ARGS} --since ${SINCE}"; fi
+          echo "Running: python pipeline/build_pit_fundamentals.py ${ARGS}"
+          python pipeline/build_pit_fundamentals.py ${ARGS} | tee backfill-summary.json
+
+      - name: Summarise into the run log
+        if: always()
+        run: |
+          {
+            echo "### Point-in-time backfill"
+            echo '```json'
+            cat backfill-summary.json 2>/dev/null || echo '{}'
+            echo '```'
+            if [ -d pipeline/data/pit/fundamentals ]; then
+              echo "Observations on disk: $(cat pipeline/data/pit/fundamentals/*.jsonl | wc -l)"
+              echo "Shards: $(ls pipeline/data/pit/fundamentals | wc -l), largest $(du -h pipeline/data/pit/fundamentals/*.jsonl | sort -h | tail -1 | cut -f1)"
+            fi
+            if [ -f pipeline/data/pit/fundamental_restatements.jsonl ]; then
+              echo "Restatements recorded: $(wc -l < pipeline/data/pit/fundamental_restatements.jsonl)"
+            fi
+            echo ""
+            echo "Committed to main for review: pipeline/data/pit/entity_audit.json" \
+                 "and, for a sample or full run, fundamentals_manifest.json."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Committed on every run, audit-only included. An audit whose only record is a log
+      # that scrolls away cannot be read afterwards, and the resolution report is the thing
+      # to check before trusting any fetched history.
+      - name: Commit the store
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A pipeline/data/pit
+          if git diff --cached --quiet; then
+            echo "Nothing changed; nothing to commit."
+            exit 0
+          fi
+          case "${{ inputs.scope || 'full' }}" in
+            audit-only) MESSAGE="chore(data): audit ticker-to-CIK resolution for the universe" ;;
+            sample)     MESSAGE="chore(data): sample point-in-time fundamentals from SEC EDGAR XBRL" ;;
+            *)          MESSAGE="chore(data): backfill point-in-time fundamentals from SEC EDGAR XBRL" ;;
+          esac
+          git commit -m "${MESSAGE}"
+          # The advisor refresh writes to main on its own schedule, so rebase rather than
+          # fail when the two land close together.
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((2 ** attempt))
+          done
+          echo "::error::Could not push the backfill after four attempts."
+          exit 1

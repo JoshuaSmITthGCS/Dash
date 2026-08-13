@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from './FirebaseAuthContext'
-import { isRefreshDue, msUntilNextBoundary } from './nightlyRefresh'
+import { msUntilNextBoundary } from './nightlyRefresh'
 
 const storageKey = (userId) => `valuesignal.portfolioQuotes.${userId}`
 
@@ -87,15 +87,14 @@ export function usePortfolioQuotes(symbols) {
     }
   }
 
-  // Refresh once a day at 9pm local time – after Nasdaq/NYSE after-hours trading has wound
-  // down – without the user having to press the button. See src/lib/nightlyRefresh.js for
-  // why 9pm and how the catch-up-if-opened-late behavior works. Both the refresh function
-  // and the latest fetchedAt are read through refs so the recursive setTimeout chain always
-  // sees current state, not whatever it closed over the one time the effect ran.
+  // Refresh immediately whenever the portfolio is opened or the user signs in – reloading
+  // the tab or logging back in shouldn't show stale cached prices until 9pm rolls around –
+  // and then once a day at 9pm local time – after Nasdaq/NYSE after-hours trading has wound
+  // down – for as long as the tab stays open. See src/lib/nightlyRefresh.js for why 9pm.
+  // requestRefresh is read through a ref so the recursive setTimeout chain always calls the
+  // current closure, not whatever it closed over the one time the effect ran.
   const requestRefreshRef = useRef(requestRefresh)
   useEffect(() => { requestRefreshRef.current = requestRefresh })
-  const fetchedAtRef = useRef(state.fetchedAt)
-  useEffect(() => { fetchedAtRef.current = state.fetchedAt })
 
   const tickerKey = [...new Set(symbols.map((symbol) => String(symbol || '').trim().toUpperCase()).filter(Boolean))]
     .sort().join(',')
@@ -104,9 +103,12 @@ export function usePortfolioQuotes(symbols) {
     if (!currentUser || !tickerKey) return undefined
     let timer
     const scheduleNext = () => {
-      if (isRefreshDue(fetchedAtRef.current)) requestRefreshRef.current()
-      timer = setTimeout(scheduleNext, msUntilNextBoundary())
+      timer = setTimeout(() => {
+        requestRefreshRef.current()
+        scheduleNext()
+      }, msUntilNextBoundary())
     }
+    requestRefreshRef.current()
     scheduleNext()
     return () => clearTimeout(timer)
   }, [currentUser, tickerKey])

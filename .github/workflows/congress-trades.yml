@@ -17,9 +17,14 @@ concurrency:
 
 jobs:
   collect:
-    if: github.ref == 'refs/heads/main'
+    # Scheduled runs stay on main; a manual dispatch may run from any branch to exercise a
+    # collector change against the live provider. The commit step below stays gated on main,
+    # so a branch run publishes nothing.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The public mirrors serve full disclosure history in one file each, tens of MB, so the
+    # collection step is dominated by two large downloads rather than by many small requests.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,7 +37,30 @@ jobs:
         env:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         run: python pipeline/build_congress_screen.py
+      - name: Summarise what was collected
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          payload = json.load(open("public/data/screens/congress-trades.json"))
+          print(f"**Status:** `{payload.get('status')}`\n")
+          if payload.get("degraded_reason"):
+              print(f"> {payload['degraded_reason']}\n")
+          for error in payload.get("source_errors") or []:
+              print(f"- source error: `{error}`")
+          counts = payload.get("source_counts") or {}
+          # Printed per source, not just as a total: "senate-efd read 40, mirrors read 0" is
+          # a partially working screen, and a single total cannot say which half is missing.
+          for source, count in sorted(counts.items()):
+              print(f"- source `{source}`: {count} usable row(s)")
+          if not counts:
+              print("- no source returned any rows")
+          print(f"\n- disclosures published: {len(payload.get('results') or [])}")
+          print(f"- summary: `{json.dumps(payload.get('summary') or {})}`")
+          PY
+          cat "$GITHUB_STEP_SUMMARY"
       - name: Commit collected data with retry
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
           git config user.name "valuesignal-data-bot"

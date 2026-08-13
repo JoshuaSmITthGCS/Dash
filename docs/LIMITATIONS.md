@@ -23,12 +23,26 @@ more depth.
 
 - **The IC harness has not reached minimum history.** 0 of 24 eligible periods as of
   `docs/BASELINE-2026-08-06.md`. No IC, ICIR, deflated Sharpe, or PBO statistic in this repo
-  represents a completed, statistically meaningful test.
-- **No sector-residual forecast target is implemented.** The research contract's primary
-  target (63-trading-day forward sector-residual return) is specified but not built;
-  `ic_harness.py` scores raw forward return over calendar-day horizons instead
-  (`docs/RESEARCH-CONTRACT.md`).
-- **No promotion has occurred**, and none is being proposed by this upgrade.
+  represents a completed, statistically meaningful test. This gates component IC, score
+  calibration, and any promotion.
+- **The score has no empirical calibration.** `score_calibration.py` publishes
+  `insufficient_data` for every bucket and `confidence_detail.historical_calibration` stays
+  null. A score of 84 is a rank, not a statement about historical outcomes
+  (`docs/ALGORITHM-RESEARCH-RESULTS.md` §11).
+- **No signal has been promoted.** The four PROMOTE decisions in the registry are all defect
+  fixes to existing behaviour, not new evidence; 44 variants have been tried across 12
+  experiments (`pipeline/reports/experiment_registry.json`).
+- **The only measured evidence points to a factor tilt, not alpha.** Six-factor annualized
+  alpha −2.57% at Newey-West |t| = 0.437; none of 14 tradeable benchmarks beaten with
+  significant alpha. That evidence comes from a survivorship-biased five-year backtest using
+  approximated filing timestamps and raw (not sector-residual) returns, so it is the best
+  available reading rather than a settled finding (`docs/ALGORITHM-RESEARCH-RESULTS.md`).
+- **The strategy's returns are regime-dependent.** Strongly positive in falling rates and
+  drawdowns, strongly negative in rising rates (−16.9pp annualized against SPY). Full-sample
+  statistics average over a split this wide.
+
+*Closed in this pass:* the sector-residual, trading-session forecast target is now implemented
+(`docs/RESEARCH-CONTRACT.md` §2), as are purge/embargo controls.
 
 ## Model coverage
 
@@ -40,7 +54,14 @@ more depth.
 - **9 of 16 screen presets are specification-only** — declared with their exact ranking/filter
   rules but no scoring function exists (`docs/SCREEN-PRESETS.md`).
 - **Only 1 of 6 portfolio-construction methods is built** (score-weighted top-N;
-  `docs/PORTFOLIO-CONSTRUCTION.md`).
+  `docs/PORTFOLIO-CONSTRUCTION.md`). Four turnover controls exist as tested challengers
+  (`portfolio_construction.py`), now measured in-sample on the 360-symbol price cache
+  (`pipeline/reports/turnover_control_matrix.json`) but with no walk-forward evidence, and
+  none promoted. The results are non-monotonic in their own parameters, which is the usual
+  signature of noise.
+- **Portfolio size and weighting matrices cannot be evaluated from committed data.** The
+  backtest artifact stores only each rebalance's top-20 picks — no full ranking and no per-name
+  returns — so top-10/40/60 and alternative weighting schemes cannot be replayed offline.
 - **The bounded technical-indicator family is 4 indicators**, not the broader set discussed in
   the literature review that motivated this — declined as likely data-snooping evidence
   (`technical_indicators.py`'s module docstring).

@@ -2,7 +2,7 @@
   "_comment": "All tunable knobs live here. Change weights/thresholds without touching code.",
   "model": {
     "semantic_version": "3.2.0",
-    "advisor_schema_version": 5,
+    "advisor_schema_version": 6,
     "etf_schema_version": 5,
     "finance_schema_version": 3,
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
@@ -23,7 +23,7 @@
     },
     "signal_corrections": {
       "enabled": true,
-      "short_horizon_treatment": "neutral",
+      "short_horizon_treatment": "reversal",
       "reversal_weight": 0.08,
       "shrinkage_target": 50.0,
       "shrinkage_max_pull": 1.0,
@@ -39,12 +39,17 @@
         "expectations": 0.15,
         "macro_regime": 0.15,
         "insider_positive": 0.25,
-        "insider_negative": 0.15
+        "insider_negative": 0.15,
+        "customer_concentration_risk": 0.15,
+        "geographic_concentration": 0.1,
+        "institutional_13f_positive": 0.15,
+        "institutional_13f_negative": 0.1,
+        "congressional_buying": 0.15
       },
-      "_comment": "The cumulative challenger neutralizes short-horizon relative strength, applies confidence shrinkage once, and expresses every modifier allocation as a fraction of the combined cap."
+      "_comment": "The cumulative challenger applies data-coverage shrinkage once and expresses every modifier allocation as a fraction of the combined cap. Its short-horizon treatment is 'reversal' rather than 'neutral' now that the champion is neutral: with both set to neutral the variant was identical to the champion and the comparison tested nothing. Reversal asks the open question -- whether short-horizon relative strength carries contrarian information -- at the reduced reversal_weight."
     }
   },
-  "short_horizon_treatment": "legacy_momentum",
+  "short_horizon_treatment": "neutral",
   "confidence": {
     "_comment": "Decomposes the single confidence scalar (weighted fundamental/technical/news coverage, see scorer.weighted_coverage) into the components docs/RESEARCH-CONTRACT.md's confidence redesign calls for. This is additive: it does not change the score, the champion formula, or the existing 'confidence' field -- it publishes a confidence_detail breakdown alongside it so a low score can be explained ('why') rather than just observed.",
     "freshness_stale_after_hours": 36,
@@ -59,21 +64,39 @@
       "6M": 182,
       "12M": 365
     },
+    "_horizons_days_comment": "Calendar-day horizons: secondary diagnostics only. horizons_sessions below is the preregistered primary target (B1) -- real trading sessions from public/data/etf/SPY.json, not calendar time.",
+    "horizons_sessions": {
+      "1M": 21,
+      "3M": 63,
+      "6M": 126,
+      "12M": 252
+    },
+    "primary_horizon": "3M",
+    "sector_residual_minimum_peers": 3,
     "periods_per_year": 12,
     "minimum_icir_periods": 24,
     "lookahead_rank_ic_threshold": 0.1,
     "confidence_interval_z": 1.96,
-    "quantile_counts": [5, 10],
+    "quantile_counts": [
+      5,
+      10
+    ],
     "long_short_cost_bps": 10.0,
+    "cost_model": "flat",
+    "cost_scenario": "base",
     "shadow_strategy_trials": 5,
-    "snapshot_schema_version": 1,
+    "snapshot_schema_version": 2,
     "modifier_fields": [
       "sector_valuation",
       "short_interest",
       "liquidity",
       "expectations",
       "macro_regime",
-      "insider_activity"
+      "insider_activity",
+      "customer_concentration_risk",
+      "geographic_concentration",
+      "institutional_13f",
+      "congressional_buying"
     ],
     "_comment": "Prospective point-in-time validation only. Headline statistics stay hidden until the configured monthly history gate is met."
   },
@@ -94,15 +117,12 @@
     "thesis_transition_width": 2.0,
     "research_center": 65.0,
     "research_transition_width": 20.0,
-    "confidence_center": 0.5,
-    "confidence_transition_width": 0.3,
     "transition_slope": 4.0,
     "neutral_subscore": 0.5,
-    "hard_confidence_floor": 0.45,
     "weights": {
       "thesis": 0.3,
       "research": 0.3,
-      "confidence": 0.2,
+      "coverage": 0.2,
       "guidance": 0.2
     },
     "guidance_scores": {
@@ -118,7 +138,10 @@
     },
     "default_sizing_mode": "capped",
     "minimum_annualized_volatility_pct": 5.0,
-    "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, confidence, and published-guidance subscores. Only confidence below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap."
+    "_comment": "Watchlist quality is a weighted geometric mean of continuous thesis, research, data coverage, and published-guidance subscores. Only data coverage below the hard floor or a published Sell blocks sizing. Equal-risk sizing scales each name against the calmest covered name and retains the same per-name cap.",
+    "coverage_center": 0.5,
+    "coverage_transition_width": 0.3,
+    "hard_coverage_floor": 0.45
   },
   "watchlist_price_targets": {
     "_comment": "Suggested entry levels for a watchlist name the user does not yet own -- both are explicit heuristics, not predictions, and every result states its own derivation so the number is never presented as more certain than it is. dip_buy is a volatility-scaled distance below the current price (the same ATR/sigma-scaling philosophy as position_risk's stop-loss levels, but anchored to current price since a watchlist name has no purchase high-water-mark). good_buy is a valuation-percentile-based discount: only applies a discount when the name is priced richer than its own configured fair percentile against sector/industry peers (peer_groups.py desirability_percentile, where higher = cheaper) -- a name already cheap relative to peers gets good_buy == current price rather than an invented discount.",
@@ -136,13 +159,72 @@
   "portfolio_analytics": {
     "trading_days_per_year": 252,
     "performance_minimum_observations": 20,
+    "acceleration": {
+      "_comment": "Portfolio-level acceleration against the benchmark (src/lib/portfolioAcceleration.js): beta-adjusted excess return over the most recent leg_days, less the same over the leg_days before it, divided by the portfolio's own tracking noise. Beta-adjusting is what separates a portfolio that outran the index from one the index carried; dividing by tracking noise makes the reading comparable across a concentrated book and a diversified one. leg_days is a calendar quarter rather than 63 trading sessions because the portfolio value series is not guaranteed to be daily. skip_days drops the last week, where short-term reversal lives. Same measure as market_behavior.relative_acceleration, which does this per company on daily closes.",
+      "leg_days": 91,
+      "skip_days": 7,
+      "minimum_intervals_per_leg": 6
+    },
+    "benchmark_comparison": {
+      "_comment": "Up/down capture and batting average (src/lib/portfolioBenchmarkComparison.js). Capture splits the record by which way the index went, because a single blended ratio cannot distinguish a portfolio that wins by keeping up in rallies from one that wins by losing less in selloffs - opposite portfolios with the same Sharpe. Batting average is bucketed by calendar month rather than by observation: a hit rate is meaningless without a stated cadence, and monthly makes it independent of how densely the value series happens to be sampled.",
+      "minimum_intervals_per_side": 8,
+      "minimum_months": 6
+    },
+    "short_term_view": {
+      "_comment": "Fast benchmark-relative reads (src/lib/portfolioShortTermView.js) for the horizons the quarter- and year-scale measures cannot speak to, and for accounts too new for them. Short windows are mostly noise, so every window is published beside a noise floor - one standard error of this portfolio's own tracking noise over a window of that length - and a reading inside the floor is labelled as such rather than reported as a result. Windows report independently: three weeks of history answers the week and honestly declines the month. Beta for the adjustment is fitted over baseline_days rather than the short window itself, so a one-week reading is not adjusted by a one-week beta; below minimum_intervals_for_beta the excess falls back to a plain difference and says so.",
+      "window_days": [7, 30],
+      "minimum_intervals": 3,
+      "minimum_intervals_for_beta": 20,
+      "baseline_days": 180,
+      "tracking_risk_days": 30
+    },
     "performance_metric_tones": {
-      "informationRatio": { "good_min": 0.25, "bad_max": -0.25 },
-      "sharpe": { "good_min": 0.5, "bad_max": 0.0 },
-      "sortino": { "good_min": 0.5, "bad_max": 0.0 },
-      "calmar": { "good_min": 0.5, "bad_max": 0.0 },
-      "maxDrawdown": { "good_min": -10.0, "bad_max": -20.0 },
-      "currentDrawdown": { "good_min": -5.0, "bad_max": -10.0 }
+      "acceleration": {
+        "good_min": 1.0,
+        "bad_max": -1.0
+      },
+      "captureSpread": {
+        "good_min": 10.0,
+        "bad_max": -10.0
+      },
+      "battingAveragePct": {
+        "good_min": 55.0,
+        "bad_max": 45.0
+      },
+      "shortTermExcessPct": {
+        "_comment": "Deliberately wide. A short-horizon excess return is mostly noise, and colouring a +0.4% week green would tell the reader it means something. The tile only takes a tone once the move clears its own noise floor, and these bounds keep even that conservative.",
+        "good_min": 2.0,
+        "bad_max": -2.0
+      },
+      "longestUnderwaterDays": {
+        "_comment": "Fewer days underwater is better, and tone bounds are read as higher-is-better, so the tile passes the negated day count as its tone value: two months or less underwater reads good, nine months or more reads bad. Up and down capture carry no bounds on purpose - neither is good or bad without the other half, which is what captureSpread scores.",
+        "good_min": -60.0,
+        "bad_max": -270.0
+      },
+      "informationRatio": {
+        "good_min": 0.25,
+        "bad_max": -0.25
+      },
+      "sharpe": {
+        "good_min": 0.5,
+        "bad_max": 0.0
+      },
+      "sortino": {
+        "good_min": 0.5,
+        "bad_max": 0.0
+      },
+      "calmar": {
+        "good_min": 0.5,
+        "bad_max": 0.0
+      },
+      "maxDrawdown": {
+        "good_min": -10.0,
+        "bad_max": -20.0
+      },
+      "currentDrawdown": {
+        "good_min": -5.0,
+        "bad_max": -10.0
+      }
     },
     "risk_free_series": "fed_funds",
     "risk_free_fallback_annual_pct": 0.0,
@@ -154,7 +236,7 @@
     "xirr_max_iterations": 120,
     "correlation_lookback_days": 252,
     "correlation_minimum_observations": 60,
-    "eigenvalue_tolerance": 0.0000000001,
+    "eigenvalue_tolerance": 1e-10,
     "eigenvalue_max_iterations": 100,
     "diversification_target_effective_holdings": 12.0,
     "diversification_target_effective_sectors": 6.0,
@@ -175,7 +257,7 @@
     "factor_minimum_monthly_observations": 24,
     "factor_annualization_months": 12,
     "factor_loading_summary_threshold": 0.15,
-    "factor_standard_error_tolerance": 0.000000000001,
+    "factor_standard_error_tolerance": 1e-12,
     "_comment": "Modified Dietz weights settled external flows by time invested. Correlation analytics use trailing daily total-price returns. The diversification score gives half its weight to effective bets and the diversification ratio, with the other half calibrated from HHI concentration. Performance metric tones use configured good minimums and bad maximums. Values between those boundaries remain neutral, and drawdowns are better when they are closer to zero."
   },
   "etf_lookthrough": {
@@ -207,38 +289,97 @@
     "history_chart_width": 300,
     "history_chart_height": 80,
     "stance_bands": [
-      { "minimum": 75.0, "label": "ATTRACTIVE" },
-      { "minimum": 60.0, "label": "PROMISING" },
-      { "minimum": 45.0, "label": "MIXED" },
-      { "minimum": 0.0, "label": "CAUTION" }
+      {
+        "minimum": 75.0,
+        "label": "ATTRACTIVE"
+      },
+      {
+        "minimum": 60.0,
+        "label": "PROMISING"
+      },
+      {
+        "minimum": 45.0,
+        "label": "MIXED"
+      },
+      {
+        "minimum": 0.0,
+        "label": "CAUTION"
+      }
     ],
     "factor_groups": {
-      "value": ["valuation"],
-      "quality": ["profitability", "financial_health", "accounting_quality"],
-      "growth": ["growth"],
-      "momentum": ["momentum_12_1", "relative_strength"],
-      "sentiment": ["news_sentiment"],
-      "risk": ["financial_health", "risk_adjusted", "drawdown_resilience", "low_beta"]
+      "value": [
+        "valuation"
+      ],
+      "quality": [
+        "profitability",
+        "financial_health",
+        "accounting_quality"
+      ],
+      "growth": [
+        "growth"
+      ],
+      "momentum": [
+        "momentum_12_1",
+        "relative_strength"
+      ],
+      "sentiment": [
+        "news_sentiment"
+      ],
+      "risk": [
+        "financial_health",
+        "risk_adjusted",
+        "drawdown_resilience",
+        "low_beta"
+      ]
     },
     "percent_metrics": [
-      "return_on_equity", "return_on_invested_capital", "gross_profits_to_assets",
-      "free_cash_flow_yield", "profit_margin", "revenue_growth", "earnings_growth",
-      "fcf_growth_3y", "operating_margin_trend", "earnings_surprise", "net_buyback_yield",
-      "stock_comp_to_revenue", "asset_growth", "accruals_ratio",
-      "days_sales_outstanding_trend", "inventory_days_trend"
+      "return_on_equity",
+      "return_on_invested_capital",
+      "gross_profits_to_assets",
+      "free_cash_flow_yield",
+      "profit_margin",
+      "revenue_growth",
+      "earnings_growth",
+      "fcf_growth_3y",
+      "operating_margin_trend",
+      "earnings_surprise",
+      "net_buyback_yield",
+      "stock_comp_to_revenue",
+      "asset_growth",
+      "accruals_ratio",
+      "days_sales_outstanding_trend",
+      "inventory_days_trend"
     ],
     "multiple_metrics": [
-      "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
-      "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "debt_to_equity", "current_ratio",
-      "interest_coverage", "net_debt_to_ebitda", "capex_to_depreciation"
+      "peg",
+      "forward_pe",
+      "sales_multiple",
+      "price_to_book",
+      "price_to_tangible_book",
+      "ev_to_ebitda",
+      "ev_to_ebit",
+      "ev_to_fcf",
+      "debt_to_equity",
+      "current_ratio",
+      "interest_coverage",
+      "net_debt_to_ebitda",
+      "capex_to_depreciation"
     ],
     "anomaly_rules": [
       {
         "id": "margin_growth_divergence",
         "severity": "watch",
         "conditions": [
-          { "metric": "operating_margin_trend", "operator": "lte", "value": -0.01 },
-          { "metric": "revenue_growth", "operator": "gte", "value": 0.1 }
+          {
+            "metric": "operating_margin_trend",
+            "operator": "lte",
+            "value": -0.01
+          },
+          {
+            "metric": "revenue_growth",
+            "operator": "gte",
+            "value": 0.1
+          }
         ],
         "message": "Operating margin is declining while revenue is still growing quickly. This divergence often signals that incremental growth is becoming less profitable."
       },
@@ -246,8 +387,16 @@
         "id": "cash_earnings_divergence",
         "severity": "warning",
         "conditions": [
-          { "metric": "accruals_ratio", "operator": "gte", "value": 0.05 },
-          { "metric": "fcf_growth_3y", "operator": "lt_metric", "compared_to": "earnings_growth" }
+          {
+            "metric": "accruals_ratio",
+            "operator": "gte",
+            "value": 0.05
+          },
+          {
+            "metric": "fcf_growth_3y",
+            "operator": "lt_metric",
+            "compared_to": "earnings_growth"
+          }
         ],
         "message": "Accruals are elevated while free cash flow growth trails earnings growth. This pattern can indicate weaker cash conversion of reported earnings."
       },
@@ -255,8 +404,16 @@
         "id": "receivables_growth_divergence",
         "severity": "watch",
         "conditions": [
-          { "metric": "days_sales_outstanding_trend", "operator": "gte", "value": 0.05 },
-          { "metric": "revenue_growth", "operator": "lte", "value": 0.0 }
+          {
+            "metric": "days_sales_outstanding_trend",
+            "operator": "gte",
+            "value": 0.05
+          },
+          {
+            "metric": "revenue_growth",
+            "operator": "lte",
+            "value": 0.0
+          }
         ],
         "message": "Days sales outstanding is extending while revenue growth is nonpositive. This pattern can indicate slower customer collections."
       },
@@ -264,8 +421,16 @@
         "id": "leveraged_buyback",
         "severity": "watch",
         "conditions": [
-          { "metric": "net_buyback_yield", "operator": "gt", "value": 0.0 },
-          { "metric": "net_debt_to_ebitda", "operator": "gte", "value": 2.5 }
+          {
+            "metric": "net_buyback_yield",
+            "operator": "gt",
+            "value": 0.0
+          },
+          {
+            "metric": "net_debt_to_ebitda",
+            "operator": "gte",
+            "value": 2.5
+          }
         ],
         "message": "Buyback yield is positive while net debt to EBITDA is elevated. This combination means repurchases are occurring alongside meaningful leverage."
       }
@@ -294,7 +459,13 @@
     "baseline_minimum_days": 30,
     "minimum_volatility_for_rescaling_pct": 0.1,
     "minimum_years_until_retirement": 1,
-    "percentiles": [0.1, 0.25, 0.5, 0.75, 0.9],
+    "percentiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
     "default_retirement_end_age": 95,
     "default_monthly_withdrawal": 3000.0,
     "default_inflation_pct": 2.5,
@@ -309,27 +480,71 @@
       "display_decimals": 1
     },
     "success_bands": [
-      { "minimum": 0.8, "label": "On track" },
-      { "minimum": 0.6, "label": "Needs attention" },
-      { "minimum": 0.0, "label": "Off track" }
+      {
+        "minimum": 0.8,
+        "label": "On track"
+      },
+      {
+        "minimum": 0.6,
+        "label": "Needs attention"
+      },
+      {
+        "minimum": 0.0,
+        "label": "Off track"
+      }
     ],
     "lever_ranges": {
-      "monthly_contribution": { "minimum": 0, "maximum": 5000, "step": 50 },
-      "retirement_age": { "minimum": 18, "maximum": 80, "step": 1 },
-      "annual_withdrawal": { "minimum": 0, "maximum": 240000, "step": 1000 }
+      "monthly_contribution": {
+        "minimum": 0,
+        "maximum": 5000,
+        "step": 50
+      },
+      "retirement_age": {
+        "minimum": 18,
+        "maximum": 80,
+        "step": 1
+      },
+      "annual_withdrawal": {
+        "minimum": 0,
+        "maximum": 240000,
+        "step": 1000
+      }
     },
     "contribution_lever_step": 150,
     "allocation_default": "growth",
     "allocation_assumptions": {
-      "conservative": { "label": "Conservative", "annual_return_pct": 4.5, "annual_volatility_pct": 7.0 },
-      "balanced": { "label": "Balanced", "annual_return_pct": 6.0, "annual_volatility_pct": 10.0 },
-      "growth": { "label": "Growth", "annual_return_pct": 7.5, "annual_volatility_pct": 15.0 },
-      "aggressive": { "label": "Aggressive", "annual_return_pct": 9.0, "annual_volatility_pct": 21.0 }
+      "conservative": {
+        "label": "Conservative",
+        "annual_return_pct": 4.5,
+        "annual_volatility_pct": 7.0
+      },
+      "balanced": {
+        "label": "Balanced",
+        "annual_return_pct": 6.0,
+        "annual_volatility_pct": 10.0
+      },
+      "growth": {
+        "label": "Growth",
+        "annual_return_pct": 7.5,
+        "annual_volatility_pct": 15.0
+      },
+      "aggressive": {
+        "label": "Aggressive",
+        "annual_return_pct": 9.0,
+        "annual_volatility_pct": 21.0
+      }
     },
     "sequence_risk_example": {
       "starting_balance": 1000000,
       "annual_withdrawal": 60000,
-      "annual_returns": [-0.22, -0.1, 0.04, 0.09, 0.17, 0.24]
+      "annual_returns": [
+        -0.22,
+        -0.1,
+        0.04,
+        0.09,
+        0.17,
+        0.24
+      ]
     },
     "goal_default_years": 5,
     "goal_default_amount": 50000,
@@ -343,10 +558,35 @@
     "home_signal_limit": 4,
     "home_theme_limit": 6,
     "mobile_preview_positions": [
-      {"id": "preview-msft", "ticker": "MSFT", "shares": 12, "costBasis": 430, "purchaseDate": "2025-01-02", "snapshotSource": "User-provided brokerage snapshot"},
-      {"id": "preview-aapl", "ticker": "AAPL", "shares": 20, "costBasis": 260, "purchaseDate": "2025-01-02"},
-      {"id": "preview-qcom", "ticker": "QCOM", "shares": 30, "costBasis": 140, "purchaseDate": "2025-01-02"},
-      {"id": "preview-voo", "ticker": "VOO", "shares": 10, "costBasis": 650, "purchaseDate": "2025-01-02"}
+      {
+        "id": "preview-msft",
+        "ticker": "MSFT",
+        "shares": 12,
+        "costBasis": 430,
+        "purchaseDate": "2025-01-02",
+        "snapshotSource": "User-provided brokerage snapshot"
+      },
+      {
+        "id": "preview-aapl",
+        "ticker": "AAPL",
+        "shares": 20,
+        "costBasis": 260,
+        "purchaseDate": "2025-01-02"
+      },
+      {
+        "id": "preview-qcom",
+        "ticker": "QCOM",
+        "shares": 30,
+        "costBasis": 140,
+        "purchaseDate": "2025-01-02"
+      },
+      {
+        "id": "preview-voo",
+        "ticker": "VOO",
+        "shares": 10,
+        "costBasis": 650,
+        "purchaseDate": "2025-01-02"
+      }
     ],
     "score_dial": {
       "size": 220,
@@ -360,7 +600,10 @@
       "minimum_gap": 0.8,
       "maximum_gap": 5.0
     },
-    "mobile_acceptance_widths": [390, 430],
+    "mobile_acceptance_widths": [
+      390,
+      430
+    ],
     "minimum_touch_target_px": 44,
     "colorblind_minimum_rgb_distance": 0.12,
     "minimum_text_contrast_ratio": 4.5,
@@ -829,6 +1072,32 @@
       "max_penalty": 3.0,
       "cluster_bonus": 1.0,
       "min_trade_value": 25000.0
+    },
+    "customer_concentration_risk": {
+      "_comment": "ASC 280 customer concentration read from dimensional XBRL (pipeline/concentration_risk.py) - a known, penalty-only risk, not a bet on direction. Below warning_share scores zero; at or above it, half the max penalty; at or above severe_share, the full penalty. SHADOW MODE ONLY (apply_challenger_modifiers, not apply_modifiers) until ConcentrationRiskPercentage1 tagging coverage across the scored universe is measured on a live run - see capability_status.customer_concentration_risk.",
+      "warning_share": 0.15,
+      "severe_share": 0.3,
+      "max_penalty": 3.0
+    },
+    "geographic_concentration": {
+      "_comment": "Single-country revenue concentration read from dimensional XBRL (pipeline/geographic_exposure.py), same shape as customer_concentration_risk. Only fires on concentration in one non-domestic geography, not on international revenue in general. SHADOW MODE ONLY (apply_challenger_modifiers, not apply_modifiers): geographic revenue tags often reflect shipping destination or contracting entity rather than end demand and need spot-checking - see capability_status.fx_exposure.",
+      "warning_share": 0.3,
+      "severe_share": 0.5,
+      "max_penalty": 2.0
+    },
+    "institutional_13f": {
+      "_comment": "Breadth of curated, publicly traded, style=active-only asset managers' quarter-over-quarter 13F position change (pipeline/institutional_ownership.py, pipeline/build_institutional_screen.py). Two-sided like insider_activity: requires min_managers net movers on one side before it scores anything. half_life_days/max_age_days decay the magnitude by how stale the underlying filing already is - a 13F position is disclosed up to 45 days after quarter-end, so it is never fully current; a filing older than max_age_days scores zero rather than being read as still-current. Read from the monthly-refreshed published screen, not fetched live per advisor run.",
+      "max_points": 3.0,
+      "max_penalty": 2.0,
+      "min_managers": 2,
+      "half_life_days": 45,
+      "max_age_days": 135
+    },
+    "congressional_buying": {
+      "_comment": "Disclosed Congressional stock purchases (pipeline/congress_signal.py), reward-only. Explicit, scoped exception to the 'no political inputs' principle stated in advisor_engine.py's module docstring - see that docstring and TODO.md for what was declined (scoring congressional holdings as evidence a stock/sector is politically protected from failure) versus what shipped (breadth x freshness of disclosed purchases, with a bonus for EXTRAORDINARY_BUY: a member's first-ever trade in a sub-$2B company). Reads the weekly-published congress screen, not a live fetch. Evidentiary basis: Ziobrowski et al. (JFQA 2004, and the 2011 House companion study) find abnormal returns to disclosed Congressional purchases in pre-STOCK-Act samples; whether that survives the post-2012 mandatory-disclosure regime is untested here.",
+      "max_points": 4.0,
+      "min_trade_value": 15000.0,
+      "extraordinary_bonus": 2.0
     }
   },
   "bucket_weights": {
@@ -917,15 +1186,34 @@
     "source_quality": {
       "regulatory_primary": {
         "weight": 1.5,
-        "matches": ["sec.gov", "sec edgar", "investor relations", "business wire", "globe newswire"]
+        "matches": [
+          "sec.gov",
+          "sec edgar",
+          "investor relations",
+          "business wire",
+          "globe newswire"
+        ]
       },
       "established_press": {
         "weight": 1.2,
-        "matches": ["reuters", "bloomberg", "financial times", "wall street journal", "associated press", "cnbc"]
+        "matches": [
+          "reuters",
+          "bloomberg",
+          "financial times",
+          "wall street journal",
+          "associated press",
+          "cnbc"
+        ]
       },
       "aggregator_syndicated": {
         "weight": 0.65,
-        "matches": ["yahoo finance", "msn", "newsbreak", "finanzen.net", "marketscreener"]
+        "matches": [
+          "yahoo finance",
+          "msn",
+          "newsbreak",
+          "finanzen.net",
+          "marketscreener"
+        ]
       },
       "neutral": {
         "weight": 1.0,
@@ -934,25 +1222,122 @@
     },
     "event_type_markers": {
       "_comment": "Keyword classification (brief section 15) -- deterministic and title/source-based, same approach as content_type/source_quality above. A headline can match multiple types; classify_event_type returns every match, ordered by this dict's key order, so the caller decides how to prioritize rather than this function silently picking one.",
-      "earnings": ["earnings", "quarterly results", "eps of", "q1 results", "q2 results", "q3 results", "q4 results", "fiscal year results"],
-      "guidance": ["guidance", "outlook raised", "outlook lowered", "forecast raised", "forecast cut", "raises forecast", "cuts forecast"],
-      "product": ["launches", "unveils", "new product", "product recall", "ships"],
-      "regulatory": ["fda", "ftc", "doj", "antitrust", "regulatory approval", "regulator", "sec investigation", "compliance"],
-      "litigation": ["lawsuit", "sues", "sued", "class action", "settlement", "court ruling"],
-      "financing": ["secondary offering", "debt offering", "credit facility", "raises capital", "private placement", "bond issuance"],
-      "m_and_a": ["acquire", "acquisition", "merger", "to be acquired", "buyout", "divest"],
-      "management": ["ceo", "cfo", "appoints", "resigns", "steps down", "names new"],
-      "auditor": ["auditor", "going concern", "material weakness"],
-      "restatement": ["restate", "restatement", "accounting error"],
-      "government_contract": ["government contract", "awarded contract", "department of defense", "federal contract"],
-      "insider_transaction": ["insider buying", "insider selling", "form 4", "director purchase", "executive sells"],
-      "political_disclosure": ["congressional", "senator", "representative", "stock act", "periodic transaction report"],
-      "analyst_revision": ["upgrades", "downgrades", "price target raised", "price target lowered", "initiates coverage"],
-      "macro_exposure": ["tariff", "interest rate", "inflation report", "fed decision", "recession"]
+      "earnings": [
+        "earnings",
+        "quarterly results",
+        "eps of",
+        "q1 results",
+        "q2 results",
+        "q3 results",
+        "q4 results",
+        "fiscal year results"
+      ],
+      "guidance": [
+        "guidance",
+        "outlook raised",
+        "outlook lowered",
+        "forecast raised",
+        "forecast cut",
+        "raises forecast",
+        "cuts forecast"
+      ],
+      "product": [
+        "launches",
+        "unveils",
+        "new product",
+        "product recall",
+        "ships"
+      ],
+      "regulatory": [
+        "fda",
+        "ftc",
+        "doj",
+        "antitrust",
+        "regulatory approval",
+        "regulator",
+        "sec investigation",
+        "compliance"
+      ],
+      "litigation": [
+        "lawsuit",
+        "sues",
+        "sued",
+        "class action",
+        "settlement",
+        "court ruling"
+      ],
+      "financing": [
+        "secondary offering",
+        "debt offering",
+        "credit facility",
+        "raises capital",
+        "private placement",
+        "bond issuance"
+      ],
+      "m_and_a": [
+        "acquire",
+        "acquisition",
+        "merger",
+        "to be acquired",
+        "buyout",
+        "divest"
+      ],
+      "management": [
+        "ceo",
+        "cfo",
+        "appoints",
+        "resigns",
+        "steps down",
+        "names new"
+      ],
+      "auditor": [
+        "auditor",
+        "going concern",
+        "material weakness"
+      ],
+      "restatement": [
+        "restate",
+        "restatement",
+        "accounting error"
+      ],
+      "government_contract": [
+        "government contract",
+        "awarded contract",
+        "department of defense",
+        "federal contract"
+      ],
+      "insider_transaction": [
+        "insider buying",
+        "insider selling",
+        "form 4",
+        "director purchase",
+        "executive sells"
+      ],
+      "political_disclosure": [
+        "congressional",
+        "senator",
+        "representative",
+        "stock act",
+        "periodic transaction report"
+      ],
+      "analyst_revision": [
+        "upgrades",
+        "downgrades",
+        "price target raised",
+        "price target lowered",
+        "initiates coverage"
+      ],
+      "macro_exposure": [
+        "tariff",
+        "interest rate",
+        "inflation report",
+        "fed decision",
+        "recession"
+      ]
     }
   },
   "market_behavior": {
-    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant. technical_extended (pipeline/technical_indicators.py: moving-average slope, RSI, Bollinger %B, OBV slope) is deliberately small -- 0.06 against 0.94 elsewhere in this blend, and market_behavior itself is only 18% of the total composite (ranking_weights.market_behavior), so this indicator family contributes roughly 1% of the total score. See technical_indicators.py's module docstring for why it stays this narrow.",
+    "_comment": "Market-behavior sub-weights, using the same risk math as the ETF model so a Sharpe means the same thing on both screens. momentum_12_1 skips the most recent month to avoid short-term reversal (Jegadeesh-Titman 1993); low_beta rewards defensive names per betting-against-beta (Frazzini-Pedersen 2014) instead of penalizing volatility with a hand-tuned constant. technical_extended (pipeline/technical_indicators.py) is deliberately small. relative_strength is listed here but excluded from the champion blend by short_horizon_treatment='neutral': it is computed as ret_20d minus a benchmark return that is the same scalar for every row, so it is rank-identical to return_20d by construction (Spearman +1.00 across 877 published rows) and was drawing 16% of this blend for a signal already present. See research/audit/CURRENT_MODEL_AUDIT.md section 6.",
     "weights": {
       "momentum_12_1": 0.3,
       "risk_adjusted": 0.26,
@@ -961,6 +1346,164 @@
       "volume_confirmation": 0.08,
       "low_beta": 0.06,
       "technical_extended": 0.06
+    },
+    "relative_acceleration": {
+      "_comment": "Whether a name's market-relative pace is picking up: cumulative beta-adjusted excess return over the most recent leg_days sessions, minus the same over the leg immediately before it, divided by its own standard error (risk_metrics.relative_acceleration). Beta-adjusting is what makes it genuinely market-relative rather than a relabelled own-return - a raw stock-minus-index difference subtracts the same scalar from every row and cannot change a cross-sectional ranking, which is the section 6 audit finding against relative_strength above. skip_days drops the most recent week because that is where short-term reversal lives, the same reason momentum_12_1 skips a month. This block has NO entry in weights and does not reach the score: it is published for the validation harness to measure prospectively, and should only be promoted to a weight if that measurement supports one. Basis: Gettleman & Marks (2006) on acceleration, Blitz-Huij-Martens (2011) on residual construction.",
+      "leg_days": 63,
+      "skip_days": 5,
+      "scoring_span": 1.0
     }
+  },
+  "evidence_events": {
+    "_comment": "Event-level evidence weights. Every number here is a starting prior chosen from the published literature and ordinary market experience, NOT a measured constant - they are frozen deliberately so the point-in-time store accumulates observations under one fixed policy, and they should only move when walk-forward evidence supports it. Half-lives are in TRADING days: an event that lands on Friday must not have burned two half-lives by Monday open.",
+    "event_materiality": {
+      "_comment": "How much a headline of this kind can move an expected cash-flow path, 0-1. This is what stops a +0.95-sentiment 'best places to work' award from outranking a +0.75-sentiment guidance raise. Highest matched type wins (see event_materiality).",
+      "guidance": 1.0,
+      "restatement": 1.0,
+      "auditor": 1.0,
+      "m_and_a": 0.95,
+      "earnings": 0.9,
+      "regulatory": 0.85,
+      "financing": 0.7,
+      "government_contract": 0.65,
+      "litigation": 0.6,
+      "analyst_revision": 0.55,
+      "product": 0.5,
+      "management": 0.45,
+      "insider_transaction": 0.4,
+      "macro_exposure": 0.3,
+      "political_disclosure": 0.2,
+      "routine_commentary": 0.15
+    },
+    "event_half_life_trading_days": {
+      "_comment": "How long this kind of information stays live. Strategic and regulatory outcomes resolve slowly and keep repricing; ordinary commentary is stale within a session or two. Longest matched type wins, because the slowest-resolving element of a story is what keeps it relevant.",
+      "m_and_a": 20.0,
+      "restatement": 15.0,
+      "auditor": 15.0,
+      "regulatory": 10.0,
+      "guidance": 8.0,
+      "litigation": 8.0,
+      "government_contract": 7.0,
+      "financing": 6.0,
+      "product": 6.0,
+      "earnings": 5.0,
+      "analyst_revision": 5.0,
+      "management": 5.0,
+      "insider_transaction": 5.0,
+      "macro_exposure": 3.0,
+      "political_disclosure": 3.0,
+      "routine_commentary": 1.5
+    },
+    "insider_half_life_trading_days": {
+      "_comment": "Far slower than news, and deliberately so. Cohen, Malloy & Pomorski measure the opportunistic-insider effect over roughly one to three months, so a purchase is still informative weeks later - decaying it on a news schedule would throw away the signal.",
+      "catalyst": 30.0,
+      "long_term": 60.0
+    },
+    "insider_sell_weight": 0.5,
+    "cluster_title_similarity": 0.72,
+    "cluster_window_hours": 72.0,
+    "source_breadth_step": 0.08,
+    "max_source_breadth_bonus": 1.3,
+    "published_event_limit": 12,
+    "expectation_weights": {
+      "_comment": "Analyst conviction is about CHANGE, not level: a static 2.6/5 consensus is already in the price. Recommendation changes accompanied by estimate revisions are the ones that provoke drift, so revision breadth and magnitude carry most of the weight.",
+      "revision_breadth": 0.35,
+      "revision_magnitude": 0.35,
+      "upgrades": 0.2,
+      "target_change": 0.1
+    },
+    "eps_revision_scale": 200.0,
+    "upgrade_scale": 6.0,
+    "target_change_scale": 1.2,
+    "news_saturation": 1.0,
+    "insider_saturation": 1.2,
+    "_saturation_comment": "Signed event strengths are summed and squashed through tanh rather than averaged. An average divides materiality straight back out (the average of one trivial event is that event), and an unbounded sum would let the most-covered company run away with the screen.",
+    "yahoo_news_count": 20,
+    "headline_direction_markers": {
+      "_comment": "Yahoo's news feed carries no sentiment score at all, so direction is derived from these phrases over the headline and summary - a deterministic keyword match in the same style as event_type_markers, NOT a sentiment model, and it should be read that way. Only the strongest matching phrase is used (headlines are short; summing lets three mild words outvote one decisive one), and a headline matching nothing carries no direction at all rather than a fabricated neutral. Weights are signed magnitudes in [-1, 1]: the extremes are reserved for statements that directly restate an expected cash-flow path.",
+      "raises full-year guidance": 0.95,
+      "raises fy guidance": 0.95,
+      "boosts full-year": 0.9,
+      "raises guidance": 0.9,
+      "raises outlook": 0.9,
+      "raises forecast": 0.9,
+      "lifts outlook": 0.85,
+      "raises dividend": 0.6,
+      "beats estimates": 0.75,
+      "beats expectations": 0.75,
+      "tops estimates": 0.75,
+      "earnings beat": 0.7,
+      "record revenue": 0.7,
+      "record quarter": 0.7,
+      "fda approval": 0.85,
+      "wins approval": 0.8,
+      "receives approval": 0.8,
+      "wins contract": 0.7,
+      "awarded contract": 0.7,
+      "to be acquired": 0.85,
+      "takeover bid": 0.8,
+      "buyback": 0.55,
+      "upgraded to buy": 0.65,
+      "upgrades to buy": 0.65,
+      "price target raised": 0.5,
+      "initiated with a buy": 0.4,
+      "cuts full-year guidance": -0.95,
+      "cuts fy guidance": -0.95,
+      "cuts guidance": -0.9,
+      "lowers guidance": -0.9,
+      "lowers outlook": -0.9,
+      "cuts forecast": -0.9,
+      "slashes forecast": -0.95,
+      "withdraws guidance": -0.95,
+      "suspends dividend": -0.85,
+      "cuts dividend": -0.8,
+      "misses estimates": -0.75,
+      "misses expectations": -0.75,
+      "earnings miss": -0.7,
+      "profit warning": -0.9,
+      "going concern": -1.0,
+      "material weakness": -0.95,
+      "restates": -0.9,
+      "restatement": -0.9,
+      "accounting error": -0.9,
+      "sec investigation": -0.85,
+      "securities fraud": -0.95,
+      "doj investigation": -0.85,
+      "class action": -0.5,
+      "recall": -0.7,
+      "fails to meet": -0.6,
+      "trial failure": -0.9,
+      "failed trial": -0.9,
+      "rejects application": -0.85,
+      "layoffs": -0.4,
+      "bankruptcy": -1.0,
+      "chapter 11": -1.0,
+      "downgraded to sell": -0.7,
+      "downgrades to sell": -0.7,
+      "price target lowered": -0.5,
+      "secondary offering": -0.5,
+      "dilution": -0.55,
+      "short seller": -0.6,
+      "steps down": -0.35,
+      "resigns": -0.35
+    }
+  },
+  "data_health": {
+    "_comment": "Round 4 provider-health monitoring and publication gate (docs/AUDIT-ROUND-4-FINDINGS.md). Statement coverage is measured per refresh against monitored_metrics; below degraded_below the refresh is labeled degraded, below critical_below critical, and the run manifest carries the state. min_publication_coverage is the per-name floor: a research score computed from less than this fraction of intended fundamentals weight publishes as INSUFFICIENT DATA rather than a ranked stance, because Round 3 item 4 measured identical evidence scoring up to 1.87x apart on data availability alone.",
+    "monitored_metrics": [
+      "ev_to_ebitda",
+      "ev_to_ebit",
+      "return_on_invested_capital",
+      "gross_profits_to_assets",
+      "piotroski_f",
+      "net_buyback_yield",
+      "altman_z",
+      "stock_comp_to_revenue",
+      "accruals_ratio"
+    ],
+    "expected_statement_coverage": 0.7,
+    "degraded_below": 0.5,
+    "critical_below": 0.3,
+    "min_publication_coverage": 0.35
   }
 }

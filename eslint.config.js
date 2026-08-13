@@ -2,15 +2,19 @@ import js from '@eslint/js'
 
 const globals = Object.fromEntries([
   // browser
-  'alert', 'Blob', 'clients', 'confirm', 'console', 'crypto', 'document', 'fetch', 'FileReader', 'import.meta',
-  'localStorage', 'navigator', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-  'Notification', 'TextEncoder', 'URL', 'window',
+  'alert', 'Blob', 'caches', 'clients', 'confirm', 'console', 'crypto', 'document', 'fetch', 'FileReader', 'import.meta',
+  'localStorage', 'navigator', 'Response', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
+  'Notification', 'TextEncoder', 'URL', 'URLSearchParams', 'window',
   // test runner
   'afterEach', 'beforeEach', 'describe', 'expect', 'it', 'vi',
 ].map((name) => [name, 'readonly']))
 
 export default [
-  { ignores: ['.venv/**', 'dist/**', 'coverage/**', 'node_modules/**'] },
+  // `.venv*` rather than `.venv`: a Python virtualenv ships vendored JavaScript (urllib3's
+  // emscripten fetch worker, for one) written for a worker global scope, so ESLint flags it
+  // as `'self' is not defined` and fails CI on code nobody here wrote. The exact-name ignore
+  // missed a `.venv.py39.bak` backup directory and took the whole `site` job down with it.
+  { ignores: ['.venv*/**', 'dist/**', 'coverage/**', 'node_modules/**'] },
   {
     files: ['**/*.{js,jsx}'],
     ...js.configs.recommended,

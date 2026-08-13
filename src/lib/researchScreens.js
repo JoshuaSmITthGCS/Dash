@@ -1,3 +1,5 @@
+import { dipWatch } from './dipWatch'
+
 const clamp = (value, minimum = 0, maximum = 100) =>
   Math.min(maximum, Math.max(minimum, value))
 
@@ -22,6 +24,39 @@ export function distanceAbove52WeekLow(row) {
   return low > 0 ? (closes.at(-1) / low - 1) * 100 : null
 }
 
+// Corroborated-first sort, mirroring rankThemeExposure's eligible-first pattern below: an
+// uncorroborated top-scorer stays visible (it's still real information) but never
+// outranks a row whose primary signal was independently confirmed. Never used to drop a
+// row - only to order it - same "flag, don't hide" philosophy the theme screen already
+// established.
+function sortCorroboratedFirst(rows) {
+  return rows.sort((left, right) => {
+    if (left.screen.corroborated !== right.screen.corroborated) return left.screen.corroborated ? -1 : 1
+    return right.screen.rankScore - left.screen.rankScore
+  })
+}
+
+// Trust ordering for pipeline/config/settings.json's source_quality tiers, mirrored from
+// the pipeline-side SOURCE_QUALITY_TRUST_ORDER in fetch_advisor.py. Reads whichever shape
+// the row carries: `sentiment_summary` (screen_universe's lightweight projection) or the
+// full `sentiment_detail.articles` (published leaderboard rows).
+const SOURCE_QUALITY_TRUST_ORDER = ['regulatory_primary', 'established_press', 'neutral', 'aggregator_syndicated']
+function newsCorroboration(row) {
+  if (row.sentiment_summary) {
+    return {
+      articleCount: row.sentiment_summary.article_count ?? null,
+      bestTier: row.sentiment_summary.best_source_quality_tier ?? null,
+    }
+  }
+  const articles = row.sentiment_detail?.articles
+  if (!Array.isArray(articles) || !articles.length) {
+    return { articleCount: row.sentiment_detail?.article_count ?? null, bestTier: null }
+  }
+  const tiersPresent = new Set(articles.map((article) => article.source_quality_tier).filter(Boolean))
+  const bestTier = SOURCE_QUALITY_TRUST_ORDER.find((tier) => tiersPresent.has(tier)) ?? null
+  return { articleCount: row.sentiment_detail?.article_count ?? articles.length, bestTier }
+}
+
 // Every screen below reads fundamentals or technical fields shaped for individual
 // companies (fundamental_categories, technical_detail.return_5d, ...). A fund holds no
 // such per-security fundamentals, so an ETF can never legitimately clear one of these
@@ -33,7 +68,7 @@ function stocksOnly(rows) {
 }
 
 export function rankValueTurnarounds(rows, limit = 5) {
-  return stocksOnly(rows)
+  const candidates = stocksOnly(rows)
     .map((row) => {
       const fundamentals = row.components?.fundamentals
       const valuation = row.fundamental_categories?.valuation
@@ -49,16 +84,57 @@ export function rankValueTurnarounds(rows, limit = 5) {
 
       const proximity = clamp(100 - (aboveLow / 35) * 100)
       const upturn = clamp(50 + weekReturn * 5)
+
+      // Corroboration: a sharply negative recent earnings surprise means the cheapness
+      // may reflect a genuinely deteriorating business, not just an overdone dip - flag
+      // it rather than let the valuation/quality/proximity blend alone vouch for it.
+      const corroborationGaps = []
+      const corroborated = !(finite(row.earnings_surprise) && row.earnings_surprise < -8)
+      if (!corroborated) corroborationGaps.push('recent earnings surprise was sharply negative - the cheapness may reflect a deteriorating business')
+
       return {
         ...row,
         screen: {
           weekReturn,
           aboveLow,
+          valuation,
+          fundamentals,
           rankScore: valuation * 0.4 + fundamentals * 0.3 + proximity * 0.2 + upturn * 0.1,
+          corroborated,
+          corroborationGaps,
         },
       }
     })
     .filter(Boolean)
+  return sortCorroboratedFirst(candidates).slice(0, limit)
+}
+
+// Buying the dip: names the platform already rates ATTRACTIVE or PROMISING - the
+// already-vetted, "amazing" side of the universe, not just anything that fell - that are
+// also genuinely down from their highs right now. Reuses dipWatch's own floor/recovery
+// band (src/lib/dipWatch.js) rather than a second opinion on what "the bottom" means, so
+// this screen and the single-stock badge never disagree about the same row. Excludes
+// 'recovering' rows on purpose: once price has cleared the recovery level the dip is
+// already over, so it no longer belongs on a screen about buying one. Ranked by quality
+// first (score) and proximity to the estimated floor second, so a merely-cheap name never
+// outranks a merely-dipping great one.
+export function rankBuyingTheDip(rows, limit = 8) {
+  const candidates = stocksOnly(rows)
+    .map((row) => {
+      if (!finite(row.score)) return null
+      const watch = dipWatch(row)
+      if (!watch || watch.status === 'recovering') return null
+      const proximityToFloor = clamp(100 - watch.distanceToFloorPct * 2)
+      return {
+        ...row,
+        screen: {
+          ...watch,
+          rankScore: row.score * 0.6 + proximityToFloor * 0.4,
+        },
+      }
+    })
+    .filter(Boolean)
+  return candidates
     .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
     .slice(0, limit)
 }
@@ -77,7 +153,7 @@ export function rankGrowingEtfs(rows, limit = 5) {
 }
 
 export function rankMomentum(rows, limit = 5) {
-  return stocksOnly(rows)
+  const candidates = stocksOnly(rows)
     .map((row) => {
       const technical = row.technical_detail || {}
       const weekReturn = finite(technical.return_5d)
@@ -104,6 +180,17 @@ export function rankMomentum(rows, limit = 5) {
         : finite(technical.risk)
           ? technical.risk
           : 50
+      // Corroboration: multi-horizon breadth. A 5d/20d pop sitting inside a longer
+      // 60/252-day downtrend is a weaker momentum case than the rankScore alone shows -
+      // require at least one of the longer horizons not to be sharply negative. Missing
+      // longer-horizon data (common for recently-scored names) is never penalized, only
+      // an actual opposing longer trend is.
+      const corroborationGaps = []
+      const longer60 = technical.return_60d
+      const longer252 = technical.return_252d
+      const corroborated = !(finite(longer60) && finite(longer252) && longer60 < -5 && longer252 < -5)
+      if (!corroborated) corroborationGaps.push('this pop sits inside a longer 60/252-day downtrend')
+
       return {
         ...row,
         screen: {
@@ -112,12 +199,13 @@ export function rankMomentum(rows, limit = 5) {
           momentum12m: technical.momentum_12_1_pct,
           relativeReturn: technical.relative_strength_20d,
           rankScore: momentum * 0.4 + relative * 0.25 + volume * 0.15 + risk * 0.2,
+          corroborated,
+          corroborationGaps,
         },
       }
     })
     .filter(Boolean)
-    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
-    .slice(0, limit)
+  return sortCorroboratedFirst(candidates).slice(0, limit)
 }
 
 // Short-term reversal (Jegadeesh 1990; Lehmann 1990): a stock that pulled back over the
@@ -128,7 +216,7 @@ export function rankMomentum(rows, limit = 5) {
 // pipeline/early_session_research.py. A fundamentals floor keeps a genuinely deteriorating
 // business from qualifying just because its price bounced.
 export function rankReversal(rows, limit = 5) {
-  return stocksOnly(rows)
+  const candidates = stocksOnly(rows)
     .map((row) => {
       const technical = row.technical_detail || {}
       const fundamentals = row.components?.fundamentals
@@ -141,17 +229,27 @@ export function rankReversal(rows, limit = 5) {
 
       const bounce = clamp(50 + weekReturn * 6)
       const pulledBack = clamp(50 + Math.abs(drawdown) * 1.2)
+
+      // Corroboration: a sharply negative recent earnings surprise means the drop was
+      // likely fundamentals-driven, not just a technical dip - unless elevated short
+      // interest offers an alternate, squeeze-consistent reason for the bounce.
+      const corroborationGaps = []
+      const shortSqueezeSignal = finite(row.short_percent_of_float) && row.short_percent_of_float >= 0.05
+      const corroborated = !(finite(row.earnings_surprise) && row.earnings_surprise < -8 && !shortSqueezeSignal)
+      if (!corroborated) corroborationGaps.push('recent earnings surprise was sharply negative with no offsetting short-interest squeeze signal')
+
       return {
         ...row,
         screen: {
-          weekReturn, monthReturn, drawdown,
+          weekReturn, monthReturn, drawdown, fundamentals,
           rankScore: bounce * 0.45 + pulledBack * 0.35 + clamp(fundamentals) * 0.20,
+          corroborated,
+          corroborationGaps,
         },
       }
     })
     .filter(Boolean)
-    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
-    .slice(0, limit)
+  return sortCorroboratedFirst(candidates).slice(0, limit)
 }
 
 // Breakout in progress: catches a stock in the act of a sharp recent acceleration - the
@@ -277,6 +375,134 @@ export function rankEmergingGrowth(rows, limit = 5) {
     .slice(0, limit)
 }
 
+// Short-term catalyst: for a quick-turnaround trade, fresh news flow and insider buying/
+// selling matter far more than fundamentals - the inverse weighting of the long-term
+// research score. Fundamentals stay in at a small weight, as a floor rather than a
+// driver: a name that is not a strong long-term research score can still clear this
+// screen, which is the point - a real catalyst on an otherwise-unremarkable business is
+// exactly what this is meant to surface.
+export function rankCatalyst(rows, limit = 5) {
+  const candidates = stocksOnly(rows)
+    .map((row) => {
+      const technical = row.technical_detail || {}
+      const insider = row.insider_activity || {}
+      const newsSentiment = row.components?.news_sentiment
+      const insiderPoints = finite(insider.points) ? insider.points
+        : finite(insider.score_points) ? insider.score_points : null
+      const weekReturn = finite(technical.return_5d) ? technical.return_5d : trailingWeekReturn(row)
+      const volumeRatio = technical.volume_ratio_60d
+      const fundamentals = row.components?.fundamentals
+
+      const signals = []
+      if (finite(newsSentiment)) signals.push([newsSentiment, 0.30])
+      if (insider.available && finite(insiderPoints)) signals.push([clamp(50 + insiderPoints * 10), 0.30])
+      if (finite(weekReturn)) signals.push([clamp(50 + weekReturn * 4), 0.25])
+      if (finite(volumeRatio)) signals.push([clamp(50 + (volumeRatio - 1) * 40), 0.05])
+      if (finite(fundamentals)) signals.push([clamp(fundamentals), 0.10])
+
+      // Needs an actual catalyst (fresh, non-neutral news or opportunistic insider
+      // activity) plus at least one other confirming signal - a quiet stock with only
+      // stale/neutral inputs is not a "something is happening right now" candidate.
+      const hasCatalyst = (finite(newsSentiment) && Math.abs(newsSentiment - 50) > 5) ||
+        (insider.available && finite(insiderPoints) && insiderPoints !== 0)
+      if (!hasCatalyst || signals.length < 2) return null
+
+      const totalWeight = signals.reduce((sum, [, weight]) => sum + weight, 0)
+      const rankScore = signals.reduce((sum, [value, weight]) => sum + value * weight, 0) / totalWeight
+
+      // Corroboration: a catalyst resting on a single low-track-record insider or a
+      // single low-quality news source is thinner evidence than the composite rankScore
+      // alone shows. Checks only the leg(s) that actually qualified this row as having a
+      // catalyst above - a row is corroborated if at least one qualifying leg is backed
+      // by independent breadth/quality, not just the aggregate points/sentiment number.
+      const corroborationGaps = []
+      const legsCorroborated = []
+      if (insider.available && finite(insiderPoints) && insiderPoints !== 0) {
+        const cluster = insiderPoints > 0 ? insider.buy_cluster : insider.sell_cluster
+        const breadthOk = finite(cluster?.insider_count) && cluster.insider_count >= 2
+        const confidenceOk = finite(cluster?.pattern_confidence) && cluster.pattern_confidence >= 0.6
+        const ok = breadthOk || confidenceOk
+        legsCorroborated.push(ok)
+        if (!ok) corroborationGaps.push('insider activity is a single trader with no established track record')
+      }
+      if (finite(newsSentiment) && Math.abs(newsSentiment - 50) > 5) {
+        const { articleCount, bestTier } = newsCorroboration(row)
+        const ok = (finite(articleCount) && articleCount >= 2) || (bestTier != null && bestTier !== 'aggregator_syndicated')
+        legsCorroborated.push(ok)
+        if (!ok) corroborationGaps.push('news sentiment rests on a single low-quality source')
+      }
+      const corroborated = legsCorroborated.some(Boolean)
+
+      return {
+        ...row,
+        screen: {
+          newsSentiment: newsSentiment ?? null,
+          insiderPoints,
+          weekReturn,
+          articleCount: newsCorroboration(row).articleCount,
+          rankScore,
+          corroborated,
+          corroborationGaps,
+        },
+      }
+    })
+    .filter(Boolean)
+  return sortCorroboratedFirst(candidates).slice(0, limit)
+}
+
+// Analyst conviction: rising consensus target and bullish average rating from
+// professional coverage - a different "the market hasn't fully repriced this yet"
+// signal from Catalyst (news/insider) or Momentum (price trend). Point-in-time estimate
+// *revision* history (rate of change in forward EPS estimates) is fetched by
+// pipeline/collect_estimates.py but not yet published on individual research rows (see
+// TODO.md); this screen uses what is actually published today - the level of consensus
+// rating and target upside, not its trend - and should absorb revision data once that
+// pipeline gap closes rather than staying a separate screen. Requires >=3 analysts,
+// matching the coverage floor the backend's own expectations modifier uses
+// (advisor_engine.py:315).
+export function rankAnalystConviction(rows, limit = 5) {
+  const candidates = stocksOnly(rows)
+    .map((row) => {
+      const count = row.analyst_count
+      const rating = row.analyst_rating // Yahoo convention: 1 = strong buy, 5 = strong sell
+      const upside = row.analyst_target_upside // percent, consensus target vs. current price
+      const fundamentals = row.components?.fundamentals
+      if (!finite(count) || count < 3) return null
+      if (!finite(rating) && !finite(upside)) return null
+
+      const ratingScore = finite(rating) ? clamp(50 + (3 - rating) * 25) : null
+      const upsideScore = finite(upside) ? clamp(50 + upside * 1.5) : null
+      const signals = [
+        ...(ratingScore !== null ? [[ratingScore, 0.5]] : []),
+        ...(upsideScore !== null ? [[upsideScore, 0.4]] : []),
+        ...(finite(fundamentals) ? [[clamp(fundamentals), 0.1]] : []),
+      ]
+      const totalWeight = signals.reduce((sum, [, weight]) => sum + weight, 0)
+      const rankScore = signals.reduce((sum, [value, weight]) => sum + value * weight, 0) / totalWeight
+
+      // Corroboration: a large consensus upside on a name already trading in the most
+      // expensive decile of its own sector is internally inconsistent - the target may
+      // simply be stale relative to a price that has since run.
+      const corroborationGaps = []
+      const corroborated = !(finite(upside) && upside > 15 && finite(row.sector_valuation_percentile) && row.sector_valuation_percentile > 85)
+      if (!corroborated) corroborationGaps.push('consensus target implies large upside but the stock already trades in the most expensive decile of its sector')
+
+      return {
+        ...row,
+        screen: {
+          analystCount: count,
+          analystRating: rating ?? null,
+          targetUpside: upside ?? null,
+          rankScore,
+          corroborated,
+          corroborationGaps,
+        },
+      }
+    })
+    .filter(Boolean)
+  return sortCorroboratedFirst(candidates).slice(0, limit)
+}
+
 // Structural-trend exposure is deliberately its own screen rather than a component of the
 // research score. Blending a forward-looking thematic bet into the fundamentals score would
 // make that score unreadable – you could no longer tell whether a stock ranked well because
@@ -307,5 +533,204 @@ export function rankThemeExposure(theme, limit = 5) {
 // theme whose signals were all unavailable this run.
 export function activeThemes(screen) {
   return (screen?.themes || []).filter((theme) => (theme.rows || []).length > 0)
+}
+
+// Best theme-exposure opportunity across every structural trend a name is connected to,
+// expressed as a screen the same shape as every other rankX() above so the tailwind lens
+// can be a real ranked list (with a qualifying bar and a stated reason) rather than a bare
+// number the caller re-sorts on. A row with no scored theme exposure does not qualify -
+// previously it fell back to -1 and padded the bottom of the list.
+export function rankTailwind(rows, limit = 5) {
+  return stocksOnly(rows)
+    .map((row) => {
+      const best = (row.theme_exposure || [])
+        .filter((exposure) => finite(exposure.opportunity_score))
+        .sort((left, right) => right.opportunity_score - left.opportunity_score)[0]
+      if (!best) return null
+      return {
+        ...row,
+        screen: {
+          rankScore: best.opportunity_score,
+          themeName: best.display_name || best.theme_id,
+          themeExposure: best.theme_exposure_score,
+          // A name the theme layer excluded on valuation grounds is still worth seeing
+          // (see rankThemeExposure) but is flagged rather than presented as a clean setup.
+          corroborated: best.eligible !== false,
+          corroborationGaps: best.eligible === false
+            ? ['the theme layer excluded this name on valuation grounds - high exposure at a euphoric price']
+            : [],
+        },
+      }
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.screen.rankScore - left.screen.rankScore)
+    .slice(0, limit)
+}
+
+const pct = (value, digits = 1) => (finite(value) ? `${value > 0 ? '+' : ''}${value.toFixed(digits)}%` : null)
+const round = (value) => (finite(value) ? Math.round(value) : null)
+
+/**
+ * One entry per strategy lens: how to rank the universe by it, what raw inputs a row must
+ * carry to be evaluable at all, and how to state in plain language why a row that
+ * qualified actually qualified.
+ *
+ * `inputs` exists so the UI can answer "why is this list short/empty?" from the data
+ * rather than leaving the user to guess. A lens whose inputs are dark across the universe
+ * (Catalyst, when no news article or Form 4 filing resolved this run) is a data-coverage
+ * problem, and saying so is more useful than silently rendering the fundamentals
+ * leaderboard in a different order.
+ *
+ * `inputMode: 'any'` means a row needs at least one input present to be evaluable at all;
+ * 'all' means every listed input is required by the screen's own gate.
+ */
+export const STRATEGY_LENSES = {
+  catalyst: {
+    label: 'Short-term catalyst (news + insider)',
+    rank: rankCatalyst,
+    inputMode: 'any',
+    inputs: [
+      { label: 'fresh news sentiment', has: (row) => finite(row.components?.news_sentiment) },
+      { label: 'Form 4 insider activity', has: (row) => Boolean(row.insider_activity?.available) },
+    ],
+    why: (screen) => [
+      finite(screen.newsSentiment)
+        ? `news sentiment ${round(screen.newsSentiment)}/100${finite(screen.articleCount) ? ` across ${screen.articleCount} article${screen.articleCount === 1 ? '' : 's'}` : ''}`
+        : null,
+      finite(screen.insiderPoints) && screen.insiderPoints !== 0
+        ? `opportunistic insider ${screen.insiderPoints > 0 ? 'buying' : 'selling'} (${screen.insiderPoints > 0 ? '+' : ''}${screen.insiderPoints.toFixed(1)} pts)`
+        : null,
+      pct(screen.weekReturn) ? `${pct(screen.weekReturn)} this week` : null,
+    ].filter(Boolean),
+  },
+  momentum: {
+    label: 'Momentum',
+    rank: rankMomentum,
+    inputMode: 'all',
+    inputs: [
+      { label: '5-day return', has: (row) => finite(row.technical_detail?.return_5d) || weeklyCloses(row).length >= 2 },
+      { label: '20-day return', has: (row) => finite(row.technical_detail?.return_20d) },
+    ],
+    why: (screen) => [
+      finite(screen.momentum12m) ? `12-1 momentum ${pct(screen.momentum12m, 0)}` : null,
+      pct(screen.monthReturn) ? `${pct(screen.monthReturn)} over 20 days` : null,
+      pct(screen.weekReturn) ? `${pct(screen.weekReturn)} this week` : null,
+    ].filter(Boolean),
+  },
+  reversal: {
+    label: 'Reversal',
+    rank: rankReversal,
+    inputMode: 'all',
+    inputs: [
+      { label: '5-day return', has: (row) => finite(row.technical_detail?.return_5d) || weeklyCloses(row).length >= 2 },
+      { label: '20-day return', has: (row) => finite(row.technical_detail?.return_20d) },
+      { label: '60-day drawdown', has: (row) => finite(row.technical_detail?.drawdown_60d) },
+      { label: 'fundamentals score', has: (row) => finite(row.components?.fundamentals) },
+    ],
+    why: (screen) => [
+      pct(screen.monthReturn) ? `down ${Math.abs(screen.monthReturn).toFixed(1)}% over 20 days` : null,
+      finite(screen.drawdown) ? `${Math.abs(screen.drawdown).toFixed(1)}% below its 60-day high` : null,
+      pct(screen.weekReturn) ? `but ${pct(screen.weekReturn)} this week` : null,
+      finite(screen.fundamentals) ? `fundamentals ${round(screen.fundamentals)}` : null,
+    ].filter(Boolean),
+  },
+  valueTurnaround: {
+    label: 'Value turnaround',
+    rank: rankValueTurnarounds,
+    inputMode: 'all',
+    inputs: [
+      { label: 'fundamentals score', has: (row) => finite(row.components?.fundamentals) },
+      { label: 'sector valuation score', has: (row) => finite(row.fundamental_categories?.valuation) },
+      { label: '52-week-low distance', has: (row) => finite(row.technical_detail?.pct_above_52w_low) || weeklyCloses(row).length >= 26 },
+    ],
+    why: (screen) => [
+      finite(screen.valuation) ? `valuation ${round(screen.valuation)}` : null,
+      finite(screen.fundamentals) ? `fundamentals ${round(screen.fundamentals)}` : null,
+      finite(screen.aboveLow) ? `${screen.aboveLow.toFixed(1)}% above its 52-week low` : null,
+      pct(screen.weekReturn) ? `${pct(screen.weekReturn)} this week` : null,
+    ].filter(Boolean),
+  },
+  analystConviction: {
+    label: 'Analyst conviction',
+    rank: rankAnalystConviction,
+    inputMode: 'all',
+    inputs: [
+      { label: 'analyst coverage (3+)', has: (row) => finite(row.analyst_count) && row.analyst_count >= 3 },
+      {
+        label: 'consensus rating or target',
+        has: (row) => finite(row.analyst_rating) || finite(row.analyst_target_upside),
+      },
+    ],
+    why: (screen) => [
+      finite(screen.analystCount) ? `${screen.analystCount} analysts covering` : null,
+      finite(screen.analystRating) ? `average rating ${screen.analystRating.toFixed(1)}/5 (1 = strong buy)` : null,
+      finite(screen.targetUpside) ? `consensus target ${pct(screen.targetUpside)} vs. price` : null,
+    ].filter(Boolean),
+  },
+  tailwind: {
+    label: 'Connected / not yet re-rated',
+    rank: rankTailwind,
+    inputMode: 'all',
+    inputs: [
+      {
+        label: 'scored theme exposure',
+        has: (row) => (row.theme_exposure || []).some((exposure) => finite(exposure.opportunity_score)),
+      },
+    ],
+    why: (screen) => [
+      screen.themeName ? `connected to ${screen.themeName}` : null,
+      finite(screen.themeExposure) ? `exposure ${round(screen.themeExposure)}/100` : null,
+      finite(screen.rankScore) ? `opportunity ${round(screen.rankScore)}/100` : null,
+    ].filter(Boolean),
+  },
+}
+
+export function isStrategyLens(key) {
+  return Object.prototype.hasOwnProperty.call(STRATEGY_LENSES, key)
+}
+
+/**
+ * Why a lens returned the list it returned: how many names it could scan, how many carry
+ * the raw inputs it needs, and which input is the binding constraint.
+ *
+ * This is deliberately computed from the same rows the lens ranks, not from a published
+ * summary - a lens that quietly sees 121 of 877 names because the rest were carried
+ * forward from an older refresh should say so on screen, not look like a short list of
+ * genuinely unattractive candidates.
+ */
+export function lensCoverage(rows, key) {
+  const lens = STRATEGY_LENSES[key]
+  if (!lens) return null
+  const universe = stocksOnly(rows || [])
+  const inputs = lens.inputs.map((input) => {
+    const present = universe.filter((row) => input.has(row)).length
+    return { label: input.label, present, missing: universe.length - present }
+  })
+  const evaluable = universe.filter((row) => (lens.inputMode === 'any'
+    ? lens.inputs.some((input) => input.has(row))
+    : lens.inputs.every((input) => input.has(row)))).length
+  const binding = inputs.slice().sort((left, right) => right.missing - left.missing)[0] || null
+  return {
+    scanned: universe.length,
+    evaluable,
+    missingInputs: universe.length - evaluable,
+    inputs,
+    // The single input that excludes the most rows - the honest answer to "why is this
+    // list not the whole universe?"
+    binding: binding && binding.missing > 0 ? binding : null,
+  }
+}
+
+/** Rank the universe by one lens, returning only rows that genuinely clear its bar. */
+export function rankByLens(rows, key, limit = 20) {
+  const lens = STRATEGY_LENSES[key]
+  return lens ? lens.rank(rows, limit) : []
+}
+
+/** Plain-language statement of why a ranked row qualified under the active lens. */
+export function lensReason(row, key) {
+  const lens = STRATEGY_LENSES[key]
+  if (!lens || !row?.screen) return ''
+  return lens.why(row.screen).join(' · ')
 }
 

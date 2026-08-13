@@ -42,16 +42,42 @@ independent corporate-action event log — the pipeline relies on provider-adjus
 **Primary target, as specified:** a 63-trading-day forward sector-residual total return —
 `stock_return(t→t+63) − sector_or_risk_adjusted_return(t→t+63)`.
 
-**Primary target, as implemented today:** `pipeline/validation/ic_harness.py` computes raw
-`forward_return = end_price/start_price - 1` over **calendar-day** horizons (1M/3M/6M/12M —
-30/91/182/365 calendar days), not the residualized, trading-day-horizon target this contract
-specifies. This is the single largest gap between the contract and the code. Closing it means
-adding a sector-residual label and re-deriving the harness's horizons in trading days, not
-calendar days — real work, not yet done, and not claimed as done anywhere else in this
-upgrade.
+**Primary target, as implemented: the same thing.** This gap is closed.
+`pipeline/validation/ic_harness.py` now measures `residual_forward_return` — a name's return
+over the window minus the equal-weight mean return of its own sector over the same window —
+and counts the horizon in **trading sessions** off a real exchange calendar
+(`pipeline/validation/trading_calendar.py`, 8,437 observed NYSE sessions read from the
+committed `public/data/etf/SPY.json` series).
 
-Until that gap closes, every IC/ICIR statistic anywhere in this codebase should be read as
-"raw forward return over a calendar-day horizon," not the contract's target.
+Horizons are configured in `settings.json validation.horizons_sessions` as 21/63/126/252
+sessions. **`3M` (63 sessions) is the preregistered primary**
+(`validation.primary_horizon`); the other three are published as diagnostics and
+`secondary_horizons_are_diagnostic_only` is set in the artifact so none of them can be
+promoted to primary after the numbers are visible.
+
+Two details worth stating rather than assuming:
+
+- **Why the old bug was invisible.** The medians line up exactly — 21 sessions spans 30
+  calendar days, 63 spans 91, 126 spans 182, 252 spans 365, which are the previous
+  `horizons_days` constants. The error was in the variance, not the centre: a fixed 91-day
+  window is 62 sessions in one part of the year and 64 in another, so the label's length
+  drifted. `horizons_days` is retained in config as the labelled pre-correction
+  approximation.
+- **Sector fallback is reported, not hidden.** A sector with fewer than
+  `validation.sector_residual_minimum_peers` (3) names in a period cannot supply a
+  meaningful mean, so those names residualize against the universe mean instead and are
+  flagged `residual_basis: "universe_fallback"`. Each variant publishes
+  `sector_residual_fallback_share`, so a period that mostly fell back — and is therefore
+  measuring something closer to a market-residual target — is readable as such.
+
+**Purge and embargo.** `validation_framework.walk_forward_splits` accepts `purge_periods` and
+`embargo_periods`, and `evaluation.walk_forward` accepts `purge_periods`. Both default to
+zero, preserving prior behaviour. The correct purge is derived, not guessed:
+`label_overlap_periods(63, sessions_per_period=21) == 2`, because a 63-session label observed
+monthly is still resolving two periods later. Because these splits are strictly expanding,
+both controls act on the trailing edge of training; the post-test embargo band of
+combinatorial cross-validation has no analogue here, since no path exists by which post-test
+data reaches a training fold.
 
 ## 3. Execution assumptions
 

@@ -35,4 +35,55 @@ describe('ShadowPortfolios', () => {
     expect(screen.getAllByText('Not started').length).toBeGreaterThan(0)
     expect(screen.getByText(/Annualized statistics remain gated until 20/)).toBeInTheDocument()
   })
+
+  it('reports the shared window separately from each strategy own window', () => {
+    useData.mockReturnValue({
+      loading: false,
+      error: null,
+      data: {
+        aligned_window: { observations: 3, window_start: '2026-08-03', window_end: '2026-08-07' },
+        strategies: [
+          {
+            strategy: 'SPY benchmark', net_return: 3.0728, snapshots: 8, observations: 4,
+            window_start: '2026-07-31', window_end: '2026-08-07', composition_change: 0,
+            aligned: { net_return: 1.626, observations: 3 },
+            evidence_status: 'Accumulating · 4 immutable net-of-cost returns',
+          },
+          {
+            strategy: 'Momentum sleeve', net_return: 0.9615, snapshots: 6, observations: 3,
+            window_start: '2026-08-03', window_end: '2026-08-07', composition_change: 15,
+            aligned: { net_return: 0.9471, observations: 3 },
+            evidence_status: 'Accumulating · 3 immutable net-of-cost returns',
+          },
+        ],
+      },
+    })
+
+    render(<MemoryRouter><ShadowPortfolios /></MemoryRouter>)
+    // The own-window numbers still differ because the windows do; the aligned pair is the
+    // comparison the reader is pointed at.
+    expect(screen.getAllByText('3.07%').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('1.63%').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('0.95%').length).toBeGreaterThan(0)
+    expect(screen.getByText(/covers only the 3 sessions every reporting strategy was in the market for/)).toBeInTheDocument()
+    expect(screen.getAllByText('15.00% not traded').length).toBeGreaterThan(0)
+  })
+
+  it('does not offer an aligned figure for a strategy that has not started', () => {
+    useData.mockReturnValue({
+      loading: false,
+      error: null,
+      data: {
+        aligned_window: { observations: 0 },
+        strategies: [{
+          strategy: 'Quality-value sleeve', snapshots: 0, observations: 0,
+          evidence_status: 'Collection wired · awaiting first eligible portfolio',
+        }],
+      },
+    })
+
+    render(<MemoryRouter><ShadowPortfolios /></MemoryRouter>)
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Not started').length).toBeGreaterThan(0)
+  })
 })

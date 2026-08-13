@@ -32,9 +32,11 @@ import os
 from datetime import datetime, timezone
 
 from common import LOG
+from peer_groups import peer_group
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 THEMES_DIR = os.path.join(HERE, "themes")
+SECTOR_PEER_LIMIT_PER_THEME = 20
 
 # Signals that describe what a company is building. Rewarded.
 LEADING_SIGNALS = ("segment_revenue_share", "filing_keyword_density_trend",
@@ -235,6 +237,59 @@ def score_theme_exposure(theme, signal_values, *, valuation_percentile=None):
     }
 
 
+# ---------------- candidate selection ----------------
+
+def expand_theme_candidates(themes, research, ranked, portfolio_symbols,
+                             *, limit_per_theme=SECTOR_PEER_LIMIT_PER_THEME):
+    """Widen the theme-scoring candidate set beyond published leaders + holdings.
+
+    Scoring a theme only against the published leaderboard means a stock that isn't
+    already a top fundamentals score - exactly the kind of name a sector-tailwind thesis
+    is trying to catch before it re-rates - never gets evaluated against a theme at all.
+    This adds a bounded set of sector/peer-group neighbours of each theme's seed tickers,
+    drawn only from names already scored this run: no new market-data fetches, and the
+    SEC EDGAR theme-signal lookups this feeds are free and cached per ticker regardless.
+
+    This is a heuristic, not the TNIC product-space peer expansion the theme config
+    declares (`expand_via_tnic`) - sector/peer-group membership is a cheap, honest proxy
+    that costs no new data, not a claim of doing the more rigorous thing. A peer-group
+    match only makes a ticker a *candidate*; the theme's own signal scoring and
+    guardrails (min_signals_required, valuation exclusion) still decide whether it
+    actually shows up as exposed.
+
+    Every candidate is tagged with where it came from (`candidate_source`:
+    "published_leader" | "portfolio" | "sector_peer") so the frontend can distinguish
+    "already a top pick" from "connected, not yet re-rated".
+    """
+    portfolio_set = set(portfolio_symbols or ())
+    by_ticker = {row["ticker"]: row for row in research if row.get("ticker")}
+
+    tagged = {row["ticker"]: {**row, "candidate_source": "published_leader"} for row in ranked}
+    for ticker in portfolio_set - set(tagged):
+        row = by_ticker.get(ticker)
+        if row:
+            tagged[ticker] = {**row, "candidate_source": "portfolio"}
+
+    for theme in themes:
+        seed_groups = set()
+        for ticker in theme.get("seed_tickers") or ():
+            seed_row = by_ticker.get(ticker)
+            if seed_row:
+                group_id, _ = peer_group(seed_row)
+                seed_groups.add(group_id)
+        if not seed_groups:
+            continue
+        peers = [
+            row for ticker, row in by_ticker.items()
+            if ticker not in tagged and peer_group(row)[0] in seed_groups
+        ]
+        peers.sort(key=lambda row: row.get("score") or 0, reverse=True)
+        for row in peers[:limit_per_theme]:
+            tagged[row["ticker"]] = {**row, "candidate_source": "sector_peer"}
+
+    return list(tagged.values())
+
+
 # ---------------- screen assembly ----------------
 
 def opportunity_score(exposure, fundamental_score, valuation_percentile):
@@ -287,6 +342,7 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_theme=15):
                 "ticker": ticker,
                 "name": row.get("name", ticker),
                 "sector": row.get("sector"),
+                "candidate_source": row.get("candidate_source"),
                 "fundamental_score": fundamental,
                 "valuation_percentile": valuation_percentile,
                 "opportunity_score": opportunity_score(result["theme_exposure_score"],
@@ -296,6 +352,7 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_theme=15):
             per_ticker.setdefault(ticker, []).append({
                 "theme_id": theme["id"], "display_name": theme.get("display_name"),
                 "theme_exposure_score": result["theme_exposure_score"],
+                "opportunity_score": entry["opportunity_score"],
                 "eligible": result["eligible"],
             })
 

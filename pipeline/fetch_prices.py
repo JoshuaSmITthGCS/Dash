@@ -11,9 +11,7 @@ Writes:
   politicians.json  (track-record leaderboard, refreshed weekly)
 """
 
-import json
 import os
-import sys
 from datetime import datetime, timezone, timedelta
 
 from common import (DATA_DIR, LOG, data_mode, load_json, load_store_json, save_json,
@@ -76,6 +74,11 @@ def fetch_snapshot(ticker, yf, etf_ids, ticker_obj=None):
             pct_30d = round((last - first) / first * 100, 2)
 
     is_etf = ticker in etf_ids or (info.get("quoteType") == "ETF")
+    # A fund never reports a company market cap. A row claiming quoteType ETF while
+    # carrying one is a provider glitch (PINC, 2026-08-10: scored as an ETF, lost every
+    # fundamental). The configured etf_ids list stays authoritative either way.
+    if is_etf and ticker not in etf_ids and safe(info, "marketCap") is not None:
+        is_etf = False
     market_cap = safe(info, "marketCap")
     free_cash_flow = safe(info, "freeCashflow")
     debt_to_equity_percent = _round(safe(info, "debtToEquity"))

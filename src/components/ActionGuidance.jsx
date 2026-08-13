@@ -37,7 +37,7 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
         <span className="chip">
           {fromStopLoss
             ? 'Position stop-loss, not a thesis signal'
-            : `${recommendation.agreementCount} of 3 factors flagged · ${recommendation.confidence || 'moderate'} confidence`}
+            : `${recommendation.agreementCount} of 3 factors flagged · ${recommendation.agreementStrength || 'moderate'} agreement`}
         </span>
       </div>
 

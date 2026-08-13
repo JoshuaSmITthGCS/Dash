@@ -41,21 +41,26 @@ const signed = (value, digits = 1, suffix = '%') =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
-function ConfidenceScoreDial({ score, confidence }) {
+/**
+ * The arc lightens and breaks as data coverage falls. The quantity is completeness, not
+ * reliability -- see src/lib/confidenceGate.js and
+ * research/audit/CURRENT_MODEL_AUDIT.md section 4.
+ */
+function CoverageScoreDial({ score, dataCoverage }) {
   const dial = modelSettings.interface.score_dial
   const maskId = `score-mask-${useId().replaceAll(':', '')}`
   const safeScore = Math.max(0, Math.min(100, Number(score) || 0))
-  const safeConfidence = Math.max(0, Math.min(1, Number(confidence) || 0))
-  const dash = dial.minimum_dash + safeConfidence * (dial.maximum_dash - dial.minimum_dash)
-  const gap = dial.maximum_gap - safeConfidence * (dial.maximum_gap - dial.minimum_gap)
-  const opacity = dial.minimum_opacity + safeConfidence * (1 - dial.minimum_opacity)
+  const safeCoverage = Math.max(0, Math.min(1, Number(dataCoverage) || 0))
+  const dash = dial.minimum_dash + safeCoverage * (dial.maximum_dash - dial.minimum_dash)
+  const gap = dial.maximum_gap - safeCoverage * (dial.maximum_gap - dial.minimum_gap)
+  const opacity = dial.minimum_opacity + safeCoverage * (1 - dial.minimum_opacity)
   return <div className="confidence-score-dial" style={{ width: dial.size }}>
-    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeConfidence * 100)} percent confidence`}>
+    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeCoverage * 100)} percent data coverage`}>
       <circle className="score-dial-track" cx={dial.center} cy={dial.center} r={dial.radius} strokeWidth={dial.stroke_width} />
       <defs><mask id={maskId}><circle cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" stroke="white" strokeWidth={dial.stroke_width} fill="none" strokeDasharray={`${safeScore} ${100 - safeScore}`} /></mask></defs>
       <circle className="score-dial-arc" cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" strokeWidth={dial.stroke_width} mask={`url(#${maskId})`} style={{ opacity, strokeDasharray: `${dash} ${gap}` }} />
     </svg>
-    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{Math.round(safeConfidence * 100)}% evidence confidence</small></div>
+    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{Math.round(safeCoverage * 100)}% data coverage</small></div>
   </div>
 }
 
@@ -63,6 +68,19 @@ function primaryTheme(stock) {
   const themes = Array.isArray(stock.theme_exposure) ? stock.theme_exposure : []
   if (!themes.length) return null
   return themes.slice().sort((left, right) => Number(right.exposure_score ?? right.score ?? 0) - Number(left.exposure_score ?? left.score ?? 0))[0]
+}
+
+export function mergeResearchStock(suppliedStock, fullResearch) {
+  if (!suppliedStock) return suppliedStock
+  const fullStock = fullResearch?.research?.find((row) => row.ticker === suppliedStock.ticker)
+    || fullResearch?.portfolio_coverage?.find((row) => row.ticker === suppliedStock.ticker)
+    || fullResearch?.screen_universe?.find((row) => row.ticker === suppliedStock.ticker)
+  if (!fullStock) return suppliedStock
+  return {
+    ...fullStock,
+    ...suppliedStock,
+    analysis_v2: { ...(fullStock.analysis_v2 || {}), ...(suppliedStock.analysis_v2 || {}) },
+  }
 }
 
 // SEC Form 4 buys vs sells (pipeline/insider_signal.py). The pipeline already scores this
@@ -95,13 +113,13 @@ function InsiderActivityView({ insider }) {
   )
 }
 
-export default function StockDetailModal({ stock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
+export default function StockDetailModal({ stock: suppliedStock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
   const [showMore, setShowMore] = useState(false)
   const { preferences } = usePreferences()
-  const { data: fullResearch } = useData(stock && !stock.explainability ? 'advisor.json' : null)
+  const { data: fullResearch } = useData(suppliedStock && !suppliedStock.explainability ? 'advisor.json' : null)
 
-  useBodyScrollLock(!!stock)
+  useBodyScrollLock(!!suppliedStock)
 
   useEffect(() => {
     const handleEscape = (e) => { if (e.key === 'Escape') onClose() }
@@ -109,10 +127,12 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
-  if (!stock) return null
-  const explainability = stock.explainability
-    || fullResearch?.research?.find((row) => row.ticker === stock.ticker)?.explainability
-  const explainableStock = explainability ? { ...stock, explainability } : stock
+  if (!suppliedStock) return null
+  // Browse/portfolio routes open immediately from report.json. Once the deep snapshot arrives,
+  // fill in evidence, modifiers and explainability while preserving any newer live quote or
+  // position-specific fields the calling route already placed on the row.
+  const stock = mergeResearchStock(suppliedStock, fullResearch)
+  const explainableStock = stock
 
   // A caller that already merged in position-specific guidance (e.g. a portfolio
   // stop-loss check) passes it here – recomputing from the raw research row would
@@ -127,7 +147,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
   const percentile = stock.valuation_percentile
   const setupGuidance = watchlistGuidance(stock, null, null, { sizingMode: preferences.watchlistSizingMode })
   const score = stock.score ?? structural?.effective_score
-  const confidence = stock.confidence ?? structural?.confidence ?? 0
+  const dataCoverage = stock.data_coverage ?? structural?.coverage ?? 0
   const theme = primaryTheme(stock)
   const themeName = theme?.theme || theme?.name || 'No material theme identified'
   const themeScore = theme?.exposure_score ?? theme?.score
@@ -178,9 +198,9 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         </header>
 
         <section className="stock-concept-hero" aria-label="Research summary">
-          <ConfidenceScoreDial score={score} confidence={confidence} />
+          <CoverageScoreDial score={score} dataCoverage={dataCoverage} />
           <div className="stock-concept-list">
-            <article><span>2 · Confidence</span><strong>{Math.round(confidence * 100)}%</strong><p>How complete and reliable the evidence is. The score arc becomes lighter and more broken when certainty falls.</p></article>
+            <article><span>2 · Data coverage</span><strong>{Math.round(dataCoverage * 100)}%</strong><p>How much of the evidence this model intends to use actually resolved. Not a reliability score and not a probability of a price move; the arc lightens as coverage falls.</p></article>
             <article><span>3 · Guidance</span><strong>{recommendation?.action || 'Watch'}</strong><p>{recommendation?.summary || 'Review the evidence before acting.'}</p></article>
             <article><span>4 · Theme exposure</span><strong>{themeName}</strong><p>{themeScore == null ? 'No material long-term theme exposure is published for this company.' : `${Number(themeScore).toFixed(0)} out of 100. Theme exposure stays independent from the research score.`}</p></article>
           </div>
@@ -194,7 +214,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         {showMore && <div className="stock-detail-expanded">
           <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
           <SetupQualityBreakdown guidance={setupGuidance} />
-          <FactorBars bars={explainability?.factor_bars} />
+          <FactorBars bars={stock.explainability?.factor_bars} />
           <div className="grid grid-4">
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '–'} />
           <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '–'} />
@@ -240,7 +260,18 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
             <RecommendationShadowPanel legacy={recommendation} shadow={stock.recommendation_v2} />
             <AnalysisLayers analysis={analysis} />
           </div>
-          {percentile?.display_value != null && <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}`}>Cheaper than approximately {percentile.display_value.toFixed(0)}% of {percentile.peer_group_label}, based on {percentile.peer_count_with_valid_data} valid peers.</p>}
+          {/* Tiers, never a percentage. The old sentence read "Cheaper than approximately
+              85% of Property & casualty insurers, based on 14 valid peers" for a name in the
+              expensive half of its group on both book and tangible book -- the ranked
+              quantity is a composite of discrete bands, and with n=14 the resolution was
+              7.7 points anyway. Groups under the minimum publish nothing at all now. */}
+          {percentile?.peer_context
+            ? <p className="stock-peer-context" title={`${percentile.peer_count_with_valid_data} valid of ${percentile.peer_count_total} ${percentile.peer_group_label}. ${percentile.peer_context.ranked_quantity_note}`}>
+                Valuation score {percentile.peer_context.tier_phrase} {percentile.peer_group_label} ({percentile.peer_context.tier_count} of {percentile.peer_context.peer_count_with_valid_data} names). Ranks this model&rsquo;s valuation composite, not a price multiple.
+              </p>
+            : percentile && <p className="stock-peer-context">
+                No peer comparison published: {percentile.peer_count_with_valid_data} valid {percentile.peer_group_label} peers, below the {percentile.minimum_peer_count} needed to rank against.
+              </p>}
         </div>}
 
         <div className="tabs">
@@ -279,13 +310,24 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
                 <div>
                   <div className="sec-label">Fundamental categories</div>
                   <div className="component-scores" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-                    {Object.entries(categories).map(([key, value]) => (
-                      <div key={key}>
-                        <span>{key.replace(/_/g, ' ')}</span>
-                        <b>{value == null ? '–' : Math.round(value)}</b>
-                        <i><em style={{ width: `${value || 0}%` }} /></i>
-                      </div>
-                    ))}
+                    {Object.entries(categories).map(([key, value]) => {
+                      // A category score renormalizes onto whatever metrics resolved, so a
+                      // 90 built from 2 of 8 metrics and one built from all 8 read the same
+                      // without the evidence count published alongside it.
+                      const evidence = stock.fundamental_detail?.category_coverage?.[key]
+                      return (
+                        <div key={key}>
+                          <span>{key.replace(/_/g, ' ')}</span>
+                          <b>{value == null ? '–' : Math.round(value)}</b>
+                          {evidence != null && evidence.metrics_applicable > 0 && (
+                            <small style={{ display: 'block', opacity: 0.65 }}>
+                              {evidence.metrics_used}/{evidence.metrics_applicable} metrics
+                            </small>
+                          )}
+                          <i><em style={{ width: `${value || 0}%` }} /></i>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -381,6 +423,17 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
               <Kpi label="Volatility" value={technical.annualized_volatility ? `${technical.annualized_volatility.toFixed(0)}%` : '–'} />
               <Kpi label="Vs SPY (20d)" value={signed(technical.relative_strength_20d)} color={moveColor(technical.relative_strength_20d)} />
               <Kpi label="Beta" value={technical.beta != null ? technical.beta.toFixed(2) : '–'} />
+              {/* Level versus change: "Vs SPY (20d)" is how far ahead this name is, this is
+                  whether that lead is still widening. Shown in standard errors, not percent -
+                  see risk_metrics.relative_acceleration. */}
+              <Kpi
+                label="Accel vs market"
+                value={signed(technical.relative_acceleration, 2, 'σ')}
+                note={technical.relative_acceleration_detail
+                  ? `${signed(technical.relative_acceleration_detail.recent_excess_pct)} this quarter vs ${signed(technical.relative_acceleration_detail.prior_excess_pct)} last, market-adjusted`
+                  : 'Needs two quarters of history against the index'}
+                color={moveColor(technical.relative_acceleration)}
+              />
             </div>
             </>}
           </div>

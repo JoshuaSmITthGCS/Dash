@@ -290,3 +290,43 @@ class ExtendedObservationsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IncrementalMarginDenominatorTests(unittest.TestCase):
+    """Incremental margin is withheld when its denominator cannot carry information.
+
+    THG published 89.9% and NEM 128.2%, both presented as operating leverage, both produced
+    by dividing a real operating-profit change by a near-zero revenue change. This function
+    is the only place holding both revenue figures, so it is the only place that can tell.
+    """
+
+    def income(self, revenue_now, revenue_prior, operating_now, operating_prior):
+        return {"periods": ["2025", "2024"],
+                "rows": {"Total Revenue": [revenue_now, revenue_prior],
+                         "Operating Income": [operating_now, operating_prior],
+                         "Gross Profit": [None, None]}}
+
+    def test_a_near_flat_revenue_denominator_withholds_the_ratio(self):
+        result = fx.derive_margins(self.income(6_050_000_000, 6_000_000_000,
+                                            1_000_000_000, 955_050_000))
+        self.assertIsNone(result["incremental_margin"])
+        self.assertIsNotNone(result["incremental_margin_unavailable_reason"])
+        self.assertAlmostEqual(result["revenue_change_fraction"], 0.0083, places=3)
+
+    def test_a_ratio_outside_the_unit_interval_is_withheld(self):
+        """A share of an incremental revenue dollar cannot exceed that dollar."""
+        result = fx.derive_margins(self.income(7_000_000_000, 6_000_000_000,
+                                            2_300_000_000, 1_000_000_000))
+        self.assertIsNone(result["incremental_margin"])
+
+    def test_a_real_revenue_change_publishes_the_ratio(self):
+        result = fx.derive_margins(self.income(7_200_000_000, 6_000_000_000,
+                                            1_500_000_000, 1_000_000_000))
+        self.assertAlmostEqual(result["incremental_margin"], 0.4167, places=3)
+        self.assertIsNone(result["incremental_margin_unavailable_reason"])
+        self.assertAlmostEqual(result["revenue_change_fraction"], 0.2, places=3)
+
+    def test_the_denominator_is_published_so_the_ratio_can_be_audited(self):
+        result = fx.derive_margins(self.income(7_200_000_000, 6_000_000_000,
+                                            1_500_000_000, 1_000_000_000))
+        self.assertIn("revenue_change_fraction", result)

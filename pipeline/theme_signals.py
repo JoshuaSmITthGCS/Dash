@@ -4,7 +4,7 @@ Split deliberately from ``themes.py``: the scoring there is pure and unit-tested
 everything network-shaped lives here behind one callable. That callable is what
 ``build_theme_screen`` takes, so tests inject a dictionary and production injects EDGAR.
 
-All five signal families come from sources that cost nothing:
+All six signal families come from sources that cost nothing:
 
   * **segment_revenue_share** - ASC 280 segment reporting via the XBRL ``companyconcept``
     API. Caveat worth stating plainly: ASC 280 lets management define its own segments, so
@@ -21,6 +21,10 @@ All five signal families come from sources that cost nothing:
     supply-chain edge.
   * **hyperscaler_capex_growth** - the demand side. Capex from the companies actually
     writing the cheques, pulled from their own XBRL tags.
+  * **backlog_growth** - year-over-year growth in remaining performance obligation, read
+    from the filing's raw XBRL/Inline XBRL contexts rather than ``company_concept``, since
+    this concept is routinely tagged only in ``SatisfactionPeriodAxis`` bands with no
+    undimensioned total for the aggregator API to return.
 
 Every function degrades to None rather than raising, and every network read is cached.
 """
@@ -29,11 +33,18 @@ import re
 
 from cache import CACHE
 from common import LOG
+from xbrl_dimensions import dimensional_facts, facts_on_axis, undimensioned_facts
 
 CAPEX_CONCEPTS = ("PaymentsToAcquirePropertyPlantAndEquipment",
                   "PaymentsToAcquireProductiveAssets")
 REVENUE_CONCEPTS = ("RevenueFromContractWithCustomerExcludingAssessedTax",
                     "Revenues", "RevenueFromContractWithCustomerIncludingAssessedTax")
+# Post-ASC 606 remaining performance obligation. Frequently tagged only in
+# SatisfactionPeriodAxis bands ("within 12 months" / "beyond 12 months") with no
+# undimensioned total - a shape ``company_concept`` cannot serve, since it returns
+# default (non-dimensional) facts only. See ``backlog_total``.
+BACKLOG_CONCEPTS = ("RevenueRemainingPerformanceObligation",)
+BACKLOG_AXIS = "SatisfactionPeriodAxis"
 
 
 # ---------------- pure text measurement ----------------
@@ -93,6 +104,23 @@ def customer_overlap_share(customers, spenders):
     return round(min(1.0, matched), 4)
 
 
+def backlog_total(facts):
+    """One filing's total remaining performance obligation from dimensional facts.
+
+    Prefers the undimensioned entity-wide tag when a filer reports one. Falls back to
+    summing the ``SatisfactionPeriodAxis`` bands when it does not, since some filers
+    disclose only the near-term/long-term split and never tag a consolidated total.
+    Returns ``None`` when neither shape is present rather than guessing.
+    """
+    total_facts = undimensioned_facts(facts)
+    if total_facts:
+        return total_facts[0]["value"]
+    banded = facts_on_axis(facts, BACKLOG_AXIS)
+    if not banded:
+        return None
+    return sum(values[0]["value"] for values in banded.values() if values)
+
+
 def growth_rate(series):
     """Year-over-year growth from a newest-first numeric series."""
     values = [value for value in (series or []) if isinstance(value, (int, float))]
@@ -128,6 +156,21 @@ def _concept_values(sec, ticker, concepts, *, cache=None, units="USD", limit=8):
         if deduped:
             return deduped[:limit]
     return []
+
+
+def recent_10k_filings(sec, ticker):
+    """Up to two most recent 10-K filings for a ticker, newest first, uncached.
+
+    Callers wrap this in ``cache.fetch("sec_submissions", f"10k:{ticker}", ...)``
+    themselves rather than caching internally. That cache key is a cross-module contract:
+    ``fetch_advisor.collect_filing_risk_signals`` reads the identical key, so a
+    concentration/geographic-exposure lookup and a backlog/keyword-density lookup for the
+    same ticker in the same run share one cached filing list instead of issuing it twice.
+    """
+    filings = sec.recent_forms(ticker, ("10-K",), limit=2)
+    for filing in filings:
+        filing["url"] = f"{int(filing['cik'])}/{filing['accession']}/{filing['document']}"
+    return filings
 
 
 def hyperscaler_capex_growth(sec, universe, *, cache=None):
@@ -192,7 +235,7 @@ class EdgarThemeSignals:
         try:
             filings = self.cache.fetch(
                 "sec_submissions", f"10k:{ticker}",
-                lambda: self._recent_annual_reports(ticker), source="sec_edgar")
+                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
         except Exception as exc:  # noqa: BLE001
             LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
             return {}
@@ -213,26 +256,37 @@ class EdgarThemeSignals:
         return {"filing_keyword_density_trend": trend,
                 "_keyword_density": densities[0]}
 
-    def _recent_annual_reports(self, ticker):
-        cik = self.sec.ticker_map().get(ticker.upper())
-        if not cik:
+    def backlog_values(self, ticker):
+        """Two most recent annual remaining-performance-obligation totals, newest first.
+
+        Reads the raw filing document (already fetched for keyword-density scoring, so
+        this is usually a cache hit) instead of ``company_concept``, because backlog is
+        routinely tagged only in dimensional bands with no undimensioned total - exactly
+        the shape ``company_concept`` has no way to report.
+        """
+        try:
+            filings = self.cache.fetch(
+                "sec_submissions", f"10k:{ticker}",
+                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
             return []
-        payload = self.sec._get(f"https://data.sec.gov/submissions/CIK{cik}.json", as_json=True)
-        recent = payload.get("filings", {}).get("recent", {})
-        filings = []
-        for index, form in enumerate(recent.get("form", [])):
-            if form != "10-K":
+        values = []
+        for filing in (filings or [])[:2]:
+            try:
+                text = self.cache.fetch(
+                    "sec_document", filing["url"],
+                    lambda filing=filing: self.sec.filing_document(
+                        filing["cik"], filing["accession"], filing["document"]),
+                    source="sec_edgar")
+            except Exception:  # noqa: BLE001
                 continue
-            accession = recent["accessionNumber"][index]
-            document = recent["primaryDocument"][index]
-            filings.append({
-                "cik": cik, "accession": accession, "document": document,
-                "filed": recent.get("filingDate", [""])[index],
-                "url": f"{int(cik)}/{accession}/{document}",
-            })
-            if len(filings) >= 2:
-                break
-        return filings
+            facts = [fact for concept in BACKLOG_CONCEPTS
+                     for fact in dimensional_facts(text, concept)]
+            total = backlog_total(facts)
+            if total is not None:
+                values.append(total)
+        return values
 
     def __call__(self, ticker, theme):
         if not self.available:
@@ -250,6 +304,9 @@ class EdgarThemeSignals:
 
         if "filing_keyword_density_trend" in declared:
             values.update(self.filing_keyword_signals(ticker, theme))
+
+        if "backlog_growth" in declared:
+            values["backlog_growth"] = growth_rate(self.backlog_values(ticker))
 
         if "customer_concentration_to_spenders" in declared:
             customers = (self.customer_map.get(theme["id"]) or {}).get(ticker.upper())

@@ -17,6 +17,7 @@ from collections import defaultdict
 from bisect import bisect_left, bisect_right
 from datetime import datetime, timezone
 
+from canonical_metrics import BUSINESS_PROFILES, classify_profile, required_for_score, suppressed_metrics
 from common import (LOG, data_mode, load_json, save_json, days_between, today_iso,
                     normalize_name, update_pipeline_status)
 
@@ -162,16 +163,20 @@ def weighted_available(scores, weights):
     return sum(score * weight for score, weight in available) / sum(weight for _, weight in available)
 
 
-# Metrics whose accounting cutoffs are meaningless for banks and insurers. They are skipped
-# for those sectors and excluded from coverage rather than counted as missing evidence.
-FINANCIAL_EXEMPT = ("price_to_book", "debt_to_equity", "current_ratio", "net_debt_to_ebitda",
-                    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "sales_multiple",
-                    "capex_to_depreciation", "inventory_days_trend", "altman_z",
-                    "gross_profits_to_assets")
-
-# Price-to-tangible-book is a bank and insurer metric. For an asset-light software company
-# whose value is people and code, tangible book is close to an accounting accident, and
-# ranking on it is noise dressed as discipline. It is scored only where it means something.
+# Retired. Both of these were sector-string heuristics that decided applicability
+# independently of pipeline/config/applicability_matrix.json, and they disagreed with it.
+# FINANCIAL_EXEMPT forced price_to_book and debt_to_equity to null for every financial --
+# the two canonical insurer inputs -- while leaving days_sales_outstanding_trend scored, and
+# then removed the nulled metrics from the coverage *denominator*, so deleting the evidence
+# raised measured coverage. THG published a Value score of 95.7 and 0.97 coverage with 13 of
+# 33 metrics missing. Applicability now has exactly one authority, read by this path and the
+# v2 path alike: canonical_metrics.suppressed_metrics / required_for_score. See
+# research/audit/CURRENT_MODEL_AUDIT.md section 5.
+#
+# Price-to-tangible-book keeps a sector gate of its own because it is not an applicability
+# question about the *business* but about whether tangible book carries economic meaning:
+# for an asset-light software company it is close to an accounting accident. Profiles that
+# name it a replacement metric (banks, insurers, REITs) always score it.
 TANGIBLE_BOOK_SECTORS = ("Financial Services", "Financials", "Financial", "Real Estate",
                          "Utilities", "Energy", "Basic Materials", "Materials", "Industrials")
 
@@ -221,57 +226,63 @@ def sales_multiple_score(snap, cfg):
     return multiple_score(snap.get("price_to_sales"), bands), "price_to_sales"
 
 
-def raw_fundamental_metrics(snap):
-    """Return comparable raw inputs after applying the existing sector applicability rules.
+# Every metric the fundamentals model can score, in the order the category weights declare
+# them. Suppression is a lookup against the applicability registry, never a literal in code.
+SCORED_METRICS = (
+    "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "return_on_equity",
+    "return_on_invested_capital", "gross_profits_to_assets", "cash_conversion",
+    "free_cash_flow_yield", "profit_margin", "debt_to_equity", "current_ratio",
+    "interest_coverage", "net_debt_to_ebitda", "altman_z", "revenue_growth",
+    "earnings_growth", "fcf_growth_3y", "operating_margin_trend", "earnings_surprise",
+    "net_buyback_yield", "stock_comp_to_revenue", "capex_to_depreciation", "asset_growth",
+    "accruals_ratio", "piotroski_f", "days_sales_outstanding_trend", "inventory_days_trend",
+)
 
-    This is the single raw-input contract shared by normalization fitting and scoring. A
-    financial company never enters an industrial-company distribution, and tangible book
-    only enters sectors where the accounting measure has economic meaning.
+
+def applicability(snap):
+    """Business profile and the metrics suppressed for it, from the shared registry.
+
+    Returns ``(profile, suppressed_set)``. ``suppressed`` means "this metric carries no
+    meaning for this kind of business", which is different from "we could not obtain it":
+    a suppressed metric leaves the coverage denominator, a missing one does not.
+    """
+    snap = snap or {}
+    profile = classify_profile(snap)
+    suppressed = set(suppressed_metrics(profile, SCORED_METRICS))
+    # Tangible book is scored where the accounting measure has economic meaning: the sectors
+    # below, plus any profile that names it a replacement metric for its own industry.
+    profile_contract = (BUSINESS_PROFILES.get("profiles") or {}).get(profile, {})
+    tangible_book_expected = ("price_to_tangible_book" in (profile_contract.get("replacement_metrics") or [])
+                              or (snap.get("sector") or "default") in TANGIBLE_BOOK_SECTORS)
+    if not tangible_book_expected:
+        suppressed.add("price_to_tangible_book")
+    return profile, suppressed
+
+
+def raw_fundamental_metrics(snap):
+    """Comparable raw inputs after applying the registry's applicability rules.
+
+    This is the single raw-input contract shared by normalization fitting and scoring. What
+    changed: suppression is now read from pipeline/config/applicability_matrix.json rather
+    than from a hardcoded financial-sector tuple, so the live score and the v2 layer cannot
+    disagree about what an insurer can be measured on. In particular price_to_book and
+    debt_to_equity are no longer discarded for financials -- they are the canonical inputs
+    for those profiles, and are declared required-for-score below.
     """
     snap = snap or {}
     sector = snap.get("sector") or "default"
-    is_financial = sector in ("Financial Services", "Financials")
+    profile, suppressed = applicability(snap)
     sales_value = snap.get("ev_to_sales")
     sales_basis = "ev_to_sales"
     if sales_value is None:
         sales_value = snap.get("price_to_sales")
         sales_basis = "price_to_sales"
-    values = {
-        "peg": snap.get("peg"),
-        "forward_pe": snap.get("forward_pe"),
-        "sales_multiple": None if is_financial else sales_value,
-        "price_to_book": None if is_financial else snap.get("price_to_book"),
-        "price_to_tangible_book": (snap.get("price_to_tangible_book")
-                                   if sector in TANGIBLE_BOOK_SECTORS else None),
-        "ev_to_ebitda": None if is_financial else snap.get("ev_to_ebitda"),
-        "ev_to_ebit": None if is_financial else snap.get("ev_to_ebit"),
-        "ev_to_fcf": None if is_financial else snap.get("ev_to_fcf"),
-        "return_on_equity": snap.get("return_on_equity"),
-        "return_on_invested_capital": snap.get("return_on_invested_capital"),
-        "gross_profits_to_assets": None if is_financial else snap.get("gross_profits_to_assets"),
-        "cash_conversion": snap.get("cash_conversion"),
-        "free_cash_flow_yield": snap.get("free_cash_flow_yield"),
-        "profit_margin": snap.get("profit_margin"),
-        "debt_to_equity": None if is_financial else snap.get("debt_to_equity"),
-        "current_ratio": None if is_financial else snap.get("current_ratio"),
-        "interest_coverage": snap.get("interest_coverage"),
-        "net_debt_to_ebitda": None if is_financial else snap.get("net_debt_to_ebitda"),
-        "altman_z": None if is_financial else snap.get("altman_z"),
-        "revenue_growth": snap.get("revenue_growth"),
-        "earnings_growth": snap.get("earnings_growth"),
-        "fcf_growth_3y": snap.get("fcf_growth_3y"),
-        "operating_margin_trend": snap.get("operating_margin_trend"),
-        "earnings_surprise": snap.get("earnings_surprise"),
-        "net_buyback_yield": snap.get("net_buyback_yield"),
-        "stock_comp_to_revenue": snap.get("stock_comp_to_revenue"),
-        "capex_to_depreciation": snap.get("capex_to_depreciation"),
-        "asset_growth": snap.get("asset_growth"),
-        "accruals_ratio": snap.get("accruals_ratio"),
-        "piotroski_f": snap.get("piotroski_f"),
-        "days_sales_outstanding_trend": snap.get("days_sales_outstanding_trend"),
-        "inventory_days_trend": snap.get("inventory_days_trend"),
-    }
-    return values, {"sales_multiple_basis": sales_basis, "sector": sector}
+    raw = {metric: snap.get(metric) for metric in SCORED_METRICS}
+    raw["sales_multiple"] = sales_value
+    values = {metric: (None if metric in suppressed else value) for metric, value in raw.items()}
+    return values, {"sales_multiple_basis": sales_basis, "sector": sector,
+                    "applicability_profile": profile, "suppressed_metrics": sorted(suppressed)}
 
 
 def _quantile(ordered, probability):
@@ -501,6 +512,56 @@ def weighted_coverage(metrics, cfg, exempt=()):
     return answered / total if total else 0.0
 
 
+def category_coverage(metrics, cfg, exempt=()):
+    """Per-category share of applicable metric weight that resolved, with counts.
+
+    ``weighted_available`` renormalizes silently, so a category score alone cannot say
+    whether it came from the full evidence base or from two surviving metrics. Suppressed
+    metrics are excluded from both sides, matching ``weighted_coverage``.
+    """
+    detail = {}
+    for category, weights in cfg["metric_weights"].items():
+        answered_weight = applicable_weight = 0.0
+        used = applicable = 0
+        for metric, weight in weights.items():
+            if metric in exempt:
+                continue
+            applicable += 1
+            applicable_weight += weight
+            if metrics.get(metric) is not None:
+                used += 1
+                answered_weight += weight
+        detail[category] = {
+            "answered_weight_share": round(answered_weight / applicable_weight, 2) if applicable_weight else None,
+            "metrics_used": used,
+            "metrics_applicable": applicable,
+        }
+    return detail
+
+
+def _categories_with_required_gate(metrics, cfg, profile):
+    """Category scores, withholding any category missing a metric it is defined by.
+
+    Renormalizing onto whatever resolved is the right treatment for a minor missing input
+    and the wrong one for a defining input. An insurer's valuation without price-to-book is
+    not a thin valuation reading; it is not a valuation reading. The published dataset had
+    125 of 125 financial-sector rows carrying a Value score with price-to-book forced to
+    null, THG's reading 95.7. Returns ``(categories, withheld)`` where ``withheld`` maps a
+    null category to the required metrics that were absent, so the payload says why.
+    """
+    categories, withheld = {}, {}
+    for category, weights in cfg["metric_weights"].items():
+        missing_required = [metric for metric in required_for_score(profile, category)
+                            if metric in weights and metrics.get(metric) is None]
+        if missing_required:
+            categories[category] = None
+            withheld[category] = missing_required
+            continue
+        value = weighted_available(metrics, weights)
+        categories[category] = round(value, 1) if value is not None else None
+    return categories, withheld
+
+
 def _band_valuation_score(snap):
     """Score valuation, profitability, solvency, growth, capital allocation, and accounting quality.
 
@@ -511,7 +572,7 @@ def _band_valuation_score(snap):
         return None, {}
     cfg = SETTINGS["fundamentals"]
     sector = snap.get("sector") or "default"
-    is_financial = sector in ("Financial Services", "Financials")
+    profile, suppressed = applicability(snap)
     pe_bands = cfg["forward_pe_by_sector"].get(sector, cfg["forward_pe_by_sector"]["default"])
     sales_score, sales_basis = sales_multiple_score(snap, cfg)
     altman_variant = snap.get("altman_z_variant")
@@ -522,32 +583,31 @@ def _band_valuation_score(snap):
         # is thin, so it no longer carries the largest weight in the bucket.
         "peg": band_score(snap.get("peg"), cfg["peg"]),
         "forward_pe": multiple_score(snap.get("forward_pe"), pe_bands),
-        "sales_multiple": None if is_financial else sales_score,
+        "sales_multiple": sales_score,
         # Goodwill makes reported book value meaningless for banks; tangible book replaces it there.
-        "price_to_book": None if is_financial else band_score(snap.get("price_to_book"), cfg["price_to_book"]),
-        "price_to_tangible_book": (band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"])
-                                   if sector in TANGIBLE_BOOK_SECTORS else None),
-        "ev_to_ebitda": None if is_financial else multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"]),
-        "ev_to_ebit": None if is_financial else multiple_score(snap.get("ev_to_ebit"), cfg["ev_to_ebit"]),
-        "ev_to_fcf": None if is_financial else multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"]),
+        "price_to_book": band_score(snap.get("price_to_book"), cfg["price_to_book"]),
+        "price_to_tangible_book": band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"]),
+        "ev_to_ebitda": multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"]),
+        "ev_to_ebit": multiple_score(snap.get("ev_to_ebit"), cfg["ev_to_ebit"]),
+        "ev_to_fcf": multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"]),
         "return_on_equity": higher_is_better_score(snap.get("return_on_equity"), cfg["return_on_equity"]),
         # ROIC is the one ROE should have been: leverage cannot inflate it.
         "return_on_invested_capital": higher_is_better_score(snap.get("return_on_invested_capital"),
                                                              cfg["return_on_invested_capital"]),
         # Gross profits over assets - the cleanest profitability signal in the literature,
         # measured above the line where accounting discretion does its work.
-        "gross_profits_to_assets": None if is_financial else higher_is_better_score(
+        "gross_profits_to_assets": higher_is_better_score(
             snap.get("gross_profits_to_assets"), cfg["gross_profits_to_assets"]),
         "cash_conversion": higher_is_better_score(snap.get("cash_conversion"), cfg["cash_conversion"]),
         "free_cash_flow_yield": higher_is_better_score(snap.get("free_cash_flow_yield"), cfg["free_cash_flow_yield"]),
         "profit_margin": higher_is_better_score(snap.get("profit_margin"), cfg["profit_margin"]),
         # Bank balance sheets are structurally leveraged; these industrial-company cutoffs do not apply.
-        "debt_to_equity": None if is_financial else band_score(snap.get("debt_to_equity"), cfg["debt_to_equity"]),
-        "current_ratio": None if is_financial else higher_is_better_score(snap.get("current_ratio"), cfg["current_ratio"]),
+        "debt_to_equity": band_score(snap.get("debt_to_equity"), cfg["debt_to_equity"]),
+        "current_ratio": higher_is_better_score(snap.get("current_ratio"), cfg["current_ratio"]),
         "interest_coverage": higher_is_better_score(snap.get("interest_coverage"), cfg["interest_coverage"]),
-        "net_debt_to_ebitda": None if is_financial else lower_is_better_score(snap.get("net_debt_to_ebitda"),
-                                                                             cfg["net_debt_to_ebitda"]),
-        "altman_z": None if is_financial else altman_score(snap.get("altman_z"), altman_variant, cfg),
+        "net_debt_to_ebitda": lower_is_better_score(snap.get("net_debt_to_ebitda"),
+                                                    cfg["net_debt_to_ebitda"]),
+        "altman_z": altman_score(snap.get("altman_z"), altman_variant, cfg),
         "revenue_growth": higher_is_better_score(snap.get("revenue_growth"), cfg["revenue_growth"]),
         "earnings_growth": higher_is_better_score(snap.get("earnings_growth"), cfg["earnings_growth"]),
         "fcf_growth_3y": higher_is_better_score(snap.get("fcf_growth_3y"), cfg["fcf_growth_3y"]),
@@ -569,21 +629,24 @@ def _band_valuation_score(snap):
                                                               cfg["days_sales_outstanding_trend"]),
         "inventory_days_trend": lower_is_better_score(snap.get("inventory_days_trend"), cfg["inventory_days_trend"]),
     }
-    categories = {}
-    for category, weights in cfg["metric_weights"].items():
-        value = weighted_available(metrics, weights)
-        categories[category] = round(value, 1) if value is not None else None
+    # A metric the registry suppresses for this profile is not scored and does not sit in
+    # the coverage denominator. A metric that is merely absent stays in the denominator.
+    metrics = {name: (None if name in suppressed else value) for name, value in metrics.items()}
+    categories, blocked = _categories_with_required_gate(metrics, cfg, profile)
     raw = weighted_available(categories, cfg["category_weights"])
+    coverage = weighted_coverage(metrics, cfg, tuple(suppressed))
     if raw is None:
-        return None, {**metrics, "categories": categories, "coverage": 0.0}
-    exempt = list(FINANCIAL_EXEMPT) if is_financial else []
-    if sector not in TANGIBLE_BOOK_SECTORS:
-        exempt.append("price_to_tangible_book")
-    coverage = weighted_coverage(metrics, cfg, tuple(exempt))
+        return None, {**metrics, "categories": categories, "coverage": round(coverage, 2),
+                      "applicability_profile": profile, "suppressed_metrics": sorted(suppressed),
+                      "categories_withheld": blocked}
     confidence_multiplier = 0.65 + (0.35 * coverage)
     total = round(raw * confidence_multiplier, 1)
     return total, {**metrics, "categories": categories, "coverage": round(coverage, 2),
+                   "category_coverage": category_coverage(metrics, cfg, tuple(suppressed)),
                    "raw_score": round(raw, 1), "sector": sector,
+                   "applicability_profile": profile,
+                   "suppressed_metrics": sorted(suppressed),
+                   "categories_withheld": blocked,
                    "sales_multiple_basis": sales_basis if sales_score is not None else None,
                    "altman_z_variant": altman_variant}
 
@@ -602,21 +665,17 @@ def _cross_sectional_valuation_score(snap, normalizer):
         score, detail = normalizer.score(metric, raw, sector, snap.get("ticker"))
         metrics[metric] = score
         normalization[metric] = detail
-    categories = {}
-    for category, weights in cfg["metric_weights"].items():
-        value = weighted_available(metrics, weights)
-        categories[category] = round(value, 1) if value is not None else None
+    profile = raw_metadata["applicability_profile"]
+    categories, blocked = _categories_with_required_gate(metrics, cfg, profile)
     raw = weighted_available(categories, cfg["category_weights"])
-    is_financial = sector in ("Financial Services", "Financials")
-    exempt = list(FINANCIAL_EXEMPT) if is_financial else []
-    if sector not in TANGIBLE_BOOK_SECTORS:
-        exempt.append("price_to_tangible_book")
-    exempt.extend(metric for metric in VALUATION_MULTIPLES
+    exempt = set(raw_metadata["suppressed_metrics"])
+    exempt.update(metric for metric in VALUATION_MULTIPLES
                   if isinstance(raw_metrics.get(metric), (int, float))
                   and raw_metrics[metric] <= 0)
     coverage = weighted_coverage(metrics, cfg, tuple(exempt))
     if raw is None:
-        return None, {**metrics, "categories": categories, "coverage": 0.0,
+        return None, {**metrics, "categories": categories, "coverage": round(coverage, 2),
+                      "applicability_profile": profile, "categories_withheld": blocked,
                       "normalization": normalization, "normalization_mode": "cross_sectional"}
     confidence_multiplier = 0.65 + (0.35 * coverage)
     total = round(raw * confidence_multiplier, 1)
@@ -626,12 +685,101 @@ def _cross_sectional_valuation_score(snap, normalizer):
         **metrics,
         "categories": categories,
         "coverage": round(coverage, 2),
+        "category_coverage": category_coverage(metrics, cfg, tuple(exempt)),
         "raw_score": round(raw, 1),
         "sector": sector,
         "sales_multiple_basis": raw_metadata["sales_multiple_basis"],
         "altman_z_variant": snap.get("altman_z_variant"),
+        "applicability_profile": profile,
+        "suppressed_metrics": raw_metadata["suppressed_metrics"],
+        "categories_withheld": blocked,
         "normalization_mode": "cross_sectional",
         "normalization_scope": "sector" if scopes == {"sector"} else "universe",
+        "normalization": normalization,
+    }
+
+
+NEUTRAL_SCORE = 50.0
+
+
+def _fixed_feature_valuation_score(snap, normalizer):
+    """Challenger: every applicable metric carries its full intended weight for every name.
+
+    Round 4 measured Spearman(coverage, final score) at +0.44 even after statement
+    enrichment restored 82% mean coverage, which fired the pre-committed decision rule:
+    renormalizing weights over whichever metrics resolve, then multiplying by
+    completeness, makes the score substantially a ranking of data availability. The
+    field's construction (Jensen-Kelly-Pedersen JF 2023, Freyberger et al. RFS 2025,
+    Bryzgalova et al. RFS 2025, Chen-McCoy JFE 2024) scores every name on the same
+    metric vector and imputes what is missing to the neutral cross-sectional value.
+
+    This mode does exactly that on the cross-sectional percentile scale, where the
+    neutral value is the center of the distribution by construction:
+      observed metric   -> its (sector-conditional) winsorized percentile
+      applicable + missing -> imputed at NEUTRAL_SCORE, flagged ``imputed``
+      suppressed        -> leaves the vector entirely (never imputed)
+    No completeness multiplier touches the score. Coverage ships as a diagnostic and a
+    publication-gate input only (settings.json data_health.min_publication_coverage).
+    """
+    if not snap or snap.get("is_etf"):
+        return None, {}
+    if normalizer is None:
+        raise ValueError("fixed_feature mode requires a fitted CrossSectionalNormalizer")
+    cfg = SETTINGS["fundamentals"]
+    raw_metrics, raw_metadata = raw_fundamental_metrics(snap)
+    sector = raw_metadata["sector"]
+    suppressed = set(raw_metadata["suppressed_metrics"])
+    suppressed.update(metric for metric in VALUATION_MULTIPLES
+                      if isinstance(raw_metrics.get(metric), (int, float))
+                      and raw_metrics[metric] <= 0)
+    metrics, normalization, imputed = {}, {}, []
+    for metric, raw in raw_metrics.items():
+        if metric in suppressed:
+            metrics[metric] = None
+            normalization[metric] = {"status": "suppressed_not_applicable"}
+            continue
+        score, detail = normalizer.score(metric, raw, sector, snap.get("ticker"))
+        if score is None:
+            metrics[metric] = NEUTRAL_SCORE
+            normalization[metric] = {**detail, "status": "imputed",
+                                     "imputed_value": NEUTRAL_SCORE}
+            imputed.append(metric)
+        else:
+            metrics[metric] = score
+            normalization[metric] = detail
+    observed_w = imputed_w = suppressed_w = 0.0
+    for category, weights in cfg["metric_weights"].items():
+        category_weight = cfg["category_weights"].get(category, 0)
+        for metric, weight in weights.items():
+            share = category_weight * weight
+            if metric in suppressed:
+                suppressed_w += share
+            elif metric in imputed:
+                imputed_w += share
+            else:
+                observed_w += share
+    applicable = observed_w + imputed_w
+    categories, blocked = _categories_with_required_gate(
+        metrics, cfg, raw_metadata["applicability_profile"])
+    raw = weighted_available(categories, cfg["category_weights"])
+    coverage = observed_w / applicable if applicable else 0.0
+    if raw is None:
+        return None, {}
+    return round(raw, 1), {
+        **metrics,
+        "categories": categories,
+        "coverage": round(coverage, 2),
+        "observed_weight_fraction": round(observed_w, 4),
+        "imputed_weight_fraction": round(imputed_w, 4),
+        "suppressed_weight_fraction": round(suppressed_w, 4),
+        "imputed_metrics": sorted(imputed),
+        "raw_score": round(raw, 1),
+        "sector": sector,
+        "applicability_profile": raw_metadata["applicability_profile"],
+        "suppressed_metrics": sorted(suppressed),
+        "categories_withheld": blocked,
+        "sales_multiple_basis": raw_metadata["sales_multiple_basis"],
+        "normalization_mode": "fixed_feature",
         "normalization": normalization,
     }
 
@@ -641,6 +789,9 @@ def valuation_score(snap, *, mode=None, normalizer=None):
 
     ``bands`` preserves the production champion. ``cross_sectional`` requires a normalizer
     fitted once on the complete refresh universe so every row uses the same distributions.
+    ``fixed_feature`` additionally imputes applicable-but-missing metrics at the neutral
+    percentile so every name is scored on the same intended weight vector, with no
+    completeness multiplier (the Round 4 imputation challenger).
     """
     selected = mode or SETTINGS.get("normalization_mode", "bands")
     if selected == "bands":
@@ -650,6 +801,8 @@ def valuation_score(snap, *, mode=None, normalizer=None):
         return score, detail
     if selected == "cross_sectional":
         return _cross_sectional_valuation_score(snap, normalizer)
+    if selected == "fixed_feature":
+        return _fixed_feature_valuation_score(snap, normalizer)
     raise ValueError(f"unsupported normalization mode: {selected}")
 
 

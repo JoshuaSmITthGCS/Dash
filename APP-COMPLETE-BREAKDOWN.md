@@ -1,8 +1,8 @@
 # ValueSignal application: complete functional and calculation breakdown
 
-Generated from live config and source on 2026-08-06
+Generated from live config and source on 2026-08-09
 
-Source commit: `2692eac`
+Source commit: `202f2bb`
 
 Application model: `3.2.0`
 
@@ -30,12 +30,22 @@ The Home route is eagerly bundled. Other routes and the stock detail sheet load 
 - `/finances`: Income, spending, pools, accounts, and contribution-room tracking.
 - `/planning`: Retirement and goal probability simulator with live levers, fan chart, and sequence-risk lesson.
 - `/screens/fast-growth`: Application route.
+- `/screens/options`: Application route.
+- `/screens/options/short-term-trades`: Application route.
+- `/screens/options/covered-call`: Application route.
+- `/screens/options/cash-secured-put`: Application route.
+- `/screens/options/protective-put`: Application route.
+- `/screens/options/collar`: Application route.
+- `/screens/options/vertical-spread`: Application route.
+- `/screens/options/advanced-strategies`: Application route.
 - `/screens/momentum`: Monthly skip-month momentum research screen.
-- `/screens/quality-value`: Quality at multi-year valuation lows.
+- `/screens/quality-value`: Quality at valuation lows, measured against each company's own collected multiple history.
 - `/screens/earnings`: Point-in-time earnings timeliness.
 - `/screens/matrix`: Structural versus tactical research matrix.
 - `/screens/early-session`: Early-session research.
 - `/screens/politics`: Congressional disclosure research.
+- `/screens/institutional`: Application route.
+- `/screens/themes`: Application route.
 - `/screens/shadow`: Shadow portfolios used for prospective comparison.
 - `/screens/validation`: Live validation and challenger evidence.
 - `/watchlist`: Saved names with setup-aware guidance.
@@ -50,11 +60,11 @@ Mobile navigation has five one-tap destinations in this order: Research, Search,
 ## Published data footprint
 
 - Published research names: 40
-- Configured screen universe: 921
+- Configured screen universe: 926
 - Published ETFs: 125
 - Monthly factor observations: 756
-- Point-in-time files: 2
-- Point-in-time rows: 2347
+- Point-in-time files: 5
+- Point-in-time rows: 19156
 - Mobile acceptance captures: 16
 
 Static research lives under `public/data`. Full-universe prospective snapshots live under `pipeline/pit_store/YYYY-MM-DD.jsonl`. Every scheduled refresh appends and never backfills.

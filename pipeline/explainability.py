@@ -210,15 +210,15 @@ def build_score_history(rows):
         if not ticker:
             continue
         scores = row.get("scores") or {}
-        confidence = row.get("confidence") or {}
+        data_coverage = row.get("data_coverage") or {}
         categories = row.get("category_scores") or {}
         grouped[ticker].append({
             "recorded_at": row.get("recorded_at"),
             "refresh_id": row.get("refresh_id"),
             "champion_score": scores.get("champion"),
             "challenger_score": scores.get("challenger"),
-            "champion_stance": stance_band(scores.get("champion"), confidence.get("champion")),
-            "challenger_stance": stance_band(scores.get("challenger"), confidence.get("challenger")),
+            "champion_stance": stance_band(scores.get("champion"), data_coverage.get("champion")),
+            "challenger_stance": stance_band(scores.get("challenger"), data_coverage.get("challenger")),
             "category_scores": categories,
         })
     result = {}

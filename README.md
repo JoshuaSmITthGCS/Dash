@@ -24,6 +24,33 @@ The overall research score is:
 - **4% company news sentiment**, aggregated over seven days. Headline sentiment largely mean-reverts
   within days, so it is a tilt rather than a component.
 
+### Acceleration versus the market
+
+Momentum asks whether a stock has been beating the market. `relative_acceleration`
+(`pipeline/risk_metrics.py`) asks the second-derivative question: whether it is beating the market
+by *more than it recently was*. It is the cumulative beta-adjusted excess return over the last 63
+sessions minus the same over the 63 before that, divided by its own standard error, with the most
+recent week skipped because that is where short-term reversal lives.
+
+Two construction choices carry the whole measure:
+
+- **Beta-adjusting is what makes it market-relative.** A raw stock-minus-index difference subtracts
+  the same number from every row on a given day, and subtracting a constant cannot change a
+  cross-sectional ranking — that is why the older `relative_strength_20d` measured +1.00 Spearman
+  against `return_20d` across 877 rows and no longer carries weight. Scaling the market leg by each
+  name's own beta means a high-beta stock that only rose because the index rose does not read as
+  accelerating.
+- **Dividing by its own tracking noise** puts a quiet utility and a volatile biotech on one scale.
+  The published reading is a t-statistic, so `+1.0` is a pickup one standard error larger than that
+  stock's ordinary wobble, not one percent.
+
+It is computed for every scored name, published on `technical_detail`, and shown on the company
+detail view — but it has **no entry in `market_behavior.weights` and contributes nothing to the
+score**. Weighting a second market-relative term on a plausible mechanism alone is the mistake the
+first one made; it stays a measurement until the validation harness has prospective evidence for it.
+Horizons are config (`market_behavior.relative_acceleration`). Basis: Gettleman & Marks (2006) on
+acceleration, Blitz, Huij & Martens (2011) on residual construction.
+
 The fundamental score:
 
 - **28% valuation**: EV/EBITDA and EV/EBIT lead — the enterprise multiple is the best-validated

@@ -76,6 +76,10 @@ jobs:
       # concurrency behind cache.py's shared 4-request/second Yahoo limiter.
       YAHOO_BATCH_SIZE: '100'
       YAHOO_QUOTE_WORKERS: '10'
+      # Unlike ENABLE_OPTIONS_VOLATILITY (left off - see fetch_advisor.py), the multi-day
+      # options screen is a real, user-facing feature, so its own extra options-chain
+      # requests are enabled here rather than left opt-in.
+      ENABLE_MULTIDAY_OPTIONS_SCREEN: '1'
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window
@@ -109,6 +113,7 @@ jobs:
           fi
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
           echo "is_rescore=$is_rescore" >> "$GITHUB_OUTPUT"
+          echo "universe_mode=$universe_mode" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
@@ -147,6 +152,48 @@ jobs:
         # Reads the same on-disk Yahoo price cache the previous step just warmed - no new
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
+      - name: Archive today's closes (survivorship price archive)
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true' && steps.refresh_window.outputs.universe_mode == 'full'
+        # Only on the once-daily full sweep, not the fast top-100 refreshes: the live
+        # universe leg is free (same warmed cache as the Momentum screen above), but the
+        # recently-delisted leg makes real Yahoo calls by design (see price_archive.py
+        # DELISTING_RETENTION_DAYS), and that cost shouldn't be paid three times a day.
+        run: python pipeline/price_archive.py daily || echo "::warning::Price archive run failed; archive_health will reflect the gap"
+      - name: Build multi-day options, covered-call, cash-secured-put, and short-term-trades screens from one shared chain fetch per ticker
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # build_options_strategies.py fetches ONE option chain per ticker (both mechanisms
+        # share the same 1-14-day window) and derives all four of these screens from it -
+        # one extra options-chain request per ticker on top of what fetch_advisor.py already
+        # pulled, not four. Replaces build_options_screen.py/build_covered_call_screen.py/
+        # build_cash_secured_put_screen.py's own run() as the live-data source for
+        # options.json/covered-calls.json/cash-secured-puts.json; those three files' run()
+        # functions still exist and are still directly testable, they're just not what's
+        # called here anymore. A Yahoo hiccup here shouldn't block the rest of the refresh.
+        run: python pipeline/build_options_strategies.py || echo "::warning::Options strategies build failed; keeping previous screen files"
+      - name: Build protective-put screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Protective put, collar, vertical spread, and advanced strategies each still cost
+        # their own options-chain request per ticker on top of the shared fetch above - left
+        # opt-in (ENABLE_*_SCREEN unset here) same as ENABLE_OPTIONS_VOLATILITY in
+        # fetch_advisor.py, so four more full sweeps of the universe don't silently multiply
+        # this job's Yahoo request volume and runtime. Set the matching env var to enable one.
+        run: python pipeline/build_protective_put_screen.py || echo "::warning::Protective-put screen build failed; keeping previous protective-puts.json"
+      - name: Build collar screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_collar_screen.py || echo "::warning::Collar screen build failed; keeping previous collars.json"
+      - name: Build vertical-spread screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_vertical_spread_screen.py || echo "::warning::Vertical-spread screen build failed; keeping previous vertical-spreads.json"
+      - name: Build advanced-strategies screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_advanced_options_screen.py || echo "::warning::Advanced-strategies screen build failed; keeping previous advanced-strategies.json"
+      - name: Run every options strategy's walk-forward backtest
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Unlike the live scanners above, every backtest here prices its option legs with
+        # Black-Scholes off the price history already cached by fetch_advisor.py - no live
+        # option-chain request, so it costs nothing extra against Yahoo's rate limiter and
+        # runs unconditionally rather than behind an ENABLE_* flag.
+        run: python pipeline/run_strategy_backtests.py || echo "::warning::Strategy backtests failed; keeping previous *-backtest.json files"
       - name: Fetch ETF growth screen
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # ETFs are evaluated independently of the stock universe; a Yahoo hiccup here
@@ -161,9 +208,38 @@ jobs:
       - name: Rescore the last published data (no network calls)
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore == 'true'
         run: python pipeline/rescore.py
+      - name: Build the quality-at-valuation-lows screen
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Reads only what is already on disk - the advisor snapshot just written, the backtest
+        # cache's closes and statements, and the point-in-time observation store - so it runs
+        # on the rescore path too, and costs no provider requests either way.
+        run: python pipeline/build_quality_value_screen.py || echo "::warning::Quality-value screen build failed; keeping previous quality-value.json"
+      - name: Build the swing-horizon screen
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Same disk-only inputs as the quality-value screen above (the advisor snapshot plus
+        # the backtest cache's closes and volumes), so it runs on the rescore path too and
+        # costs no provider requests.
+        run: python pipeline/build_swing_screen.py || echo "::warning::Swing screen build failed; keeping previous swing.json"
+      - name: Build the earnings-timeliness and structural-tactical screens
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Must precede shadow_portfolios.py, which selects a sleeve from structural-tactical.json.
+        run: python pipeline/build_tactical_screens.py || echo "::warning::Tactical screen build failed; keeping previous earnings-timeliness.json and structural-tactical.json"
       - name: Append and publish prospective shadow portfolios
         if: steps.refresh_window.outputs.should_run == 'true'
+        # Must follow build_swing_screen.py and the congress/institutional screens: the
+        # swing-only and political+institutional strategies select from those files.
         run: python pipeline/shadow_portfolios.py
+      - name: Backtest following disclosed political and institutional trades
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Reads the two published disclosure screens and the cached price history, so it
+        # costs no provider request and finishes in seconds. Its window only deepens as the
+        # disclosure stores do, which is exactly why it reruns on every refresh.
+        run: python pipeline/backtest_political_institutional.py || echo "::warning::Political/institutional backtest failed; keeping previous results"
+      - name: Rebuild the cross-method backtest comparison
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Pure aggregation over result files already on disk. Runs last so it picks up every
+        # backtest refreshed earlier in this job.
+        run: python pipeline/build_backtest_comparison.py || echo "::warning::Backtest comparison build failed; keeping previous backtest-comparison.json"
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py
@@ -179,27 +255,24 @@ jobs:
         run: |
           git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Every file this pipeline can write under public/data/, not an explicit
-          # allowlist: public/data/diagnostics.json was added by fetch_advisor.py without
-          # ever being added here, which silently left it uncommitted on every run since -
-          # `git commit` would succeed, then `git pull --rebase` below would fail with
-          # "You have unstaged changes" on that one leftover file, so no refresh ever
-          # actually published again. An allowlist can drift out of sync with what the
-          # scripts write; `git add public/data` cannot.
-          git add public/data
-          # The point-in-time store is committed because the runner is ephemeral. It cannot
-          # be rebuilt later - the providers only ever serve today's restated numbers - so
-          # the history only exists if each run appends to it and pushes the result.
-          git add --all pipeline/data/pit 2>/dev/null || true
-          git add --all pipeline/data/estimates 2>/dev/null || true
-          git add --all pipeline/data/factors 2>/dev/null || true
-          # fetch_advisor.py also appends prospective validation snapshots and rewrites
-          # normalization audit artifacts outside pipeline/data/. Leaving either tracked
-          # output unstaged makes the pull --rebase below reject the otherwise valid
-          # refresh commit with "You have unstaged changes."
-          git add --all pipeline/pit_store 2>/dev/null || true
-          git add --all pipeline/shadow_store 2>/dev/null || true
-          git add --all pipeline/reports 2>/dev/null || true
+          # Everything this run wrote, not a per-directory allowlist. That allowlist has now
+          # broken publishing twice the same way: first public/data/diagnostics.json, then
+          # pipeline/backtest_political_institutional_results.json, which
+          # backtest_political_institutional.py writes next to its own source rather than
+          # under any of the enumerated data directories. Both are tracked files that the
+          # pipeline rewrites on every run, and in both cases `git commit` succeeded while
+          # `git pull --rebase` below then aborted with "You have unstaged changes" on the
+          # one file nobody had listed - so the commit was never pushed and the site kept
+          # serving stale data while the job reported only a rebase error.
+          #
+          # `git add -A` cannot drift out of sync with what the scripts write. What it may
+          # NOT pick up is bounded by .gitignore, which already excludes the regenerable
+          # provider caches (pipeline/data/cache/, pipeline/logs/, staging). The stores that
+          # must survive the ephemeral runner - the point-in-time store, estimate and factor
+          # snapshots, the survivorship price archive whose delisted names stop resolving
+          # after a few weeks, and the prospective shadow-portfolio store - are all still
+          # committed by this, because none of them are ignored.
+          git add -A
           git diff --cached --quiet && exit 0
           if [[ "${{ steps.refresh_window.outputs.is_rescore }}" == "true" ]]; then
             git commit -m "chore(data): rescore published research (no data refresh)"
@@ -207,7 +280,10 @@ jobs:
             git commit -m "chore(data): refresh advisor research"
           fi
           for attempt in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            # --autostash so that a future output this step somehow still leaves unstaged
+            # degrades to "that one file isn't published" instead of "nothing is published":
+            # rebase sets it aside and restores it afterwards rather than refusing to run.
+            git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
             git rebase --abort 2>/dev/null || true
             sleep $((attempt * 10))
           done

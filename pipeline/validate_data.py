@@ -155,6 +155,9 @@ def validate(production=False):
         expected = min(publish_limit, advisor.get("universe_count", publish_limit))
         if advisor.get("count") != expected:
             errors.append(f"advisor.json: expected {expected} published rankings, found {advisor.get('count')}")
+    # Schema at which peer tiers replaced continuous percentiles (see peer_groups.py).
+    PEER_TIER_SCHEMA = 6
+    peer_contract_applies = int(advisor.get("schema_version") or 0) >= PEER_TIER_SCHEMA
     for index, row in enumerate(advisor.get("research", [])):
         if row.get("components", {}).get("fundamentals") is None:
             errors.append(f"advisor.json:research.{index}: ranked company lacks a fundamental score")
@@ -168,17 +171,33 @@ def validate(production=False):
         if recommendation and recommendation.get("action") in ("TRIM", "SELL") and recommendation.get("agreement_count", 0) < 2:
             errors.append(f"advisor.json:research.{index}: sell guidance requires two agreeing factors")
         percentile = row.get("valuation_percentile")
-        if percentile and row.get("sector_valuation_percentile") != percentile.get("value"):
-            errors.append(f"advisor.json:research.{index}: legacy and canonical percentile values disagree")
-        if percentile and percentile.get("value") is not None:
-            if percentile.get("peer_count_with_valid_data", 0) < percentile.get("minimum_peer_count", 4):
-                errors.append(f"advisor.json:research.{index}: percentile published below minimum peer count")
-            if percentile.get("value") == 100 and percentile.get("display_value", 100) > 99:
-                errors.append(f"advisor.json:research.{index}: user-facing percentile must cap at approximately 99")
+        # A payload is validated against the contract it was written under. The peer rules
+        # below arrived with schema 6 (tiers replacing continuous percentiles); an older
+        # committed artifact predates them and is migrated at read time by
+        # src/lib/schemaMigrations.js advisorV5ToV6, which strips the fields this rejects.
+        if percentile and peer_contract_applies:
+            if row.get("sector_valuation_percentile") != percentile.get("ordinal"):
+                errors.append(f"advisor.json:research.{index}: legacy and canonical peer ordinals disagree")
+            # A peer claim below the minimum sample must be absent, not degraded, and no
+            # continuous percentile may be published at all -- the ranked quantity is a
+            # composite of discrete bands and cannot support one. See peer_groups.py.
+            context = percentile.get("peer_context")
+            valid_peers = percentile.get("peer_count_with_valid_data", 0)
+            minimum = percentile.get("minimum_peer_count", 30)
+            if context is not None and valid_peers < minimum:
+                errors.append(f"advisor.json:research.{index}: peer context published below minimum peer count")
+            if context is None and percentile.get("tier") is not None:
+                errors.append(f"advisor.json:research.{index}: suppressed peer group still published a tier")
+            for banned in ("value", "display_value"):
+                if percentile.get(banned) is not None:
+                    errors.append(f"advisor.json:research.{index}: peer payload published a continuous "
+                                  f"percentile ('{banned}'), which the sample cannot support")
         analysis = row.get("analysis_v2", {})
         structural = analysis.get("structural", {})
-        if structural.get("confidence", 1) < 0.4 and analysis.get("company_classification") != "insufficient_evidence":
-            errors.append(f"advisor.json:research.{index}: low confidence must classify as insufficient evidence")
+        evidence_weight = structural.get("evidence_weight_resolved", structural.get("confidence", 1))
+        if evidence_weight < 0.4 and analysis.get("company_classification") != "insufficient_evidence":
+            errors.append(f"advisor.json:research.{index}: low resolved evidence weight must classify as "
+                          "insufficient evidence")
     errors.extend(enrichment_coverage_errors(advisor))
 
     benchmark_history = advisor.get("benchmark_history", {})

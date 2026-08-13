@@ -43,7 +43,7 @@ describe('suggestDipBuyPrice', () => {
 
 describe('suggestGoodBuyPrice', () => {
   it('applies a discount when priced richer than the fair percentile', () => {
-    const rich = { price: 100, valuation_percentile: { value: 20 } } // cheaper than only 20% of peers = expensive
+    const rich = { price: 100, valuation_percentile: { ordinal: 16.7, tier: 'most_expensive_third' } }
     const result = suggestGoodBuyPrice(rich)
 
     expect(result.discountPct).toBeGreaterThan(0)
@@ -51,7 +51,7 @@ describe('suggestGoodBuyPrice', () => {
   })
 
   it('does not invent a discount for a name already cheap relative to peers', () => {
-    const cheap = { price: 100, valuation_percentile: { value: 80 } } // cheaper than 80% of peers
+    const cheap = { price: 100, valuation_percentile: { ordinal: 83.3, tier: 'cheapest_third' } }
     const result = suggestGoodBuyPrice(cheap)
 
     expect(result.discountPct).toBe(0)
@@ -59,18 +59,18 @@ describe('suggestGoodBuyPrice', () => {
   })
 
   it('supports the flat sector_valuation_percentile field as a fallback source', () => {
-    const result = suggestGoodBuyPrice({ price: 100, sector_valuation_percentile: 30 })
+    const result = suggestGoodBuyPrice({ price: 100, sector_valuation_percentile: 16.7 })
     expect(result.discountPct).toBeGreaterThan(0)
   })
 
   it('is honest about missing percentile data rather than guessing', () => {
     const result = suggestGoodBuyPrice({ price: 100 })
     expect(result.price).toBeNull()
-    expect(result.derivation).toMatch(/no sector-relative valuation/i)
+    expect(result.derivation).toMatch(/no peer valuation tier/i)
   })
 
   it('bounds the maximum discount', () => {
-    const veryRich = { price: 100, valuation_percentile: { value: 0 } }
+    const veryRich = { price: 100, valuation_percentile: { ordinal: 16.7, tier: 'most_expensive_third' } }
     const result = suggestGoodBuyPrice(veryRich)
     expect(result.discountPct).toBeLessThanOrEqual(25.0)
   })
@@ -81,7 +81,7 @@ describe('suggestPriceTargets', () => {
     const stock = {
       price: 100,
       technical_detail: { annualized_volatility: 25 },
-      valuation_percentile: { value: 40 },
+      valuation_percentile: { ordinal: 16.7, tier: 'most_expensive_third' },
     }
     const result = suggestPriceTargets(stock)
     expect(result.dipBuy.price).toBeLessThan(100)

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { bullBearScore } from './bullBearScore'
 import {
-  activeThemes, rankBreakoutInProgress, rankEmergingGrowth, rankGrowingEtfs, rankMomentum,
-  rankReversal, rankThemeExposure, rankValueTurnarounds,
+  activeThemes, rankAnalystConviction, rankBreakoutInProgress, rankBuyingTheDip, rankCatalyst, rankEmergingGrowth,
+  rankGrowingEtfs, rankMomentum, rankReversal, rankThemeExposure, rankValueTurnarounds,
+  STRATEGY_LENSES, isStrategyLens, lensCoverage, lensReason, rankByLens, rankTailwind,
 } from './researchScreens'
 
 const row = (ticker, overrides = {}) => ({
@@ -33,6 +34,80 @@ describe('value turnaround screen', () => {
     expect(rankValueTurnarounds([expensive, eligible]).map((item) => item.ticker))
       .toEqual(['VALUE'])
   })
+
+  it('flags but does not drop a turnaround whose recent earnings surprise was sharply negative', () => {
+    const cleanValue = row('CLEAN', {
+      history: { closes: [...Array(51).fill(100), 101, 104] },
+    })
+    const badEarnings = row('BADEPS', {
+      history: { closes: [...Array(51).fill(100), 101, 104] },
+      earnings_surprise: -15,
+    })
+    const results = rankValueTurnarounds([badEarnings, cleanValue])
+    expect(results.map((item) => item.ticker)).toEqual(['CLEAN', 'BADEPS'])
+    expect(results.find((item) => item.ticker === 'CLEAN').screen.corroborated).toBe(true)
+    const flagged = results.find((item) => item.ticker === 'BADEPS')
+    expect(flagged.screen.corroborated).toBe(false)
+    expect(flagged.screen.corroborationGaps[0]).toMatch(/deteriorating business/)
+  })
+})
+
+describe('buying the dip screen', () => {
+  // Same fixed 52-week high/low used in dipWatch.test.js, with no `dates` on the default
+  // row() history so dipWatch's recent-60-day blend never activates - the long-term-only
+  // math is what this suite's numbers are computed against.
+  const WEEK_HIGH = 100
+  const WEEK_LOW = 55
+  const MAX_DRAWDOWN_252D = -22
+  // With those fixed inputs, dipWatch's long-term floor/max resolve to 66.5 / 79.8 - see
+  // dipWatch.js. 70 sits inside that band without also clearing the value-turnaround
+  // screen's own gates, keeping the two suites independent.
+  const IN_RANGE_PRICE = 70
+
+  const dipRow = (ticker, price, overrides = {}) => row(ticker, {
+    score: 82,
+    stance: 'ATTRACTIVE',
+    price,
+    recommendation: { action: 'HOLD' },
+    technical_detail: {
+      pct_from_52w_high: (price / WEEK_HIGH - 1) * 100,
+      pct_above_52w_low: (price / WEEK_LOW - 1) * 100,
+      max_drawdown_252d: MAX_DRAWDOWN_252D,
+      return_60d: -12,
+    },
+    ...overrides,
+  })
+
+  it('only keeps ATTRACTIVE/PROMISING names that are genuinely down from their highs', () => {
+    const eligible = dipRow('DIP', IN_RANGE_PRICE)
+    const wrongStance = dipRow('MIXED', IN_RANGE_PRICE, { stance: 'MIXED' })
+    const notDown = dipRow('FLAT', 98, {
+      technical_detail: { pct_from_52w_high: -2, pct_above_52w_low: 78, return_60d: 5 },
+    })
+    expect(rankBuyingTheDip([eligible, wrongStance, notDown]).map((item) => item.ticker)).toEqual(['DIP'])
+  })
+
+  it('excludes rows without a published score, even if otherwise eligible', () => {
+    expect(rankBuyingTheDip([dipRow('NOSCORE', IN_RANGE_PRICE, { score: undefined })])).toEqual([])
+  })
+
+  it('excludes rows that have already cleared the recovery level - the dip is over', () => {
+    const recovered = dipRow('BOUNCED', 85)
+    expect(rankBuyingTheDip([recovered])).toEqual([])
+  })
+
+  it('ranks higher-scoring names ahead of lower-scoring ones at the same proximity to the floor', () => {
+    const strong = dipRow('STRONG', IN_RANGE_PRICE, { score: 90 })
+    const weak = dipRow('WEAK', IN_RANGE_PRICE, { score: 60 })
+    expect(rankBuyingTheDip([weak, strong]).map((item) => item.ticker)).toEqual(['STRONG', 'WEAK'])
+  })
+
+  it('attaches the dipWatch floor/max/status onto screen for the chart to render', () => {
+    const [result] = rankBuyingTheDip([dipRow('DIP', IN_RANGE_PRICE)])
+    expect(result.screen.status).toBe('in_range')
+    expect(result.screen.floor).toBeCloseTo(66.5, 1)
+    expect(result.screen.max).toBeCloseTo(79.8, 1)
+  })
 })
 
 describe('momentum screen', () => {
@@ -41,6 +116,25 @@ describe('momentum screen', () => {
     const falling = row('DOWN', { technical_detail: { ...row('X').technical_detail, return_5d: -2 } })
 
     expect(rankMomentum([falling, rising]).map((item) => item.ticker)).toEqual(['UP'])
+  })
+
+  it('flags but does not drop a pop that sits inside a longer 60/252-day downtrend', () => {
+    const base = row('X').technical_detail
+    const broadBased = row('BROAD', { technical_detail: { ...base, return_5d: 3, return_60d: 5, return_252d: 10 } })
+    const oneWeekPop = row('POP', { technical_detail: { ...base, return_5d: 3, return_60d: -20, return_252d: -30 } })
+    const results = rankMomentum([oneWeekPop, broadBased])
+    expect(results.map((item) => item.ticker)).toEqual(['BROAD', 'POP'])
+    expect(results.find((item) => item.ticker === 'BROAD').screen.corroborated).toBe(true)
+    const flagged = results.find((item) => item.ticker === 'POP')
+    expect(flagged.screen.corroborated).toBe(false)
+    expect(flagged.screen.corroborationGaps[0]).toMatch(/longer 60\/252-day downtrend/)
+  })
+
+  it('does not penalize missing longer-horizon data, only an actual opposing trend', () => {
+    const base = row('X').technical_detail
+    const noLongerData = row('NEW', { technical_detail: { ...base, return_5d: 3 } })
+    const [result] = rankMomentum([noLongerData])
+    expect(result.screen.corroborated).toBe(true)
   })
 })
 
@@ -109,6 +203,23 @@ describe('short-term reversal screen', () => {
     const mildBounce = reversalRow('MILD', { technical_detail: { return_20d: -4, return_5d: 1, drawdown_60d: -6 } })
     expect(rankReversal([mildBounce, sharperBounce]).map((item) => item.ticker))
       .toEqual(['SHARP', 'MILD'])
+  })
+
+  it('flags but does not drop a bounce that followed a sharply negative earnings surprise', () => {
+    const cleanBounce = reversalRow('CLEAN')
+    const earningsDriven = reversalRow('EPS', { earnings_surprise: -12 })
+    const results = rankReversal([earningsDriven, cleanBounce])
+    expect(results.map((item) => item.ticker)).toEqual(['CLEAN', 'EPS'])
+    expect(results.find((item) => item.ticker === 'CLEAN').screen.corroborated).toBe(true)
+    const flagged = results.find((item) => item.ticker === 'EPS')
+    expect(flagged.screen.corroborated).toBe(false)
+    expect(flagged.screen.corroborationGaps[0]).toMatch(/earnings surprise/)
+  })
+
+  it('elevated short interest offers an alternate, squeeze-consistent reason for the bounce', () => {
+    const squeeze = reversalRow('SQZ', { earnings_surprise: -12, short_percent_of_float: 0.08 })
+    const [result] = rankReversal([squeeze])
+    expect(result.screen.corroborated).toBe(true)
   })
 })
 
@@ -197,6 +308,139 @@ describe('emerging growth screen (prospective, unvalidated)', () => {
       technical_detail: { return_5d: 1, relative_strength_20d: 1 },
     })
     expect(rankEmergingGrowth([milder, stronger]).map((item) => item.ticker)).toEqual(['STRONG', 'MILD'])
+  })
+})
+
+describe('short-term catalyst screen', () => {
+  const catalystRow = (ticker, overrides = {}) => row(ticker, {
+    components: { fundamentals: 40, market_behavior: 60, news_sentiment: 50 },
+    insider_activity: { available: false, points: 0 },
+    technical_detail: { return_5d: 0 },
+    ...overrides,
+  })
+
+  it('a weak long-term research score can still clear this screen on a real catalyst', () => {
+    // The whole point: fundamentals are deliberately a small weight, not a gate.
+    const buying = catalystRow('BUY', {
+      components: { fundamentals: 35, market_behavior: 55, news_sentiment: 78 },
+      insider_activity: { available: true, points: 4 },
+      technical_detail: { return_5d: 3 },
+    })
+    expect(rankCatalyst([buying]).map((item) => item.ticker)).toEqual(['BUY'])
+  })
+
+  it('excludes a quiet stock with only neutral news and no insider activity', () => {
+    const quiet = catalystRow('QUIET')
+    expect(rankCatalyst([quiet])).toEqual([])
+  })
+
+  it('opportunistic insider selling is a catalyst too, and it ranks below buying', () => {
+    const buying = catalystRow('BUY', {
+      insider_activity: { available: true, points: 4 },
+      technical_detail: { return_5d: 2 },
+    })
+    const selling = catalystRow('SELL', {
+      insider_activity: { available: true, points: -3 },
+      technical_detail: { return_5d: -1 },
+    })
+    expect(rankCatalyst([selling, buying]).map((item) => item.ticker)).toEqual(['BUY', 'SELL'])
+  })
+
+  it('fresh bullish news alone is enough of a catalyst without insider data', () => {
+    const news = catalystRow('NEWS', {
+      components: { fundamentals: 50, market_behavior: 50, news_sentiment: 85 },
+      technical_detail: { return_5d: 2 },
+    })
+    expect(rankCatalyst([news]).map((item) => item.ticker)).toEqual(['NEWS'])
+  })
+
+  it('flags but does not drop insider buying from a single trader with no track record', () => {
+    const soleTrader = catalystRow('SOLO', {
+      insider_activity: { available: true, points: 4, buy_cluster: { insider_count: 1, pattern_confidence: 0.3 } },
+      technical_detail: { return_5d: 3 },
+    })
+    const corroboratedCluster = catalystRow('CLUSTER', {
+      insider_activity: { available: true, points: 4, buy_cluster: { insider_count: 3, pattern_confidence: 0.9 } },
+      technical_detail: { return_5d: 3 },
+    })
+    const results = rankCatalyst([soleTrader, corroboratedCluster])
+    expect(results.map((item) => item.ticker)).toEqual(['CLUSTER', 'SOLO'])
+    expect(results.find((item) => item.ticker === 'CLUSTER').screen.corroborated).toBe(true)
+    const flagged = results.find((item) => item.ticker === 'SOLO')
+    expect(flagged.screen.corroborated).toBe(false)
+    expect(flagged.screen.corroborationGaps[0]).toMatch(/single trader/)
+  })
+
+  it('flags but does not drop a catalyst resting on a single low-quality news source', () => {
+    const thinNews = catalystRow('THIN', {
+      components: { fundamentals: 50, market_behavior: 50, news_sentiment: 85 },
+      technical_detail: { return_5d: 2 },
+      sentiment_summary: { article_count: 1, best_source_quality_tier: 'aggregator_syndicated' },
+    })
+    const qualityNews = catalystRow('QUALITY', {
+      components: { fundamentals: 50, market_behavior: 50, news_sentiment: 85 },
+      technical_detail: { return_5d: 2 },
+      sentiment_summary: { article_count: 1, best_source_quality_tier: 'established_press' },
+    })
+    const results = rankCatalyst([thinNews, qualityNews])
+    expect(results.map((item) => item.ticker)).toEqual(['QUALITY', 'THIN'])
+    const flagged = results.find((item) => item.ticker === 'THIN')
+    expect(flagged.screen.corroborated).toBe(false)
+    expect(flagged.screen.corroborationGaps[0]).toMatch(/low-quality source/)
+  })
+
+  it('two or more articles corroborates news even from aggregator-only sources', () => {
+    const twoArticles = catalystRow('TWO', {
+      components: { fundamentals: 50, market_behavior: 50, news_sentiment: 85 },
+      technical_detail: { return_5d: 2 },
+      sentiment_summary: { article_count: 2, best_source_quality_tier: 'aggregator_syndicated' },
+    })
+    const [result] = rankCatalyst([twoArticles])
+    expect(result.screen.corroborated).toBe(true)
+  })
+})
+
+describe('analyst conviction screen', () => {
+  const convictionRow = (ticker, overrides = {}) => row(ticker, {
+    analyst_count: 8,
+    analyst_rating: 3,
+    analyst_target_upside: 0,
+    ...overrides,
+  })
+
+  it('requires at least three analysts, matching the backend expectations-modifier floor', () => {
+    const thin = convictionRow('THIN', { analyst_count: 2, analyst_rating: 1.2, analyst_target_upside: 30 })
+    expect(rankAnalystConviction([thin])).toEqual([])
+  })
+
+  it('ranks a bullish rating and strong consensus upside above a cautious, low-upside name', () => {
+    const bullish = convictionRow('BULL', { analyst_rating: 1.4, analyst_target_upside: 25 })
+    const cautious = convictionRow('BEAR', { analyst_rating: 4.2, analyst_target_upside: -8 })
+    expect(rankAnalystConviction([cautious, bullish]).map((item) => item.ticker)).toEqual(['BULL', 'BEAR'])
+  })
+
+  it('a weak fundamentals score does not disqualify a name with strong analyst conviction', () => {
+    const weakFundamentalsStrongConviction = convictionRow('WEAK', {
+      components: { fundamentals: 25, market_behavior: 50, news_sentiment: 50 },
+      analyst_rating: 1.3, analyst_target_upside: 22,
+    })
+    expect(rankAnalystConviction([weakFundamentalsStrongConviction]).map((item) => item.ticker))
+      .toEqual(['WEAK'])
+  })
+
+  it('flags but does not drop a large consensus upside on a name already expensive for its sector', () => {
+    const coherent = convictionRow('COHERENT', {
+      analyst_rating: 1.5, analyst_target_upside: 20, sector_valuation_percentile: 40,
+    })
+    const staleTarget = convictionRow('STALE', {
+      analyst_rating: 1.5, analyst_target_upside: 20, sector_valuation_percentile: 92,
+    })
+    const results = rankAnalystConviction([staleTarget, coherent])
+    expect(results.map((item) => item.ticker)).toEqual(['COHERENT', 'STALE'])
+    expect(results.find((item) => item.ticker === 'COHERENT').screen.corroborated).toBe(true)
+    const flagged = results.find((item) => item.ticker === 'STALE')
+    expect(flagged.screen.corroborated).toBe(false)
+    expect(flagged.screen.corroborationGaps[0]).toMatch(/most expensive decile/)
   })
 })
 
@@ -296,14 +540,30 @@ describe('invariant: no stock screen ever includes an ETF', () => {
   const genuineStock = row('AAPL', {
     technical_detail: { return_5d: 3, return_20d: 3, relative_strength_20d: 1 },
   })
+  const strongEtfWithCatalystInputs = row('ETF_CATALYST', {
+    ...strongEtfShapedAsAStock,
+    insider_activity: { available: true, points: 5 },
+    analyst_count: 10, analyst_rating: 1.1, analyst_target_upside: 40,
+  })
+  const genuineCatalystStock = row('MSFT', {
+    components: { fundamentals: 50, market_behavior: 50, news_sentiment: 80 },
+    insider_activity: { available: true, points: 3 },
+    technical_detail: { return_5d: 2 },
+    analyst_count: 8, analyst_rating: 1.5, analyst_target_upside: 15,
+  })
 
   it.each([
     ['rankValueTurnarounds', rankValueTurnarounds],
     ['rankMomentum', rankMomentum],
     ['rankReversal', rankReversal],
     ['rankBreakoutInProgress', rankBreakoutInProgress],
-  ])('%s excludes ETF rows even when the ETF would otherwise dominate the ranking', (_, screenFn) => {
-    const results = screenFn([strongEtfShapedAsAStock, genuineStock], 5)
+    ['rankCatalyst', rankCatalyst],
+    ['rankAnalystConviction', rankAnalystConviction],
+  ])('%s excludes ETF rows even when the ETF would otherwise dominate the ranking', (name, screenFn) => {
+    const pool = name === 'rankCatalyst' || name === 'rankAnalystConviction'
+      ? [strongEtfWithCatalystInputs, genuineCatalystStock]
+      : [strongEtfShapedAsAStock, genuineStock]
+    const results = screenFn(pool, 5)
 
     expect(results.some((item) => item.is_etf)).toBe(false)
   })
@@ -325,5 +585,104 @@ describe('invariant: no stock screen ever includes an ETF', () => {
 
     expect(results.some((item) => item.is_etf)).toBe(false)
     expect(results.map((item) => item.ticker)).toEqual(['REALCO'])
+  })
+})
+
+describe('strategy lens registry', () => {
+  const catalystRow = (ticker, overrides = {}) => row(ticker, {
+    components: { fundamentals: 60, news_sentiment: 80 },
+    technical_detail: { return_5d: 3, return_20d: 6 },
+    ...overrides,
+  })
+
+  it('ranks tailwind on the best theme opportunity and drops names with no scored exposure', () => {
+    const connected = row('CONNECTED', {
+      theme_exposure: [
+        { theme_id: 'ai', display_name: 'AI Infrastructure', theme_exposure_score: 90, opportunity_score: 70, eligible: true },
+        { theme_id: 'grid', display_name: 'Grid', theme_exposure_score: 40, opportunity_score: 88, eligible: true },
+      ],
+    })
+    const unconnected = row('PLAIN', { theme_exposure: [] })
+
+    const ranked = rankTailwind([connected, unconnected], 5)
+
+    expect(ranked.map((item) => item.ticker)).toEqual(['CONNECTED'])
+    expect(ranked[0].screen.rankScore).toBe(88)
+    expect(ranked[0].screen.themeName).toBe('Grid')
+  })
+
+  it('flags a theme name the exposure layer excluded on valuation grounds rather than hiding it', () => {
+    const euphoric = row('RICH', {
+      theme_exposure: [{ display_name: 'AI', theme_exposure_score: 100, opportunity_score: 60, eligible: false }],
+    })
+
+    const [ranked] = rankTailwind([euphoric], 5)
+
+    expect(ranked.screen.corroborated).toBe(false)
+    expect(ranked.screen.corroborationGaps.join(' ')).toMatch(/valuation/)
+  })
+
+  it('lensCoverage names the single input that excludes the most rows', () => {
+    // Reversal needs a 60-day drawdown, which only fully polled rows carry. Reporting
+    // that is the difference between "few good candidates" and "most of the universe was
+    // never evaluated".
+    const complete = row('FULL', {
+      components: { fundamentals: 70 },
+      technical_detail: { return_5d: 4, return_20d: -8, drawdown_60d: -20 },
+    })
+    const noDrawdown = row('PARTIAL', {
+      components: { fundamentals: 70 },
+      technical_detail: { return_5d: 4, return_20d: -8 },
+    })
+
+    const coverage = lensCoverage([complete, noDrawdown, { ...noDrawdown, ticker: 'PARTIAL2' }], 'reversal')
+
+    expect(coverage.scanned).toBe(3)
+    expect(coverage.evaluable).toBe(1)
+    expect(coverage.missingInputs).toBe(2)
+    expect(coverage.binding.label).toBe('60-day drawdown')
+    expect(coverage.binding.present).toBe(1)
+  })
+
+  it('lensCoverage counts a row as evaluable under an any-of lens when one input resolves', () => {
+    const newsOnly = catalystRow('NEWS', { insider_activity: { available: false } })
+    const dark = catalystRow('DARK', {
+      components: { fundamentals: 60 }, insider_activity: { available: false },
+    })
+
+    const coverage = lensCoverage([newsOnly, dark], 'catalyst')
+
+    expect(coverage.evaluable).toBe(1)
+    expect(coverage.inputs.find((input) => input.label === 'Form 4 insider activity').present).toBe(0)
+  })
+
+  it('lensReason states the measurements that made a row qualify', () => {
+    const bouncing = row('BOUNCE', {
+      components: { fundamentals: 63 },
+      technical_detail: { return_5d: 6.6, return_20d: -10.4, drawdown_60d: -27.7 },
+    })
+
+    const [ranked] = rankByLens([bouncing], 'reversal', 20)
+
+    expect(lensReason(ranked, 'reversal')).toBe(
+      'down 10.4% over 20 days · 27.7% below its 60-day high · but +6.6% this week · fundamentals 63',
+    )
+  })
+
+  it('rankByLens returns only rows that clear the bar, never a padded ordering', () => {
+    const qualifies = row('UP', { technical_detail: { return_5d: 3, return_20d: 8, momentum_12_1: 70 } })
+    const falls = row('DOWN', { technical_detail: { return_5d: -3, return_20d: -8 } })
+
+    expect(rankByLens([qualifies, falls], 'momentum', 20).map((item) => item.ticker)).toEqual(['UP'])
+  })
+
+  it('every lens is selectable, ranks, and can explain a row it returned', () => {
+    expect(Object.keys(STRATEGY_LENSES).every((key) => isStrategyLens(key))).toBe(true)
+    expect(isStrategyLens('score')).toBe(false)
+    for (const [key, lens] of Object.entries(STRATEGY_LENSES)) {
+      expect(typeof lens.rank, key).toBe('function')
+      expect(lens.inputs.length, key).toBeGreaterThan(0)
+      expect(lensCoverage([row('ANY')], key).scanned, key).toBe(1)
+    }
   })
 })

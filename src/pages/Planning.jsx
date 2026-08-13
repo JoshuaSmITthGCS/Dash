@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
-import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
+import { annualizeReturnPct, currentHoldingsSeries, portfolioReturnSummary } from '../lib/portfolioAnalytics.js'
 import { formatPreferenceMoney, usePreferences } from '../lib/PreferencesContext.jsx'
 import { annualReturnTargetRange, applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource, sequenceRiskPaths } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
@@ -51,9 +52,11 @@ export default function Planning() {
     && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
   const positions = previewPortfolio ? modelSettings.interface.mobile_preview_positions : storedPositions
   const finances = useFirebaseFinances()
+  const tracking = usePortfolioTracking()
   const { preferences } = usePreferences()
   const [draft, setDraft] = useState(null)
   const [committed, setCommitted] = useState(null)
+  const [useLiveStrategyReturn, setUseLiveStrategyReturn] = useState(true)
   const [changedLever, setChangedLever] = useState(null)
   const [leverDeltas, setLeverDeltas] = useState({})
   const priorProbability = useRef(null)
@@ -86,6 +89,22 @@ export default function Planning() {
   }, [benchmarkReport, data, positions, preferences.defaultBenchmark])
   const returnTargetRange = useMemo(() => annualReturnTargetRange(source), [source])
 
+  // The account's own live, contribution-adjusted Strategy return (Modified Dietz), annualized
+  // -- "if I keep running this strategy at its current rate, when can I retire" -- as an
+  // alternative to the manually-set slider target below. Recomputes on every render from
+  // tracking state, so it moves automatically as the portfolio does (a new value lands here
+  // once a day, as often as a snapshot of the account is recorded). No minimum-history gate:
+  // this is deliberately wired up now and will settle down on its own as more days accumulate,
+  // rather than waiting on an arbitrary threshold before it does anything.
+  const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
+  const liveStrategyAnnualReturnPct = returnSummary.strategy.available
+    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)
+    : null
+  const liveTargetActive = useLiveStrategyReturn && liveStrategyAnnualReturnPct != null
+  const effectiveAnnualReturnTargetPct = liveTargetActive
+    ? normalizeAnnualReturnTarget(liveStrategyAnnualReturnPct, source)
+    : committed?.annualReturnTargetPct
+
   useEffect(() => {
     if (finances.loading) return
     const next = {
@@ -100,8 +119,8 @@ export default function Planning() {
   }, [finances.loading, maximumRetirementAge, minimumRetirementAge, returnTargetRange.minimumPct, returnTargetRange.maximumPct])
 
   const adjustedReturns = useMemo(() => source.available && committed
-    ? applyAllocationAssumption(source.returns, committed.allocation, committed.annualReturnTargetPct / 100)
-    : [], [committed, source])
+    ? applyAllocationAssumption(source.returns, committed.allocation, effectiveAnnualReturnTargetPct / 100)
+    : [], [committed, effectiveAnnualReturnTargetPct, source])
   const input = useMemo(() => source.available && committed ? {
     monthlyReturns: adjustedReturns,
     currentBalance: finances.settings.currentSavings,
@@ -177,12 +196,18 @@ export default function Planning() {
     </section>
 
     <section className="planning-baseline" aria-labelledby="planning-baseline-title">
-      <div><span className="eyebrow">Dotted median target</span><h2 id="planning-baseline-title">{formatAnnualReturnTarget(committed.annualReturnTargetPct)} annual</h2></div>
-      <p>{returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
+      <div><span className="eyebrow">Dotted median target</span><h2 id="planning-baseline-title">{formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} annual</h2></div>
+      <p>{liveTargetActive
+        ? `Your live Strategy return (time-weighted), annualized from ${returnSummary.strategy.startDate} to ${returnSummary.strategy.endDate} and updating automatically as your portfolio does. This is a planning assumption, not a forecast.`
+        : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12, color: 'var(--text-dim)' }}>
+        <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
+        Track my live Strategy return (time-weighted){liveStrategyAnnualReturnPct == null ? ' -- unavailable until there are at least two dated recorded account values' : ''}
+      </label>
     </section>
 
     <section className="planning-levers"><header><span className="eyebrow">Live levers</span><h2>Change the plan, then release to resimulate</h2></header>
-      <label><span>Annual return target <strong>{formatAnnualReturnTarget(draft.annualReturnTargetPct)}</strong></span><input type="range" min={returnTargetRange.minimumPct} max={returnTargetRange.maximumPct} step={returnTargetRange.stepPct} value={draft.annualReturnTargetPct} onChange={(event) => setDraft({ ...draft, annualReturnTargetPct: Number(event.target.value) })} onPointerUp={() => commitLever('annualReturnTargetPct')} onKeyUp={() => commitLever('annualReturnTargetPct')} /><small>Dotted median target. {returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year. ` : ''}{delta('annualReturnTargetPct')}</small></label>
+      <label><span>Annual return target <strong>{formatAnnualReturnTarget(liveTargetActive ? effectiveAnnualReturnTargetPct : draft.annualReturnTargetPct)}</strong></span><input type="range" disabled={liveTargetActive} min={returnTargetRange.minimumPct} max={returnTargetRange.maximumPct} step={returnTargetRange.stepPct} value={liveTargetActive ? effectiveAnnualReturnTargetPct : draft.annualReturnTargetPct} onChange={(event) => setDraft({ ...draft, annualReturnTargetPct: Number(event.target.value) })} onPointerUp={() => commitLever('annualReturnTargetPct')} onKeyUp={() => commitLever('annualReturnTargetPct')} /><small>{liveTargetActive ? 'Following your live Strategy return -- turn off tracking above to set a custom target. ' : `Dotted median target. ${returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year. ` : ''}${delta('annualReturnTargetPct')}`}</small></label>
       <label><span>Monthly contribution <strong>{money(draft.monthlyContribution)}</strong></span><input type="range" min={projectionConfig.lever_ranges.monthly_contribution.minimum} max={projectionConfig.lever_ranges.monthly_contribution.maximum} step={projectionConfig.lever_ranges.monthly_contribution.step} value={draft.monthlyContribution} onChange={(event) => setDraft({ ...draft, monthlyContribution: Number(event.target.value) })} onPointerUp={() => commitLever('monthlyContribution')} onKeyUp={() => commitLever('monthlyContribution')} /><small>{delta('monthlyContribution')}</small></label>
       <label><span>Target retirement age <strong>{draft.retirementAge}</strong></span><input type="range" min={minimumRetirementAge} max={maximumRetirementAge} step={projectionConfig.lever_ranges.retirement_age.step} value={draft.retirementAge} onChange={(event) => setDraft({ ...draft, retirementAge: Number(event.target.value) })} onPointerUp={() => commitLever('retirementAge')} onKeyUp={() => commitLever('retirementAge')} /><small>Available from age {minimumRetirementAge}. {delta('retirementAge')}</small></label>
       <label><span>Annual retirement withdrawal <strong>{money(draft.annualWithdrawal)}</strong></span><input type="range" min={projectionConfig.lever_ranges.annual_withdrawal.minimum} max={projectionConfig.lever_ranges.annual_withdrawal.maximum} step={projectionConfig.lever_ranges.annual_withdrawal.step} value={draft.annualWithdrawal} onChange={(event) => setDraft({ ...draft, annualWithdrawal: Number(event.target.value) })} onPointerUp={() => commitLever('annualWithdrawal')} onKeyUp={() => commitLever('annualWithdrawal')} /><small>In today's dollars. {delta('annualWithdrawal')}</small></label>
@@ -190,7 +215,7 @@ export default function Planning() {
       {projection.result?.runtimeMs != null && <p className="planning-runtime">Updated in {projection.result.runtimeMs.toFixed(0)} ms</p>}
     </section>
 
-    <ProjectionPanel state={projection} source={source} money={money} annualReturnTargetPct={committed.annualReturnTargetPct} startAge={finances.settings.currentAge} retirementAge={committed.retirementAge} endAge={finances.settings.retirementEndAge} title="Long-range outcome distribution" showSuccess={false} assumptionNote={`The chart runs from now through age ${finances.settings.retirementEndAge}. The dotted median targets ${formatAnnualReturnTarget(committed.annualReturnTargetPct)} annually and the shaded bands are estimates around it.`} />
+    <ProjectionPanel state={projection} source={source} money={money} annualReturnTargetPct={effectiveAnnualReturnTargetPct} startAge={finances.settings.currentAge} retirementAge={committed.retirementAge} endAge={finances.settings.retirementEndAge} title="Long-range outcome distribution" showSuccess={false} assumptionNote={`The chart runs from now through age ${finances.settings.retirementEndAge}. The dotted median targets ${formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} annually${liveTargetActive ? ', your live Strategy return, updating automatically as your portfolio does' : ''} and the shaded bands are estimates around it.`} />
     <SequenceRiskPanel money={money} />
 
     <section className="planning-goals"><header><div><span className="eyebrow">Goals</span><h2>Retirement is one goal among several</h2></div></header><form onSubmit={addGoal}><label><span>Goal name</span><input required placeholder="Home down payment" value={goalForm.name} onChange={(event) => setGoalForm({ ...goalForm, name: event.target.value })} /></label><label><span>Target amount</span><input required type="number" min="1" value={goalForm.targetAmount} onChange={(event) => setGoalForm({ ...goalForm, targetAmount: event.target.value })} /></label><label><span>Target date</span><input required type="date" value={goalForm.targetDate} onChange={(event) => setGoalForm({ ...goalForm, targetDate: event.target.value })} /></label><label><span>Funding pool</span><select value={goalForm.poolId} onChange={(event) => setGoalForm({ ...goalForm, poolId: event.target.value })}><option value="">No linked pool</option>{finances.pools.map((pool) => <option value={pool.id} key={pool.id}>{pool.name}</option>)}</select></label><button className="primary-button">Add goal</button></form>

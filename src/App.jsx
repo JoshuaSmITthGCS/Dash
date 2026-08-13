@@ -1,11 +1,10 @@
-import { lazy, Suspense, useState } from 'react'
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
-import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
-import PasswordChangeModal from './components/PasswordChangeModal.jsx'
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
@@ -13,40 +12,91 @@ import AlertBadge from './components/AlertBadge.jsx'
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand – keeps first paint off the weight of pages the visit may
 // never touch (Finances, ETF comparisons, shadow portfolios, congress trades, etc).
-const Picks = lazy(() => import('./pages/Picks.jsx'))
+const loadPicks = () => import('./pages/Picks.jsx')
+const loadPortfolio = () => import('./pages/Portfolio.jsx')
+const Picks = lazy(loadPicks)
 const PolicyRadar = lazy(() => import('./pages/PolicyRadar.jsx'))
 const Watchlist = lazy(() => import('./pages/Watchlist.jsx'))
 const Methodology = lazy(() => import('./pages/Methodology.jsx'))
 const Glossary = lazy(() => import('./pages/Glossary.jsx'))
-const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
+const Portfolio = lazy(loadPortfolio)
 const Finances = lazy(() => import('./pages/Finances.jsx'))
 const Planning = lazy(() => import('./pages/Planning.jsx'))
 const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
+const SwingScreen = lazy(() => import('./pages/SwingScreen.jsx'))
 const FastGrowthScreen = lazy(() => import('./pages/FastGrowthScreen.jsx'))
+const OptionsScreen = lazy(() => import('./pages/OptionsScreen.jsx'))
+const StrategyScreen = lazy(() => import('./pages/StrategyScreen.jsx'))
+const ThemeExposureScreen = lazy(() => import('./pages/ThemeExposureScreen.jsx'))
 const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
+const BacktestComparison = lazy(() => import('./pages/BacktestComparison.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
+const InstitutionalActivity = lazy(() => import('./pages/InstitutionalActivity.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
 const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 
+// Flat strategy paths that predate the Options tab, kept alive as redirects into it.
+const OPTIONS_STRATEGY_IDS = [
+  'short-term-trades', 'covered-call', 'cash-secured-put', 'protective-put',
+  'collar', 'vertical-spread', 'advanced-strategies',
+]
+
 const NAV = [
   { to: '/', label: 'Financial Report', icon: 'overview', end: true },
   { to: '/research', label: 'Research', icon: 'research' },
   { to: '/search', label: 'Search', icon: 'search' },
-  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true },
+  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
-  { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
-  { to: '/planning', label: 'Planning', icon: 'finances', requireAuth: true },
-  { to: '/screens/momentum', label: 'Screens', icon: 'research' },
+  { to: '/finances', label: 'Finances', icon: 'finances' },
+  { to: '/planning', label: 'Planning', icon: 'finances' },
+  // The screens tab lands on the swing screen: it is the widest-horizon-coverage screen in
+  // the rail and the one most often opened cold. Every other screen is one tap away on the
+  // rail that page renders.
+  { to: '/screens/swing', label: 'Screens', icon: 'research' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
-  { to: '/alerts', label: 'Alerts', icon: 'bell', requireAuth: true },
+  { to: '/alerts', label: 'Alerts', icon: 'bell' },
 ]
+
+const ROUTE_PRELOADERS = {
+  '/research': loadPicks,
+  '/portfolio': loadPortfolio,
+}
+
+function preloadRoute(path) {
+  ROUTE_PRELOADERS[path]?.().catch(() => {
+    // Navigation still owns recovery if a speculative preload loses its connection.
+  })
+}
+
+function RouteLoading({ pathname }) {
+  const label = pathname.startsWith('/portfolio')
+    ? 'Opening your portfolio'
+    : pathname.startsWith('/research') ? 'Opening research' : 'Opening page'
+  return (
+    <div className="route-loading" role="status" aria-live="polite">
+      <span className="loading-mark" aria-hidden="true" />
+      <strong>{label}…</strong>
+      <span>Loading the latest saved view.</span>
+    </div>
+  )
+}
+
+function CloudDataUnavailable({ feature }) {
+  const { authError, retryAuth } = useAuth()
+  return <section className="report-empty-state">
+    <span className="eyebrow">{feature}</span>
+    <h1>Cloud data is offline</h1>
+    <p>{authError || 'Firebase is still connecting to your solo workspace.'}</p>
+    <button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button>
+  </section>
+}
 
 export const MOBILE_NAV = [
   { to: '/research', label: 'Research', icon: 'research' },
@@ -55,37 +105,47 @@ export const MOBILE_NAV = [
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/planning', label: 'Planning', icon: 'finances' },
+  { to: '/screens/swing', label: 'Screens', icon: 'market' },
 ]
 
 function ProfilePanel() {
-  const { currentUser, userProfile, logout } = useAuth()
-  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const { currentUser, userProfile } = useAuth()
   if (!currentUser) return null
 
   return (
-    <>
-      <div className="profile-panel">
-        <div className="avatar" aria-hidden="true">
-          {(userProfile?.displayName || currentUser.email || 'V').slice(0, 1).toUpperCase()}
-        </div>
-        <div className="profile-copy">
-          <strong>{userProfile?.displayName || 'Investor'}</strong>
-          <span>{userProfile?.colorTheme?.name || 'ValueSignal member'}</span>
-        </div>
-        <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
-        <button className="icon-button" onClick={() => setShowPasswordChange(true)}
-          aria-label="Account settings"><Icon name="user" /></button>
-        <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
+    <div className="profile-panel">
+      <div className="avatar" aria-hidden="true">
+        {(userProfile?.displayName || 'J').slice(0, 1).toUpperCase()}
       </div>
-      {showPasswordChange && <PasswordChangeModal onClose={() => setShowPasswordChange(false)} />}
-    </>
+      <div className="profile-copy">
+        <strong>{userProfile?.displayName || 'Josh'}</strong>
+        <span>ValueSignal member</span>
+      </div>
+      <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
+    </div>
   )
 }
 
 function AppContent() {
-  const { currentUser, loading, userProfile } = useAuth()
+  const { currentUser, loading, authError, retryAuth, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
-  const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const preload = () => {
+      preloadRoute('/research')
+      preloadRoute('/portfolio')
+    }
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(preload, { timeout: 2500 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = window.setTimeout(preload, 1200)
+    return () => window.clearTimeout(id)
+  }, [])
+
+  const cloudPage = (feature, pathname, page) => loading
+    ? <RouteLoading pathname={pathname} />
+    : currentUser ? page : <CloudDataUnavailable feature={feature} />
 
   return (
     <div className="shell" data-auth-resolving={loading ? 'true' : 'false'}>
@@ -97,9 +157,9 @@ function AppContent() {
         </NavLink>
         <nav className="desktop-nav">
           {NAV.map((item) => {
-            if (item.requireAuth && !currentUser) return null
             return (
               <NavLink key={item.to} to={item.to} end={item.end}
+                onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
                 className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
                 <Icon name={item.icon} size={19} /><span>{item.label}</span>
               </NavLink>
@@ -131,48 +191,75 @@ function AppContent() {
             </div>
           </div>
         </header>
+        {authError && <div className="cloud-session-error" role="alert">
+          <span><strong>Cloud data is offline.</strong> Portfolio, finances, and alerts could not connect to Firebase.</span>
+          <button type="button" className="text-button" onClick={retryAuth}>Try again</button>
+        </div>}
         <DataStatus />
-        <Suspense fallback={<div className="route-loading" role="status"><span className="loading-mark" /></div>}>
+        <ErrorBoundary key={pathname} pageName={pathname.startsWith('/portfolio') ? 'Portfolio' : pathname.startsWith('/research') ? 'Research' : 'This page'}>
+        <Suspense fallback={<RouteLoading pathname={pathname} />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/research" element={<Picks />} />
           <Route path="/search" element={<Search />} />
           <Route path="/market" element={<PolicyRadar />} />
-          <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
-          <Route path="/portfolio/diversification" element={currentUser ? <Diversification /> : <Dashboard />} />
-          <Route path="/portfolio/insights" element={currentUser ? <Insights /> : <Dashboard />} />
-          <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
-          <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
+          <Route path="/portfolio" element={cloudPage('Portfolio', '/portfolio', <Portfolio />)} />
+          <Route path="/portfolio/diversification" element={cloudPage('Portfolio diversification', '/portfolio', <Diversification />)} />
+          <Route path="/portfolio/insights" element={cloudPage('Portfolio insights', '/portfolio', <Insights />)} />
+          <Route path="/finances" element={cloudPage('Finances', '/finances', <Finances />)} />
+          <Route path="/planning" element={cloudPage('Planning', '/planning', <Planning />)} />
+          {/* Its own page rather than the shared ResearchScreen table: the swing composite
+              publishes five separately-cited legs, their per-row coverage, and a negative
+              screen whose hits stay visible - none of which the generic screen row carries. */}
+          <Route path="/screens/swing" element={<SwingScreen />} />
           <Route path="/screens/fast-growth" element={<FastGrowthScreen />} />
+          {/* Options is one tab in the screens rail; each strategy is a sub-tab beneath it. */}
+          <Route path="/screens/options" element={<OptionsScreen />} />
+          <Route path="/screens/options/short-term-trades" element={<StrategyScreen id="short-term-trades" />} />
+          <Route path="/screens/options/covered-call" element={<StrategyScreen id="covered-call" />} />
+          <Route path="/screens/options/cash-secured-put" element={<StrategyScreen id="cash-secured-put" />} />
+          <Route path="/screens/options/protective-put" element={<StrategyScreen id="protective-put" />} />
+          <Route path="/screens/options/collar" element={<StrategyScreen id="collar" />} />
+          <Route path="/screens/options/vertical-spread" element={<StrategyScreen id="vertical-spread" />} />
+          <Route path="/screens/options/advanced-strategies" element={<StrategyScreen id="advanced-strategies" />} />
+          {/* Bookmarks and older links to the flat strategy paths still resolve. */}
+          {OPTIONS_STRATEGY_IDS.map((id) => (
+            <Route key={id} path={`/screens/${id}`}
+              element={<Navigate to={`/screens/options/${id}`} replace />} />
+          ))}
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
-          <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at multi-year valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates." />} />
+          <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates. The own-history window is only as deep as the collected point-in-time record, and every row publishes the window it was measured over." />} />
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability–kept separate from structural quality." />} />
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
           <Route path="/screens/politics" element={<CongressTrades />} />
+          <Route path="/screens/institutional" element={<InstitutionalActivity />} />
+          <Route path="/screens/themes" element={<ThemeExposureScreen />} />
+          <Route path="/screens/backtests" element={<BacktestComparison />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
           <Route path="/screens/validation" element={<LiveValidation />} />
           <Route path="/watchlist" element={<Watchlist />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/alerts" element={currentUser ? <Alerts /> : <Dashboard />} />
+          <Route path="/alerts" element={cloudPage('Alerts', '/alerts', <Alerts />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
         <ModelVersionFooter />
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
         {MOBILE_NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end}
+              onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
               className={({ isActive }) => `mobile-nav-item${item.primary ? ' mobile-nav-report' : ''}${isActive ? ' active' : ''}`}>
               <span className="mobile-nav-icon"><Icon name={item.icon} size={19} /></span>
               <span>{item.label}</span>
             </NavLink>
         ))}
       </nav>
-      {!loading && !currentUser && !previewMode && <FirebaseLoginModal />}
     </div>
   )
 }

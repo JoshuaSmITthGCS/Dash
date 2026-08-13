@@ -48,7 +48,7 @@ export function usePortfolioTracking() {
   }
 
   const recordSnapshot = async ({ value, coveragePct, source, recordedAt = new Date().toISOString() }) => {
-    if (!currentUser || !Number.isFinite(Number(value))) return { success: false, error: 'A signed-in account and portfolio value are required.' }
+    if (!currentUser || !Number.isFinite(Number(value))) return { success: false, error: 'A Firebase connection and portfolio value are required.' }
     try {
       await ensureTrackingStarted()
       const id = recordedAt.slice(0, 16).replace(/[:.]/g, '-')
@@ -66,8 +66,12 @@ export function usePortfolioTracking() {
   const recordActivity = async ({ type, amount, effectiveDate, note = '' }) => {
     const cashMovement = ['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase'].includes(type)
     const cashIncrease = ['deposit', 'sale_proceeds'].includes(type)
+    // Counted toward net invested capital (see portfolioAnalytics.js CONTRIBUTION_TYPES) but
+    // never touches the tracked uninvested-cash balance -- the money went straight into the
+    // position, it never sat as cash.
+    const contributionOnly = type === 'external_contribution'
     const numericAmount = Number(amount)
-    if (!currentUser || !['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase', 'realized_gain', 'dividend', 'fee'].includes(type) || !Number.isFinite(numericAmount) || (cashMovement && numericAmount <= 0)) return { success: false, error: 'Choose an activity type and enter a valid amount. Cash movements must be greater than zero.' }
+    if (!currentUser || !['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase', 'realized_gain', 'dividend', 'fee', 'external_contribution'].includes(type) || !Number.isFinite(numericAmount) || ((cashMovement || contributionOnly) && numericAmount <= 0)) return { success: false, error: 'Choose an activity type and enter a valid amount. Cash movements must be greater than zero.' }
     if (cashMovement && !cashIncrease && numericAmount > Number(effectiveTrackingState?.cashBalance || 0)) return { success: false, error: 'That amount is larger than the tracked uninvested cash balance. Set the current balance first if Dash is behind.' }
     try {
       await ensureTrackingStarted()
@@ -75,7 +79,7 @@ export function usePortfolioTracking() {
       const batch = writeBatch(db)
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `${type}-${Date.now()}`), {
         type, amount: numericAmount, effectiveDate, note, recordedAt,
-        source: cashMovement ? 'manual_cash_tracker' : 'manual_earnings_ledger',
+        source: cashMovement ? 'manual_cash_tracker' : contributionOnly ? 'add_position_new_money' : 'manual_earnings_ledger',
       })
       if (cashMovement) batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
         cashBalance: increment(cashIncrease ? numericAmount : -numericAmount),
@@ -115,7 +119,7 @@ export function usePortfolioTracking() {
   }
 
   const syncReferenceCashFlows = async () => {
-    if (!currentUser) return { success: false, error: 'Sign in first.' }
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
       await Promise.all(FIDELITY_CASH_FLOWS.map((row) => setDoc(
@@ -143,7 +147,7 @@ export function usePortfolioTracking() {
   }
 
   const setLedgerComplete = async (ledgerComplete) => {
-    if (!currentUser) return { success: false, error: 'Sign in first.' }
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       await ensureTrackingStarted()
       const patch = { ledgerComplete: Boolean(ledgerComplete), ledgerConfirmedAt: ledgerComplete ? new Date().toISOString() : null }

@@ -1,0 +1,29 @@
+{
+  "_comment": "Curated, publicly traded 13F institutional filers. Every CIK is resolved live at run time - never a hand-typed CIK - so a wrong or delisted ticker degrades to 'no data for this manager' rather than silently reading a different filer's holdings under this name. Necessarily partial: large, influential 13F filers that are privately held (Renaissance Technologies, Citadel Advisors, Bridgewater, ...) have no ticker and are not reachable this way. Expand by adding tickers and names, not CIKs.",
+  "_filer_comment": "The ticker resolves to the CIK of the *listed operating company*, and for an asset manager that is usually the entity that files the 10-K, not the one that files the 13F - those are separate registrants (T. Rowe Price Group vs. its adviser subsidiaries). build_institutional_screen.resolve_filer_ciks therefore tries the ticker's CIK first and then searches EDGAR by company name, keeping only entities whose EDGAR conformed name token-matches 'name' (or an alias) AND that actually file 13F-HRs. EDGAR's company search is a prefix match, so an adviser filed under a reordered name is unreachable from the colloquial spelling: give those managers a 'filer_aliases' list of name prefixes to search as well (for example \"PRICE T ROWE\"). Aliases are names, still verified against EDGAR - not CIKs, which is what keeps a typo from reading another manager's holdings under this label. The published screen's 'manager_coverage' reports, per manager, which CIKs resolved and why any resolved to none; that is the place to look before adding an alias.",
+  "_style_comment": "'style' matters because it is not a random subset of institutional flow. The largest managers here (BlackRock, State Street, Invesco) run AUM dominated by index funds and ETFs - their quarter-over-quarter position changes are close to mechanically determined by index membership and fund flows, not conviction, and feeding that into a research score that already carries valuation and sector-percentile inputs would partly reintroduce market-cap/size as a hidden second input under a 'smart money' label. build_institutional_screen.py defaults to style=active only for exactly this reason. 'alternative' (private-equity/alternative-asset managers) is excluded from the default sleeve too: their public-equity 13F stakes are typically residual holdings from take-privates or specific strategic positions, lumpy and idiosyncratic rather than a portfolio-flow signal comparable to a mutual-fund manager's.",
+  "managers": [
+    {"ticker": "BLK", "name": "BlackRock", "style": "passive"},
+    {"ticker": "STT", "name": "State Street", "style": "passive"},
+    {"ticker": "IVZ", "name": "Invesco", "style": "passive"},
+    {"ticker": "TROW", "name": "T. Rowe Price", "style": "active",
+     "filer_aliases": ["PRICE T ROWE"]},
+    {"ticker": "BEN", "name": "Franklin Resources", "style": "active"},
+    {"ticker": "AMG", "name": "Affiliated Managers Group", "style": "active",
+     "filer_aliases": ["AFFILIATED MANAGERS"]},
+    {"ticker": "JHG", "name": "Janus Henderson", "style": "active",
+     "filer_aliases": ["JANUS HENDERSON", "JANUS CAPITAL"]},
+    {"ticker": "VRTS", "name": "Virtus Investment Partners", "style": "active",
+     "filer_aliases": ["VIRTUS"]},
+    {"ticker": "APAM", "name": "Artisan Partners", "style": "active",
+     "filer_aliases": ["ARTISAN PARTNERS"]},
+    {"ticker": "CNS", "name": "Cohen & Steers", "style": "active"},
+    {"ticker": "AB", "name": "AllianceBernstein", "style": "active",
+     "filer_aliases": ["ALLIANCEBERNSTEIN"]},
+    {"ticker": "BRK-B", "name": "Berkshire Hathaway", "style": "active"},
+    {"ticker": "BX", "name": "Blackstone", "style": "alternative"},
+    {"ticker": "KKR", "name": "KKR & Co.", "style": "alternative"},
+    {"ticker": "APO", "name": "Apollo Global Management", "style": "alternative"},
+    {"ticker": "ARES", "name": "Ares Management", "style": "alternative"}
+  ]
+}

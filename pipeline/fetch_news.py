@@ -5,7 +5,6 @@ existing RSS collection remains a no-key fallback.
 """
 
 import os
-import sys
 from datetime import datetime, timezone
 
 from alpha_vantage import load_local_env

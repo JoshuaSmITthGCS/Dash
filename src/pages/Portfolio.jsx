@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useAuth } from '../lib/FirebaseAuthContext'
-import { Loading, RefreshProgress } from '../components/Bits'
+import { Loading, RefreshProgress, RatingBadge } from '../components/Bits'
 import { ActionPill } from '../components/ActionGuidance'
 import GrowthChart from '../components/GrowthChart'
 import Sparkline from '../components/Sparkline'
+import InfoTag from '../components/InfoTag.jsx'
 import StockDetailModal from '../components/StockDetailModal'
 import { getRecommendation } from '../lib/recommendation'
 import { stopLossLevels, withStopLoss } from '../lib/positionRisk'
@@ -25,6 +26,7 @@ import {
   sortPortfolioPositions,
 } from '../lib/portfolioSort'
 import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
+import { buildRatingContext, researchRating } from '../lib/researchRating.js'
 import { explainPortfolioMove } from '../lib/portfolioAttribution.js'
 import PortfolioMoveExplanation from '../components/PortfolioMoveExplanation.jsx'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
@@ -32,24 +34,31 @@ import { usePullToRefresh } from '../lib/usePullToRefresh'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
+import AnimatedNumber from '../components/AnimatedNumber.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import {
   alignSeries,
   concentrationLiquidityScore,
-  contributionAdjustedPerformance,
   currentHoldingsSeries,
   diversificationScore,
   performanceMetrics,
   portfolioReturnSummary,
+  portfolioRiskDecomposition,
   portfolioScore,
   resilienceIndex,
   riskFreeAnnualRate,
   selectPeriod,
+  sliceSeriesFrom,
+  underwaterProfile,
 } from '../lib/portfolioAnalytics.js'
-import { FIDELITY_CASH_FLOWS, FIDELITY_REFERENCE_SNAPSHOT, summarizeCashFlows } from '../lib/referenceCashFlows.js'
+import { portfolioAcceleration } from '../lib/portfolioAcceleration.js'
+import { battingAverage, captureRatios } from '../lib/portfolioBenchmarkComparison.js'
+import { shortTermView } from '../lib/portfolioShortTermView.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
+import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
 
 const money = (value, digits = 0) =>
   value == null ? '–' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
@@ -59,6 +68,11 @@ const signedPct = (value, digits = 1) =>
 
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
+// The backtested-basket series that risk/performance stats are computed from applies today's
+// holdings to every historical date it has prices for -- including dates before live tracking
+// in this account actually began. The switch below lets those stats be evaluated only since
+// that date instead, so ratios reflect the strategy actually being run, not a hypothetical
+// basket replayed further back than the account existed.
 // Cost basis is stored per share everywhere downstream (totalCost = shares * costBasis), but
 // that's easy to enter wrong: a $200 total investment typed into a bare "Cost Basis" field
 // reads as $200/share, inflating cost basis by the share count. Letting the form accept
@@ -117,7 +131,7 @@ function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirectio
   return <ResponsiveControlPanel label={`Sort: ${selectedLabel || 'holdings'}`} title="Sort holdings">{controls}</ResponsiveControlPanel>
 }
 
-function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
+function SortableHeader({ sortKey, sort, onSort, children, numeric = false, info }) {
   const active = sort.key === sortKey
   return (
     <th
@@ -135,12 +149,16 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false }) {
           <i className={`sort-arrow down ${active && sort.direction === 'desc' ? 'selected' : ''}`} />
         </span>
       </button>
+      {/* Outside the button, not inside it - <details> is interactive content and
+          invalid inside a <button>, and a click would otherwise bubble up and trigger
+          a sort toggle instead of opening the info panel. */}
+      {info}
     </th>
   )
 }
 
 export default function Portfolio() {
-  const { currentUser, logout } = useAuth()
+  const { currentUser } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
   const { data: etfData } = useData('etfs.json')
   const {
@@ -157,7 +175,7 @@ export default function Portfolio() {
   const { preferences, updatePreferences } = usePreferences()
 
   const [showAddForm, setShowAddForm] = useState(false)
-  const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
+  const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0], fundedByNewMoney: true })
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
@@ -166,12 +184,13 @@ export default function Portfolio() {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({ shares: '', costBasis: '', costMode: 'share', purchaseDate: '' })
   const [editSaving, setEditSaving] = useState(false)
-  const [activityForm, setActivityForm] = useState({ type: 'realized_gain', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
-  const [activitySaving, setActivitySaving] = useState(false)
+  const [sellingId, setSellingId] = useState(null)
+  const [sellForm, setSellForm] = useState({ shares: '', price: '', saleDate: new Date().toISOString().split('T')[0] })
+  const [sellSaving, setSellSaving] = useState(false)
+  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(false)
   const [cashForm, setCashForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
   const [cashSaving, setCashSaving] = useState(false)
   const [cashBalanceForm, setCashBalanceForm] = useState('')
-  const [fidelityPeriod, setFidelityPeriod] = useState('1Y')
   const recordedSnapshot = useRef(null)
   const referenceCashFlowSyncStarted = useRef(false)
   const refresh = useAdvisorRefresh(
@@ -179,7 +198,10 @@ export default function Portfolio() {
     reload,
     positions.map((position) => position.ticker),
   )
-  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
+  // SPY rides along with the portfolio's own quote requests so the move-explanation
+  // widget's market leg can use a live intraday benchmark return too, not just the
+  // holdings - same refresh cadence, same Netlify function, one extra symbol.
+  const portfolioQuotes = usePortfolioQuotes([...positions.map((position) => position.ticker), 'SPY'])
   const pullToRefresh = usePullToRefresh({
     onRefresh: portfolioQuotes.requestRefresh,
     enabled: positions.length > 0,
@@ -245,33 +267,33 @@ export default function Portfolio() {
     ? Number(tracking.trackingState.cashBalance || 0)
     : null
   const trackedAccountValue = portfolioStats.totalValue + (uninvestedCash || 0)
-  const contributionPerformance = contributionAdjustedPerformance(
-    trackedAccountValue,
-    tracking.activities,
-    tracking.trackingState?.cashFlowHistoryComplete,
-  )
   const returnSummary = portfolioReturnSummary(
     tracking.snapshots,
     tracking.activities,
     tracking.trackingState?.cashFlowHistoryComplete,
   )
-  const fidelityCashSummary = summarizeCashFlows()
-  const fidelityReferencePerformance = contributionAdjustedPerformance(
-    FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue,
-    FIDELITY_CASH_FLOWS,
-    true,
-  )
-  const cashFlowRows = tracking.activities
-    .filter((row) => ['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase'].includes(row.type))
-    .sort((left, right) => String(right.effectiveDate || '').localeCompare(String(left.effectiveDate || '')))
 
   const totalGainPct = portfolioStats.totalCost > 0
     ? ((portfolioStats.totalValue - portfolioStats.totalCost) / portfolioStats.totalCost) * 100
     : 0
 
-  const portfolioPositions = portfolioStats.positions.map((position) => ({ ...position, allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null }))
-  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory)
-  const scoreHoldingsSeries = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
+  // Same percentile-based -5..+5 read used on the Research page (src/lib/researchRating.js),
+  // built from the published research pool so a holding rates against the same peers there.
+  const ratingContext = buildRatingContext(research)
+  const portfolioPositions = portfolioStats.positions.map((position) => ({
+    ...position,
+    allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null,
+    rating: researchRating(position.priceInfo, ratingContext),
+  }))
+  // Tagged the same way mergePortfolioQuotes tags a holding's live quote, since this is the
+  // raw Netlify-function payload rather than something already run through that merge.
+  const benchmarkQuote = quoteRefreshIsNewest && portfolioQuotes.quotes?.SPY
+    ? { ...portfolioQuotes.quotes.SPY, portfolioQuote: true }
+    : null
+  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory, { benchmarkQuote })
+  const scoreHoldingsSeriesFull = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
+  const liveHoldingsSeries = sliceSeriesFrom(scoreHoldingsSeriesFull, LIVE_TRACKING_START)
+  const scoreHoldingsSeries = sinceLiveTrackingOnly ? liveHoldingsSeries : scoreHoldingsSeriesFull
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
   const scoreComparable = alignSeries(scorePortfolioPeriod, scoreBenchmarkPeriod, scorePortfolioPeriod?.period)
@@ -279,6 +301,32 @@ export default function Portfolio() {
   const scoreResilience = resilienceIndex(scoreComparable?.left.values || scorePortfolioPeriod?.values || [], scoreDiversification)
   const riskFree = riskFreeAnnualRate(data)
   const scorePerformance = performanceMetrics(scoreComparable?.left, scoreComparable?.right, riskFree.annualPct)
+  // Fed the unclipped holdings series rather than scoreComparable's one-year slice: the
+  // reading needs two full quarters plus the skipped week, and clipping first would leave it
+  // measuring the tail of its own window. No flows are passed because this series is today's
+  // share counts applied to historical closes - deposits and withdrawals never enter it.
+  const benchmarkSeries = benchmarkHistory?.dates
+    ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes }
+    : null
+  const scoreAcceleration = portfolioAcceleration(scoreHoldingsSeries, benchmarkSeries)
+  // Capture and batting average read the same unclipped series for the same reason: both
+  // need the market to have gone both ways, and a one-year slice of a bull run may not
+  // contain enough down periods to answer with.
+  const scoreCapture = captureRatios(scoreHoldingsSeries, benchmarkSeries)
+  const scoreBatting = battingAverage(scoreHoldingsSeries, benchmarkSeries)
+  const scoreUnderwater = underwaterProfile(scoreHoldingsSeries)
+  // Deliberately the FULL series, not the live-tracking slice the ratios above may use: the
+  // short-term panel exists to answer the last week and month, and it needs the baseline
+  // history behind them to know what this portfolio's normal wobble even is.
+  const scoreShortTerm = shortTermView(scoreHoldingsSeriesFull, benchmarkSeries)
+  // The same call the Diversification page makes, for the same numbers - tracking error and
+  // active share are computed once in portfolioRiskDecomposition and read in both places
+  // rather than reimplemented here.
+  const scoreRisk = portfolioRiskDecomposition(portfolioPositions, {
+    benchmarkHistory,
+    benchmarkWeights: (etfData?.etfs || []).find((row) => row.ticker === 'SPY')?.top_holdings,
+    etfs: etfData?.etfs || [],
+  })
   const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
   const overallScore = portfolioScore({
     diversification: scoreDiversification,
@@ -304,6 +352,9 @@ export default function Portfolio() {
   const setSortKey = (key) => commitSort(nextPortfolioSort(portfolioSort, key))
   const toggleSortDirection = () => commitSort({ ...portfolioSort, direction: portfolioSort.direction === 'asc' ? 'desc' : 'asc' })
   const selectedSort = PORTFOLIO_SORT_OPTIONS.find((option) => option.key === portfolioSort.key)
+  // Rendered once, outside both the mobile card list and the desktop table, so triggering a
+  // sale from either (only one is visible at a given viewport width) still shows the sheet.
+  const sellingPosition = sortedPositions.find((pos) => (pos.id || pos.ticker) === sellingId)
 
   useEffect(() => {
     if (!quoteRefreshIsNewest || !portfolioQuotes.fetchedAt || !portfolioStats.totalValue || recordedSnapshot.current === portfolioQuotes.fetchedAt) return
@@ -346,8 +397,22 @@ export default function Portfolio() {
       setSyncMessage(`Could not sync position: ${result.error}`)
       return
     }
+    // Money that entered the account specifically to fund this purchase is new invested
+    // capital, not investment return -- without logging it, the tracked account value jumps
+    // by the purchase amount with nothing to explain the jump, and Modified Dietz counts the
+    // whole thing as strategy performance. Skip this when the purchase was funded by cash
+    // already sitting in the tracked uninvested-cash balance (that money was contributed once,
+    // when it was originally deposited).
+    if (formData.fundedByNewMoney) {
+      await tracking.recordActivity({
+        type: 'external_contribution',
+        amount: shares * costBasis,
+        effectiveDate: formData.purchaseDate,
+        note: `${formData.ticker.toUpperCase()} purchase`,
+      })
+    }
     setSyncMessage(`${formData.ticker} saved to your cloud portfolio.`)
-    setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
+    setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0], fundedByNewMoney: true })
     setShowAddForm(false)
   }
 
@@ -371,17 +436,48 @@ export default function Portfolio() {
     setRemovingId(null)
     if (result?.success === false) {
       setSyncMessage(`Could not remove position: ${result.error || 'Unknown error'}`)
-    } else setSyncMessage('Position removed from the cloud portfolio on every signed-in device.')
+    } else setSyncMessage('Position removed from the cloud portfolio on every connected device.')
   }
 
-  const handleActivity = async (event) => {
-    event.preventDefault()
-    setActivitySaving(true)
-    const result = await tracking.recordActivity({ ...activityForm, amount: Number(activityForm.amount) })
-    setActivitySaving(false)
-    if (!result.success) { setSyncMessage(`Could not save earnings activity: ${result.error}`); return }
-    setActivityForm((current) => ({ ...current, amount: '', note: '' }))
-    setSyncMessage('Earnings activity saved to Firebase.')
+  const startSell = (pos) => {
+    setSellingId(pos.id)
+    setSellForm({ shares: String(pos.shares ?? ''), price: pos.currentPrice != null ? String(pos.currentPrice) : '', saleDate: new Date().toISOString().split('T')[0] })
+  }
+
+  const cancelSell = () => {
+    setSellingId(null)
+    setSellForm({ shares: '', price: '', saleDate: new Date().toISOString().split('T')[0] })
+  }
+
+  // Selling records two ledger entries and adjusts (or removes) the position, instead of
+  // making the user separately trim shares and log a cash movement by hand: the proceeds
+  // move into tracked uninvested cash (sale_proceeds, not a new contribution -- the money was
+  // already invested), and the realized gain/loss versus cost basis is logged for the
+  // earnings total. Selling all shares removes the holding; selling fewer trims it in place.
+  const saveSell = async (pos) => {
+    const sharesSold = parseFloat(sellForm.shares)
+    const price = parseFloat(sellForm.price)
+    if (!Number.isFinite(sharesSold) || sharesSold <= 0 || sharesSold > pos.shares || !Number.isFinite(price) || price <= 0 || !sellForm.saleDate) {
+      setSyncMessage('Enter a valid share count (up to what you hold), sale price, and date')
+      return
+    }
+    setSellSaving(true)
+    const proceeds = sharesSold * price
+    const realizedGain = proceeds - sharesSold * pos.costBasis
+    const remainingShares = pos.shares - sharesSold
+    const positionResult = remainingShares > 0.0000001
+      ? await updatePosition(pos.id, { shares: remainingShares })
+      : await removePosition(pos.id)
+    if (positionResult?.success === false) {
+      setSellSaving(false)
+      setSyncMessage(`Could not save sale: ${positionResult.error || 'Unknown error'}`)
+      return
+    }
+    await tracking.recordActivity({ type: 'sale_proceeds', amount: proceeds, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
+    await tracking.recordActivity({ type: 'realized_gain', amount: realizedGain, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
+    setSellSaving(false)
+    cancelSell()
+    setSyncMessage(`Sold ${sharesSold} ${pos.ticker} share${sharesSold === 1 ? '' : 's'} at $${price.toFixed(2)} · ${realizedGain >= 0 ? '+' : '−'}$${Math.abs(realizedGain).toFixed(2)} realized · proceeds added to uninvested cash.`)
   }
 
   const handleCashMovement = async (event) => {
@@ -403,13 +499,6 @@ export default function Portfolio() {
     if (!result.success) { setSyncMessage(`Could not set cash balance: ${result.error}`); return }
     setCashBalanceForm('')
     setSyncMessage('Uninvested cash balance reconciled.')
-  }
-
-  const toggleLedgerComplete = async () => {
-    const next = !tracking.trackingState?.ledgerComplete
-    if (next && !window.confirm('Confirm that all prior realized gains and losses, dividends, and fees have been entered. This enables the All-time earnings value.')) return
-    const result = await tracking.setLedgerComplete(next)
-    setSyncMessage(result.success ? (next ? 'All-time earnings history confirmed.' : 'Earnings history marked incomplete.') : `Could not update earnings history: ${result.error}`)
   }
 
   const startEdit = (pos) => {
@@ -465,7 +554,7 @@ export default function Portfolio() {
         </div>
         <div className={`cloud-sync-state ${syncState.connected ? 'connected' : 'disconnected'}`} role="status">
           <span aria-hidden="true" />
-          <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Signed-in account'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Waiting for your signed-in account'}</small></div>
+          <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Solo workspace'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Connecting your solo cloud workspace'}</small></div>
         </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
@@ -484,12 +573,12 @@ export default function Portfolio() {
 
       <div className="portfolio-summary">
         <div className="portfolio-value-card">
-          <div className="kpi-label">Total Value</div>
-          <div className="kpi-value">{money(trackedAccountValue, 2)}</div>
+          <div className="kpi-label"><span className="report-hero-label">Total Value{portfolioQuotes.refreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</span></div>
+          <div className="kpi-value">{trackedAccountValue == null ? '–' : <AnimatedNumber value={trackedAccountValue} format={(v) => money(v, 2)} />}</div>
           <div className="portfolio-delta" style={{ color: moveColor(returnSummary.strategy.available ? returnSummary.strategy.gain : portfolioStats.totalGain) }}>
             {returnSummary.strategy.available
-              ? `${returnSummary.strategy.gain >= 0 ? '+' : '−'}${money(Math.abs(returnSummary.strategy.gain), 2)} · ${signedPct(returnSummary.strategy.returnPct, 2)} strategy return`
-              : `${portfolioStats.totalGain >= 0 ? '+' : '−'}${money(Math.abs(portfolioStats.totalGain))} · ${signedPct(totalGainPct, 2)}`}
+              ? <>{returnSummary.strategy.gain >= 0 ? '+' : '−'}<AnimatedNumber value={Math.abs(returnSummary.strategy.gain)} format={(v) => money(v, 2)} /> · <AnimatedNumber value={returnSummary.strategy.returnPct} format={(v) => signedPct(v, 2)} /> strategy return</>
+              : <>{portfolioStats.totalGain >= 0 ? '+' : '−'}<AnimatedNumber value={Math.abs(portfolioStats.totalGain)} format={money} /> · <AnimatedNumber value={totalGainPct} format={(v) => signedPct(v, 2)} /></>}
           </div>
           <div className="kpi-note">{returnSummary.strategy.available ? 'Modified Dietz with settled external flows' : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
         </div>
@@ -539,7 +628,13 @@ export default function Portfolio() {
 
       <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
 
-      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree} />
+      <div className="settings-row live-tracking-setting" style={{ marginBottom: 14 }}>
+        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span>{sinceLiveTrackingOnly && <LiveTrackingCountdown dates={liveHoldingsSeries?.dates} />}</div>
+        <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
+      </div>
+      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree}
+        acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
+        shortTerm={scoreShortTerm} risk={scoreRisk} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">
@@ -564,28 +659,6 @@ export default function Portfolio() {
         </details>
       </section>
 
-      <section className="card fidelity-performance" aria-labelledby="fidelity-performance-title">
-        <div className="fidelity-performance-head">
-          <div>
-            <span className="eyebrow">Brokerage check · Aug 4, 2026 at 2:01 p.m. ET</span>
-            <h2 id="fidelity-performance-title">Fidelity performance reference</h2>
-            <p>Your screenshots reconcile deposits separately from market performance.</p>
-          </div>
-          <div className="period-control" aria-label="Fidelity reference return period">
-            {Object.keys(FIDELITY_REFERENCE_SNAPSHOT.periodReturns).map((period) => (
-              <button key={period} className={fidelityPeriod === period ? 'active' : ''} aria-pressed={fidelityPeriod === period} onClick={() => setFidelityPeriod(period)}>{period}</button>
-            ))}
-          </div>
-        </div>
-        <div className="fidelity-performance-grid">
-          <div><span>Account value</span><strong>{money(FIDELITY_REFERENCE_SNAPSHOT.totalAccountValue, 2)}</strong><small>{money(FIDELITY_REFERENCE_SNAPSHOT.investments, 2)} invested · {money(FIDELITY_REFERENCE_SNAPSHOT.cash, 2)} cash</small></div>
-          <div><span>Net contributed</span><strong>{money(fidelityCashSummary.netContributions)}</strong><small>{money(fidelityCashSummary.deposits)} settled deposits · {money(fidelityCashSummary.withdrawals)} withdrawn{fidelityCashSummary.pendingDeposits ? ` · ${money(fidelityCashSummary.pendingDeposits)} processing` : ''}</small></div>
-          <div><span>Fidelity {fidelityPeriod} return</span><strong style={{ color: moveColor(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod]) }}>{signedPct(FIDELITY_REFERENCE_SNAPSHOT.periodReturns[fidelityPeriod], 2)}</strong><small>Time-weighted pre-tax return from Fidelity</small></div>
-        </div>
-        <p className="fidelity-method-note">The Aug. 4 $100 transfer remains excluded while Fidelity labels it Processing. Fidelity’s period return is time-weighted, so it measures investment performance without a large late deposit diluting the percentage.</p>
-        <details className="fidelity-method-note"><summary>Contribution-adjusted gain detail</summary><p>{fidelityReferencePerformance.value >= 0 ? '+' : '−'}{money(Math.abs(fidelityReferencePerformance.value), 2)} is the reference account value minus settled net deposits. Its simple percentage is {signedPct(fidelityReferencePerformance.returnPct, 2)} and is not the primary reported return.</p></details>
-      </section>
-
       <details className="card portfolio-actions-menu">
         <summary><span><span className="eyebrow">Data actions</span><strong>Refresh and manage portfolio data</strong></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
         <div className="page-actions portfolio-toolbar">
@@ -597,34 +670,6 @@ export default function Portfolio() {
           <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}</button>
           <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
           <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
-          <button className="icon-button" onClick={logout} aria-label="Sign out"><Icon name="logout" /></button>
-        </div>
-      </details>
-
-      <details className="card earnings-tracker">
-        <summary><span><span className="eyebrow">Cash flows &amp; earnings</span><strong>Cloud portfolio ledger</strong><small>{tracking.trackingState?.trackingStartedAt ? `Storing activity since ${tracking.trackingState.trackingStartedAt.slice(0, 10)}` : 'Tracking starts with your next saved activity or price refresh'}</small></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
-        <div className="earnings-tracker-body">
-          <p>Deposits, withdrawals, trims, and purchases are managed in the uninvested-cash card above. Record realized gains, dividends, and fees here for the earnings report.</p>
-          <form className="earnings-activity-form" onSubmit={handleActivity}>
-            <label><span>Activity</span><select value={activityForm.type} onChange={(event) => setActivityForm({ ...activityForm, type: event.target.value })}><option value="realized_gain">Realized gain/loss</option><option value="dividend">Dividend</option><option value="fee">Fee</option></select></label>
-            <label><span>Amount</span><input type="number" step="0.01" required value={activityForm.amount} onChange={(event) => setActivityForm({ ...activityForm, amount: event.target.value })} placeholder={activityForm.type === 'realized_gain' ? 'Negative for a loss' : '0.00'} /></label>
-            <label><span>Date</span><input type="date" required value={activityForm.effectiveDate} onChange={(event) => setActivityForm({ ...activityForm, effectiveDate: event.target.value })} /></label>
-            <label><span>Note</span><input value={activityForm.note} onChange={(event) => setActivityForm({ ...activityForm, note: event.target.value })} placeholder="Optional" /></label>
-            <button className="primary-button compact" disabled={activitySaving}>{activitySaving ? 'Saving…' : 'Save activity'}</button>
-          </form>
-          {cashFlowRows.length > 0 && (
-            <div className="cash-flow-history" aria-label="Deposit and withdrawal history">
-              <div className="cash-flow-history-head"><strong>Cash activity</strong><span>{cashFlowRows.length} movements · {money(contributionPerformance.netContributions ?? fidelityCashSummary.netContributions)} lifetime net deposits</span></div>
-              {cashFlowRows.map((row) => (
-                <div className="cash-flow-row" key={row.id}>
-                  <span><b>{{ deposit: 'Deposit', withdrawal: 'Withdrawal', sale_proceeds: 'Trim / sale proceeds', stock_purchase: 'Buy / invest cash' }[row.type]}</b><small>{row.effectiveDate}{row.note ? ` · ${row.note}` : ''}{row.status === 'processing' ? ' · Processing' : ''}</small></span>
-                  <strong style={{ color: ['deposit', 'sale_proceeds'].includes(row.type) ? 'var(--pos)' : 'var(--text-primary)' }}>{['deposit', 'sale_proceeds'].includes(row.type) ? '+' : '−'}{money(Number(row.amount), 2)}</strong>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="ledger-confirmation"><div><strong>{tracking.trackingState?.ledgerComplete ? 'History confirmed complete' : 'Prior history not yet confirmed'}</strong><span>{tracking.activities.length} stored ledger event{tracking.activities.length === 1 ? '' : 's'}. Position removals are not assumed to be sales.</span></div><button className="secondary-button compact" onClick={toggleLedgerComplete}>{tracking.trackingState?.ledgerComplete ? 'Mark incomplete' : 'Confirm history is complete'}</button></div>
-          {tracking.error && <p className="form-error" role="alert">Firebase tracking error: {tracking.error}</p>}
         </div>
       </details>
 
@@ -756,6 +801,11 @@ export default function Portfolio() {
             </div>
             <div><button type="submit" className="tab active">Add</button></div>
           </form>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12, color: 'var(--text-dim)' }}>
+            <input type="checkbox" checked={formData.fundedByNewMoney}
+              onChange={(e) => setFormData({ ...formData, fundedByNewMoney: e.target.checked })} />
+            This purchase is funded by new money, not cash already tracked as uninvested — keeps strategy return from crediting the deposit itself as gain
+          </label>
         </div>
       )}
 
@@ -772,7 +822,10 @@ export default function Portfolio() {
             <article className="holding-card" key={pos.id || pos.ticker}>
               <div className="holding-card-head">
                 <CompanyLogo company={pos.priceInfo || pos} size={40} /><div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span><small>{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</small></div>
-                <ActionPill recommendation={pos.recommendation} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" />
+                  <ActionPill recommendation={pos.recommendation} />
+                </div>
               </div>
               <div className="holding-value">
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
@@ -809,17 +862,24 @@ export default function Portfolio() {
                   <StopLossNote stopLoss={pos.stopLoss} />
                 </div>
               )}
-              {editingId !== pos.id && pos.trendValues.length > 1 && (
+              {editingId !== pos.id && sellingId !== pos.id && pos.trendValues.length > 1 && (
                 <div className="holding-trend">
-                  <div><span>1-month trend</span><Move value={pos.trendPct} /></div>
+                  <div><span>1-month trend
+                    <InfoTag label="1-month trend">
+                      <strong>1-month trend</strong>
+                      <p>Trailing 30-day price movement for this holding - direction and shape only,
+                        not a substitute for the full research score.</p>
+                    </InfoTag>
+                  </span><Move value={pos.trendPct} /></div>
                   <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={48} />
                 </div>
               )}
               <div className="holding-actions">
-                {editingId !== pos.id && (
+                {editingId !== pos.id && sellingId !== pos.id && (
                   <>
                     {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
                     <button className="text-button" onClick={() => startEdit(pos)}>Edit</button>
+                    <button className="text-button" onClick={() => startSell(pos)}>Sell</button>
                     <button className="text-button danger" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
                       {removingId === pos.id ? 'Removing…' : 'Remove'}
                     </button>
@@ -845,7 +905,20 @@ export default function Portfolio() {
                 <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>
                 <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
                 <SortableHeader numeric sortKey="score" sort={portfolioSort} onSort={setSortKey}>Score</SortableHeader>
-                <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}>1M trend</SortableHeader>
+                <SortableHeader numeric sortKey="rating" sort={portfolioSort} onSort={setSortKey}
+                  info={<InfoTag label="Rating" align="right">
+                    <strong>Rating</strong>
+                    <p>-5 (worst) to +5 (best), a percentile read of the research score against the
+                      pool of stocks or ETFs it competes in - see src/lib/researchRating.js.</p>
+                  </InfoTag>}
+                >Rating</SortableHeader>
+                <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}
+                  info={<InfoTag label="1M trend" align="right">
+                    <strong>1-month trend</strong>
+                    <p>Trailing 30-day price movement for this holding, shown as a mini line chart -
+                      direction and shape only, not a substitute for the full research score.</p>
+                  </InfoTag>}
+                >1M trend</SortableHeader>
                 <th scope="col">Action</th>
               </tr>
             </thead>
@@ -885,6 +958,7 @@ export default function Portfolio() {
                   </td>
                   <td className="num"><Move value={pos.gainPct} /></td>
                   <td className="mono num score-cell">{pos.priceInfo?.score ?? '–'}</td>
+                  <td className="num"><RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" /></td>
                   <td className="num portfolio-trend-cell">
                     {pos.trendValues.length > 1 ? (
                       <>
@@ -907,6 +981,7 @@ export default function Portfolio() {
                           <button className="chip button-chip" onClick={() => setSelectedStock(pos)}>Details</button>
                         )}
                         <button className="chip button-chip" onClick={() => startEdit(pos)}>Edit</button>
+                        <button className="chip button-chip" onClick={() => startSell(pos)}>Sell</button>
                         <button className="chip button-chip" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
                           {removingId === pos.id ? 'Removing…' : 'Remove'}
                         </button>
@@ -917,7 +992,7 @@ export default function Portfolio() {
               ))}
               {portfolioStats.positions.length === 0 && (
                 <tr>
-                  <td colSpan="13" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
+                  <td colSpan="14" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
                     No positions yet. Click "+ Add Position" to start tracking.
                   </td>
                 </tr>
@@ -925,6 +1000,28 @@ export default function Portfolio() {
             </tbody>
           </table>
         </div>
+        {sellingPosition && (
+          <MobileSheet open title={`Sell ${sellingPosition.ticker}`} onClose={cancelSell} className="holding-edit-sheet">
+            <div className="holding-edit-form">
+              <label><span>Shares to sell (of {sellingPosition.shares})</span>
+                <input className="inline-edit-input" type="number" step="0.001" min="0" max={sellingPosition.shares} value={sellForm.shares}
+                  onChange={(e) => setSellForm({ ...sellForm, shares: e.target.value })} />
+              </label>
+              <label><span>Sale price/share</span>
+                <input className="inline-edit-input" type="number" step="0.01" min="0" value={sellForm.price}
+                  onChange={(e) => setSellForm({ ...sellForm, price: e.target.value })} />
+              </label>
+              <label><span>Sale date</span>
+                <input className="inline-edit-input" type="date" value={sellForm.saleDate}
+                  onChange={(e) => setSellForm({ ...sellForm, saleDate: e.target.value })} />
+              </label>
+            </div>
+            <div className="holding-edit-sheet-actions">
+              <button className="secondary-button" onClick={cancelSell} disabled={sellSaving}>Cancel</button>
+              <button className="primary-button" onClick={() => saveSell(sellingPosition)} disabled={sellSaving}>{sellSaving ? 'Selling…' : 'Confirm sale'}</button>
+            </div>
+          </MobileSheet>
+        )}
         </>
       )}
 

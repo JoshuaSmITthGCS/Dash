@@ -179,6 +179,74 @@ class ScreenAssemblyTests(unittest.TestCase):
         self.assertIn("unavailable_reason", screen)
 
 
+class CandidateExpansionTests(unittest.TestCase):
+    def _research(self):
+        # NVDA is the theme's seed ticker. AMD shares NVDA's sector (both classify into
+        # the same "sector:technology" peer group via peer_groups.peer_group, since
+        # neither is a bank/insurer/REIT/utility/commodity producer), so it should be
+        # pulled in as a sector_peer candidate even though it never makes the published
+        # leaderboard. UNRELATED sits in a different sector and must never be pulled in.
+        return [
+            {"ticker": "NVDA", "sector": "Technology", "score": 90},
+            {"ticker": "AMD", "sector": "Technology", "score": 60},
+            {"ticker": "MSFT", "sector": "Technology", "score": 55},
+            {"ticker": "UNRELATED", "sector": "Utilities", "score": 80},
+        ]
+
+    def test_seed_tickers_sector_peers_are_added_as_candidates(self):
+        theme = build(seed_tickers=["NVDA"])
+        research = self._research()
+        ranked = [research[0]]  # only NVDA is a published leader
+        candidates = themes.expand_theme_candidates(
+            [theme], research, ranked, portfolio_symbols=[])
+        tickers = {row["ticker"] for row in candidates}
+        self.assertIn("AMD", tickers)
+        self.assertIn("MSFT", tickers)
+        self.assertNotIn("UNRELATED", tickers)
+
+    def test_every_candidate_is_tagged_with_its_source(self):
+        theme = build(seed_tickers=["NVDA"])
+        research = self._research()
+        ranked = [research[0]]
+        candidates = themes.expand_theme_candidates(
+            [theme], research, ranked, portfolio_symbols=["MSFT"])
+        by_ticker = {row["ticker"]: row for row in candidates}
+        self.assertEqual(by_ticker["NVDA"]["candidate_source"], "published_leader")
+        self.assertEqual(by_ticker["MSFT"]["candidate_source"], "portfolio")
+        self.assertEqual(by_ticker["AMD"]["candidate_source"], "sector_peer")
+
+    def test_a_ticker_already_published_or_held_is_not_duplicated_as_a_peer(self):
+        theme = build(seed_tickers=["NVDA"])
+        research = self._research()
+        ranked = [research[0]]
+        candidates = themes.expand_theme_candidates(
+            [theme], research, ranked, portfolio_symbols=["AMD"])
+        amd_rows = [row for row in candidates if row["ticker"] == "AMD"]
+        self.assertEqual(len(amd_rows), 1)
+        self.assertEqual(amd_rows[0]["candidate_source"], "portfolio")
+
+    def test_expansion_is_capped_per_theme(self):
+        theme = build(seed_tickers=["NVDA"])
+        research = [{"ticker": "NVDA", "sector": "Technology", "score": 100}] + [
+            {"ticker": f"PEER{i}", "sector": "Technology", "score": 100 - i}
+            for i in range(30)
+        ]
+        candidates = themes.expand_theme_candidates(
+            [theme], research, ranked=[research[0]], portfolio_symbols=[],
+            limit_per_theme=5)
+        peers = [row for row in candidates if row["candidate_source"] == "sector_peer"]
+        self.assertEqual(len(peers), 5)
+        # Highest-scoring peers win the capped slots.
+        self.assertEqual({row["ticker"] for row in peers}, {f"PEER{i}" for i in range(5)})
+
+    def test_a_theme_whose_seed_tickers_were_never_scored_this_run_expands_nothing(self):
+        theme = build(seed_tickers=["NOTSCORED"])
+        research = self._research()
+        candidates = themes.expand_theme_candidates(
+            [theme], research, ranked=[], portfolio_symbols=[])
+        self.assertEqual(candidates, [])
+
+
 class SignalMeasurementTests(unittest.TestCase):
     def test_keyword_density_counts_hits_per_thousand_words(self):
         text = " ".join(["filler"] * 990 + ["HBM"] * 10)

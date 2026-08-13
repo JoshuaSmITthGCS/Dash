@@ -204,23 +204,53 @@ def derive_fcf_growth(cashflow):
     return rounded(cagr(values[0], values[-1], len(values) - 1))
 
 
+# Below this year-over-year revenue change, incremental margin is a ratio of a real number
+# to a rounding error. THG published 89.9% and NEM 128.2% on exactly this arithmetic, both
+# presented as operating leverage. See pipeline/plausibility.py and
+# research/audit/CURRENT_MODEL_AUDIT.md section 5c.
+MINIMUM_INCREMENTAL_REVENUE_FRACTION = 0.02
+
+
 def derive_margins(income):
-    """Operating margin level, its year-over-year change, and the margin on incremental revenue."""
+    """Operating margin level, its year-over-year change, and the margin on incremental revenue.
+
+    Incremental margin is withheld, rather than published and flagged downstream, whenever
+    the revenue denominator is too small to carry information -- this function is the only
+    place that holds both revenue figures, so it is the only place that can tell. The
+    revenue change is published alongside so a reader can see the denominator the ratio
+    rests on instead of taking the ratio on trust.
+    """
     revenue, operating = line(income, "revenue"), line(income, "operating_income")
     gross = line(income, "gross_profit")
     now = ratio(at(operating), at(revenue))
     prior = ratio(at(operating, 1), at(revenue, 1))
+    current_revenue, prior_revenue = at(revenue), at(revenue, 1)
     revenue_delta = None
-    if at(revenue) is not None and at(revenue, 1) is not None:
-        revenue_delta = at(revenue) - at(revenue, 1)
+    if current_revenue is not None and prior_revenue is not None:
+        revenue_delta = current_revenue - prior_revenue
+    change_fraction = (abs(revenue_delta) / abs(prior_revenue)
+                       if revenue_delta is not None and prior_revenue else None)
     incremental = None
-    if revenue_delta and revenue_delta > 0 and at(operating) is not None and at(operating, 1) is not None:
+    denominator_too_small = (change_fraction is not None
+                             and change_fraction < MINIMUM_INCREMENTAL_REVENUE_FRACTION)
+    if (revenue_delta and revenue_delta > 0 and not denominator_too_small
+            and at(operating) is not None and at(operating, 1) is not None):
         incremental = (at(operating) - at(operating, 1)) / revenue_delta
+        # A share of an incremental revenue dollar cannot exceed that dollar. Anything
+        # outside the unit interval is denominator noise however large the revenue change.
+        if abs(incremental) > 1.0:
+            incremental = None
     return {
         "operating_margin": rounded(now),
         "operating_margin_trend": rounded(None if now is None or prior is None else now - prior),
         "gross_margin": rounded(ratio(at(gross), at(revenue))),
         "incremental_margin": rounded(incremental),
+        "revenue_change_fraction": rounded(change_fraction),
+        "incremental_margin_unavailable_reason": (
+            "revenue moved less than "
+            f"{MINIMUM_INCREMENTAL_REVENUE_FRACTION * 100:.0f}% year over year, so the "
+            "incremental-margin denominator carries no information"
+            if denominator_too_small else None),
     }
 
 

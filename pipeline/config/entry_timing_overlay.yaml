@@ -1,0 +1,62 @@
+# Entry-timing overlay. Defaults entirely off.
+#
+# This gates names the composite has already selected. It does not score, rank, or reorder
+# anything. RSI and MACD appear here and nowhere in pipeline/swing_signals.py, and that
+# separation is the point: they are transforms of the recent price series the composite is
+# already reading, so letting them into the ranking would double-count one factor.
+#
+# Three rules the loader enforces and this file cannot opt out of:
+#
+#   1. enabled: true raises unless registered_variant_id is set and present in
+#      pipeline/validation/harness_freeze.json.
+#   2. momentum_turn.mode takes exactly one value. There is no mode that runs RSI and MACD
+#      together as additive confirmations. Testing both means two variants, and both consume
+#      test budget.
+#   3. No parameter here may change after its variant is registered. Changing one creates a
+#      new variant id, and the loader refuses a config that disagrees with its own id.
+#
+# The registered ablation is O-0 through O-4 and that is the entire budget. A sixth cell
+# raises the multiple-testing correction applied to all of them, so adding one means writing
+# down what is being given up.
+
+entry_timing_overlay:
+  enabled: false
+  registered_variant_id: null   # must be set before enabled can be true
+
+  # Falling-knife filter. An oversold reading inside a strongly bearish trend is a
+  # continuation signal, not a reversal signal, so every momentum mode below is evaluated only
+  # on rows that pass here. The pass rate is logged on every run.
+  trend_gate:
+    enabled: false
+    ema_fast: 10
+    ema_slope_lookback: 3
+    require_close_above: 20      # EMA period
+
+  # Exactly one of: off | rsi_change | macd_hist_slope
+  momentum_turn:
+    mode: "off"
+    # rsi_change scores the change and inflection of RSI, never its level. No RSI < 25, < 30,
+    # or any fixed-level rule is the trigger: the level-threshold family is the most heavily
+    # data-snooped surface in the indicator literature and a fixed level is chosen on the same
+    # sample it is then evaluated on. The reference point is the name's own trailing median.
+    rsi_period: 14
+    rsi_change_lookback: 3
+    rsi_median_lookback: 60
+    # macd_hist_slope fires on the histogram slope turning positive while the histogram is
+    # still negative, which precedes the signal-line crossover. The crossover itself is not a
+    # trigger; it is measured against this one, in sessions and in forward return.
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+
+  # The one overlay component with direct Tier-1 support at this horizon: Gervais, Kaniel &
+  # Mingelgrin, Journal of Finance 2001. Testable on its own, which is what variant O-2 is for.
+  volume_gate:
+    enabled: false
+    rvol_lookback: 20
+    rvol_threshold: 1.5
+
+  # A row that passes the composite but fails the momentum turn is deferred, not rejected, for
+  # up to this many sessions. Every deferral records what it would have returned had it been
+  # entered immediately, because that is the question the overlay exists to answer.
+  max_defer_sessions: 3

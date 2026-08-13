@@ -5,6 +5,18 @@ export function Tier({ label }) {
   return <span className={`tier ${tierClass(label)}`}>{label}</span>
 }
 
+// -5 (worst in its pool) .. +5 (best in its pool) - see src/lib/researchRating.js. `null`
+// means there wasn't enough of a pool to rate the row against, not a rating of zero.
+export function RatingBadge({ value, title }) {
+  if (value == null) return <span className="rating-badge rating-badge-none" title={title}>–</span>
+  const tone = value > 0 ? 'pos' : value < 0 ? 'neg' : 'flat'
+  return (
+    <span className={`rating-badge rating-badge-${tone}`} title={title}>
+      {value > 0 ? '+' : ''}{value}
+    </span>
+  )
+}
+
 const FACTOR_LABELS = {
   track_record: 'Track record',
   committee_relevance: 'Committee',

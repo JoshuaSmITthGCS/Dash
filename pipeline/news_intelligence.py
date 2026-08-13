@@ -175,7 +175,12 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
         })
 
     if not articles or total_weight <= 0:
-        return float(config["neutral_score"]), {
+        # No cleared coverage is not the same claim as "sentiment is neutral" - it is an
+        # absence of evidence. Returning the neutral_score here used to make 373 of 374
+        # screen-universe names read as "we checked and it's neutral" when the honest
+        # statement is "we have nothing". None lets blend_research_components renormalize
+        # over the components that actually have evidence instead of anchoring on a fake one.
+        return None, {
             "article_count": 0,
             "raw_article_count": len(news_items),
             "average": None,
@@ -188,6 +193,7 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
             "syndicated_copies_removed": max(0, len(eligible) - len(unique)),
             "articles": [],
             "weighting_method": "recency_source_filing_entity_novelty",
+            "news_available": False,
         }
 
     average = weighted_total / total_weight
@@ -209,4 +215,5 @@ def weighted_sentiment(news_items, ticker, config, *, now=None):
         "commentary_count": sum(item["content_type"] == "commentary" for item in articles),
         "articles": articles,
         "weighting_method": "recency_source_filing_entity_novelty",
+        "news_available": True,
     }

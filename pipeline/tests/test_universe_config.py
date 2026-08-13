@@ -100,9 +100,14 @@ class ScreenPayloadTests(unittest.TestCase):
         # The unpublished remainder of a ~900-name universe is most of what the browser
         # downloads, so it must not quietly accumulate unread fields.
         fields = set(fetch_advisor.SCREEN_TECHNICAL_FIELDS)
-        screens = os.path.join(os.path.dirname(PIPELINE_DIR), "src", "lib", "researchScreens.js")
-        with open(screens) as handle:
-            source = handle.read()
+        # Both client-side readers of the slice: the screen rankers, and the ranking models
+        # that scan the same tail (rankingModels.js - the swing model's 52-week-high leg is
+        # the reason pct_from_52w_high is published to every row rather than the head).
+        root = os.path.join(os.path.dirname(PIPELINE_DIR), "src", "lib")
+        source = ""
+        for reader in ("researchScreens.js", "rankingModels.js"):
+            with open(os.path.join(root, reader)) as handle:
+                source += handle.read()
         for field in fields:
             with self.subTest(field=field):
                 self.assertIn(field, source,

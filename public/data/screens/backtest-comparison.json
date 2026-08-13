@@ -1,0 +1,736 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "backtest-comparison-v1.0.0",
+  "generated_at": "2026-08-13T20:29:42.547826+00:00",
+  "status": "success",
+  "methods_total": 15,
+  "methods_measured": 14,
+  "success_rate_definitions": {
+    "rebalance_periods_positive": "Share of holding periods, measured between the backtest's own execution dates, that ended positive.",
+    "trades_profitable": "Share of individual simulated option trades that closed profitably. A low rate is normal for long-option strategies whose returns live in the tail.",
+    "periods_with_positive_ic": "Share of periods in which the ranking correlated positively with forward returns. A ranking measure, not a portfolio return.",
+    "not_measurable_with_contribution_flows": "The portfolio receives cash contributions, so period returns cannot be separated from deposits."
+  },
+  "comparable_groups": {
+    "held_portfolio": "Lump-sum portfolios rebalanced on a schedule. Directly comparable.",
+    "contribution_flows": "Portfolio with ongoing contributions; returns are not comparable with the lump-sum rows.",
+    "option_trades": "Per-trade option simulations. Comparable with each other only.",
+    "rank_quality": "Ranking diagnostics. Not a portfolio return at all."
+  },
+  "interpretation": "Success rates may be ranked only inside a comparable group. The feature rollup reports co-occurrence, not attribution: methods share inputs and cover different windows, so a feature's mean success rate indicates where to look, never how much that feature contributed.",
+  "methods": [
+    {
+      "id": "research_score_monthly",
+      "label": "Research score, top 20 monthly",
+      "family": "portfolio",
+      "comparable_group": "held_portfolio",
+      "features": [
+        "fundamentals",
+        "valuation",
+        "quality",
+        "growth",
+        "price momentum"
+      ],
+      "note": "The champion model: the appeal score this app ranks on, rebalanced monthly.",
+      "source": "pipeline/backtest_monthly_results.json",
+      "status": "measured",
+      "status_detail": null,
+      "generated_at": "2026-08-03T06:46:54.135869Z",
+      "window_start": "2021-08-02",
+      "window_end": "2026-07-31",
+      "total_return_pct": 69.4781,
+      "cagr_pct": 11.1423,
+      "sharpe": 0.6443,
+      "max_drawdown_pct": -27.0313,
+      "annualized_volatility_pct": 19.4319,
+      "turnover": 38.949437,
+      "benchmark_total_return_pct": 82.472,
+      "benchmark_cagr_pct": 12.7986,
+      "excess_return_pct": -12.9939,
+      "time_invested_pct": 100.0,
+      "excess_return_withheld_reason": null,
+      "success_rate": 0.65,
+      "success_rate_basis": "rebalance_periods_positive",
+      "beat_benchmark_rate": 0.5333,
+      "periods_measured": 60,
+      "periods_in_cash": 0,
+      "unique_names_held": 397,
+      "cost_bps_one_way": 10.0,
+      "caveats": [
+        "Survivorship bias: the universe is today's candidate list walked backward."
+      ]
+    },
+    {
+      "id": "emerging_growth",
+      "label": "Emerging growth screen",
+      "family": "portfolio",
+      "comparable_group": "held_portfolio",
+      "features": [
+        "growth",
+        "fundamentals",
+        "valuation"
+      ],
+      "note": "A strict qualification screen - unfilled slots sit in cash rather than being backfilled.",
+      "source": "pipeline/backtest_emerging_growth_results.json",
+      "status": "measured",
+      "status_detail": null,
+      "generated_at": "2026-08-07T17:10:21.191778Z",
+      "window_start": "2021-09-01",
+      "window_end": "2026-08-07",
+      "total_return_pct": 0.0,
+      "cagr_pct": 0.0,
+      "sharpe": null,
+      "max_drawdown_pct": 0.0,
+      "annualized_volatility_pct": 0.0,
+      "turnover": 0.0,
+      "benchmark_total_return_pct": 82.6781,
+      "benchmark_cagr_pct": 12.9981,
+      "excess_return_pct": null,
+      "time_invested_pct": 0.0,
+      "excess_return_withheld_reason": "held cash for most of the window; a benchmark difference would misreport not being invested as underperformance",
+      "success_rate": null,
+      "success_rate_basis": "rebalance_periods_positive",
+      "beat_benchmark_rate": null,
+      "periods_measured": 0,
+      "periods_in_cash": 60,
+      "unique_names_held": 0,
+      "cost_bps_one_way": 10.0,
+      "caveats": [
+        "Invested in only 0.0% of its rebalance periods and held cash for the rest, so its return is not comparable with a fully invested benchmark over the same window.",
+        "Survivorship bias: the universe is today's candidate list walked backward."
+      ]
+    },
+    {
+      "id": "swing_only",
+      "label": "Swing signals only",
+      "family": "portfolio",
+      "comparable_group": "held_portfolio",
+      "features": [
+        "earnings drift",
+        "volume",
+        "52-week proximity",
+        "short-term reversal"
+      ],
+      "note": "The swing screen traded as a weekly-rebalanced book, equal weighted.",
+      "source": "pipeline/backtest_swing_portfolio_results.json",
+      "status": "measured",
+      "status_detail": null,
+      "generated_at": "2026-08-13T06:57:55.916712Z",
+      "window_start": "2023-08-08",
+      "window_end": "2026-08-11",
+      "total_return_pct": 61.4806,
+      "cagr_pct": 17.265,
+      "sharpe": 0.9272,
+      "max_drawdown_pct": -26.7239,
+      "annualized_volatility_pct": 19.3247,
+      "turnover": 112.599368,
+      "benchmark_total_return_pct": 78.058,
+      "benchmark_cagr_pct": 21.1361,
+      "excess_return_pct": -16.5774,
+      "time_invested_pct": 100.0,
+      "excess_return_withheld_reason": null,
+      "success_rate": 0.543,
+      "success_rate_basis": "rebalance_periods_positive",
+      "beat_benchmark_rate": 0.4702,
+      "periods_measured": 151,
+      "periods_in_cash": 0,
+      "unique_names_held": 704,
+      "cost_bps_one_way": 10.0,
+      "caveats": [
+        "Survivorship bias: the universe is today's candidate list walked backward.",
+        "8 tickers, 384 point-in-time observations, 20260803T052915 to 20260812T203812 (pipeline/estimate_snapshots.py, collection_status FORWARD_COLLECTION_ONLY -- no history exists before collection began, so the analyst_revision leg cannot be reconstructed for any date this backtest walks).",
+        "disabled; no point-in-time share-count series exists in the cache"
+      ]
+    },
+    {
+      "id": "political_institutional_only",
+      "label": "Political + institutional trades only",
+      "family": "portfolio",
+      "comparable_group": "held_portfolio",
+      "features": [
+        "congressional disclosures",
+        "13F institutional breadth"
+      ],
+      "note": "Follows disclosed trades and nothing else, gated on disclosure and filing dates.",
+      "source": "pipeline/backtest_political_institutional_results.json",
+      "status": "insufficient_disclosure_history",
+      "status_detail": "1 of 60 monthly rebalances carried at least one qualifying disclosure. Below 12 the return series is a coverage measurement, not a performance measurement, and no annualized figure derived from it should be quoted.",
+      "generated_at": "2026-08-13T20:29:42.247444Z",
+      "window_start": "2021-09-01",
+      "window_end": "2026-08-13",
+      "total_return_pct": 1.2997,
+      "cagr_pct": 0.2614,
+      "sharpe": 0.3183,
+      "max_drawdown_pct": -0.5915,
+      "annualized_volatility_pct": 0.8347,
+      "turnover": 1.0,
+      "benchmark_total_return_pct": 84.0314,
+      "benchmark_cagr_pct": 13.1209,
+      "excess_return_pct": null,
+      "time_invested_pct": 1.67,
+      "excess_return_withheld_reason": "held cash for most of the window; a benchmark difference would misreport not being invested as underperformance",
+      "success_rate": 1.0,
+      "success_rate_basis": "rebalance_periods_positive",
+      "beat_benchmark_rate": 0.0,
+      "periods_measured": 1,
+      "periods_in_cash": 59,
+      "unique_names_held": 20,
+      "cost_bps_one_way": 10.0,
+      "caveats": [
+        "Invested in only 1.7% of its rebalance periods and held cash for the rest, so its return is not comparable with a fully invested benchmark over the same window.",
+        "Survivorship bias: the universe is today's candidate list walked backward.",
+        "senate-efd only in the current store; the House and FMP mirrors are dark, so member breadth is understated and the breadth term is compressed",
+        "two 13F quarter-ends in the store, so at most one quarter-over-quarter accumulation signal exists across the whole window",
+        "the published congress screen keeps a rolling publication window, so early history is not merely thin, it is absent"
+      ]
+    },
+    {
+      "id": "research_score_weekly_dca",
+      "label": "Research score, weekly with contributions",
+      "family": "portfolio",
+      "comparable_group": "contribution_flows",
+      "features": [
+        "fundamentals",
+        "valuation",
+        "quality",
+        "growth",
+        "price momentum"
+      ],
+      "source": "pipeline/backtest_historical_results.json",
+      "note": "Adds a fixed monthly contribution, so its return is not comparable with the lump-sum backtests above.",
+      "status": "measured",
+      "generated_at": "2026-07-31T05:44:09.813101Z",
+      "window_start": "2025-08-01",
+      "window_end": "2026-07-24",
+      "total_return_pct": 13.89,
+      "benchmark_total_return_pct": 8.42,
+      "excess_return_pct": 5.47,
+      "success_rate": null,
+      "success_rate_basis": "not_measurable_with_contribution_flows",
+      "beat_benchmark_rate": null,
+      "periods_measured": 52,
+      "caveats": [
+        "Monthly contributions mean period-level returns cannot be read off the value series without counting deposits as gains."
+      ]
+    },
+    {
+      "id": "swing_ranking_ic",
+      "label": "Swing signals \u2014 ranking quality (IC)",
+      "family": "ranking",
+      "comparable_group": "rank_quality",
+      "features": [
+        "earnings drift",
+        "volume",
+        "52-week proximity",
+        "short-term reversal"
+      ],
+      "source": "pipeline/backtest_swing_results.json",
+      "note": "Measures whether the swing composite ranks correctly, not what a book of its top names returned. Paired with the swing portfolio row above.",
+      "status": "measured",
+      "generated_at": null,
+      "window_start": "2023-08-14",
+      "window_end": "2026-07-14",
+      "mean_ic": -0.0082,
+      "icir": -0.469,
+      "t_stat": -0.804,
+      "success_rate": 0.5,
+      "success_rate_basis": "periods_with_positive_ic",
+      "beat_benchmark_rate": null,
+      "periods_measured": 74,
+      "mean_quantile_spread_net_pct": -0.05,
+      "deflated_sharpe": 0.1044,
+      "clears_multiple_testing_bar": false,
+      "probability_of_backtest_overfitting": 0.0,
+      "caveats": [
+        "Four of the five declared legs are measured; the analyst-revision leg has no reconstructable history, so this is a sub-composite of the shipped model."
+      ]
+    },
+    {
+      "id": "multi_day_options",
+      "label": "Multi-day options",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/options-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:26:39.562408+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": -100.0,
+      "cagr_pct": -10.5,
+      "sharpe": 0.164,
+      "deflated_sharpe": 0.8991,
+      "max_drawdown_pct": -100.0,
+      "success_rate": 0.3273,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 11612,
+      "average_pnl_per_trade": 5.09,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "short_term_trades",
+      "label": "Short-term trades",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/short-term-trades-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:27:08.763451+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": -100.0,
+      "cagr_pct": -3.27,
+      "sharpe": 0.102,
+      "deflated_sharpe": 0.9356,
+      "max_drawdown_pct": -100.0,
+      "success_rate": 0.5828,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 34836,
+      "average_pnl_per_trade": 10.59,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "covered_call",
+      "label": "Covered call",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/covered-calls-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:26:46.184538+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": 688.92,
+      "cagr_pct": 0.93,
+      "sharpe": 0.57,
+      "deflated_sharpe": 1.0,
+      "max_drawdown_pct": -6.32,
+      "success_rate": 0.6187,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 11612,
+      "average_pnl_per_trade": 27.19,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "cash_secured_put",
+      "label": "Cash-secured put",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/cash-secured-puts-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:26:51.676318+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": 57.45,
+      "cagr_pct": 0.2,
+      "sharpe": 0.208,
+      "deflated_sharpe": 0.9279,
+      "max_drawdown_pct": -9.4,
+      "success_rate": 0.8023,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 11612,
+      "average_pnl_per_trade": -0.5,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "protective_put",
+      "label": "Protective put",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/protective-puts-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:26:57.159899+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": 1349.72,
+      "cagr_pct": 1.22,
+      "sharpe": 0.579,
+      "deflated_sharpe": 1.0,
+      "max_drawdown_pct": -8.44,
+      "success_rate": 0.5156,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 2686,
+      "average_pnl_per_trade": 180.02,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "collar",
+      "label": "Collar",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/collars-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:26:59.018669+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": 234.82,
+      "cagr_pct": 0.55,
+      "sharpe": 0.494,
+      "deflated_sharpe": 1.0,
+      "max_drawdown_pct": -5.84,
+      "success_rate": 0.5763,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 2686,
+      "average_pnl_per_trade": 64.95,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "vertical_spread",
+      "label": "Vertical spread",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/vertical-spreads-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:27:01.303333+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": -100.0,
+      "cagr_pct": -4.65,
+      "sharpe": -0.087,
+      "deflated_sharpe": 0.0032,
+      "max_drawdown_pct": -100.0,
+      "success_rate": 0.3392,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 2689,
+      "average_pnl_per_trade": -22.93,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "iron_condor",
+      "label": "Iron condor",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/advanced-strategies-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:27:03.636843+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": -100.0,
+      "cagr_pct": -4.8,
+      "sharpe": -0.529,
+      "deflated_sharpe": 0.0,
+      "max_drawdown_pct": -100.0,
+      "success_rate": 0.6401,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 2581,
+      "average_pnl_per_trade": -26.58,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    },
+    {
+      "id": "straddle",
+      "label": "Straddle",
+      "family": "options",
+      "comparable_group": "option_trades",
+      "features": [
+        "option pricing",
+        "realized volatility",
+        "price momentum"
+      ],
+      "source": "public/data/screens/advanced-strategies-backtest.json",
+      "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
+      "status": "measured",
+      "generated_at": "2026-08-13T20:27:03.636843+00:00",
+      "window_start": null,
+      "window_end": null,
+      "total_return_pct": 44097716.68,
+      "cagr_pct": 6.06,
+      "sharpe": 0.431,
+      "deflated_sharpe": 1.0,
+      "max_drawdown_pct": -64.42,
+      "success_rate": 0.4574,
+      "success_rate_basis": "trades_profitable",
+      "beat_benchmark_rate": null,
+      "periods_measured": 2687,
+      "average_pnl_per_trade": 68.89,
+      "universe_tickers": 125,
+      "caveats": [
+        "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
+      ]
+    }
+  ],
+  "feature_rollup": [
+    {
+      "feature": "fundamentals",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Research score, top 20 monthly"
+      ],
+      "mean_success_rate": 0.65,
+      "minimum_success_rate": 0.65,
+      "maximum_success_rate": 0.65
+    },
+    {
+      "feature": "growth",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Research score, top 20 monthly"
+      ],
+      "mean_success_rate": 0.65,
+      "minimum_success_rate": 0.65,
+      "maximum_success_rate": 0.65
+    },
+    {
+      "feature": "price momentum",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Research score, top 20 monthly"
+      ],
+      "mean_success_rate": 0.65,
+      "minimum_success_rate": 0.65,
+      "maximum_success_rate": 0.65
+    },
+    {
+      "feature": "quality",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Research score, top 20 monthly"
+      ],
+      "mean_success_rate": 0.65,
+      "minimum_success_rate": 0.65,
+      "maximum_success_rate": 0.65
+    },
+    {
+      "feature": "valuation",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Research score, top 20 monthly"
+      ],
+      "mean_success_rate": 0.65,
+      "minimum_success_rate": 0.65,
+      "maximum_success_rate": 0.65
+    },
+    {
+      "feature": "52-week proximity",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals only"
+      ],
+      "mean_success_rate": 0.543,
+      "minimum_success_rate": 0.543,
+      "maximum_success_rate": 0.543
+    },
+    {
+      "feature": "earnings drift",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals only"
+      ],
+      "mean_success_rate": 0.543,
+      "minimum_success_rate": 0.543,
+      "maximum_success_rate": 0.543
+    },
+    {
+      "feature": "short-term reversal",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals only"
+      ],
+      "mean_success_rate": 0.543,
+      "minimum_success_rate": 0.543,
+      "maximum_success_rate": 0.543
+    },
+    {
+      "feature": "volume",
+      "success_rate_basis": "rebalance_periods_positive",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals only"
+      ],
+      "mean_success_rate": 0.543,
+      "minimum_success_rate": 0.543,
+      "maximum_success_rate": 0.543
+    },
+    {
+      "feature": "option pricing",
+      "success_rate_basis": "trades_profitable",
+      "methods": 9,
+      "method_labels": [
+        "Cash-secured put",
+        "Collar",
+        "Covered call",
+        "Iron condor",
+        "Multi-day options",
+        "Protective put",
+        "Short-term trades",
+        "Straddle",
+        "Vertical spread"
+      ],
+      "mean_success_rate": 0.54,
+      "minimum_success_rate": 0.3273,
+      "maximum_success_rate": 0.8023
+    },
+    {
+      "feature": "price momentum",
+      "success_rate_basis": "trades_profitable",
+      "methods": 9,
+      "method_labels": [
+        "Cash-secured put",
+        "Collar",
+        "Covered call",
+        "Iron condor",
+        "Multi-day options",
+        "Protective put",
+        "Short-term trades",
+        "Straddle",
+        "Vertical spread"
+      ],
+      "mean_success_rate": 0.54,
+      "minimum_success_rate": 0.3273,
+      "maximum_success_rate": 0.8023
+    },
+    {
+      "feature": "realized volatility",
+      "success_rate_basis": "trades_profitable",
+      "methods": 9,
+      "method_labels": [
+        "Cash-secured put",
+        "Collar",
+        "Covered call",
+        "Iron condor",
+        "Multi-day options",
+        "Protective put",
+        "Short-term trades",
+        "Straddle",
+        "Vertical spread"
+      ],
+      "mean_success_rate": 0.54,
+      "minimum_success_rate": 0.3273,
+      "maximum_success_rate": 0.8023
+    },
+    {
+      "feature": "52-week proximity",
+      "success_rate_basis": "periods_with_positive_ic",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals \u2014 ranking quality (IC)"
+      ],
+      "mean_success_rate": 0.5,
+      "minimum_success_rate": 0.5,
+      "maximum_success_rate": 0.5
+    },
+    {
+      "feature": "earnings drift",
+      "success_rate_basis": "periods_with_positive_ic",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals \u2014 ranking quality (IC)"
+      ],
+      "mean_success_rate": 0.5,
+      "minimum_success_rate": 0.5,
+      "maximum_success_rate": 0.5
+    },
+    {
+      "feature": "short-term reversal",
+      "success_rate_basis": "periods_with_positive_ic",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals \u2014 ranking quality (IC)"
+      ],
+      "mean_success_rate": 0.5,
+      "minimum_success_rate": 0.5,
+      "maximum_success_rate": 0.5
+    },
+    {
+      "feature": "volume",
+      "success_rate_basis": "periods_with_positive_ic",
+      "methods": 1,
+      "method_labels": [
+        "Swing signals \u2014 ranking quality (IC)"
+      ],
+      "mean_success_rate": 0.5,
+      "minimum_success_rate": 0.5,
+      "maximum_success_rate": 0.5
+    }
+  ],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "6e68bf6a9ecea3bb197acf7c679c2300f8320c1b",
+    "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
+    "generated_at": "2026-08-13T20:29:42.547826+00:00"
+  }
+}

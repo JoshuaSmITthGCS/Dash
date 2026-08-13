@@ -1,0 +1,4349 @@
+{
+  "ticker": "THG",
+  "name": "Hanover Insurance Group Inc",
+  "price": 229.08,
+  "pct_30d": 7.05,
+  "sector": "Financial Services",
+  "industry": "Insurance - Property & Casualty",
+  "market_cap": 7976615936,
+  "dividend_yield": 1.66,
+  "is_etf": false,
+  "price_to_sales": 1.18,
+  "price_to_book": 2.18,
+  "forward_pe": 11.76,
+  "trailing_pe": 10.97,
+  "peg": 0.34,
+  "debt_to_equity": 0.23,
+  "current_ratio": 0.36,
+  "return_on_equity": 0.2188,
+  "profit_margin": 0.1117,
+  "free_cash_flow": 1081224960.0,
+  "free_cash_flow_yield": 0.1355,
+  "revenue_growth": 0.043,
+  "earnings_growth": 0.25,
+  "observations": {
+    "price": [
+      {
+        "value": 229.08,
+        "unit": "usd",
+        "source": "yahoo",
+        "source_field": "currentPrice",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "market_cap": [
+      {
+        "value": 7976615936,
+        "unit": "usd",
+        "source": "yahoo",
+        "source_field": "marketCap",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "forward_pe": [
+      {
+        "value": 11.759754,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "forwardPE",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": true,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "current_ratio": [
+      {
+        "value": 0.36,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "currentRatio",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "price_to_book": [
+      {
+        "value": 2.1769664,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "priceToBook",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "price_to_sales": [
+      {
+        "value": 1.1792052,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "priceToSalesTrailing12Months",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": true,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "return_on_equity": [
+      {
+        "value": 0.21885,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "returnOnEquity",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": true,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "profit_margin": [
+      {
+        "value": 0.1117,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "profitMargins",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": true,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "trailing_revenue_growth": [
+      {
+        "value": 0.043,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "revenueGrowth",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": true,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "quarterly_eps_growth": [
+      {
+        "value": 0.249,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "earningsGrowth",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": true,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied",
+          "not_forward_growth"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "debt_to_equity": [
+      {
+        "value": 0.22982,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "debtToEquity",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "free_cash_flow_yield": [
+      {
+        "value": 0.13554933178119108,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "freeCashflow/marketCap",
+        "period_start": null,
+        "period_end": null,
+        "available_at": null,
+        "observed_at": "2026-08-10T05:17:16.808242+00:00",
+        "fetched_at": "2026-08-10T05:17:16.808242+00:00",
+        "fiscal_period": null,
+        "is_ttm": true,
+        "is_forward": false,
+        "quality_flags": [
+          "provider_period_not_supplied"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "price_to_tangible_book": [
+      {
+        "value": 2.48,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "derived:price_to_tangible_book",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "ev_to_ebit": [
+      {
+        "value": 9.64,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "derived:ev_to_ebit",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "ev_to_fcf": [
+      {
+        "value": 7.31,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "derived:ev_to_fcf",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "return_on_invested_capital": [
+      {
+        "value": 0.2026,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:return_on_invested_capital",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "cash_conversion": [
+      {
+        "value": 1.7666,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:cash_conversion",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "interest_coverage": [
+      {
+        "value": 20.53,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "derived:interest_coverage",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "fcf_growth_3y": [
+      {
+        "value": 0.1844,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:fcf_growth_3y",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "operating_margin_trend": [
+      {
+        "value": 0.0431,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:operating_margin_trend",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "net_buyback_yield": [
+      {
+        "value": 0.0141,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:net_buyback_yield",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "stock_comp_to_revenue": [
+      {
+        "value": 0.0054,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:stock_comp_to_revenue",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "capex_to_depreciation": [
+      {
+        "value": 1.67,
+        "unit": "multiple",
+        "source": "yahoo",
+        "source_field": "derived:capex_to_depreciation",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "asset_growth": [
+      {
+        "value": 0.1094,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:asset_growth",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "accruals_ratio": [
+      {
+        "value": -0.032,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:accruals_ratio",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "piotroski_f": [
+      {
+        "value": 6.4,
+        "unit": "count",
+        "source": "yahoo",
+        "source_field": "derived:piotroski_f",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ],
+    "days_sales_outstanding_trend": [
+      {
+        "value": -0.0341,
+        "unit": "decimal",
+        "source": "yahoo",
+        "source_field": "derived:days_sales_outstanding_trend",
+        "period_start": null,
+        "period_end": "2025-12-31",
+        "available_at": null,
+        "observed_at": "2026-08-10T05:18:40.609974+00:00",
+        "fetched_at": "2026-08-10T05:18:40.609974+00:00",
+        "fiscal_period": null,
+        "is_ttm": false,
+        "is_forward": false,
+        "quality_flags": [
+          "derived_from_annual_statements"
+        ],
+        "transform_version": "identity.v1"
+      }
+    ]
+  },
+  "return_on_invested_capital": 0.2026,
+  "gross_profits_to_assets": null,
+  "cash_conversion": 1.7666,
+  "fcf_growth_3y": 0.1844,
+  "interest_coverage": 20.53,
+  "net_debt_to_ebitda": null,
+  "altman_z": null,
+  "altman_z_variant": null,
+  "piotroski_f": 6.4,
+  "accruals_ratio": -0.032,
+  "asset_growth": 0.1094,
+  "earnings_surprise": null,
+  "operating_margin": 0.1351,
+  "operating_margin_trend": 0.0431,
+  "gross_margin": null,
+  "incremental_margin": 0.899,
+  "revenue_change_fraction": 0.0564,
+  "incremental_margin_unavailable_reason": null,
+  "days_sales_outstanding": 215.2,
+  "days_sales_outstanding_trend": -0.0341,
+  "inventory_days": null,
+  "inventory_days_trend": null,
+  "share_count_change": -0.0141,
+  "net_buyback_yield": 0.0141,
+  "gross_buyback_yield": 0.0162,
+  "stock_comp_to_revenue": 0.0054,
+  "capex_to_depreciation": 1.67,
+  "enterprise_value": 8554516480,
+  "ev_to_ebitda": null,
+  "ev_to_ebit": 9.64,
+  "ev_to_sales": 1.3,
+  "ev_to_fcf": 7.31,
+  "price_to_tangible_book": 2.48,
+  "earnings_yield": 0.0912,
+  "short_percent_of_float": 0.0382,
+  "days_to_cover": 3.38,
+  "institutional_ownership": null,
+  "insider_ownership": 0.0096,
+  "beta": 0.28,
+  "average_dollar_volume": 74472992,
+  "pct_from_52w_high": -2.96,
+  "pct_above_52w_low": 38.42,
+  "analyst_count": 8,
+  "analyst_rating": 2.62,
+  "analyst_consensus_target": 235.88,
+  "analyst_target_upside": 2.97,
+  "payout_ratio": 0.1795,
+  "piotroski_tests": {
+    "positive_roa": true,
+    "positive_operating_cash": true,
+    "rising_roa": true,
+    "cash_exceeds_income": true,
+    "falling_leverage": false,
+    "no_dilution": true,
+    "rising_asset_turnover": false
+  },
+  "statement_periods": [
+    "2025-12-31",
+    "2024-12-31",
+    "2023-12-31",
+    "2022-12-31"
+  ],
+  "extended_coverage": 0.8,
+  "score": 81.3,
+  "base_score": 82.9,
+  "raw_score": 85.1,
+  "stance": "ATTRACTIVE",
+  "data_coverage": 0.87,
+  "components": {
+    "fundamentals": 87.7,
+    "market_behavior": 73.9,
+    "news_sentiment": null
+  },
+  "fundamental_categories": {
+    "valuation": 90.0,
+    "profitability": 77.5,
+    "financial_health": 100.0,
+    "growth": 86.1,
+    "capital_allocation": 91.9,
+    "accounting_quality": 100.0
+  },
+  "fundamental_detail": {
+    "peg": null,
+    "forward_pe": 100.0,
+    "sales_multiple": null,
+    "price_to_book": 75.0,
+    "price_to_tangible_book": 75.0,
+    "ev_to_ebitda": null,
+    "ev_to_ebit": null,
+    "ev_to_fcf": null,
+    "return_on_equity": 100.0,
+    "return_on_invested_capital": null,
+    "gross_profits_to_assets": null,
+    "cash_conversion": null,
+    "free_cash_flow_yield": null,
+    "profit_margin": 55.0,
+    "debt_to_equity": 100.0,
+    "current_ratio": null,
+    "interest_coverage": 100.0,
+    "net_debt_to_ebitda": null,
+    "altman_z": null,
+    "revenue_growth": 55.0,
+    "earnings_growth": 100.0,
+    "fcf_growth_3y": 100.0,
+    "operating_margin_trend": 100.0,
+    "earnings_surprise": null,
+    "net_buyback_yield": 80.0,
+    "stock_comp_to_revenue": 100.0,
+    "capex_to_depreciation": null,
+    "asset_growth": 100.0,
+    "accruals_ratio": 100.0,
+    "piotroski_f": null,
+    "days_sales_outstanding_trend": null,
+    "inventory_days_trend": null,
+    "categories": {
+      "valuation": 90.0,
+      "profitability": 77.5,
+      "financial_health": 100.0,
+      "growth": 86.1,
+      "capital_allocation": 91.9,
+      "accounting_quality": 100.0
+    },
+    "coverage": 0.96,
+    "raw_score": 89.0,
+    "sector": "Financial Services",
+    "applicability_profile": "property_casualty_insurer",
+    "suppressed_metrics": [
+      "altman_z",
+      "capex_to_depreciation",
+      "cash_conversion",
+      "current_ratio",
+      "days_sales_outstanding_trend",
+      "ev_to_ebit",
+      "ev_to_ebitda",
+      "ev_to_fcf",
+      "free_cash_flow_yield",
+      "gross_profits_to_assets",
+      "inventory_days_trend",
+      "net_debt_to_ebitda",
+      "peg",
+      "piotroski_f",
+      "return_on_invested_capital",
+      "sales_multiple"
+    ],
+    "categories_withheld": {},
+    "sales_multiple_basis": "ev_to_sales",
+    "altman_z_variant": null,
+    "normalization_mode": "bands"
+  },
+  "technical_detail": {
+    "return_5d": -1.53,
+    "return_20d": 7.05,
+    "return_60d": 20.83,
+    "return_252d": 31.99,
+    "momentum_12_1_pct": 23.5,
+    "annualized_volatility": 23.62,
+    "drawdown_60d": -1.53,
+    "max_drawdown_252d": -10.02,
+    "sharpe_ratio": 1.45,
+    "sortino_ratio": 2.19,
+    "relative_strength_20d": 4.63,
+    "volume_ratio_60d": 1.57,
+    "pct_from_52w_high": -2.96,
+    "pct_above_52w_low": 38.42,
+    "beta": 0.28,
+    "technical_extended_detail": {
+      "raw": {
+        "moving_average_slope": 3.439,
+        "relative_strength_index": 69.61,
+        "bollinger_percent_b": 0.731,
+        "on_balance_volume_slope": 0.328
+      },
+      "scored": {
+        "moving_average_slope": 63.756,
+        "relative_strength_index": 69.61,
+        "bollinger_percent_b": 73.1,
+        "on_balance_volume_slope": 100.0
+      },
+      "coverage": 1.0
+    },
+    "momentum_12_1": 78.2,
+    "risk_adjusted": 77.9,
+    "relative_strength": 63.9,
+    "drawdown_resilience": 71.4,
+    "volume_confirmation": 66.4,
+    "low_beta": 48.2,
+    "technical_extended": 76.6,
+    "coverage": 1.0,
+    "short_horizon_treatment": "neutral"
+  },
+  "sentiment_detail": {
+    "article_count": 0,
+    "raw_article_count": 20,
+    "average": null,
+    "weighted_average": null,
+    "coverage": 0.0,
+    "window_days": 7,
+    "full_coverage_article_count": 8,
+    "discarded_low_confidence": 0,
+    "discarded_outside_window": 17,
+    "syndicated_copies_removed": 0,
+    "articles": [],
+    "weighting_method": "recency_source_filing_entity_novelty",
+    "news_available": false
+  },
+  "modifiers": {
+    "applied": {
+      "macro_regime": 1.06,
+      "insider_activity": -2.63
+    },
+    "total": -1.57,
+    "uncapped_total": -1.57,
+    "notes": [
+      "FRED macro regime is supportive for Financial Services (68/100)",
+      "7 insiders sold $8.4M on the open market, most recently 4 day(s) ago (opportunistic, not calendar-scheduled)"
+    ]
+  },
+  "news_available": false,
+  "sector_valuation_percentile": null,
+  "recommendation": {
+    "action": "HOLD",
+    "suggested_trim_pct": 0,
+    "agreement_strength": "high",
+    "agreement_count": 0,
+    "reasons": [],
+    "summary": "No multi-factor deterioration. Position stands on its current evidence.",
+    "unmeasured_inputs": [
+      "positioning.news_sentiment"
+    ],
+    "factors": {}
+  },
+  "strengths": [
+    "Strong valuation score (90/100)",
+    "Strong profitability and cash generation score (78/100)",
+    "Strong balance-sheet health score (100/100)",
+    "Strong growth score (86/100)",
+    "Strong capital allocation score (92/100)"
+  ],
+  "risks": [
+    "No major quantitative red flag; qualitative risks still require review"
+  ],
+  "analysis_v2": {
+    "model_version": "structural-timeliness-2.1.0",
+    "config_version": "canonical-metrics-2.0.0",
+    "applicability_profile": "property_casualty_insurer",
+    "structural": {
+      "raw_score": 90.5,
+      "effective_score": 74.5,
+      "weight_renormalization": {
+        "weights_declared": {
+          "valuation": 0.28,
+          "profitability": 0.26,
+          "financial_health": 0.15,
+          "growth": 0.11,
+          "capital_allocation": 0.1,
+          "accounting_quality": 0.1
+        },
+        "weights_effective": {
+          "valuation": 0.28,
+          "profitability": 0.26,
+          "financial_health": 0.15,
+          "growth": 0.11,
+          "capital_allocation": 0.1,
+          "accounting_quality": 0.1
+        },
+        "inputs_dropped": [],
+        "inputs_resolved": [
+          "accounting_quality",
+          "capital_allocation",
+          "financial_health",
+          "growth",
+          "profitability",
+          "valuation"
+        ],
+        "covered_weight_fraction": 1.0,
+        "redistributed_weight": 0.0
+      },
+      "evidence_weight_resolved": 0.61,
+      "coverage": 0.84,
+      "coverage_basis": "answered_applicable_weight",
+      "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+      "available_weight": 0.3418,
+      "applicable_weight": 0.4066,
+      "stale_weight": 0.0,
+      "conflicted_weight": 0.0,
+      "missing_metrics": [
+        "earnings_surprise",
+        "price_to_sales",
+        "trailing_eps_growth"
+      ],
+      "suppressed_metrics": [
+        "altman_z",
+        "capex_to_depreciation",
+        "cash_conversion",
+        "current_ratio",
+        "days_sales_outstanding_trend",
+        "ev_to_ebit",
+        "ev_to_ebitda",
+        "ev_to_fcf",
+        "free_cash_flow_yield",
+        "gross_profits_to_assets",
+        "inventory_days_trend",
+        "net_debt_to_ebitda",
+        "peg",
+        "piotroski_f",
+        "return_on_invested_capital",
+        "trailing_revenue_growth"
+      ],
+      "stale_metrics": [],
+      "provider_conflicts": [],
+      "classification": "quality_watch",
+      "categories": {
+        "valuation": 90.0,
+        "profitability": 77.5,
+        "financial_health": 100.0,
+        "growth": 100.0,
+        "capital_allocation": 91.9,
+        "accounting_quality": 100.0
+      }
+    },
+    "timeliness": {
+      "raw_score": null,
+      "effective_score": null,
+      "evidence_weight_resolved": 0.0,
+      "coverage": 0.0,
+      "available_weight": 0.0,
+      "applicable_weight": 1.0,
+      "stale_weight": 0.0,
+      "conflicted_weight": 0.0,
+      "weight_renormalization": {
+        "weights_declared": {
+          "forward_eps_revision_30d": 0.7,
+          "earnings_surprise": 0.3
+        },
+        "weights_effective": {},
+        "inputs_dropped": [
+          "earnings_surprise",
+          "forward_eps_revision_30d"
+        ],
+        "inputs_resolved": [],
+        "covered_weight_fraction": 0.0,
+        "redistributed_weight": 1.0
+      },
+      "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
+      "missing_metrics": [
+        "forward_eps_revision_30d",
+        "earnings_surprise"
+      ],
+      "suppressed_metrics": [],
+      "stale_metrics": [],
+      "provider_conflicts": [],
+      "classification": "unavailable",
+      "trailing_growth": {
+        "revenue_growth": 0.043,
+        "eps_growth": 0.25
+      },
+      "forward": {
+        "fy1_growth": null,
+        "fy2_growth": null,
+        "revision_7d": null,
+        "revision_30d": null,
+        "revision_90d": null,
+        "revision_acceleration": null,
+        "analyst_count": 8,
+        "estimate_dispersion": null,
+        "earnings_surprise": null,
+        "revenue_surprise": null,
+        "guidance_direction": null
+      }
+    },
+    "company_classification": "quality_watch",
+    "screen_memberships": [],
+    "position_action": null,
+    "metric_status": {
+      "peg": {
+        "status": "suppressed",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": "forward_pe",
+        "reason": "Universal PEG does not normalize underwriting cycles or reserve development.",
+        "quality_flags": [
+          "provider_peg_rejected"
+        ]
+      },
+      "forward_pe": {
+        "status": "applied",
+        "value": 11.76,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "price_to_sales": {
+        "status": "unavailable",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "price_to_book": {
+        "status": "applied",
+        "value": 2.18,
+        "score_contribution": 75.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "price_to_tangible_book": {
+        "status": "applied",
+        "value": 2.48,
+        "score_contribution": 75.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "ev_to_ebitda": {
+        "status": "suppressed",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": "price_to_book",
+        "reason": "EV/EBITDA is not an insurer-standard valuation measure.",
+        "quality_flags": []
+      },
+      "ev_to_ebit": {
+        "status": "suppressed",
+        "value": 9.64,
+        "score_contribution": null,
+        "replaced_by": "price_to_book",
+        "reason": "Enterprise value is economically misleading for insurers, on the same grounds as EV/EBITDA.",
+        "quality_flags": []
+      },
+      "ev_to_fcf": {
+        "status": "suppressed",
+        "value": 7.31,
+        "score_contribution": null,
+        "replaced_by": "price_to_book",
+        "reason": "Industrial FCF is not comparable for insurers.",
+        "quality_flags": []
+      },
+      "return_on_invested_capital": {
+        "status": "suppressed",
+        "value": 0.2026,
+        "score_contribution": null,
+        "replaced_by": "normalized_roe",
+        "reason": "Insurer leverage and float make generic ROIC misleading.",
+        "quality_flags": []
+      },
+      "gross_profits_to_assets": {
+        "status": "suppressed",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": "underwriting_income",
+        "reason": "Insurers report no gross-profit line; premiums less claims is underwriting income.",
+        "quality_flags": []
+      },
+      "return_on_equity": {
+        "status": "applied",
+        "value": 0.2188,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "free_cash_flow_yield": {
+        "status": "suppressed",
+        "value": 0.1355,
+        "score_contribution": null,
+        "replaced_by": "total_capital_return_yield",
+        "reason": "Industrial FCF is distorted by premiums, claims, reserves and investment flows.",
+        "quality_flags": []
+      },
+      "profit_margin": {
+        "status": "applied",
+        "value": 0.1117,
+        "score_contribution": 55.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "cash_conversion": {
+        "status": "suppressed",
+        "value": 1.7666,
+        "score_contribution": null,
+        "replaced_by": "combined_ratio",
+        "reason": "Claims reserves break industrial earnings-to-cash comparisons.",
+        "quality_flags": []
+      },
+      "interest_coverage": {
+        "status": "applied",
+        "value": 20.53,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "net_debt_to_ebitda": {
+        "status": "suppressed",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": "debt_to_capital",
+        "reason": "EBITDA leverage is not an insurer solvency measure.",
+        "quality_flags": []
+      },
+      "debt_to_equity": {
+        "status": "applied",
+        "value": 0.23,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "current_ratio": {
+        "status": "suppressed",
+        "value": 0.36,
+        "score_contribution": null,
+        "replaced_by": "risk_based_capital_ratio",
+        "reason": "Insurer liquidity and solvency require statutory measures.",
+        "quality_flags": []
+      },
+      "altman_z": {
+        "status": "suppressed",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": "risk_based_capital_ratio",
+        "reason": "Industrial bankruptcy model is not calibrated for insurers.",
+        "quality_flags": []
+      },
+      "trailing_revenue_growth": {
+        "status": "suppressed",
+        "value": 0.043,
+        "score_contribution": null,
+        "replaced_by": null,
+        "reason": "Metric registry does not declare this profile applicable.",
+        "quality_flags": []
+      },
+      "trailing_eps_growth": {
+        "status": "unavailable",
+        "value": 0.25,
+        "score_contribution": null,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": [
+          "legacy_value_missing_lineage"
+        ]
+      },
+      "fcf_growth_3y": {
+        "status": "applied",
+        "value": 0.1844,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "operating_margin_trend": {
+        "status": "applied",
+        "value": 0.0431,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "earnings_surprise": {
+        "status": "unavailable",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "net_buyback_yield": {
+        "status": "applied",
+        "value": 0.0141,
+        "score_contribution": 80.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "stock_comp_to_revenue": {
+        "status": "applied",
+        "value": 0.0054,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "capex_to_depreciation": {
+        "status": "suppressed",
+        "value": 1.67,
+        "score_contribution": null,
+        "replaced_by": "book_value_growth",
+        "reason": "Physical reinvestment is not the insurer value-creation engine.",
+        "quality_flags": []
+      },
+      "asset_growth": {
+        "status": "applied",
+        "value": 0.1094,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "accruals_ratio": {
+        "status": "applied",
+        "value": -0.032,
+        "score_contribution": 100.0,
+        "replaced_by": null,
+        "reason": null,
+        "quality_flags": []
+      },
+      "piotroski_f": {
+        "status": "suppressed",
+        "value": 6.4,
+        "score_contribution": null,
+        "replaced_by": "combined_ratio",
+        "reason": "Generic accounting checklist omits underwriting and reserve quality.",
+        "quality_flags": []
+      },
+      "days_sales_outstanding_trend": {
+        "status": "suppressed",
+        "value": -0.0341,
+        "score_contribution": null,
+        "replaced_by": "loss_ratio",
+        "reason": "Receivable days do not represent insurer underwriting quality.",
+        "quality_flags": []
+      },
+      "inventory_days_trend": {
+        "status": "suppressed",
+        "value": null,
+        "score_contribution": null,
+        "replaced_by": null,
+        "reason": "Insurers hold no inventory.",
+        "quality_flags": []
+      }
+    },
+    "applicability": {
+      "profile_id": "property_casualty_insurer",
+      "profile_confidence": 0.0,
+      "applied_metrics": [
+        "accruals_ratio",
+        "asset_growth",
+        "debt_to_equity",
+        "fcf_growth_3y",
+        "forward_pe",
+        "interest_coverage",
+        "net_buyback_yield",
+        "operating_margin_trend",
+        "price_to_book",
+        "price_to_tangible_book",
+        "profit_margin",
+        "return_on_equity",
+        "stock_comp_to_revenue"
+      ],
+      "suppressed_metrics": [
+        "altman_z",
+        "capex_to_depreciation",
+        "cash_conversion",
+        "current_ratio",
+        "days_sales_outstanding_trend",
+        "ev_to_ebit",
+        "ev_to_ebitda",
+        "ev_to_fcf",
+        "free_cash_flow_yield",
+        "gross_profits_to_assets",
+        "inventory_days_trend",
+        "net_debt_to_ebitda",
+        "peg",
+        "piotroski_f",
+        "return_on_invested_capital",
+        "trailing_revenue_growth"
+      ],
+      "replacement_metrics": [
+        "combined_ratio",
+        "underlying_combined_ratio",
+        "loss_ratio",
+        "expense_ratio",
+        "catastrophe_loss_ratio",
+        "prior_year_reserve_development",
+        "pricing_growth_vs_loss_cost",
+        "core_roe",
+        "normalized_roe",
+        "underwriting_income",
+        "book_value_per_share_growth",
+        "tangible_book_value_growth",
+        "investment_yield",
+        "debt_to_capital",
+        "financial_leverage",
+        "fixed_charge_coverage",
+        "holding_company_liquidity",
+        "statutory_capital_surplus",
+        "risk_based_capital_ratio",
+        "forward_pe_core",
+        "price_to_book",
+        "price_to_tangible_book",
+        "total_capital_return_yield"
+      ],
+      "unavailable_replacement_metrics": [
+        "combined_ratio",
+        "underlying_combined_ratio",
+        "loss_ratio",
+        "expense_ratio",
+        "catastrophe_loss_ratio",
+        "prior_year_reserve_development",
+        "pricing_growth_vs_loss_cost",
+        "core_roe",
+        "normalized_roe",
+        "underwriting_income",
+        "book_value_per_share_growth",
+        "tangible_book_value_growth",
+        "investment_yield",
+        "debt_to_capital",
+        "financial_leverage",
+        "fixed_charge_coverage",
+        "holding_company_liquidity",
+        "statutory_capital_surplus",
+        "risk_based_capital_ratio",
+        "forward_pe_core",
+        "total_capital_return_yield"
+      ],
+      "critical_data_gaps": [
+        "combined_ratio",
+        "normalized_roe",
+        "statutory_capital_surplus"
+      ]
+    },
+    "canonical_metrics": {
+      "peg": null
+    }
+  },
+  "recommendation_v2": {
+    "schema_version": "5.0.0",
+    "model_version": "decision-v2.0.0",
+    "policy_mode": "shadow",
+    "generated_at": "2026-08-10T05:22:53.757741+00:00",
+    "ticker": "THG",
+    "company_structural_state": {
+      "raw_score": 90.5,
+      "effective_score": 74.7,
+      "weight_renormalization": {
+        "weights_declared": {
+          "valuation": 0.28,
+          "profitability": 0.26,
+          "financial_health": 0.15,
+          "growth": 0.11,
+          "capital_allocation": 0.1,
+          "accounting_quality": 0.1
+        },
+        "weights_effective": {
+          "valuation": 0.28,
+          "profitability": 0.26,
+          "financial_health": 0.15,
+          "growth": 0.11,
+          "capital_allocation": 0.1,
+          "accounting_quality": 0.1
+        },
+        "inputs_dropped": [],
+        "inputs_resolved": [
+          "accounting_quality",
+          "capital_allocation",
+          "financial_health",
+          "growth",
+          "profitability",
+          "valuation"
+        ],
+        "covered_weight_fraction": 1.0,
+        "redistributed_weight": 0.0
+      },
+      "evidence_weight_resolved": 0.61,
+      "coverage": 0.84,
+      "coverage_basis": "answered_applicable_weight",
+      "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+      "available_weight": 0.3418,
+      "applicable_weight": 0.4066,
+      "stale_weight": 0.0,
+      "conflicted_weight": 0.0,
+      "missing_metrics": [
+        "earnings_surprise",
+        "price_to_sales",
+        "trailing_eps_growth"
+      ],
+      "suppressed_metrics": [
+        "altman_z",
+        "capex_to_depreciation",
+        "cash_conversion",
+        "current_ratio",
+        "days_sales_outstanding_trend",
+        "ev_to_ebit",
+        "ev_to_ebitda",
+        "ev_to_fcf",
+        "free_cash_flow_yield",
+        "gross_profits_to_assets",
+        "inventory_days_trend",
+        "net_debt_to_ebitda",
+        "peg",
+        "piotroski_f",
+        "return_on_invested_capital",
+        "trailing_revenue_growth"
+      ],
+      "stale_metrics": [],
+      "provider_conflicts": [],
+      "classification": "quality_watch",
+      "categories": {
+        "valuation": 90.0,
+        "profitability": 77.5,
+        "financial_health": 100.0,
+        "growth": 100.0,
+        "capital_allocation": 91.9,
+        "accounting_quality": 100.0
+      }
+    },
+    "company_timeliness_state": {
+      "raw_score": null,
+      "effective_score": null,
+      "evidence_weight_resolved": 0.0,
+      "coverage": 0.0,
+      "available_weight": 0.0,
+      "applicable_weight": 1.0,
+      "stale_weight": 0.0,
+      "conflicted_weight": 0.0,
+      "weight_renormalization": {
+        "weights_declared": {
+          "forward_eps_revision_30d": 0.7,
+          "earnings_surprise": 0.3
+        },
+        "weights_effective": {},
+        "inputs_dropped": [
+          "earnings_surprise",
+          "forward_eps_revision_30d"
+        ],
+        "inputs_resolved": [],
+        "covered_weight_fraction": 0.0,
+        "redistributed_weight": 1.0
+      },
+      "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
+      "missing_metrics": [
+        "forward_eps_revision_30d",
+        "earnings_surprise"
+      ],
+      "suppressed_metrics": [],
+      "stale_metrics": [],
+      "provider_conflicts": [],
+      "classification": "unavailable",
+      "trailing_growth": {
+        "revenue_growth": 0.043,
+        "eps_growth": 0.25
+      },
+      "forward": {
+        "fy1_growth": null,
+        "fy2_growth": null,
+        "revision_7d": null,
+        "revision_30d": null,
+        "revision_90d": null,
+        "revision_acceleration": null,
+        "analyst_count": 8,
+        "estimate_dispersion": null,
+        "earnings_surprise": null,
+        "revenue_surprise": null,
+        "guidance_direction": null
+      }
+    },
+    "portfolio_fit_state": {
+      "current_weight": 0.0,
+      "target_weight": 0.03,
+      "maximum_weight": 0.05,
+      "classification": "below_target",
+      "sector_weight": null,
+      "theme_weight": null,
+      "liquidity": "unknown",
+      "correlation": null,
+      "marginal_contribution_to_risk": null,
+      "reason_codes": []
+    },
+    "position_rule_state": {
+      "classification": "no_position",
+      "profile": null,
+      "rules": {}
+    },
+    "company": {
+      "structural": {
+        "raw_score": 90.5,
+        "effective_score": 74.7,
+        "weight_renormalization": {
+          "weights_declared": {
+            "valuation": 0.28,
+            "profitability": 0.26,
+            "financial_health": 0.15,
+            "growth": 0.11,
+            "capital_allocation": 0.1,
+            "accounting_quality": 0.1
+          },
+          "weights_effective": {
+            "valuation": 0.28,
+            "profitability": 0.26,
+            "financial_health": 0.15,
+            "growth": 0.11,
+            "capital_allocation": 0.1,
+            "accounting_quality": 0.1
+          },
+          "inputs_dropped": [],
+          "inputs_resolved": [
+            "accounting_quality",
+            "capital_allocation",
+            "financial_health",
+            "growth",
+            "profitability",
+            "valuation"
+          ],
+          "covered_weight_fraction": 1.0,
+          "redistributed_weight": 0.0
+        },
+        "evidence_weight_resolved": 0.61,
+        "coverage": 0.84,
+        "coverage_basis": "answered_applicable_weight",
+        "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+        "available_weight": 0.3418,
+        "applicable_weight": 0.4066,
+        "stale_weight": 0.0,
+        "conflicted_weight": 0.0,
+        "missing_metrics": [
+          "earnings_surprise",
+          "price_to_sales",
+          "trailing_eps_growth"
+        ],
+        "suppressed_metrics": [
+          "altman_z",
+          "capex_to_depreciation",
+          "cash_conversion",
+          "current_ratio",
+          "days_sales_outstanding_trend",
+          "ev_to_ebit",
+          "ev_to_ebitda",
+          "ev_to_fcf",
+          "free_cash_flow_yield",
+          "gross_profits_to_assets",
+          "inventory_days_trend",
+          "net_debt_to_ebitda",
+          "peg",
+          "piotroski_f",
+          "return_on_invested_capital",
+          "trailing_revenue_growth"
+        ],
+        "stale_metrics": [],
+        "provider_conflicts": [],
+        "classification": "quality_watch",
+        "categories": {
+          "valuation": 90.0,
+          "profitability": 77.5,
+          "financial_health": 100.0,
+          "growth": 100.0,
+          "capital_allocation": 91.9,
+          "accounting_quality": 100.0
+        }
+      },
+      "timeliness": {
+        "raw_score": null,
+        "effective_score": null,
+        "evidence_weight_resolved": 0.0,
+        "coverage": 0.0,
+        "available_weight": 0.0,
+        "applicable_weight": 1.0,
+        "stale_weight": 0.0,
+        "conflicted_weight": 0.0,
+        "weight_renormalization": {
+          "weights_declared": {
+            "forward_eps_revision_30d": 0.7,
+            "earnings_surprise": 0.3
+          },
+          "weights_effective": {},
+          "inputs_dropped": [
+            "earnings_surprise",
+            "forward_eps_revision_30d"
+          ],
+          "inputs_resolved": [],
+          "covered_weight_fraction": 0.0,
+          "redistributed_weight": 1.0
+        },
+        "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
+        "missing_metrics": [
+          "forward_eps_revision_30d",
+          "earnings_surprise"
+        ],
+        "suppressed_metrics": [],
+        "stale_metrics": [],
+        "provider_conflicts": [],
+        "classification": "unavailable",
+        "trailing_growth": {
+          "revenue_growth": 0.043,
+          "eps_growth": 0.25
+        },
+        "forward": {
+          "fy1_growth": null,
+          "fy2_growth": null,
+          "revision_7d": null,
+          "revision_30d": null,
+          "revision_90d": null,
+          "revision_acceleration": null,
+          "analyst_count": 8,
+          "estimate_dispersion": null,
+          "earnings_surprise": null,
+          "revenue_surprise": null,
+          "guidance_direction": null
+        }
+      },
+      "matrix_classification": "hold_or_watch_timeliness_unavailable",
+      "deterioration_groups": [
+        {
+          "group": "business_fundamentals",
+          "state": "stable_or_unavailable",
+          "flagged": false,
+          "score": 100.0,
+          "direction": "neutral",
+          "severity": 0.0,
+          "confidence": 0.0,
+          "freshness": "current_or_unknown",
+          "persistence_periods": 0,
+          "reason_codes": [],
+          "signals": []
+        },
+        {
+          "group": "market_behavior",
+          "state": "stable_or_unavailable",
+          "flagged": false,
+          "score": 100.0,
+          "direction": "neutral",
+          "severity": 0.0,
+          "confidence": 0.0,
+          "freshness": "current_or_unknown",
+          "persistence_periods": 0,
+          "reason_codes": [],
+          "signals": []
+        },
+        {
+          "group": "positioning_sentiment",
+          "state": "stable_or_unavailable",
+          "flagged": false,
+          "score": 100.0,
+          "direction": "neutral",
+          "severity": 0.0,
+          "confidence": 0.0,
+          "freshness": "current_or_unknown",
+          "persistence_periods": 0,
+          "reason_codes": [],
+          "signals": []
+        }
+      ],
+      "action": {
+        "label": "watch",
+        "display_label": "WATCH FOR ENTRY",
+        "confidence": 0.61,
+        "reason_namespace": "company_matrix",
+        "reason_codes": [
+          "hold_or_watch_timeliness_unavailable"
+        ]
+      }
+    },
+    "company_action": {
+      "label": "watch",
+      "display_label": "WATCH FOR ENTRY",
+      "confidence": 0.61,
+      "reason_namespace": "company_matrix",
+      "reason_codes": [
+        "hold_or_watch_timeliness_unavailable"
+      ]
+    },
+    "portfolio_fit": {
+      "current_weight": 0.0,
+      "target_weight": 0.03,
+      "maximum_weight": 0.05,
+      "classification": "below_target",
+      "sector_weight": null,
+      "theme_weight": null,
+      "liquidity": "unknown",
+      "correlation": null,
+      "marginal_contribution_to_risk": null,
+      "reason_codes": []
+    },
+    "position_rules": {},
+    "position_action": {
+      "label": "no_action",
+      "display_label": "NO ACTION",
+      "trim_percent": 0.0,
+      "shares": null,
+      "estimated_value": null,
+      "confidence": 1.0,
+      "reason_namespace": "none",
+      "reason_codes": [],
+      "trim_calculation": {},
+      "economically_material": false
+    },
+    "entry_action": {
+      "type": "initial_buy",
+      "strategy": "long_term_entry",
+      "allowed": false,
+      "reason_codes": []
+    },
+    "data_quality": {
+      "unassessed_layers": [
+        "timeliness"
+      ],
+      "evidence_weight_resolved": 0.61,
+      "data_coverage": 0.84,
+      "data_freshness": "current_or_unknown",
+      "provider_conflicts": [],
+      "applicable_metrics_available": 0.3418,
+      "stale_metrics": [],
+      "missing_critical_metrics": [
+        "insurer_capital",
+        "underwriting_quality"
+      ],
+      "severe_unresolved": true
+    },
+    "thesis_break_event": null,
+    "critical_field_requirements": [
+      "insurer_capital",
+      "underwriting_quality"
+    ],
+    "legacy_recommendation_unchanged": true
+  },
+  "insider_activity": {
+    "source": "SEC EDGAR Form 4",
+    "score_points": -2.63,
+    "available": true,
+    "transactions_reviewed": 25,
+    "opportunistic": 25,
+    "routine": 0,
+    "material_opportunistic": 23,
+    "buy_cluster": {
+      "side": "purchase",
+      "window_days": 90,
+      "insider_count": 0,
+      "trade_count": 0,
+      "total_value": 0.0,
+      "latest_date": null,
+      "days_since_latest": null,
+      "pattern_confidence": 1.0
+    },
+    "sell_cluster": {
+      "side": "sale",
+      "window_days": 90,
+      "insider_count": 7,
+      "trade_count": 12,
+      "total_value": 8383626.99,
+      "latest_date": "2026-08-06",
+      "days_since_latest": 4,
+      "pattern_confidence": 0.6
+    },
+    "uncapped_points": -2.63,
+    "points": -2.63,
+    "notes": [
+      "7 insiders sold $8.4M on the open market, most recently 4 day(s) ago (opportunistic, not calendar-scheduled)"
+    ],
+    "method": "Cohen-Malloy-Pomorski routine/opportunistic split; buys weighted above sells; 45-day half-life",
+    "recent_acquisitions": 0,
+    "recent_disposals": 25
+  },
+  "congressional_activity": null,
+  "concentration_risk": {
+    "source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
+    "score_points": 0.0,
+    "measured": true,
+    "available": false,
+    "reason": "no disclosed customer concentration",
+    "percentages": []
+  },
+  "geographic_exposure": {
+    "source": "SEC EDGAR XBRL (Revenues x StatementGeographicalAxis)",
+    "score_points": 0.0,
+    "available": false,
+    "reason": "no geographic revenue split resolved",
+    "shares": {}
+  },
+  "estimate_detail": {
+    "revision_breadth_30d": -0.3333,
+    "eps_revision_30d_pct": 0.0995,
+    "net_upgrades_90d": -3,
+    "consensus_target": 235.875,
+    "target_change_30d_pct": -0.0,
+    "revision_period": "0y",
+    "available_at": "2026-08-10T05:22:53.901233+00:00",
+    "inputs_resolved": 4
+  },
+  "revision_breadth_30d": -0.3333,
+  "eps_revision_30d_pct": 0.0995,
+  "net_upgrades_90d": -3,
+  "alpha_enriched": false,
+  "data_quality_violations": [],
+  "valuation_percentile": {
+    "peer_context": null,
+    "tier": null,
+    "ordinal": null,
+    "peer_group_id": "property_casualty_insurer",
+    "peer_group_label": "Property & casualty insurers",
+    "peer_count_total": 7,
+    "peer_count_with_valid_data": 7,
+    "minimum_peer_count": 30,
+    "constructed_at": "2026-08-10",
+    "metric_count": 1,
+    "metric_id": "structural_valuation_score",
+    "underlying_value": 90.0,
+    "direction": "higher_is_cheaper",
+    "winsorization_method": "none",
+    "percentile_method": "averaged_rank_tiers",
+    "missing_value_treatment": "exclude",
+    "invalid_reason": "insufficient_valid_peers",
+    "bottom_peers": [
+      {
+        "ticker": "KNSL",
+        "value": 68.0
+      },
+      {
+        "ticker": "ORI",
+        "value": 78.0
+      },
+      {
+        "ticker": "ALL",
+        "value": 90.0
+      }
+    ],
+    "top_peers": [
+      {
+        "ticker": "CNA",
+        "value": 95.0
+      },
+      {
+        "ticker": "MCY",
+        "value": 93.8
+      },
+      {
+        "ticker": "THG",
+        "value": 90.0
+      }
+    ]
+  },
+  "score_variants": {
+    "champion": {
+      "variant": "bands_champion",
+      "normalization_mode": "bands",
+      "score": 81.3,
+      "base_score": 82.9,
+      "raw_score": 85.1,
+      "data_coverage": 0.87,
+      "components": {
+        "fundamentals": 87.7,
+        "market_behavior": 73.9,
+        "news_sentiment": null
+      },
+      "fundamental_categories": {
+        "valuation": 90.0,
+        "profitability": 77.5,
+        "financial_health": 100.0,
+        "growth": 86.1,
+        "capital_allocation": 91.9,
+        "accounting_quality": 100.0
+      },
+      "normalized_metric_scores": {
+        "accruals_ratio": 100.0,
+        "altman_z": null,
+        "asset_growth": 100.0,
+        "capex_to_depreciation": null,
+        "cash_conversion": null,
+        "current_ratio": null,
+        "days_sales_outstanding_trend": null,
+        "debt_to_equity": 100.0,
+        "earnings_growth": 100.0,
+        "earnings_surprise": null,
+        "ev_to_ebit": null,
+        "ev_to_ebitda": null,
+        "ev_to_fcf": null,
+        "fcf_growth_3y": 100.0,
+        "forward_pe": 100.0,
+        "free_cash_flow_yield": null,
+        "gross_profits_to_assets": null,
+        "interest_coverage": 100.0,
+        "inventory_days_trend": null,
+        "net_buyback_yield": 80.0,
+        "net_debt_to_ebitda": null,
+        "operating_margin_trend": 100.0,
+        "peg": null,
+        "piotroski_f": null,
+        "price_to_book": 75.0,
+        "price_to_tangible_book": 75.0,
+        "profit_margin": 55.0,
+        "return_on_equity": 100.0,
+        "return_on_invested_capital": null,
+        "revenue_growth": 55.0,
+        "sales_multiple": null,
+        "stock_comp_to_revenue": 100.0
+      }
+    },
+    "normalization": {
+      "variant": "cross_sectional_normalization",
+      "normalization_mode": "cross_sectional",
+      "raw_score": 59.9,
+      "base_score": 58.4,
+      "score": 56.8,
+      "data_coverage": 0.87,
+      "components": {
+        "fundamentals": 56.7,
+        "market_behavior": 73.9,
+        "news_sentiment": null
+      },
+      "fundamental_categories": {
+        "valuation": 52.5,
+        "profitability": 48.1,
+        "financial_health": 63.4,
+        "growth": 56.2,
+        "capital_allocation": 67.2,
+        "accounting_quality": 79.6
+      },
+      "fundamental_detail": {
+        "peg": null,
+        "forward_pe": 49.2,
+        "sales_multiple": null,
+        "price_to_book": 71.7,
+        "price_to_tangible_book": 43.2,
+        "ev_to_ebitda": null,
+        "ev_to_ebit": null,
+        "ev_to_fcf": null,
+        "return_on_equity": 76.9,
+        "return_on_invested_capital": null,
+        "gross_profits_to_assets": null,
+        "cash_conversion": null,
+        "free_cash_flow_yield": null,
+        "profit_margin": 19.4,
+        "debt_to_equity": 85.7,
+        "current_ratio": null,
+        "interest_coverage": 50.0,
+        "net_debt_to_ebitda": null,
+        "altman_z": null,
+        "revenue_growth": 21.0,
+        "earnings_growth": 57.7,
+        "fcf_growth_3y": 73.7,
+        "operating_margin_trend": 87.5,
+        "earnings_surprise": null,
+        "net_buyback_yield": 46.9,
+        "stock_comp_to_revenue": 94.1,
+        "capex_to_depreciation": null,
+        "asset_growth": 64.3,
+        "accruals_ratio": 79.6,
+        "piotroski_f": null,
+        "days_sales_outstanding_trend": null,
+        "inventory_days_trend": null,
+        "categories": {
+          "valuation": 52.5,
+          "profitability": 48.1,
+          "financial_health": 63.4,
+          "growth": 56.2,
+          "capital_allocation": 67.2,
+          "accounting_quality": 79.6
+        },
+        "coverage": 0.96,
+        "raw_score": 57.6,
+        "sector": "Financial Services",
+        "sales_multiple_basis": "ev_to_sales",
+        "altman_z_variant": null,
+        "applicability_profile": "property_casualty_insurer",
+        "suppressed_metrics": [
+          "altman_z",
+          "capex_to_depreciation",
+          "cash_conversion",
+          "current_ratio",
+          "days_sales_outstanding_trend",
+          "ev_to_ebit",
+          "ev_to_ebitda",
+          "ev_to_fcf",
+          "free_cash_flow_yield",
+          "gross_profits_to_assets",
+          "inventory_days_trend",
+          "net_debt_to_ebitda",
+          "peg",
+          "piotroski_f",
+          "return_on_invested_capital",
+          "sales_multiple"
+        ],
+        "categories_withheld": {},
+        "normalization_mode": "cross_sectional",
+        "normalization_scope": "universe",
+        "normalization": {
+          "peg": {
+            "normalization_scope": "universe",
+            "status": "missing",
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "forward_pe": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 11.76,
+            "winsorized_value": 11.76,
+            "raw_percentile": 50.8,
+            "desirability_percentile": 49.2,
+            "direction": "lower_is_better",
+            "peer_count": 123,
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "sales_multiple": {
+            "normalization_scope": "universe",
+            "status": "missing",
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "price_to_book": {
+            "normalization_scope": "universe",
+            "status": "scored",
+            "raw_value": 2.18,
+            "winsorized_value": 2.18,
+            "raw_percentile": 28.3,
+            "desirability_percentile": 71.7,
+            "direction": "lower_is_better",
+            "peer_count": 693,
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "price_to_tangible_book": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 2.48,
+            "winsorized_value": 2.48,
+            "raw_percentile": 56.8,
+            "desirability_percentile": 43.2,
+            "direction": "lower_is_better",
+            "peer_count": 45,
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "ev_to_ebitda": {
+            "normalization_scope": "universe",
+            "status": "missing",
+            "own_history_percentile": null,
+            "own_history_observations": 0,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "ev_to_ebit": {
+            "normalization_scope": "universe",
+            "status": "missing",
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "ev_to_fcf": {
+            "normalization_scope": "universe",
+            "status": "missing",
+            "own_history_percentile": null,
+            "own_history_observations": 3,
+            "own_history_years": 5,
+            "own_history_status": "accumulating"
+          },
+          "return_on_equity": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.2188,
+            "winsorized_value": 0.2188,
+            "raw_percentile": 76.9,
+            "desirability_percentile": 76.9,
+            "direction": "higher_is_better",
+            "peer_count": 122
+          },
+          "return_on_invested_capital": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "gross_profits_to_assets": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "cash_conversion": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "free_cash_flow_yield": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "profit_margin": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.1117,
+            "winsorized_value": 0.1117,
+            "raw_percentile": 19.4,
+            "desirability_percentile": 19.4,
+            "direction": "higher_is_better",
+            "peer_count": 125
+          },
+          "debt_to_equity": {
+            "normalization_scope": "universe",
+            "status": "scored",
+            "raw_value": 0.23,
+            "winsorized_value": 0.23,
+            "raw_percentile": 14.3,
+            "desirability_percentile": 85.7,
+            "direction": "lower_is_better",
+            "peer_count": 698
+          },
+          "current_ratio": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "interest_coverage": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 20.53,
+            "winsorized_value": 20.53,
+            "raw_percentile": 50.0,
+            "desirability_percentile": 50.0,
+            "direction": "higher_is_better",
+            "peer_count": 25
+          },
+          "net_debt_to_ebitda": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "altman_z": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "revenue_growth": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.043,
+            "winsorized_value": 0.043,
+            "raw_percentile": 21.0,
+            "desirability_percentile": 21.0,
+            "direction": "higher_is_better",
+            "peer_count": 125
+          },
+          "earnings_growth": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.25,
+            "winsorized_value": 0.25,
+            "raw_percentile": 57.7,
+            "desirability_percentile": 57.7,
+            "direction": "higher_is_better",
+            "peer_count": 118
+          },
+          "fcf_growth_3y": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.1844,
+            "winsorized_value": 0.1844,
+            "raw_percentile": 73.7,
+            "desirability_percentile": 73.7,
+            "direction": "higher_is_better",
+            "peer_count": 39
+          },
+          "operating_margin_trend": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.0431,
+            "winsorized_value": 0.0431,
+            "raw_percentile": 87.5,
+            "desirability_percentile": 87.5,
+            "direction": "higher_is_better",
+            "peer_count": 25
+          },
+          "earnings_surprise": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "net_buyback_yield": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.0141,
+            "winsorized_value": 0.0141,
+            "raw_percentile": 46.9,
+            "desirability_percentile": 46.9,
+            "direction": "higher_is_better",
+            "peer_count": 50
+          },
+          "stock_comp_to_revenue": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.0054,
+            "winsorized_value": 0.0054,
+            "raw_percentile": 5.9,
+            "desirability_percentile": 94.1,
+            "direction": "lower_is_better",
+            "peer_count": 35
+          },
+          "capex_to_depreciation": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "asset_growth": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": 0.1094,
+            "winsorized_value": 0.0,
+            "raw_percentile": 35.7,
+            "desirability_percentile": 64.3,
+            "direction": "distance_from_ideal",
+            "peer_count": 50
+          },
+          "accruals_ratio": {
+            "normalization_scope": "sector",
+            "status": "scored",
+            "raw_value": -0.032,
+            "winsorized_value": -0.032,
+            "raw_percentile": 20.4,
+            "desirability_percentile": 79.6,
+            "direction": "lower_is_better",
+            "peer_count": 50
+          },
+          "piotroski_f": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "days_sales_outstanding_trend": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          },
+          "inventory_days_trend": {
+            "normalization_scope": "universe",
+            "status": "missing"
+          }
+        }
+      },
+      "normalized_metric_scores": {
+        "accruals_ratio": 79.6,
+        "altman_z": null,
+        "asset_growth": 64.3,
+        "capex_to_depreciation": null,
+        "cash_conversion": null,
+        "current_ratio": null,
+        "days_sales_outstanding_trend": null,
+        "debt_to_equity": 85.7,
+        "earnings_growth": 57.7,
+        "earnings_surprise": null,
+        "ev_to_ebit": null,
+        "ev_to_ebitda": null,
+        "ev_to_fcf": null,
+        "fcf_growth_3y": 73.7,
+        "forward_pe": 49.2,
+        "free_cash_flow_yield": null,
+        "gross_profits_to_assets": null,
+        "interest_coverage": 50.0,
+        "inventory_days_trend": null,
+        "net_buyback_yield": 46.9,
+        "net_debt_to_ebitda": null,
+        "operating_margin_trend": 87.5,
+        "peg": null,
+        "piotroski_f": null,
+        "price_to_book": 71.7,
+        "price_to_tangible_book": 43.2,
+        "profit_margin": 19.4,
+        "return_on_equity": 76.9,
+        "return_on_invested_capital": null,
+        "revenue_growth": 21.0,
+        "sales_multiple": null,
+        "stock_comp_to_revenue": 94.1
+      },
+      "largest_metric_changes": [
+        {
+          "metric": "forward_pe",
+          "champion": 100.0,
+          "challenger": 49.2,
+          "delta": -50.8
+        },
+        {
+          "metric": "interest_coverage",
+          "champion": 100.0,
+          "challenger": 50.0,
+          "delta": -50.0
+        },
+        {
+          "metric": "earnings_growth",
+          "champion": 100.0,
+          "challenger": 57.7,
+          "delta": -42.3
+        },
+        {
+          "metric": "asset_growth",
+          "champion": 100.0,
+          "challenger": 64.3,
+          "delta": -35.7
+        },
+        {
+          "metric": "profit_margin",
+          "champion": 55.0,
+          "challenger": 19.4,
+          "delta": -35.6
+        }
+      ]
+    },
+    "short_horizon": {
+      "variant": "neutral_short_horizon",
+      "short_horizon_treatment": "reversal",
+      "raw_score": 84.5,
+      "base_score": 82.3,
+      "score": 80.7,
+      "data_coverage": 0.87,
+      "components": {
+        "fundamentals": 87.7,
+        "market_behavior": 70.8,
+        "news_sentiment": null
+      }
+    },
+    "confidence_shrinkage": {
+      "variant": "single_confidence_shrinkage",
+      "raw_score": 86.2,
+      "base_score": 81.5,
+      "score": 79.9,
+      "data_coverage": 0.87,
+      "shrinkage_strength": 0.87,
+      "shrinkage_target": 50.0,
+      "components": {
+        "fundamentals": 89.0,
+        "market_behavior": 73.9,
+        "news_sentiment": null
+      }
+    },
+    "modifier_recalibration": {
+      "variant": "fractional_modifier_cap",
+      "score": 81.3,
+      "base_score": 82.9,
+      "data_coverage": 0.87,
+      "modifiers": {
+        "applied": {
+          "macro_regime": 1.06,
+          "insider_activity": -2.63
+        },
+        "total": -1.57,
+        "uncapped_total": -1.57,
+        "cap": 20.0,
+        "fractions": {
+          "sector_valuation": 0.15,
+          "short_interest_penalty": 0.3,
+          "short_interest_reward": 0.1,
+          "liquidity": 0.15,
+          "expectations": 0.15,
+          "macro_regime": 0.15,
+          "insider_positive": 0.25,
+          "insider_negative": 0.15,
+          "customer_concentration_risk": 0.15,
+          "geographic_concentration": 0.1,
+          "institutional_13f_positive": 0.15,
+          "institutional_13f_negative": 0.1,
+          "congressional_buying": 0.15
+        },
+        "short_interest_rank": {
+          "percentile": 0.428571,
+          "normalization_scope": "sector",
+          "peer_count": 43
+        },
+        "notes": [
+          "FRED macro regime is supportive for Financial Services (68/100)",
+          "7 insiders sold $8.4M on the open market, most recently 4 day(s) ago (opportunistic, not calendar-scheduled)"
+        ]
+      }
+    },
+    "challenger": {
+      "variant": "signal_corrections_cumulative",
+      "normalization_mode": "cross_sectional",
+      "short_horizon_treatment": "reversal",
+      "raw_score": 60.1,
+      "base_score": 58.8,
+      "score": 57.2,
+      "data_coverage": 0.87,
+      "shrinkage_strength": 0.87,
+      "shrinkage_target": 50.0,
+      "components": {
+        "fundamentals": 57.6,
+        "market_behavior": 70.8,
+        "news_sentiment": null
+      },
+      "fundamental_categories": {
+        "valuation": 52.5,
+        "profitability": 48.1,
+        "financial_health": 63.4,
+        "growth": 56.2,
+        "capital_allocation": 67.2,
+        "accounting_quality": 79.6
+      },
+      "normalized_metric_scores": {
+        "accruals_ratio": 79.6,
+        "altman_z": null,
+        "asset_growth": 64.3,
+        "capex_to_depreciation": null,
+        "cash_conversion": null,
+        "current_ratio": null,
+        "days_sales_outstanding_trend": null,
+        "debt_to_equity": 85.7,
+        "earnings_growth": 57.7,
+        "earnings_surprise": null,
+        "ev_to_ebit": null,
+        "ev_to_ebitda": null,
+        "ev_to_fcf": null,
+        "fcf_growth_3y": 73.7,
+        "forward_pe": 49.2,
+        "free_cash_flow_yield": null,
+        "gross_profits_to_assets": null,
+        "interest_coverage": 50.0,
+        "inventory_days_trend": null,
+        "net_buyback_yield": 46.9,
+        "net_debt_to_ebitda": null,
+        "operating_margin_trend": 87.5,
+        "peg": null,
+        "piotroski_f": null,
+        "price_to_book": 71.7,
+        "price_to_tangible_book": 43.2,
+        "profit_margin": 19.4,
+        "return_on_equity": 76.9,
+        "return_on_invested_capital": null,
+        "revenue_growth": 21.0,
+        "sales_multiple": null,
+        "stock_comp_to_revenue": 94.1
+      },
+      "largest_metric_changes": [
+        {
+          "metric": "forward_pe",
+          "champion": 100.0,
+          "challenger": 49.2,
+          "delta": -50.8
+        },
+        {
+          "metric": "interest_coverage",
+          "champion": 100.0,
+          "challenger": 50.0,
+          "delta": -50.0
+        },
+        {
+          "metric": "earnings_growth",
+          "champion": 100.0,
+          "challenger": 57.7,
+          "delta": -42.3
+        },
+        {
+          "metric": "asset_growth",
+          "champion": 100.0,
+          "challenger": 64.3,
+          "delta": -35.7
+        },
+        {
+          "metric": "profit_margin",
+          "champion": 55.0,
+          "challenger": 19.4,
+          "delta": -35.6
+        }
+      ],
+      "modifiers": {
+        "applied": {
+          "macro_regime": 1.06,
+          "insider_activity": -2.63
+        },
+        "total": -1.57,
+        "uncapped_total": -1.57,
+        "cap": 20.0,
+        "fractions": {
+          "sector_valuation": 0.15,
+          "short_interest_penalty": 0.3,
+          "short_interest_reward": 0.1,
+          "liquidity": 0.15,
+          "expectations": 0.15,
+          "macro_regime": 0.15,
+          "insider_positive": 0.25,
+          "insider_negative": 0.15,
+          "customer_concentration_risk": 0.15,
+          "geographic_concentration": 0.1,
+          "institutional_13f_positive": 0.15,
+          "institutional_13f_negative": 0.1,
+          "congressional_buying": 0.15
+        },
+        "short_interest_rank": {
+          "percentile": 0.428571,
+          "normalization_scope": "sector",
+          "peer_count": 43
+        },
+        "notes": [
+          "FRED macro regime is supportive for Financial Services (68/100)",
+          "7 insiders sold $8.4M on the open market, most recently 4 day(s) ago (opportunistic, not calendar-scheduled)"
+        ]
+      }
+    }
+  },
+  "data_coverage_detail": {
+    "data_coverage": 0.87,
+    "components": {
+      "completeness": 0.87,
+      "freshness": null,
+      "source_reliability": 0.92,
+      "peer_sample": 0.35,
+      "model_agreement": 0.25,
+      "historical_calibration": null
+    },
+    "limitations": [
+      "insufficient prospective calibration history (requires 24 eligible IC periods)",
+      "freshness unavailable for this row"
+    ],
+    "interpretation": "data coverage measures how much of the intended evidence resolved. It is not a reliability score and not a probability that the stock rises. No validated confidence metric exists yet."
+  },
+  "last_polled_at": "2026-08-10T05:22:19.642711+00:00",
+  "evidence": {
+    "news_events": [
+      {
+        "title": "AFG Q2 Earnings Beat on Strong P&C Underwriting, Investment Income",
+        "event_types": [
+          "earnings"
+        ],
+        "published_at": "2026-08-05T17:28:00+00:00",
+        "age_trading_days": 3.21,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": 0.7,
+        "direction_source": "headline_lexicon",
+        "source_quality_tier": "neutral",
+        "best_source": "Zacks",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.6407,
+        "strength": 0.4036
+      },
+      {
+        "title": "Hanover Insurance Group (THG) is a Great Momentum Stock: Should You Buy?",
+        "event_types": [
+          "routine_commentary"
+        ],
+        "published_at": "2026-08-05T16:00:03+00:00",
+        "age_trading_days": 3.26,
+        "half_life_trading_days": 1.5,
+        "materiality": 0.15,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "Zacks",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.2222,
+        "strength": null
+      },
+      {
+        "title": "Is The Hanover Insurance Group (THG) Stock Undervalued Right Now?",
+        "event_types": [
+          "earnings"
+        ],
+        "published_at": "2026-08-05T13:40:03+00:00",
+        "age_trading_days": 3.32,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "Zacks",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.6307,
+        "strength": null
+      },
+      {
+        "title": "1 Momentum  Stock with Competitive Advantages and 2 We Turn Down",
+        "event_types": [
+          "routine_commentary"
+        ],
+        "published_at": "2026-07-31T14:19:49+00:00",
+        "age_trading_days": 6.88,
+        "half_life_trading_days": 1.5,
+        "materiality": 0.15,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "StockStory",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.0417,
+        "strength": null
+      },
+      {
+        "title": "Hanover Insurance Group (THG) Stock Looks Above Fair Value Despite 122% Returns",
+        "event_types": [
+          "earnings"
+        ],
+        "published_at": "2026-07-31T13:08:47+00:00",
+        "age_trading_days": 6.91,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "Simply Wall St.",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.3836,
+        "strength": null
+      },
+      {
+        "title": "Why Hanover Insurance Group (THG) Is Up 7.5% After Record Q2 Results And $700 Million Buyback",
+        "event_types": [
+          "earnings",
+          "management"
+        ],
+        "published_at": "2026-07-31T10:07:32+00:00",
+        "age_trading_days": 7.0,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": 0.55,
+        "direction_source": "headline_lexicon",
+        "source_quality_tier": "neutral",
+        "best_source": "Simply Wall St.",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.3788,
+        "strength": 0.1875
+      },
+      {
+        "title": "THG Q2 Deep Dive: Margin Expansion and Technology Investments Shape Outlook",
+        "event_types": [
+          "routine_commentary"
+        ],
+        "published_at": "2026-07-30T20:21:02+00:00",
+        "age_trading_days": 7.41,
+        "half_life_trading_days": 1.5,
+        "materiality": 0.15,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "StockStory",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.0326,
+        "strength": null
+      },
+      {
+        "title": "The Hanover Insurance Group, Inc. (THG) Hit a 52 Week High, Can the Run Continue?",
+        "event_types": [
+          "routine_commentary"
+        ],
+        "published_at": "2026-07-30T13:15:02+00:00",
+        "age_trading_days": 7.62,
+        "half_life_trading_days": 1.5,
+        "materiality": 0.15,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "Zacks",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.0295,
+        "strength": null
+      },
+      {
+        "title": "The Hanover Insurance Group Inc (THG) Q2 2026 Earnings Call Highlights: Record Performance and ...",
+        "event_types": [
+          "earnings"
+        ],
+        "published_at": "2026-07-29T21:05:11+00:00",
+        "age_trading_days": 8.1,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "GuruFocus.com",
+        "article_count": 2,
+        "distinct_sources": 2,
+        "recency_weight": 0.3252,
+        "strength": null
+      },
+      {
+        "title": "THG Q2 Earnings Beat on Personal Lines Gains, Revenues Miss",
+        "event_types": [
+          "earnings"
+        ],
+        "published_at": "2026-07-29T18:09:00+00:00",
+        "age_trading_days": 8.19,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": 0.7,
+        "direction_source": "headline_lexicon",
+        "source_quality_tier": "neutral",
+        "best_source": "Zacks",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.3212,
+        "strength": 0.2024
+      },
+      {
+        "title": "Compared to Estimates, Hanover Insurance (THG) Q2 Earnings: A Look at Key Metrics",
+        "event_types": [
+          "earnings"
+        ],
+        "published_at": "2026-07-28T23:30:02+00:00",
+        "age_trading_days": 8.75,
+        "half_life_trading_days": 5.0,
+        "materiality": 0.9,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "Zacks",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.2974,
+        "strength": null
+      },
+      {
+        "title": "The Hanover Insurance Group (NYSE:THG) Reports Q2 CY2026 In Line With Expectations",
+        "event_types": [
+          "routine_commentary"
+        ],
+        "published_at": "2026-07-28T21:05:27+00:00",
+        "age_trading_days": 8.82,
+        "half_life_trading_days": 1.5,
+        "materiality": 0.15,
+        "direction": null,
+        "direction_source": null,
+        "source_quality_tier": "neutral",
+        "best_source": "StockStory",
+        "article_count": 1,
+        "distinct_sources": 1,
+        "recency_weight": 0.017,
+        "strength": null
+      }
+    ],
+    "news_score": 85.9,
+    "news_detail": {
+      "available": true,
+      "event_count": 18,
+      "scored_event_count": 4,
+      "net_strength": 0.9052,
+      "lexicon_scored_events": 4,
+      "provider_scored_events": 0,
+      "dominant_event": "AFG Q2 Earnings Beat on Strong P&C Underwriting, Investment Income",
+      "dominant_event_types": [
+        "earnings"
+      ],
+      "dominant_age_trading_days": 3.21,
+      "dominant_materiality": 0.9,
+      "method": "clustered events, materiality-weighted, per-event-type half-life decay"
+    },
+    "insider_events": [
+      {
+        "side": "sale",
+        "insider_count": 7,
+        "total_value": 8383626.99,
+        "days_since_latest": 4,
+        "age_trading_days": 2.86,
+        "half_life_trading_days": 30.0,
+        "horizon": "catalyst",
+        "recency_weight": 0.9361,
+        "strength": -0.2808
+      }
+    ],
+    "insider_score": 38.5,
+    "insider_score_long_term": 38.1,
+    "insider_detail": {
+      "available": true,
+      "net_strength": -0.2808,
+      "buy_events": 0,
+      "sell_events": 1,
+      "freshest_age_trading_days": 2.86,
+      "method": "decayed Form 4 clusters, 30.0-trading-day half-life"
+    },
+    "expectation_score": 47.5,
+    "expectation_detail": {
+      "available": true,
+      "inputs_resolved": 4,
+      "coverage": 1.0,
+      "revision_breadth_30d": -0.3333,
+      "eps_revision_30d_pct": 0.0995,
+      "net_upgrades_90d": -3,
+      "target_change_30d_pct": -0.0,
+      "method": "revision breadth and magnitude, rating changes, and consensus target drift"
+    }
+  },
+  "theme_exposure": [],
+  "history": {
+    "dates": [
+      "2024-12-17",
+      "2024-12-27",
+      "2025-01-08",
+      "2025-01-21",
+      "2025-01-30",
+      "2025-02-10",
+      "2025-02-20",
+      "2025-03-03",
+      "2025-03-12",
+      "2025-03-21",
+      "2025-04-01",
+      "2025-04-10",
+      "2025-04-22",
+      "2025-05-01",
+      "2025-05-12",
+      "2025-05-21",
+      "2025-06-02",
+      "2025-06-11",
+      "2025-06-23",
+      "2025-07-02",
+      "2025-07-14",
+      "2025-07-23",
+      "2025-08-01",
+      "2025-08-12",
+      "2025-08-21",
+      "2025-09-02",
+      "2025-09-11",
+      "2025-09-22",
+      "2025-10-01",
+      "2025-10-10",
+      "2025-10-21",
+      "2025-10-30",
+      "2025-11-10",
+      "2025-11-19",
+      "2025-12-01",
+      "2025-12-10",
+      "2025-12-19",
+      "2025-12-31",
+      "2026-01-12",
+      "2026-01-22",
+      "2026-02-02",
+      "2026-02-11",
+      "2026-02-23",
+      "2026-03-04",
+      "2026-03-13",
+      "2026-03-24",
+      "2026-04-02",
+      "2026-04-14",
+      "2026-04-23",
+      "2026-05-04",
+      "2026-05-13",
+      "2026-05-22",
+      "2026-06-03",
+      "2026-06-04",
+      "2026-06-05",
+      "2026-06-08",
+      "2026-06-09",
+      "2026-06-10",
+      "2026-06-11",
+      "2026-06-12",
+      "2026-06-15",
+      "2026-06-16",
+      "2026-06-17",
+      "2026-06-18",
+      "2026-06-22",
+      "2026-06-23",
+      "2026-06-24",
+      "2026-06-25",
+      "2026-06-26",
+      "2026-06-29",
+      "2026-06-30",
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-27",
+      "2026-07-28",
+      "2026-07-29",
+      "2026-07-30",
+      "2026-07-31",
+      "2026-08-03",
+      "2026-08-04",
+      "2026-08-05",
+      "2026-08-06",
+      "2026-08-07"
+    ],
+    "closes": [
+      152.13,
+      154.33,
+      152.43,
+      157.51,
+      155.72,
+      161.97,
+      158.54,
+      173.0,
+      163.66,
+      170.05,
+      174.95,
+      156.04,
+      163.05,
+      165.59,
+      167.57,
+      166.85,
+      178.04,
+      169.97,
+      170.67,
+      162.08,
+      166.12,
+      166.92,
+      168.83,
+      169.65,
+      174.1,
+      175.98,
+      182.1,
+      175.99,
+      181.5,
+      177.54,
+      175.23,
+      170.26,
+      181.5,
+      178.73,
+      185.91,
+      180.82,
+      184.77,
+      182.77,
+      174.09,
+      171.69,
+      174.5,
+      172.59,
+      173.91,
+      179.46,
+      173.39,
+      172.23,
+      176.1,
+      178.43,
+      181.87,
+      183.28,
+      189.3,
+      195.13,
+      186.35,
+      186.99,
+      193.19,
+      190.87,
+      192.43,
+      197.39,
+      196.07,
+      197.65,
+      198.27,
+      199.2,
+      199.67,
+      197.93,
+      201.29,
+      207.64,
+      210.4,
+      207.56,
+      212.61,
+      214.54,
+      214.12,
+      216.76,
+      221.61,
+      220.19,
+      218.46,
+      212.24,
+      214.34,
+      213.99,
+      216.86,
+      214.16,
+      206.9,
+      207.0,
+      213.23,
+      214.35,
+      215.06,
+      212.87,
+      214.13,
+      218.11,
+      219.52,
+      224.15,
+      232.34,
+      230.09,
+      232.63,
+      232.33,
+      228.04,
+      229.12,
+      231.46,
+      229.08
+    ],
+    "growth": [
+      500.0,
+      507.23,
+      500.99,
+      517.68,
+      511.8,
+      532.34,
+      521.07,
+      568.59,
+      537.9,
+      558.9,
+      575.0,
+      512.85,
+      535.89,
+      544.24,
+      550.75,
+      548.38,
+      585.16,
+      558.63,
+      560.93,
+      532.7,
+      545.98,
+      548.61,
+      554.89,
+      557.58,
+      572.21,
+      578.39,
+      598.5,
+      578.42,
+      596.53,
+      583.51,
+      575.92,
+      559.59,
+      596.53,
+      587.43,
+      611.02,
+      594.29,
+      607.28,
+      600.7,
+      572.18,
+      564.29,
+      573.52,
+      567.25,
+      571.58,
+      589.82,
+      569.87,
+      566.06,
+      578.78,
+      586.44,
+      597.75,
+      602.38,
+      622.17,
+      641.33,
+      612.47,
+      614.57,
+      634.95,
+      627.33,
+      632.45,
+      648.75,
+      644.42,
+      649.61,
+      651.65,
+      654.7,
+      656.25,
+      650.53,
+      661.57,
+      682.44,
+      691.51,
+      682.18,
+      698.78,
+      705.12,
+      703.74,
+      712.42,
+      728.36,
+      723.69,
+      718.0,
+      697.56,
+      704.46,
+      703.31,
+      712.75,
+      703.87,
+      680.01,
+      680.34,
+      700.82,
+      704.5,
+      706.83,
+      699.63,
+      703.77,
+      716.85,
+      721.49,
+      736.71,
+      763.62,
+      756.23,
+      764.58,
+      763.59,
+      749.49,
+      753.04,
+      760.73,
+      752.91
+    ]
+  },
+  "hypothetical": {
+    "basis": 500.0,
+    "stock_value": 752.91,
+    "benchmark_value": 639.81,
+    "stock_return_pct": 50.58,
+    "benchmark_return_pct": 27.96,
+    "excess_return_pct": 22.62,
+    "dollars_ahead": 113.1
+  },
+  "data_fetched_at": "2026-08-10T05:23:37.933120+00:00",
+  "explainability": {
+    "active_variant": "champion",
+    "attribution": {
+      "champion": {
+        "base": 50.0,
+        "evidence": [
+          {
+            "key": "valuation",
+            "label": "valuation",
+            "points": 8.8017
+          },
+          {
+            "key": "profitability",
+            "label": "profitability",
+            "points": 5.5324
+          },
+          {
+            "key": "financial_health",
+            "label": "financial health",
+            "points": 5.934
+          },
+          {
+            "key": "growth",
+            "label": "growth",
+            "points": 3.1093
+          },
+          {
+            "key": "capital_allocation",
+            "label": "capital allocation",
+            "points": 3.2979
+          },
+          {
+            "key": "accounting_quality",
+            "label": "accounting quality",
+            "points": 3.956
+          },
+          {
+            "key": "market_behavior",
+            "label": "market behavior",
+            "points": 4.4687
+          }
+        ],
+        "raw_evidence_score": 85.1,
+        "confidence_shrinkage_points": -2.2,
+        "post_confidence_score": 82.9,
+        "modifiers": [
+          {
+            "key": "sector_valuation",
+            "label": "sector valuation",
+            "points": 0.0
+          },
+          {
+            "key": "short_interest",
+            "label": "short interest",
+            "points": 0.0
+          },
+          {
+            "key": "liquidity",
+            "label": "liquidity",
+            "points": 0.0
+          },
+          {
+            "key": "expectations",
+            "label": "expectations",
+            "points": 0.0
+          },
+          {
+            "key": "macro_regime",
+            "label": "macro regime",
+            "points": 1.06
+          },
+          {
+            "key": "insider_activity",
+            "label": "insider activity",
+            "points": -2.63
+          },
+          {
+            "key": "customer_concentration_risk",
+            "label": "customer concentration risk",
+            "points": 0.0
+          },
+          {
+            "key": "geographic_concentration",
+            "label": "geographic concentration",
+            "points": 0.0
+          },
+          {
+            "key": "institutional_13f",
+            "label": "institutional 13f",
+            "points": 0.0
+          },
+          {
+            "key": "congressional_buying",
+            "label": "congressional buying",
+            "points": 0.0
+          },
+          {
+            "key": "score_rounding",
+            "label": "score boundary and rounding",
+            "points": -0.03
+          }
+        ],
+        "final_score": 81.3,
+        "reconciliation_error": 0.0,
+        "reconciled": true
+      },
+      "challenger": {
+        "base": 50.0,
+        "evidence": [
+          {
+            "key": "valuation",
+            "label": "valuation",
+            "points": 0.5738
+          },
+          {
+            "key": "profitability",
+            "label": "profitability",
+            "points": -0.3967
+          },
+          {
+            "key": "financial_health",
+            "label": "financial health",
+            "points": 1.6358
+          },
+          {
+            "key": "growth",
+            "label": "growth",
+            "points": 0.5561
+          },
+          {
+            "key": "capital_allocation",
+            "label": "capital allocation",
+            "points": 1.3993
+          },
+          {
+            "key": "accounting_quality",
+            "label": "accounting quality",
+            "points": 2.4068
+          },
+          {
+            "key": "market_behavior",
+            "label": "market behavior",
+            "points": 3.9249
+          }
+        ],
+        "raw_evidence_score": 60.1,
+        "confidence_shrinkage_points": -1.3,
+        "post_confidence_score": 58.8,
+        "modifiers": [
+          {
+            "key": "sector_valuation",
+            "label": "sector valuation",
+            "points": 0.0
+          },
+          {
+            "key": "short_interest",
+            "label": "short interest",
+            "points": 0.0
+          },
+          {
+            "key": "liquidity",
+            "label": "liquidity",
+            "points": 0.0
+          },
+          {
+            "key": "expectations",
+            "label": "expectations",
+            "points": 0.0
+          },
+          {
+            "key": "macro_regime",
+            "label": "macro regime",
+            "points": 1.06
+          },
+          {
+            "key": "insider_activity",
+            "label": "insider activity",
+            "points": -2.63
+          },
+          {
+            "key": "customer_concentration_risk",
+            "label": "customer concentration risk",
+            "points": 0.0
+          },
+          {
+            "key": "geographic_concentration",
+            "label": "geographic concentration",
+            "points": 0.0
+          },
+          {
+            "key": "institutional_13f",
+            "label": "institutional 13f",
+            "points": 0.0
+          },
+          {
+            "key": "congressional_buying",
+            "label": "congressional buying",
+            "points": 0.0
+          },
+          {
+            "key": "score_rounding",
+            "label": "score boundary and rounding",
+            "points": -0.03
+          }
+        ],
+        "final_score": 57.2,
+        "reconciliation_error": 0.0,
+        "reconciled": true
+      }
+    },
+    "factor_bars": {
+      "value": 90.0,
+      "quality": 92.5,
+      "growth": 86.1,
+      "momentum": 71.0,
+      "sentiment": null,
+      "risk": 74.4
+    },
+    "metrics": {
+      "champion": [
+        {
+          "metric": "forward_pe",
+          "label": "forward pe",
+          "category": "valuation",
+          "raw_value": 11.76,
+          "format": "multiple",
+          "sector_percentile": 50.8,
+          "desirability_percentile": 49.2,
+          "normalization_scope": "sector",
+          "peer_count": 123,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": 3,
+          "own_history_years": 5,
+          "own_history_status": "accumulating",
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 6.646,
+          "final_point_contribution": 6.2295
+        },
+        {
+          "metric": "return_on_equity",
+          "label": "return on equity",
+          "category": "profitability",
+          "raw_value": 0.2188,
+          "format": "percent",
+          "sector_percentile": 76.9,
+          "desirability_percentile": 76.9,
+          "normalization_scope": "sector",
+          "peer_count": 122,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 5.1428,
+          "final_point_contribution": 4.8204
+        },
+        {
+          "metric": "accruals_ratio",
+          "label": "accruals ratio",
+          "category": "accounting_quality",
+          "raw_value": -0.032,
+          "format": "percent",
+          "sector_percentile": 20.4,
+          "desirability_percentile": 79.6,
+          "normalization_scope": "sector",
+          "peer_count": 50,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 3.956,
+          "final_point_contribution": 3.708
+        },
+        {
+          "metric": "interest_coverage",
+          "label": "interest coverage",
+          "category": "financial_health",
+          "raw_value": 20.53,
+          "format": "multiple",
+          "sector_percentile": 50.0,
+          "desirability_percentile": 50.0,
+          "normalization_scope": "sector",
+          "peer_count": 25,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 3.7088,
+          "final_point_contribution": 3.4763
+        },
+        {
+          "metric": "debt_to_equity",
+          "label": "debt to equity",
+          "category": "financial_health",
+          "raw_value": 0.23,
+          "format": "multiple",
+          "sector_percentile": 14.3,
+          "desirability_percentile": 85.7,
+          "normalization_scope": "universe",
+          "peer_count": 698,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 2.2252,
+          "final_point_contribution": 2.0858
+        },
+        {
+          "metric": "stock_comp_to_revenue",
+          "label": "stock comp to revenue",
+          "category": "capital_allocation",
+          "raw_value": 0.0054,
+          "format": "percent",
+          "sector_percentile": 5.9,
+          "desirability_percentile": 94.1,
+          "normalization_scope": "sector",
+          "peer_count": 35,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 1.3185,
+          "final_point_contribution": 1.2359
+        },
+        {
+          "metric": "fcf_growth_3y",
+          "label": "fcf growth 3y",
+          "category": "growth",
+          "raw_value": 0.1844,
+          "format": "percent",
+          "sector_percentile": 73.7,
+          "desirability_percentile": 73.7,
+          "normalization_scope": "sector",
+          "peer_count": 39,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 1.1404,
+          "final_point_contribution": 1.0689
+        },
+        {
+          "metric": "price_to_book",
+          "label": "price to book",
+          "category": "valuation",
+          "raw_value": 2.18,
+          "format": "multiple",
+          "sector_percentile": 28.3,
+          "desirability_percentile": 71.7,
+          "normalization_scope": "universe",
+          "peer_count": 693,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": 3,
+          "own_history_years": 5,
+          "own_history_status": "accumulating",
+          "normalized_score": 75.0,
+          "evidence_point_contribution": 1.0778,
+          "final_point_contribution": 1.0103
+        },
+        {
+          "metric": "price_to_tangible_book",
+          "label": "price to tangible book",
+          "category": "valuation",
+          "raw_value": 2.48,
+          "format": "multiple",
+          "sector_percentile": 56.8,
+          "desirability_percentile": 43.2,
+          "normalization_scope": "sector",
+          "peer_count": 45,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": 3,
+          "own_history_years": 5,
+          "own_history_status": "accumulating",
+          "normalized_score": 75.0,
+          "evidence_point_contribution": 1.0778,
+          "final_point_contribution": 1.0103
+        },
+        {
+          "metric": "earnings_growth",
+          "label": "earnings growth",
+          "category": "growth",
+          "raw_value": 0.25,
+          "format": "percent",
+          "sector_percentile": 57.7,
+          "desirability_percentile": 57.7,
+          "normalization_scope": "sector",
+          "peer_count": 118,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 1.0367,
+          "final_point_contribution": 0.9717
+        },
+        {
+          "metric": "asset_growth",
+          "label": "asset growth",
+          "category": "capital_allocation",
+          "raw_value": 0.1094,
+          "format": "percent",
+          "sector_percentile": 35.7,
+          "desirability_percentile": 64.3,
+          "normalization_scope": "sector",
+          "peer_count": 50,
+          "direction": "distance_from_ideal",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 1.036,
+          "final_point_contribution": 0.9711
+        },
+        {
+          "metric": "net_buyback_yield",
+          "label": "net buyback yield",
+          "category": "capital_allocation",
+          "raw_value": 0.0141,
+          "format": "percent",
+          "sector_percentile": 46.9,
+          "desirability_percentile": 46.9,
+          "normalization_scope": "sector",
+          "peer_count": 50,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 80.0,
+          "evidence_point_contribution": 0.9434,
+          "final_point_contribution": 0.8842
+        },
+        {
+          "metric": "operating_margin_trend",
+          "label": "operating margin trend",
+          "category": "growth",
+          "raw_value": 0.0431,
+          "format": "percent",
+          "sector_percentile": 87.5,
+          "desirability_percentile": 87.5,
+          "normalization_scope": "sector",
+          "peer_count": 25,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 100.0,
+          "evidence_point_contribution": 0.8294,
+          "final_point_contribution": 0.7774
+        },
+        {
+          "metric": "profit_margin",
+          "label": "profit margin",
+          "category": "profitability",
+          "raw_value": 0.1117,
+          "format": "percent",
+          "sector_percentile": 19.4,
+          "desirability_percentile": 19.4,
+          "normalization_scope": "sector",
+          "peer_count": 125,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 55.0,
+          "evidence_point_contribution": 0.3896,
+          "final_point_contribution": 0.3652
+        },
+        {
+          "metric": "revenue_growth",
+          "label": "revenue growth",
+          "category": "growth",
+          "raw_value": 0.043,
+          "format": "percent",
+          "sector_percentile": 21.0,
+          "desirability_percentile": 21.0,
+          "normalization_scope": "sector",
+          "peer_count": 125,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 55.0,
+          "evidence_point_contribution": 0.1029,
+          "final_point_contribution": 0.0964
+        }
+      ],
+      "challenger": [
+        {
+          "metric": "profit_margin",
+          "label": "profit margin",
+          "category": "profitability",
+          "raw_value": 0.1117,
+          "format": "percent",
+          "sector_percentile": 19.4,
+          "desirability_percentile": 19.4,
+          "normalization_scope": "sector",
+          "peer_count": 125,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 19.4,
+          "evidence_point_contribution": -3.2351,
+          "final_point_contribution": -2.8187
+        },
+        {
+          "metric": "return_on_equity",
+          "label": "return on equity",
+          "category": "profitability",
+          "raw_value": 0.2188,
+          "format": "percent",
+          "sector_percentile": 76.9,
+          "desirability_percentile": 76.9,
+          "normalization_scope": "sector",
+          "peer_count": 122,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 76.9,
+          "evidence_point_contribution": 2.8384,
+          "final_point_contribution": 2.473
+        },
+        {
+          "metric": "accruals_ratio",
+          "label": "accruals ratio",
+          "category": "accounting_quality",
+          "raw_value": -0.032,
+          "format": "percent",
+          "sector_percentile": 20.4,
+          "desirability_percentile": 79.6,
+          "normalization_scope": "sector",
+          "peer_count": 50,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 79.6,
+          "evidence_point_contribution": 2.4068,
+          "final_point_contribution": 2.097
+        },
+        {
+          "metric": "debt_to_equity",
+          "label": "debt to equity",
+          "category": "financial_health",
+          "raw_value": 0.23,
+          "format": "multiple",
+          "sector_percentile": 14.3,
+          "desirability_percentile": 85.7,
+          "normalization_scope": "universe",
+          "peer_count": 698,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 85.7,
+          "evidence_point_contribution": 1.6332,
+          "final_point_contribution": 1.423
+        },
+        {
+          "metric": "stock_comp_to_revenue",
+          "label": "stock comp to revenue",
+          "category": "capital_allocation",
+          "raw_value": 0.0054,
+          "format": "percent",
+          "sector_percentile": 5.9,
+          "desirability_percentile": 94.1,
+          "normalization_scope": "sector",
+          "peer_count": 35,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 94.1,
+          "evidence_point_contribution": 1.1952,
+          "final_point_contribution": 1.0414
+        },
+        {
+          "metric": "price_to_book",
+          "label": "price to book",
+          "category": "valuation",
+          "raw_value": 2.18,
+          "format": "multiple",
+          "sector_percentile": 28.3,
+          "desirability_percentile": 71.7,
+          "normalization_scope": "universe",
+          "peer_count": 693,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": 3,
+          "own_history_years": 5,
+          "own_history_status": "accumulating",
+          "normalized_score": 71.7,
+          "evidence_point_contribution": 0.9884,
+          "final_point_contribution": 0.8611
+        },
+        {
+          "metric": "revenue_growth",
+          "label": "revenue growth",
+          "category": "growth",
+          "raw_value": 0.043,
+          "format": "percent",
+          "sector_percentile": 21.0,
+          "desirability_percentile": 21.0,
+          "normalization_scope": "sector",
+          "peer_count": 125,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 21.0,
+          "evidence_point_contribution": -0.8018,
+          "final_point_contribution": -0.6986
+        },
+        {
+          "metric": "operating_margin_trend",
+          "label": "operating margin trend",
+          "category": "growth",
+          "raw_value": 0.0431,
+          "format": "percent",
+          "sector_percentile": 87.5,
+          "desirability_percentile": 87.5,
+          "normalization_scope": "sector",
+          "peer_count": 25,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 87.5,
+          "evidence_point_contribution": 0.6386,
+          "final_point_contribution": 0.5564
+        },
+        {
+          "metric": "fcf_growth_3y",
+          "label": "fcf growth 3y",
+          "category": "growth",
+          "raw_value": 0.1844,
+          "format": "percent",
+          "sector_percentile": 73.7,
+          "desirability_percentile": 73.7,
+          "normalization_scope": "sector",
+          "peer_count": 39,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 73.7,
+          "evidence_point_contribution": 0.5551,
+          "final_point_contribution": 0.4837
+        },
+        {
+          "metric": "price_to_tangible_book",
+          "label": "price to tangible book",
+          "category": "valuation",
+          "raw_value": 2.48,
+          "format": "multiple",
+          "sector_percentile": 56.8,
+          "desirability_percentile": 43.2,
+          "normalization_scope": "sector",
+          "peer_count": 45,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": 3,
+          "own_history_years": 5,
+          "own_history_status": "accumulating",
+          "normalized_score": 43.2,
+          "evidence_point_contribution": -0.3084,
+          "final_point_contribution": -0.2687
+        },
+        {
+          "metric": "asset_growth",
+          "label": "asset growth",
+          "category": "capital_allocation",
+          "raw_value": 0.1094,
+          "format": "percent",
+          "sector_percentile": 35.7,
+          "desirability_percentile": 64.3,
+          "normalization_scope": "sector",
+          "peer_count": 50,
+          "direction": "distance_from_ideal",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 64.3,
+          "evidence_point_contribution": 0.305,
+          "final_point_contribution": 0.2657
+        },
+        {
+          "metric": "earnings_growth",
+          "label": "earnings growth",
+          "category": "growth",
+          "raw_value": 0.25,
+          "format": "percent",
+          "sector_percentile": 57.7,
+          "desirability_percentile": 57.7,
+          "normalization_scope": "sector",
+          "peer_count": 118,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 57.7,
+          "evidence_point_contribution": 0.1642,
+          "final_point_contribution": 0.143
+        },
+        {
+          "metric": "forward_pe",
+          "label": "forward pe",
+          "category": "valuation",
+          "raw_value": 11.76,
+          "format": "multiple",
+          "sector_percentile": 50.8,
+          "desirability_percentile": 49.2,
+          "normalization_scope": "sector",
+          "peer_count": 123,
+          "direction": "lower_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": 3,
+          "own_history_years": 5,
+          "own_history_status": "accumulating",
+          "normalized_score": 49.2,
+          "evidence_point_contribution": -0.1062,
+          "final_point_contribution": -0.0925
+        },
+        {
+          "metric": "net_buyback_yield",
+          "label": "net buyback yield",
+          "category": "capital_allocation",
+          "raw_value": 0.0141,
+          "format": "percent",
+          "sector_percentile": 46.9,
+          "desirability_percentile": 46.9,
+          "normalization_scope": "sector",
+          "peer_count": 50,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 46.9,
+          "evidence_point_contribution": -0.1009,
+          "final_point_contribution": -0.0879
+        },
+        {
+          "metric": "interest_coverage",
+          "label": "interest coverage",
+          "category": "financial_health",
+          "raw_value": 20.53,
+          "format": "multiple",
+          "sector_percentile": 50.0,
+          "desirability_percentile": 50.0,
+          "normalization_scope": "sector",
+          "peer_count": 25,
+          "direction": "higher_is_better",
+          "own_history_percentile": null,
+          "own_history_observations": null,
+          "own_history_years": null,
+          "own_history_status": null,
+          "normalized_score": 50.0,
+          "evidence_point_contribution": 0.0026,
+          "final_point_contribution": 0.0023
+        }
+      ]
+    },
+    "score_history": {
+      "status": "accumulating",
+      "stored_months": 1,
+      "required_months": 6,
+      "points": [
+        {
+          "recorded_at": "2026-08-07T09:50:06.527637+00:00",
+          "refresh_id": "advisor-2026-08-07T09:50:06.527637+00:00",
+          "champion_score": 88.4,
+          "challenger_score": 66.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 56.4,
+              "capital_allocation": 71.3,
+              "financial_health": 55.6,
+              "growth": 61.5,
+              "profitability": 71.9,
+              "valuation": 55.0
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T18:08:49.559640+00:00",
+          "refresh_id": "advisor-2026-08-07T18:08:49.559640+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.6,
+              "valuation": 62.3
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T18:59:29.327733+00:00",
+          "refresh_id": "advisor-2026-08-07T18:59:29.327733+00:00",
+          "champion_score": 88.7,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.5
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T19:44:09.528421+00:00",
+          "refresh_id": "advisor-2026-08-07T19:44:09.528421+00:00",
+          "champion_score": 88.7,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.5
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T19:59:03.660947+00:00",
+          "refresh_id": "advisor-2026-08-07T19:59:03.660947+00:00",
+          "champion_score": 88.7,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T20:49:54.414032+00:00",
+          "refresh_id": "advisor-2026-08-07T20:49:54.414032+00:00",
+          "champion_score": 88.7,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T21:44:33.175249+00:00",
+          "refresh_id": "advisor-2026-08-07T21:44:33.175249+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.2,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-07T22:28:39.860021+00:00",
+          "refresh_id": "advisor-2026-08-07T22:28:39.860021+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.2,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T01:22:27.667529+00:00",
+          "refresh_id": "advisor-2026-08-08T01:22:27.667529+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T02:03:48.549724+00:00",
+          "refresh_id": "advisor-2026-08-08T02:03:48.549724+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T02:12:58.669586+00:00",
+          "refresh_id": "advisor-2026-08-08T02:12:58.669586+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T03:21:58.826111+00:00",
+          "refresh_id": "advisor-2026-08-08T03:21:58.826111+00:00",
+          "champion_score": 88.8,
+          "challenger_score": 65.1,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T04:41:18.276299+00:00",
+          "refresh_id": "advisor-2026-08-08T04:41:18.276299+00:00",
+          "champion_score": 86.3,
+          "challenger_score": 62.6,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T06:33:52.733639+00:00",
+          "refresh_id": "advisor-2026-08-08T06:33:52.733639+00:00",
+          "champion_score": 86.0,
+          "challenger_score": 62.3,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-08T20:13:03.335529+00:00",
+          "refresh_id": "advisor-2026-08-08T20:13:03.335529+00:00",
+          "champion_score": 86.0,
+          "challenger_score": 62.3,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-09T03:35:44.036546+00:00",
+          "refresh_id": "advisor-2026-08-09T03:35:44.036546+00:00",
+          "champion_score": 85.4,
+          "challenger_score": 61.7,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-09T08:24:42.037367+00:00",
+          "refresh_id": "advisor-2026-08-09T08:24:42.037367+00:00",
+          "champion_score": 86.2,
+          "challenger_score": 62.5,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 54.1,
+              "capital_allocation": 70.0,
+              "financial_health": 53.8,
+              "growth": 56.1,
+              "profitability": 65.8,
+              "valuation": 62.7
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-09T09:09:35.022740+00:00",
+          "refresh_id": "advisor-2026-08-09T09:09:35.022740+00:00",
+          "champion_score": 86.2,
+          "challenger_score": 62.0,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "PROMISING",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 53.3,
+              "capital_allocation": 69.8,
+              "financial_health": 50.0,
+              "growth": 56.2,
+              "profitability": 65.8,
+              "valuation": 62.5
+            },
+            "champion": {
+              "accounting_quality": 71.8,
+              "capital_allocation": 93.2,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 94.2,
+              "valuation": 95.7
+            }
+          }
+        },
+        {
+          "recorded_at": "2026-08-10T05:23:37.933120+00:00",
+          "refresh_id": "advisor-2026-08-10T05:23:37.933120+00:00",
+          "champion_score": 81.3,
+          "challenger_score": 57.2,
+          "champion_stance": "ATTRACTIVE",
+          "challenger_stance": "MIXED",
+          "category_scores": {
+            "challenger": {
+              "accounting_quality": 79.6,
+              "capital_allocation": 67.2,
+              "financial_health": 63.4,
+              "growth": 56.2,
+              "profitability": 48.1,
+              "valuation": 52.5
+            },
+            "champion": {
+              "accounting_quality": 100.0,
+              "capital_allocation": 91.9,
+              "financial_health": 100.0,
+              "growth": 86.1,
+              "profitability": 77.5,
+              "valuation": 90.0
+            }
+          }
+        }
+      ],
+      "largest_category_driver": null
+    },
+    "anomalies": []
+  }
+}

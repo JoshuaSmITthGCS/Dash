@@ -1,8 +1,21 @@
+import InfoTag from './InfoTag.jsx'
+
 const labelize = (value) => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 
 export function radarEntries(stock) {
-  const source = stock?.analysis_v2?.structural?.categories
-    || stock?.fundamental_categories
+  // The categories that produced the score on this page, and no other set.
+  //
+  // This used to prefer analysis_v2.structural.categories, which is a *different* model's
+  // reading of the same six names. Where both existed they disagreed on 35 published rows by a
+  // median of 6 points and as much as 33: Globus Medical showed growth at 81.7 on the radar and
+  // 64.6 in the category list printed directly beside it, both labelled "Growth", both on a
+  // 0-100 scale, with nothing to say they came from different arithmetic. The rows affected
+  // were the fully-published ones, which are the rows a reader is most likely to open.
+  //
+  // The v2 structural layer is a legitimate second opinion and is published in its own section.
+  // It is not this chart, because this chart sits under the champion score's headline number.
+  const source = stock?.fundamental_categories
+    || stock?.analysis_v2?.structural?.categories
     || stock?.scores
     || {}
   return Object.entries(source)
@@ -28,7 +41,14 @@ export default function ResearchRadarChart({ stock }) {
   return (
     <figure className="research-radar" aria-label={`${stock.ticker} section scores: ${summary}`}>
       <div className="research-radar-heading">
-        <div><span className="sec-label">Section radar</span><h3>Research profile</h3></div>
+        <div><span className="sec-label">Section radar</span><h3>Research profile
+          <InfoTag label="Research profile">
+            <strong>Research profile</strong>
+            <p>Each axis is one structural research category (e.g. valuation, profitability, growth) on
+              a 0–100 scale, higher is stronger. Shows the shape of a company's evidence at a glance -
+              a broad, even shape is a different story from a name that is strong on one axis only.</p>
+          </InfoTag>
+        </h3></div>
         <span>0–100 · higher is stronger</span>
       </div>
       <svg viewBox="0 0 320 320" role="img" aria-hidden="true">

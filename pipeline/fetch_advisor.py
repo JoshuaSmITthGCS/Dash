@@ -5,29 +5,42 @@ import os
 import re
 import statistics
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_challenger,
                             normalized_metric_scores, signal_correction_variants)
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
-from confidence import confidence_components, run_source_reliability
+from data_coverage import data_coverage_components, run_source_reliability
+from data_health import publication_gate, statement_health
+from price_archive import archive_health
+from edgar_enrichment import merge_edgar_fallback
+from edgar_sue import sue_for
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
+from concentration_risk import summarize as summarize_concentration
+from geographic_exposure import summarize as summarize_geography
+from institutional_ownership import decay as institutional_decay
+from congress_signal import score_congressional_buying
 import pit_store
 from fred import FredClient, FredError, fetch_regime
+from layer_health import assert_layers_vary
+from plausibility import screen as screen_plausibility
 from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
                             series_payload)
 from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
+from evidence_events import build_evidence
 from news_intelligence import annotate_article, deduplicate_articles
+from yahoo_estimates import collect_estimate_detail
+from yahoo_news import fetch_company_news, new_diagnostics as new_news_diagnostics
 from scorer import (CrossSectionalNormalizer, SETTINGS, VALUATION_MULTIPLES,
                     sector_percentile_ranks, valuation_score)
 from normalization_report import write_normalization_report
@@ -36,8 +49,8 @@ from bias_report import write_bias_report
 from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
 from sec_edgar import SecEdgarClient
-from theme_signals import EdgarThemeSignals
-from themes import build_theme_screen, empty_screen, load_themes
+from theme_signals import EdgarThemeSignals, recent_10k_filings
+from themes import build_theme_screen, empty_screen, expand_theme_candidates, load_themes
 from validation.ic_harness import (append_refresh as append_ic_refresh,
                                    read_snapshots,
                                    rows_from_advisor as ic_rows_from_advisor,
@@ -47,13 +60,29 @@ UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
+# The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
+# title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
+# on top, so it reads one merged config rather than two half-configs.
+EVIDENCE_CONFIG = {**NEWS_CONFIG, **SETTINGS["evidence_events"]}
 MIN_ALPHA_PRIMARY_RELEVANCE = NEWS_CONFIG["alpha_vantage_primary_relevance_minimum"]
 # How many shortlisted companies get the multi-request financial-statement treatment.
 EXTENDED_LIMIT = int(UNIVERSE.get("extended_limit", PUBLISH_LIMIT * 3))
 PORTFOLIO_SYMBOLS = tuple(UNIVERSE.get("portfolio_symbols", ()))
 INCUMBENT_ENRICH_LIMIT = 20
 CHALLENGER_ENRICH_LIMIT = 5
+# Statement-starved names admitted to enrichment each refresh regardless of rank. Without
+# this the enrichment queue is a closed loop over the previous run's leaders and the model
+# can only rediscover names it already liked - see enrichment_rotation.
+ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "15")))
 NEWS_DISCOVERY_LIMIT = 75
+# Research-mode override (A3): the production enrichment queue seeds itself with the prior
+# refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
+# (EV/EBITDA, ROIC, interest coverage, Piotroski F) only ever exist for names a weaker model
+# already liked - the champion can never discover a name its own history didn't surface.
+# Setting FULL_UNIVERSE_RESEARCH=true ignores that history entirely for one run so every
+# candidate gets statement enrichment on equal footing. Never the default production path -
+# a full-universe statement sweep is far more Yahoo requests than the normal fast refresh.
+FULL_UNIVERSE_RESEARCH = os.getenv("FULL_UNIVERSE_RESEARCH", "").strip().lower() in {"1", "true", "yes"}
 
 # The unpublished remainder of the universe rides along so the value and momentum screens
 # can scan more than the leaderboard. It carries only the fields those screens actually
@@ -63,47 +92,105 @@ NEWS_DISCOVERY_LIMIT = 75
 SCREEN_TECHNICAL_FIELDS = (
     "return_5d", "return_20d", "momentum_12_1", "momentum_12_1_pct", "risk_adjusted",
     "relative_strength", "relative_strength_20d", "volume_confirmation",
-    "pct_above_52w_low",
+    "pct_above_52w_low", "drawdown_60d", "volume_ratio_60d",
+    # The swing model's continuation leg is 52-week-high proximity (George-Hwang), the one
+    # momentum-family measure that carries no recent-month return and so cannot cancel its
+    # reversal leg. Without this on the tail the leg only ever resolves for the published
+    # leaderboard, which is the opposite of what a cross-sectional screen is for.
+    "pct_from_52w_high",
+    # ...and that leg is scored in the name's own volatility, not raw, because raw proximity
+    # is mechanically higher for a quiet stock (measured -0.49 against realized volatility
+    # across the universe) and would import an undeclared low-volatility and sector tilt.
+    # See rule 4 in pipeline/swing_signals.py.
+    "annualized_volatility",
+    # return_60d/return_252d back a multi-horizon breadth check for rankMomentum's
+    # corroboration gate - a 5d/20d pop inside a longer downtrend shouldn't pass as
+    # genuine momentum. Keep in sync with src/lib/researchScreens.js.
+    "return_60d", "return_252d",
 )
 
-# The signed-in Financial Report and Portfolio views need prices, chart history, scoring
-# inputs, and published action guidance, but not the several megabytes of statement-level
-# research evidence used by the dedicated Research view. Publishing this projection keeps
-# the initial route fast while advisor.json remains the complete source for deep research.
+# The Financial Report, Portfolio, and browseable Research list need prices, chart history,
+# scoring inputs, and published action guidance, but not several megabytes of statement-level
+# evidence. Publishing this projection keeps those routes fast while advisor.json remains the
+# complete source fetched on demand for a deep company-research sheet.
 REPORT_ROW_FIELDS = (
     "ticker", "name", "price", "sector", "industry", "average_dollar_volume",
     "score", "stance", "strengths", "recommendation", "components",
     "fundamental_detail", "technical_detail", "sentiment_detail", "debt_to_equity",
     "current_ratio", "return_on_equity", "revenue_growth", "data_fetched_at",
-    "theme_exposure",
+    "theme_exposure", "data_coverage", "risks", "fundamental_categories",
+    "evidence_summary", "sentiment_summary", "estimate_detail", "earnings_surprise",
+    "standardized_unexpected_earnings", "analyst_count", "analyst_rating",
+    "analyst_target_upside", "sector_valuation_percentile", "fcf_growth_3y",
+    "free_cash_flow_yield", "interest_coverage", "net_buyback_yield",
+    "operating_margin", "operating_margin_trend", "short_percent_of_float",
+    "days_to_cover", "is_etf",
 )
 RETIRED_REPORT_SYMBOLS = {"DECJ"}
+
+
+def _layer(*path):
+    """Extractor that walks a nested payload path, returning None at the first gap."""
+    def read(row):
+        node = row
+        for key in path:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key)
+        return node
+    return read
+
+
+# Every number this pipeline publishes as a scored "layer", checked for cross-sectional
+# variance before the payload is written (see layer_health.assert_layers_vary). Adding a
+# scored layer without adding it here means nothing verifies it is a layer at all.
+PUBLISHED_LAYERS = {
+    "score": _layer("score"),
+    "base_score": _layer("base_score"),
+    "raw_score": _layer("raw_score"),
+    "components.fundamentals": _layer("components", "fundamentals"),
+    "components.market_behavior": _layer("components", "market_behavior"),
+    "components.news_sentiment": _layer("components", "news_sentiment"),
+    "fundamental_categories.valuation": _layer("fundamental_categories", "valuation"),
+    "fundamental_categories.profitability": _layer("fundamental_categories", "profitability"),
+    "fundamental_categories.financial_health": _layer("fundamental_categories", "financial_health"),
+    "fundamental_categories.growth": _layer("fundamental_categories", "growth"),
+    "fundamental_categories.capital_allocation": _layer("fundamental_categories", "capital_allocation"),
+    "fundamental_categories.accounting_quality": _layer("fundamental_categories", "accounting_quality"),
+    "analysis_v2.structural.effective_score": _layer("analysis_v2", "structural", "effective_score"),
+    "analysis_v2.timeliness.effective_score": _layer("analysis_v2", "timeliness", "effective_score"),
+}
 
 
 def report_row(row):
     history = row.get("history") or {}
     projected = {key: row.get(key) for key in REPORT_ROW_FIELDS if row.get(key) is not None}
+    # Full leaderboard rows carry detailed evidence/article records while lightweight rows
+    # already carry summaries. The route-critical projection always publishes the compact
+    # shape so client-side ranking models retain their inputs without downloading every raw
+    # event in advisor.json.
+    if "evidence_summary" not in projected:
+        summary = _evidence_summary(row.get("evidence"))
+        if summary:
+            projected["evidence_summary"] = summary
+    if "sentiment_summary" not in projected:
+        summary = _sentiment_summary(row.get("sentiment_detail"))
+        if summary:
+            projected["sentiment_summary"] = summary
     structural = (row.get("analysis_v2") or {}).get("structural")
     if structural:
         projected["analysis_v2"] = {"structural": structural}
-    variants = row.get("score_variants") or {}
-    if variants:
-        projected["score_variants"] = {
-            key: {field: variant.get(field) for field in (
-                "variant", "normalization_mode", "score", "base_score", "confidence",
-                "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
-            ) if variant.get(field) is not None}
-            for key, variant in variants.items()
-        }
     if history.get("dates") and history.get("closes"):
         projected["history"] = {"dates": history["dates"], "closes": history["closes"]}
     return projected
 
 
 def report_snapshot(payload):
-    """Create the compact, route-critical subset consumed by portfolio reporting."""
+    """Create the compact, route-critical subset consumed by report/research views."""
     def active(rows):
         return [row for row in rows if str(row.get("ticker") or "").upper() not in RETIRED_REPORT_SYMBOLS]
+
+    theme_screen = payload.get("theme_screen") or {}
 
     return {
         "schema_version": payload.get("schema_version"),
@@ -114,10 +201,89 @@ def report_snapshot(payload):
         "benchmark_history": payload.get("benchmark_history"),
         "source_status": payload.get("source_status"),
         "market": payload.get("market"),
+        "theme_screen": {
+            key: theme_screen.get(key) for key in ("generated_at", "by_ticker", "unavailable_reason")
+            if theme_screen.get(key) is not None
+        },
         "research": [report_row(row) for row in active(payload.get("research", []))],
         "portfolio_coverage": [report_row(row) for row in active(payload.get("portfolio_coverage", []))],
         "screen_universe": [report_row(row) for row in active(payload.get("screen_universe", []))],
     }
+
+
+# Trust ordering for pipeline/config/settings.json's source_quality tiers (by weight:
+# regulatory_primary 1.5, established_press 1.2, neutral 1.0, aggregator_syndicated 0.65).
+# Used only to pick the single best tier present for the lightweight screen projection
+# below - the full per-article breakdown stays published-leaderboard-only.
+SOURCE_QUALITY_TRUST_ORDER = ("regulatory_primary", "established_press", "neutral", "aggregator_syndicated")
+
+
+def _sentiment_summary(sentiment_detail):
+    """Distill sentiment_detail to the handful of fields rankCatalyst's corroboration
+    check needs (article count, filing count, best source quality) without carrying the
+    full per-article breakdown onto every screen_universe row."""
+    detail = sentiment_detail or {}
+    articles = detail.get("articles") or []
+    tiers_present = {article.get("source_quality_tier") for article in articles if article.get("source_quality_tier")}
+    best_tier = next((tier for tier in SOURCE_QUALITY_TRUST_ORDER if tier in tiers_present), None)
+    if detail.get("article_count") is None and not articles and best_tier is None:
+        return None
+    return {
+        "article_count": detail.get("article_count"),
+        "filing_count": detail.get("filing_count"),
+        "best_source_quality_tier": best_tier,
+    }
+
+
+def _evidence_summary(evidence):
+    """The evidence block trimmed to what a client-side screen actually reads.
+
+    The full per-event breakdown is for the published leaderboard, where a reader can open one
+    company and audit it. Shipping twelve fully-detailed events for each of ~900 universe rows
+    would roughly double the payload to answer a question nobody asks of the 800th-ranked
+    name, so the tail carries the scores, the freshness that produced them, and the single
+    dominant event - enough for a screen to rank on and explain itself.
+    """
+    if not evidence:
+        return None
+    # A carried-forward row from a fast refresh arrives already in this shape (it was
+    # projected by an earlier run), so re-projecting it would strip the dominant-event fields
+    # it already holds - same "may already be lightweight" case _screen_row handles.
+    if "news_detail" not in evidence and "event_count" in evidence:
+        return evidence
+    news_detail = evidence.get("news_detail") or {}
+    insider_detail = evidence.get("insider_detail") or {}
+    return {
+        "news_score": evidence.get("news_score"),
+        "insider_score": evidence.get("insider_score"),
+        "insider_score_long_term": evidence.get("insider_score_long_term"),
+        "expectation_score": evidence.get("expectation_score"),
+        "dominant_event": news_detail.get("dominant_event"),
+        "dominant_event_types": news_detail.get("dominant_event_types"),
+        "dominant_age_trading_days": news_detail.get("dominant_age_trading_days"),
+        "dominant_materiality": news_detail.get("dominant_materiality"),
+        "event_count": news_detail.get("event_count", 0),
+        "insider_freshest_age_trading_days": insider_detail.get("freshest_age_trading_days"),
+        "expectation_inputs_resolved": (evidence.get("expectation_detail") or {}).get("inputs_resolved", 0),
+    }
+
+
+def _screen_sue(row):
+    """Standardized unexpected earnings for a screen row, read from the EDGAR PIT store.
+
+    Published with its announcement date rather than as a bare number: the client-side swing
+    model has to be able to tell an open drift window from a closed one, and the store is the
+    only place the announcement date exists. Costs no network call - the facts are on disk.
+    Carried-forward rows keep whatever they already had rather than re-reading the store.
+    """
+    existing = row.get("standardized_unexpected_earnings")
+    if existing is not None:
+        return existing
+    try:
+        return sue_for(row.get("ticker"), datetime.now(timezone.utc).date().isoformat())
+    except Exception as exc:  # noqa: BLE001 - a missing surprise must not sink the row
+        LOG.warn(f"{row.get('ticker')}: SUE unavailable ({type(exc).__name__}: {exc})")
+        return None
 
 
 def _screen_row(row):
@@ -129,7 +295,7 @@ def _screen_row(row):
     detail = row.get("technical_detail") or {}
     variants = {
         key: {field: variant.get(field) for field in (
-            "variant", "normalization_mode", "score", "base_score", "confidence",
+            "variant", "normalization_mode", "score", "base_score", "data_coverage",
             "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
         ) if variant.get(field) is not None}
         for key, variant in (row.get("score_variants") or {}).items()
@@ -137,10 +303,52 @@ def _screen_row(row):
     return {
         "ticker": row["ticker"], "name": row.get("name"), "sector": row.get("sector"),
         "price": row.get("price"), "score": row["score"], "stance": row.get("stance"),
+        # Without this flag every fund in the universe reads as an ordinary company to the
+        # client-side strategy screens, which gate on per-security fundamentals a fund does
+        # not have - VOO ranked as a stock and, at one point, was the single name clearing
+        # the catalyst screen.
+        "is_etf": row.get("is_etf", False),
+        # When this row's inputs were last actually fetched, as opposed to carried forward
+        # from an earlier run. It is what lets a fast refresh rotate the stalest part of the
+        # tail back into the poll (see rotation_slice) instead of re-polling the same
+        # leaders every time and leaving the rest to age indefinitely.
+        "last_polled_at": row.get("last_polled_at"),
         "score_variants": variants or None,
         "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
                              if detail.get(key) is not None},
+        # Needed by the client-side strategy-lens sorts (rankCatalyst, rankAnalystConviction,
+        # tailwind/theme opportunity) so those lenses can scan beyond the published
+        # leaderboard - the same "scan more than the leaderboard" rationale as the
+        # technical fields above, not the full nested SEC filing/estimate detail.
+        "insider_activity": row.get("insider_activity"),
+        "analyst_count": row.get("analyst_count"),
+        "analyst_rating": row.get("analyst_rating"),
+        "analyst_target_upside": row.get("analyst_target_upside"),
+        "analyst_consensus_target": row.get("analyst_consensus_target"),
+        # Small enough to carry for the whole universe, and the analyst-conviction model is
+        # specifically meant to surface names outside the published leaderboard.
+        "estimate_detail": row.get("estimate_detail"),
+        "theme_exposure": row.get("theme_exposure"),
+        # Corroboration inputs for the strategy-lens gates (rankReversal,
+        # rankValueTurnarounds, rankAnalystConviction, rankCatalyst) - independent
+        # cross-checks against each lens's primary signal, not part of any score.
+        "earnings_surprise": row.get("earnings_surprise"),
+        # The swing ranking model's post-earnings-drift leg. Deliberately a separate field
+        # from earnings_surprise above: that one is a four-quarter weighted average of
+        # percent surprise built for fundamental momentum (and 0/839 populated while the
+        # Yahoo earnings-dates scrape is down), this is the most-recent standardized
+        # seasonal surprise PEAD is a claim about, read from the EDGAR point-in-time store.
+        # See edgar_sue.py. The two are not interchangeable and are never blended.
+        "standardized_unexpected_earnings": _screen_sue(row),
+        "short_percent_of_float": row.get("short_percent_of_float"),
+        "days_to_cover": row.get("days_to_cover"),
+        "sector_valuation_percentile": row.get("sector_valuation_percentile"),
+        "sentiment_summary": _sentiment_summary(row.get("sentiment_detail")),
+        # Dated evidence for the whole universe, not just the leaderboard - the catalyst and
+        # analyst-conviction screens are meant to surface names that are *not* already top
+        # fundamentals scores, so they need this on the tail or they cannot do their job.
+        "evidence_summary": _evidence_summary(row.get("evidence") or row.get("evidence_summary")),
         "stale_carryforward": row.get("stale_carryforward", False),
     }
 
@@ -355,15 +563,18 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
     ROIC, Piotroski, Altman-Z, and the other statement-only metrics were available. Fetching
     them separately lets a company enrich on whatever half of the data actually came back.
     """
+    as_of_today = datetime.now(timezone.utc).date().isoformat()
     if ticker_obj is None:
-        return {}
+        return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
+                                    diagnostics=diagnostics)
     try:
         inputs = extended_inputs(ticker_obj)
     except Exception as exc:  # noqa: BLE001 - extended_inputs already guards each statement call
         LOG.warn(f"{symbol}: statement frames unavailable ({type(exc).__name__}: {exc})")
         if diagnostics is not None:
             diagnostics["statement_fetch_failed"] += 1
-        return {}
+        return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
+                                    diagnostics=diagnostics)
     try:
         info = ticker_obj.info or {}
     except Exception as exc:  # noqa: BLE001
@@ -383,10 +594,12 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
         LOG.warn(f"{symbol}: extended fundamentals derivation failed ({type(exc).__name__}: {exc})")
         if diagnostics is not None:
             diagnostics["derivation_failed"] += 1
-        return {}
+        return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
+                                    diagnostics=diagnostics)
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
-    return result
+    return merge_edgar_fallback(symbol, result, snapshot, as_of=as_of_today,
+                                diagnostics=diagnostics)
 
 
 def yahoo_options_volatility(ticker_obj, price, closes):
@@ -583,37 +796,209 @@ def collect_insider_signals(sec, symbols, *, lookback_days=1100, cache=None):
     runs ahead of scoring so ``insider_modifier`` can act on it. Results are cached for a
     day - Form 4 filings are not intraday data - and the whole thing is skipped silently
     when ``SEC_USER_AGENT`` is unset, since SEC fair-access policy requires it.
+
+    Returns ``(signals, failures, diagnostics)``. The diagnostics exist because "every
+    symbol scored zero insider activity" has two very different causes - a quiet market and
+    a layer that cannot read a single filing - and the published payload could not tell them
+    apart. ``filings_reviewed`` versus ``filings_unreadable`` separates them.
     """
+    empty_diagnostics = {"filings_reviewed": 0, "filings_unreadable": 0, "symbols_with_filings": 0}
     if not sec.available or not symbols:
-        return {}, []
+        return {}, [], empty_diagnostics
     cache = cache or CACHE
     failures = []
 
     def collect_one(symbol):
         def produce():
-            transactions, _ = sec.form4_transactions(symbol, lookback_days=lookback_days)
-            return transactions
+            transactions, filings = sec.form4_transactions(symbol, lookback_days=lookback_days)
+            return {
+                "transactions": transactions,
+                "filings_reviewed": len(filings),
+                "filings_unreadable": sum(1 for filing in filings if not filing.get("parsed")),
+            }
         try:
-            transactions = cache.fetch("sec_submissions", f"form4:{symbol}:{lookback_days}",
-                                       produce, source="sec_edgar")
+            # `v2` in the key retires entries cached by the build that fetched EDGAR's
+            # XSL-rendered HTML and parsed nothing out of it; those cached empties would
+            # otherwise keep the layer dark for a day after the fix.
+            collected = cache.fetch("sec_submissions", f"form4:v2:{symbol}:{lookback_days}",
+                                    produce, source="sec_edgar")
         except Exception as exc:  # noqa: BLE001
             LOG.warn(f"{symbol}: SEC Form 4 unavailable ({type(exc).__name__})")
-            return symbol, None
-        return symbol, summarize_insiders(transactions or [])
+            return symbol, None, None
+        return symbol, summarize_insiders(collected.get("transactions") or []), collected
 
     # SEC fair access allows 10 requests/second, so a small pool is safely inside the limit
     # while still overlapping the latency of dozens of filing downloads.
     results = parallel_map(collect_one, list(symbols), provider="sec_edgar", max_workers=4)
     signals = {}
+    diagnostics = dict(empty_diagnostics)
     for entry in results:
         if not entry:
             continue
-        symbol, summary = entry
+        symbol, summary, collected = entry
         if summary is None:
             failures.append(symbol)
-        else:
-            signals[symbol] = summary
-    return signals, failures
+            continue
+        signals[symbol] = summary
+        reviewed = collected.get("filings_reviewed", 0)
+        diagnostics["filings_reviewed"] += reviewed
+        diagnostics["filings_unreadable"] += collected.get("filings_unreadable", 0)
+        diagnostics["symbols_with_filings"] += 1 if reviewed else 0
+    return signals, failures, diagnostics
+
+
+def collect_filing_risk_signals(sec, symbols, *, cache=None):
+    """Customer-concentration and geographic-concentration risk from each symbol's latest 10-K.
+
+    Reads the raw filing document through the identical ``("sec_submissions", "10k:{ticker}")``
+    / ``("sec_document", url)`` cache keys ``theme_signals.EdgarThemeSignals`` uses for
+    ``backlog_growth`` and ``filing_keyword_density_trend`` - see ``recent_10k_filings``'s
+    docstring. Whichever of this collector or the theme layer runs first in a given refresh
+    warms the cache for the other, so the two risk modifiers below cost no extra filing
+    fetches beyond what the theme screen was already going to make.
+    """
+    empty_diagnostics = {"filings_reviewed": 0, "filings_unreadable": 0,
+                         "concentration_tagged": 0, "geographic_tagged": 0}
+    if not sec.available or not symbols:
+        return {}, {}, empty_diagnostics
+    cache = cache or CACHE
+
+    def collect_one(symbol):
+        try:
+            filings = cache.fetch(
+                "sec_submissions", f"10k:{symbol}",
+                lambda: recent_10k_filings(sec, symbol), source="sec_edgar")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"{symbol}: 10-K lookup failed ({type(exc).__name__})")
+            return symbol, None, None, {"filings_reviewed": 0, "filings_unreadable": 0}
+        if not filings:
+            return symbol, None, None, {"filings_reviewed": 0, "filings_unreadable": 0}
+        filing = filings[0]
+        try:
+            text = cache.fetch(
+                "sec_document", filing["url"],
+                lambda filing=filing: sec.filing_document(
+                    filing["cik"], filing["accession"], filing["document"]),
+                source="sec_edgar")
+        except Exception:  # noqa: BLE001
+            # The filing exists but could not be read. That is a measurement failure, not
+            # evidence of diversified revenue, and must not be scored as either.
+            return (symbol, summarize_concentration("", filing_read=False), None,
+                    {"filings_reviewed": 1, "filings_unreadable": 1})
+        return (symbol, summarize_concentration(text), summarize_geography(text),
+                {"filings_reviewed": 1, "filings_unreadable": 0})
+
+    results = parallel_map(collect_one, list(symbols), provider="sec_edgar", max_workers=4)
+    concentration_signals, geographic_signals = {}, {}
+    diagnostics = dict(empty_diagnostics)
+    for entry in results:
+        if not entry:
+            continue
+        symbol, concentration, geography, counted = entry
+        diagnostics["filings_reviewed"] += counted.get("filings_reviewed", 0)
+        diagnostics["filings_unreadable"] += counted.get("filings_unreadable", 0)
+        if concentration is not None:
+            concentration_signals[symbol] = concentration
+            if concentration.get("available"):
+                diagnostics["concentration_tagged"] += 1
+        if geography is not None:
+            geographic_signals[symbol] = geography
+            if geography.get("available") and geography.get("shares"):
+                diagnostics["geographic_tagged"] += 1
+    return concentration_signals, geographic_signals, diagnostics
+
+
+def collect_institutional_signals(symbols, *, as_of=None, screen_payload=None):
+    """Fold the monthly-published institutional 13F screen into a lag-decayed score input.
+
+    No live SEC/OpenFIGI calls here: ``build_institutional_screen.py`` runs on its own
+    monthly schedule and is the source of record. This just reads what it last published
+    (``public/data/screens/institutional-13f.json``) and computes how stale each ticker's
+    underlying filing now is relative to ``as_of`` (defaults to today, the day this
+    advisor refresh is actually running) - decay happens here, at read time, precisely so
+    a screen that has not refreshed in three weeks scores less each day without needing a
+    new fetch. ``undecayed_magnitude`` is the screen's raw breadth score at full weight;
+    multiplying it by ``institutional_ownership.decay`` here reproduces exactly what
+    ``institutional_ownership.score_institutional_ownership`` would have returned had it
+    been called with today's ``days_since_filed`` directly.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/institutional-13f.json") or {}))
+    diagnostics = {"requested": len(symbols), "screen_available": payload.get("status") == "success",
+                   "screen_generated_at": payload.get("generated_at"), "tickers_matched": 0}
+    if not diagnostics["screen_available"]:
+        return {}, diagnostics
+    as_of_date = as_of or date.today()
+    universe = {str(symbol).upper() for symbol in symbols}
+    cfg = SETTINGS.get("modifiers", {}).get("institutional_13f", {})
+    signals = {}
+    for row in payload.get("results") or []:
+        ticker = str(row.get("ticker") or "").upper()
+        if ticker not in universe:
+            continue
+        magnitude, filed = row.get("undecayed_magnitude"), row.get("as_of")
+        if magnitude is None or not filed:
+            continue
+        try:
+            days_since_filed = (as_of_date - datetime.strptime(filed[:10], "%Y-%m-%d").date()).days
+        except ValueError:
+            continue
+        freshness = institutional_decay(days_since_filed, cfg.get("half_life_days", 45),
+                                        cfg.get("max_age_days", 135))
+        points = round(magnitude * freshness, 2)
+        if not points:
+            continue
+        diagnostics["tickers_matched"] += 1
+        signals[ticker] = {
+            "source": "SEC EDGAR Form 13F-HR (curated active managers, monthly screen)",
+            "score_points": points,
+            "days_since_filed": days_since_filed,
+            "notes": [*(row.get("notes") or []), f"{days_since_filed}d since 13F filed"],
+        }
+    return signals, diagnostics
+
+
+def collect_congressional_signals(symbols, *, as_of=None, screen_payload=None):
+    """Fold the weekly-published congress screen into a reward-only score input.
+
+    No live FMP calls here: ``build_congress_screen.py`` runs on its own weekly schedule
+    and is the source of record. Reads ``public/data/screens/congress-trades.json``
+    (already-classified rows carrying ``flags`` from ``build_congress_screen.classify``,
+    including the ``EXTRAORDINARY_BUY`` tier) and scores each requested ticker with
+    ``congress_signal.score_congressional_buying`` - see that module and
+    ``advisor_engine.py``'s module docstring for why this is scored at all.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/congress-trades.json") or {}))
+    results = payload.get("results") or []
+    diagnostics = {"requested": len(symbols), "screen_available": bool(results),
+                   "tickers_matched": 0}
+    if not results:
+        return {}, diagnostics
+    as_of_date = as_of or date.today()
+    cfg = SETTINGS.get("modifiers", {}).get("congressional_buying", {})
+    by_ticker = {}
+    for row in results:
+        symbol = str(row.get("symbol") or "").upper()
+        if symbol:
+            by_ticker.setdefault(symbol, []).append(row)
+
+    signals = {}
+    for symbol in symbols:
+        ticker = str(symbol).upper()
+        rows = by_ticker.get(ticker)
+        if not rows:
+            continue
+        points, detail = score_congressional_buying(rows, ticker, as_of=as_of_date, config=cfg)
+        if not points:
+            continue
+        diagnostics["tickers_matched"] += 1
+        signals[ticker] = {
+            "source": "Congressional STOCK Act disclosures (weekly screen)",
+            "score_points": points,
+            "notes": detail.get("notes") or [],
+        }
+    return signals, diagnostics
 
 
 def fetch_optional(client, function, **params):
@@ -640,7 +1025,8 @@ def macro_context(client):
     return result
 
 
-def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
+def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
+            news_diagnostics=None):
     """The cheap first pass: quote snapshot, two years of prices, and any Alpha Vantage extras.
 
     Financial statements are deliberately left out here. They cost several requests per
@@ -650,7 +1036,13 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
     fallback = yahoo_snapshot(symbol, yf, ticker_obj)
     history = yahoo_history(symbol, yf, ticker_obj=ticker_obj)
     overview = daily = news_payload = insiders = {}
-    news = []
+    # Yahoo's own per-symbol news, for every polled company rather than the five-symbol
+    # Alpha shortlist. This is what gives the catalyst model a universe to work over: entity
+    # sentiment covered 3 of 877 rows, so the model was complete and had nothing to score.
+    # One cached request per symbol, and a dark feed degrades this company's news leg rather
+    # than the run.
+    news = fetch_company_news(symbol, ticker_obj, EVIDENCE_CONFIG, cache=CACHE,
+                              diagnostics=news_diagnostics)
     marketaux_failed = False
     alpha_failed = False
     if symbol in alpha_symbols:
@@ -658,20 +1050,26 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
         time.sleep(delay)
         daily = fetch_optional(client, "TIME_SERIES_DAILY", symbol=symbol, outputsize="compact")
         time.sleep(delay)
+        # Provider-scored articles are merged ahead of the Yahoo baseline rather than
+        # replacing it. They carry real entity sentiment, which outranks the headline lexicon
+        # wherever the same story appears in both; clustering folds the duplicates together
+        # and the provider reading wins the resulting event outright.
+        provider_news = []
         if marketaux_client:
             try:
                 marketaux_payload = marketaux_client.news(
                     symbols=symbol, filter_entities="true", language="en",
                     group_similar="true", limit=10,
                 )
-                news = advisor_articles(marketaux_payload, symbol)
+                provider_news = advisor_articles(marketaux_payload, symbol)
             except (MarketauxError, OSError, ValueError) as exc:
                 marketaux_failed = True
                 LOG.warn(f"{symbol}: Marketaux news unavailable ({type(exc).__name__}: {exc})")
         if not marketaux_client or marketaux_failed:
             news_payload = fetch_optional(client, "NEWS_SENTIMENT", tickers=symbol, sort="LATEST", limit="12")
-            news = compact_news(news_payload, symbol)
+            provider_news = compact_news(news_payload, symbol)
             time.sleep(delay)
+        news = [*provider_news, *news]
         insiders = fetch_optional(client, "INSIDER_TRANSACTIONS", symbol=symbol)
         alpha_history = daily_history(daily)
         # Alpha Vantage only returns 100 sessions; Yahoo's two years wins whenever it exists.
@@ -681,6 +1079,19 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
 
     primary = overview_snapshot(symbol, overview, history["closes"]) if overview else {"ticker": symbol}
     snapshot = merge_snapshots(primary, fallback)
+    # Fail loud before anything ranks on it. merge_snapshots takes the first non-null value
+    # across providers with no arbitration, so this is also where a cross-provider
+    # disagreement is visible for the last time -- see plausibility.screen.
+    snapshot, plausibility_violations = screen_plausibility(snapshot, cross_source={
+        "market_cap": {source: payload.get("market_cap")
+                       for source, payload in (("alpha_vantage", primary), ("yahoo", fallback or {}))},
+        "price": {source: payload.get("price")
+                  for source, payload in (("alpha_vantage", primary), ("yahoo", fallback or {}))},
+    })
+    if plausibility_violations:
+        LOG.warn(f"{symbol}: dropped {len(plausibility_violations)} implausible field(s): "
+                 + ", ".join(f"{item['field']}={item['value']!r} ({item['rule']})"
+                             for item in plausibility_violations))
     if not snapshot.get("name") or len(history["closes"]) < 21:
         raise ValueError("insufficient company snapshot or price history")
     closes = history["closes"]
@@ -688,6 +1099,7 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None):
     return {
         "symbol": symbol, "snapshot": snapshot, "extended": {}, "ticker_obj": ticker_obj,
         "history": history, "news": news,
+        "plausibility_violations": plausibility_violations,
         "insider_activity": insider_summary(insiders),
         "alpha_enriched": symbol in alpha_symbols and bool(overview),
         "alpha_failed": alpha_failed,
@@ -716,7 +1128,8 @@ def enrich(contexts, limit, delay, priority=()):
     ranked = [by_symbol[symbol] for symbol in priority if symbol in by_symbol]
     ranked.extend(context for context in ranked_by_score if context["symbol"] not in set(priority))
     diagnostics = {"attempted": 0, "info_fetch_failed": 0, "statement_fetch_failed": 0,
-                   "derivation_failed": 0, "no_statement_data": 0}
+                   "derivation_failed": 0, "no_statement_data": 0,
+                   "implausible_fields_dropped": 0}
     enriched = 0
     for context in ranked[:limit]:
         diagnostics["attempted"] += 1
@@ -730,7 +1143,18 @@ def enrich(contexts, limit, delay, priority=()):
             observations = dict(context["snapshot"].get("observations") or {})
             for metric_id, rows in extended_observations(extended).items():
                 observations.setdefault(metric_id, []).extend(rows)
-            context["snapshot"] = {**context["snapshot"], **extended, "observations": observations}
+            merged = {**context["snapshot"], **extended, "observations": observations}
+            # Statement enrichment is where the derived ratios arrive -- ROIC, accruals and
+            # incremental margin among them -- so it needs its own screening pass.
+            merged, violations = screen_plausibility(merged)
+            if violations:
+                context["plausibility_violations"] = [*(context.get("plausibility_violations") or []),
+                                                      *violations]
+                diagnostics["implausible_fields_dropped"] += len(violations)
+                LOG.warn(f"{context['symbol']}: dropped {len(violations)} implausible derived "
+                         "field(s): " + ", ".join(f"{item['field']}={item['value']!r} "
+                                                  f"({item['rule']})" for item in violations))
+            context["snapshot"] = merged
             enriched += 1
         elif extended:
             diagnostics["no_statement_data"] += 1
@@ -817,8 +1241,79 @@ def carry_forward_rows(research, symbols, previous_payload):
     ]
 
 
-def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=()):
-    """Choose prior leaders, five best outsiders, then any explicit portfolio coverage."""
+def rotation_slice(symbols, already_polling, previous_payload, size):
+    """The stalest symbols outside this refresh's priority set, oldest poll first.
+
+    A fast refresh polls the previous leaders plus the portfolio, which is a fixed set: a
+    name that is not a prior leader is never re-fetched by a fast run, so it carries the
+    same row forward indefinitely and quietly falls behind whatever fields later runs
+    started publishing. That is not a display problem - it decides which names a screen can
+    evaluate at all. The published dataset showed the result plainly: 756 of 837 screen rows
+    had no 60-day drawdown, so the reversal screen could only ever see the 121 names polled
+    that day, out of a 926-name universe.
+
+    Rotating the oldest rows back in bounds that staleness: with the default sizes the whole
+    universe is re-polled within a handful of fast refreshes, and a symbol that has never
+    been polled at all sorts first because it has no timestamp to compare.
+    """
+    if size <= 0:
+        return ()
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    candidates = [symbol for symbol in symbols if symbol not in already_polling]
+    candidates.sort(key=lambda symbol: (
+        str((previous_rows.get(symbol) or {}).get("last_polled_at") or ""),
+        symbol,
+    ))
+    return tuple(candidates[:size])
+
+
+def enrichment_rotation(preliminary_symbols, already_selected, previous_payload, size):
+    """The statement-starved names that have waited longest, oldest first.
+
+    Statement-derived metrics -- ROIC, EV/EBITDA, Piotroski, Altman, accruals -- only ever
+    existed for the previous run's top 20 plus five challengers, because that is who
+    ``select_enrichment_priority`` sent to ``enrich``. A name outside that set could never
+    acquire the metrics that would let it out-rank an incumbent, so the leaderboard could
+    only ever rediscover what a weaker version of the model already liked. That is a
+    self-reinforcing ranking bias, and no amount of scoring-methodology work touches it.
+
+    This is the same fix ``rotation_slice`` applies to price polling, one layer up: a
+    bounded slice of the never-enriched and longest-unenriched names joins every refresh,
+    so the whole universe passes through statement enrichment over a predictable number of
+    runs instead of never. A symbol that has never been enriched sorts first because it has
+    no timestamp to compare.
+    """
+    if size <= 0:
+        return ()
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    candidates = [symbol for symbol in preliminary_symbols if symbol not in already_selected]
+    def last_enriched(symbol):
+        row = previous_rows.get(symbol) or {}
+        # A row that never enriched has no statement coverage; sort it ahead of every row
+        # that did, regardless of when either was last polled.
+        if not (row.get("fundamental_detail") or {}).get("raw_score"):
+            return ("", symbol)
+        return (str(row.get("last_polled_at") or ""), symbol)
+    candidates.sort(key=last_enriched)
+    return tuple(candidates[:size])
+
+
+def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
+                               full_universe_research=False, previous_payload=None,
+                               rotation_size=ENRICHMENT_ROTATION_SIZE):
+    """Prior leaders, the best outsiders, a rotation of statement-starved names, then holdings.
+
+    ``full_universe_research=True`` is the A3 research-mode override: ``previous_top`` is
+    ignored completely (not truncated, not consulted - the parameter is simply never read
+    in this branch) and every preliminary candidate becomes a challenger, so the resulting
+    priority ordering cannot depend on what a prior, weaker model happened to rank highly.
+
+    Outside that override, the rotation slice is what stops the ordinary path from being
+    a closed loop -- see ``enrichment_rotation``.
+    """
+    if full_universe_research:
+        priority = tuple(dict.fromkeys((*preliminary_symbols, *portfolio_symbols)))
+        return (), tuple(preliminary_symbols), priority
     incumbents = tuple(
         symbol for symbol in previous_top
         if symbol in available
@@ -830,7 +1325,10 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
         symbol for symbol in preliminary_symbols
         if symbol not in incumbent_set
     )[:CHALLENGER_ENRICH_LIMIT]
-    priority = tuple(dict.fromkeys((*incumbents, *challengers, *portfolio_symbols)))
+    selected = incumbent_set | set(challengers) | set(portfolio_symbols)
+    rotation = enrichment_rotation(preliminary_symbols, selected, previous_payload or {},
+                                   rotation_size)
+    priority = tuple(dict.fromkeys((*incumbents, *challengers, *rotation, *portfolio_symbols)))
     return incumbents, challengers, priority
 
 
@@ -897,6 +1395,9 @@ def run():
     # published dataset (see the carry-forward merge below `research.sort`).
     universe_mode = os.getenv("ADVISOR_UNIVERSE_MODE", "full").strip().lower()
     fast_universe_size = max(1, int(os.getenv("ADVISOR_FAST_UNIVERSE_SIZE", "100")))
+    # Sized so a ~900-name universe is fully re-polled within roughly seven fast refreshes
+    # rather than only when a full sweep happens to run.
+    fast_rotation_size = max(0, int(os.getenv("ADVISOR_FAST_ROTATION_SIZE", "120")))
     alpha_enabled = os.getenv("ALPHA_DISABLE", "").lower() not in {"1", "true", "yes"}
     alpha_limit = max(0, min(5, int(os.getenv("ALPHA_ENRICH_LIMIT", "5")))) if alpha_enabled else 0
     previous_top = previous_ranked_symbols()
@@ -917,10 +1418,13 @@ def run():
 
     if universe_mode == "fast":
         fast_priority = set(previous_top_symbols(previous_payload, fast_universe_size)) | set(portfolio_symbols)
-        refresh_symbols = tuple(symbol for symbol in symbols if symbol in fast_priority) or symbols
+        rotation = set(rotation_slice(symbols, fast_priority, previous_payload, fast_rotation_size))
+        refresh_symbols = tuple(
+            symbol for symbol in symbols if symbol in fast_priority or symbol in rotation
+        ) or symbols
         LOG.info(f"Fast refresh: polling {len(refresh_symbols)}/{len(symbols)} symbols "
-                 f"(prior top {fast_universe_size} plus portfolio holdings); the rest carry "
-                 "forward from the last full refresh")
+                 f"(prior top {fast_universe_size}, portfolio holdings, and the {len(rotation)} "
+                 "stalest names in the tail); the rest carry forward until their turn")
     else:
         refresh_symbols = symbols
 
@@ -939,9 +1443,11 @@ def run():
 
     contexts, all_news = [], []
     alpha_failures, marketaux_failures, research_failures = [], [], []
+    yahoo_news_diagnostics = new_news_diagnostics()
     for symbol in refresh_symbols:
         try:
-            context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client)
+            context = collect(symbol, client, yf, alpha_symbols, delay, marketaux_client,
+                              news_diagnostics=yahoo_news_diagnostics)
             contexts.append(context)
             all_news.extend(context["news"])
             if context["alpha_failed"]:
@@ -981,7 +1487,7 @@ def run():
         row = build_research(
             context["symbol"], context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended={},
-            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+            sector_percentile=(preliminary_peer_diagnostics.get(context["symbol"]) or {}).get("ordinal"),
             macro_regime=fred_regime,
         )
         preliminary.append(row)
@@ -1010,9 +1516,12 @@ def run():
     all_news.extend(discovery_news)
 
     incumbents, challengers, statement_priority = select_enrichment_priority(
-        previous_top, preliminary_symbols, available, portfolio_symbols
+        previous_top, preliminary_symbols, available, portfolio_symbols,
+        full_universe_research=FULL_UNIVERSE_RESEARCH,
+        previous_payload=previous_payload,
     )
-    enriched_count, enrichment_diagnostics = enrich(contexts, extended_limit, delay, statement_priority)
+    effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
+    enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)
 
     challenger_cfg = (SETTINGS.get("challengers") or {}).get(
         "cross_sectional_normalization", {}
@@ -1065,7 +1574,32 @@ def run():
     insider_candidates = tuple(dict.fromkeys(
         (*preliminary_symbols[:sec_limit], *portfolio_symbols)
     )) if sec.available else ()
-    insider_signals, sec_failures = collect_insider_signals(sec, insider_candidates)
+    insider_signals, sec_failures, sec_diagnostics = collect_insider_signals(sec, insider_candidates)
+    if sec_diagnostics["filings_unreadable"]:
+        LOG.warn(f"SEC Form 4: {sec_diagnostics['filings_unreadable']} of "
+                 f"{sec_diagnostics['filings_reviewed']} filings could not be parsed")
+
+    # Customer-concentration and geographic-concentration risk, from the same shortlist of
+    # candidates and the same rate-limited SEC client - see collect_filing_risk_signals for
+    # why this shares its cache keys with the theme layer's filing fetches. Customer
+    # concentration feeds the champion score as of Phase 3.3; geographic exposure stays
+    # challenger-only. See advisor_engine.apply_modifiers's docstring.
+    concentration_signals, geographic_signals, filing_risk_diagnostics = (
+        collect_filing_risk_signals(sec, insider_candidates)
+    )
+
+    # Institutional 13F, decayed by filing lag - reads build_institutional_screen.py's
+    # last monthly publish, no live SEC/OpenFIGI calls in this per-refresh path. Back in
+    # the champion score (see advisor_engine.apply_modifiers); the sampling-bias caveat
+    # (publicly traded, style=active managers only) is unchanged by the decay and is
+    # documented on the modifier itself, not fixed by it.
+    institutional_signals, institutional_diagnostics = collect_institutional_signals(insider_candidates)
+
+    # Congressional buying, reward-only - reads build_congress_screen.py's last weekly
+    # publish, no live FMP calls in this per-refresh path. This is advisor_engine.py's one
+    # scoped exception to "no political inputs" - see that module's docstring and
+    # congress_signal.py for what is and is not claimed.
+    congressional_signals, congressional_diagnostics = collect_congressional_signals(insider_candidates)
 
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
@@ -1079,23 +1613,62 @@ def run():
         ),
         "sec_form4": ("unavailable" if not sec.available else
                      "degraded" if sec_failures else "healthy"),
+        "sec_filing_risk": ("unavailable" if not sec.available else
+                            "degraded" if filing_risk_diagnostics["filings_unreadable"] else
+                            "healthy"),
+        "institutional_13f_screen": ("unavailable" if not institutional_diagnostics["screen_available"]
+                                     else "healthy"),
+        "congress_screen": ("unavailable" if not congressional_diagnostics["screen_available"]
+                            else "healthy"),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
     research = []
+    polled_at = datetime.now(timezone.utc).isoformat()
+    previous_rows = previous_rows_by_ticker(previous_payload)
     for context in contexts:
         symbol = context["symbol"]
         row = build_research(
             symbol, context["snapshot"], context["history"]["closes"], benchmark["closes"],
             context["news"], volumes=context["history"]["volumes"], extended=context["extended"],
-            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("value"),
+            sector_percentile=(peer_diagnostics.get(context["symbol"]) or {}).get("ordinal"),
             macro_regime=fred_regime,
             insider_activity=insider_signals.get(symbol),
+            institutional_ownership=institutional_signals.get(symbol),
+            congressional_activity=congressional_signals.get(symbol),
+            concentration_risk=concentration_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
+        row["institutional_ownership"] = institutional_signals.get(symbol)
+        row["congressional_activity"] = congressional_signals.get(symbol)
+        # concentration_risk is now a champion-path input (Phase 3.3, see
+        # advisor_engine.concentration_risk_modifier). geographic_exposure remains a display
+        # field and a challenger-only input - see geographic_concentration_modifier.
+        row["concentration_risk"] = concentration_signals.get(symbol)
+        row["geographic_exposure"] = geographic_signals.get(symbol)
+        # Expectation change - the leg the catalyst and analyst-conviction models were missing.
+        # The previous run's consensus target is the only comparison point that exists for
+        # target drift: Yahoo serves today's view and nothing else, which is precisely why
+        # the snapshot archive has to be written from day one.
+        estimate_detail = collect_estimate_detail(
+            symbol, context.get("ticker_obj"),
+            previous_target=(previous_rows.get(symbol) or {}).get("analyst_consensus_target"),
+        )
+        row["estimate_detail"] = estimate_detail
+        # Lifted flat alongside analyst_rating/analyst_target_upside, which already live at
+        # row level, so the point-in-time store archives them without having to learn about
+        # nested blocks. The consensus target only fills a gap - it never overwrites a value
+        # another source already resolved.
+        for field in ("revision_breadth_30d", "eps_revision_30d_pct", "net_upgrades_90d"):
+            if estimate_detail.get(field) is not None:
+                row[field] = estimate_detail[field]
+        if row.get("analyst_consensus_target") is None and estimate_detail.get("consensus_target") is not None:
+            row["analyst_consensus_target"] = estimate_detail["consensus_target"]
         row["alpha_enriched"] = context["alpha_enriched"]
+        # Every provider value this run refused to score, with the rule that refused it.
+        row["data_quality_violations"] = context.get("plausibility_violations") or []
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
         champion_variant = {
             "variant": "bands_champion",
@@ -1103,7 +1676,7 @@ def run():
             "score": row["score"],
             "base_score": row["base_score"],
             "raw_score": row["raw_score"],
-            "confidence": row["confidence"],
+            "data_coverage": row["data_coverage"],
             "components": row["components"],
             "fundamental_categories": row["fundamental_categories"],
             "normalized_metric_scores": normalized_metric_scores(row["fundamental_detail"]),
@@ -1118,19 +1691,66 @@ def run():
                 short_interest_ranks.get(symbol),
                 fred_regime,
                 insider_signals.get(symbol),
+                concentration_signals.get(symbol),
+                geographic_signals.get(symbol),
+                institutional_signals.get(symbol),
+                congressional_signals.get(symbol),
             ))
         elif cross_normalizer:
             row["score_variants"]["challenger"] = cross_sectional_challenger(
                 row, context["snapshot"], cross_normalizer,
             )
-        row["confidence_detail"] = confidence_components(
+        # Stamp the fetch time before the coverage decomposition reads it: it used to be
+        # stamped only after this loop, so freshness_component saw no data_fetched_at and
+        # published null -- with a false "freshness unavailable for this row" limitation --
+        # for every freshly polled row.
+        row.setdefault("data_fetched_at", polled_at)
+        row["data_coverage_detail"] = data_coverage_components(
             row, source_reliability=source_reliability_this_run,
         )
+        # Round 4 coverage floor: a name scored on too little of the intended metric
+        # weight keeps its diagnostics and challengers, but its champion score is not
+        # published as a ranked stance (docs/AUDIT-ROUND-4-FINDINGS.md, Task 6).
+        publishable, gate_reason = publication_gate(
+            (row.get("fundamental_detail") or {}).get("coverage"), SETTINGS)
+        row["publication_gate"] = {"published": publishable, "reason": gate_reason}
+        if not publishable:
+            row["stance"] = "INSUFFICIENT DATA"
+        # Every row in `research` was polled during this run by construction (carried-forward
+        # rows join `screen_universe` later and keep their older stamp), so the poll time is
+        # simply now. The next fast refresh reads it to decide what has waited longest.
+        row["last_polled_at"] = polled_at
+        # Dated evidence with per-event decay, published alongside the static component
+        # scores rather than replacing them: the screens read the events, the long-term
+        # score keeps reading the blended components it was calibrated on.
+        row["evidence"] = build_evidence(row, context["news"], EVIDENCE_CONFIG)
         research.append(row)
 
     research.sort(key=lambda row: row["score"], reverse=True)
+
+    # A layer that resolves to the same number for every company in the universe carries no
+    # information and must not be published as evidence. This failed loudly is the difference
+    # between catching the degenerate timeliness layer on its first run and shipping it for a
+    # year -- see research/audit/CURRENT_MODEL_AUDIT.md section 3.
+    assert_layers_vary(research, PUBLISHED_LAYERS)
+
     ranked = research[:publish_limit]
     ranked_tickers = {row["ticker"] for row in ranked}
+
+    # The trend-exposure layer runs as its own screen, deliberately outside the score. It
+    # is scored on the published leaders, every configured holding, and a bounded set of
+    # sector/peer-group neighbours of each theme's seed tickers - drawn only from names
+    # already scored this run, so a name that isn't a top fundamentals score today (the
+    # kind of name a sector-tailwind thesis is trying to catch before it re-rates) still
+    # gets evaluated. See themes.expand_theme_candidates for the full rationale. This runs
+    # before `screen_universe` is projected below so the lightweight rows it ships to the
+    # browser carry `theme_exposure` too, not just the published leaderboard.
+    theme_candidates = expand_theme_candidates(load_themes(), research, ranked, portfolio_symbols)
+    theme_screen = build_theme_layer(sec, theme_candidates)
+    theme_by_ticker = theme_screen.get("by_ticker") or {}
+    for row in research:
+        row["theme_exposure"] = theme_by_ticker.get(row["ticker"], [])
+
     # The momentum and 52-week-low screens rank on price behavior, not the fundamentals-led
     # composite score, so a strong screen candidate can rank outside the published leaderboard.
     # technical_detail and fundamental_categories are populated for the whole scored universe
@@ -1168,18 +1788,6 @@ def run():
     # Append this run's observations to the point-in-time store. It only becomes valuable
     # with time depth, so it starts accumulating now, well before any backtest needs it -
     # there is no way to reconstruct it retroactively from a provider that only serves today.
-    # The trend-exposure layer runs as its own screen, deliberately outside the score. It
-    # is scored on the published leaders plus every configured holding, because the SEC
-    # requests are per-company and the whole universe would be wasteful for a screen most
-    # names will not clear anyway.
-    theme_candidates = [*ranked, *(
-        row for row in research
-        if row["ticker"] in set(portfolio_symbols) and row["ticker"] not in ranked_tickers)]
-    theme_screen = build_theme_layer(sec, theme_candidates)
-    theme_by_ticker = theme_screen.get("by_ticker") or {}
-    for row in research:
-        row["theme_exposure"] = theme_by_ticker.get(row["ticker"], [])
-
     # Rows carry the raw metric values merged from their snapshot, which is what a later
     # backtest needs - the derived 0-100 scores can always be recomputed from them.
     # `research` only ever holds freshly polled rows now - carried-forward rows join
@@ -1227,11 +1835,19 @@ def run():
         "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",
+        "statement_health": statement_health(
+            [row.get("fundamental_detail") or {} for row in research], SETTINGS),
+        "price_archive_health": archive_health(),
         "universe_mode": universe_mode, "polled_count": len(refresh_symbols),
         "enrichment_selection": {
             "previous_top": list(incumbents),
             "challengers": list(challengers),
-            "priority_count": len(incumbents) + len(challengers),
+            "rotation_size": ENRICHMENT_ROTATION_SIZE,
+            "priority_count": len(statement_priority),
+            "note": "Statement enrichment previously covered only the prior run's top 20 "
+                    "plus five challengers, so a name outside that set could never acquire "
+                    "the metrics that would let it out-rank an incumbent. A rotation of "
+                    "statement-starved names now joins every refresh.",
         },
         "enrichment_diagnostics": enrichment_diagnostics,
         "normalization_distributions": {
@@ -1292,9 +1908,15 @@ def run():
         "cache": CACHE.stats(),
         "capability_status": {
             "form4_insider_transactions": {
-                "status": "available" if sec.available else "configuration_required",
+                "status": (
+                    "configuration_required" if not sec.available else
+                    "degraded" if sec_diagnostics["filings_unreadable"] else
+                    "available"
+                ),
                 "source": "SEC EDGAR",
                 "scored_symbols": len(insider_signals),
+                "filings_reviewed": sec_diagnostics["filings_reviewed"],
+                "filings_unreadable": sec_diagnostics["filings_unreadable"],
                 "note": "Open-market purchase/sale codes only, split routine vs opportunistic "
                         "and scored as a bounded decaying modifier; set SEC_USER_AGENT.",
             },
@@ -1314,9 +1936,114 @@ def run():
             },
             "analyst_revision_trends": {"status": "provider_required", "note": "Point-in-time estimate history is not supplied by current providers."},
             "guidance_beat_miss_history": {"status": "provider_required", "note": "Needs normalized company guidance and contemporaneous consensus snapshots."},
-            "backlog_growth": {"status": "filing_parser_required", "note": "Backlog is non-GAAP and must be extracted company-by-company from filings."},
-            "institutional_13f_changes": {"status": "mapping_required", "source": "SEC EDGAR", "note": "Filings are free; reliable CUSIP-to-ticker mapping is not."},
-            "fx_exposure": {"status": "filing_parser_required", "source": "SEC 10-K/10-Q", "note": "Needs filing-text extraction and issuer-specific normalization."},
+            "backlog_growth": {
+                "status": "available",
+                "source": "SEC EDGAR XBRL (dimensional contexts read from the raw filing)",
+                "note": "RevenueRemainingPerformanceObligation is XBRL-tagged, not free text - the "
+                        "prior 'filing_parser_required' status was wrong. The blocker was that "
+                        "company_concept/companyfacts return default (non-dimensional) facts only, "
+                        "and filers routinely tag this concept solely in SatisfactionPeriodAxis "
+                        "bands with no undimensioned total for those APIs to see. "
+                        "pipeline.xbrl_dimensions reads contexts out of the filing document "
+                        "directly instead, and EdgarThemeSignals.backlog_values sums the bands "
+                        "when no total exists. Wired into ai_infrastructure.yaml. Per-symbol "
+                        "coverage has not yet been measured on a live production run.",
+            },
+            "institutional_13f_changes": {
+                "status": ("unavailable" if not institutional_diagnostics["screen_available"] else
+                          "available"),
+                "source": "SEC EDGAR Form 13F-HR (curated, publicly traded, style=active "
+                         "managers, via pipeline/build_institutional_screen.py's monthly "
+                         "publish) + OpenFIGI CUSIP mapping",
+                "screen_generated_at": institutional_diagnostics["screen_generated_at"],
+                "tickers_matched": institutional_diagnostics["tickers_matched"],
+                "note": "Back in the champion score as a bounded, two-sided modifier "
+                        "('institutional_13f'), decayed by filing lag rather than treated "
+                        "as current - a 13F position is disclosed up to 45 days after "
+                        "quarter-end, and this reads the monthly screen's own publish "
+                        "date, not today, to compute that lag. Residual bias, not fixed "
+                        "by decay: restricting to publicly traded managers oversamples "
+                        "the largest passive indexers, mitigated (not eliminated) by "
+                        "defaulting to style=active-only managers - see "
+                        "pipeline/config/institutional_managers.json and "
+                        "pipeline/institutional_ownership.py's module docstring. "
+                        "Retroactive amendments (13F-HR/A) are handled explicitly: "
+                        "build_institutional_screen.manager_quarters groups by the "
+                        "period a filing covers rather than filing order, so an "
+                        "amendment supersedes the original it revises instead of being "
+                        "mistaken for a new quarter, and a value change is logged to "
+                        "pipeline/data/institutional_13f/revisions.jsonl rather than "
+                        "silently overwritten. Has never run against the live OpenFIGI "
+                        "endpoint or live 13F filings (no network access existed while "
+                        "this was written); verify CUSIP resolution rate and manager "
+                        "coverage on the first real run.",
+            },
+            "congressional_buying": {
+                "status": ("unavailable" if not congressional_diagnostics["screen_available"] else
+                          "available"),
+                "source": "STOCK Act disclosures via pipeline/build_congress_screen.py's "
+                         "weekly publish (Financial Modeling Prep)",
+                "tickers_matched": congressional_diagnostics["tickers_matched"],
+                "note": "Explicit, scoped exception to advisor_engine.py's 'no political "
+                        "inputs' principle - see that module's docstring. Reward-only "
+                        "modifier ('congressional_buying'): breadth x freshness of "
+                        "disclosed purchases, with a bonus for EXTRAORDINARY_BUY (a "
+                        "member's first-ever trade in a sub-$2B company, "
+                        "build_congress_screen.classify). A request to instead score "
+                        "whether Congress 'wouldn't let a stock/sector fail' was raised "
+                        "and declined - not implemented, see TODO.md. Evidentiary basis "
+                        "(Ziobrowski et al., JFQA 2004) predates the STOCK Act's 2012 "
+                        "disclosure regime; untested against the post-2012 world this "
+                        "reads. Has never run against live FMP data or a live congress "
+                        "screen publish (no network access existed while this was "
+                        "written); verify EXTRAORDINARY_BUY hit rate on the first real run.",
+            },
+            "fx_exposure": {
+                "status": "shadow_only",
+                "source": "SEC EDGAR XBRL (Revenues x StatementGeographicalAxis)",
+                "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
+                "geographic_tag_coverage": (
+                    round(filing_risk_diagnostics["geographic_tagged"] /
+                         filing_risk_diagnostics["filings_reviewed"], 3)
+                    if filing_risk_diagnostics["filings_reviewed"] else None
+                ),
+                "note": "Geographic revenue is XBRL-tagged, not free text - the prior "
+                        "'filing_parser_required' status was wrong for the same reason "
+                        "backlog_growth's was: company_concept/companyfacts return default "
+                        "(non-dimensional) facts only. Scored as single-country revenue "
+                        "concentration (pipeline/geographic_exposure.py) on the same "
+                        "risk-not-direction principle as customer_concentration_risk below, but "
+                        "kept out of the live score ('shadow_only', challenger score_variants "
+                        "only): revenue tagged by geography often reflects shipping destination "
+                        "or contracting entity rather than end demand (a contract manufacturer "
+                        "can book enormous 'China' revenue that is really an assembly step), so "
+                        "this needs spot-checking against real filings, and geographic_tag_"
+                        "coverage above needs measuring, before it penalizes a live score.",
+            },
+            "customer_concentration_risk": {
+                "status": "scored",
+                "source": "SEC EDGAR XBRL (ConcentrationRiskPercentage1)",
+                "filings_reviewed": filing_risk_diagnostics["filings_reviewed"],
+                "filings_unreadable": filing_risk_diagnostics["filings_unreadable"],
+                "concentration_tag_coverage": (
+                    round(filing_risk_diagnostics["concentration_tagged"] /
+                         filing_risk_diagnostics["filings_reviewed"], 3)
+                    if filing_risk_diagnostics["filings_reviewed"] else None
+                ),
+                "note": "ASC 280 customer-concentration percentage read from dimensional XBRL "
+                        "(pipeline/concentration_risk.py), scored as a penalty-only modifier in "
+                        "the champion path as of Phase 3.3. The objection that kept it in shadow "
+                        "mode - that a penalty-only modifier firing only on tagged filers favors "
+                        "whichever companies never tagged the concept - is answered by separating "
+                        "'filing read, nothing disclosed' from 'no filing read': ASC 280-10-50-42 "
+                        "requires naming any customer at or above 10% of consolidated revenue, so "
+                        "a read filing with no such tag is affirmative evidence of diversified "
+                        "revenue, while an unreadable filing is scored nothing at all. Distinct "
+                        "from the theme layer's "
+                        "customer_concentration_to_spenders: the percentage gives magnitude, not "
+                        "the customer's identity, so it cannot replace that signal's name-matching "
+                        "against confirmed theme spenders.",
+            },
         },
         "source_status": {
             "alpha_vantage": {"status": "disabled_for_intraday_refresh" if not client else
@@ -1354,10 +2081,47 @@ def run():
                         "quoteSummary-backed endpoints and fail independently of price data; "
                         "a company still enriches on statement frames alone if only .info fails.",
             },
+            "yahoo_news": {
+                # `unreadable` is the status that matters here. yfinance passes Yahoo's stream
+                # items through untouched, so this pipeline parses an undocumented shape that
+                # can change without warning; when it does, every item fails to normalize and
+                # the catalyst model quietly loses its only universe-wide input. Publishing
+                # received-versus-readable makes that a visible failure rather than a silent
+                # one, the same lesson the Form 4 layer taught below.
+                "status": (
+                    "unavailable" if yahoo_news_diagnostics["symbols_requested"] == 0 else
+                    "unreadable" if (yahoo_news_diagnostics["items_received"] > 0
+                                     and yahoo_news_diagnostics["items_normalized"] == 0) else
+                    "degraded" if (yahoo_news_diagnostics["feed_failures"]
+                                   or yahoo_news_diagnostics["symbols_with_news"] == 0) else
+                    "healthy"
+                ),
+                **yahoo_news_diagnostics,
+                "note": "Per-symbol company news for the whole polled universe. Yahoo publishes "
+                        "no sentiment score, so event direction is derived from the "
+                        "evidence_events.headline_direction_markers phrase lexicon - a "
+                        "deterministic keyword match, not a sentiment model. A headline that "
+                        "matches no phrase is recorded as coverage and scores nothing.",
+            },
             "sec_form4": {
-                "status": "unavailable" if not sec.available else ("degraded" if sec_failures else "healthy"),
+                # Distinguish "we never asked" from "we asked and SEC EDGAR failed us" -
+                # confidence.py excludes the former from source reliability (an unconfigured
+                # feature is not evidence of anything) and counts the latter as a real
+                # failure, same as any other provider outage.
+                "status": (
+                    "unavailable_not_configured" if not sec.available else
+                    "unavailable_provider_error" if sec_failures and not insider_signals else
+                    # Filings that download but cannot be parsed are a defect in this
+                    # client, not a quiet insider market, and they must not be published as
+                    # a healthy layer that simply found nothing.
+                    "degraded" if sec_failures or sec_diagnostics["filings_unreadable"] else
+                    "healthy"
+                ),
                 "failed_symbols": sec_failures,
                 "scored_symbols": len(insider_signals),
+                "filings_reviewed": sec_diagnostics["filings_reviewed"],
+                "filings_unreadable": sec_diagnostics["filings_unreadable"],
+                "symbols_with_filings": sec_diagnostics["symbols_with_filings"],
                 "note": "Set SEC_USER_AGENT to enable free source-of-record insider transactions" if not sec.available else
                         "Open-market Form 4 codes P/S only; routine calendar trades score zero, "
                         "opportunistic cluster activity is a bounded decaying modifier",
@@ -1373,6 +2137,9 @@ def run():
         universe=symbols,
         published=ranked_tickers,
         model_version=SETTINGS["model"]["semantic_version"],
+        # So a dark provider's modifier is snapshotted as unavailable coverage rather than
+        # as a neutral 0.0 that later validation would grade as real evidence.
+        source_status=payload.get("source_status"),
     )
     score_history = build_score_history(read_snapshots())
     for row in research:

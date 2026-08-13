@@ -1,0 +1,57 @@
+{
+  "adaptive_buckets": [],
+  "fixed_score_bands": [
+    {
+      "bucket": "80+",
+      "minimum_observations": 30,
+      "observations": 0,
+      "shortfall": 30,
+      "status": "insufficient_data"
+    },
+    {
+      "bucket": "75-79",
+      "minimum_observations": 30,
+      "observations": 0,
+      "shortfall": 30,
+      "status": "insufficient_data"
+    },
+    {
+      "bucket": "70-74",
+      "minimum_observations": 30,
+      "observations": 0,
+      "shortfall": 30,
+      "status": "insufficient_data"
+    },
+    {
+      "bucket": "65-69",
+      "minimum_observations": 30,
+      "observations": 0,
+      "shortfall": 30,
+      "status": "insufficient_data"
+    },
+    {
+      "bucket": "60-64",
+      "minimum_observations": 30,
+      "observations": 0,
+      "shortfall": 30,
+      "status": "insufficient_data"
+    },
+    {
+      "bucket": "0-59",
+      "minimum_observations": 30,
+      "observations": 0,
+      "shortfall": 30,
+      "status": "insufficient_data"
+    }
+  ],
+  "horizon_sessions": 63,
+  "minimum_observations_per_bucket": 30,
+  "note": "historical_calibration stays null in confidence_detail until at least one bucket clears the observation minimum. A score bucket with no closed forward windows has no outcome distribution, and inventing one would turn an admitted unknown into a false claim.",
+  "observations": 0,
+  "publishable_to_confidence_detail": false,
+  "required_ic_periods": 24,
+  "schema_version": 1,
+  "status": "insufficient_data",
+  "target": "residual_forward_return",
+  "what_would_populate_this": "24 monthly point-in-time periods whose 63-session forward windows have closed; roughly two years of production refreshes, or a point-in-time reconstruction from SEC EDGAR filing dates"
+}

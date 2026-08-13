@@ -43,6 +43,13 @@ TRACKED_FIELDS = (
     "stock_comp_to_revenue", "capex_to_depreciation", "days_sales_outstanding_trend",
     "inventory_days_trend", "short_percent_of_float", "days_to_cover", "beta",
     "analyst_rating", "analyst_target_upside", "analyst_count", "statement_periods",
+    "average_dollar_volume",
+    # Expectation change. Yahoo serves only today's view of every one of these, so a later
+    # backtest can reconstruct what the model knew on a past date from this archive or from
+    # nowhere at all - which is the whole argument for writing it from day one rather than
+    # once the first backtest needs it.
+    "analyst_consensus_target", "revision_breadth_30d", "eps_revision_30d_pct",
+    "net_upgrades_90d",
 )
 
 # How long a field stays trustworthy before it should be flagged, in hours. Statement-derived
@@ -57,6 +64,7 @@ DEFAULT_FIELD_TTL_HOURS = {
     "short_percent_of_float": 168,
     "days_to_cover": 168,
     "beta": 720,
+    "average_dollar_volume": 48,
     "default": 24 * 100,          # statement-derived metrics: a quarter plus slack
 }
 

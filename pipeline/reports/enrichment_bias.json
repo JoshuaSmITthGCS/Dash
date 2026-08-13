@@ -1,0 +1,131 @@
+{
+  "generated_at": "2026-08-07T17:14:37.612467+00:00",
+  "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
+  "coverage_by_collection": {
+    "research": {
+      "collection": "research",
+      "total_rows": 40,
+      "categories": {
+        "accounting_quality": {
+          "scored": 40,
+          "total": 40
+        },
+        "capital_allocation": {
+          "scored": 40,
+          "total": 40
+        },
+        "financial_health": {
+          "scored": 39,
+          "total": 40
+        },
+        "growth": {
+          "scored": 40,
+          "total": 40
+        },
+        "profitability": {
+          "scored": 40,
+          "total": 40
+        },
+        "valuation": {
+          "scored": 40,
+          "total": 40
+        }
+      }
+    },
+    "screen_universe": {
+      "collection": "screen_universe",
+      "total_rows": 343,
+      "categories": {
+        "accounting_quality": {
+          "scored": 110,
+          "total": 343
+        },
+        "capital_allocation": {
+          "scored": 110,
+          "total": 343
+        },
+        "financial_health": {
+          "scored": 311,
+          "total": 343
+        },
+        "growth": {
+          "scored": 343,
+          "total": 343
+        },
+        "profitability": {
+          "scored": 343,
+          "total": 343
+        },
+        "valuation": {
+          "scored": 343,
+          "total": 343
+        }
+      }
+    }
+  },
+  "enriched_vs_non_enriched": {
+    "enriched_count": 150,
+    "non_enriched_count": 233,
+    "score": {
+      "enriched": {
+        "n": 150,
+        "mean": 67.39,
+        "median": 67.3,
+        "stdev": 7.56
+      },
+      "non_enriched": {
+        "n": 233,
+        "mean": 40.82,
+        "median": 41.4,
+        "stdev": 6.07
+      }
+    },
+    "sector_distribution": {
+      "enriched": {
+        "Technology": 38,
+        "Financial Services": 33,
+        "Consumer Cyclical": 18,
+        "Healthcare": 16,
+        "Industrials": 16,
+        "Energy": 11,
+        "Consumer Defensive": 4,
+        "Communication Services": 3,
+        "Real Estate": 3,
+        "Basic Materials": 3,
+        "HEALTHCARE": 2,
+        "TECHNOLOGY": 1,
+        "CONSUMER CYCLICAL": 1,
+        "FINANCIAL SERVICES": 1
+      },
+      "non_enriched": {
+        "Industrials": 48,
+        "Consumer Cyclical": 36,
+        "Healthcare": 31,
+        "Technology": 24,
+        "Consumer Defensive": 21,
+        "Real Estate": 21,
+        "Financial Services": 17,
+        "Utilities": 16,
+        "Basic Materials": 13,
+        "Energy": 3,
+        "Communication Services": 3
+      }
+    },
+    "market_cap_comparison": {
+      "status": "not_measurable",
+      "rows_with_market_cap": 37,
+      "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
+    },
+    "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
+  },
+  "full_universe_comparison": {
+    "status": "blocked_network_policy",
+    "measures": [
+      "top_40_overlap_pct: full-universe-enriched top 40 vs the current production top 40",
+      "spearman: rank correlation between full-universe-enriched score and production score",
+      "forward_return_delta: realized forward return of full-universe-only discoveries vs the production top 40"
+    ],
+    "reproduction_command": "FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py",
+    "reason": "Requires live Yahoo/SEC statement data for the full screen universe (374 names); this environment's network egress is blocked for every provider fetch_advisor.py uses."
+  }
+}

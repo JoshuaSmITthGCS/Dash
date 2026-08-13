@@ -35,7 +35,7 @@ export function useAlerts() {
   }, [currentUser])
 
   const createRule = async (input) => {
-    if (!currentUser) return { success: false, error: 'Sign in before creating an alert.' }
+    if (!currentUser) return { success: false, error: 'Reconnect Firebase before creating an alert.' }
     if (rules.length >= alertConfig.maximum_rules_per_user) return { success: false, error: `You can create up to ${alertConfig.maximum_rules_per_user} alert rules.` }
     const checked = validateAlertRule(input)
     if (!checked.valid) return { success: false, error: checked.error }
@@ -47,7 +47,7 @@ export function useAlerts() {
   }
 
   const updateRule = async (id, patch) => {
-    if (!currentUser) return { success: false, error: 'Sign in before changing an alert.' }
+    if (!currentUser) return { success: false, error: 'Reconnect Firebase before changing an alert.' }
     await updateDoc(doc(db, 'alerts', currentUser.uid, 'rules', id), { ...patch, updatedAt: new Date().toISOString() })
     return { success: true }
   }

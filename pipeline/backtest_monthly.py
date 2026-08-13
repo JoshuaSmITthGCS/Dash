@@ -16,6 +16,7 @@ import argparse
 import json
 import math
 import os
+import statistics
 import sys
 import time
 from calendar import monthrange
@@ -34,6 +35,10 @@ from backtest_historical import (  # noqa: E402
     rank_week,
 )
 from common import LOG, load_json  # noqa: E402
+from costs import estimate_cost_bps  # noqa: E402
+from portfolio_construction import apply_controls  # noqa: E402
+
+COST_MODELS = ("flat", "tiered")
 
 
 def _month_end(year, month):
@@ -183,6 +188,29 @@ def build_panel(periods, universe_data, leg_weights):
     }
 
 
+def committed_benchmark(ticker="SPY"):
+    """The benchmark's daily series from committed ETF history, for offline reproduction.
+
+    ``--cache-only`` loads every universe symbol from ``pipeline/data/backtest_cache`` but the
+    benchmark was still fetched live, so the whole backtest failed at the last hop with no
+    network. ``public/data/etf/SPY.json`` carries 8,437 real sessions and is already committed
+    for the ETF comparison feature, which is more history than the 10-year fetch it replaces.
+
+    Returns None rather than raising if the series is absent, so the caller's existing
+    "could not fetch" path still handles it.
+    """
+    path = os.path.join(os.path.dirname(HERE), "public", "data", "etf", f"{ticker}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as handle:
+        series = (json.load(handle).get("price_series") or {}).get("fund") or []
+    rows = [row for row in series if row.get("date") and row.get("adjusted_close") is not None]
+    if not rows:
+        return None
+    return {"dates": [str(row["date"])[:10] for row in rows],
+            "closes": [float(row["adjusted_close"]) for row in rows]}
+
+
 def _price_maps(universe_data):
     return {
         symbol: dict(zip(data["dates"], data["closes"]))
@@ -190,11 +218,86 @@ def _price_maps(universe_data):
     }
 
 
+def trailing_liquidity_and_volatility(ticker_data, as_of, window=60):
+    """60-trading-day median dollar volume and annualized volatility as of a date, using
+    only the trailing window (no look-ahead) from a ticker's already-fetched daily history.
+
+    This is the same shape of input costs.py.estimate_cost_bps expects, computed from data
+    the monthly backtest already holds in memory -- no additional fetch required once
+    ``universe_data`` (with volumes) is populated.
+    """
+    if not ticker_data:
+        return None, None
+    dates = ticker_data.get("dates") or []
+    closes = ticker_data.get("closes") or []
+    volumes = ticker_data.get("volumes") or []
+    idx = None
+    for position, day in enumerate(dates):
+        if day <= as_of:
+            idx = position
+        else:
+            break
+    if idx is None or idx < 1:
+        return None, None
+    start = max(0, idx - window + 1)
+    trail_closes = closes[start:idx + 1]
+    trail_volumes = volumes[start:idx + 1] if volumes else []
+    dollar_volumes = [
+        close * volume for close, volume in zip(trail_closes, trail_volumes)
+        if close and volume
+    ]
+    median_dollar_volume_60d = statistics.median(dollar_volumes) if dollar_volumes else None
+    returns = [
+        trail_closes[i] / trail_closes[i - 1] - 1
+        for i in range(1, len(trail_closes))
+        if trail_closes[i - 1]
+    ]
+    annualized_volatility = (
+        statistics.pstdev(returns) * math.sqrt(252) if len(returns) > 1 else None
+    )
+    return median_dollar_volume_60d, annualized_volatility
+
+
+def _rebalance_turnover_and_cost(current, target, value, day, *, cost_model,
+                                 cost_scenario, transaction_cost_bps, universe_data):
+    """Turnover is always the same portfolio-weight math; only the cost estimate changes
+    with ``cost_model``. ``flat`` reproduces the pre-existing single-rate behavior exactly
+    so old results stay reproducible; ``tiered`` prices every name's own trade through
+    costs.py using that name's trailing liquidity and volatility as of ``day``.
+    """
+    names = set(current) | set(target)
+    turnover = 0.5 * sum(abs(current.get(name, 0) - target.get(name, 0)) for name in names)
+    if not current and target:
+        turnover = 1.0
+    if cost_model == "flat":
+        return turnover, value * turnover * transaction_cost_bps / 10000
+    total_cost = 0.0
+    for name in names:
+        trade_weight = abs(current.get(name, 0) - target.get(name, 0))
+        trade_dollar_value = trade_weight * value
+        if trade_dollar_value <= 0:
+            continue
+        median_dollar_volume_60d, annualized_volatility = trailing_liquidity_and_volatility(
+            universe_data.get(name), day,
+        )
+        estimate = estimate_cost_bps(
+            median_dollar_volume_60d=median_dollar_volume_60d,
+            annualized_volatility=annualized_volatility,
+            trade_dollar_value=trade_dollar_value,
+            scenario=cost_scenario,
+        )
+        total_cost += trade_dollar_value * estimate["total_bps"] / 10000
+    return turnover, total_cost
+
+
 def simulate_locked_portfolio(plans, universe_data, benchmark, initial_capital,
-                              transaction_cost_bps=10.0):
+                              transaction_cost_bps=10.0, cost_model="flat",
+                              cost_scenario="base"):
     """Mark holdings daily; only replace weights on a predeclared execution date."""
     if not plans:
         return {"history": [], "rebalances": [], "metrics": {}}
+    if cost_model not in COST_MODELS:
+        raise ValueError(f"unsupported cost model: {cost_model}")
     price_maps = _price_maps(universe_data)
     benchmark_map = dict(zip(benchmark["dates"], benchmark["closes"]))
     executions = {plan["execution_date"]: plan for plan in plans}
@@ -233,11 +336,11 @@ def simulate_locked_portfolio(plans, universe_data, benchmark, initial_capital,
             weight_sum = sum(target.values())
             target = {ticker: weight / weight_sum for ticker, weight in target.items()} if weight_sum else {}
             current = {ticker: amount / value for ticker, amount in dollars.items()} if value else {}
-            names = set(current) | set(target)
-            turnover = 0.5 * sum(abs(current.get(name, 0) - target.get(name, 0)) for name in names)
-            if not dollars and target:
-                turnover = 1.0
-            cost = value * turnover * transaction_cost_bps / 10000
+            turnover, cost = _rebalance_turnover_and_cost(
+                current, target, value, day,
+                cost_model=cost_model, cost_scenario=cost_scenario,
+                transaction_cost_bps=transaction_cost_bps, universe_data=universe_data,
+            )
             value -= cost
             total_turnover += turnover
             total_cost += cost
@@ -356,7 +459,30 @@ def main():
     parser.add_argument("--top-n", type=int, default=20)
     parser.add_argument("--initial-capital", type=float, default=100000.0)
     parser.add_argument("--report-lag-days", type=int, default=REPORT_LAG_DAYS_DEFAULT)
-    parser.add_argument("--transaction-cost-bps", type=float, default=10.0)
+    parser.add_argument("--transaction-cost-bps", type=float, default=10.0,
+                        help="One-way cost in bps for --cost-model=flat (default 10.0)")
+    parser.add_argument("--cost-model", choices=COST_MODELS, default="flat",
+                        help="'flat' preserves the original single-rate cost (default, "
+                             "reproduces prior results exactly). 'tiered' prices each "
+                             "name's own trade through costs.py using its trailing "
+                             "60-day liquidity and volatility")
+    parser.add_argument("--cost-scenario", choices=("optimistic", "base", "stress"),
+                        default="base",
+                        help="Which costs.py scenario to use when --cost-model=tiered")
+    # Turnover-control challengers (pipeline/portfolio_construction.py). All default to off,
+    # so omitting them reproduces the champion's plain top-N selection exactly.
+    parser.add_argument("--rank-buffer", type=float, default=None,
+                        help="hold an incumbent while its rank stays inside this multiple of "
+                             "top-n (e.g. 1.5); sell once past it")
+    parser.add_argument("--min-holding-months", type=int, default=None,
+                        help="hold a name at least this many months unless its rank collapses "
+                             "past 3x top-n")
+    parser.add_argument("--score-smoothing", type=float, default=None,
+                        help="exponentially weighted score smoothing alpha in (0, 1]; 1.0 is "
+                             "a no-op")
+    parser.add_argument("--replacement-margin", type=float, default=None,
+                        help="score points by which a challenger must beat the incumbent it "
+                             "would displace")
     parser.add_argument("--delay", type=float, default=0.1)
     parser.add_argument("--workers", type=int, default=6,
                         help="Concurrent cached Yahoo fetches (default 6)")
@@ -410,7 +536,8 @@ def main():
         LOG.info(f"Fetch complete: {len(universe_data)}/{len(symbols)} usable")
         return 0
 
-    benchmark = fetch_benchmark(yf, "SPY", args.delay, history_period="10y")
+    benchmark = committed_benchmark("SPY") if args.cache_only else fetch_benchmark(
+        yf, "SPY", args.delay, history_period="10y")
     if not benchmark:
         LOG.error("Could not fetch SPY")
         return 1
@@ -421,6 +548,7 @@ def main():
 
     plans, panel_periods = [], []
     leg_weights = panel_leg_weights(load_json("settings.json", from_config=True) or {})
+    holdings, held_months, previous_scores = [], {}, {}
     for index, (signal_date, execution_date) in enumerate(calendar, 1):
         spy_idx = price_index(benchmark["dates"], signal_date)
         spy_to_date = benchmark["closes"][:spy_idx + 1] if spy_idx is not None else []
@@ -428,10 +556,20 @@ def main():
             universe_data, spy_to_date, signal_date, args.report_lag_days,
             allow_current_shares=False, allow_empty_fundamentals=True,
         )
-        weights = appeal_weights(rows, args.top_n)
+        eligible = [row for row in rows if row.get("price") and row.get("score") is not None]
+        selected = apply_controls(
+            holdings, eligible, args.top_n,
+            previous_scores=previous_scores, held_months=held_months,
+            rank_buffer=args.rank_buffer, minimum_months=args.min_holding_months,
+            smoothing_alpha=args.score_smoothing,
+            replacement_margin=args.replacement_margin,
+        )
+        chosen = {row["ticker"]: row for row in eligible if row["ticker"] in set(selected)}
+        ordered = [chosen[ticker] for ticker in selected if ticker in chosen]
+        weights = appeal_weights(ordered, args.top_n)
         picks = [
             {"ticker": row["ticker"], "appeal_score": row["score"], "weight": round(weights[row["ticker"]], 8)}
-            for row in rows[:args.top_n] if row["ticker"] in weights
+            for row in ordered if row["ticker"] in weights
         ]
         plans.append({
             "signal_date": signal_date.isoformat(),
@@ -450,26 +588,70 @@ def main():
             "forward_returns_by_horizon": forwards,
             "forward_returns": forwards[PANEL_PRIMARY_HORIZON],
         })
+        carried = set(selected) & set(holdings)
+        held_months = {ticker: held_months.get(ticker, 0) + 1 if ticker in carried else 0
+                       for ticker in selected}
+        previous_scores = {row["ticker"]: row["score"] for row in eligible}
+        holdings = selected
         if index % 12 == 0:
             LOG.info(f"Ranked {index}/{len(calendar)} months; latest signal {signal_date}")
 
     portfolio = simulate_locked_portfolio(
         plans, universe_data, benchmark, args.initial_capital, args.transaction_cost_bps,
+        cost_model=args.cost_model, cost_scenario=args.cost_scenario,
     )
     benchmark_result = simulate_benchmark(
         benchmark, plans[0]["execution_date"], args.initial_capital,
         args.transaction_cost_bps,
     )
+    from validation.experiment_manifest import build_manifest
+    manifest = build_manifest(
+        strategy=f"appeal-top{args.top_n}-monthly",
+        start_date=plans[0]["signal_date"], end_date=plans[-1]["signal_date"],
+        normalization_mode=str(__import__("scorer").SETTINGS.get("normalization_mode")),
+        scoring_mode="champion",
+        rebalance_frequency="monthly",
+        universe_tickers=list(universe_data),
+        execution_assumptions={"execution": "next SPY trading-day close after signal",
+                               "weighting": "appeal score proportional",
+                               "report_lag_days": args.report_lag_days},
+        cost_model={"transaction_cost_bps_one_way": args.transaction_cost_bps,
+                    "cost_model": args.cost_model, "cost_scenario": args.cost_scenario},
+        price_cache_dir=args.cache_dir,
+        factor_files=[path for path in (
+            os.path.join(HERE, "data", "factors", "fama_french_5_monthly.zip"),
+            os.path.join(HERE, "data", "factors", "momentum_monthly.zip"),
+        ) if os.path.exists(path)],
+        calendar=[p["signal_date"] for p in plans],
+        extra={"turnover_controls": {
+            "rank_buffer": args.rank_buffer,
+            "minimum_holding_months": args.min_holding_months,
+            "score_smoothing_alpha": args.score_smoothing,
+            "replacement_margin": args.replacement_margin,
+        }},
+    )
     result = {
         "generated_at": datetime.utcnow().isoformat() + "Z",
+        "experiment_manifest": manifest,
         "method": {
             "signal": "Dash appeal score at month-end adjusted close",
             "execution": "next SPY trading-day close after signal",
             "selection": f"top {args.top_n}",
+            "turnover_controls": {
+                "rank_buffer": args.rank_buffer,
+                "minimum_holding_months": args.min_holding_months,
+                "score_smoothing_alpha": args.score_smoothing,
+                "replacement_margin": args.replacement_margin,
+                "active": any(value is not None for value in (
+                    args.rank_buffer, args.min_holding_months,
+                    args.score_smoothing, args.replacement_margin)),
+            },
             "weighting": "appeal score divided by sum of selected appeal scores",
             "fundamental_availability": f"quarter end plus {args.report_lag_days} calendar days",
             "prices": "Yahoo adjusted close (split and dividend adjusted)",
             "transaction_cost_bps_one_way": args.transaction_cost_bps,
+            "cost_model": args.cost_model,
+            "cost_scenario": args.cost_scenario if args.cost_model == "tiered" else None,
         },
         "bias_disclosures": {
             "signal_return_lookahead": False,

@@ -115,6 +115,11 @@ def classify_profile(snapshot):
         return "utility"
     if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal")):
         return "commodity_producer"
+    # Ahead of the generic profit-margin branches: a semiconductor company's capex and
+    # inventory cycles are not readable through industrial cutoffs regardless of whether it
+    # is currently profitable.
+    if "semiconductor" in text:
+        return "semiconductor"
     pre_profit = snapshot.get("profit_margin") is not None and snapshot.get("profit_margin") < 0
     if pre_profit and "biotech" in text:
         return "pre_profit_biotechnology"
@@ -133,16 +138,68 @@ def profile_rules(profile):
     return rules
 
 
+# The legacy scorer and the v2 layer name three metrics differently. Applicability is one
+# authority, so a rule or registry declaration written under either name must govern both:
+# without this, an explicit ``sales_multiple`` suppression never fired on the v2 path (which
+# asked about ``price_to_sales``) and the registry's ``trailing_revenue_growth`` declaration
+# never reached the legacy path (which asked about ``revenue_growth``).
+LEGACY_ALIASES = {
+    "revenue_growth": "trailing_revenue_growth",
+    "earnings_growth": "trailing_eps_growth",
+    "sales_multiple": "price_to_sales",
+}
+_CANONICAL_ALIASES = {canonical: legacy for legacy, canonical in LEGACY_ALIASES.items()}
+
+
+def _alias_counterpart(metric_id):
+    return LEGACY_ALIASES.get(metric_id) or _CANONICAL_ALIASES.get(metric_id)
+
+
 def applicability_for(metric_id, profile):
     if profile == "etf":
         return {"status": "suppressed", "replaced_by": None, "reason": "Corporate metric does not apply to ETFs."}
-    rule = profile_rules(profile).get(metric_id)
+    rules = profile_rules(profile)
+    counterpart = _alias_counterpart(metric_id)
+    rule = rules.get(metric_id) or (rules.get(counterpart) if counterpart else None)
     if rule:
         return {"status": rule[0], "replaced_by": rule[1], "reason": rule[2]}
     registry = METRIC_REGISTRY["metrics"].get(metric_id)
+    if registry is None and counterpart:
+        registry = METRIC_REGISTRY["metrics"].get(counterpart)
     if registry and profile not in registry.get("applicability_profiles", []):
         return {"status": "suppressed", "replaced_by": None, "reason": "Metric registry does not declare this profile applicable."}
     return {"status": "applied", "replaced_by": None, "reason": None}
+
+
+def suppressed_metrics(profile, metric_ids):
+    """Metrics this business profile cannot be meaningfully scored on.
+
+    The live scorer used two hardcoded tuples (``FINANCIAL_EXEMPT``,
+    ``TANGIBLE_BOOK_SECTORS``) keyed off Yahoo's sector string, while the registry's correct
+    per-profile rules governed only the shadow path. That is why an insurer's DSO trend was
+    scored at 80/100 with 215 receivable days published beside it, and why its price-to-book
+    and debt-to-equity -- the two canonical insurer inputs -- were forced to null. One
+    authority now serves both paths: this delegates to ``applicability_for`` so the explicit
+    matrix rules *and* the registry's per-profile declarations govern the legacy path too,
+    under either metric-ID namespace. Previously only the explicit rules were checked here,
+    so a registry-declared inapplicability (an insurer's revenue growth) stayed scored on
+    the champion while the shadow path suppressed it.
+    """
+    if profile == "etf":
+        return set(metric_ids)
+    return {metric_id for metric_id in metric_ids
+            if applicability_for(metric_id, profile)["status"] in ("suppressed", "replaced")}
+
+
+def required_for_score(profile, category):
+    """Metrics whose absence prevents ``category`` from publishing for this profile.
+
+    Renormalizing a category onto whatever happened to resolve is right for a *minor*
+    missing input and wrong for a defining one. An insurer's valuation without price-to-book
+    is not a thin valuation reading, it is not a valuation reading.
+    """
+    declared = APPLICABILITY.get("required_for_score", {}).get(profile, {})
+    return tuple(declared.get(category, ()))
 
 
 def reconcile(metric_id, observations):

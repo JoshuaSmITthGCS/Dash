@@ -1,255 +1,94 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
+  browserLocalPersistence,
   onAuthStateChanged,
-  updateProfile,
-  updatePassword as firebaseUpdatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider
+  setPersistence,
+  signInWithCustomToken,
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
-import { auth, db } from './firebase'
+import { auth } from './firebase'
 
 const AuthContext = createContext(null)
+const JOSH_PROFILE = { displayName: 'Josh', email: 'jbmsmusic05@gmail.com' }
+const SOLO_SESSION_URL = '/.netlify/functions/solo-session'
+const AUTH_REQUEST_TIMEOUT_MS = 15000
 
-// Family color themes (auto-assigned by display name)
-export const FAMILY_THEMES = {
-  'Dad': {
-    name: 'Black & Gold',
-    primary: '#000000',
-    accent: '#FFD700',
-    bg: '#0a0a0a',
-    bgCard: '#1a1a1a'
-  },
-  'Jay': {
-    name: 'Black & Red',
-    primary: '#000000',
-    accent: '#FF0000',
-    bg: '#0a0000',
-    bgCard: '#1a0000'
-  },
-  'Mom': {
-    name: 'Crimson & Cream',
-    primary: '#DC143C',
-    accent: '#FFFDD0',
-    bg: '#1a0505',
-    bgCard: '#2a0808'
-  },
-  'default': {
-    name: 'Forest Green & Cream',
-    primary: '#228B22',
-    accent: '#FFFDD0',
-    bg: '#051a05',
-    bgCard: '#082a08'
-  }
+// Firebase still owns the session and every Firestore request. This solo workspace receives
+// its owner token silently instead of asking for a password, then keeps it on the device.
+const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.warn('Persistent authentication is unavailable on this device:', error)
+})
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_resolve, reject) => {
+      window.setTimeout(() => reject(new Error('Cloud session timed out')), ms)
+    }),
+  ])
+}
+
+async function requestSoloSession() {
+  const response = await withTimeout(fetch(SOLO_SESSION_URL, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { Accept: 'application/json' },
+  }), AUTH_REQUEST_TIMEOUT_MS)
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok || !payload.token) throw new Error(payload.error || 'Cloud session was unavailable')
+  return payload.token
 }
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)
-  const [userProfile, setUserProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState('')
+  const sessionRequest = useRef(null)
 
-  // Get theme for a user based on display name
-  const getThemeForUser = (displayName) => {
-    return FAMILY_THEMES[displayName] || FAMILY_THEMES['default']
-  }
-
-  // Create user profile in Firestore
-  const createUserProfile = async (user, displayName) => {
-    const theme = getThemeForUser(displayName)
-    const profileData = {
-      uid: user.uid,
-      email: user.email,
-      displayName,
-      colorTheme: theme,
-      darkMode: true, // Default to dark mode
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
-    }
-
-    await setDoc(doc(db, 'users', user.uid), profileData)
-    return profileData
-  }
-
-  // Load user profile from Firestore
-  const loadUserProfile = async (user) => {
-    const docRef = doc(db, 'users', user.uid)
-    const docSnap = await getDoc(docRef)
-
-    if (docSnap.exists()) {
-      const profile = docSnap.data()
-      // Update last login
-      await updateDoc(docRef, {
-        lastLogin: new Date().toISOString()
-      })
-      return profile
-    }
-
-    return null
-  }
-
-  // Switch palettes by flipping one attribute. The full light and dark token sets live in
-  // variables.css, so a theme change can never leave light text sitting on a white card.
-  // Legacy profile colors remain stored for backwards compatibility. Interface appearance
-  // is now owned by PreferencesContext so a profile fetch cannot override System mode.
-  const applyTheme = () => {}
-
-  // Sign up new user
-  const signup = async (email, password, displayName) => {
-    try {
-      const result = await createUserWithEmailAndPassword(auth, email, password)
-      await updateProfile(result.user, { displayName })
-      const profile = await createUserProfile(result.user, displayName)
-      setUserProfile(profile)
-      applyTheme(profile.colorTheme, profile.darkMode)
-      return { success: true, user: result.user }
-    } catch (error) {
-      console.error('Signup error:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Sign in existing user
-  const login = async (email, password) => {
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password)
-      const profile = await loadUserProfile(result.user)
-      if (profile) {
-        setUserProfile(profile)
-        applyTheme(profile.colorTheme, profile.darkMode)
-      }
-      return { success: true, user: result.user }
-    } catch (error) {
-      console.error('Login error:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Log out
-  const logout = async () => {
-    try {
-      await signOut(auth)
-      setUserProfile(null)
-      // Reset to default theme
-      applyTheme(FAMILY_THEMES['default'], true)
-      return { success: true }
-    } catch (error) {
-      console.error('Logout error:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Update user theme
-  const updateTheme = async (newTheme, darkMode) => {
-    if (!currentUser) return
-
-    try {
-      const docRef = doc(db, 'users', currentUser.uid)
-      await updateDoc(docRef, {
-        colorTheme: newTheme,
-        darkMode
-      })
-
-      setUserProfile(prev => ({
-        ...prev,
-        colorTheme: newTheme,
-        darkMode
-      }))
-
-      applyTheme(newTheme, darkMode)
-      return { success: true }
-    } catch (error) {
-      console.error('Theme update error:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Toggle dark/light mode
-  const toggleDarkMode = async () => {
-    if (!currentUser || !userProfile) return
-
-    const newDarkMode = !userProfile.darkMode
-    await updateTheme(userProfile.colorTheme, newDarkMode)
-  }
-
-  // Change password
-  const changePassword = async (currentPassword, newPassword) => {
-    if (!currentUser || !currentUser.email) {
-      return { success: false, error: 'No user logged in' }
-    }
-
-    try {
-      // Re-authenticate first (required by Firebase for password change)
-      const credential = EmailAuthProvider.credential(
-        currentUser.email,
-        currentPassword
-      )
-      await reauthenticateWithCredential(currentUser, credential)
-
-      // Update password
-      await firebaseUpdatePassword(currentUser, newPassword)
-
-      return { success: true, message: 'Password updated successfully!' }
-    } catch (error) {
-      console.error('Password change error:', error)
-      let errorMessage = 'Failed to change password'
-
-      if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Current password is incorrect'
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'New password is too weak (min 6 characters)'
-      }
-
-      return { success: false, error: errorMessage }
-    }
-  }
-
-  // Listen for auth state changes
-  useEffect(() => {
-    // Auth should never hold the research UI hostage when Firebase is slow or offline.
-    // The observer can still populate the session later; after a short fallback we render the
-    // signed-out state with a recoverable login surface.
-    const fallback = window.setTimeout(() => setLoading(false), 1200)
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user)
+  const connectCloudData = useCallback(async () => {
+    if (sessionRequest.current) return sessionRequest.current
+    setLoading(true)
+    setAuthError('')
+    sessionRequest.current = (async () => {
+      await authPersistenceReady
+      const token = await requestSoloSession()
+      const result = await withTimeout(signInWithCustomToken(auth, token), AUTH_REQUEST_TIMEOUT_MS)
+      setCurrentUser(result.user)
       setLoading(false)
-      window.clearTimeout(fallback)
+      return result.user
+    })()
 
-      if (user) {
-        try {
-          const profile = await loadUserProfile(user)
-          if (profile) {
-            setUserProfile(profile)
-            applyTheme(profile.colorTheme, profile.darkMode)
-          }
-        } catch (error) {
-          // A profile metadata failure must not invalidate the authenticated Firebase user.
-          console.error('Profile load error:', error)
-        }
-      } else {
-        setUserProfile(null)
-      }
-    })
-
-    return () => {
-      window.clearTimeout(fallback)
-      unsubscribe()
+    try {
+      return await sessionRequest.current
+    } catch (error) {
+      console.error('Cloud session error:', error)
+      setAuthError('Cloud portfolio data is temporarily unavailable.')
+      setLoading(false)
+      return null
+    } finally {
+      sessionRequest.current = null
     }
   }, [])
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user)
+      if (user) {
+        setAuthError('')
+        setLoading(false)
+      } else {
+        connectCloudData()
+      }
+    })
+
+    return unsubscribe
+  }, [connectCloudData])
+
   const value = {
     currentUser,
-    userProfile,
+    userProfile: JOSH_PROFILE,
     loading,
-    signup,
-    login,
-    logout,
-    updateTheme,
-    toggleDarkMode,
-    changePassword,
-    FAMILY_THEMES
+    authError,
+    retryAuth: connectCloudData,
   }
 
   return (
@@ -261,8 +100,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
 }

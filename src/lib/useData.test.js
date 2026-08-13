@@ -69,6 +69,22 @@ describe('useData local caching', () => {
     expect(localStorage.getItem('dash:last-refresh:' + other)).toBeTruthy()
   })
 
+  it('paints from the Cache API layer when a payload was too big for localStorage', async () => {
+    const payload = { data: { generated_at: '2026-08-01T00:00:00Z', research: [] }, cachedAt: 1754000000000 }
+    const fakeCache = {
+      match: vi.fn().mockResolvedValue({ json: () => Promise.resolve(payload) }),
+      put: vi.fn(), delete: vi.fn(),
+    }
+    vi.stubGlobal('caches', { open: vi.fn().mockResolvedValue(fakeCache), delete: vi.fn().mockResolvedValue(true) })
+    // Network revalidation never resolves - the cached copy alone must reach the screen.
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
+
+    const hook = renderHook(() => useData('big-fixture.json'))
+    await waitFor(() => expect(hook.result.current.data).toEqual(payload.data))
+    expect(hook.result.current.fromCache).toBe(true)
+    expect(hook.result.current.loading).toBe(false)
+  })
+
   it('ignores a stale response after the requested file changes', async () => {
     let resolveFirst
     const firstResponse = new Promise((resolve) => { resolveFirst = resolve })

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  alignSeries, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
+  alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, trackedAllTimeEarnings, trailingCashFlowPace,
+  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -53,6 +53,36 @@ describe('portfolio report analytics', () => {
     ], '2026-01-01', '2026-01-11', true)
     expect(result.returnPct).toBeCloseTo(12, 8)
     expect(result.weightedCapital).toBe(125)
+  })
+
+  it('treats a new position funded by new money as a contribution, not strategy gain', () => {
+    const rows = [{ type: 'external_contribution', amount: 1000, effectiveDate: '2026-06-01' }]
+    expect(netInvestedCapital(rows)).toMatchObject({ value: 1000, deposits: 1000, withdrawals: 0 })
+    const dietz = modifiedDietzReturn(1000, 2200, rows, '2026-01-01', '2026-07-01', true)
+    // The $1000 contribution explains $1000 of the $1200 jump; only the remaining $200 is
+    // attributed to the strategy, instead of the whole jump looking like investment gain.
+    expect(dietz.netExternalFlows).toBe(1000)
+    expect(dietz.gain).toBe(200)
+  })
+
+  it('annualizes a realized return over an arbitrary span', () => {
+    expect(annualizeReturnPct(12, '2026-01-01', '2026-07-02')).toBeCloseTo(25.5, 1)
+    expect(annualizeReturnPct(null, '2026-01-01', '2026-07-01')).toBeNull()
+    expect(annualizeReturnPct(5, '2026-01-01', '2026-01-01')).toBeNull()
+  })
+
+  it('refuses to annualize a span shorter than the given minimum', () => {
+    // 18 days of live tracking stretched to a year would wildly overstate the rate.
+    expect(annualizeReturnPct(10.1, '2026-07-20', '2026-08-07', 30)).toBeNull()
+    expect(annualizeReturnPct(10.1, '2026-07-20', '2026-08-07')).not.toBeNull()
+    expect(annualizeReturnPct(10.1, '2026-01-01', '2026-08-07', 30)).not.toBeNull()
+  })
+
+  it('slices a series to only dates on or after a cutoff', () => {
+    const series = { dates: ['2026-06-01', '2026-07-19', '2026-07-20', '2026-08-01'], values: [10, 11, 12, 13] }
+    expect(sliceSeriesFrom(series, '2026-07-20')).toMatchObject({ dates: ['2026-07-20', '2026-08-01'], values: [12, 13] })
+    expect(sliceSeriesFrom(series, '2027-01-01')).toBeNull()
+    expect(sliceSeriesFrom(null, '2026-07-20')).toBeNull()
   })
 
   it('excludes processing transfers from actual gains and the observed contribution pace', () => {
@@ -252,5 +282,54 @@ describe('covariance shrinkage', () => {
   it('handles an empty or missing matrix without throwing', () => {
     expect(shrinkCovarianceMatrix([])).toEqual([])
     expect(shrinkCovarianceMatrix(null)).toBeNull()
+  })
+})
+
+describe('underwaterProfile', () => {
+  // A fall, a long crawl back, a new high, then a second shallower fall it is still in.
+  const dates = []
+  const values = []
+  const add = (day, value) => { dates.push(new Date(Date.parse('2025-01-01T00:00:00Z') + day * 86400000).toISOString().slice(0, 10)); values.push(value) }
+  add(0, 100); add(30, 120); add(60, 90); add(200, 110); add(300, 121); add(330, 112); add(360, 115)
+  const series = { dates, values }
+
+  it('reports how long the portfolio sat below its high, not just how deep it went', () => {
+    const reading = underwaterProfile(series)
+    expect(reading.available).toBe(true)
+    // Peak on day 30, back above it on day 300: 270 days underwater. Counting the four
+    // observations in between would have called it a four-day dip.
+    expect(reading.longestUnderwaterDays).toBe(270)
+    expect(reading.deepestDrawdownPct).toBeCloseTo(-25, 5)
+    expect(reading.recoveryDaysForDeepest).toBe(270)
+  })
+
+  it('measures the current spell from the high-water mark, not the last observation', () => {
+    const reading = underwaterProfile(series)
+    expect(reading.stillUnderwater).toBe(true)
+    expect(reading.highWaterDate).toBe(dates[4])
+    expect(reading.currentUnderwaterDays).toBe(60)
+    expect(reading.currentDrawdownPct).toBeCloseTo((115 / 121 - 1) * 100, 5)
+  })
+
+  it('leaves recovery null while the deepest fall has not been recovered', () => {
+    // Null is the answer here. A zero would read as "recovered immediately".
+    const sinking = { dates: dates.slice(0, 3), values: [100, 120, 90] }
+    const reading = underwaterProfile(sinking)
+    expect(reading.recoveryDaysForDeepest).toBeNull()
+    expect(reading.stillUnderwater).toBe(true)
+    expect(reading.longestUnderwaterDays).toBe(30)
+  })
+
+  it('reports zero days underwater for a portfolio at its high', () => {
+    const climbing = { dates: dates.slice(0, 3), values: [100, 110, 130] }
+    const reading = underwaterProfile(climbing)
+    expect(reading.stillUnderwater).toBe(false)
+    expect(reading.currentUnderwaterDays).toBe(0)
+    expect(reading.currentDrawdownPct).toBe(0)
+  })
+
+  it('needs two dated values before it will answer', () => {
+    expect(underwaterProfile(null).available).toBe(false)
+    expect(underwaterProfile({ dates: ['2025-01-01'], values: [100] }).available).toBe(false)
   })
 })

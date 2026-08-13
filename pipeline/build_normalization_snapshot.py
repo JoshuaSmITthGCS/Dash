@@ -59,7 +59,7 @@ def main():
                     "normalization_mode": SETTINGS.get("normalization_mode", "bands"),
                     "score": row.get("score"),
                     "base_score": row.get("base_score"),
-                    "confidence": row.get("confidence"),
+                    "data_coverage": row.get("data_coverage"),
                     "components": row.get("components"),
                     "fundamental_categories": row.get("fundamental_categories"),
                     "normalized_metric_scores": normalized_metric_scores(
