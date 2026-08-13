@@ -249,15 +249,19 @@ def position_dollars(tier, book_dollars=DEFAULT_BOOK_DOLLARS):
 
 
 UPSIDE_NOTE = (
-    "Predicted upside is what the tier's alpha assumption implies for this row, not a forecast "
-    "of the price. It is the tier's assumed gross alpha shared out across the book in "
-    "proportion to each row's composite score, less that row's own round-trip cost, over one "
-    "holding period, measured against the universe rather than as a total return. Three things "
-    "it inherits and cannot escape: the 8.8bps/month assumption in ALPHA_NOTE, which is a "
-    "convention and not a measurement, the linear alpha-in-score model, which is the standard "
-    "approximation and not an estimated relationship, and a spread proxy that is not a measured "
-    "spread. This model has no out-of-sample record. Read the number as a cost-aware ranking "
-    "with a scale attached, never as an expected return.")
+    "Predicted upside adds three things and each is a different kind of number. First, how far "
+    "this name has actually travelled over a window this long in the price history held, taken "
+    "as the median of overlapping windows - that is the term that sets the scale, it is "
+    "measured rather than assumed, and it includes whatever the market did over that period, so "
+    "it is not alpha. Second, this row's share of the tier's assumed alpha, which is the "
+    "model's opinion and is a convention rather than a measurement (see ALPHA_NOTE). Third, "
+    "minus this row's own round-trip cost. "
+    "Read the size of the number as coming almost entirely from the first term: the model's "
+    "edge is a fraction of a percent against a typical move of several percent, so a large "
+    "upside means this name usually moves a lot in this much time, not that the model is "
+    "confident. Roughly 400 sessions of history is one particular market period and a rising "
+    "one, so these medians are optimistic as a long-run base rate. Past travel is not a "
+    "forecast, the windows overlap heavily, and this model has no out-of-sample record.")
 
 
 def alpha_scale(scored, config, tier, alpha_bps_per_month=ASSUMED_GROSS_ALPHA_BPS_PER_MONTH):
@@ -309,6 +313,14 @@ def row_economics(row, tier, book_dollars=DEFAULT_BOOK_DOLLARS, scenario="base",
     scaled = alpha_bps is not None and math.isfinite(alpha_bps)
     alpha = alpha_bps if scaled else expected_alpha_bps(tier, alpha_bps_per_month)
     net = alpha - round_trip
+
+    # What this name has actually done over a window of this length. This is the term that
+    # sets the scale of the published number, and it is the only measured one of the three.
+    hold = tier_spec(tier)["target_hold_sessions"]
+    travel = ((row.get("factors") or {}).get("forward_returns") or {}).get(str(hold))
+    typical = travel.get("p50") if travel else None
+    upside = (typical + net / 100) if typical is not None else net / 100
+
     return {
         "round_trip_bps": round_trip,
         "one_way_bps": one_way["total_bps"],
@@ -317,8 +329,16 @@ def row_economics(row, tier, book_dollars=DEFAULT_BOOK_DOLLARS, scenario="base",
         "expected_alpha_bps": round(alpha, 2),
         "alpha_basis": "scaled_by_composite_score" if scaled else "tier_flat",
         "net_edge_bps": round(net, 2),
-        # The same number as a percent, which is the unit the page leads with.
-        "predicted_upside_pct": round(net / 100, 3),
+        # The measured half, published separately so the reader can see how much of the upside
+        # is the name's own habit and how much is the model. It is almost all the first.
+        "typical_move_pct": typical,
+        "usual_low_pct": travel.get("p25") if travel else None,
+        "usual_high_pct": travel.get("p75") if travel else None,
+        "share_positive": travel.get("share_positive") if travel else None,
+        "history_windows": travel.get("windows") if travel else None,
+        "upside_basis": "historical_travel_plus_model_edge" if typical is not None
+                        else "model_edge_only_no_price_history",
+        "predicted_upside_pct": round(upside, 3),
         "cost_ratio": round(round_trip / alpha, 3) if alpha else None,
         "clears_cost": net > 0,
         "position_dollars": round(position_dollars(tier, book_dollars), 2),

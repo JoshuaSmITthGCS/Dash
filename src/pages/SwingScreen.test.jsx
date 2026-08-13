@@ -383,8 +383,8 @@ describe('SwingScreen readability', () => {
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
     // FAST tops the composite and does not clear its cost. That is the reading error the
     // verdict exists to prevent, so it must be stated on the row and not inferred.
-    expect(screen.getAllByText('Cost eats it').length).toBeGreaterThan(0)
-    expect(screen.getByText('Cost eats it').getAttribute('title')).toMatch(/one round trip costs/)
+    expect(screen.getAllByText('Don’t buy').length).toBeGreaterThan(0)
+    expect(screen.getByText('Don’t buy').getAttribute('title')).toMatch(/cost eats the edge/)
   })
 
   it('marks a screened-out name as such with its reason attached', () => {
@@ -396,9 +396,9 @@ describe('SwingScreen readability', () => {
     })]
     useData.mockReturnValue({ data, loading: false, error: null })
     renderScreen()
-    const verdict = screen.getByText('Screened out')
+    const verdict = screen.getByText('Don’t buy')
     expect(verdict).toBeVisible()
-    expect(verdict.getAttribute('title')).toMatch(/Heavily shorted/)
+    expect(verdict.getAttribute('title')).toMatch(/Screened out for short interest/)
   })
 
   it('says how strong a signal is in words, keeping the exact number one hover away', () => {
@@ -482,15 +482,24 @@ describe('SwingScreen upside and trend', () => {
     expect(screen.getByText('+0.48%')).toBeVisible()
   })
 
-  it('says the upside is versus the universe and not a price forecast', () => {
+  it('shows what the name usually does, and says it is past travel rather than a forecast', () => {
     const data = tieredPayload()
     data.tiers.S.results = [tierRow('AAA', {
       rank: 1, economics_predicted_upside_pct: 0.48, economics_round_trip_bps: 4.54,
       economics_expected_alpha_bps: 52.3, economics_clears_cost: true,
+      economics_typical_move_pct: 8.2, economics_usual_low_pct: -4.1,
+      economics_usual_high_pct: 19.6, economics_share_positive: 0.63,
+      economics_history_windows: 335, economics_net_edge_bps: 47.8,
     })]
     useData.mockReturnValue({ data, loading: false, error: null })
     renderScreen()
-    expect(screen.getByText('+0.48%').getAttribute('title')).toMatch(/Versus the universe, not a total return/)
+    const cell = screen.getByText('+0.48%').closest('td')
+    expect(cell.getAttribute('title')).toMatch(/usually moved \+8\.20%/)
+    expect(cell.getAttribute('title')).toMatch(/middle half -4\.10% to \+19\.60%/)
+    expect(cell.getAttribute('title')).toMatch(/up in 63% of 335 overlapping windows/)
+    expect(cell.getAttribute('title')).toMatch(/Past travel, not a forecast/)
+    // The measured range is on the row itself, not only in a tooltip.
+    expect(screen.getByText('-4.10% to +19.60%')).toBeVisible()
   })
 
   it('shows a negative upside as negative rather than hiding it', () => {
@@ -498,7 +507,7 @@ describe('SwingScreen upside and trend', () => {
     const { container } = renderScreen()
     fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
     expect(screen.getByText('-0.03%')).toBeVisible()
-    expect(container.querySelector('td.down')).toBeTruthy()
+    expect(container.querySelector('.swing-upside span.down')).toBeTruthy()
   })
 
   it('says where the price sits in its own range', () => {

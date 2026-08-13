@@ -73,29 +73,53 @@ const TREND_TONE = {
  * composite whose round trip exceeds its expected alpha reads as the best idea on the page and
  * is the worst, and no amount of staring at two adjacent numbers makes that jump out.
  */
-// Sort order for the verdict column: best standing first when sorted descending.
-const VERDICT_ORDER = { 'In book': 3, Ranked: 2, 'Cost eats it': 1, 'Screened out': 0, 'Held out': 0 }
+// Three states, ordered best-first when sorted descending.
+const VERDICT_ORDER = { 'Worth buying': 2, 'Maybe': 1, 'Don’t buy': 0 }
 
+/**
+ * Three words, from what the screen already published.
+ *
+ * This is the one column that reads as advice, so it is worth being exact about what stands
+ * behind it. It combines three things already on the row - whether the name cleared this
+ * tier's gates, whether it ranks inside the book, and whether the model's edge survives its
+ * own round-trip cost - and says nothing the other columns do not. It is not a
+ * recommendation, it inherits every assumption in UPSIDE_NOTE, and the model behind it has no
+ * out-of-sample record. The disclaimer under the table says so and must stay there.
+ */
 function verdictFor(row) {
   if (!row.eligibility) {
     const why = (row.reason_codes || []).join(', ')
-    if (row.short_interest?.suppressed) {
-      return { label: 'Screened out', tone: 'cool', title: `Heavily shorted. ${why}` }
+    return {
+      label: 'Don’t buy', tone: 'cool',
+      title: row.short_interest?.suppressed
+        ? `Screened out for short interest. ${why}`
+        : `Did not clear this tier’s gates. ${why}`,
     }
-    return { label: 'Held out', tone: 'cool', title: why || 'Did not clear this tier’s gates' }
   }
-  const edge = row.economics_predicted_upside_pct
+  // The model's own edge, before this name's historical travel is added. A name can travel a
+  // long way in this much time and still be one the model has no edge on, and that is exactly
+  // the case this branch exists to catch.
+  const edge = row.economics_net_edge_bps
   if (edge != null && edge <= 0) {
     return {
-      label: 'Cost eats it', tone: 'watch',
-      title: `Ranks here, but one round trip costs ${row.economics_round_trip_bps} bps against `
-        + `${row.economics_expected_alpha_bps} bps of implied alpha over the whole hold.`,
+      label: 'Don’t buy', tone: 'cool',
+      title: `One round trip costs ${row.economics_round_trip_bps} bps against `
+        + `${row.economics_expected_alpha_bps} bps of modelled edge over the whole hold, so the `
+        + `cost eats the edge. Any upside shown is this name’s usual travel, not the model.`,
     }
   }
   if (row.current_membership) {
-    return { label: 'In book', tone: 'high', title: 'Ranks above this tier’s entry percentile and its expected alpha covers its round trip.' }
+    return {
+      label: 'Worth buying', tone: 'high',
+      title: 'Ranks inside this tier’s book and the modelled edge covers its round-trip cost. '
+        + 'A research filter under the assumptions on this page, not a recommendation.',
+    }
   }
-  return { label: 'Ranked', tone: 'neutral', title: 'Eligible and scored, but below this tier’s entry percentile.' }
+  return {
+    label: 'Maybe', tone: 'watch',
+    title: 'Clears the gates and its edge covers its cost, but it ranks below this tier’s '
+      + 'entry percentile, so it is not in the book.',
+  }
 }
 
 // Percentile in words. The composite is a rank of a rank, so a reader who treats its z as
@@ -506,16 +530,32 @@ export default function SwingScreen() {
     ...(tier ? [
       {
         key: 'upside', label: 'Upside', num: true, defaultDir: 'desc',
-        hint: 'What this tier’s alpha assumption implies for this row over one holding period, '
-          + 'after its own round-trip cost, measured against the universe. An assumption '
-          + 'shared out by score, not a forecast of the price.',
+        hint: 'How far this name usually travels over a window this long, plus the model’s '
+          + 'edge, less its round-trip cost. The size comes almost entirely from the name’s '
+          + 'own past travel, which is measured but is not a forecast.',
         get: (row) => row.economics_predicted_upside_pct,
-        cell: (row) => (
-          <td key="upside" className={`mono num${row.economics_clears_cost ? ' up' : ' down'}`}
-            title={`${row.economics_expected_alpha_bps} bps implied alpha over ${tier.target_hold_sessions} sessions, less ${row.economics_round_trip_bps} bps round trip. Versus the universe, not a total return.`}>
-            {upside(row.economics_predicted_upside_pct)}
-          </td>
-        ),
+        cell: (row) => {
+          const usual = row.economics_typical_move_pct
+          const low = row.economics_usual_low_pct
+          const high = row.economics_usual_high_pct
+          return (
+            <td key="upside" className="mono num swing-upside"
+              title={usual == null
+                ? `No usable price history over ${tier.target_hold_sessions} sessions, so this is the modelled edge alone.`
+                : `Over ${tier.target_hold_sessions} sessions this name has usually moved ${upside(usual)}`
+                  + ` (middle half ${upside(low)} to ${upside(high)}, up in `
+                  + `${Math.round((row.economics_share_positive || 0) * 100)}% of ${row.economics_history_windows} overlapping windows).`
+                  + ` Model edge adds ${bps(row.economics_net_edge_bps)} bps after a ${row.economics_round_trip_bps} bps round trip.`
+                  + ` Past travel, not a forecast.`}>
+              <span className={row.economics_predicted_upside_pct > 0 ? 'up' : 'down'}>
+                {upside(row.economics_predicted_upside_pct)}
+              </span>
+              {low == null ? null : (
+                <span className="swing-upside-range">{upside(low)} to {upside(high)}</span>
+              )}
+            </td>
+          )
+        },
       },
       {
         key: 'round_trip', label: 'Cost to trade', num: true, defaultDir: 'asc', full: true,

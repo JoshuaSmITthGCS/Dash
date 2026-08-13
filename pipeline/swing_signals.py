@@ -444,6 +444,62 @@ def high_52w_drawdown_sigmas(closes, volatility, window=252):
     return math.log(proximity) / volatility
 
 
+def _quantile(sorted_values, fraction):
+    """Linear-interpolated quantile. No numpy: this module has no array dependency."""
+    if not sorted_values:
+        return None
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    position = fraction * (len(sorted_values) - 1)
+    low = int(math.floor(position))
+    high = min(low + 1, len(sorted_values) - 1)
+    weight = position - low
+    return sorted_values[low] * (1 - weight) + sorted_values[high] * weight
+
+
+# Below this many windows the quantiles are describing a handful of overlapping observations
+# and should not be published as a distribution at all.
+MINIMUM_FORWARD_WINDOWS = 30
+
+FORWARD_RETURN_NOTE = (
+    "The distribution of this name's own returns over a window of the same length, measured on "
+    "the price history actually held - roughly 400 sessions, which is one particular market "
+    "period and not a long-run base rate. The windows overlap heavily (a 65-session horizon "
+    "over 400 sessions gives 335 windows that share most of their days), so these are "
+    "descriptive quantiles and carry nothing like 335 observations' worth of confidence. They "
+    "answer 'how far does this name usually travel in this much time', which is a question "
+    "about the stock. They are not a forecast, they are not alpha, and because they include "
+    "whatever the market did over that period they are not comparable across names measured "
+    "over different histories.")
+
+
+def forward_return_distribution(closes, horizon):
+    """How far this name has historically travelled over `horizon` sessions, in percent.
+
+    Overlapping windows, deliberately: non-overlapping windows would leave six observations at
+    a 65-session horizon, and six is not a distribution. The cost is that the windows are
+    strongly dependent, so the output is quantiles for scale and never a mean with a standard
+    error attached. See FORWARD_RETURN_NOTE.
+    """
+    series = [close for close in (closes or []) if _finite(close) and close > 0]
+    if horizon < 1 or len(series) < horizon + MINIMUM_FORWARD_WINDOWS:
+        return None
+    moves = sorted((series[index + horizon] / series[index] - 1) * 100
+                   for index in range(len(series) - horizon))
+    if len(moves) < MINIMUM_FORWARD_WINDOWS:
+        return None
+    return {
+        "horizon_sessions": horizon,
+        "windows": len(moves),
+        "p25": round(_quantile(moves, .25), 3),
+        "p50": round(_quantile(moves, .50), 3),
+        "p75": round(_quantile(moves, .75), 3),
+        # The share of windows that ended higher, which is the plainest statement of how often
+        # holding this name for this long has worked out at all.
+        "share_positive": round(sum(1 for move in moves if move > 0) / len(moves), 3),
+    }
+
+
 def range_position_52w(closes, window=252):
     """Where the latest close sits in its own 52-week range, 0 at the low and 1 at the high.
 
@@ -735,7 +791,8 @@ def abnormal_turnover(volumes, recent=1, reference=50):
     return (math.log(sum(latest) / len(latest)) - mean) / deviation
 
 
-def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_returns=None):
+def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_returns=None,
+                  forward_horizons=()):
     """Every raw subfactor for one row, before any cross-sectional ranking.
 
     Price and volume subfactors come from the cached daily series; revision subfactors come
@@ -747,6 +804,10 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
     universe_daily_returns, needed only by the announcement-return leg. Omitted, that leg
     falls back to the raw window return and says so by scoring an unadjusted number, which is
     the right degradation for a caller that has one row and no cross-section.
+
+    ``forward_horizons`` are the holding periods to measure this name's own historical travel
+    over, passed in by the caller because the horizons belong to the tiers and this module has
+    no business knowing what a tier is.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     estimates = row.get("estimate_detail") or {}
@@ -791,6 +852,10 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
         # Descriptive only, never scored. See TREND_NOTE.
         "range_position_52w": range_position_52w(closes),
         "trend": trend_state(closes),
+        # Keyed by horizon as a string, because this rides through JSON. The horizons come from
+        # the tiers rather than being hardcoded here: this module must not know what a tier is.
+        "forward_returns": {str(horizon): forward_return_distribution(closes, horizon)
+                            for horizon in forward_horizons},
         "return_5d": trailing_return(closes, 5),
         # Normalization and cost input, never direction: see realized_volatility's docstring.
         "realized_volatility_60d": volatility,

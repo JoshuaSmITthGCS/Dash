@@ -464,14 +464,16 @@ def test_the_books_mean_row_carries_the_tiers_assumed_alpha():
         assert mean == pytest.approx(tiers.expected_alpha_bps(tier), rel=.02), tier
 
 
-def test_upside_is_net_of_that_rows_own_cost():
+def test_the_model_edge_is_net_of_that_rows_own_cost():
     scored = tiers.score_tier(scored_rows(), "S")
     row = next(row for row in scored if row.get("current_membership"))
     economics = row["economics"]
     assert economics["net_edge_bps"] == pytest.approx(
         economics["expected_alpha_bps"] - economics["round_trip_bps"])
-    assert economics["predicted_upside_pct"] == pytest.approx(economics["net_edge_bps"] / 100, abs=.005)
-    assert economics["clears_cost"] is (economics["predicted_upside_pct"] > 0)
+    # clears_cost is about the model's edge surviving cost, not about the published upside,
+    # which is dominated by the name's own travel and would make a volatile name look like a
+    # buy the model never had a view on.
+    assert economics["clears_cost"] is (economics["net_edge_bps"] > 0)
 
 
 def test_upside_falls_back_to_the_flat_figure_without_a_cross_section():
@@ -486,3 +488,87 @@ def test_the_upside_note_refuses_the_word_forecast():
     """It is a shared-out assumption. The page must never let it read as a price forecast."""
     assert "not a forecast" in tiers.UPSIDE_NOTE.lower()
     assert "no out-of-sample record" in tiers.UPSIDE_NOTE.lower()
+
+
+# ---------------------------------------------------------------------------
+# Upside grounded in the name's own past travel
+# ---------------------------------------------------------------------------
+
+def test_forward_returns_describe_how_far_a_name_travels_in_a_window():
+    steady = [100 * (1.0008 ** index) for index in range(400)]
+    distribution = swing_signals.forward_return_distribution(steady, 65)
+    assert distribution["windows"] == 335
+    assert distribution["p50"] == pytest.approx(5.34, abs=.05)
+    assert distribution["share_positive"] == 1.0
+    # A choppy name travels far less over the same window, which is the whole point.
+    choppy = [100 + 8 * math.sin(index / 11) for index in range(400)]
+    assert abs(swing_signals.forward_return_distribution(choppy, 65)["p50"]) < 1
+
+
+def test_forward_returns_refuse_to_describe_too_few_windows():
+    """Six overlapping windows is not a distribution, and must not be published as one."""
+    short = [100 * (1.001 ** index) for index in range(80)]
+    assert swing_signals.forward_return_distribution(short, 65) is None
+    assert swing_signals.forward_return_distribution(short, 3) is not None
+
+
+def test_quantiles_are_ordered():
+    series = [100 * (1 + .01 * math.sin(index / 7)) for index in range(400)]
+    for horizon in (3, 10, 65):
+        d = swing_signals.forward_return_distribution(series, horizon)
+        assert d["p25"] <= d["p50"] <= d["p75"], horizon
+
+
+def test_upside_is_the_names_own_travel_plus_the_model_edge_less_cost():
+    scored = tiers.score_tier(scored_rows(), "S")
+    row = next(r for r in scored if r["economics"].get("typical_move_pct") is not None)
+    economics = row["economics"]
+    assert economics["upside_basis"] == "historical_travel_plus_model_edge"
+    assert economics["predicted_upside_pct"] == pytest.approx(
+        economics["typical_move_pct"] + economics["net_edge_bps"] / 100, abs=.01)
+
+
+def test_each_tier_measures_travel_over_its_own_holding_period():
+    """A 3-session book must not be sized by how far a name moves in 65 sessions."""
+    rows = scored_rows()
+    by_tier = {}
+    for tier in tiers.TIER_ORDER:
+        scored = tiers.score_tier(rows, tier)
+        moves = [r["economics"]["typical_move_pct"] for r in scored
+                 if r["economics"].get("typical_move_pct") is not None]
+        assert moves, tier
+        by_tier[tier] = sum(moves) / len(moves)
+    # Longer hold, more travel. These fixtures drift upward, so this is monotone.
+    assert by_tier["F"] < by_tier["M"] < by_tier["S"]
+
+
+def test_upside_falls_back_to_the_model_edge_when_history_is_too_short():
+    scored = tiers.score_tier(scored_rows(), "S")
+    row = dict(scored[0])
+    row["factors"] = {**row["factors"], "forward_returns": {}}
+    economics = tiers.row_economics(row, "S")
+    assert economics["upside_basis"] == "model_edge_only_no_price_history"
+    assert economics["typical_move_pct"] is None
+    assert economics["predicted_upside_pct"] == pytest.approx(economics["net_edge_bps"] / 100, abs=.01)
+
+
+def test_the_verdict_still_turns_on_the_model_edge_not_on_past_travel():
+    """A name that travels far is not thereby a buy.
+
+    Upside is dominated by historical travel, so if the buy/avoid decision keyed off upside a
+    volatile name the model has no view on would read as the best idea on the page. It keys
+    off net_edge_bps, which is the model's own edge after cost.
+    """
+    scored = tiers.score_tier(scored_rows(), "S")
+    for row in scored:
+        economics = row["economics"]
+        if economics["clears_cost"]:
+            assert economics["net_edge_bps"] > 0
+
+
+def test_the_upside_note_names_which_term_sets_the_scale():
+    note = tiers.UPSIDE_NOTE.lower()
+    assert "not a forecast" in note
+    assert "no out-of-sample record" in note
+    assert "it is not alpha" in note
+    assert "optimistic" in note

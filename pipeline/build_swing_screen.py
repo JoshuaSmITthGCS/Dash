@@ -38,6 +38,10 @@ OUTPUT = "screens/swing.json"
 # Same ranked-head convention as the quality-value and tactical screens: publish the head
 # with both counts stated rather than shipping a megabyte of table to a phone.
 PUBLISH_LIMIT = 300
+# Every tier's holding period, so each row carries the distribution of its own past travel over
+# exactly the window that tier holds for. Sorted and de-duplicated so two tiers sharing a hold
+# measure it once.
+FORWARD_HORIZONS = tuple(sorted({spec["target_hold_sessions"] for spec in TIER_SPECS.values()}))
 
 
 def publishable(scored):
@@ -124,7 +128,8 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
             "short_percent_of_float": row.get("short_percent_of_float") or observed.get("short_percent_of_float"),
             "days_to_cover": row.get("days_to_cover") or observed.get("days_to_cover"),
             "factors": swing_factors(row, closes=closes, volumes=volumes, sue=sue,
-                                     market_returns=market_returns),
+                                     market_returns=market_returns,
+                                     forward_horizons=FORWARD_HORIZONS),
         })
     return rows
 
