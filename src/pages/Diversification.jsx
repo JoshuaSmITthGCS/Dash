@@ -93,10 +93,10 @@ export default function Diversification() {
         <strong>Portfolio factor exposure</strong>
         <p>A regression of your portfolio's monthly returns against the Fama-French five factors plus
           momentum (market, size, value, profitability, investment, momentum) - shows which systematic
-          risk factors actually drove your returns, not just which stocks you hold. A t-statistic under
-          2 on alpha is not meaningful evidence of skill beyond the factors.</p>
+          risk factors actually drove your returns, not just which stocks you hold. This dashboard uses
+          the registered multiple-testing hurdle of a positive Newey–West HAC t-statistic above 3.</p>
       </InfoTag>
-    </h2></div>{factors.available && <span className="settings-value">R² {(factors.rSquared * 100).toFixed(1)}%</span>}</header>{factors.available ? <><p>{factors.summary}</p><div className="factor-loading-grid">{Object.entries(factors.loadings).map(([key, value]) => <div key={key}><span>{key.replace('_', ' ')}</span><strong>{value.toFixed(2)}</strong><small>Standard error {factors.standardErrors[key].toFixed(2)}</small></div>)}</div><p>Annualized alpha {factors.alphaAnnualPct.toFixed(2)}% with a t-statistic of {factors.alphaTStatistic?.toFixed(2) ?? 'unavailable'}. A t-statistic under 2 is not meaningful evidence of alpha.</p><small>{factors.observations} monthly observations from {factors.startMonth} through {factors.endMonth}</small></> : <div className="unavailable-panel"><strong>Factor history is accumulating</strong><p>{factors.reason}</p></div>}</section>
+    </h2></div>{factors.available && <span className="settings-value">R² {(factors.rSquared * 100).toFixed(1)}%</span>}</header>{factors.available ? <><p>{factors.summary}</p><div className="factor-loading-grid">{Object.entries(factors.loadings).map(([key, value]) => <div key={key}><span>{key.replace('_', ' ')}</span><strong>{value.toFixed(2)}</strong><small>Newey–West HAC standard error {factors.standardErrors[key].toFixed(2)}</small></div>)}</div><p>Annualized alpha {factors.alphaAnnualPct.toFixed(2)}% with a Newey–West HAC t-statistic of {factors.alphaTStatistic?.toFixed(2) ?? 'unavailable'}. The registered multiple-testing evidence hurdle is a positive t-statistic above 3.</p><small>{factors.observations} monthly observations from {factors.startMonth} through {factors.endMonth} · {factors.covariance}</small></> : <div className="unavailable-panel"><strong>Factor history is accumulating</strong><p>{factors.reason}</p></div>}</section>
     <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Independent lens</span><h2>Theme exposure
       <InfoTag label="Theme exposure">
         <strong>Theme exposure</strong>

@@ -333,6 +333,9 @@
               }
             }
           },
+          "analytics_history": {
+            "$ref": "#/$defs/analyticsHistory"
+          },
           "hypothetical": {
             "type": "object",
             "required": [
@@ -488,6 +491,15 @@
           }
         }
       }
+    },
+    "benchmark_analytics_history": {
+      "allOf": [
+        { "$ref": "#/$defs/analyticsHistory" },
+        {
+          "type": "object",
+          "properties": { "symbol": { "const": "SPY" } }
+        }
+      ]
     },
     "hypothetical_basis": {
       "type": "number",
@@ -793,6 +805,25 @@
   },
   "additionalProperties": true,
   "$defs": {
+    "analyticsHistory": {
+      "type": "object",
+      "required": ["dates", "closes", "frequency"],
+      "properties": {
+        "symbol": { "type": "string" },
+        "dates": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "string" }
+        },
+        "closes": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "number", "exclusiveMinimum": 0 }
+        },
+        "frequency": { "const": "daily" }
+      },
+      "additionalProperties": false
+    },
     "scoreOutput": {
       "type": "object",
       "required": [

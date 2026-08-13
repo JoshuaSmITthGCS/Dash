@@ -55,7 +55,7 @@ describe('shortTermView', () => {
     const { portfolio, benchmark } = build({ wobble: 0.006 })
     const week = windowOf(shortTermView(portfolio, benchmark), 7)
     expect(week.beyondNoise).toBe(false)
-    expect(shortTermVerdict(week)).toBe('Inside this portfolio’s normal wobble')
+    expect(shortTermVerdict(week)).toBe('Mostly noise · descriptive band')
   })
 
   it('clears the floor when the move is genuinely larger than the noise', () => {
@@ -63,7 +63,7 @@ describe('shortTermView', () => {
     const week = windowOf(shortTermView(portfolio, benchmark), 7)
     expect(week.beyondNoise).toBe(true)
     expect(week.excessPct).toBeGreaterThan(week.noiseFloorPct)
-    expect(shortTermVerdict(week)).toBe('Ahead by more than the usual noise')
+    expect(shortTermVerdict(week)).toBe('Strong recent positive deviation')
   })
 
   it('scales the noise floor with the length of the window', () => {

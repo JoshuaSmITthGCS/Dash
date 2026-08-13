@@ -60,6 +60,28 @@ def series_payload(dates, closes, grid, digits=2):
     }
 
 
+def analytics_series_payload(dates, closes, maximum_sessions=504, digits=4):
+    """A contiguous session tape for analytics, kept separate from the compact chart grid.
+
+    ``chart_grid`` intentionally samples old history weekly. Reusing it for Sharpe, volatility,
+    tracking error or observation counts turns a display optimisation into a data-integrity
+    defect. This payload retains the most recent two trading years at the provider's native
+    session cadence and drops invalid observations rather than carrying prices forward.
+    """
+    rows = [
+        (str(date)[:10], float(close))
+        for date, close in zip(dates or [], closes or [])
+        if date and close is not None and float(close) > 0
+    ][-maximum_sessions:]
+    if len(rows) < 2:
+        return None
+    return {
+        "dates": [date for date, _ in rows],
+        "closes": [round(close, digits) for _, close in rows],
+        "frequency": "daily",
+    }
+
+
 def hypothetical_vs_benchmark(stock_growth, benchmark_growth, basis=BASIS):
     """What the same dollars did in this stock versus the S&P 500 over the charted window."""
     stock = [value for value in (stock_growth or []) if value is not None]

@@ -15,12 +15,25 @@ import {
 // the narrow right-hand column would squeeze the label rather than show it.
 const INLINE_VALUE_LIMIT = 24
 
+const METRIC_TOOLTIPS = {
+  rank_ic: 'Rank IC is the Spearman correlation between model ranks and later returns at the named horizon. Positive values mean higher-ranked securities subsequently performed better.',
+  icir: 'ICIR divides the mean rank IC by its variability and scales it for the observation cadence. Higher values indicate a more consistent cross-sectional ranking signal.',
+  mfe: 'Maximum favorable excursion is the largest mark-to-market gain reached while a position was open. It describes opportunity captured or left unrealized; it is not the final trade return.',
+  mae: 'Maximum adverse excursion is the largest mark-to-market loss reached while a position was open. Smaller adverse excursions generally indicate cleaner entries or tighter risk control.',
+}
+
+function metricTooltip(metric) {
+  const id = String(metric.id || '').toLowerCase()
+  return Object.entries(METRIC_TOOLTIPS).find(([key]) => id.includes(key))?.[1] || null
+}
+
 function Metric({ metric, hideState = false }) {
   const tone = metricTone(metric)
   const progress = sampleProgress(metric)
   const text = metricValueText(metric)
   const wide = text.length > INLINE_VALUE_LIMIT
   const state = metric.status_message || progress
+  const tooltip = metricTooltip(metric)
   return (
     <article className={`signal-metric tone-${tone}${wide ? ' wide-value' : ''}`}>
       <header>
@@ -49,6 +62,12 @@ function Metric({ metric, hideState = false }) {
           </span>
         )}
         {metric.cadence && <span className="signal-cadence">{metric.cadence}</span>}
+        {tooltip && (
+          <details className="metric-tooltip">
+            <summary aria-label={`About ${metric.label}`}>What it measures</summary>
+            <p>{tooltip}</p>
+          </details>
+        )}
       </footer>
     </article>
   )

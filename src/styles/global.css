@@ -970,6 +970,73 @@ details.performance-metrics { border: 1px solid var(--border-default); border-ra
 .performance-metrics-preview b { display: block; font: 700 13px var(--font-mono); }
 .performance-metrics-preview small { display: block; margin-top: 3px; color: var(--text-tertiary); font-size: 9px; }
 
+/* Analytics workspace: dense, calm, and token-driven. Status is always icon + text; colour
+   is secondary. Metric cards reuse the existing tone class contract for old render sites. */
+.analytics-workspace { margin-bottom: var(--section-gap); }
+.analytics-toolbar { position: sticky; top: 8px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 8px; border: 1px solid var(--border-default); border-radius: 14px; background: color-mix(in srgb, var(--surface-primary) 94%, transparent); box-shadow: var(--surface-shadow); backdrop-filter: blur(12px); }
+.analytics-view-selector { display: flex; flex-wrap: wrap; gap: 4px; }
+.analytics-view-selector button, .metric-filters button { min-height: 36px; padding: 7px 11px; border: 0; border-radius: 9px; background: transparent; color: var(--text-tertiary); font: 700 10px var(--font-body); cursor: pointer; }
+.analytics-view-selector button[aria-current="page"], .metric-filters button.active { background: var(--surface-secondary); color: var(--text); box-shadow: inset 0 0 0 1px var(--border-default); }
+.analytics-scope { display: flex; align-items: center; gap: 8px; min-width: min(280px, 42vw); }
+.analytics-scope > span { color: var(--text-tertiary); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.analytics-scope select { min-height: 44px; min-width: 0; flex: 1; }
+.analytics-overall, .prospective-clock, .baseline-comparison, .algorithm-period, .rolling-sharpe, .evidence-matrix, .all-metrics { margin-bottom: var(--section-gap); padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
+.analytics-overall { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 18px 30px; }
+.analytics-overall h2, .prospective-clock h2, .baseline-comparison h2, .algorithm-period h2, .rolling-sharpe h2, .evidence-matrix h2, .all-metrics h2 { margin-top: 4px; font: 700 20px/1.15 var(--font-display); }
+.analytics-overall p, .prospective-clock p, .algorithm-period p { margin: 8px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+.analytics-counts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.performance-metrics > .analytics-counts { display: flex; overflow: visible; border: 0; border-radius: 0; background: transparent; }
+.analytics-counts > span { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 5px 8px; border: 1px solid var(--border-subtle); border-radius: 999px; color: var(--text-secondary); font: 700 11px var(--font-mono); }
+.analytics-counts i { font-style: normal; font-size: 9px; }
+.analytics-counts small { color: var(--text-tertiary); font: 600 8px var(--font-body); text-transform: uppercase; letter-spacing: .04em; }
+.count-positive i { color: var(--pos); }.count-negative i { color: var(--neg); }.count-neutral i { color: var(--text-secondary); }.count-insufficient i { color: var(--warn); }
+.analytics-section-rollup { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.analytics-section-rollup span { padding: 10px; border-radius: 10px; background: var(--surface-secondary); color: var(--text-tertiary); font-size: 9px; }
+.analytics-section-rollup b { display: block; margin-bottom: 4px; color: var(--text); font-size: 10px; }
+.analytics-section > header { margin-bottom: 10px; }
+.section-read { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 10px; border: 1px solid var(--border-default); border-radius: 999px; color: var(--text-secondary); font: 700 10px var(--font-mono); }
+.read-strong, .read-healthy { color: var(--pos); }.read-weak, .read-poor { color: var(--neg); }.read-inconclusive { color: var(--warn); }
+.evidence-bar { display: flex; width: 100%; height: 5px; margin: 10px 0; overflow: hidden; border-radius: 999px; background: var(--surface-tertiary, var(--border-subtle)); }
+.performance-metrics > .evidence-bar { display: flex; border: 0; border-radius: 999px; background: var(--surface-tertiary, var(--border-subtle)); }
+.evidence-bar i { display: block; height: 100%; }.evidence-bar .positive { background: var(--pos); }.evidence-bar .neutral { background: var(--text-faint); }.evidence-bar .negative { background: var(--neg); }
+.analytics-takeaway { margin: 8px 0 3px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+.analytics-sample { display: block; color: var(--text-tertiary); font-size: 9px; }
+.analytics-drivers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 12px 0; }
+.performance-metrics > .analytics-drivers { display: grid; overflow: visible; border: 0; border-radius: 0; background: transparent; }
+.analytics-drivers span { min-width: 0; padding: 8px 10px; border: 1px solid var(--border-subtle); border-radius: 10px; color: var(--text-secondary); font-size: 9px; overflow-wrap: anywhere; }
+.analytics-drivers b { display: block; margin-bottom: 3px; color: var(--text-tertiary); font-size: 8px; text-transform: uppercase; letter-spacing: .06em; }
+.performance-metrics > .metric-card-grid, .metric-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--border-subtle); }
+.performance-metrics .metric-card-grid article, .metric-card-grid article { min-width: 0; padding: 14px; background: var(--surface-secondary); }
+[data-metric-card] > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin: 0; }
+[data-metric-card] > header > span:first-child { color: var(--text-tertiary); font-size: 9px; line-height: 1.35; }
+[data-metric-card] > strong { display: block; margin: 8px 0 5px; color: var(--text); font: 700 19px/1.1 var(--font-mono); overflow-wrap: anywhere; }
+[data-metric-card] > small { display: block; min-height: 2.8em; color: var(--text-tertiary); font-size: 8px; line-height: 1.4; }
+.metric-status { display: inline-flex !important; align-items: center; gap: 4px; flex: 0 0 auto; color: var(--text-tertiary) !important; font-size: 8px !important; text-transform: uppercase; letter-spacing: .04em; }
+.metric-status i { font-style: normal; }
+.metric-tone-positive .metric-status i, .metric-tone-positive > strong { color: var(--pos); }.metric-tone-negative .metric-status i, .metric-tone-negative > strong { color: var(--neg); }.metric-tone-unavailable .metric-status i { color: var(--warn); }.metric-tone-unavailable > strong { color: var(--text-faint); font-size: 14px; }
+[data-metric-card] > footer { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.metric-confidence, .metric-trend { padding: 3px 5px; border-radius: 5px; background: var(--surface-primary); color: var(--text-tertiary); font-size: 7px; text-transform: uppercase; letter-spacing: .04em; }
+.metric-tooltip { margin-left: auto; position: relative; }
+.metric-tooltip summary { min-height: 30px; display: inline-flex; align-items: center; color: var(--text-tertiary); font-size: 8px; cursor: pointer; list-style: none; }
+.metric-tooltip summary::-webkit-details-marker { display: none; }
+.metric-tooltip p { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 8; width: min(260px, 70vw); margin: 0; padding: 9px; border: 1px solid var(--border-default); border-radius: 9px; background: var(--surface-primary); box-shadow: var(--surface-shadow); color: var(--text-secondary); font-size: 9px; line-height: 1.45; }
+.analytics-detail { margin-top: 10px; }
+.analytics-detail > summary, .metric-group > summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: pointer; }
+.compact-grid [data-metric-card] > strong { font-size: 15px; }
+.compact-grid [data-metric-card] > small { min-height: 0; }
+.all-metrics > header, .prospective-clock > header, .baseline-comparison > header, .algorithm-period > header, .rolling-sharpe > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.baseline-comparison > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }.baseline-comparison > div span { padding: 10px; border-radius: 10px; background: var(--surface-secondary); color: var(--text-secondary); font-size: 9px; }.baseline-comparison > div b { display: block; margin-bottom: 4px; color: var(--text); }.baseline-comparison p { margin-top: 10px; color: var(--text-tertiary); font-size: 9px; line-height: 1.5; }
+.metric-search label { display: block; }.metric-search label > span { display: block; margin-bottom: 5px; color: var(--text-tertiary); font-size: 9px; }.metric-search input { width: 100%; min-height: 44px; }
+.metric-filters { display: flex; flex-wrap: wrap; gap: 4px; margin: 9px 0 14px; }
+.metric-filters button { min-width: 44px; min-height: 44px; border: 1px solid var(--border-subtle); }
+.metric-group { border-top: 1px solid var(--border-subtle); }.metric-group > summary span { color: var(--text-faint); font-family: var(--font-mono); }
+.analytics-empty { padding: 24px; border: 1px dashed var(--border-default); border-radius: 12px; color: var(--text-secondary); text-align: center; }.analytics-empty p { margin-top: 4px; font-size: 10px; }
+.prospective-clock dl { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; overflow: hidden; margin-top: 14px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--border-subtle); }.prospective-clock dl > div { padding: 11px; background: var(--surface-secondary); }.prospective-clock dt { color: var(--text-tertiary); font-size: 8px; }.prospective-clock dd { margin: 5px 0 0; color: var(--text); font: 700 10px/1.4 var(--font-mono); }
+.rolling-sharpe svg { display: block; width: 100%; height: 210px; overflow: visible; }.rolling-sharpe line { stroke: var(--border-default); stroke-width: .4; stroke-dasharray: 2 2; }.rolling-sharpe polyline { fill: none; stroke: var(--accent); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.evidence-matrix > header { margin-bottom: 12px; }.evidence-matrix-grid > div { display: grid; grid-template-columns: minmax(150px, 1.8fr) repeat(4, minmax(70px, 1fr)); border-top: 1px solid var(--border-subtle); }.evidence-matrix-grid span, .evidence-matrix-grid b { padding: 9px; color: var(--text-secondary); font-size: 9px; text-align: center; }.evidence-matrix-grid b, .evidence-matrix-grid span:first-child { text-align: left; }.evidence-matrix-grid .matrix-head { border-top: 0; }.evidence-matrix-grid .matrix-head span { color: var(--text-tertiary); font-size: 8px; text-transform: uppercase; }
+@media (max-width: 900px) { .analytics-overall { grid-template-columns: 1fr; }.analytics-section-rollup { grid-column: 1; }.prospective-clock dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }.performance-metrics > .metric-card-grid, .metric-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .analytics-toolbar { position: static; align-items: stretch; flex-direction: column; }.analytics-view-selector { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.analytics-view-selector button { min-height: 44px; }.analytics-scope { min-width: 0; flex-direction: column; align-items: stretch; }.analytics-section-rollup, .analytics-drivers, .baseline-comparison > div { grid-template-columns: 1fr; }.performance-metrics > .metric-card-grid, .metric-card-grid { grid-template-columns: 1fr; }.prospective-clock dl { grid-template-columns: 1fr; }.evidence-matrix-grid > div { grid-template-columns: 1.6fr repeat(4, minmax(42px, .65fr)); }.evidence-matrix-grid span, .evidence-matrix-grid b { padding: 8px 3px; font-size: 8px; }.analytics-counts small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }.analytics-counts > span { min-height: 36px; } }
+
 /* Signal metrics, split by whether a live sample gates the reading. The `signal-evidence`
    prefix keeps clear of the older `.signal-metrics` overview grid further down this file. */
 .signal-evidence { margin-bottom: var(--section-gap); }

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:cloud": "netlify dev",
     "build": "vite build",
     "docs:breakdown": "node scripts/generate-app-breakdown.mjs",
     "preview": "vite preview",

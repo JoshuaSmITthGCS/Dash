@@ -138,7 +138,8 @@ class EnrichmentPriorityTests(unittest.TestCase):
 
 class PortfolioCoverageTests(unittest.TestCase):
     def test_every_configured_holding_gets_a_coverage_row(self):
-        research = [{"ticker": "LIVE", "name": "Live", "price": 10}]
+        analytics = {"dates": ["2026-08-12", "2026-08-13"], "closes": [9.8, 10], "frequency": "daily"}
+        research = [{"ticker": "LIVE", "name": "Live", "price": 10, "analytics_history": analytics}]
         previous = [{"ticker": "STALE", "name": "Stale", "price": 8}]
 
         rows = build_portfolio_coverage(
@@ -146,6 +147,7 @@ class PortfolioCoverageTests(unittest.TestCase):
         )
 
         self.assertEqual([row["ticker"] for row in rows], ["LIVE", "STALE", "MISSING"])
+        self.assertEqual(rows[0]["analytics_history"], analytics)
         self.assertEqual(rows[1]["coverage_status"], "stale_provider_unavailable")
         self.assertEqual(rows[2]["coverage_status"], "provider_unavailable")
         self.assertIsNone(rows[2]["price"])

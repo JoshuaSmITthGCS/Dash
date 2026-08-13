@@ -1,24 +1,37 @@
-function ratio(value) {
-  return value == null || !Number.isFinite(value) ? 'Unavailable' : value.toFixed(2)
+import { useEffect, useMemo, useState } from 'react'
+import modelSettings from '../../pipeline/config/settings.json'
+import MetricCard from './MetricCard.jsx'
+import SignalMetricsPanel from './SignalMetricsPanel.jsx'
+import { buildPortfolioMetricModel } from '../lib/portfolioMetricModel.js'
+import { combinedEvidence, sectionAssessment } from '../lib/metricAssessment.js'
+
+const VIEWS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'all', label: 'All Metrics' },
+  { id: 'algorithm', label: 'Algorithm' },
+  { id: 'historical', label: 'Historical' },
+]
+
+const FILTERS = ['All', 'Return', 'Risk', 'Benchmark', 'Algorithm', 'Statistical', 'Execution', 'Cost']
+
+const STATUS_ICON = { positive: '▲', neutral: '●', negative: '▼', insufficient: '?' }
+
+function sessionValue(key, fallback) {
+  try { return globalThis.sessionStorage?.getItem(key) || fallback } catch { return fallback }
 }
 
-function percent(value) {
-  return value == null || !Number.isFinite(value) ? 'Unavailable' : `${value.toFixed(1)}%`
+function storeSession(key, value) {
+  try { globalThis.sessionStorage?.setItem(key, value) } catch { /* storage can be unavailable in private contexts */ }
 }
 
-function sigma(value) {
-  return value == null || !Number.isFinite(value) ? 'Unavailable' : `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}σ`
-}
-
-function signedPercent(value) {
-  return value == null || !Number.isFinite(value) ? 'Unavailable' : `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}%`
-}
-
-function days(value) {
-  if (value == null || !Number.isFinite(value)) return 'Unavailable'
-  if (value < 60) return `${Math.round(value)}d`
-  const months = value / 30.44
-  return months < 18 ? `${months.toFixed(1)}mo` : `${(value / 365.25).toFixed(1)}y`
+function PersistentDetails({ storageId, className, defaultOpen = false, children }) {
+  const key = `valuesignal.analytics.expanded.${storageId}`
+  const [open, setOpen] = useState(() => sessionValue(key, defaultOpen ? 'open' : 'closed') === 'open')
+  return <details className={className} open={open} onToggle={(event) => {
+    const next = event.currentTarget.open
+    setOpen(next)
+    storeSession(key, next ? 'open' : 'closed')
+  }}>{children}</details>
 }
 
 export function performanceMetricTone(key, value) {
@@ -30,207 +43,222 @@ export function performanceMetricTone(key, value) {
   return 'neutral'
 }
 
-/**
- * The two numbers worth keeping visible while the panel is closed. Sharpe is the headline
- * risk-adjusted read and drawdown is the one that describes what holding it felt like;
- * collapsing the section should cost the reader neither.
- */
 export function collapsedSummary(metrics) {
   if (!metrics?.available) return metrics?.reason || 'Unavailable'
-  return `Sharpe ${ratio(metrics.sharpe)} · Max drawdown ${percent(metrics.maxDrawdown)}`
+  const sharpe = Number.isFinite(metrics.sharpe) ? metrics.sharpe.toFixed(2) : 'Unavailable'
+  const drawdown = Number.isFinite(metrics.maxDrawdown) ? `${metrics.maxDrawdown.toFixed(1)}%` : 'Unavailable'
+  return `Sharpe ${sharpe} · Max drawdown ${drawdown}`
 }
 
-/** A short-horizon move only earns a colour once it clears its own noise floor. Inside the
- * floor it tones neutral at zero; with no reading at all it stays null so the tile reads as
- * unavailable rather than as a flat week. */
-function shortTermTone(window) {
-  if (!window?.available) return null
-  return window.beyondNoise ? window.excessPct : 0
-}
-
-/** `toneValue` lets a lower-is-better metric colour itself correctly without inverting what
- * it displays - the day counts below are better when small, and every tone bound in config
- * is read as higher-is-better. */
-function Metric({ name, label, value, format, note, toneValue }) {
-  const tone = performanceMetricTone(name, toneValue ?? value)
-  const glyph = tone === 'positive' ? '▲' : tone === 'negative' ? '▼' : tone === 'neutral' ? '●' : ''
-  return <article className={`metric-tone-${tone}`}><span>{label}</span><strong>{glyph && <i aria-hidden="true">{glyph}</i>}{format(value)}</strong><small>{note}</small></article>
-}
-
-/**
- * Three panels of six rather than one long strip, split by the question each answers: what
- * this portfolio did to you, how it did against the index over quarters and years, and what
- * it has done in the last few days and weeks. Information ratio sits in the second because
- * it is a benchmark measure, not a standalone risk one; active share sits in the third
- * because it needs no history at all. Six tiles each also lands every grid exactly on its
- * column count at all three breakpoints.
- *
- * The first panel is collapsed by default. These are the slowest-moving numbers here - a
- * Sharpe ratio does not change meaningfully between visits, and at this sample length it
- * cannot - so they keep their two headline readings in the summary line and give the
- * vertical space back to the panels that answer days and weeks.
- */
-export default function PerformanceMetrics({
-  metrics, benchmarkLabel = 'benchmark', riskFree,
-  acceleration = null, capture = null, batting = null, underwater = null,
-  shortTerm = null, risk = null, defaultOpen = false,
-}) {
-  const captureNote = (side) => (capture?.available
-    ? `${capture.observations[side]} ${side} periods · index ${side === 'up' ? '+' : ''}${capture[`${side}BenchmarkPct`].toFixed(1)}%`
-    : capture?.reason || 'Needs history on both sides of the market')
-  const windowOf = (days) => shortTerm?.windows?.find((row) => row.days === days) || null
-  const week = windowOf(7)
-  const month = windowOf(30)
+function EvidenceCounts({ counts }) {
   return (
-    <>
-      <details className="performance-metrics" open={defaultOpen}>
-        <summary aria-label="Standard risk and performance measures">
-          <div><span className="eyebrow">Standard measures</span><h2 id="standard-performance-title">Risk and performance</h2></div>
-          <div className="performance-metrics-preview"><b>{collapsedSummary(metrics)}</b><small>{metrics?.available ? `${metrics.observations} daily returns` : ''}</small></div>
-        </summary>
-        <div>
-          <Metric name="sharpe" label="Sharpe ratio" value={metrics?.sharpe} format={ratio} note={`${riskFree?.fallback ? 'Configured fallback' : riskFree?.series} ${riskFree?.annualPct?.toFixed(2) ?? '0.00'}%`} />
-          <Metric name="sortino" label="Sortino ratio" value={metrics?.sortino} format={ratio} note="Downside risk only" />
-          <Metric name="calmar" label="Calmar ratio" value={metrics?.calmar} format={ratio} note="Return per drawdown" />
-          <Metric name="maxDrawdown" label="Maximum drawdown" value={metrics?.maxDrawdown} format={percent} note="Worst peak decline" />
-          <Metric name="currentDrawdown" label="Current drawdown" value={metrics?.currentDrawdown} format={percent} note="From high-water mark" />
-          {/* Depth is two tiles to the left. This is how long it lasted - the part that is
-              underestimated in advance and felt most at the time. */}
-          <Metric
-            name="longestUnderwaterDays"
-            label="Longest underwater"
-            value={underwater?.available ? underwater.longestUnderwaterDays : null}
-            toneValue={underwater?.available ? -underwater.longestUnderwaterDays : null}
-            format={days}
-            note={underwater?.available
-              ? (underwater.stillUnderwater
-                ? `Below its high since ${underwater.highWaterDate}`
-                : `Recovered · at a high as of ${underwater.highWaterDate}`)
-              : underwater?.reason || 'Needs dated portfolio values'}
-          />
-        </div>
-      </details>
-
-      <section className="performance-metrics" aria-labelledby="benchmark-comparison-title">
-        <header><div><span className="eyebrow">Comparison</span><h2 id="benchmark-comparison-title">Versus the {benchmarkLabel}</h2></div><small>{batting?.available ? `${batting.months} months, ${batting.firstMonth} to ${batting.lastMonth}` : batting?.reason}</small></header>
-        <div>
-          {/* Level, then change: information ratio says how far ahead, acceleration says
-              whether the gap is still widening. See src/lib/portfolioAcceleration.js. */}
-          {/* Tracking error is the information ratio's own denominator, so it belongs in
-              this tile rather than in one of its own. The Diversification page reports the
-              same quantity built from holdings covariance instead of the value series. */}
-          <Metric name="informationRatio" label="Information ratio" value={metrics?.informationRatio} format={ratio}
-            note={risk?.trackingErrorPct != null
-              ? `Excess return per unit of tracking risk · ${risk.trackingErrorPct.toFixed(1)}% tracking error`
-              : 'Excess return per unit of tracking risk'} />
-          <Metric
-            name="acceleration"
-            label="Acceleration"
-            value={acceleration?.available ? acceleration.acceleration : null}
-            format={sigma}
-            note={acceleration?.available
-              ? `${accelerationLabel(acceleration)} · ${signedPercent(acceleration.recentExcessPct)} this quarter vs ${signedPercent(acceleration.priorExcessPct)} last, beta-adjusted`
-              : acceleration?.reason || 'Needs two quarters against the benchmark'}
-          />
-          {/* Neither capture number is good or bad alone - a low up capture is the price of
-              a low down capture. The spread beside them is what settles it. */}
-          <Metric name="upCapture" label="Up capture" value={capture?.available ? capture.upCapturePct : null} format={percent} note={captureNote('up')} />
-          <Metric name="downCapture" label="Down capture" value={capture?.available ? capture.downCapturePct : null} format={percent} note={captureNote('down')} />
-          <Metric
-            name="captureSpread"
-            label="Capture spread"
-            value={capture?.available ? capture.captureSpread : null}
-            format={signedPercent}
-            note={capture?.available
-              ? (capture.captureSpread >= 0
-                ? 'Keeping more of the upside than the downside'
-                : 'Taking more of the downside than the upside')
-              : capture?.reason || 'Needs history on both sides of the market'}
-          />
-          <Metric
-            name="battingAveragePct"
-            label="Batting average"
-            value={batting?.available ? batting.battingAveragePct : null}
-            format={percent}
-            note={batting?.available
-              ? `Beat the index in ${batting.wins} of ${batting.months} months${batting.winLossRatio ? ` · wins ${batting.winLossRatio.toFixed(1)}× the size of losses` : ''}`
-              : batting?.reason || 'Needs six months of overlapping history'}
-          />
-        </div>
-      </section>
-
-      {/* Everything above is gated behind quarters or years of history, correctly so for
-          what it claims. This panel answers days and weeks, and answers them for an account
-          too new for any of it. The price of a short window is noise, so each reading is
-          published beside the noise floor that says whether it is a result or a wobble. */}
-      <section className="performance-metrics" aria-labelledby="short-term-view-title">
-        <header>
-          <div><span className="eyebrow">Fast reads</span><h2 id="short-term-view-title">Short-term view</h2></div>
-          <small>{shortTerm?.available ? shortTerm.methodology : shortTerm?.reason}</small>
-        </header>
-        <div>
-          <Metric
-            name="shortTermExcessPct"
-            label="Past week vs index"
-            value={week?.available ? week.excessPct : null}
-            toneValue={shortTermTone(week)}
-            format={signedPercent}
-            note={week?.available
-              ? `You ${signedPercent(week.portfolioPct)} · index ${signedPercent(week.benchmarkPct)}`
-              : week?.reason || 'Not enough history yet'}
-          />
-          <Metric
-            name="shortTermExcessPct"
-            label="Past month vs index"
-            value={month?.available ? month.excessPct : null}
-            toneValue={shortTermTone(month)}
-            format={signedPercent}
-            note={month?.available
-              ? `You ${signedPercent(month.portfolioPct)} · index ${signedPercent(month.benchmarkPct)}`
-              : month?.reason || 'Not enough history yet'}
-          />
-          {/* The tile that keeps the two beside it honest. */}
-          <Metric
-            name="noiseFloor"
-            label="Noise floor (month)"
-            value={month?.available ? month.noiseFloorPct : null}
-            format={(value) => `±${Math.abs(value).toFixed(1)}%`}
-            note={month?.available ? shortTermVerdict(month) : 'Needs a tracking-noise estimate'}
-          />
-          <Metric
-            name="streak"
-            label="Current streak"
-            value={shortTerm?.available ? shortTerm.streak.observations : null}
-            format={(value) => `${Math.round(value)}`}
-            note={shortTerm?.available
-              ? `Periods ${shortTerm.streak.direction} of the index, spanning ${shortTerm.streak.days}d`
-              : 'Needs two overlapping observations'}
-          />
-          <Metric
-            name="recentTrackingRisk"
-            label="Recent tracking risk"
-            value={shortTerm?.available ? shortTerm.recentTrackingRiskPct : null}
-            format={percent}
-            note={shortTerm?.baselineTrackingRiskPct != null
-              ? `Last 30 days annualized · ${shortTerm.baselineTrackingRiskPct.toFixed(1)}% baseline`
-              : 'How far this portfolio moves independently of the index'}
-          />
-          {/* Needs no history at all - it is a fact about today's weights - which is why it
-              belongs in the panel for readings that work immediately. */}
-          <Metric
-            name="activeShare"
-            label="Active share"
-            value={risk?.activeSharePct ?? null}
-            format={percent}
-            note={risk?.activeSharePct != null
-              ? 'Share of the book that differs from the index right now'
-              : 'Needs benchmark constituent coverage'}
-          />
-        </div>
-      </section>
-    </>
+    <div className="analytics-counts" aria-label={`${counts.positive} positive, ${counts.neutral} neutral, ${counts.negative} negative, ${counts.insufficient} insufficient`}>
+      {['positive', 'neutral', 'negative', 'insufficient'].map((status) => (
+        <span key={status} className={`count-${status}`}><i aria-hidden="true">{STATUS_ICON[status]}</i>{counts[status]} <small>{status}</small></span>
+      ))}
+    </div>
   )
 }
-import modelSettings from '../../pipeline/config/settings.json'
-import { accelerationLabel } from '../lib/portfolioAcceleration.js'
-import { shortTermVerdict } from '../lib/portfolioShortTermView.js'
+
+function EvidenceBar({ summary }) {
+  const assessed = summary.counts.positive + summary.counts.neutral + summary.counts.negative
+  const width = (status) => assessed ? summary.counts[status] / assessed * 100 : 0
+  return (
+    <div className="evidence-bar" aria-label="Assessed evidence balance">
+      <i className="positive" style={{ width: `${width('positive')}%` }} />
+      <i className="neutral" style={{ width: `${width('neutral')}%` }} />
+      <i className="negative" style={{ width: `${width('negative')}%` }} />
+    </div>
+  )
+}
+
+function Driver({ label, metric }) {
+  return <span><b>{label}</b>{metric ? metric.name.toLowerCase() : 'None measured'}</span>
+}
+
+function AnalyticsSection({ id, eyebrow, title, metrics, summary, sampleNote, defaultCore = 5 }) {
+  const ordered = metrics.slice().sort((left, right) => right.priority - left.priority)
+  const core = ordered.slice(0, defaultCore)
+  const detail = ordered.slice(defaultCore)
+  return (
+    <section className="performance-metrics analytics-section" aria-labelledby={`${id}-title`}>
+      <header>
+        <div><span className="eyebrow">{eyebrow}</span><h2 id={`${id}-title`}>{title}</h2></div>
+        <span className={`section-read read-${summary.read.toLowerCase()}`}>{summary.read}</span>
+      </header>
+      <EvidenceCounts counts={summary.counts} />
+      <EvidenceBar summary={summary} />
+      <p className="analytics-takeaway">{summary.narrative}</p>
+      {sampleNote && <small className="analytics-sample">{sampleNote}</small>}
+      <div className="analytics-drivers">
+        <Driver label="Helping" metric={summary.helping} />
+        <Driver label="Hurting" metric={summary.hurting} />
+        <Driver label="Watch" metric={summary.watch} />
+      </div>
+      <div className="metric-card-grid">
+        {core.map((row) => <MetricCard key={row.id} metric={row} />)}
+      </div>
+      {detail.length > 0 && (
+        <PersistentDetails className="analytics-detail" storageId={`${id}-detail`}>
+          <summary>Show all {metrics.length}</summary>
+          <div className="metric-card-grid compact-grid">{detail.map((row) => <MetricCard key={row.id} metric={row} mode="compact" />)}</div>
+        </PersistentDetails>
+      )}
+    </section>
+  )
+}
+
+function OverallEvidence({ sections }) {
+  const overall = combinedEvidence(sections)
+  return (
+    <section className="analytics-overall" aria-labelledby="analytics-overall-title">
+      <div>
+        <span className="eyebrow">Performance evidence</span>
+        <h2 id="analytics-overall-title">Overall evidence: {overall.read}</h2>
+        <p>{overall.narrative}</p>
+      </div>
+      <EvidenceCounts counts={overall.counts} />
+      <div className="analytics-section-rollup">
+        {sections.map((section) => <span key={section.id}><b>{section.label}</b>{section.summary.counts.positive} positive · {section.summary.counts.neutral} neutral · {section.summary.counts.negative} negative</span>)}
+      </div>
+    </section>
+  )
+}
+
+function RollingSharpeChart({ statistics }) {
+  const series = statistics?.rolling60 || []
+  if (!series.length) return <div className="analytics-empty"><strong>Rolling Sharpe is insufficient</strong><p>Requires at least 60 contiguous daily returns in this scope.</p></div>
+  const values = series.map((row) => row.value).filter(Number.isFinite)
+  const minimum = Math.min(...values, -1)
+  const maximum = Math.max(...values, 1)
+  const points = series.map((row, index) => {
+    const x = series.length === 1 ? 50 : index / (series.length - 1) * 100
+    const y = 100 - (row.value - minimum) / (maximum - minimum) * 100
+    return `${x},${y}`
+  }).join(' ')
+  const zeroY = 100 - (0 - minimum) / (maximum - minimum) * 100
+  return (
+    <section className="rolling-sharpe" aria-labelledby="rolling-sharpe-title">
+      <header><div><span className="eyebrow">Stability</span><h2 id="rolling-sharpe-title">Rolling 60-day Sharpe</h2></div><small>{series.length} rolling windows</small></header>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Rolling 60-day Sharpe chart">
+        <line x1="0" x2="100" y1={zeroY} y2={zeroY} />
+        <polyline points={points} />
+      </svg>
+    </section>
+  )
+}
+
+function EvidenceMatrix({ sections }) {
+  return (
+    <section className="evidence-matrix" aria-labelledby="evidence-matrix-title">
+      <header><span className="eyebrow">Cross-section check</span><h2 id="evidence-matrix-title">Evidence matrix</h2></header>
+      <div className="evidence-matrix-grid" role="table" aria-label="Evidence counts by section">
+        <div role="row" className="matrix-head"><span role="columnheader">Section</span><span role="columnheader">Positive</span><span role="columnheader">Neutral</span><span role="columnheader">Negative</span><span role="columnheader">Insufficient</span></div>
+        {sections.map((section) => <div role="row" key={section.id}><b role="rowheader">{section.label}</b><span>{section.summary.counts.positive}</span><span>{section.summary.counts.neutral}</span><span>{section.summary.counts.negative}</span><span>{section.summary.counts.insufficient}</span></div>)}
+      </div>
+    </section>
+  )
+}
+
+function AllMetrics({ model }) {
+  const [filter, setFilter] = useState('All')
+  const [query, setQuery] = useState('')
+  const visible = useMemo(() => model.groups.map((group) => ({
+    ...group,
+    metrics: group.metrics.filter((row) => (filter === 'All' || row.category === filter) && `${row.name} ${row.id}`.toLowerCase().includes(query.trim().toLowerCase())),
+  })).filter((group) => group.metrics.length), [filter, model.groups, query])
+  return (
+    <section className="all-metrics" aria-labelledby="all-metrics-title">
+      <header><div><span className="eyebrow">Full tear-sheet</span><h2 id="all-metrics-title">All metrics</h2></div><small>{visible.reduce((sum, group) => sum + group.metrics.length, 0)} visible</small></header>
+      <div className="metric-search"><label><span>Search metrics</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Sharpe, drawdown, alpha…" /></label></div>
+      <div className="metric-filters" aria-label="Filter metrics">{FILTERS.map((item) => <button type="button" key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item}</button>)}</div>
+      {visible.length ? visible.map((group) => (
+        <PersistentDetails key={group.name} className="metric-group" storageId={`all-${group.name}`} defaultOpen>
+          <summary><strong>{group.name}</strong><span>{group.metrics.length}</span></summary>
+          <div className="metric-card-grid compact-grid">{group.metrics.map((row) => <MetricCard key={row.id} metric={row} mode="compact" />)}</div>
+        </PersistentDetails>
+      )) : <div className="analytics-empty"><strong>No matching metrics</strong><p>Try a broader filter or search term.</p></div>}
+    </section>
+  )
+}
+
+function ProspectiveClock({ prospective }) {
+  if (!prospective) return null
+  const criteria = prospective.promotion_criteria_champion_or_challenger || {}
+  const trials = prospective.trial_count_for_deflated_statistics?.dsr_trial_count_used
+  return (
+    <section className="prospective-clock" aria-labelledby="prospective-clock-title">
+      <header><div><span className="eyebrow">Pre-registered validation</span><h2 id="prospective-clock-title">Prospective clock</h2></div><span className="section-read read-inconclusive">0 / {criteria.minimum_periods || 24} periods</span></header>
+      <p>Starts {prospective.harness_start_date}. Thresholds were frozen {prospective.frozen_at}; UI changes do not reset the clock.</p>
+      <dl><div><dt>Mean rank IC</dt><dd>{criteria.mean_spearman_ic}</dd></div><div><dt>ICIR</dt><dd>{criteria.icir}</dd></div><div><dt>Deflated Sharpe</dt><dd>{criteria.deflated_sharpe}</dd></div><div><dt>PBO</dt><dd>{criteria.pbo}</dd></div><div><dt>Trials registry</dt><dd>N={trials ?? 'not recorded'}</dd></div></dl>
+    </section>
+  )
+}
+
+function BaselineComparison({ comparison }) {
+  if (!comparison) return null
+  const row = (label, counts) => <span><b>{label}</b>{counts.positive} positive · {counts.neutral} neutral · {counts.negative} negative</span>
+  return (
+    <section className="baseline-comparison" aria-labelledby="baseline-comparison-title">
+      <header><div><span className="eyebrow">Compatible evidence only</span><h2 id="baseline-comparison-title">Baseline comparison</h2></div></header>
+      <div>{row('Before algorithm', comparison.before)}{row('Since algorithm', comparison.since)}<span><b>Evidence shift</b>{comparison.positiveShift >= 0 ? '+' : ''}{comparison.positiveShift} positive · {comparison.negativeShift >= 0 ? '+' : ''}{comparison.negativeShift} negative</span></div>
+      <p>{comparison.label} {comparison.compared} compatible sufficient metrics compared; {comparison.omitted} omitted for insufficient samples or incompatible definitions. This is observational, not a causal claim.</p>
+    </section>
+  )
+}
+
+export default function PerformanceMetrics({
+  metrics, benchmarkLabel = 'benchmark',
+  acceleration = null, capture = null, batting = null, underwater = null,
+  shortTerm = null, risk = null,
+  model: suppliedModel = null, statistics = null, factor = null, benchmark = null,
+  exposure = null, execution = null, robustness = null, signalMetrics = null,
+  prospective = null, scopes = [], scope = null, onScopeChange = null,
+  baselineComparison = null,
+}) {
+  const model = suppliedModel || buildPortfolioMetricModel({ performance: metrics, statistics, acceleration, capture, batting, underwater, shortTerm, risk, factor, benchmark, exposure, execution, robustness })
+  const [view, setView] = useState(() => sessionValue('valuesignal.analytics.view', 'overview'))
+  const selectView = (next) => {
+    setView(next)
+    storeSession('valuesignal.analytics.view', next)
+    if (next === 'algorithm' && scope === 'all_history' && scopes.some((item) => item.id === 'since_algorithm')) onScopeChange?.('since_algorithm')
+  }
+  useEffect(() => {
+    if (view === 'algorithm' && scope === 'all_history' && scopes.some((item) => item.id === 'since_algorithm')) {
+      onScopeChange?.('since_algorithm')
+    }
+  }, [onScopeChange, scope, scopes, view])
+  const sections = [
+    { id: 'standard', label: 'Risk & performance', metrics: model.standard, summary: sectionAssessment('standard', model.standard) },
+    { id: 'comparison', label: 'Benchmark comparison', metrics: model.comparison, summary: sectionAssessment('comparison', model.comparison) },
+    { id: 'fast', label: 'Short-term', metrics: model.fast, summary: sectionAssessment('fast', model.fast) },
+  ]
+  const sample = statistics?.available ? `${statistics.observations} daily returns · ${statistics.startDate} to ${statistics.endDate} · ${statistics.cadence.coveragePct.toFixed(1)}% weekday coverage` : statistics?.reason || metrics?.reason
+  return (
+    <div className="analytics-workspace">
+      <nav className="analytics-toolbar" aria-label="Analytics views and scope">
+        <div className="analytics-view-selector">{VIEWS.map((item) => <button type="button" key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => selectView(item.id)}>{item.label}</button>)}</div>
+        {scopes.length > 0 && <label className="analytics-scope"><span>Scope</span><select value={scope || scopes[0].id} onChange={(event) => onScopeChange?.(event.target.value)}>{scopes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>}
+      </nav>
+      {view === 'overview' && <>
+        <OverallEvidence sections={sections} />
+        <AnalyticsSection id="standard-performance" eyebrow="Standard measures" title="Risk and performance" metrics={model.standard} summary={sections[0].summary} sampleNote={sample} />
+        <AnalyticsSection id="benchmark-comparison" eyebrow="Comparison" title={`Versus the ${benchmarkLabel}`} metrics={model.comparison} summary={sections[1].summary} sampleNote={sample} />
+        <AnalyticsSection id="short-term-view" eyebrow="Fast reads" title="Short-term view" metrics={model.fast} summary={sections[2].summary} sampleNote={shortTerm?.methodology || shortTerm?.reason} />
+        <EvidenceMatrix sections={sections} />
+      </>}
+      {view === 'all' && <AllMetrics model={model} />}
+      {view === 'algorithm' && <>
+        <ProspectiveClock prospective={prospective} />
+        <BaselineComparison comparison={baselineComparison} />
+        <section className="algorithm-period" aria-labelledby="algorithm-period-title"><header><div><span className="eyebrow">Algorithm period</span><h2 id="algorithm-period-title">Scoped evidence</h2></div></header><EvidenceCounts counts={combinedEvidence(sections).counts} /><p>{statistics?.available ? `${statistics.observations} trading returns · Evidence: ${statistics.observations >= 250 ? 'developing' : 'promising but immature'}.` : `? Insufficient — ${statistics?.reason || 'daily live algorithm observations are required'}`}</p></section>
+        <SignalMetricsPanel report={signalMetrics} />
+      </>}
+      {view === 'historical' && <>
+        <RollingSharpeChart statistics={statistics} />
+        <AnalyticsSection id="historical-risk" eyebrow="Historical" title="Risk and performance" metrics={model.standard} summary={sections[0].summary} sampleNote={sample} />
+        <AnalyticsSection id="historical-comparison" eyebrow="Historical" title={`Versus the ${benchmarkLabel}`} metrics={model.comparison} summary={sections[1].summary} sampleNote={sample} />
+      </>}
+    </div>
+  )
+}

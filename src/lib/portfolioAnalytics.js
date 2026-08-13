@@ -55,8 +55,20 @@ function closeMap(history) {
 }
 
 export function currentHoldingsSeries(positions = [], priceData = {}, anchorDates = []) {
-  const dated = anchorDates.length ? anchorDates : [...new Set(positions.flatMap((position) => priceData[position.ticker]?.history?.dates || []))].sort()
-  const tracked = positions.map((position) => ({ position, prices: closeMap(priceData[position.ticker]?.history) })).filter((row) => row.prices.size && finite(row.position.shares))
+  // `history` is intentionally a compact chart grid (daily recent points, weekly older
+  // points). Analytics must prefer the separate native-daily contract. Falling back keeps
+  // legacy charts/accounts readable, but the returned frequency is marked irregular so
+  // inferential calculations can refuse to annualize it.
+  const sourceFor = (position) => priceData[position.ticker]?.analytics_history || priceData[position.ticker]?.history
+  const dated = anchorDates.length ? anchorDates : [...new Set(positions.flatMap((position) => sourceFor(position)?.dates || []))].sort()
+  const tracked = positions.map((position) => {
+    const source = sourceFor(position)
+    return {
+      position,
+      prices: closeMap(source),
+      nativeDaily: source?.frequency === 'daily' && Boolean(priceData[position.ticker]?.analytics_history),
+    }
+  }).filter((row) => row.prices.size && finite(row.position.shares))
   if (!tracked.length || dated.length < 2) return null
   const rows = dated.map((date) => {
     let value = 0
@@ -65,7 +77,18 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
     return covered === tracked.length ? { date, value, coveragePct: positions.length ? covered / positions.length * 100 : 0 } : null
   }).filter(Boolean)
   if (rows.length < 2) return null
-  return { dates: rows.map((row) => row.date), values: rows.map((row) => row.value), coverage: rows.map((row) => row.coveragePct), methodology: 'Current quantities applied to historical daily closes. This is not actual historical account value.' }
+  const nativeDaily = tracked.length === positions.filter((position) => finite(position.shares)).length
+    && tracked.every((row) => row.nativeDaily)
+  return {
+    dates: rows.map((row) => row.date),
+    values: rows.map((row) => row.value),
+    coverage: rows.map((row) => row.coveragePct),
+    frequency: nativeDaily ? 'daily' : 'irregular',
+    source: nativeDaily ? 'analytics_history' : 'legacy_chart_history',
+    methodology: nativeDaily
+      ? 'Current quantities applied to native daily adjusted closes. This is a historical replay of today’s holdings, not actual historical account value.'
+      : 'Current quantities applied to a compact chart grid. This is suitable for display only; daily annualization and inference are unavailable.',
+  }
 }
 
 /** Drops every observation before cutoffDate, keeping a series' own shape intact. Used to let
@@ -98,7 +121,7 @@ export function selectPeriod(series, period = '1M') {
   const start = values[0]
   const end = values.at(-1)
   const dollarReturn = end - start
-  return { period, dates, values, startDate: dates[0], endDate: dates.at(-1), startValue: start, endValue: end, dollarReturn, returnPct: start ? dollarReturn / start * 100 : null, high: Math.max(...values), low: Math.min(...values), coveragePct: series.coverage?.slice(startIndex).reduce((sum, value) => sum + value, 0) / values.length || null, methodology: series.methodology }
+  return { period, dates, values, startDate: dates[0], endDate: dates.at(-1), startValue: start, endValue: end, dollarReturn, returnPct: start ? dollarReturn / start * 100 : null, high: Math.max(...values), low: Math.min(...values), coveragePct: series.coverage?.slice(startIndex).reduce((sum, value) => sum + value, 0) / values.length || null, methodology: series.methodology, frequency: series.frequency, source: series.source }
 }
 
 export function latestMarketDayReturn(series) {
@@ -113,8 +136,14 @@ export function alignSeries(left, right, period = left?.period || right?.period 
   const rightValues = new Map(right.dates.map((date, index) => [date, right.values[index]]))
   const rows = left.dates.map((date, index) => ({ date, left: left.values[index], right: rightValues.get(date) })).filter((row) => finite(row.left) && finite(row.right))
   if (rows.length < 2) return null
-  const make = (key) => selectPeriod({ dates: rows.map((row) => row.date), values: rows.map((row) => row[key]) }, 'All')
-  return { dates: rows.map((row) => row.date), left: { ...make('left'), period }, right: { ...make('right'), period } }
+  const make = (key, source) => selectPeriod({
+    dates: rows.map((row) => row.date),
+    values: rows.map((row) => row[key]),
+    frequency: source.frequency,
+    source: source.source,
+    methodology: source.methodology,
+  }, 'All')
+  return { dates: rows.map((row) => row.date), left: { ...make('left', left), period }, right: { ...make('right', right), period } }
 }
 
 /**
@@ -305,6 +334,44 @@ function accountValueEndpoints(snapshots = []) {
   const usable = [...byDay.values()].sort((left, right) => left.date.localeCompare(right.date))
   if (usable.length < 2) return null
   return { first: usable[0], last: usable.at(-1), observations: usable.length }
+}
+
+/**
+ * Builds a time-weighted live account index from the last recorded value on each market
+ * day. Settled external deposits/withdrawals are removed interval by interval. When the
+ * ledger is not confirmed complete, the series is deliberately marked non-daily so the
+ * inferential layer reports the missing dependency instead of treating cash as return.
+ */
+export function recordedAccountSeries(snapshots = [], transactions = [], historyComplete = false) {
+  const byDay = new Map()
+  snapshots.filter((row) => finite(row.value) && Number(row.value) > 0 && (row.marketDate || row.recordedAt))
+    .sort((left, right) => String(left.recordedAt || '').localeCompare(String(right.recordedAt || '')))
+    .forEach((row) => {
+      const date = row.marketDate || String(row.recordedAt).slice(0, 10)
+      byDay.set(date, Number(row.value))
+    })
+  const rows = [...byDay.entries()].sort(([left], [right]) => left.localeCompare(right))
+  if (rows.length < 2) return null
+  const values = [100]
+  for (let index = 1; index < rows.length; index += 1) {
+    const [previousDate, previousValue] = rows[index - 1]
+    const [date, endingValue] = rows[index]
+    const externalFlow = settledExternalFlows(transactions, previousDate, date)
+      .filter((flow) => flow.date > previousDate)
+      .reduce((sum, flow) => sum + flow.amount, 0)
+    const adjustedEndingValue = endingValue - externalFlow
+    if (!(previousValue > 0) || !(adjustedEndingValue > 0)) return null
+    values.push(values.at(-1) * adjustedEndingValue / previousValue)
+  }
+  return {
+    dates: rows.map(([date]) => date),
+    values,
+    frequency: historyComplete ? 'daily' : 'cash-flow-unverified',
+    source: 'recorded_account_snapshots',
+    methodology: historyComplete
+      ? 'Time-weighted live account index from the final recorded value each market day, net of settled external deposits and withdrawals.'
+      : 'Recorded account values are available, but the external cash-flow ledger has not been confirmed complete.',
+  }
 }
 
 function xnpv(rate, flows) {
@@ -624,7 +691,7 @@ export function shrinkCovarianceMatrix(covarianceMatrix, intensity = 0.2) {
 export function correlationDiversification(positions = []) {
   const requestedTickers = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0).map((row) => row.ticker)
   let eligible = positions.filter((row) => finite(row.currentValue) && row.currentValue > 0)
-    .map((row) => ({ row, returns: returnMap(row.priceInfo?.history) }))
+    .map((row) => ({ row, returns: returnMap(row.priceInfo?.analytics_history || row.priceInfo?.history) }))
     .filter((item) => item.returns.size >= analyticsConfig.correlation_minimum_observations)
   while (eligible.length >= 2) {
     const commonDates = [...eligible[0].returns.keys()]
@@ -657,6 +724,7 @@ export function correlationDiversification(positions = []) {
         ))),
         dates: commonDates,
         returnSeries: series,
+        standaloneVolatilitiesPct: Object.fromEntries(eligible.map((item, index) => [item.row.ticker, volatilities[index] * 100])),
         weights,
         effectiveBets,
         diversificationRatio: portfolioVolatility > 0 ? weightedAverageVolatility / portfolioVolatility : null,
@@ -706,6 +774,7 @@ export function portfolioRiskDecomposition(positions = [], options = {}) {
   const contributions = tickers.map((ticker, index) => ({
     ticker,
     weightPct: weights[index] * 100,
+    standaloneVolatilityPct: correlationResult.standaloneVolatilitiesPct?.[ticker] ?? null,
     marginalContributionToRiskPct: volatility > 0 ? covarianceTimesWeights[index] / volatility * 100 : 0,
     componentContributionToRiskPct: componentRisks[index] * 100,
     percentContributionToRisk: componentTotal ? componentRisks[index] / componentTotal * 100 : 0,
@@ -920,6 +989,12 @@ export function riskFreeAnnualRate(payload) {
  */
 export function performanceMetrics(portfolioPeriod, benchmarkPeriod = null, riskFreeAnnualPct = analyticsConfig.risk_free_fallback_annual_pct) {
   if (!portfolioPeriod?.values?.length) return { available: false, score: null, reason: 'Portfolio return history is required.' }
+  if (portfolioPeriod.frequency && portfolioPeriod.frequency !== 'daily') {
+    const reason = portfolioPeriod.frequency === 'cash-flow-unverified'
+      ? 'Confirm the complete external cash-flow ledger before treating recorded account-value changes as strategy returns.'
+      : 'Native daily analytics history is required; the available series is a compact chart grid.'
+    return { available: false, score: null, observations: Math.max(0, portfolioPeriod.values.length - 1), reason }
+  }
   const portfolioReturns = periodReturns(portfolioPeriod.values)
   if (portfolioReturns.length < analyticsConfig.performance_minimum_observations) {
     return { available: false, score: null, observations: portfolioReturns.length, reason: `At least ${analyticsConfig.performance_minimum_observations} daily returns are required.` }

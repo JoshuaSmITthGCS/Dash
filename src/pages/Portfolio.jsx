@@ -38,11 +38,14 @@ import AnimatedNumber from '../components/AnimatedNumber.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import {
   alignSeries,
+  benchmarkHistoryFromSnapshot,
+  BENCHMARKS,
   concentrationLiquidityScore,
   currentHoldingsSeries,
   diversificationScore,
   performanceMetrics,
   portfolioReturnSummary,
+  recordedAccountSeries,
   portfolioRiskDecomposition,
   portfolioScore,
   resilienceIndex,
@@ -56,9 +59,52 @@ import { battingAverage, captureRatios } from '../lib/portfolioBenchmarkComparis
 import { shortTermView } from '../lib/portfolioShortTermView.js'
 import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
-import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
+import { factorRegression } from '../lib/factorAnalytics.js'
+import {
+  benchmarkFit,
+  executionStatistics,
+  exposureStatistics,
+  performanceStatistics,
+  regimeConditionalPerformance,
+  robustnessStatistics,
+} from '../lib/portfolioStatistics.js'
+import { buildPortfolioMetricModel } from '../lib/portfolioMetricModel.js'
+import { combinedEvidence, compareEvidencePeriods, sectionAssessment } from '../lib/metricAssessment.js'
+import prospectiveValidation from '../../pipeline/validation/harness_freeze.json'
+
+const ANALYTICS_SCOPES = [
+  { id: 'all_history', label: 'All portfolio history' },
+  { id: 'since_algorithm', label: 'Since algorithm activation' },
+  { id: 'live_algorithm', label: 'Live algorithm only' },
+  { id: 'backtest', label: 'Backtest period' },
+]
+
+function sessionSetting(key, fallback) {
+  try { return globalThis.sessionStorage?.getItem(key) || fallback } catch { return fallback }
+}
+
+function asValueSeries(history, limit = null) {
+  if (!history?.dates?.length) return null
+  const start = limit ? Math.max(0, history.dates.length - limit) : 0
+  return {
+    dates: history.dates.slice(start),
+    values: (history.values || history.closes || []).slice(start),
+    frequency: history.frequency || 'daily',
+    source: history.source || history.symbol || null,
+    symbol: history.symbol || null,
+    label: history.label || null,
+    methodology: history.methodology,
+  }
+}
+
+function sliceSeriesBefore(series, cutoffDate) {
+  if (!series?.dates?.length) return null
+  const end = series.dates.findIndex((date) => date >= cutoffDate)
+  if (end < 2) return null
+  return { ...series, dates: series.dates.slice(0, end), values: series.values.slice(0, end), coverage: series.coverage?.slice(0, end) }
+}
 
 const money = (value, digits = 0) =>
   value == null ? '–' : `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
@@ -161,6 +207,12 @@ export default function Portfolio() {
   const { currentUser } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
   const { data: etfData } = useData('etfs.json')
+  const { data: factorData } = useData('factors/french.json')
+  const { data: signalMetrics } = useData('validation/signal_metrics.json')
+  const { data: spySnapshot } = useData('etf/SPY.json')
+  const { data: rspSnapshot } = useData('etf/RSP.json')
+  const { data: iwmSnapshot } = useData('etf/IWM.json')
+  const { data: ijrSnapshot } = useData('etf/IJR.json')
   const {
     positions,
     loading: portfolioLoading,
@@ -173,6 +225,7 @@ export default function Portfolio() {
   } = useFirebasePortfolio()
   const tracking = usePortfolioTracking()
   const { preferences, updatePreferences } = usePreferences()
+  const { data: selectedBenchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark || 'SPY'}.json`)
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0], fundedByNewMoney: true })
@@ -187,7 +240,7 @@ export default function Portfolio() {
   const [sellingId, setSellingId] = useState(null)
   const [sellForm, setSellForm] = useState({ shares: '', price: '', saleDate: new Date().toISOString().split('T')[0] })
   const [sellSaving, setSellSaving] = useState(false)
-  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(false)
+  const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'all_history'))
   const [cashForm, setCashForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
   const [cashSaving, setCashSaving] = useState(false)
   const [cashBalanceForm, setCashBalanceForm] = useState('')
@@ -212,6 +265,7 @@ export default function Portfolio() {
   const portfolioCoverage = data?.portfolio_coverage || []
   const screenUniverse = data?.screen_universe || []
   const benchmarkHistory = data?.benchmark_history
+  const benchmarkAnalyticsHistory = data?.benchmark_analytics_history
   // Lightweight screen rows are a useful quote fallback for a holding that has been
   // fetched but has not reached full published coverage yet (EXPE is one such case).
   // Full coverage is listed last so it always wins when both versions exist.
@@ -291,44 +345,60 @@ export default function Portfolio() {
     ? { ...portfolioQuotes.quotes.SPY, portfolioQuote: true }
     : null
   const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory, { benchmarkQuote })
-  const scoreHoldingsSeriesFull = currentHoldingsSeries(positions, priceData, benchmarkHistory?.dates || [])
-  const liveHoldingsSeries = sliceSeriesFrom(scoreHoldingsSeriesFull, LIVE_TRACKING_START)
-  const scoreHoldingsSeries = sinceLiveTrackingOnly ? liveHoldingsSeries : scoreHoldingsSeriesFull
-  const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
-  const scoreBenchmarkPeriod = selectPeriod(benchmarkHistory?.dates ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes } : null, scorePortfolioPeriod?.period || 'All')
+  const reportBenchmarkSeries = asValueSeries(benchmarkAnalyticsHistory, 504)
+  const candidateInputs = [
+    { symbol: 'SPY', label: 'S&P 500', snapshot: spySnapshot },
+    { symbol: 'RSP', label: 'Equal-weight S&P 500', snapshot: rspSnapshot },
+    { symbol: 'IWM', label: 'Russell 2000', snapshot: iwmSnapshot },
+    { symbol: 'IJR', label: 'S&P SmallCap 600', snapshot: ijrSnapshot },
+  ].map(({ symbol, label, snapshot }) => {
+    const series = asValueSeries(benchmarkHistoryFromSnapshot(snapshot), 504)
+    return series ? { ...series, symbol, label } : null
+  }).filter(Boolean)
+  const selectedPublished = asValueSeries(benchmarkHistoryFromSnapshot(selectedBenchmarkSnapshot), 504)
+  const selectedBenchmarkSymbol = selectedPublished?.symbol || reportBenchmarkSeries?.symbol || 'SPY'
+  const selectedBenchmarkLabel = BENCHMARKS.find((row) => row.symbol === selectedBenchmarkSymbol)?.label
+    || candidateInputs.find((row) => row.symbol === selectedBenchmarkSymbol)?.label
+    || selectedBenchmarkSymbol
+  const analyticsBenchmarkSeries = selectedPublished || reportBenchmarkSeries
+  const scoreHoldingsSeriesFull = currentHoldingsSeries(positions, priceData, analyticsBenchmarkSeries?.dates || [])
+  const sinceAlgorithmSeries = sliceSeriesFrom(scoreHoldingsSeriesFull, LIVE_TRACKING_START)
+  const liveAccountSeries = recordedAccountSeries(
+    tracking.snapshots,
+    tracking.activities,
+    tracking.trackingState?.cashFlowHistoryComplete,
+  )
+  const scoreHoldingsSeries = analyticsScope === 'since_algorithm'
+    ? sinceAlgorithmSeries
+    : analyticsScope === 'live_algorithm'
+      ? liveAccountSeries
+      : analyticsScope === 'backtest'
+        ? null
+        : scoreHoldingsSeriesFull
+  const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, 'All')
+  const scoreBenchmarkPeriod = selectPeriod(analyticsBenchmarkSeries, 'All')
   const scoreComparable = alignSeries(scorePortfolioPeriod, scoreBenchmarkPeriod, scorePortfolioPeriod?.period)
-  const scoreDiversification = diversificationScore(portfolioPositions, { etfs: etfData?.etfs || [] })
-  const scoreResilience = resilienceIndex(scoreComparable?.left.values || scorePortfolioPeriod?.values || [], scoreDiversification)
   const riskFree = riskFreeAnnualRate(data)
-  const scorePerformance = performanceMetrics(scoreComparable?.left, scoreComparable?.right, riskFree.annualPct)
-  // Fed the unclipped holdings series rather than scoreComparable's one-year slice: the
-  // reading needs two full quarters plus the skipped week, and clipping first would leave it
-  // measuring the tail of its own window. No flows are passed because this series is today's
-  // share counts applied to historical closes - deposits and withdrawals never enter it.
-  const benchmarkSeries = benchmarkHistory?.dates
-    ? { dates: benchmarkHistory.dates, values: benchmarkHistory.closes }
-    : null
-  const scoreAcceleration = portfolioAcceleration(scoreHoldingsSeries, benchmarkSeries)
-  // Capture and batting average read the same unclipped series for the same reason: both
-  // need the market to have gone both ways, and a one-year slice of a bull run may not
-  // contain enough down periods to answer with.
-  const scoreCapture = captureRatios(scoreHoldingsSeries, benchmarkSeries)
-  const scoreBatting = battingAverage(scoreHoldingsSeries, benchmarkSeries)
+  const backtestBlocker = 'A registered algorithm backtest return series is not published; signal diagnostics are available in the Algorithm view, but portfolio returns are not inferred from them.'
+  const scorePerformance = analyticsScope === 'backtest'
+    ? { available: false, score: null, observations: 0, reason: backtestBlocker }
+    : performanceMetrics(scoreComparable?.left, scoreComparable?.right, riskFree.annualPct)
+  // Every metric below receives the same selected scope and daily benchmark. Metrics with a
+  // legitimate monthly cadence (batting average/factors) declare their own count and dates.
+  const scoreAcceleration = portfolioAcceleration(scoreHoldingsSeries, analyticsBenchmarkSeries)
+  const scoreCapture = captureRatios(scoreHoldingsSeries, analyticsBenchmarkSeries)
+  const scoreBatting = battingAverage(scoreHoldingsSeries, analyticsBenchmarkSeries)
   const scoreUnderwater = underwaterProfile(scoreHoldingsSeries)
-  // Deliberately the FULL series, not the live-tracking slice the ratios above may use: the
-  // short-term panel exists to answer the last week and month, and it needs the baseline
-  // history behind them to know what this portfolio's normal wobble even is.
-  const scoreShortTerm = shortTermView(scoreHoldingsSeriesFull, benchmarkSeries)
-  // The same call the Diversification page makes, for the same numbers - tracking error and
-  // active share are computed once in portfolioRiskDecomposition and read in both places
-  // rather than reimplemented here.
+  const scoreShortTerm = shortTermView(scoreHoldingsSeries, analyticsBenchmarkSeries)
   const scoreRisk = portfolioRiskDecomposition(portfolioPositions, {
-    benchmarkHistory,
-    benchmarkWeights: (etfData?.etfs || []).find((row) => row.ticker === 'SPY')?.top_holdings,
+    benchmarkHistory: analyticsBenchmarkSeries ? { dates: analyticsBenchmarkSeries.dates, closes: analyticsBenchmarkSeries.values } : null,
+    benchmarkWeights: (etfData?.etfs || []).find((row) => row.ticker === selectedBenchmarkSymbol)?.top_holdings,
     etfs: etfData?.etfs || [],
   })
+  const scoreDiversification = diversificationScore(portfolioPositions, { etfs: etfData?.etfs || [] })
+  const scoreResilience = resilienceIndex(scoreComparable?.left?.values || scorePortfolioPeriod?.values || [], scoreDiversification)
   const scoreConcentration = concentrationLiquidityScore(portfolioPositions)
-  const overallScore = portfolioScore({
+  const legacyPortfolioScore = portfolioScore({
     diversification: scoreDiversification,
     resilience: scoreResilience,
     performance: scorePerformance,
@@ -336,6 +406,80 @@ export default function Portfolio() {
     concentrationLiquidity: scoreConcentration,
     dataCompleteness: positions.length ? Math.round(portfolioPositions.filter((position) => position.currentValue != null).length / positions.length * 100) : 0,
   })
+  const scoreStatistics = analyticsScope === 'backtest'
+    ? { available: false, observations: 0, reason: backtestBlocker }
+    : performanceStatistics(scoreComparable?.left || scorePortfolioPeriod, riskFree.annualPct, { trialCount: prospectiveValidation.trial_count_for_deflated_statistics?.dsr_trial_count_used })
+  const scoreFactor = factorRegression(scoreComparable?.left || scorePortfolioPeriod, factorData)
+  const scoreBenchmarkFit = benchmarkFit(scoreHoldingsSeries, candidateInputs)
+  const comparisonFor = (candidate) => {
+    if (!candidate || !scoreHoldingsSeries) return null
+    const portfolioPeriod = selectPeriod(scoreHoldingsSeries, 'All')
+    const benchmarkPeriod = selectPeriod(candidate, 'All')
+    const comparable = alignSeries(portfolioPeriod, benchmarkPeriod, 'All')
+    return {
+      symbol: candidate.symbol,
+      label: candidate.label,
+      performance: performanceMetrics(comparable?.left, comparable?.right, riskFree.annualPct),
+      capture: captureRatios(scoreHoldingsSeries, candidate),
+      batting: battingAverage(scoreHoldingsSeries, candidate),
+    }
+  }
+  const scoreBenchmarkComparisons = {
+    spy: comparisonFor(candidateInputs.find((row) => row.symbol === 'SPY')),
+    best: comparisonFor(candidateInputs.find((row) => row.symbol === scoreBenchmarkFit.bestFit?.symbol)),
+  }
+  const scoreExposure = exposureStatistics(portfolioPositions)
+  const scoreExecution = executionStatistics()
+  const publishedPbo = signalMetrics?.metrics?.find((row) => row.id === 'pbo')
+  const scoreRobustness = robustnessStatistics({
+    pbo: ['ready', 'provisional'].includes(publishedPbo?.status) ? publishedPbo.value : null,
+  })
+  const scoreRegimes = regimeConditionalPerformance(scoreHoldingsSeries, analyticsBenchmarkSeries)
+  const scoreMetricModel = buildPortfolioMetricModel({
+    performance: scorePerformance,
+    statistics: scoreStatistics,
+    acceleration: scoreAcceleration,
+    capture: scoreCapture,
+    batting: scoreBatting,
+    underwater: scoreUnderwater,
+    shortTerm: scoreShortTerm,
+    risk: scoreRisk,
+    factor: scoreFactor,
+    benchmark: scoreBenchmarkFit,
+    benchmarkComparisons: scoreBenchmarkComparisons,
+    exposure: scoreExposure,
+    execution: scoreExecution,
+    robustness: scoreRobustness,
+    regime: scoreRegimes,
+    legacyPortfolioScore,
+  })
+  const analyticsSections = [
+    { id: 'standard', metrics: scoreMetricModel.standard, summary: sectionAssessment('standard', scoreMetricModel.standard) },
+    { id: 'comparison', metrics: scoreMetricModel.comparison, summary: sectionAssessment('comparison', scoreMetricModel.comparison) },
+    { id: 'fast', metrics: scoreMetricModel.fast, summary: sectionAssessment('fast', scoreMetricModel.fast) },
+  ]
+  const analyticsEvidence = combinedEvidence(analyticsSections)
+  const comparableEvidenceFor = (series) => {
+    const portfolioPeriod = selectPeriod(series, 'All')
+    const benchmarkPeriod = selectPeriod(analyticsBenchmarkSeries, 'All')
+    const comparable = alignSeries(portfolioPeriod, benchmarkPeriod, 'All')
+    const performance = performanceMetrics(comparable?.left, comparable?.right, riskFree.annualPct)
+    const statistics = performanceStatistics(comparable?.left || portfolioPeriod, riskFree.annualPct, { trialCount: prospectiveValidation.trial_count_for_deflated_statistics?.dsr_trial_count_used })
+    const model = buildPortfolioMetricModel({
+      performance,
+      statistics,
+      acceleration: portfolioAcceleration(series, analyticsBenchmarkSeries),
+      capture: captureRatios(series, analyticsBenchmarkSeries),
+      batting: battingAverage(series, analyticsBenchmarkSeries),
+      underwater: underwaterProfile(series),
+      shortTerm: shortTermView(series, analyticsBenchmarkSeries),
+    })
+    return [...model.standard, ...model.comparison, ...model.fast]
+  }
+  const algorithmBaseline = compareEvidencePeriods(
+    comparableEvidenceFor(sliceSeriesBefore(scoreHoldingsSeriesFull, LIVE_TRACKING_START)),
+    comparableEvidenceFor(sinceAlgorithmSeries),
+  )
   const versusIndex = portfolioVsBenchmark(portfolioPositions, benchmarkHistory)
   const basis = data?.hypothetical_basis || 500
   const fixedBasisTotal = portfolioFixedBasisVsBenchmark(portfolioStats.positions, priceData, benchmarkHistory, basis)
@@ -583,10 +727,10 @@ export default function Portfolio() {
           <div className="kpi-note">{returnSummary.strategy.available ? 'Modified Dietz with settled external flows' : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
         </div>
         <div className="card kpi portfolio-score-kpi">
-          <div className="kpi-label">Portfolio Score</div>
-          <div className="kpi-value">{overallScore.available ? overallScore.score : '–'}<small>/100</small></div>
-          <div className="kpi-note">{overallScore.available ? `${overallScore.provisional ? 'Provisional · ' : ''}${overallScore.reason}` : overallScore.reason}</div>
-          <a href="/portfolio/diversification">See score details →</a>
+          <div className="kpi-label">Performance evidence</div>
+          <div className="kpi-value evidence-kpi-value">{analyticsEvidence.read}</div>
+          <div className="kpi-note">▲ {analyticsEvidence.counts.positive} · ● {analyticsEvidence.counts.neutral} · ▼ {analyticsEvidence.counts.negative} · ? {analyticsEvidence.counts.insufficient}</div>
+          <a href="#analytics-overall-title">Review the evidence →</a>
         </div>
         <div className="card kpi">
           <div className="kpi-label">Vs S&P 500</div>
@@ -628,13 +772,16 @@ export default function Portfolio() {
 
       <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
 
-      <div className="settings-row live-tracking-setting" style={{ marginBottom: 14 }}>
-        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span>{sinceLiveTrackingOnly && <LiveTrackingCountdown dates={liveHoldingsSeries?.dates} />}</div>
-        <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
-      </div>
-      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel="S&P 500" riskFree={riskFree}
+      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel={selectedBenchmarkLabel} riskFree={riskFree}
         acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
-        shortTerm={scoreShortTerm} risk={scoreRisk} />
+        shortTerm={scoreShortTerm} risk={scoreRisk} model={scoreMetricModel} statistics={scoreStatistics}
+        factor={scoreFactor} benchmark={scoreBenchmarkFit} exposure={scoreExposure} execution={scoreExecution}
+        robustness={scoreRobustness} signalMetrics={signalMetrics} prospective={prospectiveValidation}
+        baselineComparison={algorithmBaseline}
+        scopes={ANALYTICS_SCOPES} scope={analyticsScope} onScopeChange={(next) => {
+          setAnalyticsScope(next)
+          try { globalThis.sessionStorage?.setItem('valuesignal.analytics.scope', next) } catch { /* optional session persistence */ }
+        }} />
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">

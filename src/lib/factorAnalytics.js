@@ -2,8 +2,16 @@ import modelSettings from '../../pipeline/config/settings.json' with { type: 'js
 
 const config = modelSettings.portfolio_analytics
 const FACTOR_KEYS = ['market_excess', 'size', 'value', 'profitability', 'investment', 'momentum']
+const FACTOR_MODELS = [
+  { id: 'capm', label: 'CAPM', keys: ['market_excess'] },
+  { id: 'ff3', label: 'Fama–French 3-factor', keys: ['market_excess', 'size', 'value'] },
+  { id: 'carhart4', label: 'Carhart 4-factor', keys: ['market_excess', 'size', 'value', 'momentum'] },
+  { id: 'ff5', label: 'Fama–French 5-factor', keys: ['market_excess', 'size', 'value', 'profitability', 'investment'] },
+  // Retained as the existing canonical read so no pre-refactor measurement disappears.
+  { id: 'ff5_momentum', label: 'Fama–French 5-factor + momentum', keys: FACTOR_KEYS },
+]
 
-const finite = (value) => Number.isFinite(Number(value))
+const finite = (value) => value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
 
 function invertMatrix(input) {
   const size = input.length
@@ -31,6 +39,16 @@ function invertMatrix(input) {
 
 function multiplyMatrixVector(matrix, vector) {
   return matrix.map((row) => row.reduce((sum, value, index) => sum + value * vector[index], 0))
+}
+
+function multiplyMatrices(left, right) {
+  return left.map((row) => right[0].map((_, column) => (
+    row.reduce((sum, value, index) => sum + value * right[index][column], 0)
+  )))
+}
+
+function transpose(matrix) {
+  return matrix[0].map((_, column) => matrix.map((row) => row[column]))
 }
 
 function monthlyReturns(series) {
@@ -62,29 +80,40 @@ function factorSummary(loadings) {
   return `Your portfolio behaves like a ${allocation}${momentum ? ` with ${momentum}` : ''}.`
 }
 
-/** Ordinary least squares on monthly excess returns against FF5 plus momentum. */
-export function factorRegression(portfolioSeries, payload) {
-  const returns = monthlyReturns(portfolioSeries)
-  const factorRows = new Map((payload?.observations || []).map((row) => [row.month, row]))
-  const observations = [...returns.entries()].map(([month, value]) => {
-    const factors = factorRows.get(month)
-    if (!factors || !FACTOR_KEYS.every((key) => finite(factors[key])) || !finite(factors.risk_free)) return null
-    return { month, y: value - Number(factors.risk_free), x: [1, ...FACTOR_KEYS.map((key) => Number(factors[key]))] }
-  }).filter(Boolean)
-  if (observations.length < config.factor_minimum_monthly_observations) {
-    return {
-      available: false,
-      observations: observations.length,
-      requiredObservations: config.factor_minimum_monthly_observations,
-      reason: `${observations.length} of ${config.factor_minimum_monthly_observations} monthly observations accumulated.`,
+function neweyWestCovariance(inverseXtx, observations, residuals, lag) {
+  const columns = observations[0].x.length
+  const meat = Array.from({ length: columns }, () => Array(columns).fill(0))
+  const addOuter = (left, right, scale) => {
+    for (let row = 0; row < columns; row += 1) {
+      for (let column = 0; column < columns; column += 1) meat[row][column] += scale * left[row] * right[column]
     }
   }
-  const columns = FACTOR_KEYS.length + 1
+  observations.forEach((item, index) => addOuter(item.x, item.x, residuals[index] ** 2))
+  for (let distance = 1; distance <= lag; distance += 1) {
+    const weight = 1 - distance / (lag + 1)
+    for (let index = distance; index < observations.length; index += 1) {
+      const scale = weight * residuals[index] * residuals[index - distance]
+      addOuter(observations[index].x, observations[index - distance].x, scale)
+      addOuter(observations[index - distance].x, observations[index].x, scale)
+    }
+  }
+  const sandwich = multiplyMatrices(multiplyMatrices(inverseXtx, meat), transpose(inverseXtx))
+  const correction = observations.length / Math.max(1, observations.length - columns)
+  return sandwich.map((row) => row.map((value) => value * correction))
+}
+
+function regress(baseObservations, model) {
+  const observations = baseObservations.map((item) => ({
+    ...item,
+    x: [1, ...model.keys.map((key) => item.factors[key])],
+  }))
+  const columns = model.keys.length + 1
+  if (observations.length <= columns) return { id: model.id, label: model.label, available: false, reason: 'The sample has fewer observations than regression parameters.' }
   const xtx = Array.from({ length: columns }, (_, row) => Array.from({ length: columns }, (_, column) => (
     observations.reduce((sum, item) => sum + item.x[row] * item.x[column], 0)
   )))
   const inverse = invertMatrix(xtx)
-  if (!inverse) return { available: false, observations: observations.length, reason: 'The factor inputs are collinear for this window.' }
+  if (!inverse) return { id: model.id, label: model.label, available: false, observations: observations.length, reason: 'The factor inputs are collinear for this window.' }
   const xty = Array.from({ length: columns }, (_, column) => observations.reduce(
     (sum, item) => sum + item.x[column] * item.y, 0,
   ))
@@ -94,13 +123,16 @@ export function factorRegression(portfolioSeries, payload) {
   const residualSumSquares = residuals.reduce((sum, value) => sum + value ** 2, 0)
   const yMean = observations.reduce((sum, item) => sum + item.y, 0) / observations.length
   const totalSumSquares = observations.reduce((sum, item) => sum + (item.y - yMean) ** 2, 0)
-  const residualVariance = residualSumSquares / (observations.length - columns)
-  const standardErrors = inverse.map((row, index) => Math.sqrt(Math.max(0, residualVariance * row[index])))
-  const loadings = Object.fromEntries(FACTOR_KEYS.map((key, index) => [key, coefficients[index + 1]]))
-  const loadingStandardErrors = Object.fromEntries(FACTOR_KEYS.map((key, index) => [key, standardErrors[index + 1]]))
+  const hacLag = Math.max(1, Math.floor(4 * (observations.length / 100) ** (2 / 9)))
+  const hacCovariance = neweyWestCovariance(inverse, observations, residuals, hacLag)
+  const standardErrors = hacCovariance.map((row, index) => Math.sqrt(Math.max(0, row[index])))
+  const loadings = Object.fromEntries(model.keys.map((key, index) => [key, coefficients[index + 1]]))
+  const loadingStandardErrors = Object.fromEntries(model.keys.map((key, index) => [key, standardErrors[index + 1]]))
   const alphaMonthly = coefficients[0]
   const alphaStandardError = standardErrors[0]
   return {
+    id: model.id,
+    label: model.label,
     available: true,
     observations: observations.length,
     startMonth: observations[0].month,
@@ -110,7 +142,54 @@ export function factorRegression(portfolioSeries, payload) {
     alphaAnnualPct: alphaMonthly * config.factor_annualization_months * 100,
     alphaTStatistic: alphaStandardError > 0 ? alphaMonthly / alphaStandardError : null,
     rSquared: totalSumSquares > 0 ? 1 - residualSumSquares / totalSumSquares : null,
-    summary: factorSummary(loadings),
+    residualVolatilityAnnualPct: Math.sqrt(residualSumSquares / Math.max(1, observations.length - columns)) * Math.sqrt(config.factor_annualization_months) * 100,
+    unexplainedVariancePct: totalSumSquares > 0 ? residualSumSquares / totalSumSquares * 100 : null,
+    hacLag,
+    covariance: 'Newey–West HAC with Bartlett weights and finite-sample correction',
+  }
+}
+
+/**
+ * Escalating monthly CAPM/FF3/Carhart4/FF5 regressions with Newey–West HAC inference.
+ * The committed Ken French artifact is monthly, so this does not pretend to be a daily
+ * regression. The frequency and sample are returned explicitly.
+ */
+export function factorRegression(portfolioSeries, payload) {
+  const returns = monthlyReturns(portfolioSeries)
+  const factorRows = new Map((payload?.observations || []).map((row) => [row.month, row]))
+  const observations = [...returns.entries()].map(([month, value]) => {
+    const factors = factorRows.get(month)
+    if (!factors || !FACTOR_KEYS.every((key) => finite(factors[key])) || !finite(factors.risk_free)) return null
+    return {
+      month,
+      y: value - Number(factors.risk_free),
+      factors: Object.fromEntries(FACTOR_KEYS.map((key) => [key, Number(factors[key])])),
+    }
+  }).filter(Boolean)
+  if (observations.length < config.factor_minimum_monthly_observations) {
+    return {
+      available: false,
+      observations: observations.length,
+      requiredObservations: config.factor_minimum_monthly_observations,
+      frequency: 'monthly',
+      reason: `${observations.length} of ${config.factor_minimum_monthly_observations} monthly observations accumulated.`,
+    }
+  }
+  const models = FACTOR_MODELS.map((model) => regress(observations, model))
+  const full = models.at(-1)
+  if (!full?.available) return { ...full, models, frequency: 'monthly' }
+  return {
+    ...full,
+    frequency: 'monthly',
+    models,
+    summary: factorSummary(full.loadings),
+    alphaInterpretation: (() => {
+      const carhart = models.find((model) => model.id === 'carhart4')
+      if (!carhart?.available || !finite(carhart.alphaTStatistic)) return 'Momentum-and-size-adjusted alpha is not estimable.'
+      return carhart.alphaTStatistic > 3
+        ? 'Alpha remains positive above the registered t > 3 hurdle after momentum and size.'
+        : 'Alpha is not significant after momentum and size; this sample does not distinguish alpha from packaged factor exposure.'
+    })(),
   }
 }
 

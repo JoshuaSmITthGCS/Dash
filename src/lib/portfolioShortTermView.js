@@ -152,6 +152,11 @@ export function shortTermView(portfolioSeries, benchmarkSeries, options = {}) {
 /** Short label for a window tile: what the number is actually saying. */
 export function shortTermVerdict(window) {
   if (!window?.available) return window?.reason || 'Not enough history yet'
-  if (window.beyondNoise === false) return 'Inside this portfolio’s normal wobble'
-  return window.excessPct >= 0 ? 'Ahead by more than the usual noise' : 'Behind by more than the usual noise'
+  if (!(window.noiseFloorPct > 0)) return 'Noise floor unavailable'
+  const ratio = Math.abs(window.excessPct) / window.noiseFloorPct
+  if (ratio < 0.5) return 'Mostly noise · descriptive band'
+  if (ratio < 1) return 'Inside this portfolio’s normal wobble'
+  if (ratio < 1.5) return 'Possible signal, not decisive'
+  if (ratio < 2) return window.excessPct >= 0 ? 'Meaningful positive deviation' : 'Meaningful negative deviation'
+  return window.excessPct >= 0 ? 'Strong recent positive deviation' : 'Strong recent negative deviation'
 }

@@ -71,6 +71,31 @@ class AlignmentTests(unittest.TestCase):
         self.assertIsNone(mh.series_payload(dates, closes, mh.weekly_grid(dates)))
 
 
+class AnalyticsSeriesTests(unittest.TestCase):
+    def test_native_sessions_are_not_replaced_by_the_compact_chart_grid(self):
+        dates = sessions(120)
+        closes = [100.0 + index / 10 for index in range(120)]
+
+        payload = mh.analytics_series_payload(dates, closes)
+
+        self.assertEqual(payload["dates"], dates)
+        self.assertEqual(len(payload["closes"]), 120)
+        self.assertEqual(payload["frequency"], "daily")
+        self.assertGreater(len(payload["dates"]), len(mh.chart_grid(dates)))
+
+    def test_contract_trims_to_the_latest_sessions_and_drops_invalid_prices(self):
+        dates = sessions(8)
+        closes = [100, 101, None, 0, 104, 105, 106, 107]
+
+        payload = mh.analytics_series_payload(dates, closes, maximum_sessions=4)
+
+        self.assertEqual(payload["dates"], dates[-4:])
+        self.assertEqual(payload["closes"], [104.0, 105.0, 106.0, 107.0])
+
+    def test_one_valid_observation_is_not_published_as_a_return_series(self):
+        self.assertIsNone(mh.analytics_series_payload(sessions(2), [100, None]))
+
+
 class HypotheticalTests(unittest.TestCase):
     def test_growth_series_starts_at_the_standard_basis(self):
         dates = sessions(200)

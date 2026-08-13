@@ -86,7 +86,7 @@ describe('comparison panel', () => {
     expect(tileFor('Acceleration')).toHaveTextContent('189 days of overlapping history')
     expect(tileFor('Up capture')).toHaveTextContent('this window has 30 up and 2 down')
     expect(tileFor('Batting average')).toHaveTextContent('2 available')
-    expect(tileFor('Capture spread')).toHaveTextContent('Unavailable')
+    expect(tileFor('Capture spread')).toHaveTextContent('Insufficient')
   })
 })
 
@@ -120,7 +120,7 @@ describe('short-term panel', () => {
     expect(tileFor('Past week vs index').className).toBe('metric-tone-positive')
     // +0.4% against a 2.4% floor is the ordinary wobble, and must not read as a win.
     expect(tileFor('Past month vs index').className).toBe('metric-tone-neutral')
-    expect(tileFor('Noise floor (month)')).toHaveTextContent('Inside this portfolio’s normal wobble')
+    expect(tileFor('Noise floor (month)')).toHaveTextContent('Mostly noise')
   })
 
   it('declines a single window without taking the panel down with it', () => {

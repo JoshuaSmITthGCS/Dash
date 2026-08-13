@@ -31,8 +31,8 @@ import pit_store
 from fred import FredClient, FredError, fetch_regime
 from layer_health import assert_layers_vary
 from plausibility import screen as screen_plausibility
-from market_history import (BASIS, chart_grid, hypothetical_vs_benchmark, sector_percentiles,
-                            series_payload)
+from market_history import (BASIS, analytics_series_payload, chart_grid,
+                            hypothetical_vs_benchmark, sector_percentiles, series_payload)
 from peer_groups import canonical_percentiles
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
@@ -164,6 +164,7 @@ PUBLISHED_LAYERS = {
 
 def report_row(row):
     history = row.get("history") or {}
+    analytics_history = row.get("analytics_history") or {}
     projected = {key: row.get(key) for key in REPORT_ROW_FIELDS if row.get(key) is not None}
     # Full leaderboard rows carry detailed evidence/article records while lightweight rows
     # already carry summaries. The route-critical projection always publishes the compact
@@ -182,6 +183,8 @@ def report_row(row):
         projected["analysis_v2"] = {"structural": structural}
     if history.get("dates") and history.get("closes"):
         projected["history"] = {"dates": history["dates"], "closes": history["closes"]}
+    if analytics_history.get("dates") and analytics_history.get("closes"):
+        projected["analytics_history"] = analytics_history
     return projected
 
 
@@ -199,6 +202,7 @@ def report_snapshot(payload):
         "universe_count": payload.get("universe_count"),
         "hypothetical_basis": payload.get("hypothetical_basis"),
         "benchmark_history": payload.get("benchmark_history"),
+        "benchmark_analytics_history": payload.get("benchmark_analytics_history"),
         "source_status": payload.get("source_status"),
         "market": payload.get("market"),
         "theme_screen": {
@@ -1366,6 +1370,9 @@ def attach_history(row, context, grid, benchmark_growth):
     if not payload:
         return
     row["history"] = {"dates": grid, **payload}
+    analytics_history = analytics_series_payload(history["dates"], history["closes"])
+    if analytics_history:
+        row["analytics_history"] = analytics_history
     row["hypothetical"] = hypothetical_vs_benchmark(payload["growth"], benchmark_growth)
 
 
@@ -1892,6 +1899,10 @@ def run():
         },
         "market": {"status": market_status.get("markets", []), "macro": {**macro, "regime": fred_regime}},
         "benchmark_history": {"symbol": "SPY", "dates": grid, **(benchmark_series or {})},
+        "benchmark_analytics_history": {
+            "symbol": "SPY",
+            **(analytics_series_payload(benchmark["dates"], benchmark["closes"]) or {}),
+        },
         "hypothetical_basis": BASIS,
         "research": ranked,
         "screen_universe": screen_universe,
