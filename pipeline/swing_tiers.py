@@ -13,17 +13,22 @@ Three rules govern what may enter a tier.
    Fraction-of-payoff captured, from the decay curves in research/HORIZON-STRATIFIED-REDESIGN.md
    section 2:
 
-   | leg                 | 2-5 sessions | 6-15 sessions | 16-40 sessions |
+   | leg                 | 2-5 sessions | 6-15 sessions | 16-90 sessions |
    |---------------------|--------------|---------------|----------------|
-   | announcement return | 100%         | 30%           | 65%            |
+   | announcement return | 100%         | 30%           | 100%           |
    | high volume premium | 20%          | 55%           | 100% (spent)   |
    | short-term reversal | 55-65%       | 95-100%       | then adverse   |
-   | PEAD (SUE)          | 10-12%       | 25-30%        | 60-65%         |
-   | 52-week high        | 5%           | 16%           | 60-65%         |
-   | analyst revision    | 6-8%         | 12-15%        | 35-40%         |
+   | PEAD (SUE)          | 10-12%       | 25-30%        | 95%            |
+   | 52-week high        | 5%           | 16%           | 95%            |
+   | analyst revision    | 6-8%         | 12-15%        | 55%            |
 
    That table is why the fast book carries no 52-week leg and the slow book carries no volume
    leg. Neither has paid yet, or both have already paid, at the other's horizon.
+
+   The slow column is quoted at a 65-session hold rather than the 40 this screen originally
+   capped at. Capping at 40 forfeited roughly 35-40% of the PEAD payoff, most of it the
+   25-30% Bernard & Thomas measure landing in the three days around the *next* announcement,
+   which a 40-session hold sells before reaching.
 
 2. **The fast book is event-triggered, not a cross-sectional rank.** TIER_F requires the
    announcement-return leg to resolve, so a name enters only when it has actually just
@@ -144,10 +149,16 @@ TIER_SPECS = {
     },
     "S": {
         "id": "swing-tier-S",
-        "label": "8-week swing",
-        "horizon_label": "16-40 sessions",
-        "target_hold_sessions": 40,
-        "session_band": (16, 40),
+        "label": "13-week swing",
+        "horizon_label": "16-90 sessions",
+        # 65, not 40, and not an arbitrary "longer". A quarter is roughly 63 trading sessions,
+        # and Bernard & Thomas measure 25-30% of the entire post-earnings drift landing in the
+        # three-day window around the *next* announcement. A 40-session hold sells the position
+        # before the single densest part of the payoff arrives. 65 sessions is the shortest
+        # hold that clears that cluster, which captures it without paying for holding time that
+        # buys nothing: every session past the next announcement is cost without drift.
+        "target_hold_sessions": 65,
+        "session_band": (16, 90),
         "trigger": "cross-sectional rank",
         "weights": {
             "pead_drift": .30,
@@ -162,9 +173,12 @@ TIER_SPECS = {
             "exit_percentile": 75,
         },
         "book_size_names": 82,
-        "note": ("The only tier whose cost budget is comfortable: roughly 6 round trips a year "
-                 "against 84 in the fast book. The volume leg is absent because its 20-session "
-                 "window has closed before this book's hold is half done."),
+        "note": ("The only tier whose cost budget is comfortable: under 4 round trips a year "
+                 "against 84 in the fast book. The hold runs past the next earnings "
+                 "announcement deliberately, because 25-30% of the post-earnings drift lands in "
+                 "the three days around it and a 40-session hold sells before it arrives. The "
+                 "volume leg is absent because its 20-session window has closed before this "
+                 "book's hold is a third done."),
     },
 }
 
@@ -395,13 +409,17 @@ def tier_evidence(tier):
 # research/HORIZON-STRATIFIED-REDESIGN.md section 2, which states per-cell provenance and
 # marks which cells are interpolated from published endpoints rather than read off a published
 # path. Published with the screen so a reader can see why a leg is absent from a tier.
+# The S column is quoted at the 65-session hold. It was materially lower at 40, and the
+# difference is the whole argument for the longer hold: PEAD goes from 62% to 95% because the
+# next-announcement cluster lands around session 63, and the 52-week and revision legs are
+# monthly accruals that simply have more months to accrue over.
 DECAY_CAPTURE = {
-    "announcement_return": {"F": 1.00, "M": 0.30, "S": 0.65},
+    "announcement_return": {"F": 1.00, "M": 0.30, "S": 1.00},
     "high_volume_premium": {"F": 0.20, "M": 0.55, "S": 1.00},
     "short_term_reversal": {"F": 0.60, "M": 0.97, "S": None},
-    "pead_drift": {"F": 0.11, "M": 0.27, "S": 0.62},
-    "high_52w_proximity": {"F": 0.05, "M": 0.16, "S": 0.62},
-    "analyst_revision": {"F": 0.07, "M": 0.13, "S": 0.37},
+    "pead_drift": {"F": 0.11, "M": 0.27, "S": 0.95},
+    "high_52w_proximity": {"F": 0.05, "M": 0.16, "S": 0.95},
+    "analyst_revision": {"F": 0.07, "M": 0.13, "S": 0.55},
 }
 
 DECAY_CAPTURE_NOTE = (

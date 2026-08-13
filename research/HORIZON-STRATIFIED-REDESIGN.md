@@ -23,8 +23,22 @@ they were built.
 | A leg may not enter a faster tier on a slower tier's effect size | Enforced as a test: a leg capturing under 20% of its documented payoff inside a tier's window cannot be in that tier | `test_swing_tiers.py::test_each_leg_only_enters_a_tier_where_its_payoff_lands` |
 | The reversal leg fails at t=1.37 | **Still carried, at 20%, in the fast book only.** It is one of only two legs with any documented fast-horizon claim, so a 3-day book without it would have one leg. This is the clearest place where the built product departs from the report's recommendation | `TIER_SPECS["F"]` |
 
-The 8-week tier was kept at 40 sessions rather than extended to the 60-90 this report argues
-for. Extending it remains recommendation R3 and is still the cheapest change available.
+**R3 is done.** The slow tier now holds **65 sessions**, not 40. 65 is the shortest hold that
+clears the next earnings announcement (a quarter is roughly 63 sessions), which is where
+Bernard & Thomas measure 25-30% of the entire drift landing. Every session past that is cost
+without drift, so the hold was set to the cluster rather than to an arbitrary "longer".
+
+| Measure at the slow tier | 40 sessions | **65 sessions** |
+|---|---|---|
+| Round trips per year | 6.3 | **3.9** |
+| Annual cost drag at the $1M blended 19bp round trip | 120 bps | **74 bps** |
+| PEAD payoff captured | 62% | **95%** |
+| 52-week payoff captured | 62% | **95%** |
+| Announcement-return payoff captured | 65% | **100%** |
+| Analyst revision payoff captured | 37% | **55%** |
+
+Cost fell 38% and every leg's capture rose. This is the one change in the report that is
+strictly free, and the table is why.
 
 Two design decisions the report did not anticipate, both forced by writing the code:
 

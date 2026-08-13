@@ -46,7 +46,7 @@ const bps = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(
  * The tiers are not one composite sorted three ways. Each carries only the legs whose
  * documented payoff lands inside its own holding window, so the switcher changes which columns
  * exist, not just which rows are on top. The economics line is the part worth reading twice: a
- * 3-day book pays its round trip 84 times a year and an 8-week book pays it 6 times, which is
+ * 3-day book pays its round trip 84 times a year and a 13-week book pays it under 4 times, which is
  * the whole reason they cannot share a cost budget or a liquidity floor.
  */
 function TierSwitcher({ tiers, order, active, onSelect }) {

@@ -222,13 +222,13 @@ def test_percentiles_are_recomputed_after_the_trigger_gate():
 def test_round_trips_per_year_follow_the_holding_period():
     assert tiers.round_trips_per_year("F") == pytest.approx(84.0)
     assert tiers.round_trips_per_year("M") == pytest.approx(25.2)
-    assert tiers.round_trips_per_year("S") == pytest.approx(6.3)
+    assert tiers.round_trips_per_year("S") == pytest.approx(252 / 65)
 
 
 def test_expected_alpha_scales_with_the_holding_period_not_the_tier_label():
     """A 3-session hold has one thirteenth of a 40-session hold's time to earn anything."""
     assert (tiers.expected_alpha_bps("S") / tiers.expected_alpha_bps("F")
-            == pytest.approx(40 / 3))
+            == pytest.approx(65 / 3))
 
 
 def test_the_fast_book_needs_far_more_alpha_per_month_than_the_slow_one():

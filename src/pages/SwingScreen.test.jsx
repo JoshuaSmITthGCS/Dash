@@ -212,12 +212,12 @@ const tieredPayload = (overrides = {}) => payload({
       ],
     },
     S: {
-      tier: 'S', label: '8-week swing', horizon_label: '16-40 sessions', target_hold_sessions: 40,
+      tier: 'S', label: '13-week swing', horizon_label: '16-90 sessions', target_hold_sessions: 65,
       weights: { pead_drift: 0.3, announcement_return: 0.25, high_52w_proximity: 0.25, analyst_revision: 0.2 },
       decay_capture: { pead_drift: 0.62, announcement_return: 0.65, high_52w_proximity: 0.62, analyst_revision: 0.37 },
       leg_coverage: { pead_drift: 0.83, announcement_return: 0.95, high_52w_proximity: 1, analyst_revision: 0.99 },
       required_legs: [], trigger_unresolved_count: 0,
-      round_trips_per_year: 6.3, median_round_trip_bps: 3.2, expected_alpha_bps_per_period: 16.76,
+      round_trips_per_year: 3.9, median_round_trip_bps: 3.2, expected_alpha_bps_per_period: 27.24,
       median_net_edge_bps: 13.5, book_clearing_cost: 82, book_count: 82,
       break_even_alpha_bps_per_month: 1.7,
       note: 'The only tier whose cost budget is comfortable.',
@@ -231,7 +231,7 @@ describe('SwingScreen horizon tiers', () => {
   it('opens on the default tier rather than the fast one', () => {
     useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
     renderScreen()
-    expect(screen.getByRole('tab', { name: /8-week swing/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /13-week swing/ })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: /3-day swing/ })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getAllByText('SLOW').length).toBeGreaterThan(0)
   })
