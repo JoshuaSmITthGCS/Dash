@@ -15,7 +15,11 @@ export default function FirebaseLoginModal() {
 
   const handleLogin = async (event) => {
     event.preventDefault(); setError(''); setLoading(true)
-    const result = await login(password)
+    // Desktop password managers may populate the input without firing React's change
+    // event. Read the submitted field itself so the visible password is always the one
+    // sent to Firebase, even when component state has not caught up with autofill.
+    const submittedPassword = event.currentTarget.elements.namedItem('password')?.value ?? password
+    const result = await login(submittedPassword)
     if (!result.success) { setError(result.error); setLoading(false) }
   }
 
@@ -34,7 +38,7 @@ export default function FirebaseLoginModal() {
         <form onSubmit={handleLogin} className="auth-form">
           <input className="sr-only" type="email" name="username" value={OWNER_EMAIL}
             autoComplete="username" readOnly tabIndex="-1" aria-hidden="true" />
-          <label><span>Password</span><input type="password" value={password}
+          <label><span>Password</span><input type="password" name="password" value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password" autoFocus required /></label>
           {error && <div className="form-error" role="alert">{error}</div>}
