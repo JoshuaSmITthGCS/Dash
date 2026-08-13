@@ -34,7 +34,7 @@ from backtest_historical import (  # noqa: E402
     price_index,
     rank_week,
 )
-from common import LOG  # noqa: E402
+from common import LOG, load_json  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from portfolio_construction import apply_controls  # noqa: E402
 
@@ -83,6 +83,109 @@ def appeal_weights(rows, top_n):
     if total <= 0:
         return {row["ticker"]: 1 / len(selected) for row in selected}
     return {row["ticker"]: score / total for row, score in zip(selected, scores)}
+
+
+# ---------------- scored panel ----------------
+#
+# The equity curve answers one question - what would this have been worth - and answers it
+# slowly, because a return series needs years before it separates skill from noise. The panel
+# written below answers the faster and more useful question: did the score rank anything,
+# which legs did the ranking, and at what horizon. It costs nothing extra to produce, because
+# every ranked row already exists in memory at each rebalance and is otherwise discarded once
+# the top N have been taken from it.
+
+PANEL_HORIZON_TRADING_DAYS = {"1d": 1, "5d": 5, "21d": 21, "63d": 63}
+PANEL_PRIMARY_HORIZON = "21d"
+ADV_WINDOW_DAYS = 60
+
+
+def panel_leg_weights(settings):
+    """The two-level blend flattened into one linear weight per leg.
+
+    Live scoring blends six fundamental categories into a fundamentals score, then blends
+    that with market behaviour and news sentiment. For a drop-one-leg test the useful shape
+    is flat: each category carries its own weight times the fundamentals share. Score-level
+    modifiers are deliberately outside this - they are caps and penalties, not legs, and
+    folding them in would make the leg contributions unattributable.
+    """
+    categories = (settings.get("fundamentals") or {}).get("category_weights") or {}
+    ranking = settings.get("ranking_weights") or {}
+    weights = {name: round(weight * ranking.get("fundamentals", 0.0), 4)
+               for name, weight in categories.items()}
+    for name in ("market_behavior", "news_sentiment"):
+        if ranking.get(name):
+            weights[name] = ranking[name]
+    return weights
+
+
+def panel_scores(rows):
+    """Composite score and every leg score for one ranked cross-section."""
+    scores, legs = {}, {}
+    for row in rows:
+        ticker, score = row.get("ticker"), row.get("score")
+        if not ticker or not isinstance(score, (int, float)):
+            continue
+        components = row.get("components") or {}
+        leg_scores = {name: value for name, value
+                      in (row.get("fundamental_categories") or {}).items()
+                      if isinstance(value, (int, float))}
+        for name in ("market_behavior", "news_sentiment"):
+            if isinstance(components.get(name), (int, float)):
+                leg_scores[name] = components[name]
+        scores[ticker] = score
+        legs[ticker] = leg_scores
+    return scores, legs
+
+
+def panel_forward_returns(universe_data, execution_date, tickers):
+    """Forward return at each graded horizon, counted in that name's own trading days.
+
+    A horizon that runs past the end of the price history yields no observation rather than
+    a truncated one, so a short horizon never gets silently graded as a long one.
+    """
+    output = {label: {} for label in PANEL_HORIZON_TRADING_DAYS}
+    for ticker in tickers:
+        data = universe_data.get(ticker)
+        if not data:
+            continue
+        start = price_index(data["dates"], date.fromisoformat(execution_date))
+        if start is None:
+            continue
+        entry = data["closes"][start]
+        if not entry:
+            continue
+        for label, days in PANEL_HORIZON_TRADING_DAYS.items():
+            end = start + days
+            if end < len(data["closes"]) and data["closes"][end]:
+                output[label][ticker] = data["closes"][end] / entry - 1
+    return output
+
+
+def panel_dollar_volume(universe_data, window=ADV_WINDOW_DAYS):
+    """Trailing average daily dollar volume per name, for the capacity ceiling."""
+    volumes = {}
+    for symbol, data in universe_data.items():
+        closes, traded = data.get("closes") or [], data.get("volumes") or []
+        pairs = [(close, volume) for close, volume in zip(closes[-window:], traded[-window:])
+                 if close and volume]
+        if len(pairs) >= window // 2:
+            volumes[symbol] = round(sum(close * volume for close, volume in pairs) / len(pairs), 2)
+    return volumes
+
+
+def build_panel(periods, universe_data, leg_weights):
+    """Assemble the artifact pipeline/signal_metrics.py grades the signal from."""
+    return {
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "primary_horizon": PANEL_PRIMARY_HORIZON,
+        "horizon_trading_days": PANEL_HORIZON_TRADING_DAYS,
+        "leg_weights": leg_weights,
+        "note": ("Leg scores are pre-modifier. Forward returns are measured from the locked "
+                 "execution close, so the score is always older than the return it is graded "
+                 "against."),
+        "periods": periods,
+        "dollar_volume": panel_dollar_volume(universe_data),
+    }
 
 
 def committed_benchmark(ticker="SPY"):
@@ -392,6 +495,9 @@ def main():
                         help="Optional isolated yfinance cookie/timezone cache")
     parser.add_argument("--cache-dir", default=os.path.join(HERE, "data", "backtest_cache"))
     parser.add_argument("--out", default=os.path.join(HERE, "backtest_monthly_results.json"))
+    parser.add_argument("--panel-out", default=os.path.join(HERE, "backtest_signal_panel.json"),
+                        help="Scored cross-section panel for pipeline/signal_metrics.py. "
+                             "Pass an empty string to skip it.")
     args = parser.parse_args()
 
     try:
@@ -440,7 +546,8 @@ def main():
         LOG.error(f"Only {len(calendar)} monthly execution dates were available")
         return 1
 
-    plans = []
+    plans, panel_periods = [], []
+    leg_weights = panel_leg_weights(load_json("settings.json", from_config=True) or {})
     holdings, held_months, previous_scores = [], {}, {}
     for index, (signal_date, execution_date) in enumerate(calendar, 1):
         spy_idx = price_index(benchmark["dates"], signal_date)
@@ -469,6 +576,17 @@ def main():
             "execution_date": execution_date.isoformat(),
             "weights": weights,
             "picks": picks,
+        })
+        scores, leg_scores = panel_scores(rows)
+        forwards = panel_forward_returns(universe_data, execution_date.isoformat(), scores)
+        panel_periods.append({
+            "date": execution_date.isoformat(),
+            "signal_date": signal_date.isoformat(),
+            "names": len(scores),
+            "scores": scores,
+            "leg_scores": leg_scores,
+            "forward_returns_by_horizon": forwards,
+            "forward_returns": forwards[PANEL_PRIMARY_HORIZON],
         })
         carried = set(selected) & set(holdings)
         held_months = {ticker: held_months.get(ticker, 0) + 1 if ticker in carried else 0
@@ -553,6 +671,12 @@ def main():
     }
     with open(args.out, "w", encoding="utf-8") as handle:
         json.dump(result, handle, indent=2)
+    if args.panel_out:
+        with open(args.panel_out, "w", encoding="utf-8") as handle:
+            json.dump(build_panel(panel_periods, universe_data, leg_weights), handle, indent=2)
+        graded = sum(1 for period in panel_periods if period["forward_returns"])
+        print(f"Wrote {args.panel_out}: {len(panel_periods)} scored cross-sections, "
+              f"{graded} with {PANEL_PRIMARY_HORIZON} forward returns")
     strategy = portfolio["metrics"]
     spy = benchmark_result["metrics"]
     print(f"Strategy CAGR {strategy.get('cagr', 0):.2%}, max DD {strategy.get('maximum_drawdown', 0):.2%}")

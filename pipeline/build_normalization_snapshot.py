@@ -13,6 +13,7 @@ from normalization_report import write_normalization_report
 from normalization_audit import write_normalization_audit
 from bias_report import write_bias_report
 from signal_report import write_signal_report
+from signal_metrics import write_report as write_signal_metrics
 from validation.ic_harness import read_snapshots, write_report as write_ic_report
 from observability import diagnostics_payload
 from explainability import attach_explainability, attribution_errors, build_score_history
@@ -172,6 +173,9 @@ def main():
     save_json("advisor.json", payload)
     save_json("report.json", report_snapshot(payload))
     save_json("diagnostics.json", diagnostics_payload(payload))
+    # Republished on every refresh so the sample counters on the signal-quality panel move
+    # with the store rather than with whoever last ran the module by hand.
+    write_signal_metrics()
     print(f"Published normalization challenger for {comparison['universe_count']} comparable rows")
     return 0
 

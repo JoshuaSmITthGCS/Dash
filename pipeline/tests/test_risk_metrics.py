@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 import unittest
 
@@ -242,6 +243,55 @@ class ScoreMappingTests(unittest.TestCase):
         self.assertGreater(rm.volatility_percentile(12.0, peers),
                            rm.volatility_percentile(38.0, peers))
         self.assertIsNone(rm.volatility_percentile(12.0, [10.0]))
+
+
+class DistributionShapeTests(unittest.TestCase):
+    """The shape family. Every one of these must refuse to answer on a short sample."""
+
+    def setUp(self):
+        generator = random.Random(19)
+        self.symmetric = [generator.gauss(0.0005, 0.01) for _ in range(500)]
+        # Same mean, but the losses arrive in a few large pieces instead of many small ones.
+        self.crash_prone = [generator.gauss(0.0015, 0.006)
+                            if index % 50 else generator.gauss(-0.05, 0.01)
+                            for index in range(500)]
+        self.closes = [100.0]
+        for value in self.symmetric:
+            self.closes.append(self.closes[-1] * (1 + value))
+
+    def test_short_samples_return_nothing_rather_than_a_reading(self):
+        short = self.symmetric[:30]
+        for value in (rm.omega_ratio(short), rm.ulcer_index(short), rm.skewness(short),
+                      rm.excess_kurtosis(short), rm.tail_ratio(short),
+                      rm.gain_to_pain(short), rm.conditional_value_at_risk(short),
+                      rm.martin_ratio(short, short)):
+            self.assertIsNone(value)
+
+    def test_omega_falls_as_the_threshold_rises(self):
+        self.assertGreater(rm.omega_ratio(self.symmetric, 0.0),
+                           rm.omega_ratio(self.symmetric, 0.002))
+
+    def test_a_crash_prone_series_reads_worse_on_every_shape_measure(self):
+        self.assertLess(rm.skewness(self.crash_prone), rm.skewness(self.symmetric))
+        self.assertGreater(rm.excess_kurtosis(self.crash_prone),
+                           rm.excess_kurtosis(self.symmetric))
+        self.assertLess(rm.conditional_value_at_risk(self.crash_prone),
+                        rm.conditional_value_at_risk(self.symmetric))
+
+    def test_gain_to_pain_falls_when_the_same_gain_costs_more_loss(self):
+        gentle = [0.01 if index % 2 else -0.002 for index in range(400)]
+        painful = [0.02 if index % 2 else -0.012 for index in range(400)]
+        self.assertAlmostEqual(sum(gentle), sum(painful), places=6)
+        self.assertGreater(rm.gain_to_pain(gentle), rm.gain_to_pain(painful))
+
+    def test_ulcer_index_measures_time_underwater_not_just_the_worst_day(self):
+        rising = [100.0 * (1.001 ** day) for day in range(400)]
+        sagging = [100.0 - day * 0.05 for day in range(400)]
+        self.assertLess(rm.ulcer_index(rising), rm.ulcer_index(sagging))
+        self.assertIsNotNone(rm.martin_ratio(self.symmetric, self.closes))
+
+    def test_tail_ratio_is_undefined_when_a_tail_is_missing(self):
+        self.assertIsNone(rm.tail_ratio([0.01] * 300))
 
 
 if __name__ == "__main__":

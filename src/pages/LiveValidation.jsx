@@ -1,5 +1,6 @@
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
+import SignalMetricsPanel from '../components/SignalMetricsPanel.jsx'
 import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
 import InfoTag from '../components/InfoTag.jsx'
@@ -109,10 +110,12 @@ export default function LiveValidation() {
   const { data, loading, error } = useData('validation/live_v2_validation.json')
   const { data: icData, loading: icLoading, error: icError } = useData('validation/ic_validation.json')
   const { data: evidence, error: evidenceError } = useData('validation/research_evidence.json')
-  if (loading || icLoading) return <><ScreenNavigation /><Loading /></>
+  const { data: signalMetrics, loading: signalLoading, error: signalError } = useData('validation/signal_metrics.json')
+  if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   return <><ScreenNavigation />
     <div className="page-head"><div><span className="eyebrow">Controlled staging refresh</span><h1 className="page-title">Live v2 validation</h1>
       <p className="page-sub">Provider lineage, applicability, confidence gates, and independent decision layers. This view never replaces production output.</p></div></div>
+    <SignalMetricsPanel report={signalMetrics} error={signalError} />
     <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>

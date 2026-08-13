@@ -957,6 +957,84 @@ details { border-top: 1px solid var(--border); padding-top: 12px; } summary { mi
 .validation-pass { color: var(--pos); }
 .validation-fail, .validation-error { color: var(--neg); }
 
+/* Standard measures, collapsed. Declared after the generic `details` rule so the card
+   keeps its own border and padding instead of inheriting the bare top rule. */
+details.performance-metrics { border: 1px solid var(--border-default); border-radius: var(--card-radius); padding: var(--card-padding); }
+.performance-metrics > summary { min-height: 44px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; color: var(--text); list-style: none; cursor: pointer; }
+.performance-metrics > summary::-webkit-details-marker { display: none; }
+.performance-metrics > summary::after { content: "▾"; align-self: center; color: var(--text-tertiary); font-size: 12px; transition: transform .18s ease; }
+.performance-metrics[open] > summary::after { transform: rotate(180deg); }
+.performance-metrics[open] > summary { margin-bottom: 16px; }
+.performance-metrics > summary h2 { margin-top: 4px; font: 700 20px/1.15 var(--font-display); }
+.performance-metrics-preview { margin-left: auto; text-align: right; }
+.performance-metrics-preview b { display: block; font: 700 13px var(--font-mono); }
+.performance-metrics-preview small { display: block; margin-top: 3px; color: var(--text-tertiary); font-size: 9px; }
+
+/* Signal metrics, split by whether a live sample gates the reading. The `signal-evidence`
+   prefix keeps clear of the older `.signal-metrics` overview grid further down this file. */
+.signal-evidence { margin-bottom: var(--section-gap); }
+.signal-evidence > .section-heading { margin-top: 0; }
+.signal-evidence > .section-heading p, .signal-bucket > .section-heading p { max-width: 62ch; text-align: left; }
+.signal-evidence-summary { display: flex; gap: 18px; }
+.signal-evidence-summary > span { text-align: right; }
+.signal-evidence-summary b { display: block; font: 700 20px var(--font-mono); }
+.signal-evidence-summary small { color: var(--text-faint); font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.signal-evidence-summary .breached b { color: var(--neg); }
+.signal-evidence-empty code { font: 10px var(--font-mono); }
+
+.signal-bucket { margin-bottom: 22px; padding: 16px; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--bg-card); }
+.signal-bucket > .section-heading { margin: 0 0 12px; }
+.signal-bucket h3 { margin-top: 5px; font: 700 18px var(--font-display); }
+.signal-bucket-count { text-align: right; }
+.signal-bucket-count b { display: block; font: 700 18px var(--font-mono); }
+.signal-bucket-count small { color: var(--text-faint); font-size: 9px; }
+
+details.signal-group { margin-top: 8px; padding: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-elev); }
+.signal-group > summary { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 14px; color: var(--text); list-style: none; cursor: pointer; }
+.signal-group > summary::-webkit-details-marker { display: none; }
+.signal-group > summary::after { content: "▾"; color: var(--text-tertiary); font-size: 12px; transition: transform .18s ease; }
+.signal-group[open] > summary::after { transform: rotate(180deg); }
+.signal-group > summary strong { display: block; margin: 3px 0; font: 650 14px var(--font-display); }
+.signal-group > summary small { display: block; max-width: 52ch; color: var(--text-faint); font-size: 10px; line-height: 1.4; }
+.signal-group-count { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.signal-group-count b { font: 700 13px var(--font-mono); }
+.signal-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px; padding: 0 14px 14px; }
+
+.signal-metric { padding: 12px; border: 1px solid var(--border); border-left-width: 3px; border-radius: 12px; background: var(--bg-card); }
+.signal-metric.tone-ready { border-left-color: var(--pos); }
+.signal-metric.tone-breached { border-left-color: var(--neg); }
+.signal-metric.tone-accumulating { border-left-color: var(--warn); }
+.signal-metric.tone-pending { border-left-color: var(--border-lit); }
+.signal-metric > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.signal-metric strong { font: 650 13px var(--font-display); }
+.signal-metric header small { display: block; margin-top: 4px; color: var(--text-faint); font-size: 10px; line-height: 1.45; }
+.signal-metric-value { display: grid; justify-items: end; gap: 5px; text-align: right; }
+.signal-metric-value b { font: 700 15px var(--font-mono); overflow-wrap: anywhere; }
+.signal-status-ready { color: var(--pos); }
+.signal-status-breached { color: var(--neg); }
+.signal-status-accumulating { color: var(--warn); }
+.signal-status-pending { color: var(--text-faint); }
+.signal-metric-wide { margin: 10px 0 0; font: 700 13px/1.5 var(--font-mono); overflow-wrap: anywhere; }
+.signal-group-note { margin: -4px 14px 10px; color: var(--text-faint); font-size: 10px; line-height: 1.45; }
+.signal-metric-state, .signal-metric-reference { margin: 8px 0 0; color: var(--text-faint); font-size: 10px; line-height: 1.45; }
+.signal-metric-reference { font-family: var(--font-mono); }
+.signal-metric > footer { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; color: var(--text-faint); font: 9px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
+.signal-kill.breached { color: var(--neg); }
+
+.signal-cadence-table dl { display: grid; gap: 8px; margin: 10px 0 0; }
+.signal-cadence-table dl > div { display: grid; grid-template-columns: 190px 1fr; gap: 12px; }
+.signal-cadence-table dt { color: var(--text-dim); font: 650 11px var(--font-mono); }
+.signal-cadence-table dd { margin: 0; color: var(--text-faint); font-size: 11px; }
+
+@media (max-width: 600px) {
+  .performance-metrics > summary { flex-wrap: wrap; }
+  .performance-metrics-preview { margin-left: 0; text-align: left; }
+  .signal-evidence-summary { width: 100%; justify-content: space-between; gap: 10px; }
+  .signal-bucket > .section-heading, .signal-evidence > .section-heading { flex-direction: column; align-items: flex-start; }
+  .signal-evidence > .section-heading p, .signal-bucket > .section-heading p { text-align: left; }
+  .signal-cadence-table dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
 /* Phone-native visual layer. This deliberately changes presentation only: the existing
    routes, controls, data, and component behavior remain untouched. */
 @media (max-width: 900px) {

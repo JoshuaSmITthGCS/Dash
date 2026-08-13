@@ -17,17 +17,38 @@ const accumulating = {
   bucket_returns: { 5: { buckets: [], monotonic: false } },
 }
 
+const signalMetrics = {
+  groups: [
+    { id: 'signal', letter: 'A', title: 'Signal quality', summary: 'Does it predict.', requires_live_sample: false },
+    { id: 'monitoring', letter: 'F', title: 'Drift alarms', summary: 'Live against backtest.', requires_live_sample: true },
+  ],
+  cadence: [{ frequency: 'Weekly', items: 'Rolling IC, turnover' }],
+  live_sample: { days: 2, refreshes: 7, first_date: '2026-08-05', last_date: '2026-08-06' },
+  summary: { total: 2, ready: 1, breached: 0, sample_free_total: 1, sample_free_ready: 1, needs_sample_total: 1 },
+  metrics: [
+    { id: 'rank_ic_21d', group: 'signal', label: 'Rank IC (21d)', value: 0.031, display: '0.031',
+      breached: false, requires_live_sample: false, status: 'ready', observations: 58 },
+    { id: 'feature_psi', group: 'monitoring', label: 'Feature distribution PSI', value: null,
+      breached: false, requires_live_sample: true, status: 'accumulating',
+      status_message: '2 live days recorded.', observations: 2, required_observations: 60 },
+  ],
+}
+
 describe('LiveValidation', () => {
   beforeEach(() => {
-    useData.mockImplementation((name) => name.includes('ic_validation')
-      ? { data: {
+    useData.mockImplementation((name) => {
+      if (name.includes('ic_validation')) {
+        return { data: {
           snapshot_refreshes: 1,
           variants: {
             champion: { '1M': accumulating },
             challenger: { '1M': accumulating },
           },
         }, loading: false, error: null }
-      : { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null })
+      }
+      if (name.includes('signal_metrics')) return { data: signalMetrics, loading: false, error: null }
+      return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
+    })
   })
 
   it('renders honest accumulating states with zero realized periods', () => {
@@ -35,5 +56,14 @@ describe('LiveValidation', () => {
     expect(screen.getByText('Champion versus challenger')).toBeInTheDocument()
     expect(screen.getAllByText('accumulating, 0 of 24 periods')).toHaveLength(2)
     expect(screen.queryByText(/^0\.000$/)).not.toBeInTheDocument()
+  })
+
+  it('leads with signal metrics split by what a live sample gates', () => {
+    render(<MemoryRouter><LiveValidation /></MemoryRouter>)
+    expect(screen.getByText('Computable now')).toBeInTheDocument()
+    expect(screen.getByText('Needs live sample')).toBeInTheDocument()
+    // The sample-free reading is present while the sample-gated one still counts up.
+    expect(screen.getByText('0.031')).toBeInTheDocument()
+    expect(screen.getByText('2 live days recorded.')).toBeInTheDocument()
   })
 })

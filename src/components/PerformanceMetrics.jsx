@@ -30,6 +30,16 @@ export function performanceMetricTone(key, value) {
   return 'neutral'
 }
 
+/**
+ * The two numbers worth keeping visible while the panel is closed. Sharpe is the headline
+ * risk-adjusted read and drawdown is the one that describes what holding it felt like;
+ * collapsing the section should cost the reader neither.
+ */
+export function collapsedSummary(metrics) {
+  if (!metrics?.available) return metrics?.reason || 'Unavailable'
+  return `Sharpe ${ratio(metrics.sharpe)} · Max drawdown ${percent(metrics.maxDrawdown)}`
+}
+
 /** A short-horizon move only earns a colour once it clears its own noise floor. Inside the
  * floor it tones neutral at zero; with no reading at all it stays null so the tile reads as
  * unavailable rather than as a flat week. */
@@ -54,11 +64,16 @@ function Metric({ name, label, value, format, note, toneValue }) {
  * it is a benchmark measure, not a standalone risk one; active share sits in the third
  * because it needs no history at all. Six tiles each also lands every grid exactly on its
  * column count at all three breakpoints.
+ *
+ * The first panel is collapsed by default. These are the slowest-moving numbers here - a
+ * Sharpe ratio does not change meaningfully between visits, and at this sample length it
+ * cannot - so they keep their two headline readings in the summary line and give the
+ * vertical space back to the panels that answer days and weeks.
  */
 export default function PerformanceMetrics({
   metrics, benchmarkLabel = 'benchmark', riskFree,
   acceleration = null, capture = null, batting = null, underwater = null,
-  shortTerm = null, risk = null,
+  shortTerm = null, risk = null, defaultOpen = false,
 }) {
   const captureNote = (side) => (capture?.available
     ? `${capture.observations[side]} ${side} periods · index ${side === 'up' ? '+' : ''}${capture[`${side}BenchmarkPct`].toFixed(1)}%`
@@ -68,8 +83,11 @@ export default function PerformanceMetrics({
   const month = windowOf(30)
   return (
     <>
-      <section className="performance-metrics" aria-labelledby="standard-performance-title">
-        <header><div><span className="eyebrow">Standard measures</span><h2 id="standard-performance-title">Risk and performance</h2></div><small>{metrics?.available ? `${metrics.observations} daily returns` : metrics?.reason}</small></header>
+      <details className="performance-metrics" open={defaultOpen}>
+        <summary aria-label="Standard risk and performance measures">
+          <div><span className="eyebrow">Standard measures</span><h2 id="standard-performance-title">Risk and performance</h2></div>
+          <div className="performance-metrics-preview"><b>{collapsedSummary(metrics)}</b><small>{metrics?.available ? `${metrics.observations} daily returns` : ''}</small></div>
+        </summary>
         <div>
           <Metric name="sharpe" label="Sharpe ratio" value={metrics?.sharpe} format={ratio} note={`${riskFree?.fallback ? 'Configured fallback' : riskFree?.series} ${riskFree?.annualPct?.toFixed(2) ?? '0.00'}%`} />
           <Metric name="sortino" label="Sortino ratio" value={metrics?.sortino} format={ratio} note="Downside risk only" />
@@ -91,7 +109,7 @@ export default function PerformanceMetrics({
               : underwater?.reason || 'Needs dated portfolio values'}
           />
         </div>
-      </section>
+      </details>
 
       <section className="performance-metrics" aria-labelledby="benchmark-comparison-title">
         <header><div><span className="eyebrow">Comparison</span><h2 id="benchmark-comparison-title">Versus the {benchmarkLabel}</h2></div><small>{batting?.available ? `${batting.months} months, ${batting.firstMonth} to ${batting.lastMonth}` : batting?.reason}</small></header>
