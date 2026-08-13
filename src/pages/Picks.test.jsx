@@ -43,7 +43,7 @@ describe('Picks research page', () => {
     // A fund-model score of 91 must not let an ETF outrank a fundamentals-scored stock of
     // 62 in one shared list -- the two numbers come from incompatible models.
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') {
+      if (file === 'report.json') {
         return { data: { research: [stock({ score: 62 })] }, loading: false }
       }
       return { data: { etfs: [etf({ scores: { overall: 91, quality: 88, performance: 85 } })] }, loading: false }
@@ -61,7 +61,7 @@ describe('Picks research page', () => {
 
   it('filtering to Stocks only hides the ETF section entirely', () => {
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [stock()] }, loading: false }
+      if (file === 'report.json') return { data: { research: [stock()] }, loading: false }
       return { data: { etfs: [etf()] }, loading: false }
     })
 
@@ -74,7 +74,7 @@ describe('Picks research page', () => {
 
   it('filtering to ETFs only hides the Stocks section entirely', () => {
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [stock()] }, loading: false }
+      if (file === 'report.json') return { data: { research: [stock()] }, loading: false }
       return { data: { etfs: [etf()] }, loading: false }
     })
 
@@ -87,7 +87,7 @@ describe('Picks research page', () => {
 
   it('the bucket planner allocates across stocks only by default, never blending in an ETF score', () => {
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [stock({ score: 62 })] }, loading: false }
+      if (file === 'report.json') return { data: { research: [stock({ score: 62 })] }, loading: false }
       return { data: { etfs: [etf({ scores: { overall: 91, quality: 88, performance: 85 } })] }, loading: false }
     })
 
@@ -102,7 +102,7 @@ describe('Picks research page', () => {
 
   it('shows Buy Now for a buy-worthy pick that is not currently in a decline', () => {
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [stock()] }, loading: false }
+      if (file === 'report.json') return { data: { research: [stock()] }, loading: false }
       return { data: { etfs: [] }, loading: false }
     })
 
@@ -123,7 +123,7 @@ describe('Picks research page', () => {
       insider_activity: { available: true, points: 4 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') {
+      if (file === 'report.json') {
         return { data: { research: [stock({ score: 90 })], screen_universe: [screenOnly] }, loading: false }
       }
       return { data: { etfs: [] }, loading: false }
@@ -152,7 +152,7 @@ describe('Picks research page', () => {
       },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') {
+      if (file === 'report.json') {
         return {
           data: {
             research: [stock({ score: 90, components: { fundamentals: 90, news_sentiment: 50 } })],
@@ -184,7 +184,7 @@ describe('Picks research page', () => {
       },
     })
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') {
+      if (file === 'report.json') {
         return {
           data: { research: [], screen_universe: Array.from({ length: 40 }, (_, index) => qualifier(index)) },
           loading: false,
@@ -209,7 +209,7 @@ describe('Picks research page', () => {
       technical_detail: { return_5d: 6.6, return_20d: -10.4, drawdown_60d: -27.7 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [bouncing] }, loading: false }
+      if (file === 'report.json') return { data: { research: [], screen_universe: [bouncing] }, loading: false }
       return { data: { etfs: [] }, loading: false }
     })
 
@@ -234,7 +234,7 @@ describe('Picks research page', () => {
       technical_detail: { return_5d: 4, return_20d: -8 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [scorable, noDrawdown] }, loading: false }
+      if (file === 'report.json') return { data: { research: [], screen_universe: [scorable, noDrawdown] }, loading: false }
       return { data: { etfs: [] }, loading: false }
     })
 
@@ -256,7 +256,7 @@ describe('Picks research page', () => {
       recommendation: { action: 'HOLD', agreement_count: 2 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
+      if (file === 'report.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
       return { data: { etfs: [] }, loading: false }
     })
 
@@ -276,7 +276,7 @@ describe('Picks research page', () => {
       components: { fundamentals: 63 }, technical_detail: { return_20d: -10.4 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
+      if (file === 'report.json') return { data: { research: [], screen_universe: [lightweight] }, loading: false }
       return { data: { etfs: [] }, loading: false }
     })
 
@@ -307,7 +307,7 @@ describe('Picks research page', () => {
       },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') {
+      if (file === 'report.json') {
         return { data: { research: [], screen_universe: [thinButHighReading, wellEvidenced] }, loading: false }
       }
       return { data: { etfs: [] }, loading: false }
@@ -332,7 +332,7 @@ describe('Picks research page', () => {
       evidence_summary: { event_count: 1, news_score: 95 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [thin] }, loading: false }
+      if (file === 'report.json') return { data: { research: [], screen_universe: [thin] }, loading: false }
       return { data: { etfs: [] }, loading: false }
     })
 
@@ -352,7 +352,7 @@ describe('Picks research page', () => {
       evidence_summary: { event_count: 1, news_score: 90, dominant_age_trading_days: 0 },
     }
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') return { data: { research: [], screen_universe: [fundWithoutFlag] }, loading: false }
+      if (file === 'report.json') return { data: { research: [], screen_universe: [fundWithoutFlag] }, loading: false }
       return { data: { etfs: [etf()] }, loading: false }
     })
 
@@ -367,7 +367,7 @@ describe('Picks research page', () => {
     const createRule = vi.fn().mockResolvedValue({ success: true })
     useAlerts.mockReturnValue({ createRule })
     useData.mockImplementation((file) => {
-      if (file === 'advisor.json') {
+      if (file === 'report.json') {
         return {
           data: {
             research: [stock({

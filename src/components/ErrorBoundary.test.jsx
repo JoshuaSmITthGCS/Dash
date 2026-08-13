@@ -18,19 +18,29 @@ describe('ErrorBoundary', () => {
   })
 
   it('catches a render error instead of unmounting the whole tree', () => {
-    render(<ErrorBoundary><Bomb shouldThrow /></ErrorBoundary>)
-    expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong loading this page.')
+    render(<ErrorBoundary pageName="Research"><Bomb shouldThrow /></ErrorBoundary>)
+    expect(screen.getByRole('alert')).toHaveTextContent('Research didn’t finish loading')
+    expect(screen.getByRole('alert')).toHaveTextContent('Your saved data is safe')
     expect(screen.queryByText('fine')).not.toBeInTheDocument()
   })
 
   it('lets the user retry once the underlying problem is gone', () => {
-    const { rerender } = render(<ErrorBoundary><Bomb shouldThrow /></ErrorBoundary>)
+    const retry = vi.fn()
+    const { rerender } = render(<ErrorBoundary onRetry={retry}><Bomb shouldThrow /></ErrorBoundary>)
     expect(screen.getByRole('alert')).toBeVisible()
 
-    rerender(<ErrorBoundary><Bomb shouldThrow={false} /></ErrorBoundary>)
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    rerender(<ErrorBoundary onRetry={retry}><Bomb shouldThrow={false} /></ErrorBoundary>)
+    fireEvent.click(screen.getByRole('button', { name: 'Reload page' }))
 
+    expect(retry).toHaveBeenCalledOnce()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByText('fine')).toBeVisible()
+  })
+
+  it('explains how to recover when an app update invalidates a route chunk', () => {
+    function ChunkBomb() { throw new Error('Failed to fetch dynamically imported module') }
+    render(<ErrorBoundary pageName="Portfolio"><ChunkBomb /></ErrorBoundary>)
+    expect(screen.getByRole('alert')).toHaveTextContent('Portfolio didn’t finish loading')
+    expect(screen.getByRole('alert')).toHaveTextContent('app may have updated')
   })
 })

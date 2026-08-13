@@ -70,6 +70,19 @@ function primaryTheme(stock) {
   return themes.slice().sort((left, right) => Number(right.exposure_score ?? right.score ?? 0) - Number(left.exposure_score ?? left.score ?? 0))[0]
 }
 
+export function mergeResearchStock(suppliedStock, fullResearch) {
+  if (!suppliedStock) return suppliedStock
+  const fullStock = fullResearch?.research?.find((row) => row.ticker === suppliedStock.ticker)
+    || fullResearch?.portfolio_coverage?.find((row) => row.ticker === suppliedStock.ticker)
+    || fullResearch?.screen_universe?.find((row) => row.ticker === suppliedStock.ticker)
+  if (!fullStock) return suppliedStock
+  return {
+    ...fullStock,
+    ...suppliedStock,
+    analysis_v2: { ...(fullStock.analysis_v2 || {}), ...(suppliedStock.analysis_v2 || {}) },
+  }
+}
+
 // SEC Form 4 buys vs sells (pipeline/insider_signal.py). The pipeline already scores this
 // into the modifier, but never surfaced the raw grouping – show it only once real filings
 // were reviewed, so a quiet run (no SEC_USER_AGENT, no filings this window) renders nothing
@@ -100,13 +113,13 @@ function InsiderActivityView({ insider }) {
   )
 }
 
-export default function StockDetailModal({ stock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
+export default function StockDetailModal({ stock: suppliedStock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
   const [showMore, setShowMore] = useState(false)
   const { preferences } = usePreferences()
-  const { data: fullResearch } = useData(stock && !stock.explainability ? 'advisor.json' : null)
+  const { data: fullResearch } = useData(suppliedStock && !suppliedStock.explainability ? 'advisor.json' : null)
 
-  useBodyScrollLock(!!stock)
+  useBodyScrollLock(!!suppliedStock)
 
   useEffect(() => {
     const handleEscape = (e) => { if (e.key === 'Escape') onClose() }
@@ -114,10 +127,12 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
     return () => document.removeEventListener('keydown', handleEscape)
   }, [onClose])
 
-  if (!stock) return null
-  const explainability = stock.explainability
-    || fullResearch?.research?.find((row) => row.ticker === stock.ticker)?.explainability
-  const explainableStock = explainability ? { ...stock, explainability } : stock
+  if (!suppliedStock) return null
+  // Browse/portfolio routes open immediately from report.json. Once the deep snapshot arrives,
+  // fill in evidence, modifiers and explainability while preserving any newer live quote or
+  // position-specific fields the calling route already placed on the row.
+  const stock = mergeResearchStock(suppliedStock, fullResearch)
+  const explainableStock = stock
 
   // A caller that already merged in position-specific guidance (e.g. a portfolio
   // stop-loss check) passes it here – recomputing from the raw research row would
@@ -199,7 +214,7 @@ export default function StockDetailModal({ stock, onClose, benchmarkHistory, pos
         {showMore && <div className="stock-detail-expanded">
           <ActionGuidance recommendation={recommendation} position={position} stopLoss={stopLoss} />
           <SetupQualityBreakdown guidance={setupGuidance} />
-          <FactorBars bars={explainability?.factor_bars} />
+          <FactorBars bars={stock.explainability?.factor_bars} />
           <div className="grid grid-4">
           <Kpi label="Current price" value={stock.price ? `$${stock.price.toFixed(2)}` : '–'} />
           <Kpi label="Market cap" value={stock.market_cap ? `$${(stock.market_cap / 1e9).toFixed(1)}B` : '–'} />

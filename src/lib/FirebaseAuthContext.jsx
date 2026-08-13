@@ -1,5 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth'
+import {
+  browserLocalPersistence,
+  onAuthStateChanged,
+  setPersistence,
+  signInWithEmailAndPassword,
+} from 'firebase/auth'
 import { auth } from './firebase'
 
 const AuthContext = createContext(null)
@@ -13,6 +18,13 @@ const JOSH_PROFILE = { displayName: 'Josh', email: OWNER_EMAIL }
 // Interactive sign-in must not spin forever on a flaky or offline connection - the same
 // principle already applied to the passive auth-state check below (see its comment).
 const AUTH_REQUEST_TIMEOUT_MS = 15000
+
+// Make the intended remembered-device behavior explicit instead of depending on Firebase's
+// environment-selected default. If storage is unavailable (for example, a locked-down private
+// window), auth still works for the current tab and the sign-in form explains the next failure.
+const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.warn('Persistent authentication is unavailable on this device:', error)
+})
 
 const AUTH_ERROR_MESSAGES = {
   'auth/wrong-password': 'That password is incorrect.',
@@ -41,6 +53,7 @@ export function AuthProvider({ children }) {
 
   const login = async (password) => {
     try {
+      await authPersistenceReady
       const result = await withTimeout(signInWithEmailAndPassword(auth, OWNER_EMAIL, password), AUTH_REQUEST_TIMEOUT_MS)
       return { success: true, user: result.user }
     } catch (error) {
@@ -50,20 +63,15 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // Auth should never hold the research UI hostage when Firebase is slow or offline.
-    // The observer can still populate the session later; after a short fallback we render
-    // the signed-out state with a recoverable login surface.
-    const fallback = window.setTimeout(() => setLoading(false), 1200)
+    // Keep the login surface hidden until Firebase has definitively restored (or rejected)
+    // the saved browser session. A timer here used to show the password modal after 1.2s even
+    // when a remembered session was still resolving on a slower desktop connection.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user)
       setLoading(false)
-      window.clearTimeout(fallback)
     })
 
-    return () => {
-      window.clearTimeout(fallback)
-      unsubscribe()
-    }
+    return unsubscribe
   }, [])
 
   const value = {

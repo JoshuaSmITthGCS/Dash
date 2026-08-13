@@ -160,9 +160,6 @@ function ReportProjection({ input, source, money, annualReturnTargetPct, current
 
 export default function Dashboard() {
   const { data, loading, reload: reloadReport } = useData('report.json')
-  // Start the larger Market Pulse payload on the landing report so /market is warm when it
-  // is opened, while keeping it out of the report's blocking loading condition below.
-  const { data: advisorData, loading: advisorLoading, reload: reloadAdvisor } = useData('advisor.json')
   const { data: etfData, loading: etfLoading, reload: reloadEtfs } = useData('etfs.json')
   const { currentUser } = useAuth()
   const { positions: storedPositions, loading: portfolioLoading } = useFirebasePortfolio()
@@ -188,9 +185,9 @@ export default function Dashboard() {
   const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 
   const reloadHomeData = useCallback(async () => {
-    const [latestReport] = await Promise.all([reloadReport(), reloadAdvisor(), reloadEtfs(), reloadBenchmarks()])
+    const [latestReport] = await Promise.all([reloadReport(), reloadEtfs(), reloadBenchmarks()])
     return latestReport
-  }, [reloadAdvisor, reloadBenchmarks, reloadEtfs, reloadReport])
+  }, [reloadBenchmarks, reloadEtfs, reloadReport])
   const universeRefresh = useAdvisorRefresh(
     data?.generated_at,
     reloadHomeData,
@@ -247,7 +244,7 @@ export default function Dashboard() {
   const scorePortfolioPeriod = selectPeriod(scoreHoldingsSeries, '1Y') || selectPeriod(scoreHoldingsSeries, 'All')
   const scoreComparison = compareBenchmarkSeries(scorePortfolioPeriod, selectedBenchmarkSeries.slice(0, 1))
   const resilience = resilienceIndex(scoreComparison?.portfolio.values || scorePortfolioPeriod?.values || [], diversification)
-  const riskFree = riskFreeAnnualRate(advisorData)
+  const riskFree = riskFreeAnnualRate(data)
   const performance = performanceMetrics(scoreComparison?.portfolio, scoreComparison?.benchmarks[0], riskFree.annualPct)
   const concentrationLiquidity = concentrationLiquidityScore(portfolio.positions)
   const overall = portfolioScore({ diversification, resilience, performance, benchmarkEfficiency: null, concentrationLiquidity, dataCompleteness: Math.round(portfolio.coveragePct || 0) })
@@ -259,7 +256,7 @@ export default function Dashboard() {
   const intraday = intradayPortfolioHigh(tracking.snapshots.filter((snapshot) => snapshot.marketDate === latestTrackingDate))
   const allTimeEarnings = trackedAllTimeEarnings(portfolio, tracking.activities, tracking.trackingState)
   const actionable = portfolio.positions.map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null })).filter((row) => row.recommendation && row.recommendation.action !== 'HOLD')
-  const portfolioThemes = aggregateThemeExposure(portfolio.positions, advisorData?.theme_screen?.by_ticker || {})
+  const portfolioThemes = aggregateThemeExposure(portfolio.positions, data?.theme_screen?.by_ticker || {})
   const sectorAllocation = Object.entries(portfolio.positions.reduce((totals, position) => {
     const sector = position.priceInfo?.sector || 'Unclassified'
     totals[sector] = (totals[sector] || 0) + Number(position.currentValue || 0)
@@ -477,7 +474,7 @@ export default function Dashboard() {
 
     <BuyingTheDipChart rows={dipRows} />
 
-    <MarketPulsePreview data={advisorData} loading={advisorLoading} />
+    <MarketPulsePreview data={data} loading={loading} />
 
     <section className="report-focused-screens" aria-labelledby="focused-screens-title">
       <header className="section-heading"><div><span className="eyebrow">Focused breakdown</span><h2 id="focused-screens-title">Fast growth, value, momentum, reversals, and ETFs</h2></div><Link to="/research">All research →</Link></header>

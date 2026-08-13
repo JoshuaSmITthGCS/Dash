@@ -63,16 +63,22 @@ body { overscroll-behavior-y: contain; }
 .content { width: min(100%, 1380px); min-width: 0; padding: 28px 38px 100px; }
 .mobile-header, .mobile-nav { display: none; }
 .app-loading { min-height: 100dvh; display: grid; place-content: center; gap: 12px; color: var(--text-dim); }
-.route-loading { min-height: 50vh; display: grid; place-content: center; }
+.route-loading { min-height: 50vh; display: grid; place-content: center; justify-items: center; gap: 10px; color: var(--text-dim); text-align: center; }
+.route-loading strong { color: var(--text); font: 650 16px var(--font-display); }
+.route-loading > span:last-child { color: var(--text-faint); font-size: 12px; }
 .loading-mark { width: 34px; height: 34px; justify-self: center; border: 3px solid var(--border-lit); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .route-error {
-  min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; text-align: center; padding: 24px;
+  width: min(100%, 620px); min-height: 50vh; margin-inline: auto; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 32px 24px;
 }
-.route-error p { color: var(--text-faint); font-size: 13px; margin: 0 0 8px; }
-.route-error-actions { display: flex; gap: 10px; }
+.route-error-kicker { color: var(--negative); font: 700 10px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.route-error > strong { font: 750 clamp(24px, 4vw, 36px)/1.1 var(--font-display); letter-spacing: -.03em; }
+.route-error p { max-width: 52ch; color: var(--text-dim); font-size: 14px; line-height: 1.6; margin: 0 0 8px; }
+.route-error small { color: var(--text-faint); font-size: 11px; }
+.route-error-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .route-error-actions a { text-decoration: none; }
+@media (max-width: 430px) { .route-error-actions { width: 100%; }.route-error-actions > * { width: 100%; } }
 
 /* Shared status and page furniture */
 .data-status {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../lib/FirebaseAuthContext'
+import { OWNER_EMAIL, useAuth } from '../lib/FirebaseAuthContext'
 import Icon from './Icons'
 import useBodyScrollLock from '../lib/useBodyScrollLock'
 
@@ -32,6 +32,8 @@ export default function FirebaseLoginModal() {
           <div><span className="eyebrow">Welcome back</span><h1 id="auth-title">Josh</h1></div>
         </div>
         <form onSubmit={handleLogin} className="auth-form">
+          <input className="sr-only" type="email" name="username" value={OWNER_EMAIL}
+            autoComplete="username" readOnly tabIndex="-1" aria-hidden="true" />
           <label><span>Password</span><input type="password" value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password" autoFocus required /></label>

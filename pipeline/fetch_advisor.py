@@ -109,16 +109,22 @@ SCREEN_TECHNICAL_FIELDS = (
     "return_60d", "return_252d",
 )
 
-# The signed-in Financial Report and Portfolio views need prices, chart history, scoring
-# inputs, and published action guidance, but not the several megabytes of statement-level
-# research evidence used by the dedicated Research view. Publishing this projection keeps
-# the initial route fast while advisor.json remains the complete source for deep research.
+# The Financial Report, Portfolio, and browseable Research list need prices, chart history,
+# scoring inputs, and published action guidance, but not several megabytes of statement-level
+# evidence. Publishing this projection keeps those routes fast while advisor.json remains the
+# complete source fetched on demand for a deep company-research sheet.
 REPORT_ROW_FIELDS = (
     "ticker", "name", "price", "sector", "industry", "average_dollar_volume",
     "score", "stance", "strengths", "recommendation", "components",
     "fundamental_detail", "technical_detail", "sentiment_detail", "debt_to_equity",
     "current_ratio", "return_on_equity", "revenue_growth", "data_fetched_at",
-    "theme_exposure",
+    "theme_exposure", "data_coverage", "risks", "fundamental_categories",
+    "evidence_summary", "sentiment_summary", "estimate_detail", "earnings_surprise",
+    "standardized_unexpected_earnings", "analyst_count", "analyst_rating",
+    "analyst_target_upside", "sector_valuation_percentile", "fcf_growth_3y",
+    "free_cash_flow_yield", "interest_coverage", "net_buyback_yield",
+    "operating_margin", "operating_margin_trend", "short_percent_of_float",
+    "days_to_cover", "is_etf",
 )
 RETIRED_REPORT_SYMBOLS = {"DECJ"}
 
@@ -159,27 +165,32 @@ PUBLISHED_LAYERS = {
 def report_row(row):
     history = row.get("history") or {}
     projected = {key: row.get(key) for key in REPORT_ROW_FIELDS if row.get(key) is not None}
+    # Full leaderboard rows carry detailed evidence/article records while lightweight rows
+    # already carry summaries. The route-critical projection always publishes the compact
+    # shape so client-side ranking models retain their inputs without downloading every raw
+    # event in advisor.json.
+    if "evidence_summary" not in projected:
+        summary = _evidence_summary(row.get("evidence"))
+        if summary:
+            projected["evidence_summary"] = summary
+    if "sentiment_summary" not in projected:
+        summary = _sentiment_summary(row.get("sentiment_detail"))
+        if summary:
+            projected["sentiment_summary"] = summary
     structural = (row.get("analysis_v2") or {}).get("structural")
     if structural:
         projected["analysis_v2"] = {"structural": structural}
-    variants = row.get("score_variants") or {}
-    if variants:
-        projected["score_variants"] = {
-            key: {field: variant.get(field) for field in (
-                "variant", "normalization_mode", "score", "base_score", "data_coverage",
-                "fundamental_categories", "normalized_metric_scores", "largest_metric_changes",
-            ) if variant.get(field) is not None}
-            for key, variant in variants.items()
-        }
     if history.get("dates") and history.get("closes"):
         projected["history"] = {"dates": history["dates"], "closes": history["closes"]}
     return projected
 
 
 def report_snapshot(payload):
-    """Create the compact, route-critical subset consumed by portfolio reporting."""
+    """Create the compact, route-critical subset consumed by report/research views."""
     def active(rows):
         return [row for row in rows if str(row.get("ticker") or "").upper() not in RETIRED_REPORT_SYMBOLS]
+
+    theme_screen = payload.get("theme_screen") or {}
 
     return {
         "schema_version": payload.get("schema_version"),
@@ -190,6 +201,10 @@ def report_snapshot(payload):
         "benchmark_history": payload.get("benchmark_history"),
         "source_status": payload.get("source_status"),
         "market": payload.get("market"),
+        "theme_screen": {
+            key: theme_screen.get(key) for key in ("generated_at", "by_ticker", "unavailable_reason")
+            if theme_screen.get(key) is not None
+        },
         "research": [report_row(row) for row in active(payload.get("research", []))],
         "portfolio_coverage": [report_row(row) for row in active(payload.get("portfolio_coverage", []))],
         "screen_universe": [report_row(row) for row in active(payload.get("screen_universe", []))],

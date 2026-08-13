@@ -49,7 +49,7 @@ const COLUMN_SORTS = {
     'The score the pipeline published for this row, exactly as calibrated: 78% fundamentals (valuation, profitability, financial health, growth, capital allocation, accounting quality), 18% market behavior, 4% news sentiment, plus small bounded modifiers. This is the number the point-in-time store and the validation harness are accumulating observations against, so it is shown unchanged rather than recomposed. Only computed for fully published companies.'],
   return: ['20-day return', (a, b) => (b.technical_detail?.return_20d ?? -999) - (a.technical_detail?.return_20d ?? -999),
     'Raw trailing 20-trading-day price return. Not a predictive score and not risk-adjusted - purely "what has the price done lately." Available for the full scored universe.'],
-  confidence: ['Data coverage', (a, b) => (b.confidence ?? -1) - (a.confidence ?? -1),
+  confidence: ['Data coverage', (a, b) => (b.data_coverage ?? -1) - (a.data_coverage ?? -1),
     'How complete and reliable the underlying data was, not how attractive the company is. A high number means more inputs resolved. Only computed for fully published companies; each ranking model additionally reports its own mode-specific confidence over the inputs it actually reads.'],
   portfolioPct: ['% of my portfolio', (a, b) => (b.portfolioPct ?? -1) - (a.portfolioPct ?? -1),
     "How much of your current portfolio's value this position represents right now, from your held shares at today's price. Rows you don't hold read as 0% and sort to the bottom; requires a signed-in portfolio with at least one priced position."],
@@ -189,7 +189,7 @@ function ThinEvidenceChip({ row }) {
 // missing confidence as "0%" (which the card used to do) reads as a measured zero and is
 // simply wrong.
 function isLightData(row) {
-  return !row.is_etf && !finite(row.confidence)
+  return !row.is_etf && !finite(row.data_coverage)
 }
 
 function LightDataChip({ row }) {
@@ -343,7 +343,7 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
       <dl className="research-card-metrics">
         <div><dt>Fundamentals</dt><dd>{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</dd></div>
         <div><dt>20-day return</dt><dd><Move pct={row.technical_detail?.return_20d} capsule /></dd></div>
-        <div><dt>Data coverage</dt><dd>{finite(row.confidence) ? `${Math.round(row.confidence * 100)}%` : '–'}</dd></div>
+        <div><dt>Data coverage</dt><dd>{finite(row.data_coverage) ? `${Math.round(row.data_coverage * 100)}%` : '–'}</dd></div>
         <div><dt>% of my portfolio</dt><dd>{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</dd></div>
       </dl>
       <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
@@ -412,7 +412,7 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
               <td className="mono num score-cell">{row.score}</td>
               <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
               <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
-              <td className="mono num">{finite(row.confidence) ? `${Math.round(row.confidence * 100)}%` : '–'}</td>
+              <td className="mono num">{finite(row.data_coverage) ? `${Math.round(row.data_coverage * 100)}%` : '–'}</td>
               <td><EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
                 alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} /></td>
               <td className="mono num">{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</td>
@@ -430,7 +430,9 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
 }
 
 export default function Picks() {
-  const { data, loading } = useData('advisor.json')
+  // The list and all client-side ranking models use the compact report projection. The full
+  // statement/evidence snapshot is fetched only when a company detail sheet needs it.
+  const { data, loading } = useData('report.json')
   const { data: etfData, loading: etfLoading } = useData('etfs.json')
   const { positions, loading: portfolioLoading, addPosition } = useFirebasePortfolio()
   const { createRule } = useAlerts()

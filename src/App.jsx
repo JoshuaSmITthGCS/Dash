@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -13,12 +13,14 @@ import AlertBadge from './components/AlertBadge.jsx'
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand – keeps first paint off the weight of pages the visit may
 // never touch (Finances, ETF comparisons, shadow portfolios, congress trades, etc).
-const Picks = lazy(() => import('./pages/Picks.jsx'))
+const loadPicks = () => import('./pages/Picks.jsx')
+const loadPortfolio = () => import('./pages/Portfolio.jsx')
+const Picks = lazy(loadPicks)
 const PolicyRadar = lazy(() => import('./pages/PolicyRadar.jsx'))
 const Watchlist = lazy(() => import('./pages/Watchlist.jsx'))
 const Methodology = lazy(() => import('./pages/Methodology.jsx'))
 const Glossary = lazy(() => import('./pages/Glossary.jsx'))
-const Portfolio = lazy(() => import('./pages/Portfolio.jsx'))
+const Portfolio = lazy(loadPortfolio)
 const Finances = lazy(() => import('./pages/Finances.jsx'))
 const Planning = lazy(() => import('./pages/Planning.jsx'))
 const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
@@ -62,6 +64,30 @@ const NAV = [
   { to: '/alerts', label: 'Alerts', icon: 'bell', requireAuth: true },
 ]
 
+const ROUTE_PRELOADERS = {
+  '/research': loadPicks,
+  '/portfolio': loadPortfolio,
+}
+
+function preloadRoute(path) {
+  ROUTE_PRELOADERS[path]?.().catch(() => {
+    // Navigation still owns recovery if a speculative preload loses its connection.
+  })
+}
+
+function RouteLoading({ pathname }) {
+  const label = pathname.startsWith('/portfolio')
+    ? 'Opening your portfolio'
+    : pathname.startsWith('/research') ? 'Opening research' : 'Opening page'
+  return (
+    <div className="route-loading" role="status" aria-live="polite">
+      <span className="loading-mark" aria-hidden="true" />
+      <strong>{label}…</strong>
+      <span>Loading the latest saved view.</span>
+    </div>
+  )
+}
+
 export const MOBILE_NAV = [
   { to: '/research', label: 'Research', icon: 'research' },
   { to: '/search', label: 'Search', icon: 'search' },
@@ -96,6 +122,19 @@ function AppContent() {
   const { pathname } = useLocation()
   const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
 
+  useEffect(() => {
+    const preload = () => {
+      preloadRoute('/research')
+      if (currentUser) preloadRoute('/portfolio')
+    }
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(preload, { timeout: 2500 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = window.setTimeout(preload, 1200)
+    return () => window.clearTimeout(id)
+  }, [currentUser])
+
   return (
     <div className="shell" data-auth-resolving={loading ? 'true' : 'false'}>
       <a className="skip-link" href="#main-content">Skip to content</a>
@@ -109,6 +148,7 @@ function AppContent() {
             if (item.requireAuth && !currentUser) return null
             return (
               <NavLink key={item.to} to={item.to} end={item.end}
+                onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
                 className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
                 <Icon name={item.icon} size={19} /><span>{item.label}</span>
               </NavLink>
@@ -141,8 +181,8 @@ function AppContent() {
           </div>
         </header>
         <DataStatus />
-        <ErrorBoundary key={pathname}>
-        <Suspense fallback={<div className="route-loading" role="status"><span className="loading-mark" /></div>}>
+        <ErrorBoundary key={pathname} pageName={pathname.startsWith('/portfolio') ? 'Portfolio' : pathname.startsWith('/research') ? 'Research' : 'This page'}>
+        <Suspense fallback={<RouteLoading pathname={pathname} />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/research" element={<Picks />} />
@@ -197,6 +237,7 @@ function AppContent() {
       <nav className="mobile-nav" aria-label="Mobile navigation">
         {MOBILE_NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end}
+              onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
               className={({ isActive }) => `mobile-nav-item${item.primary ? ' mobile-nav-report' : ''}${isActive ? ' active' : ''}`}>
               <span className="mobile-nav-icon"><Icon name={item.icon} size={19} /></span>
               <span>{item.label}</span>

@@ -1,7 +1,7 @@
 import { useData } from '../lib/useData'
 
 export default function ModelVersionFooter() {
-  const { data } = useData('advisor.json')
+  const { data } = useData('report.json')
   const version = data?.model_metadata
   if (!data) return null
   const semantic = version?.semantic_version || data.model_version || 'unknown'
