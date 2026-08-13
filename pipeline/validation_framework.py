@@ -11,8 +11,9 @@ from statistics import mean, stdev
 from datetime import datetime, timezone
 
 REQUIRED_EXTERNAL = {"date", "ticker", "rank"}
-STRATEGIES = ("production", "structural_tactical", "momentum", "quality_value", "combined",
-              "SPY", "eligible_universe_equal_weight", "external")
+STRATEGIES = ("production", "structural_tactical", "momentum", "quality_value", "swing",
+              "political_institutional", "combined", "SPY", "eligible_universe_equal_weight",
+              "external")
 
 
 def append_immutable_snapshot(root, strategy, as_of, rows, metadata=None):
