@@ -48,7 +48,7 @@ export function usePortfolioTracking() {
   }
 
   const recordSnapshot = async ({ value, coveragePct, source, recordedAt = new Date().toISOString() }) => {
-    if (!currentUser || !Number.isFinite(Number(value))) return { success: false, error: 'A signed-in account and portfolio value are required.' }
+    if (!currentUser || !Number.isFinite(Number(value))) return { success: false, error: 'A Firebase connection and portfolio value are required.' }
     try {
       await ensureTrackingStarted()
       const id = recordedAt.slice(0, 16).replace(/[:.]/g, '-')
@@ -119,7 +119,7 @@ export function usePortfolioTracking() {
   }
 
   const syncReferenceCashFlows = async () => {
-    if (!currentUser) return { success: false, error: 'Sign in first.' }
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
       await Promise.all(FIDELITY_CASH_FLOWS.map((row) => setDoc(
@@ -147,7 +147,7 @@ export function usePortfolioTracking() {
   }
 
   const setLedgerComplete = async (ledgerComplete) => {
-    if (!currentUser) return { success: false, error: 'Sign in first.' }
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       await ensureTrackingStarted()
       const patch = { ledgerComplete: Boolean(ledgerComplete), ledgerConfirmedAt: ledgerComplete ? new Date().toISOString() : null }

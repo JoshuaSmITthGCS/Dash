@@ -101,7 +101,7 @@ function PriceTargetEditor({ item, suggested, onSave, onCreateAlert, alertBusy }
 export default function Watchlist() {
   const { data, loading, reload } = useData('advisor.json')
   const { preferences } = usePreferences()
-  const { currentUser } = useAuth()
+  const { currentUser, authError, retryAuth } = useAuth()
   const watchlist = useWatchlist()
   const { createRule } = useAlerts()
   const [input, setInput] = useState('')
@@ -170,7 +170,7 @@ export default function Watchlist() {
     return (
       <div className="page-head"><div><span className="eyebrow">Saved research</span>
         <h1 className="page-title">My <span className="accent">watchlist</span></h1>
-        <p className="page-sub">Sign in to save a watchlist that syncs across your devices.</p></div></div>
+        <p className="page-sub">{authError || 'Firebase is connecting to your solo workspace.'}</p><button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button></div></div>
     )
   }
 

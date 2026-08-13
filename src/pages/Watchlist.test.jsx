@@ -58,14 +58,15 @@ describe('Watchlist filtering and sorting', () => {
     usePreferences.mockReturnValue({ preferences: { watchlistSizingMode: 'capped' } })
   })
 
-  it('prompts sign-in instead of the grid when signed out', () => {
-    useAuth.mockReturnValue({ currentUser: null })
+  it('offers Firebase reconnection instead of a login prompt when cloud data is offline', () => {
+    useAuth.mockReturnValue({ currentUser: null, authError: 'Cloud portfolio data is temporarily unavailable.', retryAuth: vi.fn() })
     useWatchlist.mockReturnValue({ items: [], loading: false, isWatched: () => false, addTicker: vi.fn(), removeTicker: vi.fn(), updateTargets: vi.fn() })
     useData.mockReturnValue({ data: { research: [] }, loading: false, reload: vi.fn() })
 
     render(<MemoryRouter><Watchlist /></MemoryRouter>)
 
-    expect(screen.getByText(/Sign in to save a watchlist/)).toBeVisible()
+    expect(screen.getByText('Cloud portfolio data is temporarily unavailable.')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Reconnect Firebase' })).toBeVisible()
   })
 
   it('shows a match count per research screen and filters the grid to the selected one', () => {

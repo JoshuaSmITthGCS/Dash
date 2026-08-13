@@ -172,7 +172,7 @@ export function useFirebasePortfolio() {
   // Add new position
   const addPosition = async (ticker, shares, costBasis, purchaseDate = new Date().toISOString().split('T')[0], costBasisInputMode = 'share') => {
     if (!currentUser) {
-      alert('Please log in to add positions')
+      alert('Firebase is not connected. Reconnect cloud data before adding positions.')
       return
     }
 
@@ -255,7 +255,7 @@ export function useFirebasePortfolio() {
   // snapshot metadata and normalized ticker casing.
   // This is explicit rather than automatic because it writes to the signed-in cloud portfolio.
   const syncReferencePortfolio = async () => {
-    if (!currentUser) return { success: false, error: 'Please sign in first' }
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
       const staleReferencePositions = positions.filter((position) => isRetiredReferencePosition(position.id, position))
@@ -329,7 +329,7 @@ export function useFirebasePortfolio() {
   // Import portfolio
   const importPortfolio = async (file) => {
     if (!currentUser) {
-      alert('Please log in to import portfolio')
+      alert('Firebase is not connected. Reconnect cloud data before importing a portfolio.')
       return
     }
 

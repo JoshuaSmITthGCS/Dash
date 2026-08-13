@@ -436,7 +436,7 @@ export default function Portfolio() {
     setRemovingId(null)
     if (result?.success === false) {
       setSyncMessage(`Could not remove position: ${result.error || 'Unknown error'}`)
-    } else setSyncMessage('Position removed from the cloud portfolio on every signed-in device.')
+    } else setSyncMessage('Position removed from the cloud portfolio on every connected device.')
   }
 
   const startSell = (pos) => {
@@ -554,7 +554,7 @@ export default function Portfolio() {
         </div>
         <div className={`cloud-sync-state ${syncState.connected ? 'connected' : 'disconnected'}`} role="status">
           <span aria-hidden="true" />
-          <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Signed-in account'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Waiting for your signed-in account'}</small></div>
+          <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Solo workspace'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Connecting your solo cloud workspace'}</small></div>
         </div>
       </div>
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}

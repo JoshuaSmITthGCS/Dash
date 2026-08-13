@@ -127,7 +127,7 @@ export async function handler(event) {
 
   const authorization = event.headers.authorization || event.headers.Authorization || ''
   const idToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : ''
-  if (!idToken) return json(401, { error: 'Sign in before refreshing portfolio prices.' })
+  if (!idToken) return json(401, { error: 'A Firebase cloud session is required to refresh portfolio prices.' })
 
   const symbols = parseSymbols(event.body)
   if (!symbols.length) return json(400, { error: 'No valid portfolio symbols were provided.' })

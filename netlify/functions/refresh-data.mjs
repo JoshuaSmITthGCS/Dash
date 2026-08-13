@@ -176,7 +176,7 @@ export async function handler(event) {
 
   const authorization = event.headers.authorization || event.headers.Authorization || ''
   const idToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : ''
-  if (!idToken) return json(401, { error: 'Sign in before requesting a refresh.' })
+  if (!idToken) return json(401, { error: 'A Firebase cloud session is required to request a refresh.' })
 
   try {
     const user = await getAuth(firebaseApp()).verifyIdToken(idToken, true)

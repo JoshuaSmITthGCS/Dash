@@ -1,16 +1,16 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 
 const authMocks = vi.hoisted(() => ({
   observer: null,
   setPersistence: vi.fn(() => Promise.resolve()),
-  signIn: vi.fn(),
+  signInWithCustomToken: vi.fn(),
   unsubscribe: vi.fn(),
 }))
 
 vi.mock('firebase/auth', () => ({
   browserLocalPersistence: { type: 'LOCAL' },
   setPersistence: authMocks.setPersistence,
-  signInWithEmailAndPassword: authMocks.signIn,
+  signInWithCustomToken: authMocks.signInWithCustomToken,
   onAuthStateChanged: vi.fn((_auth, observer) => {
     authMocks.observer = observer
     return authMocks.unsubscribe
@@ -21,34 +21,57 @@ vi.mock('./firebase', () => ({ auth: {} }))
 import { AuthProvider, useAuth } from './FirebaseAuthContext.jsx'
 
 function AuthState() {
-  const { currentUser, loading } = useAuth()
-  return <span>{loading ? 'Restoring session' : currentUser ? 'Signed in' : 'Signed out'}</span>
+  const { currentUser, loading, authError } = useAuth()
+  return <span>{loading ? 'Connecting Firebase' : currentUser ? 'Cloud connected' : authError}</span>
 }
 
-describe('remembered-device authentication', () => {
+describe('solo workspace Firebase session', () => {
   beforeEach(() => {
     authMocks.observer = null
     authMocks.unsubscribe.mockClear()
+    authMocks.signInWithCustomToken.mockReset()
+    vi.stubGlobal('fetch', vi.fn())
   })
 
-  it('keeps auth resolving until Firebase restores the saved user', () => {
-    render(<AuthProvider><AuthState /></AuthProvider>)
-    expect(screen.getByText('Restoring session')).toBeVisible()
-
-    act(() => authMocks.observer({ uid: 'saved-user' }))
-
-    expect(screen.getByText('Signed in')).toBeVisible()
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
-  it('does not turn a slow saved-session check into a signed-out state on a timer', () => {
-    vi.useFakeTimers()
+  it('uses an existing persistent Firebase session without requesting another token', () => {
     render(<AuthProvider><AuthState /></AuthProvider>)
+    expect(screen.getByText('Connecting Firebase')).toBeVisible()
 
-    act(() => vi.advanceTimersByTime(10_000))
-    expect(screen.getByText('Restoring session')).toBeVisible()
+    act(() => authMocks.observer({ uid: 'owner-uid' }))
+
+    expect(screen.getByText('Cloud connected')).toBeVisible()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('silently creates the owner session when the device has no saved session', async () => {
+    fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ token: 'solo-custom-token' }),
+    })
+    authMocks.signInWithCustomToken.mockResolvedValue({ user: { uid: 'owner-uid' } })
+    render(<AuthProvider><AuthState /></AuthProvider>)
 
     act(() => authMocks.observer(null))
-    expect(screen.getByText('Signed out')).toBeVisible()
-    vi.useRealTimers()
+
+    await waitFor(() => expect(authMocks.signInWithCustomToken).toHaveBeenCalledWith({}, 'solo-custom-token'))
+    expect(fetch).toHaveBeenCalledWith('/.netlify/functions/solo-session', expect.objectContaining({ method: 'POST' }))
+    expect(screen.getByText('Cloud connected')).toBeVisible()
+  })
+
+  it('shows a recoverable cloud error without opening a login form', async () => {
+    fetch.mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'Cloud data could not be connected.' }),
+    })
+    render(<AuthProvider><AuthState /></AuthProvider>)
+
+    act(() => authMocks.observer(null))
+
+    expect(await screen.findByText('Cloud portfolio data is temporarily unavailable.')).toBeVisible()
+    expect(authMocks.signInWithCustomToken).not.toHaveBeenCalled()
   })
 })

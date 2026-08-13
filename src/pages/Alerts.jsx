@@ -31,13 +31,13 @@ function destination(event) {
 }
 
 export default function Alerts() {
-  const { currentUser } = useAuth()
+  const { currentUser, authError, retryAuth } = useAuth()
   const alerts = useAlerts()
   const [draft, setDraft] = useState(initialRule)
   const [message, setMessage] = useState('')
   const [offerPush, setOfferPush] = useState(false)
   const [saving, setSaving] = useState(false)
-  if (!currentUser) return <section className="report-empty-state"><span className="eyebrow">Alerts</span><h1>Sign in to create alerts</h1><p>In-app alerts are private to your account and sync across devices.</p></section>
+  if (!currentUser) return <section className="report-empty-state"><span className="eyebrow">Alerts</span><h1>Cloud alerts are offline</h1><p>{authError || 'Firebase is still connecting to your solo workspace.'}</p><button className="primary-button" onClick={retryAuth}>Reconnect Firebase</button></section>
   if (alerts.loading) return <Loading />
 
   const submit = async (event) => {

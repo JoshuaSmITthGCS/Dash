@@ -5,7 +5,6 @@ import { DataStatus } from './components/DataStatus.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Icon from './components/Icons.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
-import FirebaseLoginModal from './components/FirebaseLoginModal.jsx'
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
@@ -50,10 +49,10 @@ const NAV = [
   { to: '/', label: 'Financial Report', icon: 'overview', end: true },
   { to: '/research', label: 'Research', icon: 'research' },
   { to: '/search', label: 'Search', icon: 'search' },
-  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio', requireAuth: true },
+  { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
-  { to: '/finances', label: 'Finances', icon: 'finances', requireAuth: true },
-  { to: '/planning', label: 'Planning', icon: 'finances', requireAuth: true },
+  { to: '/finances', label: 'Finances', icon: 'finances' },
+  { to: '/planning', label: 'Planning', icon: 'finances' },
   // The screens tab lands on the swing screen: it is the widest-horizon-coverage screen in
   // the rail and the one most often opened cold. Every other screen is one tap away on the
   // rail that page renders.
@@ -61,7 +60,7 @@ const NAV = [
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
-  { to: '/alerts', label: 'Alerts', icon: 'bell', requireAuth: true },
+  { to: '/alerts', label: 'Alerts', icon: 'bell' },
 ]
 
 const ROUTE_PRELOADERS = {
@@ -86,6 +85,16 @@ function RouteLoading({ pathname }) {
       <span>Loading the latest saved view.</span>
     </div>
   )
+}
+
+function CloudDataUnavailable({ feature }) {
+  const { authError, retryAuth } = useAuth()
+  return <section className="report-empty-state">
+    <span className="eyebrow">{feature}</span>
+    <h1>Cloud data is offline</h1>
+    <p>{authError || 'Firebase is still connecting to your solo workspace.'}</p>
+    <button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button>
+  </section>
 }
 
 export const MOBILE_NAV = [
@@ -117,15 +126,13 @@ function ProfilePanel() {
 }
 
 function AppContent() {
-  const { currentUser, loading, userProfile } = useAuth()
+  const { currentUser, loading, authError, retryAuth, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
   const { pathname } = useLocation()
-  const previewMode = import.meta.env.DEV && new window.URLSearchParams(window.location.search).has('preview')
-
   useEffect(() => {
     const preload = () => {
       preloadRoute('/research')
-      if (currentUser) preloadRoute('/portfolio')
+      preloadRoute('/portfolio')
     }
     if ('requestIdleCallback' in window) {
       const id = window.requestIdleCallback(preload, { timeout: 2500 })
@@ -133,7 +140,11 @@ function AppContent() {
     }
     const id = window.setTimeout(preload, 1200)
     return () => window.clearTimeout(id)
-  }, [currentUser])
+  }, [])
+
+  const cloudPage = (feature, pathname, page) => loading
+    ? <RouteLoading pathname={pathname} />
+    : currentUser ? page : <CloudDataUnavailable feature={feature} />
 
   return (
     <div className="shell" data-auth-resolving={loading ? 'true' : 'false'}>
@@ -145,7 +156,6 @@ function AppContent() {
         </NavLink>
         <nav className="desktop-nav">
           {NAV.map((item) => {
-            if (item.requireAuth && !currentUser) return null
             return (
               <NavLink key={item.to} to={item.to} end={item.end}
                 onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
@@ -180,6 +190,10 @@ function AppContent() {
             </div>
           </div>
         </header>
+        {authError && <div className="cloud-session-error" role="alert">
+          <span><strong>Cloud data is offline.</strong> Portfolio, finances, and alerts could not connect to Firebase.</span>
+          <button type="button" className="text-button" onClick={retryAuth}>Try again</button>
+        </div>}
         <DataStatus />
         <ErrorBoundary key={pathname} pageName={pathname.startsWith('/portfolio') ? 'Portfolio' : pathname.startsWith('/research') ? 'Research' : 'This page'}>
         <Suspense fallback={<RouteLoading pathname={pathname} />}>
@@ -188,11 +202,11 @@ function AppContent() {
           <Route path="/research" element={<Picks />} />
           <Route path="/search" element={<Search />} />
           <Route path="/market" element={<PolicyRadar />} />
-          <Route path="/portfolio" element={currentUser ? <Portfolio /> : <Dashboard />} />
-          <Route path="/portfolio/diversification" element={currentUser ? <Diversification /> : <Dashboard />} />
-          <Route path="/portfolio/insights" element={currentUser ? <Insights /> : <Dashboard />} />
-          <Route path="/finances" element={currentUser ? <Finances /> : <Dashboard />} />
-          <Route path="/planning" element={currentUser || previewMode ? <Planning /> : <Dashboard />} />
+          <Route path="/portfolio" element={cloudPage('Portfolio', '/portfolio', <Portfolio />)} />
+          <Route path="/portfolio/diversification" element={cloudPage('Portfolio diversification', '/portfolio', <Diversification />)} />
+          <Route path="/portfolio/insights" element={cloudPage('Portfolio insights', '/portfolio', <Insights />)} />
+          <Route path="/finances" element={cloudPage('Finances', '/finances', <Finances />)} />
+          <Route path="/planning" element={cloudPage('Planning', '/planning', <Planning />)} />
           {/* Its own page rather than the shared ResearchScreen table: the swing composite
               publishes five separately-cited legs, their per-row coverage, and a negative
               screen whose hits stay visible - none of which the generic screen row carries. */}
@@ -226,7 +240,7 @@ function AppContent() {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/alerts" element={currentUser ? <Alerts /> : <Dashboard />} />
+          <Route path="/alerts" element={cloudPage('Alerts', '/alerts', <Alerts />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
@@ -244,7 +258,6 @@ function AppContent() {
             </NavLink>
         ))}
       </nav>
-      {!loading && !currentUser && !previewMode && <FirebaseLoginModal />}
     </div>
   )
 }

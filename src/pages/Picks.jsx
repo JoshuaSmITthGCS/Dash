@@ -52,7 +52,7 @@ const COLUMN_SORTS = {
   confidence: ['Data coverage', (a, b) => (b.data_coverage ?? -1) - (a.data_coverage ?? -1),
     'How complete and reliable the underlying data was, not how attractive the company is. A high number means more inputs resolved. Only computed for fully published companies; each ranking model additionally reports its own mode-specific confidence over the inputs it actually reads.'],
   portfolioPct: ['% of my portfolio', (a, b) => (b.portfolioPct ?? -1) - (a.portfolioPct ?? -1),
-    "How much of your current portfolio's value this position represents right now, from your held shares at today's price. Rows you don't hold read as 0% and sort to the bottom; requires a signed-in portfolio with at least one priced position."],
+    "How much of your current portfolio's value this position represents right now, from your held shares at today's price. Rows you don't hold read as 0% and sort to the bottom; requires a connected cloud portfolio with at least one priced position."],
   undervalued: ['Most undervalued (cheap + growth)', (a, b) => (b.valueGrowthScore ?? -1) - (a.valueGrowthScore ?? -1),
     "Blends two peer-relative percentiles: how cheap it is against its own peers (sector valuation for stocks, cost score for ETFs) and how much growth the numbers show (published revenue growth where available, otherwise 12-1 price momentum for stocks or trailing 1-year return for ETFs, ranked against its own pool). Cheap alone or growing alone can rank near the top - this rewards having both."],
 }
@@ -654,7 +654,7 @@ export default function Picks() {
     setBuyingTicker('')
     const notice = result?.success
       ? { message: `${shares.toFixed(4)} ${row.ticker} shares added at $${price.toFixed(2)} for $100 on ${localToday}.` }
-      : { error: true, message: result?.error ? `Could not add ${row.ticker}: ${result.error}` : 'Sign in to add this trade to your portfolio.' }
+      : { error: true, message: result?.error ? `Could not add ${row.ticker}: ${result.error}` : 'Reconnect Firebase to add this trade to your portfolio.' }
     setBuyStatuses((current) => ({ ...current, [row.ticker]: notice }))
     setTradeNotice(notice)
   }
