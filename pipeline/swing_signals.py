@@ -257,7 +257,13 @@ CAPACITY_COST_CEILING_BPS = 50.0
 # and report drift monotone *in the rank*, not linear in the scaled surprise, so a
 # rank-to-normal-score transform is closer to the published construct than the raw z is.
 # Applied only here: the other subfactors are bounded ratios without this tail.
-RANK_NORMALIZED_SUBFACTORS = {"standardized_unexpected_earnings"}
+# `announcement_return` joins it for the same reason. An announcement-window return is one of
+# the fattest-tailed quantities in equity data - a name can move 40% on a print while the
+# median name moves under 2% - so winsorizing at the 5th and 95th percentiles would tie every
+# genuinely large surprise at one value, which on the leg that exists precisely to rank
+# surprises is the whole signal thrown away. Brandt et al sort into deciles and report drift
+# monotone in the rank, so ranking is also the published construct.
+RANK_NORMALIZED_SUBFACTORS = {"standardized_unexpected_earnings", "announcement_return"}
 
 # Eligibility gates, deliberately the same shape and defaults as the momentum screen's so the
 # two screens exclude the same names for the same stated reasons.
@@ -294,6 +300,11 @@ DEFAULT_CONFIG = {
     # PEAD drift is a claim about a *recent* announcement. Past this the drift window has
     # closed and the leg is dropped rather than carried on a stale surprise.
     "pead_window_trading_days": 60,
+    # The same gate for the announcement-return leg, kept as its own key because the tiers set
+    # it differently: a 3-day book wants an announcement that fired this week, an 8-week book
+    # wants the whole drift window. Default matches the SUE window so the two earnings legs
+    # age together unless a tier deliberately separates them.
+    "announcement_window_max_age": 60,
     "entry_percentile": 90,
     "exit_percentile": 75,
 }
@@ -519,19 +530,142 @@ def pead_factor(sue=None, config=None):
     return float(value), "IN_DRIFT_WINDOW"
 
 
-def swing_factors(row, closes=None, volumes=None, config=None, sue=None):
+def universe_daily_returns(all_closes):
+    """Equal-weighted universe daily return, indexed from the end: [0] is the latest session.
+
+    The market leg of every abnormal-return construct in this file. Built from the same cached
+    closes the factors are built from rather than from an index series, for two reasons. It
+    needs no fetch and no new provider, which keeps the screen re-derivable from the
+    repository, and it is the benchmark this book is actually measured against - an
+    equal-weighted mean of the scored universe, not a cap-weighted index whose mega-cap
+    concentration this book does not share.
+
+    Rows are aligned from the *end* rather than the start. Every series in the cache is
+    updated to the same latest session, so offset j is the same calendar session for every
+    name, while start-alignment would compare a 300-session history against a 5000-session one
+    at the same index.
+    """
+    series = [closes for closes in all_closes if closes and len(closes) > 1]
+    if not series:
+        return []
+    horizon = min(len(closes) for closes in series) - 1
+    returns = []
+    for offset in range(horizon):
+        moves = []
+        for closes in series:
+            later, earlier = closes[-1 - offset], closes[-2 - offset]
+            if _finite(later) and _finite(earlier) and earlier > 0:
+                moves.append(later / earlier - 1)
+        returns.append(sum(moves) / len(moves) if moves else None)
+    return returns
+
+
+def announcement_return(closes, age_sessions, market_returns=None):
+    """The [0,+1] abnormal return around the earnings announcement - the EAR surprise.
+
+    Brandt, Kishore, Santa-Clara & Venkatachalam measure a strategy sorted on the
+    announcement-window return earning 7.55%/yr, roughly 1.3 points above the same strategy
+    sorted on SUE, and unlike SUE its drift does not reverse after three quarters. The reason
+    to carry it here is coverage rather than effect size: it needs no analyst estimate and no
+    XBRL line item, only the daily bars and the 8-K Item 2.02 timestamp this pipeline already
+    stores, so it resolves on names that fail every analyst-dependent leg. The resolution
+    floor screens for size largely because two of the five original legs need analyst data,
+    and this leg is the part of the answer that does not require relaxing the floor.
+
+    ``age_sessions`` is sessions elapsed since the release, from the same
+    ``announcement_age_trading_days`` anchor the SUE leg is aged on, so a period with no
+    resolvable release datetime scores nothing here either rather than falling back to the
+    filing date.
+
+    The window spans the close before the announcement to the close one session after it, so
+    it needs at least one completed session after the release. An announcement that fired
+    today has no measurable window yet and returns None rather than a half-formed one.
+    """
+    series = closes or []
+    if not _finite(age_sessions):
+        return None
+    age = int(age_sessions)
+    if age < 1 or len(series) < age + 3:
+        return None
+    start, end = series[-(age + 2)], series[-age]
+    if not (_finite(start) and _finite(end) and start > 0):
+        return None
+    raw = end / start - 1
+    if not market_returns:
+        return raw * 100
+    # The same two sessions on the universe: the one ending on the announcement day and the
+    # one after it. Compounded rather than summed, so the abnormal return is a difference of
+    # like-for-like holding-period returns.
+    span = [market_returns[offset] for offset in (age, age - 1)
+            if offset < len(market_returns) and market_returns[offset] is not None]
+    if len(span) < 2:
+        return raw * 100
+    market = 1.0
+    for move in span:
+        market *= 1 + move
+    return (raw - (market - 1)) * 100
+
+
+def abnormal_turnover(volumes, recent=1, reference=50):
+    """Volume shock in the name's own trailing sigmas, not as a raw ratio.
+
+    The same correction rule 4 applies to the 52-week leg, applied to the volume leg. A raw
+    ratio of recent to average volume is mechanically larger for a name whose baseline volume
+    is low and stable, so ranking on it imports an undeclared liquidity tilt in exactly the
+    way ranking on raw 52-week proximity imported an undeclared volatility tilt. Standardizing
+    the log volume against its own trailing distribution divides that out and leaves the
+    surprise, which is the quantity Gervais-Kaniel-Mingelgrin's investor-recognition mechanism
+    is about.
+
+    Published beside `volume_ratio_1d_50d` rather than replacing it, so the change stays
+    auditable in both directions.
+    """
+    series = [volume for volume in (volumes or []) if _finite(volume) and volume > 0]
+    if len(series) < reference + recent:
+        return None
+    window = series[-(reference + recent):-recent] if recent else series[-reference:]
+    logs = [math.log(volume) for volume in window]
+    if len(logs) < 2:
+        return None
+    mean = sum(logs) / len(logs)
+    variance = sum((value - mean) ** 2 for value in logs) / (len(logs) - 1)
+    deviation = math.sqrt(variance)
+    # A relative floor, not `<= 0`. Fifty identical volumes give a variance of ~1e-30 rather
+    # than exactly zero once the mean carries floating-point error, and dividing a comparably
+    # tiny numerator by it returns a confident-looking z of ~1 for a name whose volume has not
+    # moved at all. Log volumes are order 10, so 1e-9 is far below any real dispersion.
+    if deviation < 1e-9:
+        return None
+    latest = series[-recent:]
+    return (math.log(sum(latest) / len(latest)) - mean) / deviation
+
+
+def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_returns=None):
     """Every raw subfactor for one row, before any cross-sectional ranking.
 
     Price and volume subfactors come from the cached daily series; revision subfactors come
     from the row's own published `estimate_detail`; the surprise comes from the EDGAR
     point-in-time store via `sue`. Anything unresolvable stays None, and the leg it belongs to
     scores 0 - the cross-sectional mean - rather than rescaling the legs that did resolve.
+
+    ``market_returns`` is the equal-weighted universe daily return series from
+    universe_daily_returns, needed only by the announcement-return leg. Omitted, that leg
+    falls back to the raw window return and says so by scoring an unadjusted number, which is
+    the right degradation for a caller that has one row and no cross-section.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     estimates = row.get("estimate_detail") or {}
     surprise, pead_status = pead_factor(sue, config)
     volatility = realized_volatility(closes)
+    age = (sue or {}).get("age_trading_days")
+    ear = announcement_return(closes, age, market_returns)
+    if ear is not None and _finite(age) and age > config["announcement_window_max_age"]:
+        ear = None
     return {
+        "announcement_return": ear,
+        "announcement_age_sessions": age if _finite(age) else None,
+        "abnormal_turnover_1d": abnormal_turnover(volumes, recent=1),
+        "abnormal_turnover_5d": abnormal_turnover(volumes, recent=5),
         "standardized_unexpected_earnings": surprise,
         "pead_status": pead_status,
         "pead_basis": (sue or {}).get("basis"),
@@ -826,7 +960,8 @@ def _gate_reasons(row, coverage, config, legs_resolved=None):
     return reasons
 
 
-def swing_scores(rows, current_members=None, config=None, variant=BASELINE_VARIANT):
+def swing_scores(rows, current_members=None, config=None, variant=BASELINE_VARIANT,
+                 weights=None, subfactors=None):
     """Score and rank the cross-section. One row in, one scored row out - nothing is dropped.
 
     Each leg is standardized across the universe and combined at its declared weight,
@@ -838,13 +973,21 @@ def swing_scores(rows, current_members=None, config=None, variant=BASELINE_VARIA
 
     ``variant`` selects a registered weight and subfactor set - see SWING_VARIANTS. The
     default is the frozen baseline.
+
+    ``weights`` and ``subfactors`` override the variant's, for callers that rank the same
+    cross-section under a different leg set - the horizon tiers in swing_tiers.py are the
+    only ones. They are parameters rather than new SWING_VARIANTS entries deliberately: the
+    variant registry is what harness_freeze.json registers on the prospective clock, and a
+    tier is a different book rather than a competing specification of the same one. Adding
+    tiers there would inflate the registered search path by three for no measurement gain.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     current_members = current_members or {}
     rows = list(rows)
     spec = variant_spec(variant)
-    weights = variant_weights(variant)
-    subfactors_by_leg = variant_subfactors(variant)
+    weights = dict(weights) if weights else variant_weights(variant)
+    subfactors_by_leg = ({leg: definition for leg, definition in subfactors.items()
+                          if leg in weights} if subfactors else variant_subfactors(variant))
     standardized = _standardized_subfactors(rows, config, subfactors_by_leg)
     total_weight = sum(weights.values())
     leg_count = len(weights)
@@ -1167,15 +1310,19 @@ def _median_position_capacity(book, max_participation):
     return sizes[len(sizes) // 2] if sizes else None
 
 
-def leg_coverage(scored, variant=BASELINE_VARIANT):
+def leg_coverage(scored, variant=BASELINE_VARIANT, weights=None):
     """Share of rows each leg actually resolved on - the honest header for a thin leg.
 
     A composite whose highest-weighted leg is empty across the universe is not the same
     screen as one where it is full, and the page has to be able to say which it is looking at.
+
+    ``weights`` reports coverage over an arbitrary leg set rather than the variant's, for the
+    horizon tiers, whose leg sets differ from the frozen five.
     """
     total = len(scored) or 1
+    legs = weights or variant_weights(variant)
     return {leg: round(sum(1 for row in scored if (row.get("leg_scores") or {}).get(leg) is not None) / total, 3)
-            for leg in variant_weights(variant)}
+            for leg in legs}
 
 
 # The PEAD leg's coverage under the superseded filing-date anchor, measured on this universe

@@ -7,6 +7,36 @@
 
 ---
 
+## Implementation status, 2026-08-13
+
+**All three tiers were built, at the author's direction, after this report recommended funding
+one.** That decision is recorded here rather than argued again. What the report changed is how
+they were built.
+
+| Report said | What was built | Where |
+|---|---|---|
+| Tier F fails its break-even by ~15x | Built, but **event-triggered rather than a standing cross-sectional rank**. A name enters only in the sessions after it reports, so turnover follows the earnings calendar, not the trading calendar | `swing_tiers.py::TIER_SPECS["F"]` |
+| Tier M is undecidable on current evidence | Built, with the decision left to the data | `TIER_SPECS["M"]` |
+| Tier S is the only tier that clears | Built | `TIER_SPECS["S"]` |
+| The cost arithmetic is what decides viability | **Every row publishes its own round trip against its own expected alpha.** `net_edge_bps` is a sortable column, so a book that does not clear its costs says so per name rather than in a footnote | `swing_tiers.py::row_economics` |
+| Announcement-return surprise is the structural fix for P1 | Built as a leg in all three tiers. Needs no analyst data | `swing_signals.py::announcement_return` |
+| A leg may not enter a faster tier on a slower tier's effect size | Enforced as a test: a leg capturing under 20% of its documented payoff inside a tier's window cannot be in that tier | `test_swing_tiers.py::test_each_leg_only_enters_a_tier_where_its_payoff_lands` |
+| The reversal leg fails at t=1.37 | **Still carried, at 20%, in the fast book only.** It is one of only two legs with any documented fast-horizon claim, so a 3-day book without it would have one leg. This is the clearest place where the built product departs from the report's recommendation | `TIER_SPECS["F"]` |
+
+The 8-week tier was kept at 40 sessions rather than extended to the 60-90 this report argues
+for. Extending it remains recommendation R3 and is still the cheapest change available.
+
+Two design decisions the report did not anticipate, both forced by writing the code:
+
+- **Tier M lost its 52-week leg.** The 20%-capture rule this report proposes, once written as a
+  test, rejected a 15% allocation to a leg capturing 16% at that horizon. The rule was applied
+  rather than relaxed, and the freed weight went to the three legs that had delivered.
+- **The volume leg was rebuilt as abnormal turnover.** A raw recent-to-average volume ratio is
+  mechanically larger for a quiet-baseline name, which imports the same undeclared tilt that
+  raw 52-week proximity imported before rule 4 fixed it.
+
+---
+
 ## How to read this document
 
 Three labels appear throughout and they mean different things.

@@ -406,6 +406,40 @@ td { padding: 14px; border-bottom: 1px solid var(--border); font-size: 12px; } t
 .swing-row-name { display: block; color: var(--text-faint); font-size: 10.5px; }
 .swing-row-suppressed { opacity: .72; }
 .swing-suppressed-cell { color: var(--warn); }
+
+/* Horizon tiers. The switcher changes which book is shown, and each book has its own legs,
+   its own liquidity floor and its own cost budget, so it reads as a set of tabs over three
+   different tables rather than as a filter over one. */
+.swing-tier-switcher { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--section-gap); }
+.swing-tier-tab {
+  display: grid; gap: 2px; flex: 1 1 160px; padding: 10px 14px; text-align: left; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg-elev); color: var(--text-dim);
+  transition: border-color .15s, background .15s;
+}
+.swing-tier-tab:hover { border-color: var(--border-lit); }
+.swing-tier-tab.is-active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg-elev)); }
+.swing-tier-tab b { color: var(--text); font-size: 12.5px; }
+.swing-tier-tab.is-active b { color: var(--accent); }
+.swing-tier-horizon { color: var(--text-dim); font: 10px var(--font-mono); }
+.swing-tier-meta { color: var(--text-faint); font: 10px var(--font-mono); }
+.swing-tier-econ { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.swing-tier-econ li { display: grid; gap: 2px; }
+.swing-tier-econ b { color: var(--text); font: 650 13px var(--font-mono); }
+.swing-tier-econ span { color: var(--text-faint); font-size: 10.5px; }
+.swing-tier-econ li.thin b { color: var(--warn); }
+.swing-evidence-capture { color: var(--text-faint); font: 10px var(--font-mono); cursor: help; }
+.swing-evidence-capture.thin { color: var(--warn); }
+
+/* Sortable headers. The button carries the click target and the caret, the th carries
+   aria-sort, so the accessible name stays the column name in every sort state. */
+.swing-sort {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; cursor: pointer;
+  border: 0; background: none; color: inherit; font: inherit; text-align: inherit;
+}
+.swing-sort:hover { color: var(--text); }
+.swing-sort.is-active { color: var(--accent); }
+.swing-sort-caret { color: var(--text-faint); font-size: 9px; }
+.swing-sort.is-active .swing-sort-caret { color: var(--accent); }
 .portfolio-move-explanation { margin-bottom: var(--section-gap); }
 .portfolio-move-explanation header { margin-bottom: 14px; }
 .portfolio-move-explanation h2 { margin: 4px 0 0; font: 750 26px var(--font-mono); }

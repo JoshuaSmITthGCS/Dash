@@ -24,7 +24,12 @@ from swing_signals import (BASELINE_VARIANT, DECAY_HAIRCUT, DEFAULT_CONFIG, HOLD
                            SHORT_INTEREST_EVIDENCE, SWING_EVIDENCE, SWING_SUBFACTORS,
                            SWING_VARIANTS, SWING_WEIGHTS, capacity_profile, leg_coverage,
                            legs_resolved_distribution, pead_anchor_diagnostic, sector_cap_log,
-                           swing_factors, swing_scores, trailing_dollar_volume)
+                           swing_factors, swing_scores, trailing_dollar_volume,
+                           universe_daily_returns)
+from swing_tiers import (ALPHA_NOTE, ANNOUNCEMENT_EVIDENCE, ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
+                         DECAY_CAPTURE, DECAY_CAPTURE_NOTE, DEFAULT_BOOK_DOLLARS, TIER_ORDER,
+                         TIER_SPECS, score_tier, tier_config, tier_evidence, tier_spec,
+                         tier_summary)
 
 SCHEMA_VERSION = "1.1.0"
 MODEL_VERSION = "swing-v1.1.0"
@@ -71,16 +76,22 @@ def resolve_sue(ticker, as_of, sessions, sue_for=sue_for):
 
 
 def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_resolver=resolve_sue):
-    """One pre-score row per ticker: its context, plus every raw swing subfactor."""
+    """One pre-score row per ticker: its context, plus every raw swing subfactor.
+
+    Two passes rather than one. The announcement-return leg is an *abnormal* return, so it
+    needs the universe's own daily return series as its market leg, and that cannot be built
+    until every row's closes have been read. The first pass gathers the series, the second
+    scores against it. Nothing here fetches: the market leg is the equal-weighted mean of the
+    same cached closes the factors come from, not an index from a provider.
+    """
     entry_for = entry_for or backtest_entry
     observations = observations if observations is not None else latest_observations()
     as_of = as_of or datetime.now(timezone.utc).date().isoformat()
-    rows = []
+    prepared = []
     for row in universe:
         ticker = row.get("ticker")
         if not ticker or row.get("is_etf"):
             continue
-        observed = observations.get(ticker) or {}
         # Dividend-adjusted closes: every factor here is a return or a ratio of returns, and
         # an unadjusted series reads each ex-dividend date as a real decline.
         entry = with_current_price(entry_for(ticker) or {}, row.get("price"),
@@ -88,6 +99,13 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
         closes, volumes = entry.get("closes") or [], entry.get("volumes") or []
         if not closes:
             continue
+        prepared.append((row, ticker, entry, closes, volumes))
+
+    market_returns = universe_daily_returns([closes for _, _, _, closes, _ in prepared])
+
+    rows = []
+    for row, ticker, entry, closes, volumes in prepared:
+        observed = observations.get(ticker) or {}
         sue = sue_resolver(ticker, as_of, entry.get("dates") or [])
         group_id, group_label = peer_group(row)
         rows.append({
@@ -105,7 +123,8 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
             "data_coverage": row.get("data_coverage"),
             "short_percent_of_float": row.get("short_percent_of_float") or observed.get("short_percent_of_float"),
             "days_to_cover": row.get("days_to_cover") or observed.get("days_to_cover"),
-            "factors": swing_factors(row, closes=closes, volumes=volumes, sue=sue),
+            "factors": swing_factors(row, closes=closes, volumes=volumes, sue=sue,
+                                     market_returns=market_returns),
         })
     return rows
 
@@ -119,11 +138,20 @@ def _rounded(value, places=4):
     return round(value, places) if isinstance(value, float) else value
 
 
-def to_result(rank, row):
+def to_result(rank, row, weights=None):
+    """One published row. ``weights`` is the leg set that scored it, so a tier row publishes
+    its own legs rather than the frozen five the single-book screen declares."""
+    weights = weights or SWING_WEIGHTS
     factors = row.get("factors") or {}
     legs = row.get("leg_scores") or {}
     contributions = row.get("leg_contributions") or {}
+    economics = row.get("economics") or {}
     return {
+        **({"tier": row["tier"], "tier_id": row.get("tier_id")} if row.get("tier") else {}),
+        # The cost arithmetic, per row, so a name can be sorted on whether it survives being
+        # traded rather than only on where it ranks. net_edge_bps below zero means one round
+        # trip costs more than the tier assumes the name earns over its whole holding period.
+        **({f"economics_{key}": value for key, value in economics.items()} if economics else {}),
         "rank": rank, "ticker": row["ticker"], "name": row.get("name"),
         "sector": row.get("sector"),
         "peer_group": row.get("peer_group_label") or row.get("peer_group"),
@@ -149,15 +177,15 @@ def to_result(rank, row):
         "median_dollar_volume_60d": _rounded(row.get("median_dollar_volume_60d"), 0),
         "legs": {leg: {
             "z": None if legs.get(leg) is None else round(legs[leg], 4),
-            "weight": SWING_WEIGHTS[leg],
-            "declared_weight": SWING_WEIGHTS[leg],
+            "weight": weights[leg],
+            "declared_weight": weights[leg],
             # What the leg was actually worth on this row after renormalizing across the legs
             # that resolved. Equal to the declared weight only on a full row.
-            "effective_weight": (round(SWING_WEIGHTS[leg] * (row.get("renormalization_factor") or 0), 4)
+            "effective_weight": (round(weights[leg] * (row.get("renormalization_factor") or 0), 4)
                                  if legs.get(leg) is not None else 0.0),
             "contribution": round(contributions.get(leg, 0.0), 4),
             "applied": legs.get(leg) is not None,
-        } for leg in SWING_WEIGHTS},
+        } for leg in weights},
         "dropped_legs": row.get("dropped_legs", []),
         "reversal_cost_gated": row.get("reversal_cost_gated", False),
         "short_interest": row.get("short_interest"),
@@ -174,8 +202,50 @@ def to_result(rank, row):
     }
 
 
-def payload(results, scored, generated_at):
+def tier_book(rows, tier, previous, book_dollars=DEFAULT_BOOK_DOLLARS):
+    """One horizon tier: its ranked rows, its economics and the evidence behind its legs."""
+    spec = tier_spec(tier)
+    scored = score_tier(rows, tier, current_members=previous.get(tier) or {},
+                        book_dollars=book_dollars)
+    published = [to_result(rank + 1, row, spec["weights"])
+                 for rank, row in enumerate(publishable(scored))]
     return {
+        **tier_summary(scored, tier, book_dollars),
+        "evidence": tier_evidence(tier),
+        "decay_capture": {leg: DECAY_CAPTURE.get(leg, {}).get(tier) for leg in spec["weights"]},
+        "thresholds": tier_config(tier),
+        "leg_coverage": leg_coverage(scored, weights=spec["weights"]),
+        "scored_count": len(scored),
+        "published_count": len(published),
+        "results": published,
+    }
+
+
+def previous_tier_members(screen):
+    return {tier: {row["ticker"]: True
+                   for row in ((screen or {}).get("tiers", {}).get(tier) or {}).get("results", [])
+                   if row.get("current_membership") and row.get("ticker")}
+            for tier in TIER_ORDER}
+
+
+def payload(results, scored, generated_at, tiers=None):
+    return {
+        "tiers": tiers or {},
+        "tier_order": list(TIER_ORDER),
+        "default_tier": "S",
+        "tier_note": (
+            "Three separately-specified books, not one composite sorted three ways. Each tier "
+            "carries only the legs whose documented payoff lands inside its own holding window, "
+            "at its own weights, behind its own liquidity floor, against its own cost budget. "
+            "The 3-day book is event-triggered: a name enters it only in the sessions after it "
+            "reports, so its turnover follows the earnings calendar rather than the trading "
+            "calendar."),
+        "decay_capture": DECAY_CAPTURE,
+        "decay_capture_note": DECAY_CAPTURE_NOTE,
+        "alpha_assumption": {
+            "gross_bps_per_month": ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
+            "note": ALPHA_NOTE,
+        },
         "schema_version": SCHEMA_VERSION, "model_version": MODEL_VERSION,
         "config_version": CONFIG_VERSION, "generated_at": generated_at,
         "status": "success",
@@ -183,7 +253,7 @@ def payload(results, scored, generated_at):
         "weights": SWING_WEIGHTS,
         "subfactors": {leg: [name for name, _ in subfactors]
                        for leg, subfactors in SWING_SUBFACTORS.items()},
-        "evidence": SWING_EVIDENCE,
+        "evidence": {**SWING_EVIDENCE, "announcement_return": ANNOUNCEMENT_EVIDENCE},
         "negative_screen": SHORT_INTEREST_EVIDENCE,
         "decay_haircut": DECAY_HAIRCUT,
         "thresholds": DEFAULT_CONFIG,
@@ -262,13 +332,23 @@ def run():
         save_json(OUTPUT, result)
         return result
 
-    scored = swing_scores(rows, current_members=previous_members(load_json(OUTPUT)))
+    existing = load_json(OUTPUT)
+    scored = swing_scores(rows, current_members=previous_members(existing))
     results = [to_result(rank + 1, row) for rank, row in enumerate(publishable(scored))]
-    result = payload(results, scored, generated_at)
+    previous = previous_tier_members(existing)
+    tiers = {tier: tier_book(rows, tier, previous) for tier in TIER_ORDER}
+    result = payload(results, scored, generated_at, tiers)
     save_json(OUTPUT, result)
     LOG.info(f"Swing screen: scored {len(scored)} tickers "
              f"({result['eligible_count']} eligible, {result['suppressed_count']} suppressed on "
              f"short interest), published {len(results)}")
+    for tier in TIER_ORDER:
+        book = tiers[tier]
+        LOG.info(f"  tier {tier} ({book['label']}, {book['horizon_label']}): "
+                 f"{book['book_count']} in book, {book['eligible_count']} eligible, "
+                 f"median round trip {book['median_round_trip_bps']}bps against "
+                 f"{book['expected_alpha_bps_per_period']}bps assumed alpha, "
+                 f"{book['book_clearing_cost']} of {book['book_count']} clearing cost")
     return result
 
 

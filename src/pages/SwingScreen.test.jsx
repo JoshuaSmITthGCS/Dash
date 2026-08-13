@@ -156,3 +156,182 @@ describe('SwingScreen', () => {
     expect(screen.getByText(/INSUFFICIENT_PRICE_HISTORY/)).toBeVisible()
   })
 })
+
+// ---------------------------------------------------------------------------
+// Horizon tiers and sorting
+// ---------------------------------------------------------------------------
+
+const tierRow = (ticker, overrides = {}) => ({
+  ...row(),
+  ticker, name: `${ticker} Inc`,
+  legs: {
+    announcement_return: leg(1.5, true, 0.5),
+    high_volume_premium: leg(0.9, true, 0.3),
+    short_term_reversal: leg(-0.2, true, 0.2),
+  },
+  dropped_legs: [],
+  ...overrides,
+})
+
+const tieredPayload = (overrides = {}) => payload({
+  tier_order: ['F', 'M', 'S'],
+  default_tier: 'S',
+  alpha_assumption: { gross_bps_per_month: 8.8, note: 'Expected alpha is an assumption, not a measurement.' },
+  evidence: {
+    ...payload().evidence,
+    announcement_return: {
+      label: 'Announcement return (EAR)', horizon: '0 to +1 sessions', direction: 'continuation',
+      citation: 'Brandt, Kishore, Santa-Clara & Venkatachalam', effect: '7.55%/yr abnormal',
+      caveat: 'Needs no analyst estimate.',
+    },
+    high_volume_premium: {
+      label: 'High-volume return premium', horizon: '1-4 weeks', direction: 'continuation',
+      citation: 'Gervais, Kaniel & Mingelgrin 2001', effect: 'High volume appreciates',
+      caveat: 'Investor recognition, not a risk premium.',
+    },
+    short_term_reversal: {
+      label: 'Short-term reversal', horizon: '2-10 days', direction: 'contrarian',
+      citation: 'Jegadeesh 1990', effect: '0.33%/month at t=1.37',
+      caveat: 'The most capacity-constrained anomaly.',
+    },
+  },
+  tiers: {
+    F: {
+      tier: 'F', label: '3-day swing', horizon_label: '2-5 sessions', target_hold_sessions: 3,
+      weights: { announcement_return: 0.5, high_volume_premium: 0.3, short_term_reversal: 0.2 },
+      decay_capture: { announcement_return: 1.0, high_volume_premium: 0.2, short_term_reversal: 0.6 },
+      leg_coverage: { announcement_return: 0.33, high_volume_premium: 1, short_term_reversal: 1 },
+      required_legs: ['announcement_return'], trigger_unresolved_count: 640,
+      round_trips_per_year: 84, median_round_trip_bps: 4.4, expected_alpha_bps_per_period: 1.26,
+      median_net_edge_bps: -3.1, book_clearing_cost: 0, book_count: 12,
+      break_even_alpha_bps_per_month: 30.8,
+      note: 'Event-triggered rather than a standing cross-sectional rank.',
+      results: [
+        tierRow('FAST', { rank: 1, composite_z: 2.1, economics_net_edge_bps: -3.1, economics_round_trip_bps: 4.4, economics_clears_cost: false, economics_expected_alpha_bps: 1.26 }),
+        tierRow('CHEAP', { rank: 2, composite_z: 1.2, economics_net_edge_bps: 0.4, economics_round_trip_bps: 0.9, economics_clears_cost: true, economics_expected_alpha_bps: 1.26 }),
+      ],
+    },
+    S: {
+      tier: 'S', label: '8-week swing', horizon_label: '16-40 sessions', target_hold_sessions: 40,
+      weights: { pead_drift: 0.3, announcement_return: 0.25, high_52w_proximity: 0.25, analyst_revision: 0.2 },
+      decay_capture: { pead_drift: 0.62, announcement_return: 0.65, high_52w_proximity: 0.62, analyst_revision: 0.37 },
+      leg_coverage: { pead_drift: 0.83, announcement_return: 0.95, high_52w_proximity: 1, analyst_revision: 0.99 },
+      required_legs: [], trigger_unresolved_count: 0,
+      round_trips_per_year: 6.3, median_round_trip_bps: 3.2, expected_alpha_bps_per_period: 16.76,
+      median_net_edge_bps: 13.5, book_clearing_cost: 82, book_count: 82,
+      break_even_alpha_bps_per_month: 1.7,
+      note: 'The only tier whose cost budget is comfortable.',
+      results: [tierRow('SLOW', { rank: 1, economics_net_edge_bps: 13.5, economics_round_trip_bps: 3.2, economics_clears_cost: true, economics_expected_alpha_bps: 16.76 })],
+    },
+  },
+  ...overrides,
+})
+
+describe('SwingScreen horizon tiers', () => {
+  it('opens on the default tier rather than the fast one', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.getByRole('tab', { name: /8-week swing/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /3-day swing/ })).toHaveAttribute('aria-selected', 'false')
+    expect(screen.getAllByText('SLOW').length).toBeGreaterThan(0)
+  })
+
+  it('switching horizon changes which legs exist, not just the row order', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    // The slow book has a PEAD column and no reversal column.
+    expect(screen.getByRole('columnheader', { name: 'PEAD' })).toBeVisible()
+    expect(screen.queryByRole('columnheader', { name: 'Reversal' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+
+    // The fast book has a reversal column and no PEAD column: its payoff has not landed yet.
+    expect(screen.getByRole('columnheader', { name: 'Reversal' })).toBeVisible()
+    expect(screen.queryByRole('columnheader', { name: 'PEAD' })).toBeNull()
+    expect(screen.getAllByText('FAST').length).toBeGreaterThan(0)
+    expect(screen.queryByText('SLOW')).toBeNull()
+  })
+
+  it('says plainly when the median name in a book does not clear its own cost', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(screen.getByText(/costs more to round trip than the tier assumes it earns/)).toBeVisible()
+    expect(screen.getByText('0/12')).toBeVisible()
+  })
+
+  it('labels the alpha figure every net-edge number depends on as an assumption', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.getByText(/an assumption, not a measurement/)).toBeVisible()
+  })
+
+  it('publishes how much of each leg’s payoff lands inside the tier’s own window', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(screen.getByText('100% of its payoff lands in this window')).toBeVisible()
+    // The volume leg pays only a fifth of its total this fast, and is flagged for it.
+    expect(screen.getByText('20% of its payoff lands in this window')).toHaveClass('thin')
+  })
+
+  it('states the event trigger and how many names it holds out', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(screen.getByText(/640 names are ranked but held out today/)).toBeVisible()
+  })
+})
+
+describe('SwingScreen sorting', () => {
+  const tickers = (container) =>
+    [...container.querySelectorAll('tbody tr td:nth-child(2) b')].map((node) => node.textContent)
+
+  it('sorts on any column and reverses on a second click', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    const { container } = renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+    expect(tickers(container)).toEqual(['FAST', 'CHEAP'])
+
+    fireEvent.click(screen.getByRole('button', { name: /Composite/ }))
+    expect(tickers(container)).toEqual(['FAST', 'CHEAP'])
+    fireEvent.click(screen.getByRole('button', { name: /Composite/ }))
+    expect(tickers(container)).toEqual(['CHEAP', 'FAST'])
+  })
+
+  it('sorts on net edge, which is the column that decides whether a name is worth trading', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    const { container } = renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Net edge/ }))
+
+    // Best net edge first, so the one name that clears its cost is on top even though it
+    // ranks second on the composite.
+    expect(tickers(container)).toEqual(['CHEAP', 'FAST'])
+  })
+
+  it('marks the sorted column for assistive technology without changing its name', () => {
+    useData.mockReturnValue({ data: tieredPayload(), loading: false, error: null })
+    renderScreen()
+    const header = screen.getByRole('columnheader', { name: 'Composite' })
+    expect(header).toHaveAttribute('aria-sort', 'none')
+    fireEvent.click(screen.getByRole('button', { name: /Composite/ }))
+    expect(screen.getByRole('columnheader', { name: 'Composite' })).toHaveAttribute('aria-sort', 'descending')
+  })
+
+  it('sorts rows with no cost estimate last rather than treating them as cheapest', () => {
+    const data = tieredPayload()
+    data.tiers.F.results = [
+      tierRow('KNOWN', { rank: 1, economics_round_trip_bps: 5.0, economics_net_edge_bps: -3.7 }),
+      tierRow('UNKNOWN', { rank: 2, economics_round_trip_bps: null, economics_net_edge_bps: null }),
+    ]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    const { container } = renderScreen()
+    fireEvent.click(screen.getByRole('tab', { name: /3-day swing/ }))
+
+    fireEvent.click(screen.getByRole('button', { name: /Round trip/ }))
+
+    expect(tickers(container)).toEqual(['KNOWN', 'UNKNOWN'])
+  })
+})

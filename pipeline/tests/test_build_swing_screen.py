@@ -578,8 +578,14 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch, tmp_path):
     assert result["status"] == "success"
     assert result["scored_count"] == 8
     assert [row["rank"] for row in result["results"]] == list(range(1, len(result["results"]) + 1))
-    # The file has to carry why each leg is there, not just the number it produced.
-    assert set(result["weights"]) == set(result["evidence"])
+    # The file has to carry why each leg is there, not just the number it produced. Containment
+    # rather than equality since the horizon tiers landed: `evidence` now also covers legs no
+    # tier-agnostic weight vector declares (the announcement return), and every one of those
+    # still has to arrive with its citation attached.
+    assert set(result["weights"]) <= set(result["evidence"])
+    assert all(result["evidence"][leg].get("citation")
+               for tier in result["tier_order"]
+               for leg in result["tiers"][tier]["weights"])
     assert result["evidence"]["pead_drift"]["citation"].startswith("Bernard & Thomas")
     assert result["decay_haircut"]["post_publication"] == .58
     assert set(result["leg_coverage"]) == set(swing_signals.SWING_WEIGHTS)
