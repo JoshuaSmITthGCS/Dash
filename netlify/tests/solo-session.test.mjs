@@ -1,4 +1,4 @@
-import { createSoloSession, handler } from './solo-session.mjs'
+import { createSoloSession, handler } from '../functions/solo-session.mjs'
 
 describe('solo-session function', () => {
   it('creates a custom token for the existing owner UID', async () => {
