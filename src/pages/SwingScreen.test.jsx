@@ -545,3 +545,36 @@ describe('SwingScreen upside and trend', () => {
       .toBe(container.querySelector('tbody tr').children.length)
   })
 })
+
+describe('SwingScreen verdict and upside agree', () => {
+  it('does not call a name worth buying beside a negative upside', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('FLAT', {
+      rank: 1, current_membership: true, eligibility: true,
+      economics_net_edge_bps: 34.8, economics_predicted_upside_pct: -0.36,
+      economics_typical_move_pct: -0.7, economics_usual_low_pct: -18.7,
+      economics_usual_high_pct: 23.0, economics_share_positive: 0.49,
+      economics_history_windows: 335, economics_round_trip_bps: 4.9,
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    const verdict = screen.getByText('Maybe')
+    expect(verdict).toBeVisible()
+    expect(verdict.getAttribute('title')).toMatch(/the two disagree/)
+    expect(screen.queryByText('Worth buying')).toBeNull()
+  })
+
+  it('still calls a name worth buying when both agree', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('GOOD', {
+      rank: 1, current_membership: true, eligibility: true,
+      economics_net_edge_bps: 47.8, economics_predicted_upside_pct: 9.58,
+      economics_typical_move_pct: 9.1, economics_usual_low_pct: -5.11,
+      economics_usual_high_pct: 23.66, economics_share_positive: 0.66,
+      economics_history_windows: 335, economics_round_trip_bps: 4.54,
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    expect(screen.getByText('Worth buying')).toBeVisible()
+  })
+})

@@ -108,11 +108,23 @@ function verdictFor(row) {
         + `cost eats the edge. Any upside shown is this name’s usual travel, not the model.`,
     }
   }
+  // The model can like a name that has historically gone nowhere over a window this long.
+  // Calling that "worth buying" beside a negative upside is a contradiction on the face of
+  // the row, whatever the internal logic, so it is downgraded rather than explained away.
+  const upsidePct = row.economics_predicted_upside_pct
+  if (upsidePct != null && upsidePct <= 0) {
+    return {
+      label: 'Maybe', tone: 'watch',
+      title: 'The model’s edge survives its cost, but over a window this long this name has '
+        + 'more often than not gone nowhere or fallen, so the two disagree.',
+    }
+  }
   if (row.current_membership) {
     return {
       label: 'Worth buying', tone: 'high',
-      title: 'Ranks inside this tier’s book and the modelled edge covers its round-trip cost. '
-        + 'A research filter under the assumptions on this page, not a recommendation.',
+      title: 'Ranks inside this tier’s book, the modelled edge covers its round-trip cost, and '
+        + 'this name has historically travelled upward over a window this long. A research '
+        + 'filter under the assumptions on this page, not a recommendation.',
     }
   }
   return {
