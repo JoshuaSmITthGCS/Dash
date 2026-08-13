@@ -4,6 +4,7 @@ import sys
 import threading
 import time
 import unittest
+import urllib.error
 import xml.etree.ElementTree as ET
 from unittest import mock
 
@@ -131,6 +132,29 @@ class FairAccessTests(unittest.TestCase):
         observed_rate = len(sent) / max(elapsed, 1e-9)
         self.assertLessEqual(observed_rate, 10.0,
                              f"issued {observed_rate:.1f} requests/second, over the SEC ceiling")
+
+    def test_a_rate_limited_response_is_retried_rather_than_raising(self):
+        # The bug this guards: the 403/429 handler logged through a bare `LOG` name that was
+        # never imported into this module, so the one code path that exists to survive a
+        # rate-limit breach raised NameError on its first use and the backoff below it never
+        # ran. Callers wrapping the fetch saw an opaque NameError and fell back to stale
+        # cached copies instead of retrying.
+        responses = [urllib.error.HTTPError("https://data.sec.gov/x.json", 429, "Too Many "
+                                            "Requests", {}, None)]
+
+        def fake_urlopen(request, timeout=None):
+            if responses:
+                raise responses.pop()
+            return contextlib.nullcontext(_FakeResponse(b'{"ok": true}'))
+
+        client = SecEdgarClient(user_agent="Test Harness test@example.com",
+                                limiter=_NoopLimiter())
+        with mock.patch.object(sec_edgar.urllib.request, "urlopen", fake_urlopen), \
+                mock.patch.object(sec_edgar.time, "sleep", lambda _seconds: None):
+            payload = client._get("https://data.sec.gov/x.json", as_json=True)
+
+        self.assertEqual(payload, {"ok": True})
+        self.assertEqual(responses, [])
 
     def test_a_client_without_an_identity_refuses_to_call(self):
         # The environment is cleared explicitly: other modules call load_local_env() at

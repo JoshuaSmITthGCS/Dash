@@ -78,6 +78,42 @@ def test_contract_liquidity_rejects_illiquid_or_wide_spread_rows():
     assert module.contract_liquidity(wide_spread, price=100) is None
 
 
+def test_contract_liquidity_rejects_nan_fields_instead_of_raising():
+    """Yahoo sends NaN, not null, for a field it has no value for.
+
+    NaN answers False to every comparison, so an unguarded row sails past the liquidity
+    floors and only fails at int(NaN) - which is what took down the whole options-strategy
+    build mid-universe rather than skipping the one bad contract.
+    """
+    nan = float("nan")
+    assert module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.1, open_interest=nan),
+                                     price=100) is None
+    assert module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.1, volume=nan),
+                                     price=100) is None
+    assert module.contract_liquidity(contract(strike=100, bid=nan, ask=2.1), price=100) is None
+    assert module.contract_liquidity(contract(strike=nan, bid=2.0, ask=2.1), price=100) is None
+    assert module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.1), price=nan) is None
+
+
+def test_contract_liquidity_drops_nan_implied_volatility_but_keeps_the_row():
+    """IV is not a liquidity gate, so a missing one leaves an otherwise tradable row usable -
+    it just carries no IV, and the delta search skips it on its own."""
+    row = module.contract_liquidity(
+        contract(strike=100, bid=2.0, ask=2.1, open_interest=500, iv=float("nan")), price=100)
+    assert row is not None
+    assert row["implied_volatility"] is None
+
+
+def test_select_by_target_delta_skips_nan_rows_and_still_picks_a_contract():
+    frame = FakeFrame([
+        contract(strike=105, bid=1.0, ask=1.05, open_interest=float("nan"), iv=0.35),
+        contract(strike=110, bid=0.6, ask=0.65, iv=0.35),
+    ])
+    chosen = module.select_by_target_delta(frame, price=100, dte=30, side="call", target_delta=0.2)
+    assert chosen is not None
+    assert chosen["strike"] == 110
+
+
 def test_liquidity_factor_rewards_open_interest_and_penalizes_spread():
     tight = module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.05, open_interest=1000), price=100)
     wide = module.contract_liquidity(contract(strike=100, bid=2.0, ask=2.09, open_interest=1000), price=100)

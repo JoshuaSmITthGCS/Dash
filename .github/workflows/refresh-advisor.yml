@@ -255,31 +255,24 @@ jobs:
         run: |
           git config user.name "valuesignal-data-bot"
           git config user.email "actions@users.noreply.github.com"
-          # Every file this pipeline can write under public/data/, not an explicit
-          # allowlist: public/data/diagnostics.json was added by fetch_advisor.py without
-          # ever being added here, which silently left it uncommitted on every run since -
-          # `git commit` would succeed, then `git pull --rebase` below would fail with
-          # "You have unstaged changes" on that one leftover file, so no refresh ever
-          # actually published again. An allowlist can drift out of sync with what the
-          # scripts write; `git add public/data` cannot.
-          git add public/data
-          # The point-in-time store is committed because the runner is ephemeral. It cannot
-          # be rebuilt later - the providers only ever serve today's restated numbers - so
-          # the history only exists if each run appends to it and pushes the result.
-          git add --all pipeline/data/pit 2>/dev/null || true
-          git add --all pipeline/data/estimates 2>/dev/null || true
-          git add --all pipeline/data/factors 2>/dev/null || true
-          # Same ephemeral-runner reasoning: a delisted name's terminal prices are only
-          # ever fetchable while it's still young enough to resolve (price_archive.py),
-          # so this run's archive additions must be committed or they're gone for good.
-          git add --all pipeline/data/price_archive 2>/dev/null || true
-          # fetch_advisor.py also appends prospective validation snapshots and rewrites
-          # normalization audit artifacts outside pipeline/data/. Leaving either tracked
-          # output unstaged makes the pull --rebase below reject the otherwise valid
-          # refresh commit with "You have unstaged changes."
-          git add --all pipeline/pit_store 2>/dev/null || true
-          git add --all pipeline/shadow_store 2>/dev/null || true
-          git add --all pipeline/reports 2>/dev/null || true
+          # Everything this run wrote, not a per-directory allowlist. That allowlist has now
+          # broken publishing twice the same way: first public/data/diagnostics.json, then
+          # pipeline/backtest_political_institutional_results.json, which
+          # backtest_political_institutional.py writes next to its own source rather than
+          # under any of the enumerated data directories. Both are tracked files that the
+          # pipeline rewrites on every run, and in both cases `git commit` succeeded while
+          # `git pull --rebase` below then aborted with "You have unstaged changes" on the
+          # one file nobody had listed - so the commit was never pushed and the site kept
+          # serving stale data while the job reported only a rebase error.
+          #
+          # `git add -A` cannot drift out of sync with what the scripts write. What it may
+          # NOT pick up is bounded by .gitignore, which already excludes the regenerable
+          # provider caches (pipeline/data/cache/, pipeline/logs/, staging). The stores that
+          # must survive the ephemeral runner - the point-in-time store, estimate and factor
+          # snapshots, the survivorship price archive whose delisted names stop resolving
+          # after a few weeks, and the prospective shadow-portfolio store - are all still
+          # committed by this, because none of them are ignored.
+          git add -A
           git diff --cached --quiet && exit 0
           if [[ "${{ steps.refresh_window.outputs.is_rescore }}" == "true" ]]; then
             git commit -m "chore(data): rescore published research (no data refresh)"
@@ -287,7 +280,10 @@ jobs:
             git commit -m "chore(data): refresh advisor research"
           fi
           for attempt in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            # --autostash so that a future output this step somehow still leaves unstaged
+            # degrades to "that one file isn't published" instead of "nothing is published":
+            # rebase sets it aside and restores it afterwards rather than refusing to run.
+            git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0
             git rebase --abort 2>/dev/null || true
             sleep $((attempt * 10))
           done

@@ -127,6 +127,22 @@ def probability_below(price, strike, iv, dte, r=0.0):
     return None if above is None else 1 - above
 
 
+def _finite(value, default=None):
+    """``value`` as a float, or ``default`` when it is missing or not a real number.
+
+    Yahoo returns NaN rather than a null for an option field it has no value for, and NaN
+    poisons every gate below by silently answering False to all of them: ``NaN < MINIMUM``
+    is False, so a row with no open interest at all passes the liquidity floor, and the
+    ``int(NaN)`` at the end then raises and takes down the whole screen build. Coercing to
+    a real number here is what lets the gates reject the row instead.
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return number if math.isfinite(number) else default
+
+
 def contract_liquidity(contract, price):
     """Bid/ask/OI/spread/volume fields for one contract row, or None if it fails basic gates.
 
@@ -134,10 +150,13 @@ def contract_liquidity(contract, price):
     MINIMUM_VOLUME is gated separately and on top of it - a contract can carry heavy OI and
     still show no fills today.
     """
-    strike = contract.get("strike")
-    bid, ask = contract.get("bid"), contract.get("ask")
-    open_interest = contract.get("openInterest") or 0
-    volume = contract.get("volume") or 0
+    strike = _finite(contract.get("strike"))
+    bid, ask = _finite(contract.get("bid")), _finite(contract.get("ask"))
+    price = _finite(price)
+    # A missing count is genuinely zero contracts, so it fails the floors below rather than
+    # being treated as unknown-and-therefore-acceptable.
+    open_interest = _finite(contract.get("openInterest"), 0)
+    volume = _finite(contract.get("volume"), 0)
     if not strike or not price:
         return None
     if not bid or not ask or bid <= 0 or ask <= 0 or ask < bid:
@@ -156,7 +175,7 @@ def contract_liquidity(contract, price):
     # for cheap legs where a percentage figure overstates the real execution cost.
     if spread_pct > MAXIMUM_SPREAD_PCT and (ask - bid) > MAXIMUM_ABSOLUTE_SPREAD:
         return None
-    implied_volatility = contract.get("impliedVolatility")
+    implied_volatility = _finite(contract.get("impliedVolatility"))
     # Fill assumption for anything downstream that prices an entry off this contract: mid
     # plus a quarter of the spread, not mid itself - a screen is not a fill guarantee, and
     # modeling perfect mid execution is exactly the optimism the transaction-cost review
@@ -166,7 +185,7 @@ def contract_liquidity(contract, price):
     return {
         "strike": float(strike), "bid": float(bid), "ask": float(ask), "mid": round(mid, 4),
         "spread_pct": round(spread_pct, 4), "fill_price": round(fill_price, 4),
-        "implied_volatility": float(implied_volatility) if implied_volatility else None,
+        "implied_volatility": implied_volatility if implied_volatility else None,
         "open_interest": int(open_interest), "volume": int(volume),
         "moneyness": round(strike / price - 1, 4),
     }

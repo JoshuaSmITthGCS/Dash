@@ -203,6 +203,12 @@ class SecEdgarClient:
                 if error.code not in self.RETRY_STATUSES or attempt + 1 == self.MAX_ATTEMPTS:
                     raise
                 delay = 2 ** attempt
+                # Local import for the same reason as limiter() above - sec_edgar stays
+                # usable standalone. It was previously a bare LOG reference with no import
+                # at all, so the one path that exists to survive a rate-limit breach raised
+                # NameError on its first 403/429 instead of backing off, and the backoff
+                # below never ran once.
+                from common import LOG
                 LOG.warn(f"SEC {error.code} on {url}; backing off {delay}s "
                          f"(attempt {attempt + 1}/{self.MAX_ATTEMPTS})")
                 time.sleep(delay)
