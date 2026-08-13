@@ -91,4 +91,11 @@ def test_rank_ic_risk_free_holdout_and_deflated_sharpe():
 def test_shadow_strategy_contract_declares_both_comparison_modes():
     with open("pipeline/config/shadow_strategies.json") as handle: payload = json.load(handle)
     assert set(payload["comparison_modes"]) == {"signal_only", "full_strategy"}
-    assert len(payload["strategies"]) == 9
+    # Named rather than counted: a bare length check fires on any addition without saying
+    # what changed, and passes for a rename that silently drops a declared strategy.
+    assert set(payload["strategies"]) == {
+        "legacy_production_model", "v2_structural_model", "structural_timeliness_model",
+        "momentum_sleeve", "quality_value_sleeve", "swing_only",
+        "political_institutional_only", "combined_model", "SPY_benchmark",
+        "equal_weight_eligible_universe", "manual_external_rankings",
+    }

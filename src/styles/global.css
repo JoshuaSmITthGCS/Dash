@@ -1536,6 +1536,22 @@ body { background: var(--app-background); background-image: none; }
 @media (max-width: 900px) { .shadow-validation-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 430px) { .shadow-validation-summary { grid-template-columns: 1fr; }.shadow-validation-summary article { padding: 15px 17px; } }
 
+.backtest-compare-group { margin-bottom: 30px; }
+.backtest-compare-group .section-title { margin: 0 0 6px; font: 650 13px var(--font-mono); }
+.backtest-group-note { margin: 0 0 12px; max-width: 78ch; color: var(--text-tertiary); font: 10px/1.6 var(--font-mono); }
+.backtest-compare-table td { vertical-align: top; }
+.backtest-compare-table table { min-width: 1040px; }
+.backtest-features { display: block; margin-top: 4px; color: var(--text-tertiary); font-size: 9px; line-height: 1.45; }
+.backtest-status-flag { display: inline-block; margin-top: 4px; padding: 2px 7px; border: 1px solid var(--border-default); border-radius: 999px; color: var(--text-tertiary); font-size: 9px; }
+.backtest-success b { display: block; font: 650 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+.backtest-success small { display: block; margin-top: 2px; color: var(--text-tertiary); font-size: 9px; white-space: nowrap; }
+.backtest-success.none { color: var(--text-tertiary); font-size: 9px; line-height: 1.45; }
+.backtest-caveat-list { padding: 18px; }
+.backtest-caveat-list > div + div { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-default); }
+.backtest-caveat-list strong { display: block; font: 650 11px var(--font-mono); }
+.backtest-caveat-list ul { margin: 8px 0; padding-left: 18px; color: var(--text-secondary); font: 10px/1.6 var(--font-mono); }
+.backtest-status-detail { margin: 6px 0 0; color: var(--warn); font: 10px/1.6 var(--font-mono); }
+
 /* Shared table fallback cards and responsive financial forms. */
 .result-card-list { display: none; }
 .congress-kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 20px; }

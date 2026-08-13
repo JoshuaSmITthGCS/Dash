@@ -29,6 +29,7 @@ const OptionsScreen = lazy(() => import('./pages/OptionsScreen.jsx'))
 const StrategyScreen = lazy(() => import('./pages/StrategyScreen.jsx'))
 const ThemeExposureScreen = lazy(() => import('./pages/ThemeExposureScreen.jsx'))
 const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
+const BacktestComparison = lazy(() => import('./pages/BacktestComparison.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
@@ -234,6 +235,7 @@ function AppContent() {
           <Route path="/screens/politics" element={<CongressTrades />} />
           <Route path="/screens/institutional" element={<InstitutionalActivity />} />
           <Route path="/screens/themes" element={<ThemeExposureScreen />} />
+          <Route path="/screens/backtests" element={<BacktestComparison />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
           <Route path="/screens/validation" element={<LiveValidation />} />
           <Route path="/watchlist" element={<Watchlist />} />

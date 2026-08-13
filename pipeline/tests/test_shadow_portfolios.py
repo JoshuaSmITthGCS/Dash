@@ -198,3 +198,68 @@ def test_aligned_window_is_the_intersection_of_observed_sessions(tmp_path):
     assert production["aligned"]["observations"] == 1
     assert production["aligned"]["window_start"] == "2026-08-05"
     assert by_name["Momentum sleeve"]["aligned"]["observations"] == 1
+
+
+def test_swing_and_disclosure_strategies_select_from_their_own_screens():
+    advisor, benchmark = fixture_payload()
+    selected = selections_from_payload(advisor, benchmark, {
+        "swing": {"status": "success", "results": [
+            {"ticker": "BBB", "eligibility": True, "composite_z": 1.4},
+            {"ticker": "AAA", "eligibility": False, "composite_z": 2.0},
+        ]},
+        "congress-trades": {"status": "partial", "results": [
+            {"symbol": "AAA", "disclosure_date": "2026-08-01", "transaction_date": "2026-07-01",
+             "representative": "Rep A", "amount_lower": 50000.0, "transaction_type": "Purchase",
+             "asset_type": "Stock", "flags": []},
+        ]},
+        "institutional-13f": {"status": "success", "results": []},
+    }, as_of="2026-08-04")
+
+    # The swing sleeve holds only the eligible row; the ineligible one is not backfilled.
+    assert [row["ticker"] for row in selected["swing"]] == ["BBB"]
+    assert [row["ticker"] for row in selected["political_institutional"]] == ["AAA"]
+    assert selected["political_institutional"][0]["weight"] == 1.0
+
+
+def test_the_disclosure_strategy_collects_from_a_partial_congress_screen():
+    # congress-trades.json publishes status "partial" whenever any one of its four upstream
+    # sources is dark, which is its normal state. Requiring "success" would mean this
+    # strategy silently never collected a snapshot at all.
+    advisor, benchmark = fixture_payload()
+    congress = {"status": "partial", "results": [
+        {"symbol": "AAA", "disclosure_date": "2026-08-01", "transaction_date": "2026-07-01",
+         "representative": "Rep A", "amount_lower": 50000.0, "transaction_type": "Purchase",
+         "asset_type": "Stock", "flags": []},
+    ]}
+    selected = selections_from_payload(advisor, benchmark, {"congress-trades": congress},
+                                       as_of="2026-08-04")
+    assert [row["ticker"] for row in selected["political_institutional"]] == ["AAA"]
+
+    skipped = selections_from_payload(
+        advisor, benchmark, {"congress-trades": {**congress, "status": "skipped"}},
+        as_of="2026-08-04")
+    assert skipped["political_institutional"] == []
+
+
+def test_a_disclosure_is_aged_against_the_snapshot_date_not_the_wall_clock():
+    # Bootstrapping replays archived payloads. Scoring a months-old commit's disclosures with
+    # today's freshness decay would give the reconstructed history a signal that was never
+    # visible then.
+    advisor, benchmark = fixture_payload()
+    screens = {"congress-trades": {"status": "partial", "results": [
+        {"symbol": "AAA", "disclosure_date": "2026-08-01", "transaction_date": "2026-07-01",
+         "representative": "Rep A", "amount_lower": 50000.0, "transaction_type": "Purchase",
+         "asset_type": "Stock", "flags": []},
+    ]}}
+
+    fresh = selections_from_payload(advisor, benchmark, screens, as_of="2026-08-04")
+    before_disclosure = selections_from_payload(advisor, benchmark, screens, as_of="2026-07-15")
+
+    assert fresh["political_institutional"]
+    assert before_disclosure["political_institutional"] == []
+
+
+def test_the_report_covers_every_declared_strategy_including_the_new_ones():
+    labels = {row["strategy"] for row in build_report("/nonexistent")["strategies"]}
+    assert "Swing signals only" in labels
+    assert "Political + institutional trades only" in labels

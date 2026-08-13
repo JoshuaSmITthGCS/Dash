@@ -66,11 +66,19 @@ STRATEGIES = OrderedDict([
     ("structural_tactical", "Structural + tactical model"),
     ("momentum", "Momentum sleeve"),
     ("quality_value", "Quality-value sleeve"),
+    ("swing", "Swing signals only"),
+    ("political_institutional", "Political + institutional trades only"),
     ("combined", "Combined model"),
     ("SPY", "SPY benchmark"),
     ("eligible_universe_equal_weight", "Equal-weight eligible universe"),
     ("external", "User-imported external rankings"),
 ])
+
+# Screens that are read to build a selection. Kept as a tuple so current_payload() and the
+# git bootstrap load exactly the same set - the two drifted apart once already, which is how
+# a strategy ends up with a live history that its bootstrap cannot reproduce.
+SCREEN_FILES = ("structural-tactical", "momentum", "quality-value", "swing",
+                "congress-trades", "institutional-13f")
 
 
 def _read_json(path, fallback=None):
@@ -118,7 +126,39 @@ def _equal_weight_rows(rows, price_by_ticker, signal_field=None, limit=20):
     return [{**row, "weight": weight} for row in selected]
 
 
-def selections_from_payload(advisor, benchmark, screens=None):
+def _political_institutional_rows(screens, price_by_ticker, as_of=None, limit=20):
+    """The follow-the-disclosed-trades selection, from today's two disclosure screens.
+
+    ``congress-trades.json`` publishes ``status: "partial"`` whenever any one of its four
+    upstream sources is rate-limited or dark, which is its normal state rather than an
+    error, so requiring ``"success"`` here (as the ranked screens do) would mean this
+    strategy never collected a single snapshot. A skipped or unavailable screen still
+    contributes nothing.
+
+    Ranking is ``political_institutional.rank_disclosed_trades``, the same function the
+    backtest uses. ``as_of`` is the snapshot's own date rather than the wall clock so that
+    ``--bootstrap-git``, which replays archived screen payloads, ages each disclosure
+    against the date it is being replayed at - scoring a 2026-05 commit's disclosures with
+    today's freshness decay would give the reconstructed history a different signal than
+    the one that was actually visible then.
+    """
+    def usable(name):
+        payload = screens.get(name) or {}
+        if payload.get("status") in {"skipped", "unavailable", "error"}:
+            return []
+        return payload.get("results") or []
+
+    congress, institutional = usable("congress-trades"), usable("institutional-13f")
+    if not congress and not institutional:
+        return []
+    from political_institutional import rank_disclosed_trades
+    ranked = rank_disclosed_trades(congress, institutional,
+                                   as_of=as_of or datetime.now(timezone.utc).date(),
+                                   universe=set(price_by_ticker))
+    return _equal_weight_rows(ranked, price_by_ticker, signal_field="score", limit=limit)
+
+
+def selections_from_payload(advisor, benchmark, screens=None, as_of=None):
     """Project current public outputs into predeclared signal-only portfolios."""
     screens = screens or {}
     price_by_ticker = _priced_universe(advisor)
@@ -140,6 +180,8 @@ def selections_from_payload(advisor, benchmark, screens=None):
         "structural_tactical": screen_rows("structural-tactical", "tactical_score"),
         "momentum": screen_rows("momentum", "percentile"),
         "quality_value": screen_rows("quality-value", "quality_value_score"),
+        "swing": screen_rows("swing", "composite_z"),
+        "political_institutional": _political_institutional_rows(screens, price_by_ticker, as_of),
         "eligible_universe_equal_weight": _equal_weight_rows(
             eligible, price_by_ticker, limit=None,
         ),
@@ -195,7 +237,7 @@ def append_payload(advisor, benchmark, screens, store_root=DEFAULT_STORE, source
         benchmark = {**benchmark, "histories": {**(benchmark.get("histories") or {}),
                                                 "SPY": advisor["benchmark_history"]}}
     session = price_session(benchmark)
-    selections = selections_from_payload(advisor, benchmark, screens)
+    selections = selections_from_payload(advisor, benchmark, screens, as_of=as_of)
     appended, preserved, stale = [], [], []
     defaults = _read_json(PIPELINE_DIR / "config" / "shadow_strategies.json", {}) \
         .get("construction_defaults", {})
@@ -554,7 +596,7 @@ def bootstrap_git(store_root=DEFAULT_STORE):
             continue
         screens = {
             name: _git_json(commit, f"public/data/screens/{name}.json")
-            for name in ("structural-tactical", "momentum", "quality-value")
+            for name in SCREEN_FILES
         }
         result = append_payload(
             advisor, benchmark, screens, store_root,
@@ -702,7 +744,7 @@ def current_payload():
     benchmark = _read_json(PUBLIC_DATA / "benchmark-report.json", {})
     screens = {
         name: _read_json(PUBLIC_DATA / "screens" / f"{name}.json", {})
-        for name in ("structural-tactical", "momentum", "quality-value")
+        for name in SCREEN_FILES
     }
     return advisor, benchmark, screens
 
