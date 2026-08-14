@@ -45,6 +45,15 @@ describe('comparison panel', () => {
     expect(tileFor('Information ratio').closest('section')).toHaveAttribute('aria-labelledby', 'benchmark-comparison-title')
   })
 
+  it('keeps only the three highest-priority measures visible before disclosure', () => {
+    const { container } = render(<PerformanceMetrics metrics={metrics} benchmarkLabel="S&P 500"
+      acceleration={acceleration} capture={capture} batting={batting} />)
+    const standard = container.querySelector('[aria-labelledby="standard-performance-title"]')
+    expect(standard.querySelector(':scope > .metric-card-grid').children).toHaveLength(3)
+    expect(standard.querySelector('.analytics-detail')).not.toHaveAttribute('open')
+    expect(standard.querySelector('.analytics-detail > summary')).toHaveTextContent(/Show \d+ more measures/)
+  })
+
   it('shows acceleration in sigma with both quarters behind it', () => {
     render(<PerformanceMetrics metrics={metrics} acceleration={acceleration} capture={capture} batting={batting} />)
     expect(tileFor('Acceleration')).toHaveTextContent('+1.62σ')

@@ -1041,6 +1041,12 @@ details.performance-metrics { border: 1px solid var(--border-default); border-ra
 .metric-tooltip p { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 8; width: min(260px, 70vw); margin: 0; padding: 9px; border: 1px solid var(--border-default); border-radius: 9px; background: var(--surface-primary); box-shadow: var(--surface-shadow); color: var(--text-secondary); font-size: 9px; line-height: 1.45; }
 .analytics-detail { margin-top: 10px; }
 .analytics-detail > summary, .metric-group > summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: pointer; }
+.analytics-detail > summary { gap: 12px; padding: 0 10px; border: 1px solid var(--border-subtle); border-radius: var(--control-radius); background: var(--surface-secondary); list-style: none; }
+.analytics-detail > summary::-webkit-details-marker { display: none; }
+.analytics-detail > summary::after { content: "▾"; color: var(--text-tertiary); transition: transform var(--duration-fast) var(--ease-default); }
+.analytics-detail[open] > summary::after { transform: rotate(180deg); }
+.analytics-detail > summary small { margin-left: auto; color: var(--text-tertiary); font: 600 8px var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
+.analytics-detail[open] > .metric-card-grid { margin-top: 8px; }
 .compact-grid [data-metric-card] > strong { font-size: 15px; }
 .compact-grid [data-metric-card] > small { min-height: 0; }
 .all-metrics > header, .prospective-clock > header, .baseline-comparison > header, .algorithm-period > header, .rolling-sharpe > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -2093,7 +2099,35 @@ body { background: var(--app-background); }
   .allocation-donut-widget { max-width: 220px; }
 }
 
-/* Portfolio: Summary / Allocation / Performance hierarchy */
+/* Portfolio: sticky in-page navigation and progressive dashboard hierarchy */
+.portfolio-sticky-tools {
+  position: sticky; top: 8px; z-index: 40; min-width: 0; display: flex; align-items: center; gap: 10px;
+  margin: 0 0 18px; padding: 7px; border: 1px solid var(--border-default); border-radius: var(--card-radius);
+  background: color-mix(in srgb, var(--surface-primary) 94%, transparent); box-shadow: var(--surface-shadow); backdrop-filter: blur(16px);
+}
+.portfolio-section-nav { min-width: 0; flex: 1; margin: 0; padding: 0; }
+.portfolio-section-nav a { min-height: 44px; padding-inline: 14px; font-weight: 650; }
+.portfolio-sticky-actions { flex: none; display: flex; align-items: center; gap: 6px; }
+.portfolio-sticky-actions .portfolio-sticky-refresh { min-height: 44px; white-space: nowrap; }
+.portfolio-data-menu { position: relative; }
+.portfolio-data-menu > summary {
+  min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; list-style: none; cursor: pointer;
+  border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-secondary); color: var(--text-secondary); font-size: 11px; font-weight: 700;
+}
+.portfolio-data-menu > summary::-webkit-details-marker { display: none; }
+.portfolio-data-menu > summary svg { transition: transform var(--duration-fast) var(--ease-default); }
+.portfolio-data-menu[open] > summary { color: var(--brand-primary); border-color: color-mix(in srgb, var(--brand-primary) 45%, var(--border-default)); }
+.portfolio-data-menu[open] > summary svg { transform: rotate(90deg); }
+.portfolio-data-popover {
+  position: absolute; z-index: 45; top: calc(100% + 8px); right: 0; width: min(680px, calc(100vw - 48px));
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px;
+  border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: 0 18px 48px rgba(10, 18, 14, .16);
+}
+.portfolio-data-popover button { min-height: 44px; justify-content: flex-start; }
+.portfolio-data-status { grid-column: 1 / -1; padding: 4px 4px 8px; border-bottom: 1px solid var(--border-subtle); }
+.portfolio-data-status .eyebrow { margin-bottom: 3px; }
+.portfolio-data-status time { color: var(--text-secondary); font: 10px var(--font-mono); }
+#portfolio-summary, #portfolio-performance, #portfolio-data-overview { scroll-margin-top: 92px; }
 .portfolio-dashboard-section { margin-bottom: 28px; }
 .portfolio-section-heading { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
 .portfolio-section-heading > div { display: flex; align-items: center; gap: 12px; }
@@ -2109,6 +2143,24 @@ body { background: var(--app-background); }
 .portfolio-summary-kpis strong, .portfolio-benchmark-kpis strong { overflow: hidden; font: 700 15px var(--font-mono); font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .portfolio-summary-chart { padding-top: 6px; }
 .portfolio-summary-chart .chart-scrub-summary { margin-inline: 42px; }
+.portfolio-holdings-section { margin-bottom: 20px; }
+.portfolio-subsection-heading { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.portfolio-subsection-heading h2, .portfolio-subsection-heading h3 { margin-top: 3px; font: 710 18px/1.15 var(--font-display); letter-spacing: -.02em; }
+.portfolio-subsection-heading > span { color: var(--text-tertiary); font: 650 10px var(--font-mono); }
+.portfolio-holdings-section > .filters { margin-top: 0; }
+.suggested-actions { margin-bottom: 20px; }
+.portfolio-suggested-list { display: grid; gap: 10px; }
+.portfolio-suggested-row { min-height: 48px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+.portfolio-suggested-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.portfolio-suggested-row > span:not(.action-pill) { min-width: 200px; flex: 1; color: var(--text-secondary); font-size: 12px; }
+.portfolio-suggested-row > small { color: var(--text-tertiary); font-size: 10px; }
+.portfolio-suggested-empty { padding: 4px 0; color: var(--text-secondary); font-size: 12px; }
+.portfolio-concentration-card { margin-bottom: 20px; border-color: color-mix(in srgb, var(--warning) 55%, var(--border-default)); }
+.portfolio-concentration-list { display: grid; gap: 8px; }
+.portfolio-concentration-list > div { display: flex; align-items: center; gap: 12px; }
+.portfolio-concentration-list > div > span:first-child { color: var(--warning); font-weight: 700; }
+.portfolio-concentration-list > div > span:last-child { color: var(--text-secondary); font-size: 12px; }
+.portfolio-concentration-card > p { margin-top: 10px; color: var(--text-tertiary); font-size: 10px; line-height: 1.5; }
 .portfolio-allocation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--section-gap); }
 .portfolio-allocation-card { min-width: 0; padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
 .portfolio-allocation-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
@@ -2126,6 +2178,8 @@ body { background: var(--app-background); }
 .portfolio-benchmark-chart { margin-bottom: var(--section-gap); padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--control-radius); background: var(--surface-secondary); }
 .portfolio-performance-section > .portfolio-return-summary, .portfolio-performance-section > .portfolio-move-explanation, .portfolio-performance-section > .performance-metrics { margin-bottom: var(--section-gap); }
 .portfolio-performance-section > :last-child { margin-bottom: 0; }
+.portfolio-data-overview-section > .portfolio-section-heading { border-bottom: 1px solid var(--border-subtle); }
+.portfolio-data-overview-section .analytics-toolbar { position: static; }
 
 @media (max-width: 900px) {
   .portfolio-sector-card .allocation-donut-widget { grid-template-columns: 1fr; }
@@ -2133,6 +2187,13 @@ body { background: var(--app-background); }
 }
 
 @media (max-width: 720px) {
+  .portfolio-sticky-tools { align-items: stretch; flex-direction: column; }
+  .portfolio-section-nav { width: 100%; }
+  .portfolio-sticky-actions { width: 100%; }
+  .portfolio-sticky-actions > button, .portfolio-data-menu { flex: 1; }
+  .portfolio-data-menu > summary { width: 100%; justify-content: center; }
+  .portfolio-data-popover { right: 0; width: calc(100vw - 44px); }
+  #portfolio-summary, #portfolio-performance, #portfolio-data-overview { scroll-margin-top: 140px; }
   .portfolio-allocation-grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
   .portfolio-allocation-card { scroll-snap-align: start; }
   .portfolio-summary-kpis strong, .portfolio-benchmark-kpis strong { font-size: 12px; }
@@ -2149,6 +2210,11 @@ body { background: var(--app-background); }
   .portfolio-allocation-card > header { flex-direction: column; }
   .portfolio-allocation-card > header > small { max-width: none; text-align: left; }
   .portfolio-sector-card .donut-legend { grid-template-columns: 1fr; }
+  .portfolio-data-popover { grid-template-columns: 1fr; }
+  .portfolio-data-status { grid-column: 1; }
+  .portfolio-sticky-refresh span { display: inline; }
+  .portfolio-subsection-heading { align-items: flex-start; }
+  .portfolio-suggested-row > span:not(.action-pill) { min-width: 100%; }
 }
 
 /* ============================================================
@@ -2255,7 +2321,7 @@ body { background: var(--app-background); }
 @media (max-width: 620px) {
   .heatmap-heading { align-items: flex-start; gap: 10px; }
   .heatmap-legend { justify-content: flex-start; }
-  .heatmap-svg { min-height: 260px; }
+  .heatmap-svg { height: auto; }
 }
 
 /* ============================================================

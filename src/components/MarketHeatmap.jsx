@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { dailyMoveForPosition } from '../lib/marketPresentation.js'
 
 /**
@@ -8,6 +8,24 @@ import { dailyMoveForPosition } from '../lib/marketPresentation.js'
  */
 
 const finite = (value) => value !== null && value !== '' && Number.isFinite(Number(value))
+
+function useMediaQuery(query) {
+  const getMatches = () => typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia(query).matches
+  const [matches, setMatches] = useState(getMatches)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
+    const media = window.matchMedia(query)
+    const update = () => setMatches(media.matches)
+    update()
+    media.addEventListener?.('change', update)
+    return () => media.removeEventListener?.('change', update)
+  }, [query])
+
+  return matches
+}
 
 function squarify(items, x, y, width, height) {
   const total = items.reduce((sum, item) => sum + item.weight, 0)
@@ -124,11 +142,15 @@ function signedChange(change) {
 
 export default function MarketHeatmap({ positions = [] }) {
   const titleId = useId()
+  const compact = useMediaQuery('(max-width: 620px)')
   const sectors = buildPortfolioSectorHeatmap(positions)
   if (!sectors.length) return null
 
-  const W = 720
-  const H = 340
+  const W = compact ? 360 : 720
+  const H = compact ? 260 : 340
+  const fontSize = compact
+    ? { sector: 12, move: 11, allocation: 10, tickers: 9 }
+    : { sector: 10, move: 9, allocation: 8, tickers: 8 }
   const rects = squarify(sectors, 0, 0, W, H)
   const summary = sectors
     .map((sector) => `${sector.sector} ${sector.allocationPct.toFixed(1)}% allocation, ${signedChange(sector.avgChange)}`)
@@ -157,22 +179,22 @@ export default function MarketHeatmap({ positions = [] }) {
                 width={Math.max(0, rect.w - 2)} height={Math.max(0, rect.h - 2)} rx="6" />
               {showLabel && <>
                 <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 - 10}
-                  textAnchor="middle" fill={textColor} fontSize="10" fontWeight="700" fontFamily="var(--font-display)">
+                  textAnchor="middle" fill={textColor} fontSize={fontSize.sector} fontWeight="700" fontFamily="var(--font-display)">
                   {rect.sector.length > rect.w / 7 ? `${rect.sector.slice(0, Math.max(2, Math.floor(rect.w / 7)))}…` : rect.sector}
                 </text>
                 <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 5}
-                  textAnchor="middle" fill={textColor} fontSize="9" fontWeight="700" fontFamily="var(--font-mono)">
+                  textAnchor="middle" fill={textColor} fontSize={fontSize.move} fontWeight="700" fontFamily="var(--font-mono)">
                   {signedChange(rect.avgChange)}
                 </text>
                 {rect.h > 54 && (
                   <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 20}
-                    textAnchor="middle" fill={textColor} fillOpacity=".82" fontSize="8" fontFamily="var(--font-mono)">
+                    textAnchor="middle" fill={textColor} fillOpacity=".82" fontSize={fontSize.allocation} fontFamily="var(--font-mono)">
                     {rect.allocationPct.toFixed(1)}% allocated
                   </text>
                 )}
                 {rect.h > 78 && rect.w > 90 && (
                   <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 34}
-                    textAnchor="middle" fill={textColor} fillOpacity=".7" fontSize="8" fontFamily="var(--font-mono)">
+                    textAnchor="middle" fill={textColor} fillOpacity=".7" fontSize={fontSize.tickers} fontFamily="var(--font-mono)">
                     {rect.tickers.join(' · ')}
                   </text>
                 )}

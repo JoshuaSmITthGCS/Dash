@@ -76,7 +76,7 @@ function Driver({ label, metric }) {
   return <span><b>{label}</b>{metric ? metric.name.toLowerCase() : 'None measured'}</span>
 }
 
-function AnalyticsSection({ id, eyebrow, title, metrics, summary, sampleNote, defaultCore = 5 }) {
+function AnalyticsSection({ id, eyebrow, title, metrics, summary, sampleNote, defaultCore = 3 }) {
   const ordered = metrics.slice().sort((left, right) => right.priority - left.priority)
   const core = ordered.slice(0, defaultCore)
   const detail = ordered.slice(defaultCore)
@@ -100,7 +100,7 @@ function AnalyticsSection({ id, eyebrow, title, metrics, summary, sampleNote, de
       </div>
       {detail.length > 0 && (
         <PersistentDetails className="analytics-detail" storageId={`${id}-detail`}>
-          <summary>Show all {metrics.length}</summary>
+          <summary><span>Show {detail.length} more measure{detail.length === 1 ? '' : 's'}</span><small>{metrics.length} total</small></summary>
           <div className="metric-card-grid compact-grid">{detail.map((row) => <MetricCard key={row.id} metric={row} mode="compact" />)}</div>
         </PersistentDetails>
       )}
