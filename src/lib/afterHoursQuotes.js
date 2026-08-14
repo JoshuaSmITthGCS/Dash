@@ -47,19 +47,30 @@ export function afterHoursPortfolioReturn(positions, quotes = {}) {
  * The portfolio's live day-so-far dollar and percent move: each holding's fetched price
  * versus its own previousClose (Yahoo's `chartPreviousClose`, carried onto the merged price
  * row by mergePortfolioQuotes), summed across whichever holdings currently have a live
- * quote. Falls back to nothing (`available: false`) when no holding has one yet, so a caller
- * can fall back to the report's close-to-close move instead of showing a false $0.
+ * quote. Before the first refresh, an imported brokerage snapshot can supply the same
+ * current-session price/previous-close pair. Otherwise the caller falls back to the report's
+ * close-to-close move instead of showing a false $0.
  */
 export function liveTodayPortfolioReturn(positions, priceData = {}) {
   const rows = (positions || [])
     .map((position) => {
       const source = priceData[String(position.ticker || '').toUpperCase()]
       const shares = Number(position.shares)
-      if (!source?.portfolioQuote || !finite(shares) || !finite(source.price) || !finite(source.previousClose) || !source.previousClose) return null
+      const useSource = source?.portfolioQuote || source?.positionSnapshot
+      const currentPrice = useSource && finite(source.price)
+        ? source.price
+        : source ? null : position.snapshotPrice
+      const previousClose = useSource && finite(source.previousClose)
+        ? source.previousClose
+        : source ? null : position.snapshotPreviousClose
+      if (!finite(shares) || !finite(currentPrice) || !finite(previousClose) || !previousClose) return null
+      const currentValue = !source?.portfolioQuote && finite(position.snapshotValue)
+        ? position.snapshotValue
+        : currentPrice * shares
       return {
         ticker: position.ticker,
-        dollarReturn: (source.price - source.previousClose) * shares,
-        priorValue: source.previousClose * shares,
+        dollarReturn: currentValue - previousClose * shares,
+        priorValue: previousClose * shares,
       }
     })
     .filter(Boolean)

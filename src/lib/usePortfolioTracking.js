@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { collection, doc, increment, onSnapshot, setDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { useAuth } from './FirebaseAuthContext.jsx'
-import { FIDELITY_CASH_FLOWS } from './referenceCashFlows.js'
 
 function marketDate(iso = new Date().toISOString()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -64,82 +63,16 @@ export function usePortfolioTracking() {
   }
 
   const recordActivity = async ({ type, amount, effectiveDate, note = '' }) => {
-    const cashMovement = ['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase'].includes(type)
-    const cashIncrease = ['deposit', 'sale_proceeds'].includes(type)
-    // Counted toward net invested capital (see portfolioAnalytics.js CONTRIBUTION_TYPES) but
-    // never touches the tracked uninvested-cash balance -- the money went straight into the
-    // position, it never sat as cash.
-    const contributionOnly = type === 'external_contribution'
     const numericAmount = Number(amount)
-    if (!currentUser || !['deposit', 'withdrawal', 'sale_proceeds', 'stock_purchase', 'realized_gain', 'dividend', 'fee', 'external_contribution'].includes(type) || !Number.isFinite(numericAmount) || ((cashMovement || contributionOnly) && numericAmount <= 0)) return { success: false, error: 'Choose an activity type and enter a valid amount. Cash movements must be greater than zero.' }
-    if (cashMovement && !cashIncrease && numericAmount > Number(effectiveTrackingState?.cashBalance || 0)) return { success: false, error: 'That amount is larger than the tracked uninvested cash balance. Set the current balance first if Dash is behind.' }
+    if (!currentUser || !['realized_gain', 'dividend', 'fee'].includes(type) || !Number.isFinite(numericAmount)) return { success: false, error: 'Choose a supported earnings activity and enter a valid amount.' }
     try {
       await ensureTrackingStarted()
       const recordedAt = new Date().toISOString()
-      const batch = writeBatch(db)
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `${type}-${Date.now()}`), {
+      await setDoc(doc(db, 'portfolios', currentUser.uid, 'activity', `${type}-${Date.now()}`), {
         type, amount: numericAmount, effectiveDate, note, recordedAt,
-        source: cashMovement ? 'manual_cash_tracker' : contributionOnly ? 'add_position_new_money' : 'manual_earnings_ledger',
+        source: 'manual_earnings_ledger',
       })
-      if (cashMovement) batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
-        cashBalance: increment(cashIncrease ? numericAmount : -numericAmount),
-        cashTrackingEnabled: true,
-        cashBalanceUpdatedAt: recordedAt,
-      }, { merge: true })
-      await batch.commit()
       return { success: true }
-    } catch (reason) {
-      setError(reason.message)
-      return { success: false, error: reason.message }
-    }
-  }
-
-  const setCashBalance = async ({ amount, effectiveDate, note = '' }) => {
-    const numericAmount = Number(amount)
-    if (!currentUser || !Number.isFinite(numericAmount) || numericAmount < 0) return { success: false, error: 'Enter a valid cash balance of zero or more.' }
-    try {
-      await ensureTrackingStarted()
-      const recordedAt = new Date().toISOString()
-      const batch = writeBatch(db)
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `cash-balance-${Date.now()}`), {
-        type: 'cash_balance_adjustment', amount: numericAmount,
-        previousAmount: Number(effectiveTrackingState?.cashBalance || 0), effectiveDate, note,
-        recordedAt, source: 'manual_cash_reconciliation',
-      })
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
-        cashBalance: numericAmount, cashTrackingEnabled: true,
-        cashBalanceAsOf: effectiveDate, cashBalanceUpdatedAt: recordedAt,
-      }, { merge: true })
-      await batch.commit()
-      return { success: true }
-    } catch (reason) {
-      setError(reason.message)
-      return { success: false, error: reason.message }
-    }
-  }
-
-  const syncReferenceCashFlows = async () => {
-    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
-    try {
-      const importedAt = new Date().toISOString()
-      await Promise.all(FIDELITY_CASH_FLOWS.map((row) => setDoc(
-        doc(db, 'portfolios', currentUser.uid, 'activity', row.id),
-        { ...row, recordedAt: importedAt, source: 'user_provided_fidelity_history' },
-        { merge: true },
-      )))
-      const patch = {
-        cashFlowHistoryComplete: true,
-        fidelityHistoryImported: true,
-        fidelityHistoryImportedAt: importedAt,
-        trackingStartedAt: derivedStartedAt || importedAt,
-        cashBalance: trackingState?.cashTrackingEnabled ? Number(trackingState.cashBalance || 0) : 0.42,
-        cashTrackingEnabled: true,
-        cashBalanceAsOf: trackingState?.cashTrackingEnabled ? trackingState.cashBalanceAsOf || marketDate(importedAt) : '2026-08-04',
-        cashBalanceUpdatedAt: trackingState?.cashTrackingEnabled ? trackingState.cashBalanceUpdatedAt || importedAt : importedAt,
-      }
-      await setDoc(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), patch, { merge: true })
-      setTrackingState((current) => ({ ...current, ...patch }))
-      return { success: true, count: FIDELITY_CASH_FLOWS.length }
     } catch (reason) {
       setError(reason.message)
       return { success: false, error: reason.message }
@@ -160,7 +93,7 @@ export function usePortfolioTracking() {
     }
   }
 
-  return { snapshots, activities, trackingState: effectiveTrackingState, error, recordSnapshot, recordActivity, setCashBalance, setLedgerComplete, syncReferenceCashFlows }
+  return { snapshots, activities, trackingState: effectiveTrackingState, error, recordSnapshot, recordActivity, setLedgerComplete }
 }
 
 export { marketDate }

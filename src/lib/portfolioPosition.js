@@ -22,6 +22,31 @@ export function mergePortfolioQuotes(priceData, quotes = {}) {
   return merged
 }
 
+/** Prefer a newer brokerage-export price while retaining the published history/metadata. */
+export function mergePositionSnapshots(priceData, positions = [], publishedAt = null) {
+  const merged = { ...priceData }
+  const publishedTime = Date.parse(publishedAt || '')
+  positions.forEach((position) => {
+    const ticker = String(position?.ticker || '').trim().toUpperCase()
+    const snapshotTime = Date.parse(position?.snapshotRecordedAt || '')
+    if (!ticker || !Number.isFinite(Number(position?.snapshotPrice))) return
+    const current = merged[ticker]
+    const snapshotIsNewer = !Number.isFinite(publishedTime)
+      || (Number.isFinite(snapshotTime) && snapshotTime >= publishedTime)
+    if (current?.portfolioQuote || (Number.isFinite(Number(current?.price)) && !snapshotIsNewer)) return
+    merged[ticker] = {
+      ...(current || { ticker }),
+      price: Number(position.snapshotPrice),
+      previousClose: Number.isFinite(Number(position.snapshotPreviousClose))
+        ? Number(position.snapshotPreviousClose)
+        : current?.previousClose ?? null,
+      positionSnapshot: true,
+      quoteMarketTime: position.snapshotRecordedAt || null,
+    }
+  })
+  return merged
+}
+
 // These records were entered before the portfolio form distinguished total dollars from
 // dollars per share. Their exact values make the intended total unambiguous: treating the
 // entered amount as a per-share price produces the broken returns reported in the UI.

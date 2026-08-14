@@ -2133,7 +2133,8 @@ body { background: var(--app-background); }
 }
 
 @media (max-width: 720px) {
-  .portfolio-allocation-grid { grid-template-columns: 1fr; }
+  .portfolio-allocation-grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+  .portfolio-allocation-card { scroll-snap-align: start; }
   .portfolio-summary-kpis strong, .portfolio-benchmark-kpis strong { font-size: 12px; }
 }
 

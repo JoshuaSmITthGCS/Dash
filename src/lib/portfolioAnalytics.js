@@ -33,7 +33,9 @@ export function enrichPortfolio(positions = [], priceData = {}) {
     const costBasis = Number(position.costBasis)
     const currentPrice = finite(source?.price) ? Number(source.price) : finite(position.snapshotPrice) ? Number(position.snapshotPrice) : null
     const totalCost = finite(shares) && finite(costBasis) ? shares * costBasis : null
-    const currentValue = currentPrice == null || !finite(shares) ? null : shares * currentPrice
+    const currentValue = source?.positionSnapshot && finite(position.snapshotValue)
+      ? Number(position.snapshotValue)
+      : currentPrice == null || !finite(shares) ? null : shares * currentPrice
     const gain = currentValue == null || totalCost == null ? null : currentValue - totalCost
     return { ...position, ticker, shares, costBasis, currentPrice, totalCost, currentValue, gain, gainPct: totalCost > 0 && gain != null ? gain / totalCost * 100 : null, allocationPct: null, priceInfo: source }
   })

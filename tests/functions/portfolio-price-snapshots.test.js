@@ -34,7 +34,7 @@ describe('scheduled portfolio price snapshots', () => {
     })
   })
 
-  it('builds an account-value point from only portfolio quotes and tracked cash', () => {
+  it('builds an invested-only value point from portfolio quotes', () => {
     const recordedAt = new Date('2026-08-13T15:35:00.000Z')
     const snapshot = buildPortfolioSnapshot(
       [{ ticker: 'AAPL', shares: 2 }, { ticker: 'MSFT', shares: 1 }],
@@ -42,14 +42,12 @@ describe('scheduled portfolio price snapshots', () => {
         AAPL: { price: 230, marketTime: '2026-08-13T15:34:00.000Z' },
         MSFT: { price: 510, marketTime: '2026-08-13T15:34:00.000Z' },
       },
-      25,
       recordedAt,
     )
 
     expect(snapshot).toMatchObject({
-      value: 995,
+      value: 970,
       investedValue: 970,
-      cashValue: 25,
       coveragePct: 100,
       source: 'scheduled_portfolio_price_refresh',
       samplingIntervalMinutes: 5,
@@ -62,7 +60,6 @@ describe('scheduled portfolio price snapshots', () => {
     expect(buildPortfolioSnapshot(
       [{ ticker: 'AAPL', shares: 2 }, { ticker: 'MSFT', shares: 1 }],
       { AAPL: { price: 230 } },
-      0,
       new Date('2026-08-13T15:35:00.000Z'),
     )).toBeNull()
   })
@@ -91,10 +88,6 @@ describe('scheduled portfolio price snapshots', () => {
         })),
       })),
       collection: vi.fn(() => ({ doc: () => root })),
-      getAll: vi.fn(async () => [{
-        exists: true,
-        data: () => ({ cashTrackingEnabled: true, cashBalance: 40 }),
-      }]),
       batch: vi.fn(() => ({
         set: (ref, payload, options) => sets.push({ ref, payload, options }),
         commit: vi.fn(async () => undefined),
@@ -112,7 +105,7 @@ describe('scheduled portfolio price snapshots', () => {
     expect(sets).toHaveLength(2)
     expect(sets[0]).toMatchObject({
       ref: { path: 'portfolios/u1/intradaySnapshots/2026-08-13T15-35' },
-      payload: { value: 500, source: 'scheduled_portfolio_price_refresh' },
+      payload: { value: 460, source: 'scheduled_portfolio_price_refresh' },
       options: { merge: true },
     })
     expect(sets[1]).toMatchObject({
