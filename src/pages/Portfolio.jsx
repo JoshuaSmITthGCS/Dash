@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useAuth } from '../lib/FirebaseAuthContext'
@@ -93,11 +94,37 @@ const ANALYTICS_SCOPES = [
 const SUMMARY_PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
 const PERFORMANCE_PERIODS = ['1W', '1M', '3M', '1Y', 'All']
 const PERIOD_NAMES = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year', All: 'All time' }
-const PORTFOLIO_SECTIONS = [
-  { id: 'portfolio-summary', label: 'Summary' },
-  { id: 'portfolio-performance', label: 'Performance' },
-  { id: 'portfolio-data-overview', label: 'Data overview' },
+export const PORTFOLIO_NAV = [
+  { to: '/portfolio', label: 'Summary', end: true },
+  { to: '/portfolio/performance', label: 'Performance' },
+  { to: '/portfolio/data-overview', label: 'Data overview' },
 ]
+
+const PORTFOLIO_PAGE_COPY = {
+  summary: {
+    title: <>My <span className="accent">portfolio</span></>,
+    description: 'Your holdings, suggested actions, and current allocation.',
+  },
+  performance: {
+    title: <>Portfolio <span className="accent">performance</span></>,
+    description: 'Your time-weighted return and a fair comparison with the selected benchmark.',
+  },
+  data: {
+    title: <>Portfolio <span className="accent">data overview</span></>,
+    description: 'Why your portfolio moved and the evidence behind its standard measures.',
+  },
+}
+
+export function PortfolioNavigation() {
+  return (
+    <nav className="screen-nav portfolio-section-nav" aria-label="Portfolio sections">
+      {PORTFOLIO_NAV.map((item) => (
+        <NavLink key={item.to} to={item.to} end={item.end}
+          className={({ isActive }) => isActive ? 'active' : ''}>{item.label}</NavLink>
+      ))}
+    </nav>
+  )
+}
 
 function sessionSetting(key, fallback) {
   try { return globalThis.sessionStorage?.getItem(key) || fallback } catch { return fallback }
@@ -221,7 +248,7 @@ function SortableHeader({ sortKey, sort, onSort, children, numeric = false, info
   )
 }
 
-export default function Portfolio() {
+export default function Portfolio({ view = 'summary' }) {
   const { currentUser } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
   const { data: etfData } = useData('etfs.json')
@@ -264,7 +291,7 @@ export default function Portfolio() {
   const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'all_history'))
   const [summaryPeriod, setSummaryPeriod] = useState('1D')
   const [performancePeriod, setPerformancePeriod] = useState('1M')
-  const [activeSection, setActiveSection] = useState(PORTFOLIO_SECTIONS[0].id)
+  const [essentialOnly, setEssentialOnly] = useState(true)
   const [suggestedActionsOpen, setSuggestedActionsOpen] = useState(preferences.suggestedActionsDefault === 'expanded')
   const referencePortfolioSyncStarted = useRef(false)
   const refresh = useAdvisorRefresh(
@@ -281,21 +308,6 @@ export default function Portfolio() {
     enabled: positions.length > 0,
     refreshing: portfolioQuotes.refreshing,
   })
-
-  useEffect(() => {
-    if (dataLoading || portfolioLoading || typeof globalThis.IntersectionObserver === 'undefined') return undefined
-    const sections = PORTFOLIO_SECTIONS
-      .map(({ id }) => document.getElementById(id))
-      .filter(Boolean)
-    const observer = new globalThis.IntersectionObserver((entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((left, right) => Math.abs(left.boundingClientRect.top) - Math.abs(right.boundingClientRect.top))
-      if (visible[0]?.target?.id) setActiveSection(visible[0].target.id)
-    }, { rootMargin: '-112px 0px -62% 0px', threshold: [0, 0.05, 0.25] })
-    sections.forEach((section) => observer.observe(section))
-    return () => observer.disconnect()
-  }, [dataLoading, portfolioLoading])
 
   const research = data?.research || []
   const portfolioCoverage = data?.portfolio_coverage || []
@@ -716,6 +728,8 @@ export default function Portfolio() {
     cancelEdit()
   }
 
+  const pageCopy = PORTFOLIO_PAGE_COPY[view] || PORTFOLIO_PAGE_COPY.summary
+
   return (
     <>
       <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={portfolioQuotes.refreshing} />
@@ -723,17 +737,15 @@ export default function Portfolio() {
       <div className="page-head">
         <div>
           <span className="eyebrow">Your money</span>
-          <h1 className="page-title">My <span className="accent">portfolio</span></h1>
-          <p className="page-sub">
-            Holdings, action guidance, and a fair same-dollar comparison with the S&amp;P 500.
-          </p>
+          <h1 className="page-title">{pageCopy.title}</h1>
+          <p className="page-sub">{pageCopy.description}</p>
         </div>
         <div className={`cloud-sync-state ${syncState.connected ? 'connected' : 'disconnected'}`} role="status">
           <span aria-hidden="true" />
           <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Solo workspace'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Connecting your solo cloud workspace'}</small></div>
         </div>
       </div>
-      {actionable.length > 0 && <a className="portfolio-sell-alert" href="#sell-signals"><Icon name="bell" size={17} /><span><strong>{actionable.length} sell signal{actionable.length === 1 ? '' : 's'} need review</strong><small>{actionable.map((position) => position.ticker).join(', ')} · Hold positions are not shown here.</small></span><Icon name="chevron" size={16} /></a>}
+      {view === 'summary' && actionable.length > 0 && <a className="portfolio-sell-alert" href="#sell-signals"><Icon name="bell" size={17} /><span><strong>{actionable.length} sell signal{actionable.length === 1 ? '' : 's'} need review</strong><small>{actionable.map((position) => position.ticker).join(', ')} · Hold positions are not shown here.</small></span><Icon name="chevron" size={16} /></a>}
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
       {(portfolioQuotes.message || portfolioQuotes.error) && (
         <div className={`sync-message refresh-message ${portfolioQuotes.error ? 'error' : 'success'}`} role="status" aria-live="polite">
@@ -749,19 +761,7 @@ export default function Portfolio() {
       )}
 
       <div className="portfolio-sticky-tools">
-        <nav className="screen-nav portfolio-section-nav" aria-label="Portfolio sections">
-          {PORTFOLIO_SECTIONS.map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className={activeSection === section.id ? 'active' : ''}
-              aria-current={activeSection === section.id ? 'location' : undefined}
-              onClick={() => setActiveSection(section.id)}
-            >
-              {section.label}
-            </a>
-          ))}
-        </nav>
+        <PortfolioNavigation />
         <div className="portfolio-sticky-actions">
           <button className="primary-button compact portfolio-sticky-refresh" onClick={portfolioQuotes.requestRefresh} disabled={portfolioQuotes.refreshing || positions.length === 0}>
             <Icon name="sync" size={16} className={portfolioQuotes.refreshing ? 'refresh-spin' : ''} />
@@ -783,7 +783,7 @@ export default function Portfolio() {
         </div>
       </div>
 
-      <section id="portfolio-summary" className="portfolio-page-section" aria-labelledby="portfolio-summary-title">
+      {view === 'summary' && <section className="portfolio-page-section" aria-labelledby="portfolio-summary-title">
       <div className="portfolio-dashboard-section portfolio-summary-section">
         <header className="portfolio-section-heading">
           <div><span className="portfolio-section-number">01</span><div><span className="eyebrow">Overview</span><h2 id="portfolio-summary-title">Summary</h2></div></div>
@@ -809,7 +809,16 @@ export default function Portfolio() {
       <section className="portfolio-holdings-section" aria-labelledby="portfolio-holdings-title">
         <header className="portfolio-subsection-heading">
           <div><span className="eyebrow">Your positions</span><h3 id="portfolio-holdings-title">All holdings</h3></div>
-          <span>{positions.length} holding{positions.length === 1 ? '' : 's'}</span>
+          <div className="portfolio-holdings-heading-actions">
+            <span>{positions.length} holding{positions.length === 1 ? '' : 's'}</span>
+            <label className="portfolio-essential-control">
+              <span><strong>Essential only</strong><small>{essentialOnly ? 'Extra details hidden' : 'All details shown'}</small></span>
+              <span className="switch">
+                <input type="checkbox" checked={essentialOnly} onChange={(event) => setEssentialOnly(event.target.checked)} />
+                <span aria-hidden="true" />
+              </span>
+            </label>
+          </div>
         </header>
 
       <div className="filters" style={{ marginBottom: 20 }}>
@@ -872,78 +881,87 @@ export default function Portfolio() {
           onSortKey={setSortKey}
           onToggleDirection={toggleSortDirection}
         />
-        <div className="portfolio-mobile-list">
+        <div className={`portfolio-mobile-list portfolio-stock-grid ${essentialOnly ? 'essential' : 'expanded'}`}>
           {sortedPositions.map((pos) => (
-            <article className={`holding-card portfolio-holding-block ${pos.dayMove?.pct == null ? 'neutral' : pos.dayMove.pct >= 0 ? 'positive' : 'negative'}`} key={pos.id || pos.ticker}>
-              <div className="holding-card-head">
-                <CompanyLogo company={pos.priceInfo || pos} size={40} /><div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span><small>{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</small></div>
-                <div className="holding-day-corner">
-                  <strong>{signedPct(pos.dayMove?.pct, 2)}</strong>
-                  <small>{pos.dayMove?.positionDelta == null ? 'Day delta pending' : `${pos.dayMove.positionDelta >= 0 ? '+' : '−'}${money(Math.abs(pos.dayMove.positionDelta), 2)}`}</small>
+            <article className={`portfolio-stock-tile ${pos.dayMove?.pct == null ? 'neutral' : pos.dayMove.pct >= 0 ? 'positive' : 'negative'}`} key={pos.id || pos.ticker}>
+              <button type="button" className="portfolio-stock-primary" onClick={() => pos.priceInfo && setSelectedStock(pos)} disabled={!pos.priceInfo}
+                aria-label={`${pos.ticker}, ${signedPct(pos.dayMove?.pct, 2)} today, ${pos.currentPrice == null ? 'price unavailable' : `${money(pos.currentPrice, 2)} per share`}${pos.priceInfo ? '. Open research' : ''}`}>
+                <span className="portfolio-stock-identity">
+                  <CompanyLogo company={pos.priceInfo || pos} size={26} />
+                  <span><strong>{pos.ticker}</strong><small title={pos.priceInfo?.name || 'Coverage pending'}>{pos.priceInfo?.name || 'Coverage pending'}</small></span>
+                </span>
+                <span className="portfolio-stock-move">
+                  <strong><span aria-hidden="true">{pos.dayMove?.pct == null ? '•' : pos.dayMove.pct >= 0 ? '▲' : '▼'}</span>{signedPct(pos.dayMove?.pct, 2)}</strong>
+                  <small>{pos.currentPrice == null ? 'Price pending' : money(pos.currentPrice, 2)}</small>
+                </span>
+              </button>
+
+              {!essentialOnly && <div className="portfolio-stock-details">
+                <div className="portfolio-stock-allocation">{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</div>
+                <div className="holding-value">
+                  <div><span>Current price</span><strong>{pos.currentPrice == null ? 'Unavailable' : money(pos.currentPrice, 2)}</strong></div>
+                  <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
                 </div>
-              </div>
-              <div className="holding-value">
-                <div><span>Current price</span><strong>{pos.currentPrice == null ? 'Unavailable' : money(pos.currentPrice, 2)}</strong></div>
-                <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
-              </div>
-              <div className="holding-block-status"><ActionPill recommendation={pos.recommendation} /><RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" /><span className={pos.gainPct >= 0 ? 'positive' : 'negative'}>{signedPct(pos.gainPct)} total return</span></div>
-              <small className="as-of-line">As of {pos.priceInfo?.history?.dates?.at(-1) || pos.priceInfo?.data_as_of || 'the latest available close'}</small>
-              {editingId === pos.id ? (
-                <MobileSheet open title={`Edit ${pos.ticker}`} onClose={cancelEdit} className="holding-edit-sheet"><div className="holding-edit-form">
-                  <label><span>Shares</span>
-                    <input className="inline-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
-                      onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
-                  </label>
-                  <label>
-                    <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      Cost basis
-                      <select value={editForm.costMode} onChange={(e) => setEditForm({ ...editForm, costMode: e.target.value })}
-                        style={{ minHeight: 'auto', height: 18, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 9, textTransform: 'none', letterSpacing: 0 }}>
-                        <option value="share">$/share</option>
-                        <option value="total">Total $</option>
-                      </select>
-                    </span>
-                    <input className="inline-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
-                      onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
-                  </label>
-                  <label><span>Purchase date</span>
-                    <input className="inline-edit-input" type="date" value={editForm.purchaseDate}
-                      onChange={(e) => setEditForm({ ...editForm, purchaseDate: e.target.value })} />
-                  </label>
-                </div><div className="holding-edit-sheet-actions"><button className="secondary-button" onClick={cancelEdit} disabled={editSaving}>Cancel</button><button className="primary-button" onClick={() => saveEdit(pos.id)} disabled={editSaving}>{editSaving ? 'Saving…' : 'Save changes'}</button></div></MobileSheet>
-              ) : (
-                <div className="holding-meta">
-                  <span>{pos.shares} shares</span><span>Avg. cost/share {money(pos.costBasis, 2)}</span>
-                  <span>{pos.quoteSource || 'Live quote unavailable'}</span>
-                  <StopLossNote stopLoss={pos.stopLoss} />
-                </div>
-              )}
-              {editingId !== pos.id && sellingId !== pos.id && pos.trendValues.length > 1 && (
-                <div className="holding-trend">
-                  <div><span>1-month trend
-                    <InfoTag label="1-month trend">
-                      <strong>1-month trend</strong>
-                      <p>Trailing 30-day price movement for this holding - direction and shape only,
-                        not a substitute for the full research score.</p>
-                    </InfoTag>
-                  </span><Move value={pos.trendPct} /></div>
-                  <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={48} />
-                </div>
-              )}
-              <div className="holding-actions">
-                {editingId !== pos.id && sellingId !== pos.id && (
-                  <>
-                    {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
-                    <button className="text-button" onClick={() => startEdit(pos)}>Edit</button>
-                    <button className="text-button" onClick={() => startSell(pos)}>Sell</button>
-                    <button className="text-button danger" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
-                      {removingId === pos.id ? 'Removing…' : 'Remove'}
-                    </button>
-                  </>
+                <div className="holding-block-status"><ActionPill recommendation={pos.recommendation} /><RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" /><span>{signedPct(pos.gainPct)} total return</span></div>
+                <small className="as-of-line">As of {pos.priceInfo?.history?.dates?.at(-1) || pos.priceInfo?.data_as_of || 'the latest available close'}</small>
+                {editingId === pos.id ? (
+                  <MobileSheet open title={`Edit ${pos.ticker}`} onClose={cancelEdit} className="holding-edit-sheet"><div className="holding-edit-form">
+                    <label><span>Shares</span>
+                      <input className="inline-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
+                        onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
+                    </label>
+                    <label>
+                      <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        Cost basis
+                        <select value={editForm.costMode} onChange={(e) => setEditForm({ ...editForm, costMode: e.target.value })}
+                          style={{ minHeight: 'auto', height: 18, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 9, textTransform: 'none', letterSpacing: 0 }}>
+                          <option value="share">$/share</option>
+                          <option value="total">Total $</option>
+                        </select>
+                      </span>
+                      <input className="inline-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
+                        onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
+                    </label>
+                    <label><span>Purchase date</span>
+                      <input className="inline-edit-input" type="date" value={editForm.purchaseDate}
+                        onChange={(e) => setEditForm({ ...editForm, purchaseDate: e.target.value })} />
+                    </label>
+                  </div><div className="holding-edit-sheet-actions"><button className="secondary-button" onClick={cancelEdit} disabled={editSaving}>Cancel</button><button className="primary-button" onClick={() => saveEdit(pos.id)} disabled={editSaving}>{editSaving ? 'Saving…' : 'Save changes'}</button></div></MobileSheet>
+                ) : (
+                  <div className="holding-meta">
+                    <span>{pos.shares} shares</span><span>Avg. cost/share {money(pos.costBasis, 2)}</span>
+                    <span>{pos.quoteSource || 'Live quote unavailable'}</span>
+                    <StopLossNote stopLoss={pos.stopLoss} />
+                  </div>
                 )}
-              </div>
+                {editingId !== pos.id && sellingId !== pos.id && pos.trendValues.length > 1 && (
+                  <div className="holding-trend">
+                    <div><span>1-month trend
+                      <InfoTag label="1-month trend">
+                        <strong>1-month trend</strong>
+                        <p>Trailing 30-day price movement for this holding - direction and shape only,
+                          not a substitute for the full research score.</p>
+                      </InfoTag>
+                    </span><Move value={pos.trendPct} /></div>
+                    <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={48} />
+                  </div>
+                )}
+                <div className="holding-actions">
+                  {editingId !== pos.id && sellingId !== pos.id && (
+                    <>
+                      {pos.priceInfo && <button className="secondary-button" onClick={() => setSelectedStock(pos)}>Research</button>}
+                      <button className="text-button" onClick={() => startEdit(pos)}>Edit</button>
+                      <button className="text-button" onClick={() => startSell(pos)}>Sell</button>
+                      <button className="text-button danger" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
+                        {removingId === pos.id ? 'Removing…' : 'Remove'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>}
             </article>
           ))}
+          {sortedPositions.length === 0 && <div className="portfolio-holdings-empty">No positions yet. Add a position to start tracking.</div>}
         </div>
         <div className="card card-pad table-wrap portfolio-table">
           <table>
@@ -1304,9 +1322,9 @@ export default function Portfolio() {
           </article>
         </div>
       </section>
-      </section>
+      </section>}
 
-      <section id="portfolio-performance" className="portfolio-dashboard-section portfolio-performance-section" aria-labelledby="portfolio-performance-title">
+      {view === 'performance' && <section className="portfolio-dashboard-section portfolio-performance-section" aria-labelledby="portfolio-performance-title">
         <header className="portfolio-section-heading">
           <div><span className="portfolio-section-number">02</span><div><span className="eyebrow">Benchmark</span><h2 id="portfolio-performance-title">Performance</h2></div></div>
           <label><span>Compare over</span><select value={performancePeriod} onChange={(event) => setPerformancePeriod(event.target.value)}>{PERFORMANCE_PERIODS.map((period) => <option key={period} value={period}>{PERIOD_NAMES[period]}</option>)}</select></label>
@@ -1359,9 +1377,9 @@ export default function Portfolio() {
             </div>
           </details>
         )}
-      </section>
+      </section>}
 
-      <section id="portfolio-data-overview" className="portfolio-dashboard-section portfolio-data-overview-section" aria-labelledby="portfolio-data-overview-title">
+      {view === 'data' && <section className="portfolio-dashboard-section portfolio-data-overview-section" aria-labelledby="portfolio-data-overview-title">
         <header className="portfolio-section-heading">
           <div><span className="portfolio-section-number">03</span><div><span className="eyebrow">Evidence</span><h2 id="portfolio-data-overview-title">Data overview</h2></div></div>
         </header>
@@ -1376,7 +1394,7 @@ export default function Portfolio() {
             setAnalyticsScope(next)
             try { globalThis.sessionStorage?.setItem('valuesignal.analytics.scope', next) } catch { /* optional session persistence */ }
           }} />
-      </section>
+      </section>}
 
       {selectedStock && (
         <StockDetailModal

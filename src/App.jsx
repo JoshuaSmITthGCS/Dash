@@ -244,7 +244,9 @@ function AppContent() {
           <Route path="/search" element={<Search />} />
           <Route path="/market" element={<PolicyRadar />} />
           <Route path="/markets" element={<Markets />} />
-          <Route path="/portfolio" element={cloudPage('Portfolio', '/portfolio', <Portfolio />)} />
+          <Route path="/portfolio" element={cloudPage('Portfolio', '/portfolio', <Portfolio view="summary" />)} />
+          <Route path="/portfolio/performance" element={cloudPage('Portfolio performance', '/portfolio', <Portfolio view="performance" />)} />
+          <Route path="/portfolio/data-overview" element={cloudPage('Portfolio data overview', '/portfolio', <Portfolio view="data" />)} />
           <Route path="/portfolio/diversification" element={cloudPage('Portfolio diversification', '/portfolio', <Diversification />)} />
           <Route path="/portfolio/insights" element={cloudPage('Portfolio insights', '/portfolio', <Insights />)} />
           <Route path="/finances" element={cloudPage('Finances', '/finances', <Finances />)} />
