@@ -33,7 +33,7 @@ export default function MetricCard({ metric, mode = 'full' }) {
       {mode === 'full' && (
         <footer>
           {metric.confidence !== 'none' && <span className="metric-confidence">{metric.confidence} confidence</span>}
-          {metric.trend && metric.trend !== 'unknown' && <span className={`metric-trend trend-${metric.trend}`}>{metric.trend === 'improving' ? '↑' : metric.trend === 'deteriorating' ? '↓' : '→'} {metric.trendDetail || metric.trend}</span>}
+          {metric.trend && metric.trend !== 'unknown' && <span className={`metric-trend trend-${metric.trend}`}><svg className="trend-bars" width="14" height="12" viewBox="0 0 14 12" aria-hidden="true"><rect x="0" y="6" width="3" height="6" rx="1" /><rect x="5" y="3" width="3" height="9" rx="1" /><rect x="10" y="0" width="3" height="12" rx="1" /></svg> {metric.trendDetail || metric.trend}</span>}
           {metric.tooltip?.measures && (
             <details className="metric-tooltip">
               <summary aria-label={`About ${metric.name}`}>What it measures</summary>

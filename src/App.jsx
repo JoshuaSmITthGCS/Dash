@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -47,21 +47,18 @@ const OPTIONS_STRATEGY_IDS = [
 ]
 
 const NAV = [
-  { to: '/', label: 'Financial Report', icon: 'overview', end: true },
+  { to: '/', label: 'Home', icon: 'overview', end: true },
   { to: '/research', label: 'Research', icon: 'research' },
   { to: '/search', label: 'Search', icon: 'search' },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/finances', label: 'Finances', icon: 'finances' },
   { to: '/planning', label: 'Planning', icon: 'finances' },
-  // The screens tab lands on the swing screen: it is the widest-horizon-coverage screen in
-  // the rail and the one most often opened cold. Every other screen is one tap away on the
-  // rail that page renders.
   { to: '/screens/swing', label: 'Screens', icon: 'research' },
+  { to: '/alerts', label: 'Alerts', icon: 'bell' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
-  { to: '/alerts', label: 'Alerts', icon: 'bell' },
 ]
 
 const ROUTE_PRELOADERS = {
@@ -99,13 +96,11 @@ function CloudDataUnavailable({ feature }) {
 }
 
 export const MOBILE_NAV = [
-  { to: '/research', label: 'Research', icon: 'research' },
-  { to: '/search', label: 'Search', icon: 'search' },
-  { to: '/', label: 'Report', icon: 'overview', end: true, primary: true },
+  { to: '/', label: 'Home', icon: 'overview', end: true },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
-  { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
-  { to: '/planning', label: 'Planning', icon: 'finances' },
-  { to: '/screens/swing', label: 'Screens', icon: 'market' },
+  { to: '/research', label: 'Research', icon: 'research' },
+  { to: '/screens/swing', label: 'Markets', icon: 'market' },
+  { to: '/settings', label: 'More', icon: 'more' },
 ]
 
 function ProfilePanel() {
@@ -126,10 +121,26 @@ function ProfilePanel() {
   )
 }
 
+function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('vs-sidebar-collapsed') === '1' } catch { return false }
+  })
+  const toggle = useCallback(() => {
+    setCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem('vs-sidebar-collapsed', next ? '1' : '0') } catch { /* storage unavailable */ }
+      return next
+    })
+  }, [])
+  return [collapsed, toggle]
+}
+
 function AppContent() {
   const { currentUser, loading, authError, retryAuth, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
   const { pathname } = useLocation()
+  const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
+
   useEffect(() => {
     const preload = () => {
       preloadRoute('/research')
@@ -148,29 +159,36 @@ function AppContent() {
     : currentUser ? page : <CloudDataUnavailable feature={feature} />
 
   return (
-    <div className="shell" data-auth-resolving={loading ? 'true' : 'false'}>
+    <div className={`shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`} data-auth-resolving={loading ? 'true' : 'false'}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="rail" aria-label="Primary navigation">
-        <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
-          <span className="brand-mark">V</span>
-          <span><span className="brand">Value<em>Signal</em></span><span className="brand-sub">research intelligence</span></span>
-        </NavLink>
+        <div className="rail-top">
+          <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
+            <span className="brand-mark">V</span>
+            {!sidebarCollapsed && <span><span className="brand">Value<em>Signal</em></span></span>}
+          </NavLink>
+          <button className="sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <Icon name="chevron" size={14} />
+          </button>
+        </div>
         <nav className="desktop-nav">
           {NAV.map((item) => {
             return (
               <NavLink key={item.to} to={item.to} end={item.end}
                 onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
-                className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
-                <Icon name={item.icon} size={19} /><span>{item.label}</span>
+                className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}
+                title={sidebarCollapsed ? item.label : undefined}>
+                <Icon name={item.icon} size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
               </NavLink>
             )
           })}
         </nav>
-        <div className="rail-note">
+        {!sidebarCollapsed && <div className="rail-note">
           <span>Research framework</span>
-          Fundamentals first. Evidence, not hype. General research only.
-        </div>
-        <ProfilePanel />
+          Fundamentals first. Evidence, not hype.
+        </div>}
+        {!sidebarCollapsed && <ProfilePanel />}
       </aside>
 
       <main id="main-content" className="content" tabIndex="-1">
@@ -208,12 +226,8 @@ function AppContent() {
           <Route path="/portfolio/insights" element={cloudPage('Portfolio insights', '/portfolio', <Insights />)} />
           <Route path="/finances" element={cloudPage('Finances', '/finances', <Finances />)} />
           <Route path="/planning" element={cloudPage('Planning', '/planning', <Planning />)} />
-          {/* Its own page rather than the shared ResearchScreen table: the swing composite
-              publishes five separately-cited legs, their per-row coverage, and a negative
-              screen whose hits stay visible - none of which the generic screen row carries. */}
           <Route path="/screens/swing" element={<SwingScreen />} />
           <Route path="/screens/fast-growth" element={<FastGrowthScreen />} />
-          {/* Options is one tab in the screens rail; each strategy is a sub-tab beneath it. */}
           <Route path="/screens/options" element={<OptionsScreen />} />
           <Route path="/screens/options/short-term-trades" element={<StrategyScreen id="short-term-trades" />} />
           <Route path="/screens/options/covered-call" element={<StrategyScreen id="covered-call" />} />
@@ -222,7 +236,6 @@ function AppContent() {
           <Route path="/screens/options/collar" element={<StrategyScreen id="collar" />} />
           <Route path="/screens/options/vertical-spread" element={<StrategyScreen id="vertical-spread" />} />
           <Route path="/screens/options/advanced-strategies" element={<StrategyScreen id="advanced-strategies" />} />
-          {/* Bookmarks and older links to the flat strategy paths still resolve. */}
           {OPTIONS_STRATEGY_IDS.map((id) => (
             <Route key={id} path={`/screens/${id}`}
               element={<Navigate to={`/screens/options/${id}`} replace />} />
@@ -254,8 +267,8 @@ function AppContent() {
         {MOBILE_NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end}
               onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
-              className={({ isActive }) => `mobile-nav-item${item.primary ? ' mobile-nav-report' : ''}${isActive ? ' active' : ''}`}>
-              <span className="mobile-nav-icon"><Icon name={item.icon} size={19} /></span>
+              className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
+              <span className="mobile-nav-icon"><Icon name={item.icon} size={18} /></span>
               <span>{item.label}</span>
             </NavLink>
         ))}

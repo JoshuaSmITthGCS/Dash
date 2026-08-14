@@ -239,14 +239,23 @@ export default function GrowthChart({
             )
           })}
 
-          {lines.map((line) => {
+          {lines.map((line, lineIndex) => {
+            const gradientId = `area-grad-${lineIndex}`
             const points = scalePoints(line.values, usableDates, chartWidth, chartHeight, bounds, pad)
             const last = [...points].reverse().find(Boolean)
             const connected = points.filter(Boolean)
             const areaPath = connected.length > 1 ? `${pathFor(points, chartStyle === 'step')} L${connected.at(-1).x.toFixed(1)} ${(chartHeight - pad.bottom).toFixed(1)} L${connected[0].x.toFixed(1)} ${(chartHeight - pad.bottom).toFixed(1)} Z` : ''
             return (
               <g key={line.label} className={line.emphasis ? 'chart-series-primary' : 'chart-series-secondary'}>
-                {chartStyle === 'area' && line.emphasis && <path className="chart-data-area" d={areaPath} fill={line.color} opacity=".1" />}
+                {line.emphasis && connected.length > 1 && <>
+                  <defs>
+                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stopColor={line.color} stopOpacity=".18" />
+                      <stop offset="1" stopColor={line.color} stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path className="chart-data-area" d={areaPath} fill={`url(#${gradientId})`} />
+                </>}
                 <path className="chart-data-line" d={pathFor(points, chartStyle === 'step')} fill="none" stroke={line.color}
                   strokeWidth={line.emphasis ? 2.4 : 1.8}
                   strokeDasharray={line.dashPattern || (line.dashed ? '5 4' : undefined)}

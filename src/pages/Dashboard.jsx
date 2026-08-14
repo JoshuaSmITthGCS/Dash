@@ -46,6 +46,10 @@ import { aggregateThemeExposure } from '../lib/factorAnalytics.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
 import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
+import AllocationDonut from '../components/AllocationDonut.jsx'
+import ScoreGauge from '../components/ScoreGauge.jsx'
+import MarketHeatmap from '../components/MarketHeatmap.jsx'
+import Sparkline from '../components/Sparkline.jsx'
 
 const PERIODS = ['1D', '1W', '1M', '3M', 'YTD', '1Y', 'All']
 const BENCHMARK_STYLES = [
@@ -59,8 +63,33 @@ function Metric({ label, value, note, tone = '' }) {
   return <article className="report-metric"><span>{label}</span><strong className={tone}>{value}</strong><small>{note}</small></article>
 }
 
+function MarketSentimentStrip({ rows, macro }) {
+  const regime = macro?.regime
+  const leader = rows[0]
+  const withChange = rows.filter((row) => row.dayChange != null)
+  const topMover = withChange.length ? withChange.reduce((best, row) => Math.abs(row.dayChange) > Math.abs(best.dayChange) ? row : best) : null
+  const regimeTone = regime?.label === 'Supportive' || regime?.label === 'Neutral-Supportive' ? 'positive' : regime?.label === 'Restrictive' || regime?.label === 'Neutral-Restrictive' ? 'negative' : 'neutral'
+  return (
+    <div className="sentiment-strip" aria-label="Market sentiment at a glance">
+      <div className="sentiment-pill">
+        <span className={`sentiment-dot ${regimeTone}`} aria-hidden="true" />
+        <div><small>Macro regime</small><b>{regime?.label || 'Pending'}</b></div>
+      </div>
+      {leader && <div className="sentiment-pill">
+        <div><small>Research leader</small><b>{leader.ticker} · {leader.score}</b></div>
+      </div>}
+      {topMover && <div className="sentiment-pill">
+        <div><small>Top mover</small><b className={topMover.dayChange >= 0 ? 'positive' : 'negative'}>{topMover.ticker} {topMover.dayChange >= 0 ? '+' : ''}{topMover.dayChange.toFixed(1)}%</b></div>
+      </div>}
+      <div className="sentiment-pill">
+        <div><small>Universe</small><b>{rows.length} names</b></div>
+      </div>
+    </div>
+  )
+}
+
 function ScoreCard({ label, result, note }) {
-  return <article className="report-score-card"><div className="score-orbit" style={{ '--score': result?.score || 0 }}><strong>{result?.available ? result.score : '–'}</strong><span>/100</span></div><div><h3>{label}</h3><p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p>{result?.provisional && <span className="provisional-badge">Provisional</span>}</div></article>
+  return <article className="report-score-card"><ScoreGauge score={result?.score || 0} available={result?.available} label={label} provisional={result?.provisional} reason={result?.reason} /><div><h3>{label}</h3><p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p></div></article>
 }
 
 function DirectionPill({ value, children }) {
@@ -102,14 +131,14 @@ function DashboardWidget({ id, widgets, children }) {
   return <div className={`dashboard-widget dashboard-widget-${id}`} style={{ order: widget.order }}>{children}</div>
 }
 
-function FocusedScreenCard({ title, kicker, note, rows, metric, loading, to }) {
-  return <article className="report-screen-card">
+function FocusedScreenCard({ title, kicker, note, rows, metric, loading, to, style }) {
+  return <article className="report-screen-card" style={style}>
     <header><div><span>{kicker}</span><h3>{title}</h3></div><small>{note}</small></header>
     <div className="report-screen-list">
       {loading ? <div className="report-inline-loading" role="status">Loading this screen on the Report…</div>
         : rows.length ? rows.map((row, index) => {
           const detail = metric(row)
-          return <div key={row.ticker}><span className="screen-rank">#{index + 1}</span><span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span><span className="report-screen-metric"><small>{detail.label}</small><Move pct={detail.value} /></span></div>
+          return <div key={row.ticker}><CompanyLogo company={row} size={28} /><span className="screen-rank">#{index + 1}</span><span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span><span className="report-screen-metric"><small>{detail.label}</small><Move pct={detail.value} /></span></div>
         })
           : <div className="report-inline-loading">No name clears this screen in the latest report.</div>}
     </div>
@@ -333,7 +362,7 @@ export default function Dashboard() {
     <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={pullRefreshing} />
     {customize && <Customizer widgets={draftWidgets} onChange={setDraftWidgets} onDone={saveCustomization} />}
     <header className="page-head report-head">
-      <div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)}</span><h1 className="page-title">Financial Report</h1><p className="page-sub">Your portfolio, explained with traceable daily-close data.</p></div>
+      <div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)}</span><h1 className="page-title">Portfolio Overview</h1><p className="page-sub">Traceable daily-close analytics</p></div>
       <div className="report-head-actions">
         {currentUser && <button type="button" className="secondary-button home-universe-refresh" onClick={universeRefresh.requestFullRefresh} disabled={universeRefresh.refreshing}
           title="Rebuild research for the complete covered universe">
@@ -374,6 +403,7 @@ export default function Dashboard() {
             {portfolioQuotes.refreshing ? 'Checking Yahoo…' : 'Refresh after-hours'}
           </button>
           {(portfolioQuotes.message || portfolioQuotes.error) && <span className={`after-hours-message ${portfolioQuotes.error ? 'negative' : 'positive'}`} role="status" aria-live="polite">{portfolioQuotes.error || portfolioQuotes.message}</span>}
+          {chartSelection.series?.values?.length > 1 && <Sparkline values={chartSelection.series.values.slice(-30)} height={40} className="hero-sparkline" />}
           <small>{portfolio.positions.length} holdings · {Math.round(portfolio.coveragePct)}% price coverage</small>
         </article>
         <Metric label="Today’s return" value={today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))}` : '–'} note={`${signedPct(today?.returnPct)} close-to-close through ${today?.date || 'unavailable'}`} tone={tone(today?.dollarReturn)} />
@@ -383,7 +413,7 @@ export default function Dashboard() {
 
       <div className="report-secondary-facts"><Metric label="Total unrealized return" value={portfolio.gain == null ? '–' : `${portfolio.gain >= 0 ? '+' : '−'}${money(Math.abs(portfolio.gain))}`} note={`${signedPct(portfolio.gainPct)} versus entered per-share cost basis`} tone={tone(portfolio.gain)} /><Metric label="Invested cost basis" value={money(portfolio.totalCost)} note="Shares × entered per-share cost" /></div>
 
-      <section className="card insights-recap dashboard-pulse" aria-labelledby="dashboard-pulse-title">
+      <section className={`card insights-recap dashboard-pulse mood-${mood.emoji === '🟢' || mood.emoji === '🚀' ? 'positive' : mood.emoji === '🔴' || mood.emoji === '⚠️' ? 'negative' : 'neutral'}`} aria-labelledby="dashboard-pulse-title">
         <div className="insights-mood">
           <span className="insights-mood-emoji" aria-hidden="true">{mood.emoji}</span>
           <div>
@@ -450,11 +480,15 @@ export default function Dashboard() {
               Concentrated in one or two sectors means the portfolio moves with that sector's fate -
               see Diversification for the full look-through breakdown including ETF holdings.</p>
           </InfoTag>
-        </h2></div><Link to="/portfolio/diversification">Full analysis →</Link></header><div>{sectorAllocation.map((item) => <article key={item.sector}><div><strong>{item.sector}</strong><span>{item.pct.toFixed(1)}%</span></div><i aria-hidden="true"><span style={{ width: `${item.pct}%` }} /></i><small>{money(item.value)}</small></article>)}</div></section>
+        </h2></div><Link to="/portfolio/diversification">Full analysis →</Link></header>
+        <div className="allocation-split">
+          <AllocationDonut sectors={sectorAllocation} totalLabel={money(portfolio.totalValue)} />
+          <div className="allocation-bars">{sectorAllocation.map((item) => <article key={item.sector}><div><strong>{item.sector}</strong><span>{item.pct.toFixed(1)}%</span></div><i aria-hidden="true"><span style={{ width: `${item.pct}%` }} /></i><small>{money(item.value)}</small></article>)}</div>
+        </div></section>
       </DashboardWidget>
 
       <DashboardWidget id="top-signal" widgets={preferences.widgets}>
-        <article className="signal-preview"><header><div><span className="eyebrow">Top signal</span><h2>Research leader</h2></div><Tier label={leader.stance} /></header><div className="signal-company"><CompanyLogo company={leader} size={48} /><div><strong>{leader.ticker}</strong><span>{leader.name}</span></div><b>{leader.score}/100</b></div><p>{leader.strengths?.[0] || 'Highest-scoring published company in the latest evidence run.'}</p><Link to="/research">Open research →</Link></article>
+        <article className="signal-preview"><header><div><span className="eyebrow">Top signal</span><h2>Research leader</h2></div><Tier label={leader.stance} /></header><div className="signal-company"><CompanyLogo company={leader} size={48} /><div><strong>{leader.ticker}</strong><span>{leader.name}</span></div><b>{leader.score}/100</b></div>{leader.sparkline && <Sparkline values={leader.sparkline} height={48} className="signal-sparkline" />}<p>{leader.strengths?.[0] || 'Highest-scoring published company in the latest evidence run.'}</p><Link to="/research">Open research →</Link></article>
       </DashboardWidget>
 
       <DashboardWidget id="action-needed" widgets={preferences.widgets}>
@@ -462,7 +496,7 @@ export default function Dashboard() {
       </DashboardWidget>
 
       <DashboardWidget id="watchlist-preview" widgets={preferences.widgets}>
-        <article className="watchlist-preview"><header><div><span className="eyebrow">Watchlist</span><h2>Names you follow</h2></div><Link to="/watchlist">View all</Link></header>{watchRows.length ? watchRows.map((row) => <div className="watch-preview-row" key={row.ticker}><CompanyLogo company={row} size={32} /><div><strong>{row.ticker}</strong><span>{row.name}</span></div><b>{row.score}</b></div>) : <p>No published watchlist matches yet.</p>}</article>
+        <article className="watchlist-preview"><header><div><span className="eyebrow">Watchlist</span><h2>Names you follow</h2></div><Link to="/watchlist">View all</Link></header>{watchRows.length ? watchRows.map((row) => <div className="watch-preview-row" key={row.ticker}><CompanyLogo company={row} size={32} /><div><strong>{row.ticker}</strong><span>{row.name}</span></div>{row.sparkline && <Sparkline values={row.sparkline} height={28} className="watch-sparkline" />}<span className="watch-row-stats"><b>{row.score}</b>{row.dayChange != null && <Move pct={row.dayChange} />}</span></div>) : <p>No published watchlist matches yet.</p>}</article>
       </DashboardWidget>
       </div>
 
@@ -474,11 +508,13 @@ export default function Dashboard() {
 
     <BuyingTheDipChart rows={dipRows} />
 
+    <MarketSentimentStrip rows={rows} macro={data?.market?.macro} />
     <MarketPulsePreview data={data} loading={loading} />
+    <MarketHeatmap rows={rows} />
 
     <section className="report-focused-screens" aria-labelledby="focused-screens-title">
       <header className="section-heading"><div><span className="eyebrow">Focused breakdown</span><h2 id="focused-screens-title">Fast growth, value, momentum, reversals, and ETFs</h2></div><Link to="/research">All research →</Link></header>
-      <div className="report-screen-grid">{focusedScreens.map((screen) => <FocusedScreenCard key={screen.kicker} {...screen} />)}</div>
+      <div className="report-screen-grid">{focusedScreens.map((screen, index) => <FocusedScreenCard key={screen.kicker} {...screen} style={{ '--i': index }} />)}</div>
       <p className="screen-disclaimer">Research screens, not trade instructions. Confirm current prices, liquidity, news, and your own risk limits before acting.</p>
     </section>
 

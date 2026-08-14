@@ -141,7 +141,14 @@ function RollingSharpeChart({ statistics }) {
     <section className="rolling-sharpe" aria-labelledby="rolling-sharpe-title">
       <header><div><span className="eyebrow">Stability</span><h2 id="rolling-sharpe-title">Rolling 60-day Sharpe</h2></div><small>{series.length} rolling windows</small></header>
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Rolling 60-day Sharpe chart">
+        <defs>
+          <linearGradient id="rolling-sharpe-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="var(--brand-primary)" stopOpacity=".18" />
+            <stop offset="1" stopColor="var(--brand-primary)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
         <line x1="0" x2="100" y1={zeroY} y2={zeroY} />
+        <polygon className="rolling-sharpe-fill" points={`${points} ${series.length === 1 ? '50' : '100'},100 0,100`} fill="url(#rolling-sharpe-grad)" />
         <polyline points={points} />
       </svg>
     </section>
