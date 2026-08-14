@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 45,
+  "refreshes_observed": 46,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -9032,6 +9032,147 @@
           ],
           "score_delta": -13.3,
           "confidence_delta": 0.48
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-14T05:03:55.716953+00:00",
+      "current_refresh": "advisor-2026-08-14T12:19:52.653192+00:00",
+      "shared_tickers": 881,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 112,
+      "tickers_with_availability_driven_change_pct": 0.127,
+      "mean_abs_score_delta": 8.04,
+      "mean_abs_confidence_delta": 0.04,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "TOL",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 23.3,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "WAT",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 23.0,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "TPR",
+          "metrics_with_value_change": [
+            "forward_pe",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 22.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WEN",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 22.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 22.3,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "SLM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 22.1,
+          "confidence_delta": 0.0
+        },
+        {
+          "ticker": "RYN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "sales_multiple"
+          ],
+          "score_delta": 22.0,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "MCHP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 21.2,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "ZTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 20.1,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "TRMB",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "forward_pe",
+            "peg",
+            "price_to_book"
+          ],
+          "score_delta": 19.0,
+          "confidence_delta": -0.06
         }
       ]
     }

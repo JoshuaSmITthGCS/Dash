@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-14T05:08:49.788958+00:00",
+  "generated_at": "2026-08-14T12:26:11.681567+00:00",
   "groups": [
     {
       "id": "signal",
@@ -69,7 +69,7 @@
   ],
   "live_sample": {
     "days": 10,
-    "refreshes": 47,
+    "refreshes": 48,
     "first_date": "2026-08-05",
     "last_date": "2026-08-14"
   },
@@ -767,11 +767,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 2,
+      "observations": 3,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-14T05:03:55.716953+00:00",
+        "as_of": "2026-08-14T12:19:52.653192+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -830,6 +830,24 @@
           },
           {
             "as_of": "2026-08-14T05:03:55.716953+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2164,
+              "financial_services": 0.4776,
+              "healthcare": -0.091,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-08-14T12:19:52.653192+00:00",
             "active_sector_weights": {
               "basic_materials": 0.0338,
               "communication_services": -0.0991,
@@ -2171,7 +2189,7 @@
         "status": "ready",
         "value": 2,
         "date": "2026-08-14",
-        "refresh_id": "advisor-2026-08-14T05:03:55.716953+00:00",
+        "refresh_id": "advisor-2026-08-14T12:19:52.653192+00:00",
         "rows": 881,
         "missing_prices": 2,
         "missing_price_tickers": [
@@ -2190,7 +2208,7 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-08-14T05:03:55.172681+00:00"
+          "observed_at": "2026-08-14T12:19:48.460556+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -2244,8 +2262,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "85976ad2fb0ac7586e9f5729ef543d80d7e8f819",
+    "git_commit_sha": "4c00e51371c38d5b929f1290818230e794918c88",
     "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
-    "generated_at": "2026-08-14T05:08:49.788958+00:00"
+    "generated_at": "2026-08-14T12:26:11.681567+00:00"
   }
 }
