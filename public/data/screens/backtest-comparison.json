@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "model_version": "backtest-comparison-v1.0.0",
-  "generated_at": "2026-08-14T01:46:58.033752+00:00",
+  "generated_at": "2026-08-14T12:25:59.691692+00:00",
   "status": "success",
   "methods_total": 15,
   "methods_measured": 14,
@@ -35,26 +35,26 @@
       "source": "pipeline/backtest_monthly_results.json",
       "status": "measured",
       "status_detail": null,
-      "generated_at": "2026-08-03T06:46:54.135869Z",
-      "window_start": "2021-08-02",
-      "window_end": "2026-07-31",
-      "total_return_pct": 69.4781,
-      "cagr_pct": 11.1423,
-      "sharpe": 0.6443,
-      "max_drawdown_pct": -27.0313,
-      "annualized_volatility_pct": 19.4319,
-      "turnover": 38.949437,
-      "benchmark_total_return_pct": 82.472,
-      "benchmark_cagr_pct": 12.7986,
-      "excess_return_pct": -12.9939,
+      "generated_at": "2026-08-14T04:28:10.514429Z",
+      "window_start": "2021-09-01",
+      "window_end": "2026-08-13",
+      "total_return_pct": 104.9975,
+      "cagr_pct": 15.6149,
+      "sharpe": 0.9205,
+      "max_drawdown_pct": -18.9802,
+      "annualized_volatility_pct": 17.5384,
+      "turnover": 30.482077,
+      "benchmark_total_return_pct": 84.0314,
+      "benchmark_cagr_pct": 13.1209,
+      "excess_return_pct": 20.9661,
       "time_invested_pct": 100.0,
       "excess_return_withheld_reason": null,
-      "success_rate": 0.65,
+      "success_rate": 0.5833,
       "success_rate_basis": "rebalance_periods_positive",
       "beat_benchmark_rate": 0.5333,
       "periods_measured": 60,
       "periods_in_cash": 0,
-      "unique_names_held": 397,
+      "unique_names_held": 353,
       "cost_bps_one_way": 10.0,
       "caveats": [
         "Survivorship bias: the universe is today's candidate list walked backward."
@@ -155,7 +155,7 @@
       "source": "pipeline/backtest_political_institutional_results.json",
       "status": "insufficient_disclosure_history",
       "status_detail": "1 of 60 monthly rebalances carried at least one qualifying disclosure. Below 12 the return series is a coverage measurement, not a performance measurement, and no annualized figure derived from it should be quoted.",
-      "generated_at": "2026-08-14T01:46:57.733229Z",
+      "generated_at": "2026-08-14T12:25:59.389891Z",
       "window_start": "2021-09-01",
       "window_end": "2026-08-13",
       "total_return_pct": 1.2997,
@@ -258,19 +258,19 @@
       "source": "public/data/screens/options-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:44:36.535465+00:00",
+      "generated_at": "2026-08-14T12:23:25.741055+00:00",
       "window_start": null,
       "window_end": null,
       "total_return_pct": -100.0,
-      "cagr_pct": -8.86,
-      "sharpe": 0.185,
-      "deflated_sharpe": 0.9525,
+      "cagr_pct": -10.3,
+      "sharpe": 0.163,
+      "deflated_sharpe": 0.8955,
       "max_drawdown_pct": -100.0,
-      "success_rate": 0.3292,
+      "success_rate": 0.3287,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 11612,
-      "average_pnl_per_trade": 6.36,
+      "average_pnl_per_trade": 5.56,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -289,19 +289,19 @@
       "source": "public/data/screens/short-term-trades-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:45:04.926825+00:00",
+      "generated_at": "2026-08-14T12:23:56.587014+00:00",
       "window_start": null,
       "window_end": null,
       "total_return_pct": -100.0,
-      "cagr_pct": -2.66,
-      "sharpe": 0.115,
-      "deflated_sharpe": 0.9732,
+      "cagr_pct": -3.19,
+      "sharpe": 0.102,
+      "deflated_sharpe": 0.934,
       "max_drawdown_pct": -100.0,
-      "success_rate": 0.584,
+      "success_rate": 0.5823,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 34836,
-      "average_pnl_per_trade": 12.3,
+      "average_pnl_per_trade": 10.75,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -320,19 +320,19 @@
       "source": "public/data/screens/covered-calls-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:44:43.000894+00:00",
+      "generated_at": "2026-08-14T12:23:33.633957+00:00",
       "window_start": null,
       "window_end": null,
-      "total_return_pct": 752.26,
-      "cagr_pct": 0.97,
-      "sharpe": 0.591,
+      "total_return_pct": 719.39,
+      "cagr_pct": 0.95,
+      "sharpe": 0.573,
       "deflated_sharpe": 1.0,
       "max_drawdown_pct": -6.32,
-      "success_rate": 0.6203,
+      "success_rate": 0.6177,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 11612,
-      "average_pnl_per_trade": 29.71,
+      "average_pnl_per_trade": 26.69,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -351,19 +351,19 @@
       "source": "public/data/screens/cash-secured-puts-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:44:48.504310+00:00",
+      "generated_at": "2026-08-14T12:23:39.223441+00:00",
       "window_start": null,
       "window_end": null,
-      "total_return_pct": 63.87,
-      "cagr_pct": 0.22,
-      "sharpe": 0.226,
-      "deflated_sharpe": 0.9548,
-      "max_drawdown_pct": -9.4,
-      "success_rate": 0.8025,
+      "total_return_pct": 58.09,
+      "cagr_pct": 0.21,
+      "sharpe": 0.207,
+      "deflated_sharpe": 0.927,
+      "max_drawdown_pct": -9.02,
+      "success_rate": 0.8005,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 11612,
-      "average_pnl_per_trade": 0.81,
+      "average_pnl_per_trade": 0.0,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -382,19 +382,19 @@
       "source": "public/data/screens/protective-puts-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:44:53.899571+00:00",
+      "generated_at": "2026-08-14T12:23:44.696108+00:00",
       "window_start": null,
       "window_end": null,
-      "total_return_pct": 1514.53,
+      "total_return_pct": 1517.52,
       "cagr_pct": 1.27,
-      "sharpe": 0.601,
+      "sharpe": 0.592,
       "deflated_sharpe": 1.0,
       "max_drawdown_pct": -8.44,
-      "success_rate": 0.5192,
+      "success_rate": 0.5145,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
-      "periods_measured": 2687,
-      "average_pnl_per_trade": 193.4,
+      "periods_measured": 2686,
+      "average_pnl_per_trade": 183.92,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -413,19 +413,19 @@
       "source": "public/data/screens/collars-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:44:55.699422+00:00",
+      "generated_at": "2026-08-14T12:23:47.074239+00:00",
       "window_start": null,
       "window_end": null,
-      "total_return_pct": 259.1,
-      "cagr_pct": 0.58,
-      "sharpe": 0.521,
+      "total_return_pct": 243.57,
+      "cagr_pct": 0.56,
+      "sharpe": 0.5,
       "deflated_sharpe": 1.0,
       "max_drawdown_pct": -5.84,
-      "success_rate": 0.5795,
+      "success_rate": 0.5756,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
-      "periods_measured": 2687,
-      "average_pnl_per_trade": 75.22,
+      "periods_measured": 2686,
+      "average_pnl_per_trade": 65.6,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -444,19 +444,19 @@
       "source": "public/data/screens/vertical-spreads-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:44:57.854254+00:00",
+      "generated_at": "2026-08-14T12:23:49.262535+00:00",
       "window_start": null,
       "window_end": null,
       "total_return_pct": -99.98,
-      "cagr_pct": -3.73,
-      "sharpe": -0.044,
-      "deflated_sharpe": 0.0172,
+      "cagr_pct": -3.88,
+      "sharpe": -0.051,
+      "deflated_sharpe": 0.0133,
       "max_drawdown_pct": -100.0,
       "success_rate": 0.3444,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 2689,
-      "average_pnl_per_trade": -21.93,
+      "average_pnl_per_trade": -22.4,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -475,19 +475,19 @@
       "source": "public/data/screens/advanced-strategies-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:45:00.037307+00:00",
+      "generated_at": "2026-08-14T12:23:51.575079+00:00",
       "window_start": null,
       "window_end": null,
       "total_return_pct": -100.0,
-      "cagr_pct": -4.84,
-      "sharpe": -0.534,
+      "cagr_pct": -5.0,
+      "sharpe": -0.549,
       "deflated_sharpe": 0.0,
       "max_drawdown_pct": -100.0,
-      "success_rate": 0.638,
+      "success_rate": 0.6376,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 2580,
-      "average_pnl_per_trade": -24.69,
+      "average_pnl_per_trade": -27.94,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -506,19 +506,19 @@
       "source": "public/data/screens/advanced-strategies-backtest.json",
       "note": "Simulated option pricing: entry legs are Black-Scholes estimates from trailing realized volatility, not quoted historical prices.",
       "status": "measured",
-      "generated_at": "2026-08-14T01:45:00.037307+00:00",
+      "generated_at": "2026-08-14T12:23:51.575079+00:00",
       "window_start": null,
       "window_end": null,
-      "total_return_pct": 32901361.89,
-      "cagr_pct": 5.92,
-      "sharpe": 0.426,
+      "total_return_pct": 79860730.32,
+      "cagr_pct": 6.35,
+      "sharpe": 0.444,
       "deflated_sharpe": 1.0,
-      "max_drawdown_pct": -68.2,
-      "success_rate": 0.457,
+      "max_drawdown_pct": -66.24,
+      "success_rate": 0.4552,
       "success_rate_basis": "trades_profitable",
       "beat_benchmark_rate": null,
       "periods_measured": 2687,
-      "average_pnl_per_trade": 62.53,
+      "average_pnl_per_trade": 72.65,
       "universe_tickers": 125,
       "caveats": [
         "Option entry prices are modeled, not quoted; spreads, open interest and fill quality are not simulated."
@@ -533,9 +533,9 @@
       "method_labels": [
         "Research score, top 20 monthly"
       ],
-      "mean_success_rate": 0.65,
-      "minimum_success_rate": 0.65,
-      "maximum_success_rate": 0.65
+      "mean_success_rate": 0.5833,
+      "minimum_success_rate": 0.5833,
+      "maximum_success_rate": 0.5833
     },
     {
       "feature": "growth",
@@ -544,9 +544,9 @@
       "method_labels": [
         "Research score, top 20 monthly"
       ],
-      "mean_success_rate": 0.65,
-      "minimum_success_rate": 0.65,
-      "maximum_success_rate": 0.65
+      "mean_success_rate": 0.5833,
+      "minimum_success_rate": 0.5833,
+      "maximum_success_rate": 0.5833
     },
     {
       "feature": "price momentum",
@@ -555,9 +555,9 @@
       "method_labels": [
         "Research score, top 20 monthly"
       ],
-      "mean_success_rate": 0.65,
-      "minimum_success_rate": 0.65,
-      "maximum_success_rate": 0.65
+      "mean_success_rate": 0.5833,
+      "minimum_success_rate": 0.5833,
+      "maximum_success_rate": 0.5833
     },
     {
       "feature": "quality",
@@ -566,9 +566,9 @@
       "method_labels": [
         "Research score, top 20 monthly"
       ],
-      "mean_success_rate": 0.65,
-      "minimum_success_rate": 0.65,
-      "maximum_success_rate": 0.65
+      "mean_success_rate": 0.5833,
+      "minimum_success_rate": 0.5833,
+      "maximum_success_rate": 0.5833
     },
     {
       "feature": "valuation",
@@ -577,9 +577,9 @@
       "method_labels": [
         "Research score, top 20 monthly"
       ],
-      "mean_success_rate": 0.65,
-      "minimum_success_rate": 0.65,
-      "maximum_success_rate": 0.65
+      "mean_success_rate": 0.5833,
+      "minimum_success_rate": 0.5833,
+      "maximum_success_rate": 0.5833
     },
     {
       "feature": "52-week proximity",
@@ -640,9 +640,9 @@
         "Straddle",
         "Vertical spread"
       ],
-      "mean_success_rate": 0.5416,
-      "minimum_success_rate": 0.3292,
-      "maximum_success_rate": 0.8025
+      "mean_success_rate": 0.5396,
+      "minimum_success_rate": 0.3287,
+      "maximum_success_rate": 0.8005
     },
     {
       "feature": "price momentum",
@@ -659,9 +659,9 @@
         "Straddle",
         "Vertical spread"
       ],
-      "mean_success_rate": 0.5416,
-      "minimum_success_rate": 0.3292,
-      "maximum_success_rate": 0.8025
+      "mean_success_rate": 0.5396,
+      "minimum_success_rate": 0.3287,
+      "maximum_success_rate": 0.8005
     },
     {
       "feature": "realized volatility",
@@ -678,9 +678,9 @@
         "Straddle",
         "Vertical spread"
       ],
-      "mean_success_rate": 0.5416,
-      "minimum_success_rate": 0.3292,
-      "maximum_success_rate": 0.8025
+      "mean_success_rate": 0.5396,
+      "minimum_success_rate": 0.3287,
+      "maximum_success_rate": 0.8005
     },
     {
       "feature": "52-week proximity",
@@ -729,8 +729,8 @@
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "9436d31a4ae16bfc32947ec2a20bb4daf0bb53b5",
+    "git_commit_sha": "4c00e51371c38d5b929f1290818230e794918c88",
     "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
-    "generated_at": "2026-08-14T01:46:58.033752+00:00"
+    "generated_at": "2026-08-14T12:25:59.691692+00:00"
   }
 }
