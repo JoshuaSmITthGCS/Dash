@@ -26,8 +26,8 @@ import { rankBreakoutInProgress, rankBuyingTheDip, rankGrowingEtfs, rankMomentum
 import BuyingTheDipChart from '../components/BuyingTheDipChart.jsx'
 import {
   actualRecordedValueSeries,
-  intradayRecordedValueSeries,
   PORTFOLIO_HISTORY_LABELS,
+  recordedValueSeriesForPeriod,
   selectPortfolioHistorySeries,
 } from '../lib/portfolioPerformance.js'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
@@ -107,6 +107,17 @@ function HomePortfolioPanel({
   fetchedAt,
 }) {
   const [holdingsSort, setHoldingsSort] = useState('day')
+  const resolutionNote = chart?.frequency === 'five-minute'
+    ? 'Every five-minute cloud recording is shown for the latest trading day.'
+    : chart?.frequency === 'daily-average'
+      ? 'Each point averages that trading day’s five-minute recordings.'
+      : chart?.frequency === 'weekly-average'
+        ? 'Each point averages the recorded trading days in that market week.'
+        : chart?.frequency === 'monthly-average'
+          ? 'Each point averages the recorded trading days in that month.'
+          : period === '1D'
+            ? 'Five-minute cloud history is still accumulating; the latest historical fallback is shown.'
+            : 'Historical values use saved closes until enough cloud snapshots accumulate.'
   const ranked = positions.map((position) => ({ ...position, move: dailyMoveForPosition(position) }))
     .sort((left, right) => holdingsSort === 'allocation'
       ? (right.allocationPct ?? -Infinity) - (left.allocationPct ?? -Infinity)
@@ -124,7 +135,7 @@ function HomePortfolioPanel({
         </div>
       </header>
       {chart ? <GrowthChart className="home-primary-chart" height={360} width={920} dates={chart.dates} series={[{ label: chartLabel, values: chart.values, color: 'var(--series-stock)', emphasis: true }]} valueFormatter={money} caption={chart.methodology} /> : <div className="unavailable-panel"><strong>{period} history is still building</strong><p>Two saved portfolio observations are needed to draw this range.</p></div>}
-      <footer><span><i aria-hidden="true" />{chartLabel}</span><small>{period === '1D' ? 'Prices refresh every 5 minutes while this tab is visible.' : 'Historical values use saved closes.'}{fetchedAt ? ` Last quote ${new Date(fetchedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}.` : ''}</small></footer>
+      <footer><span><i aria-hidden="true" />{chartLabel}</span><small>{resolutionNote}{fetchedAt ? ` Last quote ${new Date(fetchedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}.` : ''}</small></footer>
     </article>
 
     <aside className="home-top-holdings">
@@ -267,12 +278,15 @@ export default function Dashboard() {
   }).filter(Boolean)
   const comparison = effectiveChartMode === 'backtest' ? compareBenchmarkSeries(selected, selectedBenchmarkSeries) : null
   const chartedPortfolio = comparison?.portfolio || selected
-  const intradaySeries = intradayRecordedValueSeries(tracking.snapshots)
-  const homeChart = period === '1D' && intradaySeries
-    ? selectPeriod(intradaySeries, 'All')
+  const recordedZoomSeries = recordedValueSeriesForPeriod(tracking.snapshots, period)
+  const homeChart = recordedZoomSeries
+    ? selectPeriod(recordedZoomSeries, 'All')
     : chartedPortfolio
-  const homeChartLabel = period === '1D' && intradaySeries
-    ? 'Intraday recorded value'
+  const homeChartLabel = recordedZoomSeries
+    ? period === '1D' ? 'Five-minute recorded value'
+      : period === '1W' || period === '1M' ? 'Average value by trading day'
+        : period === '3M' ? 'Average value by market week'
+          : 'Average value by month'
     : PORTFOLIO_HISTORY_LABELS[effectiveChartMode]
   const today = latestMarketDayReturn(holdingsSeries)
   // Prefer each holding's live price vs. its own previousClose (real-time, updates on every

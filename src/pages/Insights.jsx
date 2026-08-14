@@ -12,7 +12,7 @@ import {
   diversificationScore, enrichPortfolio, latestMarketDayReturn, portfolioReturnSummary,
 } from '../lib/portfolioAnalytics.js'
 import {
-  alignForChart, beatMarketStreak, benchmarkShadowPortfolio, detectMilestones,
+  alignManyForChart, beatMarketStreak, benchmarkShadowPortfolio, detectMilestones,
   holdingsVsBenchmark, portfolioMood, purchaseTimingSignal, snapshotDailySeries, tradeStats, valueStreak,
 } from '../lib/traderInsights.js'
 import { Loading, Empty } from '../components/Bits.jsx'
@@ -21,6 +21,12 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import InfoTag from '../components/InfoTag.jsx'
 
 const moveColor = (value) => value == null ? 'var(--text-faint)' : value >= 0 ? 'var(--up)' : 'var(--down)'
+const MARKET_DESTINATIONS = [
+  { symbol: 'SPY', label: 'S&P 500', color: 'var(--series-benchmark)', dashPattern: '7 4' },
+  { symbol: 'QQQ', label: 'Nasdaq-100', color: 'var(--series-benchmark-2)', dashPattern: '3 3' },
+  { symbol: 'DIA', label: 'Dow Jones', color: 'var(--series-benchmark-3)', dashPattern: '9 3 2 3' },
+  { symbol: 'IWM', label: 'Russell 2000', color: 'var(--series-cash)', dashPattern: '2 4' },
+]
 
 function latestMove(history) {
   const values = history?.closes || []
@@ -35,10 +41,11 @@ export default function Insights() {
   const { currentUser } = useAuth()
   const { preferences } = usePreferences()
   const { data: benchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark}.json`)
+  const { data: benchmarkReport, loading: benchmarkReportLoading } = useData('benchmark-report.json')
   const { data: etfData } = useData('etfs.json')
   const [shareStatus, setShareStatus] = useState('')
 
-  if (loading || portfolioLoading || !currentUser) return <Loading />
+  if (loading || portfolioLoading || benchmarkReportLoading || !currentUser) return <Loading />
   if (!positions.length) return <Empty note="Add portfolio holdings to see how you're doing versus the market and as a trader." />
 
   const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
@@ -54,8 +61,15 @@ export default function Insights() {
   const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
 
   const actualDaily = snapshotDailySeries(tracking.snapshots)
-  const shadow = benchmarkHistory ? benchmarkShadowPortfolio(tracking.activities, benchmarkHistory) : { available: false }
-  const chartAligned = shadow.available ? alignForChart(actualDaily, shadow) : null
+  const marketShadows = MARKET_DESTINATIONS.map((destination) => {
+    const published = benchmarkReport?.histories?.[destination.symbol]
+    const history = published
+      ? { ...published, symbol: destination.symbol }
+      : destination.symbol === preferences.defaultBenchmark ? benchmarkHistory : null
+    const shadow = history ? benchmarkShadowPortfolio(tracking.activities, history) : { available: false }
+    return shadow.available ? { ...destination, ...shadow } : null
+  }).filter(Boolean)
+  const chartAligned = alignManyForChart(actualDaily, marketShadows)
 
   const beatStreak = benchmarkHistory ? beatMarketStreak(tracking.snapshots, benchmarkHistory) : { available: false }
   const greenStreak = valueStreak(tracking.snapshots)
@@ -128,12 +142,12 @@ export default function Insights() {
     </section>
 
     <section className="report-section" aria-labelledby="vs-market-title">
-      <header className="section-heading"><div><span className="eyebrow">Same dollars, different destination</span><h2 id="vs-market-title">You vs. {benchmarkLabel}
-        <InfoTag label={`You vs. ${benchmarkLabel}`}>
-          <strong>You vs. {benchmarkLabel}</strong>
-          <p>Applies your actual deposit and withdrawal history to {benchmarkLabel} instead of your
-            real holdings - "same dollars, same timing, different destination." This isolates security
-            selection from your saving behavior, unlike a simple return percentage comparison.</p>
+      <header className="section-heading"><div><span className="eyebrow">Same dollars, different destination</span><h2 id="vs-market-title">You vs. the major indexes
+        <InfoTag label="You vs. the major indexes">
+          <strong>You vs. the major indexes</strong>
+          <p>Applies your actual deposit and withdrawal history to the S&amp;P 500, Nasdaq-100,
+            Dow Jones, and Russell 2000 instead of your real holdings. Every line uses the same
+            dollars and timing, isolating destination choice from saving behavior.</p>
         </InfoTag>
       </h2></div></header>
       {chartAligned
@@ -141,9 +155,14 @@ export default function Insights() {
             dates={chartAligned.dates}
             series={[
               { label: 'Your account', values: chartAligned.primaryValues, color: 'var(--accent)', emphasis: true },
-              { label: `${benchmarkLabel}, same deposits`, values: chartAligned.secondaryValues, color: 'var(--text-faint)', dashed: true },
+              ...marketShadows.map((shadow, index) => ({
+                label: `${shadow.label} (${shadow.symbol})`,
+                values: chartAligned.comparisonValues[index],
+                color: shadow.color,
+                dashPattern: shadow.dashPattern,
+              })),
             ]}
-            caption={`If every deposit and withdrawal had gone into ${benchmarkLabel} instead, that account would be worth ${money(shadow.finalValue)} today – you're at ${money(trackedAccountValue)}.`}
+            caption={`On the latest shared recording date, your account was ${money(chartAligned.primaryValues.at(-1))}. The same deposits and withdrawals would be ${marketShadows.map((shadow, index) => `${money(chartAligned.comparisonValues[index].at(-1))} in ${shadow.symbol}`).join(' · ')}.`}
             zoomable
           />
         : <div className="report-empty-state"><h2>Not enough history yet</h2><p>This chart needs dated deposits/withdrawals and a refreshed portfolio value on more than one day. Keep tracking cash flows and refreshing prices to build it out.</p></div>}

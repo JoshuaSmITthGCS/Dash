@@ -197,6 +197,15 @@ The browser sends a Firebase ID token to the Netlify function. The GitHub token 
 credential remain server-side. The function refuses duplicate runs and always dispatches
 `data-only`; Alpha Vantage can only be selected from the GitHub Actions manual form.
 
+Netlify also runs `portfolio-price-snapshots` every five minutes. During the regular U.S. market
+session it reads only saved portfolio positions, requests their current prices, and writes a
+complete account-value point to each user's private `intradaySnapshots` collection. It runs on the
+published production deploy even when no browser is open and uses the same server-only
+`FIREBASE_SERVICE_ACCOUNT_JSON` credential. A portfolio is skipped rather than storing a misleading
+partial value when any holding is unpriced.
+The chart keeps those raw points for its Today view, derives one average per trading day for Week
+and Month, then rolls daily averages into weekly points for 3 Months and monthly points for Year.
+
 See [Configure manual refresh on Netlify](docs/MANUAL_REFRESH_SETUP.md) for step-by-step instructions
 to create each value, add the variables safely, verify the live function, and troubleshoot errors.
 

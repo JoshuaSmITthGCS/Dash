@@ -39,6 +39,27 @@ export function alignForChart(primary, secondary) {
   }
 }
 
+// Aligns several same-dollar benchmark shadows to the dates on which the real account was
+// recorded. Requiring a common observation grid keeps the visual comparison one-to-one and
+// prevents daily benchmark points from creating gaps between sparser account observations.
+export function alignManyForChart(primary, comparisons = []) {
+  if (!primary?.dates?.length || !comparisons.length) return null
+  const comparisonMaps = comparisons.map((series) => new Map(
+    (series?.dates || []).map((date, index) => [date, series.values?.[index]]),
+  ))
+  const rows = primary.dates.map((date, index) => ({
+    date,
+    primary: primary.values?.[index],
+    comparisons: comparisonMaps.map((values) => values.get(date)),
+  })).filter((row) => finite(row.primary) && row.comparisons.every(finite))
+  if (rows.length < 2) return null
+  return {
+    dates: rows.map((row) => row.date),
+    primaryValues: rows.map((row) => Number(row.primary)),
+    comparisonValues: comparisons.map((_, index) => rows.map((row) => Number(row.comparisons[index]))),
+  }
+}
+
 // Replays the cash-flow ledger as if every deposit bought, and every withdrawal sold,
 // benchmark units at that day's close instead of touching the real portfolio. Gives an
 // apples-to-apples "same dollars, in the index instead" account value series.

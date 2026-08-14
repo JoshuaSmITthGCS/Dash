@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  alignForChart, beatMarketStreak, benchmarkShadowPortfolio, detectMilestones, holdingsVsBenchmark,
+  alignForChart, alignManyForChart, beatMarketStreak, benchmarkShadowPortfolio, detectMilestones, holdingsVsBenchmark,
   portfolioMood, purchaseTimingSignal, snapshotDailySeries, tradeStats, valueStreak,
 } from './traderInsights.js'
 
@@ -21,6 +21,19 @@ describe('snapshotDailySeries and alignForChart', () => {
     expect(aligned.dates).toEqual(['2026-01-01', '2026-01-02', '2026-01-03'])
     expect(aligned.primaryValues).toEqual([100, null, 120])
     expect(aligned.secondaryValues).toEqual([null, 50, 55])
+  })
+
+  it('aligns multiple index alternatives to the account recording dates', () => {
+    const primary = { dates: ['2026-01-01', '2026-01-03'], values: [100, 120] }
+    const indexes = [
+      { dates: ['2026-01-01', '2026-01-02', '2026-01-03'], values: [100, 102, 104] },
+      { dates: ['2026-01-01', '2026-01-02', '2026-01-03'], values: [100, 98, 101] },
+    ]
+    expect(alignManyForChart(primary, indexes)).toEqual({
+      dates: ['2026-01-01', '2026-01-03'],
+      primaryValues: [100, 120],
+      comparisonValues: [[100, 104], [100, 101]],
+    })
   })
 })
 

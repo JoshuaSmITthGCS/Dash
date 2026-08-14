@@ -51,6 +51,99 @@ export function actualRecordedValueSeries(snapshots = [], transactions = []) {
   }
 }
 
+const average = (values) => values.reduce((sum, value) => sum + value, 0) / values.length
+
+function weekStart(dateText) {
+  const date = new Date(`${dateText}T00:00:00Z`)
+  const weekday = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() - weekday + 1)
+  return date.toISOString().slice(0, 10)
+}
+
+function averageGroups(rows, keyForRow) {
+  const groups = new Map()
+  for (const row of rows) {
+    const key = keyForRow(row)
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row.value)
+  }
+  return [...groups].sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, values]) => ({ date, value: average(values) }))
+}
+
+function trailingCalendarDays(rows, days) {
+  if (!rows.length) return []
+  const end = Date.parse(rows.at(-1).date)
+  const cutoff = end - days * 24 * 60 * 60 * 1000
+  return rows.filter((row) => Date.parse(row.date) >= cutoff)
+}
+
+/**
+ * Display-resolution hierarchy for the cloud snapshot chart. Raw observations are never
+ * overwritten: Today shows every five-minute point, Week and Month give each market day one
+ * averaged point, 3 Months gives each week one point, and Year gives each month one point.
+ * Weekly/monthly values average the daily averages, so a day with an extra retry never receives
+ * more weight merely because it has more stored observations.
+ */
+export function recordedValueSeriesForPeriod(snapshots = [], period = '1D') {
+  const rows = snapshots
+    .filter((row) => row?.recordedAt && Number.isFinite(Number(row.value)))
+    .map((row) => ({
+      recordedAt: row.recordedAt,
+      marketDate: row.marketDate || String(row.recordedAt).slice(0, 10),
+      value: Number(row.value),
+    }))
+    .sort((left, right) => String(left.recordedAt).localeCompare(String(right.recordedAt)))
+  if (!rows.length) return null
+
+  if (period === '1D') {
+    const latestDate = rows.at(-1).marketDate
+    const points = rows.filter((row) => row.marketDate === latestDate)
+    if (points.length < 2) return null
+    return {
+      dates: points.map((row) => row.recordedAt),
+      values: points.map((row) => row.value),
+      frequency: 'five-minute',
+      source: 'firestore_portfolio_snapshots',
+      methodology: `${points.length} five-minute account-value observations recorded during ${latestDate}.`,
+    }
+  }
+
+  const daily = averageGroups(rows, (row) => row.marketDate)
+  let points
+  let frequency
+  let methodology
+  if (period === '1W') {
+    points = trailingCalendarDays(daily, 7)
+    frequency = 'daily-average'
+    methodology = 'Each point is the average of that trading day’s five-minute portfolio recordings during the trailing week.'
+  } else if (period === '1M') {
+    points = trailingCalendarDays(daily, 31)
+    frequency = 'daily-average'
+    methodology = 'Each point is the average of that trading day’s five-minute portfolio recordings during the trailing month.'
+  } else if (period === '3M') {
+    const trailing = trailingCalendarDays(daily, 93)
+    points = averageGroups(trailing.map((row) => ({ ...row, marketDate: row.date })), (row) => weekStart(row.marketDate))
+    frequency = 'weekly-average'
+    methodology = 'Each point averages the daily portfolio values within that market week during the trailing three months.'
+  } else if (period === '1Y') {
+    const trailing = trailingCalendarDays(daily, 366)
+    points = averageGroups(trailing.map((row) => ({ ...row, marketDate: row.date })), (row) => `${row.marketDate.slice(0, 7)}-01`)
+    frequency = 'monthly-average'
+    methodology = 'Each point averages the daily portfolio values within that month during the trailing year.'
+  } else {
+    return null
+  }
+  if (points.length < 2) return null
+  return {
+    dates: points.map((row) => row.date),
+    values: points.map((row) => row.value),
+    frequency,
+    source: 'firestore_portfolio_snapshots',
+    methodology,
+  }
+}
+
 /**
  * Every stored observation from the latest market date, preserving its timestamp instead of
  * collapsing the day to one close. This is display-only intraday account value: external cash
@@ -58,20 +151,8 @@ export function actualRecordedValueSeries(snapshots = [], transactions = []) {
  * into return statistics.
  */
 export function intradayRecordedValueSeries(snapshots = []) {
-  const rows = snapshots
-    .filter((row) => row?.recordedAt && Number.isFinite(Number(row.value)))
-    .sort((left, right) => String(left.recordedAt).localeCompare(String(right.recordedAt)))
-  if (!rows.length) return null
-  const latestMarketDate = rows.at(-1).marketDate || String(rows.at(-1).recordedAt).slice(0, 10)
-  const latest = rows.filter((row) => (row.marketDate || String(row.recordedAt).slice(0, 10)) === latestMarketDate)
-  if (latest.length < 2) return null
-  return {
-    dates: latest.map((row) => row.recordedAt),
-    values: latest.map((row) => Number(row.value)),
-    frequency: 'intraday',
-    source: 'firestore_portfolio_snapshots',
-    methodology: `Account values recorded during ${latestMarketDate}. ${latest.length} five-minute observations are available.`,
-  }
+  const series = recordedValueSeriesForPeriod(snapshots, '1D')
+  return series ? { ...series, frequency: 'intraday' } : null
 }
 
 export const PORTFOLIO_HISTORY_LABELS = {

@@ -246,7 +246,6 @@ export default function Portfolio() {
   const [cashForm, setCashForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
   const [cashSaving, setCashSaving] = useState(false)
   const [cashBalanceForm, setCashBalanceForm] = useState('')
-  const recordedSnapshot = useRef(null)
   const referenceCashFlowSyncStarted = useRef(false)
   const refresh = useAdvisorRefresh(
     data?.generated_at,
@@ -501,12 +500,6 @@ export default function Portfolio() {
   // Rendered once, outside both the mobile card list and the desktop table, so triggering a
   // sale from either (only one is visible at a given viewport width) still shows the sheet.
   const sellingPosition = sortedPositions.find((pos) => (pos.id || pos.ticker) === sellingId)
-
-  useEffect(() => {
-    if (!quoteRefreshIsNewest || !portfolioQuotes.fetchedAt || !portfolioStats.totalValue || recordedSnapshot.current === portfolioQuotes.fetchedAt) return
-    recordedSnapshot.current = portfolioQuotes.fetchedAt
-    tracking.recordSnapshot({ value: trackedAccountValue, coveragePct: positions.length ? portfolioStats.positions.filter((position) => position.currentValue != null).length / positions.length * 100 : 0, source: 'portfolio_price_refresh', recordedAt: portfolioQuotes.fetchedAt })
-  }, [portfolioQuotes.fetchedAt, quoteRefreshIsNewest, trackedAccountValue])
 
   // The supplied Fidelity cash history belongs with the supplied Fidelity holdings snapshot.
   // Import once, automatically, after that portfolio is connected; stable document IDs make it safe to retry.

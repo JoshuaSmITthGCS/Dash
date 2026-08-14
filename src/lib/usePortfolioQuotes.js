@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from './FirebaseAuthContext'
-
-export const PORTFOLIO_QUOTE_REFRESH_MS = 5 * 60 * 1000
 
 const storageKey = (userId) => `valuesignal.portfolioQuotes.${userId}`
 
@@ -88,42 +86,18 @@ export function usePortfolioQuotes(symbols) {
     }
   }
 
-  // Refresh immediately whenever the portfolio is opened or the user signs in, then every
-  // five minutes while the tab is visible. Each successful refresh is recorded by the page's
-  // portfolio-tracking effect, producing the denser intraday account-value line requested by
-  // the user. Pausing in a background tab avoids paying for quotes no one is looking at.
-  const requestRefreshRef = useRef(requestRefresh)
-  useEffect(() => { requestRefreshRef.current = requestRefresh })
-
   const tickerKey = [...new Set(symbols.map((symbol) => String(symbol || '').trim().toUpperCase()).filter(Boolean))]
     .sort().join(',')
 
+  // The production scheduler records five-minute cloud snapshots whether or not a browser
+  // is open. This one immediate request keeps the visible holding cards current on arrival;
+  // manual refresh remains available without creating a second browser-owned timer.
   useEffect(() => {
     if (!currentUser || !tickerKey) return undefined
-    let timer = null
-    const stop = () => {
-      if (timer) clearInterval(timer)
-      timer = null
-    }
-    const start = () => {
-      stop()
-      if (document.visibilityState === 'hidden') return
-      timer = setInterval(() => requestRefreshRef.current(), PORTFOLIO_QUOTE_REFRESH_MS)
-    }
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') stop()
-      else {
-        requestRefreshRef.current()
-        start()
-      }
-    }
-    requestRefreshRef.current()
-    start()
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => {
-      stop()
-      document.removeEventListener('visibilitychange', handleVisibility)
-    }
+    requestRefresh()
+    return undefined
+    // Ticker membership is the refresh boundary. requestRefresh itself changes identity as
+    // request state changes and intentionally must not restart this effect.
   }, [currentUser, tickerKey])
 
   return { ...state, requestRefresh }

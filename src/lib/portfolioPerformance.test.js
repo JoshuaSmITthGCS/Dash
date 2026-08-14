@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   intradayRecordedValueSeries,
+  recordedValueSeriesForPeriod,
   actualRecordedValueSeries,
   benchmarkAlternative,
   benchmarkCloseOn,
@@ -61,6 +62,50 @@ describe('intradayRecordedValueSeries', () => {
     expect(intradayRecordedValueSeries([
       { marketDate: '2026-08-13', recordedAt: '2026-08-13T14:35:00Z', value: 100 },
     ])).toBeNull()
+  })
+})
+
+describe('recordedValueSeriesForPeriod', () => {
+  const snapshots = [
+    { recordedAt: '2026-08-03T14:30:00.000Z', marketDate: '2026-08-03', value: 100 },
+    { recordedAt: '2026-08-03T14:35:00.000Z', marketDate: '2026-08-03', value: 110 },
+    { recordedAt: '2026-08-04T14:30:00.000Z', marketDate: '2026-08-04', value: 120 },
+    { recordedAt: '2026-08-04T14:35:00.000Z', marketDate: '2026-08-04', value: 140 },
+    { recordedAt: '2026-08-10T14:30:00.000Z', marketDate: '2026-08-10', value: 150 },
+    { recordedAt: '2026-08-10T14:35:00.000Z', marketDate: '2026-08-10', value: 170 },
+    { recordedAt: '2026-09-01T14:30:00.000Z', marketDate: '2026-09-01', value: 180 },
+    { recordedAt: '2026-09-01T14:35:00.000Z', marketDate: '2026-09-01', value: 200 },
+  ]
+
+  it('keeps every five-minute observation in the day view', () => {
+    const result = recordedValueSeriesForPeriod(snapshots, '1D')
+    expect(result.dates).toEqual(['2026-09-01T14:30:00.000Z', '2026-09-01T14:35:00.000Z'])
+    expect(result.values).toEqual([180, 200])
+    expect(result.frequency).toBe('five-minute')
+  })
+
+  it('shows one average for each trading day in week and month views', () => {
+    const week = recordedValueSeriesForPeriod(snapshots.slice(0, 6), '1W')
+    expect(week.dates).toEqual(['2026-08-03', '2026-08-04', '2026-08-10'])
+    expect(week.values).toEqual([105, 130, 160])
+    expect(week.frequency).toBe('daily-average')
+
+    const month = recordedValueSeriesForPeriod(snapshots, '1M')
+    expect(month.dates).toEqual(['2026-08-03', '2026-08-04', '2026-08-10', '2026-09-01'])
+    expect(month.values).toEqual([105, 130, 160, 190])
+  })
+
+  it('averages daily values into weekly and monthly zoom levels', () => {
+    const quarter = recordedValueSeriesForPeriod(snapshots, '3M')
+    expect(quarter.dates).toEqual(['2026-08-03', '2026-08-10', '2026-08-31'])
+    expect(quarter.values).toEqual([117.5, 160, 190])
+    expect(quarter.frequency).toBe('weekly-average')
+
+    const year = recordedValueSeriesForPeriod(snapshots, '1Y')
+    expect(year.dates).toEqual(['2026-08-01', '2026-09-01'])
+    expect(year.values[0]).toBeCloseTo(131.6667, 4)
+    expect(year.values[1]).toBe(190)
+    expect(year.frequency).toBe('monthly-average')
   })
 })
 
