@@ -161,8 +161,9 @@ function useSidebarCollapsed() {
 function AppContent() {
   const { currentUser, loading, authError, retryAuth, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
+  const portfolioPreview = import.meta.env.DEV && new URLSearchParams(search).get('portfolioPreview') === '1'
 
   useEffect(() => {
     const preload = () => {
@@ -179,7 +180,7 @@ function AppContent() {
 
   const cloudPage = (feature, pathname, page) => loading
     ? <RouteLoading pathname={pathname} />
-    : currentUser ? page : <CloudDataUnavailable feature={feature} />
+    : currentUser || (portfolioPreview && feature.startsWith('Portfolio')) ? page : <CloudDataUnavailable feature={feature} />
 
   return (
     <div className={`shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`} data-auth-resolving={loading ? 'true' : 'false'}>

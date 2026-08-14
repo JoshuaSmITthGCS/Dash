@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   intradayRecordedValueSeries,
+  recordedPerformanceSeriesForPeriod,
   recordedValueSeriesForPeriod,
   actualRecordedValueSeries,
   benchmarkAlternative,
@@ -106,6 +107,38 @@ describe('recordedValueSeriesForPeriod', () => {
     expect(year.values[0]).toBeCloseTo(131.6667, 4)
     expect(year.values[1]).toBe(190)
     expect(year.frequency).toBe('monthly-average')
+  })
+})
+
+describe('recordedPerformanceSeriesForPeriod', () => {
+  const snapshots = [
+    { recordedAt: '2026-08-13T14:30:00.000Z', marketDate: '2026-08-13', value: 100 },
+    { recordedAt: '2026-08-13T14:35:00.000Z', marketDate: '2026-08-13', value: 151 },
+    { recordedAt: '2026-08-13T14:40:00.000Z', marketDate: '2026-08-13', value: 148 },
+    { recordedAt: '2026-08-13T15:35:00.000Z', marketDate: '2026-08-13', value: 150 },
+  ]
+
+  it('removes deposits before chaining each five-minute gain or loss', () => {
+    const result = recordedPerformanceSeriesForPeriod(snapshots, [{
+      type: 'deposit', amount: 50, effectiveDate: '2026-08-13', recordedAt: '2026-08-13T14:32:00.000Z',
+    }], '1D')
+
+    expect(result.values[0]).toBe(100)
+    expect(result.values[1]).toBe(101)
+    expect(result.values[2]).toBeCloseTo(98.9934, 4)
+    expect(result.dollarReturn).toBeCloseTo(result.values.at(-1) - 100, 8)
+    expect(result.flowCount).toBe(1)
+    expect(result.methodology).toContain('deposits are not counted as profit')
+  })
+
+  it('adds a last-hour range without dropping its starting observation', () => {
+    const result = recordedPerformanceSeriesForPeriod(snapshots, [], '1H')
+    expect(result.dates).toEqual([
+      '2026-08-13T14:35:00.000Z',
+      '2026-08-13T14:40:00.000Z',
+      '2026-08-13T15:35:00.000Z',
+    ])
+    expect(result.frequency).toBe('five-minute')
   })
 })
 

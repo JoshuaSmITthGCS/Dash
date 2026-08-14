@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile,
+  portfolioAnnualizedReturn, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -63,6 +63,21 @@ describe('portfolio report analytics', () => {
     // attributed to the strategy, instead of the whole jump looking like investment gain.
     expect(dietz.netExternalFlows).toBe(1000)
     expect(dietz.gain).toBe(200)
+  })
+
+  it('chains a true time-weighted strategy return without counting deposits', () => {
+    const result = portfolioReturnSummary([
+      { value: 100, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+      { value: 165, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      { value: 181.5, marketDate: '2026-01-03', recordedAt: '2026-01-03T20:00:00Z' },
+    ], [
+      { type: 'deposit', amount: 50, effectiveDate: '2026-01-02' },
+    ], true)
+
+    // Day 1 earns 15% after the $50 deposit is removed; day 2 earns 10%.
+    expect(result.strategy.returnPct).toBeCloseTo(26.5, 8)
+    expect(result.strategy.gain).toBeCloseTo(26.5, 8)
+    expect(result.strategy.methodology).toContain('removing settled external deposits')
   })
 
   it('annualizes a realized return over an arbitrary span', () => {

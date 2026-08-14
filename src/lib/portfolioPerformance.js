@@ -144,6 +144,136 @@ export function recordedValueSeriesForPeriod(snapshots = [], period = '1D') {
   }
 }
 
+const PERFORMANCE_PERIOD_MS = {
+  '1H': 60 * 60 * 1000,
+  '1W': 7 * 24 * 60 * 60 * 1000,
+  '1M': 31 * 24 * 60 * 60 * 1000,
+  '3M': 93 * 24 * 60 * 60 * 1000,
+  '1Y': 366 * 24 * 60 * 60 * 1000,
+}
+
+const EXTERNAL_FLOW_TYPES = new Set(['deposit', 'external_contribution', 'withdrawal'])
+
+function settledPerformanceFlows(transactions = []) {
+  return transactions.flatMap((row) => {
+    const effectiveDate = String(row?.effectiveDate || row?.date || '').slice(0, 10)
+    const amount = Number(row?.amount)
+    if (
+      !EXTERNAL_FLOW_TYPES.has(row?.type)
+      || !effectiveDate
+      || !Number.isFinite(amount)
+      || ['pending', 'processing'].includes(row?.status)
+    ) return []
+
+    // A cash movement entered today carries an exact recordedAt timestamp. Historical
+    // imports only have a settlement date, so midnight puts them between the prior close
+    // and that date's first observation instead of inventing intraday precision.
+    const recordedAt = String(row?.recordedAt || '')
+    const timestamp = recordedAt.slice(0, 10) === effectiveDate
+      ? Date.parse(recordedAt)
+      : Date.parse(`${effectiveDate}T00:00:00Z`)
+    if (!Number.isFinite(timestamp)) return []
+    return [{
+      timestamp,
+      amount: row.type === 'withdrawal' ? -Math.abs(amount) : Math.abs(amount),
+    }]
+  }).sort((left, right) => left.timestamp - right.timestamp)
+}
+
+function lastInGroups(rows, keyForRow) {
+  const groups = new Map()
+  rows.forEach((row) => groups.set(keyForRow(row), row))
+  return [...groups.values()].sort((left, right) => left.timestamp - right.timestamp)
+}
+
+/**
+ * Builds the chart users mean when they ask "how did my portfolio perform?" Raw account
+ * values are converted into a chained return path interval by interval. Settled deposits,
+ * external contributions, and withdrawals inside an interval are removed before that
+ * interval's return is calculated, so adding cash cannot appear as profit.
+ *
+ * The path is anchored to the first recorded dollar value in the selected window. Its
+ * ending-minus-starting value is therefore the contribution-adjusted dollar profit for
+ * that same selected range. Intraday and week views retain every five-minute observation;
+ * longer ranges sample that already-adjusted path to keep the SVG responsive.
+ */
+export function recordedPerformanceSeriesForPeriod(snapshots = [], transactions = [], period = '1D') {
+  const allRows = snapshots
+    .filter((row) => row?.recordedAt && Number.isFinite(Number(row.value)) && Number(row.value) > 0)
+    .map((row) => ({
+      date: row.recordedAt,
+      marketDate: row.marketDate || String(row.recordedAt).slice(0, 10),
+      timestamp: Date.parse(row.recordedAt),
+      rawValue: Number(row.value),
+    }))
+    .filter((row) => Number.isFinite(row.timestamp))
+    .sort((left, right) => left.timestamp - right.timestamp)
+  if (allRows.length < 2) return null
+
+  const latest = allRows.at(-1)
+  let rows
+  if (period === '1D') {
+    rows = allRows.filter((row) => row.marketDate === latest.marketDate)
+  } else {
+    const duration = PERFORMANCE_PERIOD_MS[period]
+    if (!duration) return null
+    const cutoff = latest.timestamp - duration
+    rows = allRows.filter((row) => row.timestamp >= cutoff)
+  }
+  if (rows.length < 2) return null
+
+  const flows = settledPerformanceFlows(transactions)
+  const adjusted = [{ ...rows[0], value: rows[0].rawValue }]
+  let flowCount = 0
+  for (let index = 1; index < rows.length; index += 1) {
+    const previous = rows[index - 1]
+    const current = rows[index]
+    const intervalFlows = flows.filter((flow) => flow.timestamp > previous.timestamp && flow.timestamp <= current.timestamp)
+    const netExternalFlow = intervalFlows.reduce((sum, flow) => sum + flow.amount, 0)
+    const adjustedEndingValue = current.rawValue - netExternalFlow
+    if (!(adjustedEndingValue > 0) || !(previous.rawValue > 0)) continue
+    flowCount += intervalFlows.length
+    adjusted.push({
+      ...current,
+      value: adjusted.at(-1).value * adjustedEndingValue / previous.rawValue,
+    })
+  }
+  if (adjusted.length < 2) return null
+
+  let displayed = adjusted
+  let frequency = 'five-minute'
+  if (period === '1M') {
+    displayed = lastInGroups(adjusted, (row) => `${row.marketDate}-${new Date(row.timestamp).getUTCHours()}`)
+    frequency = 'hourly-close'
+  } else if (period === '3M') {
+    displayed = lastInGroups(adjusted, (row) => row.marketDate)
+    frequency = 'daily-close'
+  } else if (period === '1Y') {
+    displayed = lastInGroups(adjusted, (row) => weekStart(row.marketDate))
+    frequency = 'weekly-close'
+  }
+  if (displayed.length < 2) return null
+
+  const values = displayed.map((row) => row.value)
+  const startValue = values[0]
+  const endValue = values.at(-1)
+  const dollarReturn = endValue - startValue
+  return {
+    dates: displayed.map((row) => row.date),
+    values,
+    startDate: displayed[0].date,
+    endDate: displayed.at(-1).date,
+    startValue,
+    endValue,
+    dollarReturn,
+    returnPct: startValue ? dollarReturn / startValue * 100 : null,
+    frequency,
+    flowCount,
+    source: 'firestore_portfolio_snapshots',
+    methodology: `${displayed.length} contribution-adjusted observations. Each move chains the positive or negative account change from its recorded interval after removing ${flowCount} settled external cash flow${flowCount === 1 ? '' : 's'}; deposits are not counted as profit.`,
+  }
+}
+
 /**
  * Every stored observation from the latest market date, preserving its timestamp instead of
  * collapsing the day to one close. This is display-only intraday account value: external cash

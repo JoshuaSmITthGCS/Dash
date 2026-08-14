@@ -20,7 +20,7 @@ export default function PortfolioReturnSummary({ summary }) {
         <span>Strategy return (time-weighted)</span>
         <strong>{summary.strategy.available ? signed(summary.strategy.returnPct) : 'Unavailable'}</strong>
         {summary.strategy.available && <ReturnBar value={summary.strategy.returnPct} />}
-        <small>{summary.strategy.available ? 'Modified Dietz' : summary.strategy.reason}</small>
+        <small>{summary.strategy.available ? 'Deposits and withdrawals excluded' : summary.strategy.reason}</small>
       </article>
       <article>
         <span>Your return (money-weighted, includes timing of deposits)</span>

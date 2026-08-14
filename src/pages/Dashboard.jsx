@@ -27,7 +27,7 @@ import BuyingTheDipChart from '../components/BuyingTheDipChart.jsx'
 import {
   actualRecordedValueSeries,
   PORTFOLIO_HISTORY_LABELS,
-  recordedValueSeriesForPeriod,
+  recordedPerformanceSeriesForPeriod,
   selectPortfolioHistorySeries,
 } from '../lib/portfolioPerformance.js'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
@@ -47,7 +47,8 @@ import MarketHeatmap from '../components/MarketHeatmap.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import { dailyMoveForPosition, marketType, rankDailySectors, rankDailyStocks } from '../lib/marketPresentation.js'
 
-const PERIODS = ['1D', '1W', '1M', '3M', '1Y']
+const PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
+const PERIOD_LABELS = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year' }
 const interfaceConfig = modelSettings.interface
 
 function MarketSentimentStrip({ rows, macro }) {
@@ -108,13 +109,13 @@ function HomePortfolioPanel({
 }) {
   const [holdingsSort, setHoldingsSort] = useState('day')
   const resolutionNote = chart?.frequency === 'five-minute'
-    ? 'Every five-minute cloud recording is shown for the latest trading day.'
-    : chart?.frequency === 'daily-average'
-      ? 'Each point averages that trading day’s five-minute recordings.'
-      : chart?.frequency === 'weekly-average'
-        ? 'Each point averages the recorded trading days in that market week.'
-        : chart?.frequency === 'monthly-average'
-          ? 'Each point averages the recorded trading days in that month.'
+    ? `Every five-minute interval is shown for ${period === '1H' ? 'the last hour' : period === '1W' ? 'the trailing week' : 'the latest trading day'}.`
+    : chart?.frequency === 'hourly-close'
+      ? 'Hourly closes keep the contribution-adjusted monthly path responsive.'
+      : chart?.frequency === 'daily-close'
+        ? 'Daily closes show the contribution-adjusted three-month path.'
+        : chart?.frequency === 'weekly-close'
+          ? 'Weekly closes show the contribution-adjusted yearly path.'
           : period === '1D'
             ? 'Five-minute cloud history is still accumulating; the latest historical fallback is shown.'
             : 'Historical values use saved closes until enough cloud snapshots accumulate.'
@@ -127,14 +128,14 @@ function HomePortfolioPanel({
   return <section className="home-primary-grid" aria-label="Portfolio performance and leading holdings">
     <article className="home-performance-card">
       <header className="home-performance-head">
-        <label><span>Portfolio performance</span><select value={period} onChange={(event) => onPeriodChange(event.target.value)}>{PERIODS.map((item) => <option key={item} value={item}>{item === '1D' ? 'Today' : item === '1W' ? 'Week' : item === '1M' ? 'Month' : item === '3M' ? '3 months' : 'Year'}</option>)}</select></label>
+        <label><span>Portfolio performance</span><select value={period} onChange={(event) => onPeriodChange(event.target.value)}>{PERIODS.map((item) => <option key={item} value={item}>{PERIOD_LABELS[item]}</option>)}</select></label>
         <div className="home-performance-kpis">
           <span><small>Portfolio value</small><strong>{money(totalValue)}</strong></span>
           <span><small>Today</small><strong className={today?.dollarReturn >= 0 ? 'positive' : 'negative'}>{today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)}` : 'Unavailable'}</strong></span>
-          <span><small>Total profit</small><strong className={totalProfit >= 0 ? 'positive' : 'negative'}>{totalProfit == null ? 'Unavailable' : `${totalProfit >= 0 ? '+' : '−'}${money(Math.abs(totalProfit))}`}</strong></span>
+          <span><small>Total profit · {PERIOD_LABELS[period]}</small><strong className={totalProfit >= 0 ? 'positive' : 'negative'}>{totalProfit == null ? 'Unavailable' : `${totalProfit >= 0 ? '+' : '−'}${money(Math.abs(totalProfit))}`}</strong></span>
         </div>
       </header>
-      {chart ? <GrowthChart className="home-primary-chart" height={360} width={920} dates={chart.dates} series={[{ label: chartLabel, values: chart.values, color: 'var(--series-stock)', emphasis: true }]} valueFormatter={money} caption={chart.methodology} /> : <div className="unavailable-panel"><strong>{period} history is still building</strong><p>Two saved portfolio observations are needed to draw this range.</p></div>}
+      {chart ? <GrowthChart className="home-primary-chart" height={360} width={920} dates={chart.dates} series={[{ label: chartLabel, values: chart.values, color: 'var(--series-stock)', emphasis: true }]} valueFormatter={money} caption={chart.methodology} lineStyle="line" /> : <div className="unavailable-panel"><strong>{period} history is still building</strong><p>Two saved portfolio observations are needed to draw this range.</p></div>}
       <footer><span><i aria-hidden="true" />{chartLabel}</span><small>{resolutionNote}{fetchedAt ? ` Last quote ${new Date(fetchedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}.` : ''}</small></footer>
     </article>
 
@@ -269,7 +270,7 @@ export default function Dashboard() {
   const recordedSeries = actualRecordedValueSeries(tracking.snapshots, tracking.activities)
   const chartSelection = selectPortfolioHistorySeries(holdingsSeries, recordedSeries)
   const effectiveChartMode = chartSelection.mode
-  const selected = selectPeriod(chartSelection.series, period)
+  const selected = period === '1H' ? null : selectPeriod(chartSelection.series, period)
   const selectedBenchmarkSymbols = preferences.defaultBenchmarks || [preferences.defaultBenchmark]
   const selectedBenchmarkSeries = selectedBenchmarkSymbols.map((symbol) => {
     const history = benchmarkReport?.histories?.[symbol]
@@ -278,16 +279,15 @@ export default function Dashboard() {
   }).filter(Boolean)
   const comparison = effectiveChartMode === 'backtest' ? compareBenchmarkSeries(selected, selectedBenchmarkSeries) : null
   const chartedPortfolio = comparison?.portfolio || selected
-  const recordedZoomSeries = recordedValueSeriesForPeriod(tracking.snapshots, period)
+  const recordedZoomSeries = recordedPerformanceSeriesForPeriod(tracking.snapshots, tracking.activities, period)
   const homeChart = recordedZoomSeries
-    ? selectPeriod(recordedZoomSeries, 'All')
+    ? recordedZoomSeries
     : chartedPortfolio
   const homeChartLabel = recordedZoomSeries
-    ? period === '1D' ? 'Five-minute recorded value'
-      : period === '1W' || period === '1M' ? 'Average value by trading day'
-        : period === '3M' ? 'Average value by market week'
-          : 'Average value by month'
+    ? 'Deposit-excluded performance'
     : PORTFOLIO_HISTORY_LABELS[effectiveChartMode]
+  const homePeriodProfit = homeChart?.dollarReturn
+    ?? (homeChart?.values?.length > 1 ? homeChart.values.at(-1) - homeChart.values[0] : null)
   const today = latestMarketDayReturn(holdingsSeries)
   // Prefer each holding's live price vs. its own previousClose (real-time, updates on every
   // quote refresh) over the report's close-to-close move, so the headline number on the
@@ -333,10 +333,10 @@ export default function Dashboard() {
     preferences.defaultBenchmark,
     fidelityProjectionBaseline(positions),
   )
-  // Prefer the live, contribution-adjusted Strategy return (Modified Dietz, annualized) as
+  // Prefer the live, contribution-adjusted Strategy return (time-weighted, annualized) as
   // the outcome-distribution's center so it moves with the portfolio automatically, instead
   // of the static manual assumption from Finances -- that's still the fallback whenever there
-  // isn't yet enough dated snapshot history for a Modified Dietz result. No minimum-history
+  // isn't yet enough dated snapshot history for a time-weighted result. No minimum-history
   // gate: this is wired to move with the account from day one and settles down on its own as
   // more tracked days accumulate, rather than waiting on an arbitrary threshold.
   const liveStrategyAnnualReturnPct = returnSummary.strategy.available
@@ -406,7 +406,7 @@ export default function Dashboard() {
         onPeriodChange={(next) => { setPeriod(next); updatePreferences({ defaultChartPeriod: next }) }}
         money={money}
         totalValue={trackedAccountValue}
-        totalProfit={returnSummary.strategy.available ? returnSummary.strategy.gain : portfolio.gain}
+        totalProfit={homePeriodProfit}
         today={heroToday}
         fetchedAt={portfolioQuotes.fetchedAt}
       />

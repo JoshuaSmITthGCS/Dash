@@ -91,4 +91,8 @@ describe('interface preferences', () => {
   it('keeps year-to-date as a supported home chart range', () => {
     expect(validatePreferences({ defaultChartPeriod: 'YTD' }).defaultChartPeriod).toBe('YTD')
   })
+
+  it('keeps last hour as a supported chart range', () => {
+    expect(validatePreferences({ defaultChartPeriod: '1H' }).defaultChartPeriod).toBe('1H')
+  })
 })

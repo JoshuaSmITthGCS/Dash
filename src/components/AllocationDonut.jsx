@@ -31,33 +31,35 @@ export default function AllocationDonut({ sectors = [], totalLabel = '' }) {
 
   return (
     <div className="allocation-donut-widget">
-      <svg
-        className="allocation-donut-svg"
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
-        width={SIZE}
-        height={SIZE}
-        role="img"
-        aria-label={`Sector allocation: ${sectors.map((s) => `${s.sector} ${s.pct.toFixed(1)}%`).join(', ')}`}
-      >
-        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
-          stroke="var(--surface-tertiary)" strokeWidth={STROKE} />
-        {arcs.map((arc) => (
-          <circle
-            key={arc.sector}
-            className="donut-segment"
-            cx={CENTER} cy={CENTER} r={RADIUS}
-            fill="none"
-            stroke={arc.color}
-            strokeWidth={STROKE}
-            strokeDasharray={`${arc.dash} ${arc.gap}`}
-            strokeLinecap="butt"
-            transform={`rotate(${arc.rotation} ${CENTER} ${CENTER})`}
-          >
-            <title>{arc.sector}: {arc.pct.toFixed(1)}%</title>
-          </circle>
-        ))}
-      </svg>
-      {totalLabel && <span className="donut-center-label">{totalLabel}</span>}
+      <div className="allocation-donut-plot">
+        <svg
+          className="allocation-donut-svg"
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          width={SIZE}
+          height={SIZE}
+          role="img"
+          aria-label={`Sector allocation: ${sectors.map((s) => `${s.sector} ${s.pct.toFixed(1)}%`).join(', ')}`}
+        >
+          <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none"
+            stroke="var(--surface-tertiary)" strokeWidth={STROKE} />
+          {arcs.map((arc) => (
+            <circle
+              key={arc.sector}
+              className="donut-segment"
+              cx={CENTER} cy={CENTER} r={RADIUS}
+              fill="none"
+              stroke={arc.color}
+              strokeWidth={STROKE}
+              strokeDasharray={`${arc.dash} ${arc.gap}`}
+              strokeLinecap="butt"
+              transform={`rotate(${arc.rotation} ${CENTER} ${CENTER})`}
+            >
+              <title>{arc.sector}: {arc.pct.toFixed(1)}%</title>
+            </circle>
+          ))}
+        </svg>
+        {totalLabel && <span className="donut-center-label">{totalLabel}</span>}
+      </div>
       <div className="donut-legend">
         {arcs.map((arc) => (
           <div key={arc.sector}>

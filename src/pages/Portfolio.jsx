@@ -17,6 +17,7 @@ import {
   portfolioFixedBasisVsBenchmark,
   portfolioGrowthSeries,
   portfolioVsBenchmark,
+  recordedPerformanceSeriesForPeriod,
 } from '../lib/portfolioPerformance'
 import Icon from '../components/Icons'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
@@ -40,6 +41,7 @@ import {
   alignSeries,
   benchmarkHistoryFromSnapshot,
   BENCHMARKS,
+  compareBenchmarkSeries,
   concentrationLiquidityScore,
   currentHoldingsSeries,
   diversificationScore,
@@ -50,6 +52,7 @@ import {
   portfolioScore,
   resilienceIndex,
   riskFreeAnnualRate,
+  sectorLookThrough,
   selectPeriod,
   sliceSeriesFrom,
   underwaterProfile,
@@ -71,10 +74,14 @@ import {
   robustnessStatistics,
 } from '../lib/portfolioStatistics.js'
 import { buildPortfolioMetricModel } from '../lib/portfolioMetricModel.js'
-import { combinedEvidence, compareEvidencePeriods, sectionAssessment } from '../lib/metricAssessment.js'
+import { compareEvidencePeriods } from '../lib/metricAssessment.js'
 import prospectiveValidation from '../../pipeline/validation/harness_freeze.json'
 import StockTickerTape from '../components/StockTickerTape.jsx'
 import { dailyMoveForPosition } from '../lib/marketPresentation.js'
+import AllocationDonut from '../components/AllocationDonut.jsx'
+import { buildPeerIndex } from '../lib/rankingModels.js'
+import { styleOf } from '../lib/portfolioStyleTilt.js'
+import modelSettings from '../../pipeline/config/settings.json'
 
 const ANALYTICS_SCOPES = [
   { id: 'all_history', label: 'All portfolio history' },
@@ -82,6 +89,10 @@ const ANALYTICS_SCOPES = [
   { id: 'live_algorithm', label: 'Live algorithm only' },
   { id: 'backtest', label: 'Backtest period' },
 ]
+
+const SUMMARY_PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
+const PERFORMANCE_PERIODS = ['1W', '1M', '3M', '1Y', 'All']
+const PERIOD_NAMES = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year', All: 'All time' }
 
 function sessionSetting(key, fallback) {
   try { return globalThis.sessionStorage?.getItem(key) || fallback } catch { return fallback }
@@ -216,7 +227,7 @@ export default function Portfolio() {
   const { data: iwmSnapshot } = useData('etf/IWM.json')
   const { data: ijrSnapshot } = useData('etf/IJR.json')
   const {
-    positions,
+    positions: storedPositions,
     loading: portfolioLoading,
     addPosition,
     removePosition,
@@ -225,6 +236,9 @@ export default function Portfolio() {
     syncReferencePortfolio,
     syncState,
   } = useFirebasePortfolio()
+  const previewPortfolio = import.meta.env.DEV
+    && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
+  const positions = previewPortfolio ? modelSettings.interface.mobile_preview_positions : storedPositions
   const tracking = usePortfolioTracking()
   const { preferences, updatePreferences } = usePreferences()
   const { data: selectedBenchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark || 'SPY'}.json`)
@@ -243,6 +257,8 @@ export default function Portfolio() {
   const [sellForm, setSellForm] = useState({ shares: '', price: '', saleDate: new Date().toISOString().split('T')[0] })
   const [sellSaving, setSellSaving] = useState(false)
   const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'all_history'))
+  const [summaryPeriod, setSummaryPeriod] = useState('1D')
+  const [performancePeriod, setPerformancePeriod] = useState('1M')
   const [cashForm, setCashForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
   const [cashSaving, setCashSaving] = useState(false)
   const [cashBalanceForm, setCashBalanceForm] = useState('')
@@ -328,10 +344,6 @@ export default function Portfolio() {
     tracking.trackingState?.cashFlowHistoryComplete,
   )
 
-  const totalGainPct = portfolioStats.totalCost > 0
-    ? ((portfolioStats.totalValue - portfolioStats.totalCost) / portfolioStats.totalCost) * 100
-    : 0
-
   // Same percentile-based -5..+5 read used on the Research page (src/lib/researchRating.js),
   // built from the published research pool so a holding rates against the same peers there.
   const ratingContext = buildRatingContext(research)
@@ -341,6 +353,29 @@ export default function Portfolio() {
     rating: researchRating(position.priceInfo, ratingContext),
     dayMove: dailyMoveForPosition(position),
   }))
+  const pricedAccountValue = portfolioStats.totalValue + (uninvestedCash || 0)
+  const etfTickers = new Set((etfData?.etfs || []).map((row) => String(row.ticker || '').toUpperCase()))
+  const stylePeerIndex = buildPeerIndex(research.filter((row) => !row.is_etf))
+  const assetTotals = portfolioPositions.reduce((totals, position) => {
+    if (!(position.currentValue > 0)) return totals
+    const bucket = etfTickers.has(position.ticker)
+      ? 'ETFs'
+      : styleOf(stylePeerIndex, position.priceInfo) === 'short_term'
+        ? 'Short-term stocks'
+        : 'Long-term stocks'
+    totals[bucket] = (totals[bucket] || 0) + position.currentValue
+    return totals
+  }, {})
+  if (uninvestedCash > 0) assetTotals.Cash = uninvestedCash
+  const assetAllocation = ['Long-term stocks', 'Short-term stocks', 'ETFs', 'Cash']
+    .filter((label) => assetTotals[label] > 0)
+    .map((label) => ({
+      label,
+      value: assetTotals[label],
+      pct: pricedAccountValue > 0 ? assetTotals[label] / pricedAccountValue * 100 : 0,
+    }))
+  const sectorAllocation = sectorLookThrough(portfolioPositions, etfData?.etfs || []).exposures
+    .map((row) => ({ sector: row.label, pct: row.pct }))
   // Tagged the same way mergePortfolioQuotes tags a holding's live quote, since this is the
   // raw Netlify-function payload rather than something already run through that merge.
   const benchmarkQuote = quoteRefreshIsNewest && portfolioQuotes.quotes?.SPY
@@ -370,6 +405,35 @@ export default function Portfolio() {
     tracking.activities,
     tracking.trackingState?.cashFlowHistoryComplete,
   )
+  const summaryRecordedSeries = recordedPerformanceSeriesForPeriod(
+    tracking.snapshots,
+    tracking.activities,
+    summaryPeriod,
+  )
+  const summaryFallbackSeries = summaryPeriod === '1H' ? null : selectPeriod(scoreHoldingsSeriesFull, summaryPeriod)
+  const summaryChart = summaryRecordedSeries || summaryFallbackSeries
+  const summaryProfit = summaryChart?.dollarReturn
+    ?? (summaryChart?.values?.length > 1 ? summaryChart.values.at(-1) - summaryChart.values[0] : null)
+  const summaryReturnPct = summaryChart?.returnPct
+    ?? (summaryChart?.values?.length > 1 && summaryChart.values[0]
+      ? (summaryChart.values.at(-1) / summaryChart.values[0] - 1) * 100
+      : null)
+  const comparisonSource = liveAccountSeries || scoreHoldingsSeriesFull
+  const visiblePerformancePeriod = selectPeriod(comparisonSource, performancePeriod)
+  const visiblePerformanceComparison = compareBenchmarkSeries(
+    visiblePerformancePeriod,
+    analyticsBenchmarkSeries ? [{
+      symbol: selectedBenchmarkSymbol,
+      label: selectedBenchmarkLabel,
+      dates: analyticsBenchmarkSeries.dates,
+      values: analyticsBenchmarkSeries.values,
+    }] : [],
+  )
+  const performanceIndex = visiblePerformanceComparison ? {
+    dates: visiblePerformanceComparison.dates,
+    portfolio: visiblePerformanceComparison.portfolio.values.map((value) => 100 * value / visiblePerformanceComparison.portfolio.values[0]),
+    benchmark: visiblePerformanceComparison.benchmarks[0].values.map((value) => 100 * value / visiblePerformanceComparison.benchmarks[0].values[0]),
+  } : null
   const scoreHoldingsSeries = analyticsScope === 'since_algorithm'
     ? sinceAlgorithmSeries
     : analyticsScope === 'live_algorithm'
@@ -455,12 +519,6 @@ export default function Portfolio() {
     regime: scoreRegimes,
     legacyPortfolioScore,
   })
-  const analyticsSections = [
-    { id: 'standard', metrics: scoreMetricModel.standard, summary: sectionAssessment('standard', scoreMetricModel.standard) },
-    { id: 'comparison', metrics: scoreMetricModel.comparison, summary: sectionAssessment('comparison', scoreMetricModel.comparison) },
-    { id: 'fast', metrics: scoreMetricModel.fast, summary: sectionAssessment('fast', scoreMetricModel.fast) },
-  ]
-  const analyticsEvidence = combinedEvidence(analyticsSections)
   const comparableEvidenceFor = (series) => {
     const portfolioPeriod = selectPeriod(series, 'All')
     const benchmarkPeriod = selectPeriod(analyticsBenchmarkSeries, 'All')
@@ -712,62 +770,87 @@ export default function Portfolio() {
         </div>
       )}
 
-      <div className="portfolio-summary">
-        <div className="portfolio-value-card">
-          <div className="kpi-label"><span className="report-hero-label">Total Value{portfolioQuotes.refreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</span></div>
-          <div className="kpi-value">{trackedAccountValue == null ? '–' : <AnimatedNumber value={trackedAccountValue} format={(v) => money(v, 2)} />}</div>
-          <div className="portfolio-delta" style={{ color: moveColor(returnSummary.strategy.available ? returnSummary.strategy.gain : portfolioStats.totalGain) }}>
-            {returnSummary.strategy.available
-              ? <>{returnSummary.strategy.gain >= 0 ? '+' : '−'}<AnimatedNumber value={Math.abs(returnSummary.strategy.gain)} format={(v) => money(v, 2)} /> · <AnimatedNumber value={returnSummary.strategy.returnPct} format={(v) => signedPct(v, 2)} /> strategy return</>
-              : <>{portfolioStats.totalGain >= 0 ? '+' : '−'}<AnimatedNumber value={Math.abs(portfolioStats.totalGain)} format={money} /> · <AnimatedNumber value={totalGainPct} format={(v) => signedPct(v, 2)} /></>}
-          </div>
-          <div className="kpi-note">{returnSummary.strategy.available ? 'Modified Dietz with settled external flows' : `${positions.length} positions · ${money(portfolioStats.totalCost)} cost basis`}</div>
+      <section className="portfolio-dashboard-section portfolio-summary-section" aria-labelledby="portfolio-summary-title">
+        <header className="portfolio-section-heading">
+          <div><span className="portfolio-section-number">01</span><div><span className="eyebrow">Overview</span><h2 id="portfolio-summary-title">Summary</h2></div></div>
+          <label><span>Time range</span><select value={summaryPeriod} onChange={(event) => setSummaryPeriod(event.target.value)}>{SUMMARY_PERIODS.map((period) => <option key={period} value={period}>{PERIOD_NAMES[period]}</option>)}</select></label>
+        </header>
+        <div className="portfolio-summary-kpis">
+          <span><small>Portfolio value{portfolioQuotes.refreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</small><strong>{trackedAccountValue == null ? '–' : <AnimatedNumber value={trackedAccountValue} format={(value) => money(value, 2)} />}</strong></span>
+          <span><small>Today</small><strong className={moveExplanation.totalReturnPct >= 0 ? 'positive' : 'negative'}>{moveExplanation.totalReturnPct == null ? 'Unavailable' : `${signedPct(moveExplanation.totalReturnPct, 2)} · ${money(Math.abs(portfolioStats.totalValue * moveExplanation.totalReturnPct / 100), 2)}`}</strong></span>
+          <span><small>Total profit · {PERIOD_NAMES[summaryPeriod]}</small><strong className={summaryProfit >= 0 ? 'positive' : 'negative'}>{summaryProfit == null ? 'Unavailable' : `${summaryProfit >= 0 ? '+' : '−'}${money(Math.abs(summaryProfit), 2)} · ${signedPct(summaryReturnPct, 2)}`}</strong></span>
         </div>
-        <div className="card kpi portfolio-score-kpi">
-          <div className="kpi-label">Performance evidence</div>
-          <div className="kpi-value evidence-kpi-value">{analyticsEvidence.read}</div>
-          <div className="kpi-note">▲ {analyticsEvidence.counts.positive} · ● {analyticsEvidence.counts.neutral} · ▼ {analyticsEvidence.counts.negative} · ? {analyticsEvidence.counts.insufficient}</div>
-          <a href="#analytics-overall-title">Review the evidence →</a>
-        </div>
-        <div className="card kpi">
-          <div className="kpi-label">Vs S&P 500</div>
-          <div className="kpi-value" style={{ color: moveColor(versusIndex?.excessReturnPct) }}>
-            {versusIndex
-              ? signedPct(versusIndex.excessReturnPct)
-              : '–'}
-          </div>
-          <div className="kpi-note">
-            {versusIndex
-              ? `${versusIndex.dollarsAhead >= 0 ? '+' : '−'}${money(Math.abs(versusIndex.dollarsAhead))} versus the index · ${versusIndex.comparable} compared position${versusIndex.comparable === 1 ? '' : 's'}`
-              : 'Add a purchase date inside the charted window'}
-          </div>
-          <a href="/portfolio/insights">Trader insights →</a>
-        </div>
-        <div className="card kpi">
-          <div className="kpi-label">Uninvested cash</div>
-          <div className="kpi-value">
-            {uninvestedCash == null ? '–' : money(uninvestedCash, 2)}
-          </div>
-          <div className="kpi-note">
-            {uninvestedCash == null ? 'Sync Fidelity or set a cash balance below' : 'Available for your next purchase'}
-          </div>
-        </div>
-      </div>
+        {summaryChart ? <GrowthChart
+          className="portfolio-summary-chart"
+          height={390}
+          width={1080}
+          dates={summaryChart.dates}
+          series={[{ label: 'Deposit-excluded performance', values: summaryChart.values, color: 'var(--series-stock)', emphasis: true }]}
+          valueFormatter={(value) => money(value, 2)}
+          caption={summaryChart.methodology || 'Current quantities applied to historical prices; deposits are not part of the series.'}
+          lineStyle="line"
+        /> : <div className="unavailable-panel"><strong>{PERIOD_NAMES[summaryPeriod]} history is still building</strong><p>Two five-minute account observations are needed to draw this range.</p></div>}
+      </section>
 
-      <PortfolioReturnSummary summary={returnSummary} />
+      <section className="portfolio-dashboard-section portfolio-allocation-section" aria-labelledby="portfolio-allocation-title">
+        <header className="portfolio-section-heading">
+          <div><span className="portfolio-section-number">02</span><div><span className="eyebrow">Positioning</span><h2 id="portfolio-allocation-title">Allocation</h2></div></div>
+        </header>
+        <div className="portfolio-allocation-grid">
+          <article className="portfolio-allocation-card">
+            <header><div><span className="eyebrow">By role</span><h3>Asset allocation</h3></div><small>Current market value</small></header>
+            <div className="portfolio-asset-bars">{assetAllocation.map((item) => <div key={item.label}>
+              <div><span>{item.label}</span><strong>{item.pct.toFixed(1)}%</strong></div>
+              <i aria-hidden="true"><span style={{ width: `${item.pct}%` }} /></i>
+              <small>{money(item.value, 2)}</small>
+            </div>)}</div>
+            <p>Stocks with an active, evidence-backed catalyst are short-term; other stocks are long-term. ETFs and cash remain separate.</p>
+          </article>
+          <article className="portfolio-allocation-card portfolio-sector-card">
+            <header><div><span className="eyebrow">By exposure</span><h3>Sector allocation</h3></div><small>ETF look-through where available</small></header>
+            {sectorAllocation.length ? <AllocationDonut sectors={sectorAllocation} totalLabel={money(portfolioStats.totalValue)} /> : <div className="unavailable-panel"><strong>Sector data unavailable</strong><p>Priced holdings with sector coverage will appear here.</p></div>}
+          </article>
+        </div>
+      </section>
 
-      <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
+      <section className="portfolio-dashboard-section portfolio-performance-section" aria-labelledby="portfolio-performance-title">
+        <header className="portfolio-section-heading">
+          <div><span className="portfolio-section-number">03</span><div><span className="eyebrow">Benchmark</span><h2 id="portfolio-performance-title">Performance</h2></div></div>
+          <label><span>Compare over</span><select value={performancePeriod} onChange={(event) => setPerformancePeriod(event.target.value)}>{PERFORMANCE_PERIODS.map((period) => <option key={period} value={period}>{PERIOD_NAMES[period]}</option>)}</select></label>
+        </header>
+        {performanceIndex ? <div className="portfolio-benchmark-chart">
+          <div className="portfolio-benchmark-kpis">
+            <span><small>Your time-weighted return</small><strong className={visiblePerformanceComparison.portfolio.returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.portfolio.returnPct, 2)}</strong></span>
+            <span><small>{selectedBenchmarkLabel}</small><strong className={visiblePerformanceComparison.benchmarks[0].returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.benchmarks[0].returnPct, 2)}</strong></span>
+            <span><small>Difference</small><strong className={visiblePerformanceComparison.portfolio.returnPct - visiblePerformanceComparison.benchmarks[0].returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.portfolio.returnPct - visiblePerformanceComparison.benchmarks[0].returnPct, 2)}</strong></span>
+          </div>
+          <GrowthChart
+            height={330}
+            width={1080}
+            dates={performanceIndex.dates}
+            series={[
+              { label: 'Your time-weighted return', values: performanceIndex.portfolio, color: 'var(--series-stock)', emphasis: true },
+              { label: selectedBenchmarkLabel, values: performanceIndex.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
+            ]}
+            valueFormatter={(value) => signedPct(value - 100, 1)}
+            caption={`Both lines start at 0% on the same market date. Your line removes settled deposits and withdrawals before chaining returns; ${selectedBenchmarkLabel} uses matched daily closes.`}
+            lineStyle="line"
+          />
+        </div> : <div className="unavailable-panel"><strong>Comparison history is still building</strong><p>Two shared market dates are needed to compare your time-weighted return with {selectedBenchmarkLabel}.</p></div>}
 
-      <PerformanceMetrics metrics={scorePerformance} benchmarkLabel={selectedBenchmarkLabel} riskFree={riskFree}
-        acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
-        shortTerm={scoreShortTerm} risk={scoreRisk} model={scoreMetricModel} statistics={scoreStatistics}
-        factor={scoreFactor} benchmark={scoreBenchmarkFit} exposure={scoreExposure} execution={scoreExecution}
-        robustness={scoreRobustness} signalMetrics={signalMetrics} prospective={prospectiveValidation}
-        baselineComparison={algorithmBaseline}
-        scopes={ANALYTICS_SCOPES} scope={analyticsScope} onScopeChange={(next) => {
-          setAnalyticsScope(next)
-          try { globalThis.sessionStorage?.setItem('valuesignal.analytics.scope', next) } catch { /* optional session persistence */ }
-        }} />
+        <PortfolioReturnSummary summary={returnSummary} />
+        <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
+        <PerformanceMetrics metrics={scorePerformance} benchmarkLabel={selectedBenchmarkLabel} riskFree={riskFree}
+          acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
+          shortTerm={scoreShortTerm} risk={scoreRisk} model={scoreMetricModel} statistics={scoreStatistics}
+          factor={scoreFactor} benchmark={scoreBenchmarkFit} exposure={scoreExposure} execution={scoreExecution}
+          robustness={scoreRobustness} signalMetrics={signalMetrics} prospective={prospectiveValidation}
+          baselineComparison={algorithmBaseline}
+          scopes={ANALYTICS_SCOPES} scope={analyticsScope} onScopeChange={(next) => {
+            setAnalyticsScope(next)
+            try { globalThis.sessionStorage?.setItem('valuesignal.analytics.scope', next) } catch { /* optional session persistence */ }
+          }} />
+      </section>
 
       <section className="card cash-account" aria-labelledby="cash-account-title">
         <div className="cash-account-copy">

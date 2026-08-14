@@ -92,7 +92,7 @@ export default function Settings() {
 
     <section className="settings-card" aria-labelledby="charts-heading">
       <header><div><span className="settings-icon"><Icon name="market" /></span><div><h2 id="charts-heading">Charts</h2><p>Defaults for supported financial visualizations.</p></div></div></header>
-      <SelectRow id="chart-period" label="Default period" value={preferences.defaultChartPeriod} onChange={(defaultChartPeriod) => updatePreferences({ defaultChartPeriod })}>{['1D', '1W', '1M', '3M', '6M', '1Y', 'All'].map((period) => <option key={period}>{period}</option>)}</SelectRow>
+      <SelectRow id="chart-period" label="Default period" value={preferences.defaultChartPeriod} onChange={(defaultChartPeriod) => updatePreferences({ defaultChartPeriod })}>{['1H', '1D', '1W', '1M', '3M', '6M', '1Y', 'All'].map((period) => <option key={period}>{period}</option>)}</SelectRow>
       <SelectRow id="chart-style" label="Chart style" value={preferences.chartStyle} onChange={(chartStyle) => updatePreferences({ chartStyle })}><option value="line">Line</option><option value="area">Line with area fill</option><option value="step">Stepped line</option></SelectRow>
       <SelectRow id="chart-weight" label="Line weight" value={preferences.chartLineWeight} onChange={(chartLineWeight) => updatePreferences({ chartLineWeight })}><option value="thin">Thin</option><option value="standard">Standard</option><option value="bold">Bold</option></SelectRow>
       <SelectRow id="chart-grid" label="Grid visibility" value={preferences.chartGrid} onChange={(chartGrid) => updatePreferences({ chartGrid })}><option value="minimal">Minimal</option><option value="standard">Standard</option><option value="hidden">Hidden</option></SelectRow>

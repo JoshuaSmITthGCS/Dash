@@ -113,6 +113,7 @@ export default function GrowthChart({
   valueFormatter = money,
   earningsMarker = null, // { value, label } – most recent earnings-surprise reading, if the pipeline has one
   endMarkers = [], // { value, label, color } – live/extended-session values anchored to the latest date
+  lineStyle = null,
 }) {
   const [zoom, setZoom] = useState('all')
   const [activeIndex, setActiveIndex] = useState(null)
@@ -155,7 +156,7 @@ export default function GrowthChart({
     ? { ...MINIMAL_PAD, top: mobileViewport && mobileTopInset != null ? mobileTopInset : MINIMAL_PAD.top }
     : DEFAULT_PAD
   const innerHeight = chartHeight - pad.top - pad.bottom
-  const chartStyle = document.documentElement.dataset.chartStyle || 'line'
+  const chartStyle = lineStyle || document.documentElement.dataset.chartStyle || 'line'
 
   const labelIndexes = [...new Set([0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1])]
   const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {

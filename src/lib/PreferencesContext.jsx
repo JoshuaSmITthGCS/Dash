@@ -93,7 +93,7 @@ export function validatePreferences(raw) {
     chartStyle: pick(raw.chartStyle, ['line', 'area', 'step'], 'area'),
     chartLineWeight: pick(raw.chartLineWeight, ['thin', 'standard', 'bold'], 'standard'),
     chartGrid: pick(raw.chartGrid, ['minimal', 'standard', 'hidden'], 'standard'),
-    defaultChartPeriod: pick(raw.defaultChartPeriod, ['1D', '1W', '1M', '3M', '6M', 'YTD', '1Y', 'All'], '1M'),
+    defaultChartPeriod: pick(raw.defaultChartPeriod, ['1H', '1D', '1W', '1M', '3M', '6M', 'YTD', '1Y', 'All'], '1M'),
     defaultLandingPage: pick(raw.defaultLandingPage, ['report'], 'report'),
     holdingSort: {
       key: pick(raw.holdingSort?.key === 'gainPct' ? 'return' : raw.holdingSort?.key, ['allocation', 'ticker', 'company', 'signal', 'value', 'gain', 'return', 'score', 'rating', 'trend', 'shares', 'cost', 'price', 'purchaseDate'], 'allocation'),

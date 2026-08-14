@@ -444,13 +444,33 @@ export function annualizeReturnPct(returnPct, startDate, endDate, minimumDays = 
 
 export function portfolioReturnSummary(snapshots = [], transactions = [], historyComplete = false) {
   const endpoints = accountValueEndpoints(snapshots)
-  const strategy = endpoints
-    ? modifiedDietzReturn(endpoints.first.value, endpoints.last.value, transactions, endpoints.first.date, endpoints.last.date, historyComplete)
-    : { available: false, returnPct: null, reason: 'Two dated recorded account values are required.' }
+  const strategySeries = historyComplete ? recordedAccountSeries(snapshots, transactions, true) : null
+  const strategyReturnPct = strategySeries?.values?.length > 1
+    ? (strategySeries.values.at(-1) / strategySeries.values[0] - 1) * 100
+    : null
+  const strategy = endpoints && finite(strategyReturnPct)
+    ? {
+        available: true,
+        returnPct: strategyReturnPct,
+        gain: endpoints.first.value * strategyReturnPct / 100,
+        beginningValue: endpoints.first.value,
+        endingValue: endpoints.last.value,
+        startDate: strategySeries.dates[0],
+        endDate: strategySeries.dates.at(-1),
+        observations: strategySeries.dates.length,
+        methodology: 'Time-weighted return chains each recorded market-day return after removing settled external deposits and withdrawals from that interval.',
+      }
+    : {
+        available: false,
+        returnPct: null,
+        reason: historyComplete
+          ? 'Two dated recorded account values are required.'
+          : 'Confirm the complete deposit and withdrawal history first.',
+      }
   return {
     strategy,
     moneyWeighted: moneyWeightedAccountReturn(snapshots, transactions, historyComplete),
-    explanation: 'Strategy return reduces the effect of cash-flow timing. Your return includes when deposits and withdrawals entered the account.',
+    explanation: 'Strategy return excludes deposits and withdrawals interval by interval. Your return includes the timing and size of those cash flows.',
   }
 }
 
