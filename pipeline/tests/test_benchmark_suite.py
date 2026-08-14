@@ -90,8 +90,11 @@ class CommittedDataTests(unittest.TestCase):
         """A sanity check that this module's return path matches the committed backtest's."""
         if not os.path.exists(bs.BACKTEST_PATH):
             self.skipTest("backtest artifact not present in this checkout")
+        import json
+        with open(bs.BACKTEST_PATH) as handle:
+            expected = json.load(handle)["benchmark_spy"]["metrics"]["cagr"]
         report = bs.build_report()
-        self.assertAlmostEqual(report["benchmarks"]["SPY"]["cagr"], 0.1280, delta=0.005)
+        self.assertAlmostEqual(report["benchmarks"]["SPY"]["cagr"], expected, places=6)
 
     def test_summary_only_claims_significance_at_the_conventional_bar(self):
         if not os.path.exists(bs.BACKTEST_PATH):

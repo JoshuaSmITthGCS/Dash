@@ -1,197 +1,201 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-07T12:05:57.965197+00:00",
+  "generated_at": "2026-08-14T01:42:25.509457+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "dd8c0b2c564003cd31875fc2c459cb123d0f2a42",
-  "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
+  "code_commit_hash": "9436d31a4ae16bfc32947ec2a20bb4daf0bb53b5",
+  "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
   "headline": {
     "validation_status": "no calibration history yet",
     "ic_periods_accumulated": 0,
     "ic_periods_required": 24,
-    "forecast_target": null,
+    "forecast_target": {
+      "definition": "sector_residual_return_over_trading_sessions",
+      "primary_horizon": "3M",
+      "primary_horizon_sessions": 63
+    },
     "score_is_not_a_probability": "The Research Score ranks attractiveness. Confidence measures how reliable that rank's evidence is. Neither is a probability that the stock rises, and no score bucket has enough closed forward windows to state one."
   },
   "benchmarks": {
     "status": "measured",
     "window": {
       "initial_capital": 100000.0,
-      "start": "2021-08-02"
+      "start": "2021-09-01"
     },
     "strategy": {
-      "cagr": 0.10331,
-      "final_value": 169478.08,
-      "max_drawdown": -0.20764,
-      "sharpe": 0.611,
-      "volatility": 0.19195
+      "cagr": 0.156149,
+      "final_value": 204997.55,
+      "max_drawdown": -0.189802,
+      "sharpe": 0.9205,
+      "volatility": 0.175384
     },
     "rows": [
       {
         "name": "SPY",
         "description": "S&P 500 -- the published, least representative comparison",
-        "cagr": 0.12736,
-        "volatility": 0.15741,
-        "sharpe": 0.844,
-        "max_drawdown": -0.23927,
-        "beta": 0.7872,
-        "annualized_alpha_pct": 1.557,
-        "newey_west_t_statistic": 0.247,
-        "significant": false
-      },
-      {
-        "name": "VUG",
-        "description": "CRSP US large growth",
-        "cagr": 0.12252,
-        "volatility": 0.20401,
-        "sharpe": 0.671,
-        "max_drawdown": -0.33159,
-        "beta": 0.4759,
-        "annualized_alpha_pct": 5.632,
-        "newey_west_t_statistic": 0.767,
+        "cagr": 0.131209,
+        "volatility": 0.172675,
+        "sharpe": 0.8048,
+        "max_drawdown": -0.244964,
+        "beta": 0.76,
+        "annualized_alpha_pct": 5.972,
+        "newey_west_t_statistic": 1.174,
         "significant": false
       },
       {
         "name": "VTV",
         "description": "CRSP US large value",
-        "cagr": 0.12171,
-        "volatility": 0.13904,
-        "sharpe": 0.899,
-        "max_drawdown": -0.15344,
-        "beta": 0.9843,
-        "annualized_alpha_pct": -0.483,
-        "newey_west_t_statistic": -0.088,
+        "cagr": 0.127104,
+        "volatility": 0.138584,
+        "sharpe": 0.9384,
+        "max_drawdown": -0.17039,
+        "beta": 1.0051,
+        "annualized_alpha_pct": 3.111,
+        "newey_west_t_statistic": 0.796,
+        "significant": false
+      },
+      {
+        "name": "VUG",
+        "description": "CRSP US large growth",
+        "cagr": 0.125674,
+        "volatility": 0.226285,
+        "sharpe": 0.6395,
+        "max_drawdown": -0.35613,
+        "beta": 0.439,
+        "annualized_alpha_pct": 10.8,
+        "newey_west_t_statistic": 1.756,
         "significant": false
       },
       {
         "name": "IWF",
         "description": "Russell 1000 Growth",
-        "cagr": 0.11832,
-        "volatility": 0.19368,
-        "sharpe": 0.677,
-        "max_drawdown": -0.30748,
-        "beta": 0.5193,
-        "annualized_alpha_pct": 5.388,
-        "newey_west_t_statistic": 0.747,
+        "cagr": 0.122776,
+        "volatility": 0.21846,
+        "sharpe": 0.6426,
+        "max_drawdown": -0.327226,
+        "beta": 0.4749,
+        "annualized_alpha_pct": 10.408,
+        "newey_west_t_statistic": 1.691,
         "significant": false
       },
       {
         "name": "IWD",
         "description": "Russell 1000 Value",
-        "cagr": 0.1157,
-        "volatility": 0.14872,
-        "sharpe": 0.814,
-        "max_drawdown": -0.17796,
-        "beta": 0.9303,
-        "annualized_alpha_pct": 0.594,
-        "newey_west_t_statistic": 0.106,
+        "cagr": 0.1191,
+        "volatility": 0.148535,
+        "sharpe": 0.8369,
+        "max_drawdown": -0.190394,
+        "beta": 0.9355,
+        "annualized_alpha_pct": 4.71,
+        "newey_west_t_statistic": 1.189,
         "significant": false
       },
       {
         "name": "IJH+IWD 50/50",
         "description": "matches the realized beta 0.79 / SMB 0.455 profile the six-factor regression measured, using a fixed 50/50 rather than a fitted mix",
-        "cagr": 0.10046,
-        "volatility": 0.1619,
-        "sharpe": 0.674,
-        "max_drawdown": -0.19687,
-        "beta": 0.8834,
-        "annualized_alpha_pct": 2.264,
-        "newey_west_t_statistic": 0.423,
+        "cagr": 0.104535,
+        "volatility": 0.169128,
+        "sharpe": 0.6764,
+        "max_drawdown": -0.204946,
+        "beta": 0.8724,
+        "annualized_alpha_pct": 6.545,
+        "newey_west_t_statistic": 1.721,
         "significant": false
       },
       {
         "name": "SCHD",
         "description": "Dow Jones US Dividend 100 -- quality/dividend screen",
-        "cagr": 0.09236,
-        "volatility": 0.1472,
-        "sharpe": 0.675,
-        "max_drawdown": -0.15702,
-        "beta": 0.8804,
-        "annualized_alpha_pct": 2.981,
-        "newey_west_t_statistic": 0.504,
+        "cagr": 0.098943,
+        "volatility": 0.144188,
+        "sharpe": 0.731,
+        "max_drawdown": -0.168443,
+        "beta": 0.8865,
+        "annualized_alpha_pct": 7.2,
+        "newey_west_t_statistic": 1.624,
         "significant": false
       },
       {
         "name": "RSP",
         "description": "S&P 500 equal weight -- breadth-matched",
-        "cagr": 0.08732,
-        "volatility": 0.1577,
-        "sharpe": 0.611,
-        "max_drawdown": -0.20684,
-        "beta": 0.8667,
-        "annualized_alpha_pct": 3.571,
-        "newey_west_t_statistic": 0.623,
+        "cagr": 0.092176,
+        "volatility": 0.162322,
+        "sharpe": 0.629,
+        "max_drawdown": -0.213844,
+        "beta": 0.8647,
+        "annualized_alpha_pct": 7.773,
+        "newey_west_t_statistic": 1.832,
         "significant": false
       },
       {
         "name": "IJH",
         "description": "S&P MidCap 400 -- the strategy's actual size band",
-        "cagr": 0.08435,
-        "volatility": 0.18107,
-        "sharpe": 0.539,
-        "max_drawdown": -0.21581,
-        "beta": 0.7875,
-        "annualized_alpha_pct": 4.307,
-        "newey_west_t_statistic": 0.807,
-        "significant": false
+        "cagr": 0.08917,
+        "volatility": 0.197273,
+        "sharpe": 0.5346,
+        "max_drawdown": -0.241046,
+        "beta": 0.7647,
+        "annualized_alpha_pct": 8.775,
+        "newey_west_t_statistic": 2.213,
+        "significant": true
       },
       {
         "name": "VB",
         "description": "CRSP US small cap",
-        "cagr": 0.07527,
-        "volatility": 0.18842,
-        "sharpe": 0.48,
-        "max_drawdown": -0.24432,
-        "beta": 0.7457,
-        "annualized_alpha_pct": 5.34,
-        "newey_west_t_statistic": 0.968,
-        "significant": false
+        "cagr": 0.079278,
+        "volatility": 0.207505,
+        "sharpe": 0.474,
+        "max_drawdown": -0.281541,
+        "beta": 0.7131,
+        "annualized_alpha_pct": 10.101,
+        "newey_west_t_statistic": 2.389,
+        "significant": true
       },
       {
         "name": "IJR",
         "description": "S&P SmallCap 600",
-        "cagr": 0.07331,
-        "volatility": 0.20032,
-        "sharpe": 0.453,
-        "max_drawdown": -0.23118,
-        "beta": 0.6555,
-        "annualized_alpha_pct": 6.051,
-        "newey_west_t_statistic": 1.002,
-        "significant": false
+        "cagr": 0.075671,
+        "volatility": 0.212564,
+        "sharpe": 0.4519,
+        "max_drawdown": -0.280241,
+        "beta": 0.6486,
+        "annualized_alpha_pct": 11.047,
+        "newey_west_t_statistic": 2.463,
+        "significant": true
       },
       {
         "name": "IWM",
         "description": "Russell 2000 -- small cap",
-        "cagr": 0.07036,
-        "volatility": 0.20634,
-        "sharpe": 0.433,
-        "max_drawdown": -0.26752,
-        "beta": 0.6475,
-        "annualized_alpha_pct": 6.338,
-        "newey_west_t_statistic": 1.045,
-        "significant": false
-      },
-      {
-        "name": "NOBL",
-        "description": "S&P 500 Dividend Aristocrats -- quality proxy",
-        "cagr": 0.06483,
-        "volatility": 0.15127,
-        "sharpe": 0.492,
-        "max_drawdown": -0.17486,
-        "beta": 0.8282,
-        "annualized_alpha_pct": 5.914,
-        "newey_west_t_statistic": 0.908,
-        "significant": false
+        "cagr": 0.073243,
+        "volatility": 0.22504,
+        "sharpe": 0.4289,
+        "max_drawdown": -0.319116,
+        "beta": 0.6263,
+        "annualized_alpha_pct": 11.255,
+        "newey_west_t_statistic": 2.481,
+        "significant": true
       },
       {
         "name": "VXF",
         "description": "Extended market (completion index) -- everything outside the S&P 500",
-        "cagr": 0.06295,
-        "volatility": 0.20066,
-        "sharpe": 0.405,
-        "max_drawdown": -0.33241,
-        "beta": 0.6595,
-        "annualized_alpha_pct": 6.87,
-        "newey_west_t_statistic": 1.109,
-        "significant": false
+        "cagr": 0.068344,
+        "volatility": 0.224929,
+        "sharpe": 0.4093,
+        "max_drawdown": -0.363936,
+        "beta": 0.6198,
+        "annualized_alpha_pct": 11.576,
+        "newey_west_t_statistic": 2.291,
+        "significant": true
+      },
+      {
+        "name": "NOBL",
+        "description": "S&P 500 Dividend Aristocrats -- quality proxy",
+        "cagr": 0.06709,
+        "volatility": 0.14524,
+        "sharpe": 0.5232,
+        "max_drawdown": -0.179209,
+        "beta": 0.9102,
+        "annualized_alpha_pct": 9.296,
+        "newey_west_t_statistic": 2.014,
+        "significant": true
       }
     ],
     "summary": {
@@ -199,65 +203,77 @@
         "IJH",
         "IJH+IWD 50/50",
         "IJR",
+        "IWD",
+        "IWF",
         "IWM",
         "NOBL",
         "RSP",
         "SCHD",
+        "SPY",
+        "VB",
+        "VTV",
+        "VUG",
+        "VXF"
+      ],
+      "beaten_on_cagr_count": "14 of 14",
+      "benchmarks_compared": 14,
+      "significant_positive_alpha_against": [
+        "IJH",
+        "IJR",
+        "IWM",
+        "NOBL",
         "VB",
         "VXF"
       ],
-      "beaten_on_cagr_count": "9 of 14",
-      "benchmarks_compared": 14,
-      "significant_positive_alpha_against": [],
-      "verdict": "no tradeable benchmark in this set is beaten with statistically significant alpha"
+      "verdict": "significant positive alpha against 6 benchmark(s)"
     }
   },
   "factor_exposures": {
     "status": "measured",
-    "months": 58,
-    "r_squared": 0.5889018674529483,
-    "annualized_alpha_pct": -2.5678747724307005,
+    "months": 57,
+    "r_squared": 0.6523518189288242,
+    "annualized_alpha_pct": 3.0604652652704845,
     "loadings": [
       {
         "factor": "alpha",
-        "estimate": -0.002165502070115501,
-        "newey_west_t_statistic": -0.4365254513783112,
+        "estimate": 0.0025152973500496057,
+        "newey_west_t_statistic": 0.6799420580089505,
         "significant": false
       },
       {
         "factor": "market_excess",
-        "estimate": 0.8591821580596294,
-        "newey_west_t_statistic": 6.495519495466118,
+        "estimate": 0.8097074608527671,
+        "newey_west_t_statistic": 8.320843400126732,
         "significant": true
       },
       {
         "factor": "size",
-        "estimate": 0.45458133296073217,
-        "newey_west_t_statistic": 2.0623716126371794,
+        "estimate": 0.5247002523008238,
+        "newey_west_t_statistic": 3.852528173565139,
         "significant": true
       },
       {
         "factor": "value",
-        "estimate": 0.1977808933537769,
-        "newey_west_t_statistic": 0.9967387636123345,
+        "estimate": 0.1056522427314743,
+        "newey_west_t_statistic": 0.5157486800638622,
         "significant": false
       },
       {
         "factor": "profitability",
-        "estimate": 0.16210189948270992,
-        "newey_west_t_statistic": 0.6984502359074549,
+        "estimate": 0.21083462121141305,
+        "newey_west_t_statistic": 1.3841798161527075,
         "significant": false
       },
       {
         "factor": "investment",
-        "estimate": 0.08274444510652086,
-        "newey_west_t_statistic": 0.3056849729268716,
+        "estimate": 0.14820779733450007,
+        "newey_west_t_statistic": 0.6284629884713551,
         "significant": false
       },
       {
         "factor": "momentum",
-        "estimate": 0.40448506175136084,
-        "newey_west_t_statistic": 2.4984807046204565,
+        "estimate": 0.37956613308383347,
+        "newey_west_t_statistic": 2.923760985827792,
         "significant": true
       }
     ]
@@ -274,49 +290,49 @@
       "why": "the committed backtest stores per-rebalance picks and the portfolio value path but not per-name entry and exit prices, so position-level statistics cannot be computed from it"
     },
     "sample": {
-      "first": "2021-09",
-      "last": "2026-07",
+      "first": "2021-10",
+      "last": "2026-08",
       "months": 59
     },
     "expectancy": {
-      "average_loss": 0.04215,
-      "average_win": 0.04293,
-      "expectancy_per_period": 0.00977,
-      "mean_return_per_period": 0.00977,
-      "payoff_ratio": 1.019,
+      "average_loss": 0.03848,
+      "average_win": 0.04326,
+      "expectancy_per_period": 0.01416,
+      "mean_return_per_period": 0.01416,
+      "payoff_ratio": 1.124,
       "periods": 59,
-      "win_rate": 0.6102
+      "win_rate": 0.6441
     },
     "profit_factor": {
-      "gross_loss": 0.96937,
-      "gross_profit": 1.54562,
-      "profit_factor": 1.594
+      "gross_loss": 0.80816,
+      "gross_profit": 1.64375,
+      "profit_factor": 2.034
     },
     "streaks": {
       "longest_losing_streak": 3,
       "longest_winning_streak": 7
     },
     "risk_adjusted": {
-      "annualized_return": 0.10331,
-      "annualized_volatility": 0.19195,
-      "calmar": 0.498,
-      "recovery_factor": 0.498,
-      "sharpe_zero_rate": 0.611,
-      "sortino_zero_rate": 0.905
+      "annualized_return": 0.16628,
+      "annualized_volatility": 0.17408,
+      "calmar": 1.087,
+      "recovery_factor": 1.087,
+      "sharpe_zero_rate": 0.976,
+      "sortino_zero_rate": 1.508
     },
     "turnover": {
-      "annualized_cost_drag": 0.0078,
-      "annualized_turnover": 7.79,
-      "mean_cost_drag_per_rebalance": 0.00065,
-      "mean_monthly_turnover": 0.6492,
-      "median_monthly_turnover": 0.6527,
+      "annualized_cost_drag": 0.0061,
+      "annualized_turnover": 6.096,
+      "mean_cost_drag_per_rebalance": 0.000508,
+      "mean_monthly_turnover": 0.508,
+      "median_monthly_turnover": 0.5019,
       "rebalances": 60
     },
     "turnover_adjusted_return": {
-      "annualized_cost_drag": 0.0078,
-      "implied_gross_annualized_return": 0.11111,
-      "net_annualized_return": 0.10331,
-      "share_of_gross_return_consumed_by_costs": 0.0702
+      "annualized_cost_drag": 0.0061,
+      "implied_gross_annualized_return": 0.17238,
+      "net_annualized_return": 0.16628,
+      "share_of_gross_return_consumed_by_costs": 0.0354
     },
     "regime_definitions": {
       "market_direction": "benchmark above/below its trailing 200-session mean",
@@ -327,56 +343,56 @@
     "regime_attribution": {
       "market_direction": {
         "bear": {
-          "benchmark_annualized": -0.24219,
-          "excess_annualized": 0.10361,
-          "months": 11,
-          "strategy_annualized": -0.13858,
-          "strategy_mean_monthly": -0.00974,
-          "win_rate": 0.4545
+          "benchmark_annualized": -0.26491,
+          "excess_annualized": 0.11134,
+          "months": 10,
+          "strategy_annualized": -0.15358,
+          "strategy_mean_monthly": -0.01179,
+          "win_rate": 0.3
         },
         "bull": {
-          "benchmark_annualized": 0.31276,
-          "excess_annualized": -0.11133,
-          "months": 40,
-          "strategy_annualized": 0.20143,
-          "strategy_mean_monthly": 0.01659,
-          "win_rate": 0.675
+          "benchmark_annualized": 0.31961,
+          "excess_annualized": -0.0459,
+          "months": 41,
+          "strategy_annualized": 0.27371,
+          "strategy_mean_monthly": 0.02127,
+          "win_rate": 0.7317
         }
       },
       "rates": {
         "falling_rates": {
-          "benchmark_annualized": 0.08615,
-          "excess_annualized": 0.10332,
-          "months": 32,
-          "strategy_annualized": 0.18947,
-          "strategy_mean_monthly": 0.01611,
-          "win_rate": 0.625
+          "benchmark_annualized": 0.10935,
+          "excess_annualized": 0.09637,
+          "months": 31,
+          "strategy_annualized": 0.20573,
+          "strategy_mean_monthly": 0.01696,
+          "win_rate": 0.6452
         },
         "rising_rates": {
           "benchmark_annualized": 0.17547,
-          "excess_annualized": -0.16902,
+          "excess_annualized": -0.06657,
           "months": 26,
-          "strategy_annualized": 0.00645,
-          "strategy_mean_monthly": 0.00207,
-          "win_rate": 0.5769
+          "strategy_annualized": 0.1089,
+          "strategy_mean_monthly": 0.01001,
+          "win_rate": 0.6154
         }
       },
       "volatility": {
         "high_volatility": {
-          "benchmark_annualized": 0.07924,
-          "excess_annualized": -0.09999,
-          "months": 29,
-          "strategy_annualized": -0.02075,
-          "strategy_mean_monthly": -0.00011,
-          "win_rate": 0.5862
+          "benchmark_annualized": 0.06779,
+          "excess_annualized": -0.03369,
+          "months": 28,
+          "strategy_annualized": 0.03409,
+          "strategy_mean_monthly": 0.00403,
+          "win_rate": 0.6071
         },
         "low_volatility": {
-          "benchmark_annualized": 0.17015,
-          "excess_annualized": 0.06947,
-          "months": 28,
-          "strategy_annualized": 0.23962,
-          "strategy_mean_monthly": 0.01948,
-          "win_rate": 0.6429
+          "benchmark_annualized": 0.20289,
+          "excess_annualized": 0.10142,
+          "months": 29,
+          "strategy_annualized": 0.3043,
+          "strategy_mean_monthly": 0.02361,
+          "win_rate": 0.6897
         }
       }
     }
@@ -385,51 +401,51 @@
     "status": "measured",
     "turnover": {
       "rebalances": 60,
-      "mean_turnover": 0.6492,
-      "total_turnover": 38.9494,
+      "mean_turnover": 0.508,
+      "total_turnover": 30.4821,
       "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)"
     },
     "realized_flat_10bps": {
       "cost_bps": 10.0,
-      "total_cost": 4522.44,
-      "final_value": 169478.08,
-      "cagr": 0.111423
+      "total_cost": 3778.2,
+      "final_value": 204997.55,
+      "cagr": 0.156149
     },
     "scenarios": [
       {
         "scenario": "gross",
         "cost_bps": 0.0,
         "total_cost": 0.0,
-        "drag_vs_realized_flat": -4522.44
+        "drag_vs_realized_flat": -3778.2
       },
       {
         "scenario": "optimistic",
         "cost_bps": 6.25,
-        "total_cost": 2826.54,
-        "drag_vs_realized_flat": -1695.9
+        "total_cost": 2361.37,
+        "drag_vs_realized_flat": -1416.83
       },
       {
         "scenario": "base",
         "cost_bps": 12.5,
-        "total_cost": 5653.03,
-        "drag_vs_realized_flat": 1130.59
+        "total_cost": 4722.74,
+        "drag_vs_realized_flat": 944.54
       },
       {
         "scenario": "stress",
         "cost_bps": 25.0,
-        "total_cost": 11306.05,
-        "drag_vs_realized_flat": 6783.61
+        "total_cost": 9445.5,
+        "drag_vs_realized_flat": 5667.3
       }
     ],
     "per_name_liquidity_legs": {
-      "status": "blocked_network_policy",
+      "status": "not_measured_inputs_available",
       "measures": [
         "adv_participation_pct",
         "estimated_spread_bps_by_name",
         "estimated_market_impact_bps_by_name",
         "days_to_liquidate"
       ],
-      "reason": "costs.estimate_cost_bps's tiered/impact legs need each traded name's own median_dollar_volume_60d and annualized_volatility on the rebalance date. pipeline/data/backtest_cache/ (per-name price/volume history) is empty in this checkout, and this session's network policy blocks fetching it.",
+      "reason": "costs.estimate_cost_bps's tiered/impact legs need each traded name's own median_dollar_volume_60d and annualized_volatility on the rebalance date. The committed pipeline/data/backtest_cache contains those inputs, but the three tiered scenario reruns are separate experiments and are not inferred from this flat-rate repricing.",
       "reproduction_command": "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario {optimistic,base,stress} --out pipeline/reports/backtest_tiered_<scenario>.json"
     },
     "never_present_gross_as_net": true
@@ -437,7 +453,7 @@
   "calibration": {
     "status": "insufficient_data",
     "observations": 0,
-    "target": "residual_forward_return",
+    "target": "sector_residual_return",
     "horizon_sessions": 63,
     "fixed_score_bands": [
       {
@@ -489,19 +505,20 @@
   "experiments": {
     "status": "measured",
     "summary": {
-      "experiments": 12,
-      "total_variants_tested": 43,
+      "experiments": 14,
+      "total_variants_tested": 51,
       "by_decision": {
-        "ABANDON": 4,
+        "ABANDON": 5,
         "INCONCLUSIVE": 2,
         "KEEP_AS_CHALLENGER": 2,
-        "PROMOTE": 4
+        "PROMOTE": 5
       },
       "promoted_to_champion": [
         "WO-1",
         "WO-2",
         "WO-3",
-        "A1-NEWS-NEUTRAL"
+        "A1-NEWS-NEUTRAL",
+        "C6-applicability-unification"
       ]
     },
     "experiments": [
@@ -612,6 +629,24 @@
         "decision": "INCONCLUSIVE",
         "reason": "The gate is the deliverable: fabricating calibration would convert an admitted unknown into a false claim. Caught one inconsistency in testing -- publishability was gated on adaptive quintiles while confidence.py reads fixed bands, and the two can disagree.",
         "number_of_variants_tested": 1
+      },
+      {
+        "id": "C6-applicability-unification",
+        "hypothesis": "The champion and v2 paths resolve metric applicability from the same authority and reach the same answers.",
+        "category": "data_integrity",
+        "result": "Defect confirmed by direct read: the legacy path checked only explicit rules (an insurer's revenue growth stayed scored against a registry that declares it inapplicable) while the v2 path's price_to_sales alias dodged the explicit sales_multiple rule, and every declaration_defaults-inheriting metric was suppressed for the semiconductor profile because the default list predated it -- CRUS's v2 structural score was computed from 3 metrics while the champion scored 26. The matrix also required price_to_book for REITs while the registry suppressed it.",
+        "decision": "PROMOTE",
+        "reason": "Consistency defect fix, not a new signal: one authority now answers both paths under both namespaces, pinned by tests (required-vs-applicability invariant, per-profile legacy/v2 agreement, semiconductor un-gutting).",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "C7-turnover-walkforward",
+        "hypothesis": "The C4 in-sample turnover-control winners (smooth07, hold6) survive the promotion gates: a walk-forward split, PBO below 0.5, and a deflated Sharpe above 0.95.",
+        "category": "signal_evidence",
+        "result": "Rejected on every gate. The variant chosen on the first half finished last of seven on the second half, PBO is 0.80-0.84 (selection is generating winners at random), and no variant's deflated Sharpe probability reached even half the 0.95 bar. The in-sample ordering also disagrees with the earlier 360-name-cache matrix (smooth07/hold6 led there; hold3/margin5 here), which is noise behavior, not a real effect.",
+        "decision": "ABANDON",
+        "reason": "The C4 challengers' in-sample edge does not survive its own selection process. Promoting smooth07 or hold6 on the earlier evidence would have shipped overfit. Turnover remains a cost problem worth attacking, but not through any of these seven selection rules.",
+        "number_of_variants_tested": 7
       }
     ]
   },
@@ -631,7 +666,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 39,
+            "scored": 30,
             "total": 40
           },
           "growth": {
@@ -643,93 +678,93 @@
             "total": 40
           },
           "valuation": {
-            "scored": 40,
+            "scored": 39,
             "total": 40
           }
         }
       },
       "screen_universe": {
         "collection": "screen_universe",
-        "total_rows": 343,
+        "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 110,
-            "total": 343
+            "scored": 180,
+            "total": 839
           },
           "capital_allocation": {
-            "scored": 110,
-            "total": 343
+            "scored": 181,
+            "total": 839
           },
           "financial_health": {
-            "scored": 311,
-            "total": 343
+            "scored": 799,
+            "total": 839
           },
           "growth": {
-            "scored": 343,
-            "total": 343
+            "scored": 827,
+            "total": 839
           },
           "profitability": {
-            "scored": 343,
-            "total": 343
+            "scored": 836,
+            "total": 839
           },
           "valuation": {
-            "scored": 343,
-            "total": 343
+            "scored": 815,
+            "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 150,
-      "non_enriched_count": 233,
+      "enriched_count": 220,
+      "non_enriched_count": 659,
       "score": {
         "enriched": {
-          "n": 150,
-          "mean": 67.39,
-          "median": 67.3,
-          "stdev": 7.56
+          "n": 220,
+          "mean": 70.64,
+          "median": 72.1,
+          "stdev": 10.2
         },
         "non_enriched": {
-          "n": 233,
-          "mean": 40.82,
-          "median": 41.4,
-          "stdev": 6.07
+          "n": 659,
+          "mean": 50.9,
+          "median": 50.5,
+          "stdev": 11.04
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 38,
-          "Financial Services": 33,
-          "Consumer Cyclical": 18,
-          "Healthcare": 16,
-          "Industrials": 16,
-          "Energy": 11,
-          "Consumer Defensive": 4,
-          "Communication Services": 3,
-          "Real Estate": 3,
-          "Basic Materials": 3,
-          "HEALTHCARE": 2,
-          "TECHNOLOGY": 1,
-          "CONSUMER CYCLICAL": 1,
-          "FINANCIAL SERVICES": 1
+          "Financial Services": 60,
+          "Technology": 58,
+          "Healthcare": 22,
+          "Consumer Cyclical": 19,
+          "Industrials": 19,
+          "Energy": 18,
+          "Consumer Defensive": 6,
+          "Communication Services": 6,
+          "Basic Materials": 5,
+          "Utilities": 4,
+          "Real Estate": 2,
+          "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 48,
-          "Consumer Cyclical": 36,
-          "Healthcare": 31,
-          "Technology": 24,
-          "Consumer Defensive": 21,
-          "Real Estate": 21,
-          "Financial Services": 17,
-          "Utilities": 16,
-          "Basic Materials": 13,
-          "Energy": 3,
-          "Communication Services": 3
+          "Industrials": 119,
+          "Technology": 94,
+          "Consumer Cyclical": 94,
+          "Healthcare": 78,
+          "Financial Services": 65,
+          "Real Estate": 51,
+          "Consumer Defensive": 50,
+          "Basic Materials": 33,
+          "Utilities": 30,
+          "Energy": 21,
+          "Communication Services": 21,
+          "ETF": 2,
+          "Unknown": 1
         }
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 37,
+        "rows_with_market_cap": 39,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -739,8 +774,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7c0057f82f040caf2e570c40c3a2a8c40e4a398e",
-    "config_hash": "efe15b0e76c8aa6d3ebfd97b33d5c9a131137a4aa7661343d8a305a364df684b",
-    "generated_at": "2026-08-07T12:05:57.965197+00:00"
+    "git_commit_sha": "218a385e7ac43e2e7ab23fb1e5bcf9d1d7974dde",
+    "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
+    "generated_at": "2026-08-14T01:42:25.509457+00:00"
   }
 }

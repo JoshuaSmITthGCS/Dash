@@ -63,23 +63,26 @@ price move. The UI labels it "Evidence confidence" for that reason.
 anywhere in this repository should be read as a validated result.
 
 **What has been measured**, from a survivorship-biased five-year backtest that uses
-approximated filing timestamps and raw rather than sector-residual returns
-(`docs/ALGORITHM-RESEARCH-RESULTS.md`):
+approximated filing timestamps and raw rather than sector-residual returns. The current
+numbers come from `pipeline/reports/{factor_regression_p0,benchmark_alpha_regressions,strategy_diagnostics}.json`:
 
-- Six-factor regression (Newey-West, 58 months): annualized alpha **−2.57%, |t| = 0.437**.
-  Significant loadings are market (6.50), size (2.06) and momentum (2.50) — not the value and
+- Six-factor regression (Newey-West, 57 months): annualized alpha **+3.06%, |t| = 0.680**,
+  still statistically indistinguishable from zero. Significant loadings are market (8.32),
+  size (3.85) and momentum (2.92) — not the value and
   profitability the score is mostly built from.
-- Against 14 tradeable style/size ETFs: **none beaten with statistically significant alpha**,
-  largest |t| = 1.11. VTV returns more at lower volatility with a shallower drawdown.
-- Regime-dependent: **+10.3pp** annualized against SPY in bear markets and in falling rates,
-  **−16.9pp** in rising rates.
+- Against 14 tradeable style/size ETF legs: all are beaten on CAGR and six smaller-cap or
+  breadth benchmarks are beaten with significant positive alpha. Alpha remains insignificant
+  against SPY, VTV, and the fixed IJH/IWD blend, while the six-factor residual above remains
+  insignificant.
+- Regime-dependent: **+11.1pp** annualized against SPY in bear markets, **+9.6pp** in falling
+  rates, and **−6.7pp** in rising rates.
 
 **Current classification: B — a transparent factor tilt with no demonstrated residual alpha**,
 carrying a real Verdict D caveat because the contract's own target has never been measured.
 Do not present SPY outperformance as this model's objective.
 
 The forecast target is now implemented as specified: 63 **trading sessions**, sector-residual,
-preregistered as primary. Deflation uses the honest trial count (44 variants across 12
+preregistered as primary. Deflation uses the honest trial count (51 variants across 14
 experiments, `pipeline/reports/experiment_registry.json`), not the 5 configured shadow
 strategies.
 
@@ -90,10 +93,10 @@ scenarios, with a labeled (not measured) spread proxy — see `docs/TRANSACTION-
 into both `backtest_monthly.py` and `ic_harness.py` behind `validation.cost_model`, defaulting
 to the original flat 10bps so prior results reproduce exactly.
 
-At the realized 64.9% monthly turnover, the published 10bps costs **78bps a year**, or 7.0% of
-gross return. A tiered model would need a rate above **35.7bps one-way** to give up 200bps more;
-the worst rate the model produces without a volatility input is 25bps
-(`pipeline/reports/cost_sensitivity.json`).
+At the realized 50.8% mean monthly turnover, the published flat 10bps path costs an estimated
+**61bps a year**, or 3.5% of implied gross annualized return. The flat-rate stress scenario is
+25bps; full per-name tiered reruns are reproducible from the committed cache but remain separate
+experiments (`pipeline/reports/cost_sensitivity.json`).
 
 ## Known limitations
 

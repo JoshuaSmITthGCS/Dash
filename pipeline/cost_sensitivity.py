@@ -2,10 +2,9 @@
 
 ``costs.py`` (WO-3) is already wired into ``backtest_monthly.py`` and ``ic_harness.py``. What
 was missing is a report that actually shows the sensitivity. Re-running the backtest itself
-under each cost regime needs each traded name's 5-year daily price/volume history, which is
-not committed (``pipeline/data/backtest_cache/`` is empty) and cannot be fetched under this
-session's network policy -- see ``pipeline/reports/cost_regime_comparison.json`` for that
-blocked leg.
+under each cost regime needs each traded name's 5-year daily price/volume history. That cache
+is now committed, so the full tiered rerun is reproducible; this report remains the cheaper
+flat-rate sensitivity and labels the per-name rerun as available but not measured here.
 
 What *is* real: every one of the 60 monthly rebalances in
 ``pipeline/backtest_monthly_results.json`` already stores its realized ``turnover`` and the
@@ -116,14 +115,15 @@ def build_report(backtest=None):
             "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)",
         },
         "per_name_liquidity_legs": {
-            "status": "blocked_network_policy",
+            "status": "not_measured_inputs_available",
             "measures": ["adv_participation_pct", "estimated_spread_bps_by_name",
                         "estimated_market_impact_bps_by_name", "days_to_liquidate"],
             "reason": (
                 "costs.estimate_cost_bps's tiered/impact legs need each traded name's own "
                 "median_dollar_volume_60d and annualized_volatility on the rebalance date. "
-                "pipeline/data/backtest_cache/ (per-name price/volume history) is empty in "
-                "this checkout, and this session's network policy blocks fetching it."
+                "The committed pipeline/data/backtest_cache contains those inputs, but the "
+                "three tiered scenario reruns are separate experiments and are not inferred "
+                "from this flat-rate repricing."
             ),
             "reproduction_command": (
                 "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario "

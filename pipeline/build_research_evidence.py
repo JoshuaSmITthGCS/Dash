@@ -192,6 +192,17 @@ def build_report():
     loaded = {key: _read(name) for key, name in SOURCES.items()}
     advisor = load_json("advisor.json") or {}
     ic = load_json(os.path.join("validation", "ic_validation.json")) or {}
+    settings = load_json("settings.json", from_config=True) or {}
+    validation = settings.get("validation") or {}
+    primary_horizon = ic.get("primary_horizon") or validation.get("primary_horizon")
+    primary_sessions = (validation.get("horizons_sessions") or {}).get(primary_horizon)
+    forecast_target = None
+    if ic.get("primary_target"):
+        forecast_target = {
+            "definition": ic["primary_target"],
+            "primary_horizon": primary_horizon,
+            "primary_horizon_sessions": primary_sessions,
+        }
     calibration = calibration_panel(loaded["calibration"])
     return {
         "schema_version": 1,
@@ -208,7 +219,7 @@ def build_report():
                                        .get("3M", {}).get("periods_accumulated", 0)),
             "ic_periods_required": ((ic.get("variants") or {}).get("champion", {})
                                     .get("3M", {}).get("minimum_periods")),
-            "forecast_target": ic.get("forecast_target"),
+            "forecast_target": forecast_target,
             "score_is_not_a_probability": (
                 "The Research Score ranks attractiveness. Confidence measures how reliable "
                 "that rank's evidence is. Neither is a probability that the stock rises, and "

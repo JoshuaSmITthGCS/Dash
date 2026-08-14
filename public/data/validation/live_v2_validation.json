@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0.0",
-  "model_version": "structural-timeliness-2.0.0",
+  "model_version": "structural-timeliness-2.1.0",
   "config_version": "live-validation-v1.0.0",
   "universe_version": "representative-v1",
-  "data_cutoff": "2026-08-03T05:29:39.702594+00:00",
-  "run_id": "017a63bd284bfb54",
+  "data_cutoff": "2026-08-14T04:29:08.638790+00:00",
+  "run_id": "246a11b1395cfdc7",
   "production_outputs_replaced": false,
   "raw_response_publication": "not_published",
   "results": [
@@ -14,8 +14,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/HIG-2026-08-03.json",
-        "sha256": "f63ae927a8e6f9fb87f236be3c5ed0e63a17025fce3a6e7d14b91b5e17ea9877"
+        "path": "pipeline/data/staging/raw_provider/HIG-2026-08-14.json",
+        "sha256": "20d6719072522919102f07098179c29bc5f57cfeb4469d37e4fe19d5a7da3dce"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -28,15 +28,15 @@
       "observations": {
         "price": [
           {
-            "value": 141.91,
+            "value": 137.81,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -46,15 +46,15 @@
         ],
         "market_cap": [
           {
-            "value": 38901903360,
+            "value": 37777965056,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -64,15 +64,15 @@
         ],
         "forward_pe": [
           {
-            "value": 10.33888,
+            "value": 10.067281,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -91,8 +91,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -104,17 +104,77 @@
         ],
         "price_to_book": [
           {
-            "value": 1.9972976,
+            "value": 1.9395926,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 1.2886906,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.22061001,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.1489,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -131,8 +191,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -151,8 +211,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -162,40 +222,99 @@
             ],
             "transform_version": "identity.v1"
           }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 0.22329999999999997,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": 0.1457860428383578,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "diversified_insurer",
         "structural": {
-          "raw_score": 100.0,
-          "effective_score": 52.9,
-          "confidence": 0.06,
-          "coverage": 0.08,
+          "raw_score": 93.7,
+          "effective_score": 61.1,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.405797,
+              "profitability": 0.376812,
+              "financial_health": 0.217391
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation",
+              "growth"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.69,
+            "redistributed_weight": 0.31
+          },
+          "evidence_weight_resolved": 0.25,
+          "coverage": 0.35,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.042,
-          "applicable_weight": 0.5134,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.135,
+          "applicable_weight": 0.3814,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
           "missing_metrics": [
             "accruals_ratio",
             "asset_growth",
-            "debt_to_equity",
             "earnings_surprise",
-            "ev_to_ebit",
             "fcf_growth_3y",
-            "gross_profits_to_assets",
             "interest_coverage",
-            "inventory_days_trend",
             "net_buyback_yield",
             "operating_margin_trend",
-            "price_to_book",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
@@ -205,12 +324,16 @@
             "cash_conversion",
             "current_ratio",
             "days_sales_outstanding_trend",
+            "ev_to_ebit",
             "ev_to_ebitda",
             "ev_to_fcf",
             "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "inventory_days_trend",
             "net_debt_to_ebitda",
             "peg",
             "piotroski_f",
+            "price_to_sales",
             "return_on_invested_capital",
             "trailing_revenue_growth"
           ],
@@ -218,9 +341,9 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 100.0,
-            "profitability": null,
-            "financial_health": null,
+            "valuation": 93.8,
+            "profitability": 90.0,
+            "financial_health": 100.0,
             "growth": null,
             "capital_allocation": null,
             "accounting_quality": null
@@ -228,13 +351,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -242,7 +380,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.081,
             "eps_growth": 0.36
@@ -277,24 +415,24 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 10.34,
+            "value": 10.07,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "price_to_book",
+            "reason": "Premium revenue is not comparable to industrial sales, and EV is not an insurer measure.",
             "quality_flags": []
           },
           "price_to_book": {
-            "status": "unavailable",
-            "value": 2.0,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 1.94,
+            "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
@@ -316,11 +454,11 @@
             "quality_flags": []
           },
           "ev_to_ebit": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "price_to_book",
+            "reason": "Enterprise value is economically misleading for insurers, on the same grounds as EV/EBITDA.",
             "quality_flags": []
           },
           "ev_to_fcf": {
@@ -340,42 +478,36 @@
             "quality_flags": []
           },
           "gross_profits_to_assets": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
+            "replaced_by": "underwriting_income",
+            "reason": "Insurers report no gross-profit line; premiums less claims is underwriting income.",
+            "quality_flags": []
+          },
+          "return_on_equity": {
+            "status": "applied",
+            "value": 0.2206,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "return_on_equity": {
-            "status": "unavailable",
-            "value": 0.2206,
-            "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
-          },
           "free_cash_flow_yield": {
             "status": "suppressed",
-            "value": 0.1416,
+            "value": 0.1458,
             "score_contribution": null,
             "replaced_by": "total_capital_return_yield",
             "reason": "Industrial FCF is distorted by premiums, claims, reserves and investment flows.",
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.1489,
-            "score_contribution": null,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "suppressed",
@@ -402,9 +534,9 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.22,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
@@ -524,11 +656,11 @@
             "quality_flags": []
           },
           "inventory_days_trend": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
             "replaced_by": null,
-            "reason": null,
+            "reason": "Insurers hold no inventory.",
             "quality_flags": []
           }
         },
@@ -536,7 +668,11 @@
           "profile_id": "diversified_insurer",
           "profile_confidence": 0.0,
           "applied_metrics": [
-            "forward_pe"
+            "debt_to_equity",
+            "forward_pe",
+            "price_to_book",
+            "profit_margin",
+            "return_on_equity"
           ],
           "suppressed_metrics": [
             "altman_z",
@@ -544,12 +680,16 @@
             "cash_conversion",
             "current_ratio",
             "days_sales_outstanding_trend",
+            "ev_to_ebit",
             "ev_to_ebitda",
             "ev_to_fcf",
             "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "inventory_days_trend",
             "net_debt_to_ebitda",
             "peg",
             "piotroski_f",
+            "price_to_sales",
             "return_on_invested_capital",
             "trailing_revenue_growth"
           ],
@@ -607,7 +747,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.25,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -639,51 +779,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.08397871990418371,
-          "momentum_12_7": 0.11706836026087886,
-          "momentum_6_1": -0.009935493505745852,
-          "high_52w_proximity": 0.9741214360021133,
+          "momentum_12_1": 0.09130261218978086,
+          "momentum_12_7": 0.029319340887163925,
+          "momentum_6_1": 0.01677909287899304,
+          "high_52w_proximity": 0.945977515699753,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.083978719904
+            "return": 0.09130261219
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.117068360261
+            "return": 0.029319340887
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.009935493506
+            "return": 0.016779092879
           }
         }
       },
@@ -706,6 +846,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -723,8 +866,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/JPM-2026-08-03.json",
-        "sha256": "36cb7d4a28c33d655f4caa3bf39ddc19472d380f2dd7d2fbaf5cba13f2e27e3a"
+        "path": "pipeline/data/staging/raw_provider/JPM-2026-08-14.json",
+        "sha256": "56cdb1e8659048bda3a2e33aa7c5c3bca24dd1ac4c57a9c024defb3ec5c92927"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -737,15 +880,33 @@
       "observations": {
         "price": [
           {
-            "value": 351.79,
+            "value": 363.11,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "market_cap": [
+          {
+            "value": 965213945856,
+            "unit": "usd",
+            "source": "yahoo",
+            "source_field": "marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -755,15 +916,15 @@
         ],
         "forward_pe": [
           {
-            "value": 14.187467,
+            "value": 14.520339,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -775,15 +936,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.7205,
+            "value": 1.7597,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -796,17 +957,77 @@
         ],
         "price_to_book": [
           {
-            "value": 2.6448984,
+            "value": 2.7300065,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 5.180187,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.17789,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.34921002,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -823,8 +1044,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -843,8 +1064,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -857,52 +1078,75 @@
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "bank",
         "structural": {
-          "raw_score": 80.0,
-          "effective_score": 51.3,
-          "confidence": 0.04,
-          "coverage": 0.06,
+          "raw_score": 84.2,
+          "effective_score": 56.3,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.518519,
+              "profitability": 0.481481
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation",
+              "financial_health",
+              "growth"
+            ],
+            "inputs_resolved": [
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.54,
+            "redistributed_weight": 0.46
+          },
+          "evidence_weight_resolved": 0.18,
+          "coverage": 0.26,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.042,
-          "applicable_weight": 0.6834,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.108,
+          "applicable_weight": 0.423,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
           "missing_metrics": [
             "accruals_ratio",
             "asset_growth",
-            "capex_to_depreciation",
             "cash_conversion",
-            "days_sales_outstanding_trend",
             "debt_to_equity",
             "earnings_surprise",
-            "ev_to_ebit",
-            "ev_to_fcf",
             "fcf_growth_3y",
-            "gross_profits_to_assets",
             "interest_coverage",
-            "inventory_days_trend",
             "net_buyback_yield",
             "operating_margin_trend",
-            "piotroski_f",
-            "price_to_book",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
           "suppressed_metrics": [
             "altman_z",
+            "capex_to_depreciation",
             "current_ratio",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
             "ev_to_ebitda",
+            "ev_to_fcf",
             "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "inventory_days_trend",
             "net_debt_to_ebitda",
             "peg",
+            "piotroski_f",
+            "price_to_sales",
             "return_on_invested_capital",
             "trailing_revenue_growth"
           ],
@@ -910,8 +1154,8 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 80.0,
-            "profitability": null,
+            "valuation": 78.8,
+            "profitability": 90.0,
             "financial_health": null,
             "growth": null,
             "capital_allocation": null,
@@ -920,13 +1164,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -934,7 +1193,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.304,
             "eps_growth": 0.47
@@ -969,24 +1228,24 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 14.19,
+            "value": 14.52,
             "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "price_to_tangible_book",
+            "reason": "Interest and fee income is not comparable to industrial sales.",
             "quality_flags": []
           },
           "price_to_book": {
-            "status": "unavailable",
-            "value": 2.64,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 2.73,
+            "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
@@ -1008,19 +1267,19 @@
             "quality_flags": []
           },
           "ev_to_ebit": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "price_to_tangible_book",
+            "reason": "Enterprise value is economically misleading for banks.",
             "quality_flags": []
           },
           "ev_to_fcf": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "price_to_tangible_book",
+            "reason": "Industrial FCF is not comparable for banks.",
             "quality_flags": []
           },
           "return_on_invested_capital": {
@@ -1032,22 +1291,20 @@
             "quality_flags": []
           },
           "gross_profits_to_assets": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "net_interest_margin",
+            "reason": "Banks report no gross-profit line.",
             "quality_flags": []
           },
           "return_on_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.1779,
-            "score_contribution": null,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "free_cash_flow_yield": {
             "status": "suppressed",
@@ -1058,14 +1315,12 @@
             "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.3492,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -1174,11 +1429,11 @@
             "quality_flags": []
           },
           "capex_to_depreciation": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "efficiency_ratio",
+            "reason": "Physical reinvestment is not the bank value-creation engine.",
             "quality_flags": []
           },
           "asset_growth": {
@@ -1198,27 +1453,27 @@
             "quality_flags": []
           },
           "piotroski_f": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "common_equity_tier_1_ratio",
+            "reason": "Generic accounting checklist omits credit and capital quality.",
             "quality_flags": []
           },
           "days_sales_outstanding_trend": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "net_charge_off_trend",
+            "reason": "Receivable days do not represent bank credit quality.",
             "quality_flags": []
           },
           "inventory_days_trend": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
             "replaced_by": null,
-            "reason": null,
+            "reason": "Banks hold no inventory.",
             "quality_flags": []
           }
         },
@@ -1226,15 +1481,26 @@
           "profile_id": "bank",
           "profile_confidence": 0.0,
           "applied_metrics": [
-            "forward_pe"
+            "forward_pe",
+            "price_to_book",
+            "profit_margin",
+            "return_on_equity"
           ],
           "suppressed_metrics": [
             "altman_z",
+            "capex_to_depreciation",
             "current_ratio",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
             "ev_to_ebitda",
+            "ev_to_fcf",
             "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "inventory_days_trend",
             "net_debt_to_ebitda",
             "peg",
+            "piotroski_f",
+            "price_to_sales",
             "return_on_invested_capital",
             "trailing_revenue_growth"
           ],
@@ -1282,7 +1548,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.18,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -1314,51 +1580,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.1210369962242408,
-          "momentum_12_7": 0.09298735996284302,
-          "momentum_6_1": 0.07556686404479618,
-          "high_52w_proximity": 0.9845512606661204,
+          "momentum_12_1": 0.18943664696732454,
+          "momentum_12_7": 0.024363554755314487,
+          "momentum_6_1": 0.18276150315081097,
+          "high_52w_proximity": 0.9943315423469637,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.121036996224
+            "return": 0.189436646967
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.092987359963
+            "return": 0.024363554755
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.075566864045
+            "return": 0.182761503151
           }
         }
       },
@@ -1381,6 +1647,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -1398,8 +1667,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/O-2026-08-03.json",
-        "sha256": "854a0833527bee50bab9722d6181a1a7c50a961a760336cd5ac332c01bf12b4e"
+        "path": "pipeline/data/staging/raw_provider/O-2026-08-14.json",
+        "sha256": "15371cb980cfac42bd2d646c15f258e7d0435f5a60896a57cb50fb256a3f930e"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -1412,15 +1681,33 @@
       "observations": {
         "price": [
           {
-            "value": 63.87,
+            "value": 62.95,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "market_cap": [
+          {
+            "value": 59563417600,
+            "unit": "usd",
+            "source": "yahoo",
+            "source_field": "marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1430,15 +1717,15 @@
         ],
         "forward_pe": [
           {
-            "value": 37.41323,
+            "value": 36.874325,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -1450,15 +1737,15 @@
         ],
         "provider_peg": [
           {
-            "value": 3.0296,
+            "value": 2.9357,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1471,15 +1758,15 @@
         ],
         "current_ratio": [
           {
-            "value": 2.062,
+            "value": 1.528,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "currentRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1491,15 +1778,15 @@
         ],
         "price_to_book": [
           {
-            "value": 1.5213664,
+            "value": 1.506053,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1509,17 +1796,77 @@
             "transform_version": "identity.v1"
           }
         ],
+        "price_to_sales": [
+          {
+            "value": 9.82002,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.03225,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.20898001,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
         "trailing_revenue_growth": [
           {
-            "value": 0.12,
+            "value": 0.096,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "revenueGrowth",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1531,15 +1878,15 @@
         ],
         "quarterly_eps_growth": [
           {
-            "value": 0.179,
+            "value": 0.692,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "earningsGrowth",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1549,21 +1896,88 @@
             ],
             "transform_version": "identity.v1"
           }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 0.74722,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": 0.026561301949201786,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "reit",
         "structural": {
-          "raw_score": 50.0,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0.0,
+          "raw_score": 51.8,
+          "effective_score": 50.2,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.405797,
+              "profitability": 0.376812,
+              "financial_health": 0.217391
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation",
+              "growth"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.69,
+            "redistributed_weight": 0.31
+          },
+          "evidence_weight_resolved": 0.11,
+          "coverage": 0.16,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.0,
-          "applicable_weight": 0.739,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.1182,
+          "applicable_weight": 0.753,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
           "missing_metrics": [
@@ -1572,7 +1986,6 @@
             "capex_to_depreciation",
             "cash_conversion",
             "days_sales_outstanding_trend",
-            "debt_to_equity",
             "earnings_surprise",
             "ev_to_ebit",
             "ev_to_ebitda",
@@ -1586,9 +1999,6 @@
             "operating_margin_trend",
             "piotroski_f",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
@@ -1598,7 +2008,6 @@
             "forward_pe",
             "free_cash_flow_yield",
             "peg",
-            "price_to_book",
             "return_on_invested_capital",
             "trailing_revenue_growth"
           ],
@@ -1606,9 +2015,9 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": null,
-            "profitability": null,
-            "financial_health": null,
+            "valuation": 36.4,
+            "profitability": 55.0,
+            "financial_health": 75.0,
             "growth": null,
             "capital_allocation": null,
             "accounting_quality": null
@@ -1616,13 +2025,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -1630,10 +2054,10 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
-            "revenue_growth": 0.12,
-            "eps_growth": 0.18
+            "revenue_growth": 0.096,
+            "eps_growth": 0.69
           },
           "forward": {
             "fy1_growth": null,
@@ -1665,26 +2089,26 @@
           },
           "forward_pe": {
             "status": "suppressed",
-            "value": 37.41,
+            "value": 36.87,
             "score_contribution": null,
             "replaced_by": "price_to_ffo",
             "reason": "P/FFO is the standard earnings multiple for REITs.",
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "applied",
             "value": null,
-            "score_contribution": null,
+            "score_contribution": 15.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
           "price_to_book": {
-            "status": "suppressed",
-            "value": 1.52,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 1.51,
+            "score_contribution": 75.0,
             "replaced_by": null,
-            "reason": "Metric registry does not declare this profile applicable.",
+            "reason": null,
             "quality_flags": []
           },
           "price_to_tangible_book": {
@@ -1736,32 +2160,28 @@
             "quality_flags": []
           },
           "return_on_equity": {
-            "status": "unavailable",
-            "value": 0.0283,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.0323,
+            "score_contribution": 10.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "free_cash_flow_yield": {
             "status": "suppressed",
-            "value": null,
+            "value": 0.0266,
             "score_contribution": null,
             "replaced_by": "affo_yield",
             "reason": "AFFO better reflects recurring property cash generation.",
             "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
-            "value": 0.189,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.209,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -1788,18 +2208,16 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
-            "value": 0.73,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.75,
+            "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "current_ratio": {
             "status": "suppressed",
-            "value": 2.06,
+            "value": 1.53,
             "score_contribution": null,
             "replaced_by": "fixed_charge_coverage",
             "reason": "REIT liquidity is better assessed through debt maturity and coverage.",
@@ -1815,7 +2233,7 @@
           },
           "trailing_revenue_growth": {
             "status": "suppressed",
-            "value": 0.12,
+            "value": 0.096,
             "score_contribution": null,
             "replaced_by": null,
             "reason": "Metric registry does not declare this profile applicable.",
@@ -1823,7 +2241,7 @@
           },
           "trailing_eps_growth": {
             "status": "unavailable",
-            "value": 0.18,
+            "value": 0.69,
             "score_contribution": null,
             "replaced_by": null,
             "reason": null,
@@ -1923,14 +2341,19 @@
         "applicability": {
           "profile_id": "reit",
           "profile_confidence": 0.0,
-          "applied_metrics": [],
+          "applied_metrics": [
+            "debt_to_equity",
+            "price_to_book",
+            "price_to_sales",
+            "profit_margin",
+            "return_on_equity"
+          ],
           "suppressed_metrics": [
             "altman_z",
             "current_ratio",
             "forward_pe",
             "free_cash_flow_yield",
             "peg",
-            "price_to_book",
             "return_on_invested_capital",
             "trailing_revenue_growth"
           ],
@@ -1975,7 +2398,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.11,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -2007,51 +2430,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.16506329427584743,
-          "momentum_12_7": 0.03279180707610263,
-          "momentum_6_1": 0.03510339307030019,
-          "high_52w_proximity": 0.966080595261876,
+          "momentum_12_1": 0.14654888049933046,
+          "momentum_12_7": 0.07002217957822987,
+          "momentum_6_1": -0.025844665415900914,
+          "high_52w_proximity": 0.9521650578339659,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.165063294276
+            "return": 0.146548880499
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.032791807076
+            "return": 0.070022179578
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.03510339307
+            "return": -0.025844665416
           }
         }
       },
@@ -2074,6 +2497,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -2091,8 +2517,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/NEE-2026-08-03.json",
-        "sha256": "17573ab098e70d12c04992365a154884e9e22bbdcc45fbbff181e275a01cd40d"
+        "path": "pipeline/data/staging/raw_provider/NEE-2026-08-14.json",
+        "sha256": "a2792b4a68c88ba55f36589d6542ff8549401370fa8b8fbba2eed2e2cbf62d49"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -2105,15 +2531,15 @@
       "observations": {
         "price": [
           {
-            "value": 86.92,
+            "value": 86.01,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2123,15 +2549,15 @@
         ],
         "market_cap": [
           {
-            "value": 181313224704,
+            "value": 179414990848,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2141,15 +2567,15 @@
         ],
         "forward_pe": [
           {
-            "value": 19.667473,
+            "value": 19.467337,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -2161,15 +2587,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.8967,
+            "value": 1.8505,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2189,10 +2615,90 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_book": [
+          {
+            "value": 3.1404264,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToBook",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 6.2513933,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.11677,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.32401,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -2209,8 +2715,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2229,8 +2735,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2240,20 +2746,88 @@
             ],
             "transform_version": "identity.v1"
           }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 1.61676,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": -0.0990267036886124,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "utility",
         "structural": {
-          "raw_score": 60.6,
-          "effective_score": 50.7,
-          "confidence": 0.07,
-          "coverage": 0.09,
+          "raw_score": 65.3,
+          "effective_score": 52.4,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.35,
+              "profitability": 0.325,
+              "financial_health": 0.1875,
+              "growth": 0.1375
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.8,
+            "redistributed_weight": 0.2
+          },
+          "evidence_weight_resolved": 0.16,
+          "coverage": 0.22,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.0856,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.2038,
           "applicable_weight": 0.9332,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
@@ -2264,7 +2838,6 @@
             "capex_to_depreciation",
             "cash_conversion",
             "days_sales_outstanding_trend",
-            "debt_to_equity",
             "earnings_surprise",
             "ev_to_ebit",
             "ev_to_ebitda",
@@ -2277,12 +2850,8 @@
             "net_debt_to_ebitda",
             "operating_margin_trend",
             "piotroski_f",
-            "price_to_book",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
@@ -2294,9 +2863,9 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 80.0,
-            "profitability": null,
-            "financial_health": 10.0,
+            "valuation": 64.0,
+            "profitability": 77.5,
+            "financial_health": 35.7,
             "growth": 80.0,
             "capital_allocation": null,
             "accounting_quality": null
@@ -2304,13 +2873,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -2318,7 +2902,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.124,
             "eps_growth": 0.53
@@ -2353,26 +2937,24 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 19.67,
+            "value": 19.47,
             "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "applied",
             "value": null,
-            "score_contribution": null,
+            "score_contribution": 45.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "price_to_book": {
-            "status": "unavailable",
-            "value": null,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 3.14,
+            "score_contribution": 50.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
@@ -2426,34 +3008,28 @@
             "quality_flags": []
           },
           "return_on_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.1168,
-            "score_contribution": null,
+            "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "free_cash_flow_yield": {
             "status": "replaced",
-            "value": -0.098,
+            "value": -0.099,
             "score_contribution": null,
             "replaced_by": "funds_from_operations_yield",
             "reason": "Regulated utilities commonly fund large mandated capital programs.",
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.324,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -2480,14 +3056,12 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 1.62,
-            "score_contribution": null,
+            "score_contribution": 50.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "current_ratio": {
             "status": "applied",
@@ -2617,7 +3191,12 @@
           "profile_confidence": 0.0,
           "applied_metrics": [
             "current_ratio",
+            "debt_to_equity",
             "forward_pe",
+            "price_to_book",
+            "price_to_sales",
+            "profit_margin",
+            "return_on_equity",
             "trailing_revenue_growth"
           ],
           "suppressed_metrics": [
@@ -2659,7 +3238,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.16,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -2691,51 +3270,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.2709189165063959,
-          "momentum_12_7": 0.14619492310260407,
-          "momentum_6_1": 0.012693050244031667,
-          "high_52w_proximity": 0.8945304985646247,
+          "momentum_12_1": 0.23179163383861234,
+          "momentum_12_7": 0.22824723111782763,
+          "momentum_6_1": -0.06626163722693068,
+          "high_52w_proximity": 0.8851653441469493,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.270918916506
+            "return": 0.231791633839
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.146194923103
+            "return": 0.228247231118
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.012693050244
+            "return": -0.066261637227
           }
         }
       },
@@ -2758,6 +3337,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -2775,8 +3357,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/BSX-2026-08-03.json",
-        "sha256": "c03501a2cfb148a24db72531ac67f3af98228ea11855b1a8053a86e55d0b1ae8"
+        "path": "pipeline/data/staging/raw_provider/BSX-2026-08-14.json",
+        "sha256": "e0b70546bbbd7da52808dd11060083b6fcfabaaf1c57c12d65fddcf68df230a8"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -2789,15 +3371,15 @@
       "observations": {
         "price": [
           {
-            "value": 46.73,
+            "value": 51.69,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2807,15 +3389,15 @@
         ],
         "market_cap": [
           {
-            "value": 69457379328,
+            "value": 74910670848,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2825,15 +3407,15 @@
         ],
         "forward_pe": [
           {
-            "value": 13.574042,
+            "value": 15.032762,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -2845,15 +3427,15 @@
         ],
         "provider_peg": [
           {
-            "value": 0.6716,
+            "value": 0.7252,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2864,19 +3446,99 @@
             "transform_version": "identity.v1"
           }
         ],
+        "current_ratio": [
+          {
+            "value": 1.24,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "currentRatio",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
         "price_to_book": [
           {
-            "value": 2.6853235,
+            "value": 2.9996517,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 3.5678544,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.15338999,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.17499,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -2893,8 +3555,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2913,8 +3575,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2924,20 +3586,88 @@
             ],
             "transform_version": "identity.v1"
           }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 0.50151,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": 0.03272397745541546,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "general",
         "structural": {
-          "raw_score": 82.9,
-          "effective_score": 52.0,
-          "confidence": 0.06,
-          "coverage": 0.08,
+          "raw_score": 77.0,
+          "effective_score": 54.8,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.35,
+              "profitability": 0.325,
+              "financial_health": 0.1875,
+              "growth": 0.1375
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.8,
+            "redistributed_weight": 0.2
+          },
+          "evidence_weight_resolved": 0.18,
+          "coverage": 0.25,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.0846,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.2454,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
@@ -2947,15 +3677,12 @@
             "asset_growth",
             "capex_to_depreciation",
             "cash_conversion",
-            "current_ratio",
             "days_sales_outstanding_trend",
-            "debt_to_equity",
             "earnings_surprise",
             "ev_to_ebit",
             "ev_to_ebitda",
             "ev_to_fcf",
             "fcf_growth_3y",
-            "free_cash_flow_yield",
             "gross_profits_to_assets",
             "interest_coverage",
             "inventory_days_trend",
@@ -2965,10 +3692,7 @@
             "peg",
             "piotroski_f",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
@@ -2977,9 +3701,9 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 93.8,
-            "profitability": null,
-            "financial_health": null,
+            "valuation": 89.5,
+            "profitability": 68.9,
+            "financial_health": 83.9,
             "growth": 55.0,
             "capital_allocation": null,
             "accounting_quality": null
@@ -2987,13 +3711,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -3001,7 +3740,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.075,
             "eps_growth": 0.15
@@ -3036,25 +3775,23 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 13.57,
+            "value": 15.03,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "applied",
             "value": null,
-            "score_contribution": null,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "price_to_book": {
             "status": "applied",
-            "value": 2.69,
+            "value": 3.0,
             "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
@@ -3109,30 +3846,28 @@
             "quality_flags": []
           },
           "return_on_equity": {
-            "status": "unavailable",
-            "value": null,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.1534,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
           "free_cash_flow_yield": {
-            "status": "unavailable",
-            "value": null,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.0327,
+            "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.175,
-            "score_contribution": null,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -3159,19 +3894,17 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
-            "value": 0.42,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.5,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "current_ratio": {
-            "status": "unavailable",
-            "value": null,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 1.24,
+            "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
@@ -3295,8 +4028,14 @@
           "profile_id": "general",
           "profile_confidence": 0.0,
           "applied_metrics": [
+            "current_ratio",
+            "debt_to_equity",
             "forward_pe",
+            "free_cash_flow_yield",
             "price_to_book",
+            "price_to_sales",
+            "profit_margin",
+            "return_on_equity",
             "trailing_revenue_growth"
           ],
           "suppressed_metrics": [],
@@ -3313,7 +4052,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.18,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -3345,51 +4084,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": -0.5932138672319536,
-          "momentum_12_7": -0.09121235095157287,
-          "momentum_6_1": -0.5436758167196393,
-          "high_52w_proximity": 0.4321250213240661,
+          "momentum_12_1": -0.5570616157133997,
+          "momentum_12_7": -0.11345972721045616,
+          "momentum_6_1": -0.3919323296021606,
+          "high_52w_proximity": 0.4779914825083395,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": -0.593213867232
+            "return": -0.557061615713
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.091212350952
+            "return": -0.11345972721
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.54367581672
+            "return": -0.391932329602
           }
         }
       },
@@ -3412,6 +4151,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -3429,8 +4171,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/MSFT-2026-08-03.json",
-        "sha256": "d093ac35f1fc9808f2d725c6247d0b6a241677d265208c1938f3b832013725cf"
+        "path": "pipeline/data/staging/raw_provider/MSFT-2026-08-14.json",
+        "sha256": "199bb9aedc63071685b18ba09da356f161114a50c79277e2574dfbd3b63ee4d7"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -3443,15 +4185,15 @@
       "observations": {
         "price": [
           {
-            "value": 464.72,
+            "value": 496.88,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3461,15 +4203,15 @@
         ],
         "market_cap": [
           {
-            "value": 3450799652864,
+            "value": 3689605234688,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3479,15 +4221,15 @@
         ],
         "forward_pe": [
           {
-            "value": 19.964653,
+            "value": 21.078102,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -3499,15 +4241,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.5188,
+            "value": 1.6526,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3527,8 +4269,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3540,17 +4282,77 @@
         ],
         "price_to_book": [
           {
-            "value": 7.8018975,
+            "value": 8.341812,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 11.11866,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.34039003,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.40305,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -3567,8 +4369,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3587,8 +4389,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3598,20 +4400,88 @@
             ],
             "transform_version": "identity.v1"
           }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 0.29118,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": 0.004484355129499137,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "general",
         "structural": {
-          "raw_score": 73.7,
-          "effective_score": 51.7,
-          "confidence": 0.07,
-          "coverage": 0.1,
+          "raw_score": 77.4,
+          "effective_score": 54.8,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.35,
+              "profitability": 0.325,
+              "financial_health": 0.1875,
+              "growth": 0.1375
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.8,
+            "redistributed_weight": 0.2
+          },
+          "evidence_weight_resolved": 0.18,
+          "coverage": 0.25,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.0996,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.2454,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
@@ -3622,13 +4492,11 @@
             "capex_to_depreciation",
             "cash_conversion",
             "days_sales_outstanding_trend",
-            "debt_to_equity",
             "earnings_surprise",
             "ev_to_ebit",
             "ev_to_ebitda",
             "ev_to_fcf",
             "fcf_growth_3y",
-            "free_cash_flow_yield",
             "gross_profits_to_assets",
             "interest_coverage",
             "inventory_days_trend",
@@ -3638,10 +4506,7 @@
             "peg",
             "piotroski_f",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
@@ -3650,9 +4515,9 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 81.2,
-            "profitability": null,
-            "financial_health": 55.0,
+            "valuation": 80.9,
+            "profitability": 68.9,
+            "financial_health": 83.9,
             "growth": 80.0,
             "capital_allocation": null,
             "accounting_quality": null
@@ -3660,13 +4525,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -3674,7 +4554,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.177,
             "eps_growth": 0.32
@@ -3709,25 +4589,23 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 19.96,
+            "value": 21.08,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "applied",
             "value": null,
-            "score_contribution": null,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "price_to_book": {
             "status": "applied",
-            "value": 7.8,
+            "value": 8.34,
             "score_contribution": 25.0,
             "replaced_by": null,
             "reason": null,
@@ -3782,34 +4660,28 @@
             "quality_flags": []
           },
           "return_on_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.3404,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "free_cash_flow_yield": {
-            "status": "unavailable",
-            "value": 0.0047,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.0045,
+            "score_contribution": 30.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.4031,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -3836,14 +4708,12 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.29,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "current_ratio": {
             "status": "applied",
@@ -3973,8 +4843,13 @@
           "profile_confidence": 0.0,
           "applied_metrics": [
             "current_ratio",
+            "debt_to_equity",
             "forward_pe",
+            "free_cash_flow_yield",
             "price_to_book",
+            "price_to_sales",
+            "profit_margin",
+            "return_on_equity",
             "trailing_revenue_growth"
           ],
           "suppressed_metrics": [],
@@ -3991,7 +4866,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.18,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -4023,51 +4898,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": -0.29522115817394234,
-          "momentum_12_7": -0.09030612462591958,
-          "momentum_6_1": -0.12923580660346712,
-          "high_52w_proximity": 0.8627357433366624,
+          "momentum_12_1": -0.07702308929512625,
+          "momentum_12_7": -0.14919313779825938,
+          "momentum_6_1": 0.18583932348665733,
+          "high_52w_proximity": 0.9224397224323799,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": -0.295221158174
+            "return": -0.077023089295
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.090306124626
+            "return": -0.149193137798
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.129235806603
+            "return": 0.185839323487
           }
         }
       },
@@ -4090,6 +4965,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -4107,8 +4985,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/XOM-2026-08-03.json",
-        "sha256": "6f3da63d3b6f0e2bc02d8aefabba60f031210b127ff4288948890f4a7d995332"
+        "path": "pipeline/data/staging/raw_provider/XOM-2026-08-14.json",
+        "sha256": "7f799db5202aa048e4ecde86a80e16da4d69805020f3dee85d786bc9c18287fd"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -4121,15 +4999,33 @@
       "observations": {
         "price": [
           {
-            "value": 155.44,
+            "value": 158.61,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "market_cap": [
+          {
+            "value": 652190351360,
+            "unit": "usd",
+            "source": "yahoo",
+            "source_field": "marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4139,15 +5035,15 @@
         ],
         "forward_pe": [
           {
-            "value": 14.692454,
+            "value": 14.7865505,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -4159,15 +5055,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.3159,
+            "value": 1.2507,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4187,8 +5083,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4200,17 +5096,77 @@
         ],
         "price_to_book": [
           {
-            "value": 2.4642117,
+            "value": 2.514426,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 1.8063213,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": 0.12584,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": 0.09072,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -4227,8 +5183,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4247,8 +5203,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4258,21 +5214,89 @@
             ],
             "transform_version": "identity.v1"
           }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 0.15921,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": 0.031694735337459624,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "commodity_producer",
         "structural": {
-          "raw_score": 84.3,
-          "effective_score": 52.5,
-          "confidence": 0.07,
-          "coverage": 0.1,
+          "raw_score": 78.7,
+          "effective_score": 55.8,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.35,
+              "profitability": 0.325,
+              "financial_health": 0.1875,
+              "growth": 0.1375
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.8,
+            "redistributed_weight": 0.2
+          },
+          "evidence_weight_resolved": 0.2,
+          "coverage": 0.28,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.0996,
-          "applicable_weight": 0.9748,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.2454,
+          "applicable_weight": 0.8758,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
           "missing_metrics": [
@@ -4282,38 +5306,33 @@
             "capex_to_depreciation",
             "cash_conversion",
             "days_sales_outstanding_trend",
-            "debt_to_equity",
             "earnings_surprise",
             "ev_to_ebit",
             "ev_to_ebitda",
             "ev_to_fcf",
-            "fcf_growth_3y",
-            "free_cash_flow_yield",
-            "gross_profits_to_assets",
             "interest_coverage",
             "inventory_days_trend",
             "net_buyback_yield",
             "net_debt_to_ebitda",
-            "operating_margin_trend",
             "piotroski_f",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
           "suppressed_metrics": [
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "operating_margin_trend",
             "peg"
           ],
           "stale_metrics": [],
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 93.8,
-            "profitability": null,
-            "financial_health": 55.0,
+            "valuation": 89.5,
+            "profitability": 55.0,
+            "financial_health": 83.9,
             "growth": 100.0,
             "capital_allocation": null,
             "accounting_quality": null
@@ -4321,13 +5340,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -4335,7 +5369,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.441,
             "eps_growth": 1.13
@@ -4370,23 +5404,23 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 14.69,
+            "value": 14.79,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "applied",
             "value": null,
-            "score_contribution": null,
+            "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
           "price_to_book": {
             "status": "applied",
-            "value": 2.46,
+            "value": 2.51,
             "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
@@ -4433,40 +5467,36 @@
             "quality_flags": []
           },
           "gross_profits_to_assets": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
+            "replaced_by": "lifting_production_cost",
+            "reason": "Gross profitability moves with realized price rather than asset productivity.",
+            "quality_flags": []
+          },
+          "return_on_equity": {
+            "status": "applied",
+            "value": 0.1258,
+            "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
-          "return_on_equity": {
-            "status": "unavailable",
-            "value": 0.1258,
-            "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
-          },
           "free_cash_flow_yield": {
-            "status": "unavailable",
-            "value": null,
-            "score_contribution": null,
+            "status": "applied",
+            "value": 0.0317,
+            "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.0907,
-            "score_contribution": null,
+            "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -4493,14 +5523,12 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.16,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "current_ratio": {
             "status": "applied",
@@ -4537,19 +5565,19 @@
             ]
           },
           "fcf_growth_3y": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "free_cash_flow_breakeven",
+            "reason": "Three-year FCF growth for a producer tracks the commodity cycle, not capital discipline.",
             "quality_flags": []
           },
           "operating_margin_trend": {
-            "status": "unavailable",
+            "status": "suppressed",
             "value": null,
             "score_contribution": null,
-            "replaced_by": null,
-            "reason": null,
+            "replaced_by": "normalized_midcycle_margin",
+            "reason": "Trailing margin trend for a producer is the realized commodity price, not structural improvement.",
             "quality_flags": []
           },
           "earnings_surprise": {
@@ -4630,11 +5658,19 @@
           "profile_confidence": 0.0,
           "applied_metrics": [
             "current_ratio",
+            "debt_to_equity",
             "forward_pe",
+            "free_cash_flow_yield",
             "price_to_book",
+            "price_to_sales",
+            "profit_margin",
+            "return_on_equity",
             "trailing_revenue_growth"
           ],
           "suppressed_metrics": [
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "operating_margin_trend",
             "peg"
           ],
           "replacement_metrics": [
@@ -4672,7 +5708,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.2,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -4704,51 +5740,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.26368802423268844,
-          "momentum_12_7": 0.09747564408185827,
-          "momentum_6_1": -0.020046214897523562,
-          "high_52w_proximity": 0.9126672303801805,
+          "momentum_12_1": 0.39046351463673856,
+          "momentum_12_7": 0.24802493382208568,
+          "momentum_6_1": 0.02619699961579003,
+          "high_52w_proximity": 0.9312799002445685,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.263688024233
+            "return": 0.390463514637
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.097475644082
+            "return": 0.248024933822
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.020046214898
+            "return": 0.026196999616
           }
         }
       },
@@ -4771,6 +5807,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -4788,8 +5827,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/MRNA-2026-08-03.json",
-        "sha256": "b6d7c7775b35fea6b0dce88cb50fb9dc44bfe48cd79633e6c5ea64fdbe10c44d"
+        "path": "pipeline/data/staging/raw_provider/MRNA-2026-08-14.json",
+        "sha256": "5b4005d0ccdafc2e661295d068fcb303b010bac235049d8c50a675004063b4f4"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -4802,15 +5841,15 @@
       "observations": {
         "price": [
           {
-            "value": 54.82,
+            "value": 63.65,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4820,15 +5859,15 @@
         ],
         "market_cap": [
           {
-            "value": 21751822336,
+            "value": 25411366912,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4838,15 +5877,15 @@
         ],
         "forward_pe": [
           {
-            "value": -11.367242,
+            "value": -13.167695,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -4865,8 +5904,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4878,17 +5917,77 @@
         ],
         "price_to_book": [
           {
-            "value": 3.2351727,
+            "value": 3.7562704,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "price_to_sales": [
+          {
+            "value": 11.405461,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToSalesTrailing12Months",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "return_on_equity": [
+          {
+            "value": -0.38998002,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "returnOnEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "profit_margin": [
+          {
+            "value": -1.41427,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "profitMargins",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
             "is_forward": false,
             "quality_flags": [
               "provider_period_not_supplied"
@@ -4905,8 +6004,48 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": true,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "debt_to_equity": [
+          {
+            "value": 0.19036,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "debtToEquity",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ],
+        "free_cash_flow_yield": [
+          {
+            "value": 0.011776225381196841,
+            "unit": "decimal",
+            "source": "yahoo",
+            "source_field": "freeCashflow/marketCap",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4918,17 +6057,45 @@
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "pre_profit_biotechnology",
         "structural": {
-          "raw_score": 70.4,
-          "effective_score": 50.8,
-          "confidence": 0.04,
-          "coverage": 0.06,
+          "raw_score": 31.4,
+          "effective_score": 47.5,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {
+              "valuation": 0.35,
+              "profitability": 0.325,
+              "financial_health": 0.1875,
+              "growth": 0.1375
+            },
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation"
+            ],
+            "inputs_resolved": [
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "covered_weight_fraction": 0.8,
+            "redistributed_weight": 0.2
+          },
+          "evidence_weight_resolved": 0.14,
+          "coverage": 0.19,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
-          "available_weight": 0.0436,
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "available_weight": 0.1478,
           "applicable_weight": 0.7826,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
@@ -4938,7 +6105,6 @@
             "capex_to_depreciation",
             "cash_conversion",
             "days_sales_outstanding_trend",
-            "debt_to_equity",
             "earnings_surprise",
             "ev_to_ebit",
             "ev_to_ebitda",
@@ -4952,9 +6118,6 @@
             "operating_margin_trend",
             "piotroski_f",
             "price_to_tangible_book",
-            "profit_margin",
-            "return_on_equity",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth"
           ],
@@ -4970,8 +6133,8 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": null,
-            "profitability": null,
+            "valuation": 15.0,
+            "profitability": 10.0,
             "financial_health": 100.0,
             "growth": 30.0,
             "capital_allocation": null,
@@ -4980,13 +6143,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -4994,7 +6172,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": 0.021,
             "eps_growth": null
@@ -5029,7 +6207,7 @@
           },
           "forward_pe": {
             "status": "suppressed",
-            "value": -11.37,
+            "value": -13.17,
             "score_contribution": null,
             "replaced_by": "cash_runway_months",
             "reason": "No positive consensus earnings.",
@@ -5038,19 +6216,17 @@
               "provider_value_outside_valid_range"
             ]
           },
-          "sales_multiple": {
-            "status": "unavailable",
+          "price_to_sales": {
+            "status": "applied",
             "value": null,
-            "score_contribution": null,
+            "score_contribution": 15.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "price_to_book": {
             "status": "suppressed",
-            "value": 3.24,
+            "value": 3.76,
             "score_contribution": null,
             "replaced_by": "cash_runway_months",
             "reason": "Book value does not capture pipeline probability.",
@@ -5105,34 +6281,28 @@
             "quality_flags": []
           },
           "return_on_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": -0.39,
-            "score_contribution": null,
+            "score_contribution": 10.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "free_cash_flow_yield": {
             "status": "suppressed",
-            "value": 0.0138,
+            "value": 0.0118,
             "score_contribution": null,
             "replaced_by": "cash_runway_months",
             "reason": "Cash burn should be evaluated as runway.",
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "profit_margin": {
-            "status": "unavailable",
+            "status": "applied",
             "value": -1.4143,
-            "score_contribution": null,
+            "score_contribution": 10.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "cash_conversion": {
             "status": "unavailable",
@@ -5159,14 +6329,12 @@
             "quality_flags": []
           },
           "debt_to_equity": {
-            "status": "unavailable",
+            "status": "applied",
             "value": 0.19,
-            "score_contribution": null,
+            "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
-            "quality_flags": [
-              "legacy_value_missing_lineage"
-            ]
+            "quality_flags": []
           },
           "current_ratio": {
             "status": "applied",
@@ -5294,6 +6462,10 @@
           "profile_confidence": 0.0,
           "applied_metrics": [
             "current_ratio",
+            "debt_to_equity",
+            "price_to_sales",
+            "profit_margin",
+            "return_on_equity",
             "trailing_revenue_growth"
           ],
           "suppressed_metrics": [
@@ -5338,7 +6510,7 @@
       "company_action": {
         "label": "insufficient_evidence",
         "display_label": "INSUFFICIENT EVIDENCE",
-        "confidence": 0.0,
+        "confidence": 0.14,
         "reason_namespace": "company_data_quality",
         "reason_codes": [
           "company_confidence_below_0_40"
@@ -5370,51 +6542,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 1.3690798391245607,
-          "momentum_12_7": -0.00236805467147827,
-          "momentum_6_1": 0.589062837854331,
-          "high_52w_proximity": 0.6701711204110546,
+          "momentum_12_1": 1.275633015674146,
+          "momentum_12_7": 0.8293897640382522,
+          "momentum_6_1": 0.02333395570507668,
+          "high_52w_proximity": 0.7781173490373253,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 1.369079839125
+            "return": 1.275633015674
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.002368054671
+            "return": 0.829389764038
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.589062837854
+            "return": 0.023333955705
           }
         }
       },
@@ -5437,6 +6609,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -5454,11 +6629,11 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/VTI-2026-08-03.json",
-        "sha256": "dc8199e5b5865dcef2bae031ef2ee74ef4d11c49113c4525c427c22cb15d4a9c"
+        "path": "pipeline/data/staging/raw_provider/VTI-2026-08-14.json",
+        "sha256": "71f85d713fa2b5d87dbb1ca33b3a0ff22ebd14413961b9654eee96e40c6064fe"
       },
       "classification": {
-        "company": "insufficient_evidence",
+        "company": "unavailable",
         "profile_id": "etf",
         "peer_group": null,
         "total_peer_count": 0,
@@ -5467,16 +6642,38 @@
       },
       "observations": {},
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "etf",
         "structural": {
-          "raw_score": 50.0,
-          "effective_score": 50.0,
-          "confidence": 0.0,
+          "raw_score": null,
+          "effective_score": null,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation",
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "evidence_weight_resolved": 0.0,
           "coverage": 0.0,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
           "available_weight": 0.0,
           "applicable_weight": 0.0,
           "stale_weight": 0.0,
@@ -5507,18 +6704,18 @@
             "peg",
             "piotroski_f",
             "price_to_book",
+            "price_to_sales",
             "price_to_tangible_book",
             "profit_margin",
             "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth",
             "trailing_revenue_growth"
           ],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "categories": {
             "valuation": null,
             "profitability": null,
@@ -5530,13 +6727,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -5544,7 +6756,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": null,
             "eps_growth": null
@@ -5563,7 +6775,7 @@
             "guidance_direction": null
           }
         },
-        "company_classification": "insufficient_evidence",
+        "company_classification": "unavailable",
         "screen_memberships": [],
         "position_action": null,
         "metric_status": {
@@ -5585,7 +6797,7 @@
             "reason": "Corporate metric does not apply to ETFs.",
             "quality_flags": []
           },
-          "sales_multiple": {
+          "price_to_sales": {
             "status": "suppressed",
             "value": null,
             "score_contribution": null,
@@ -5855,11 +7067,11 @@
             "peg",
             "piotroski_f",
             "price_to_book",
+            "price_to_sales",
             "price_to_tangible_book",
             "profit_margin",
             "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth",
             "trailing_revenue_growth"
@@ -5916,51 +7128,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.20415833098717773,
-          "momentum_12_7": 0.08448523361998639,
-          "momentum_6_1": 0.0930707505268622,
-          "high_52w_proximity": 0.9864012316050819,
+          "momentum_12_1": 0.17067697711934127,
+          "momentum_12_7": 0.07632125718750049,
+          "momentum_6_1": 0.09344419508294233,
+          "high_52w_proximity": 1.0,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.204158330987
+            "return": 0.170676977119
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.08448523362
+            "return": 0.076321257188
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.093070750527
+            "return": 0.093444195083
           }
         }
       },
@@ -5983,6 +7195,9 @@
         "low_confidence_action_gate": {
           "status": "pass"
         },
+        "unresolved_layer_publishes_no_score": {
+          "status": "pass"
+        },
         "company_and_position_actions_separate": {
           "status": "pass"
         },
@@ -6000,11 +7215,11 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/TLT-2026-08-03.json",
-        "sha256": "e2dcebd32e0e91e683abacd3820f673fe684028bfd88939b8f63849e08012d65"
+        "path": "pipeline/data/staging/raw_provider/TLT-2026-08-14.json",
+        "sha256": "c789338fe0d12d97d0ca482b7bb80d450aa7763986231f1a077bdcf432676747"
       },
       "classification": {
-        "company": "insufficient_evidence",
+        "company": "unavailable",
         "profile_id": "etf",
         "peer_group": null,
         "total_peer_count": 0,
@@ -6014,15 +7229,15 @@
       "observations": {
         "forward_pe": [
           {
-            "value": -4112.5,
+            "value": -4129.5,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -6034,15 +7249,15 @@
         ],
         "price_to_book": [
           {
-            "value": 0.552514,
+            "value": 0.55479795,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-03T05:29:39.702594+00:00",
-            "fetched_at": "2026-08-03T05:29:39.702594+00:00",
+            "observed_at": "2026-08-14T04:29:08.638790+00:00",
+            "fetched_at": "2026-08-14T04:29:08.638790+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -6054,16 +7269,38 @@
         ]
       },
       "analysis": {
-        "model_version": "structural-timeliness-2.0.0",
+        "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "etf",
         "structural": {
-          "raw_score": 50.0,
-          "effective_score": 50.0,
-          "confidence": 0.0,
+          "raw_score": null,
+          "effective_score": null,
+          "weight_renormalization": {
+            "weights_declared": {
+              "valuation": 0.28,
+              "profitability": 0.26,
+              "financial_health": 0.15,
+              "growth": 0.11,
+              "capital_allocation": 0.1,
+              "accounting_quality": 0.1
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "accounting_quality",
+              "capital_allocation",
+              "financial_health",
+              "growth",
+              "profitability",
+              "valuation"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "evidence_weight_resolved": 0.0,
           "coverage": 0.0,
           "coverage_basis": "answered_applicable_weight",
-          "confidence_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
+          "evidence_weight_basis": "coverage_x_provenance_reliability_minus_stale_and_conflict_penalties",
           "available_weight": 0.0,
           "applicable_weight": 0.0,
           "stale_weight": 0.0,
@@ -6094,18 +7331,18 @@
             "peg",
             "piotroski_f",
             "price_to_book",
+            "price_to_sales",
             "price_to_tangible_book",
             "profit_margin",
             "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth",
             "trailing_revenue_growth"
           ],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "categories": {
             "valuation": null,
             "profitability": null,
@@ -6117,13 +7354,28 @@
         },
         "timeliness": {
           "raw_score": null,
-          "effective_score": 50.0,
-          "confidence": 0.0,
-          "coverage": 0,
-          "available_weight": 0,
+          "effective_score": null,
+          "evidence_weight_resolved": 0.0,
+          "coverage": 0.0,
+          "available_weight": 0.0,
           "applicable_weight": 1.0,
           "stale_weight": 0.0,
           "conflicted_weight": 0.0,
+          "weight_renormalization": {
+            "weights_declared": {
+              "forward_eps_revision_30d": 0.7,
+              "earnings_surprise": 0.3
+            },
+            "weights_effective": {},
+            "inputs_dropped": [
+              "earnings_surprise",
+              "forward_eps_revision_30d"
+            ],
+            "inputs_resolved": [],
+            "covered_weight_fraction": 0.0,
+            "redistributed_weight": 1.0
+          },
+          "unavailable_reason": "No free provider supplies broad forward consensus estimates or revisions, and earnings-surprise collection is opt-in (ENABLE_EARNINGS_SURPRISE). Publishing nothing rather than a neutral placeholder.",
           "missing_metrics": [
             "forward_eps_revision_30d",
             "earnings_surprise"
@@ -6131,7 +7383,7 @@
           "suppressed_metrics": [],
           "stale_metrics": [],
           "provider_conflicts": [],
-          "classification": "insufficient_evidence",
+          "classification": "unavailable",
           "trailing_growth": {
             "revenue_growth": null,
             "eps_growth": null
@@ -6150,7 +7402,7 @@
             "guidance_direction": null
           }
         },
-        "company_classification": "insufficient_evidence",
+        "company_classification": "unavailable",
         "screen_memberships": [],
         "position_action": null,
         "metric_status": {
@@ -6166,7 +7418,7 @@
           },
           "forward_pe": {
             "status": "suppressed",
-            "value": -4112.5,
+            "value": -4129.5,
             "score_contribution": null,
             "replaced_by": null,
             "reason": "Corporate metric does not apply to ETFs.",
@@ -6175,7 +7427,7 @@
               "provider_value_outside_valid_range"
             ]
           },
-          "sales_multiple": {
+          "price_to_sales": {
             "status": "suppressed",
             "value": null,
             "score_contribution": null,
@@ -6445,11 +7697,11 @@
             "peg",
             "piotroski_f",
             "price_to_book",
+            "price_to_sales",
             "price_to_tangible_book",
             "profit_margin",
             "return_on_equity",
             "return_on_invested_capital",
-            "sales_multiple",
             "stock_comp_to_revenue",
             "trailing_eps_growth",
             "trailing_revenue_growth"
@@ -6506,51 +7758,51 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.03573079863402295,
-          "momentum_12_7": 0.025209820277288575,
-          "momentum_6_1": 0.010610298578634048,
-          "high_52w_proximity": 0.922644977816393,
+          "momentum_12_1": -0.010731081532781017,
+          "momentum_12_7": 0.024726522062316514,
+          "momentum_6_1": -0.07735513613143552,
+          "high_52w_proximity": 0.9301908890540616,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.035730798634
+            "return": -0.010731081533
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2025-07-31",
-            "ending_month_end": "2025-12-31",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2025-08-29",
+            "ending_month_end": "2026-01-30",
             "skipped_months": [
-              "2026-01",
               "2026-02",
               "2026-03",
               "2026-04",
               "2026-05",
               "2026-06",
-              "2026-07"
+              "2026-07",
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.025209820277
+            "return": 0.024726522062
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-03",
-            "starting_month_end": "2026-01-30",
-            "ending_month_end": "2026-06-30",
+            "formation_date": "2026-08-14",
+            "starting_month_end": "2026-02-27",
+            "ending_month_end": "2026-07-31",
             "skipped_months": [
-              "2026-07"
+              "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.010610298579
+            "return": -0.077355136131
           }
         }
       },
@@ -6571,6 +7823,9 @@
           "status": "pass"
         },
         "low_confidence_action_gate": {
+          "status": "pass"
+        },
+        "unresolved_layer_publishes_no_score": {
           "status": "pass"
         },
         "company_and_position_actions_separate": {

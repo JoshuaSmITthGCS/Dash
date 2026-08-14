@@ -406,8 +406,9 @@ statistic anywhere in this repository should be read as a validated result.
 What *has* been measured, from a survivorship-biased five-year backtest using approximated
 filing timestamps and raw (not sector-residual) returns (`docs/ALGORITHM-RESEARCH-RESULTS.md`):
 
-- Six-factor regression (Newey-West, 58 months): annualized alpha **−2.57%**, |t| = 0.437.
-  Significant loadings are market (6.50), size (2.06), momentum (2.50) — **not** the value and
+- Latest committed six-factor regression (Newey-West, 57 months): annualized alpha **+3.06%**,
+  |t| = 0.680 and therefore still insignificant. Significant loadings are market (8.32),
+  size (3.85), momentum (2.92) — **not** the value and
   profitability the score is mostly built from.
   **Reproducibility status (Round 4, docs/AUDIT-ROUND-4-FINDINGS.md):** this estimate is
   reproducible to the digit, but it is a statement about one construction on one cache
@@ -419,10 +420,11 @@ filing timestamps and raw (not sector-residual) returns (`docs/ALGORITHM-RESEARC
   neither statistically distinguishable from zero. No historical alpha figure from this
   repository is authoritative without its experiment manifest
   (`pipeline/validation/experiment_manifest.py`).
-- Against 14 tradeable style/size ETFs: **none beaten with statistically significant alpha**
-  (largest |t| = 1.11). VTV returns more at lower volatility with a shallower drawdown.
-- Regime-dependent: **+10.3pp** annualized vs. SPY in bear markets/falling rates, **−16.9pp** in
-  rising rates.
+- Against 14 tradeable style/size ETF legs: all are beaten on CAGR and six smaller-cap/breadth
+  legs are beaten with significant single-benchmark alpha; alpha remains insignificant against
+  SPY, VTV, the fixed size/value blend, and the six-factor model.
+- Regime-dependent: **+11.1pp** annualized vs. SPY in bear markets, **+9.6pp** in falling rates,
+  and **−6.7pp** in rising rates.
 
 **Current classification: B — a transparent factor tilt with no demonstrated residual alpha.**
 Do not present SPY outperformance as this model's objective.

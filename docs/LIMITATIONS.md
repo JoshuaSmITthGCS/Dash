@@ -29,16 +29,19 @@ more depth.
   `insufficient_data` for every bucket and `confidence_detail.historical_calibration` stays
   null. A score of 84 is a rank, not a statement about historical outcomes
   (`docs/ALGORITHM-RESEARCH-RESULTS.md` §11).
-- **No signal has been promoted.** The four PROMOTE decisions in the registry are all defect
-  fixes to existing behaviour, not new evidence; 44 variants have been tried across 12
+- **No signal has been promoted.** The five PROMOTE decisions in the registry are all defect
+  fixes to existing behaviour, not new evidence; 51 variants have been tried across 14
   experiments (`pipeline/reports/experiment_registry.json`).
-- **The only measured evidence points to a factor tilt, not alpha.** Six-factor annualized
-  alpha −2.57% at Newey-West |t| = 0.437; none of 14 tradeable benchmarks beaten with
-  significant alpha. That evidence comes from a survivorship-biased five-year backtest using
+- **The factor-controlled evidence still points to a factor tilt, not proven residual alpha.**
+  Six-factor annualized alpha is +3.06% at Newey-West |t| = 0.680. Six smaller-cap/breadth ETF
+  legs are beaten with significant single-benchmark alpha, but SPY, VTV, the fixed size/value
+  blend, and the six-factor model are not. That evidence comes from a survivorship-biased
+  five-year backtest using
   approximated filing timestamps and raw (not sector-residual) returns, so it is the best
-  available reading rather than a settled finding (`docs/ALGORITHM-RESEARCH-RESULTS.md`).
+  available reading rather than a settled finding
+  (`pipeline/reports/{factor_regression_p0,benchmark_alpha_regressions}.json`).
 - **The strategy's returns are regime-dependent.** Strongly positive in falling rates and
-  drawdowns, strongly negative in rising rates (−16.9pp annualized against SPY). Full-sample
+  drawdowns, negative in rising rates (−6.7pp annualized against SPY). Full-sample
   statistics average over a split this wide.
 
 *Closed in this pass:* the sector-residual, trading-session forecast target is now implemented

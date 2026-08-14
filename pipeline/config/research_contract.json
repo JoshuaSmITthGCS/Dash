@@ -29,26 +29,27 @@
   },
 
   "forecast_targets": {
-    "_comment": "The brief's recommended primary target is a 63-trading-day forward sector-residual total return. That specific residualized form is NOT implemented yet -- documented here as the target this contract commits to, with current implementation status stated honestly rather than assumed.",
+    "_comment": "The preregistered primary target is a 63-trading-session forward sector-residual total return. pipeline/validation/ic_harness.py evaluates it prospectively from immutable snapshots; calendar-day raw returns remain secondary diagnostics.",
     "primary": {
       "definition": "forward_residual_return(i, t, h) = stock_total_return(i, t -> t+h) - sector_or_risk_adjusted_return(i, t -> t+h)",
       "horizon_trading_days": 63,
-      "implementation_status": "not_implemented",
-      "note": "pipeline/validation/ic_harness.py currently scores raw forward_return = end_price/start_price - 1 (line ~214), not a sector-residual variant. The residualization step is the gap between the current challenger-validation harness and this contract's primary target."
+      "implementation_status": "implemented_accumulating",
+      "enforced_in": "pipeline/validation/ic_harness.py evaluate_variant_sessions()",
+      "note": "The calculation is implemented; statistical eligibility remains gated until 24 closed monthly periods exist."
     },
     "horizons": {
       "5d":   { "trading_days": 5,   "implementation_status": "not_implemented" },
-      "21d":  { "trading_days": 21,  "implementation_status": "not_implemented" },
-      "63d":  { "trading_days": 63,  "implementation_status": "not_implemented", "note": "primary" },
-      "126d": { "trading_days": 126, "implementation_status": "not_implemented" },
-      "252d": { "trading_days": 252, "implementation_status": "not_implemented" }
+      "21d":  { "trading_days": 21,  "implementation_status": "implemented_accumulating" },
+      "63d":  { "trading_days": 63,  "implementation_status": "implemented_accumulating", "note": "primary" },
+      "126d": { "trading_days": 126, "implementation_status": "implemented_accumulating" },
+      "252d": { "trading_days": 252, "implementation_status": "implemented_accumulating" }
     },
     "currently_implemented_horizons": {
-      "_comment": "pipeline/validation/ic_harness.py and settings.json validation.horizons_days use CALENDAR days, not trading days -- a real gap against this contract, not a rounding difference.",
-      "1M": { "calendar_days": 30, "enforced_in": "settings.json validation.horizons_days" },
-      "3M": { "calendar_days": 91, "enforced_in": "settings.json validation.horizons_days" },
-      "6M": { "calendar_days": 182, "enforced_in": "settings.json validation.horizons_days" },
-      "12M": { "calendar_days": 365, "enforced_in": "settings.json validation.horizons_days" }
+      "_comment": "Session-based sector-residual targets are primary_variants; calendar-day raw-return horizons are retained as explicitly labeled secondary diagnostics.",
+      "1M": { "trading_sessions": 21, "calendar_days_secondary": 30, "enforced_in": "settings.json validation.horizons_sessions and horizons_days" },
+      "3M": { "trading_sessions": 63, "calendar_days_secondary": 91, "enforced_in": "settings.json validation.horizons_sessions and horizons_days" },
+      "6M": { "trading_sessions": 126, "calendar_days_secondary": 182, "enforced_in": "settings.json validation.horizons_sessions and horizons_days" },
+      "12M": { "trading_sessions": 252, "calendar_days_secondary": 365, "enforced_in": "settings.json validation.horizons_sessions and horizons_days" }
     },
     "total_return_basis": "Yahoo-adjusted close series (splits/dividends folded into price); no separate distribution-reinvestment tracking",
     "forward_label_timing": "ic_harness.py's append_refresh only appends realized labels once the full horizon has elapsed relative to data_as_of -- see minimum_icir_periods gating in settings.json validation"

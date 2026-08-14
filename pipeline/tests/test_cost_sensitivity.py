@@ -57,10 +57,10 @@ class BuildReportTests(unittest.TestCase):
         self.assertEqual(report["turnover"]["rebalances"], 2)
         self.assertAlmostEqual(report["turnover"]["mean_turnover"], 0.75, places=4)
 
-    def test_per_name_liquidity_legs_are_marked_blocked_never_fabricated(self):
+    def test_per_name_liquidity_legs_are_unmeasured_never_fabricated(self):
         report = build_report(_backtest([]))
         blocked = report["per_name_liquidity_legs"]
-        self.assertEqual(blocked["status"], "blocked_network_policy")
+        self.assertEqual(blocked["status"], "not_measured_inputs_available")
         self.assertIn("adv_participation_pct", blocked["measures"])
 
     def test_never_presents_gross_as_net(self):

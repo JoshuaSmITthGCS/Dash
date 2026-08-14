@@ -1,246 +1,246 @@
 {
   "benchmarks": {
     "IJH": {
-      "cagr": 0.08435,
+      "cagr": 0.08917,
       "description": "S&P MidCap 400 -- the strategy's actual size band",
-      "final_value": 153324.79,
-      "max_drawdown": -0.21581,
-      "sharpe": 0.539,
+      "final_value": 152588.97,
+      "max_drawdown": -0.241046,
+      "sharpe": 0.5346,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 4.307,
-        "beta": 0.7875,
-        "classical_t_statistic": 0.716,
-        "monthly_alpha": 0.00352,
+        "annualized_alpha_pct": 8.775,
+        "beta": 0.7647,
+        "classical_t_statistic": 1.729,
+        "monthly_alpha": 0.007034,
         "months": 59,
-        "newey_west_t_statistic": 0.807,
-        "r_squared": 0.5607
+        "newey_west_t_statistic": 2.213,
+        "r_squared": 0.6379
       },
-      "volatility": 0.18107
+      "volatility": 0.197273
     },
     "IJH+IWD 50/50": {
-      "cagr": 0.10046,
+      "cagr": 0.104535,
       "description": "matches the realized beta 0.79 / SMB 0.455 profile the six-factor regression measured, using a fixed 50/50 rather than a fitted mix",
-      "final_value": 164920.83,
-      "max_drawdown": -0.19687,
-      "sharpe": 0.674,
+      "final_value": 163539.31,
+      "max_drawdown": -0.204946,
+      "sharpe": 0.6764,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 2.264,
-        "beta": 0.8834,
-        "classical_t_statistic": 0.379,
-        "monthly_alpha": 0.001867,
+        "annualized_alpha_pct": 6.545,
+        "beta": 0.8724,
+        "classical_t_statistic": 1.334,
+        "monthly_alpha": 0.005297,
         "months": 59,
-        "newey_west_t_statistic": 0.423,
-        "r_squared": 0.5643
+        "newey_west_t_statistic": 1.721,
+        "r_squared": 0.6603
       },
-      "volatility": 0.1619
+      "volatility": 0.169128
     },
     "IJR": {
-      "cagr": 0.07331,
+      "cagr": 0.075671,
       "description": "S&P SmallCap 600",
-      "final_value": 145943.47,
-      "max_drawdown": -0.23118,
-      "sharpe": 0.453,
+      "final_value": 143459.02,
+      "max_drawdown": -0.280241,
+      "sharpe": 0.4519,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 6.051,
-        "beta": 0.6555,
-        "classical_t_statistic": 0.916,
-        "monthly_alpha": 0.004908,
+        "annualized_alpha_pct": 11.047,
+        "beta": 0.6486,
+        "classical_t_statistic": 1.977,
+        "monthly_alpha": 0.00877,
         "months": 59,
-        "newey_west_t_statistic": 1.002,
-        "r_squared": 0.4757
+        "newey_west_t_statistic": 2.463,
+        "r_squared": 0.5647
       },
-      "volatility": 0.20032
+      "volatility": 0.212564
     },
     "IWD": {
-      "cagr": 0.1157,
+      "cagr": 0.1191,
       "description": "Russell 1000 Value",
-      "final_value": 176516.88,
-      "max_drawdown": -0.17796,
-      "sharpe": 0.814,
+      "final_value": 174489.64,
+      "max_drawdown": -0.190394,
+      "sharpe": 0.8369,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 0.594,
-        "beta": 0.9303,
-        "classical_t_statistic": 0.095,
-        "monthly_alpha": 0.000494,
+        "annualized_alpha_pct": 4.71,
+        "beta": 0.9355,
+        "classical_t_statistic": 0.93,
+        "monthly_alpha": 0.003843,
         "months": 59,
-        "newey_west_t_statistic": 0.106,
-        "r_squared": 0.5281
+        "newey_west_t_statistic": 1.189,
+        "r_squared": 0.6385
       },
-      "volatility": 0.14872
+      "volatility": 0.148535
     },
     "IWF": {
-      "cagr": 0.11832,
+      "cagr": 0.122776,
       "description": "Russell 1000 Growth",
-      "final_value": 181365.42,
-      "max_drawdown": -0.30748,
-      "sharpe": 0.677,
+      "final_value": 177343.02,
+      "max_drawdown": -0.327226,
+      "sharpe": 0.6426,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 5.388,
-        "beta": 0.5193,
-        "classical_t_statistic": 0.691,
-        "monthly_alpha": 0.004383,
+        "annualized_alpha_pct": 10.408,
+        "beta": 0.4749,
+        "classical_t_statistic": 1.431,
+        "monthly_alpha": 0.008285,
         "months": 59,
-        "newey_west_t_statistic": 0.747,
-        "r_squared": 0.2776
+        "newey_west_t_statistic": 1.691,
+        "r_squared": 0.2792
       },
-      "volatility": 0.19368
+      "volatility": 0.21846
     },
     "IWM": {
-      "cagr": 0.07036,
+      "cagr": 0.073243,
       "description": "Russell 2000 -- small cap",
-      "final_value": 144162.16,
-      "max_drawdown": -0.26752,
-      "sharpe": 0.433,
+      "final_value": 141864.03,
+      "max_drawdown": -0.319116,
+      "sharpe": 0.4289,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 6.338,
-        "beta": 0.6475,
-        "classical_t_statistic": 0.975,
-        "monthly_alpha": 0.005134,
+        "annualized_alpha_pct": 11.255,
+        "beta": 0.6263,
+        "classical_t_statistic": 2.001,
+        "monthly_alpha": 0.008928,
         "months": 59,
-        "newey_west_t_statistic": 1.045,
-        "r_squared": 0.492
+        "newey_west_t_statistic": 2.481,
+        "r_squared": 0.5593
       },
-      "volatility": 0.20634
+      "volatility": 0.22504
     },
     "NOBL": {
-      "cagr": 0.06483,
+      "cagr": 0.06709,
       "description": "S&P 500 Dividend Aristocrats -- quality proxy",
-      "final_value": 139542.23,
-      "max_drawdown": -0.17486,
-      "sharpe": 0.492,
+      "final_value": 137885.86,
+      "max_drawdown": -0.179209,
+      "sharpe": 0.5232,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 5.914,
-        "beta": 0.8282,
-        "classical_t_statistic": 0.86,
-        "monthly_alpha": 0.0048,
+        "annualized_alpha_pct": 9.296,
+        "beta": 0.9102,
+        "classical_t_statistic": 1.774,
+        "monthly_alpha": 0.007435,
         "months": 59,
-        "newey_west_t_statistic": 0.908,
-        "r_squared": 0.4327
+        "newey_west_t_statistic": 2.014,
+        "r_squared": 0.6149
       },
-      "volatility": 0.15127
+      "volatility": 0.14524
     },
     "RSP": {
-      "cagr": 0.08732,
+      "cagr": 0.092176,
       "description": "S&P 500 equal weight -- breadth-matched",
-      "final_value": 155665.02,
-      "max_drawdown": -0.20684,
-      "sharpe": 0.611,
+      "final_value": 154683.61,
+      "max_drawdown": -0.213844,
+      "sharpe": 0.629,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 3.571,
-        "beta": 0.8667,
-        "classical_t_statistic": 0.565,
-        "monthly_alpha": 0.002928,
+        "annualized_alpha_pct": 7.773,
+        "beta": 0.8647,
+        "classical_t_statistic": 1.488,
+        "monthly_alpha": 0.006258,
         "months": 59,
-        "newey_west_t_statistic": 0.623,
-        "r_squared": 0.5153
+        "newey_west_t_statistic": 1.832,
+        "r_squared": 0.6162
       },
-      "volatility": 0.1577
+      "volatility": 0.162322
     },
     "SCHD": {
-      "cagr": 0.09236,
+      "cagr": 0.098943,
       "description": "Dow Jones US Dividend 100 -- quality/dividend screen",
-      "final_value": 158896.34,
-      "max_drawdown": -0.15702,
-      "sharpe": 0.675,
+      "final_value": 159483.62,
+      "max_drawdown": -0.168443,
+      "sharpe": 0.731,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 2.981,
-        "beta": 0.8804,
-        "classical_t_statistic": 0.448,
-        "monthly_alpha": 0.002451,
+        "annualized_alpha_pct": 7.2,
+        "beta": 0.8865,
+        "classical_t_statistic": 1.289,
+        "monthly_alpha": 0.005811,
         "months": 59,
-        "newey_west_t_statistic": 0.504,
-        "r_squared": 0.4636
+        "newey_west_t_statistic": 1.624,
+        "r_squared": 0.5625
       },
-      "volatility": 0.1472
+      "volatility": 0.144188
     },
     "SPY": {
-      "cagr": 0.12736,
+      "cagr": 0.131209,
       "description": "S&P 500 -- the published, least representative comparison",
-      "final_value": 187730.95,
-      "max_drawdown": -0.23927,
-      "sharpe": 0.844,
+      "final_value": 184031.36,
+      "max_drawdown": -0.244964,
+      "sharpe": 0.8048,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 1.557,
-        "beta": 0.7872,
-        "classical_t_statistic": 0.225,
-        "monthly_alpha": 0.001288,
+        "annualized_alpha_pct": 5.972,
+        "beta": 0.76,
+        "classical_t_statistic": 0.965,
+        "monthly_alpha": 0.004845,
         "months": 59,
-        "newey_west_t_statistic": 0.247,
-        "r_squared": 0.4227
+        "newey_west_t_statistic": 1.174,
+        "r_squared": 0.4693
       },
-      "volatility": 0.15741
+      "volatility": 0.172675
     },
     "VB": {
-      "cagr": 0.07527,
+      "cagr": 0.079278,
       "description": "CRSP US small cap",
-      "final_value": 147012.56,
-      "max_drawdown": -0.24432,
-      "sharpe": 0.48,
+      "final_value": 145854.83,
+      "max_drawdown": -0.281541,
+      "sharpe": 0.474,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 5.34,
-        "beta": 0.7457,
-        "classical_t_statistic": 0.869,
-        "monthly_alpha": 0.004345,
+        "annualized_alpha_pct": 10.101,
+        "beta": 0.7131,
+        "classical_t_statistic": 1.9,
+        "monthly_alpha": 0.008051,
         "months": 59,
-        "newey_west_t_statistic": 0.968,
-        "r_squared": 0.544
+        "newey_west_t_statistic": 2.389,
+        "r_squared": 0.6045
       },
-      "volatility": 0.18842
+      "volatility": 0.207505
     },
     "VTV": {
-      "cagr": 0.12171,
+      "cagr": 0.127104,
       "description": "CRSP US large value",
-      "final_value": 181308.5,
-      "max_drawdown": -0.15344,
-      "sharpe": 0.899,
+      "final_value": 180750.89,
+      "max_drawdown": -0.17039,
+      "sharpe": 0.9384,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": -0.483,
-        "beta": 0.9843,
-        "classical_t_statistic": -0.077,
-        "monthly_alpha": -0.000403,
+        "annualized_alpha_pct": 3.111,
+        "beta": 1.0051,
+        "classical_t_statistic": 0.616,
+        "monthly_alpha": 0.002556,
         "months": 59,
-        "newey_west_t_statistic": -0.088,
-        "r_squared": 0.5168
+        "newey_west_t_statistic": 0.796,
+        "r_squared": 0.6411
       },
-      "volatility": 0.13904
+      "volatility": 0.138584
     },
     "VUG": {
-      "cagr": 0.12252,
+      "cagr": 0.125674,
       "description": "CRSP US large growth",
-      "final_value": 184940.15,
-      "max_drawdown": -0.33159,
-      "sharpe": 0.671,
+      "final_value": 179619.65,
+      "max_drawdown": -0.35613,
+      "sharpe": 0.6395,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 5.632,
-        "beta": 0.4759,
-        "classical_t_statistic": 0.712,
-        "monthly_alpha": 0.004576,
+        "annualized_alpha_pct": 10.8,
+        "beta": 0.439,
+        "classical_t_statistic": 1.47,
+        "monthly_alpha": 0.008583,
         "months": 59,
-        "newey_west_t_statistic": 0.767,
-        "r_squared": 0.259
+        "newey_west_t_statistic": 1.756,
+        "r_squared": 0.2647
       },
-      "volatility": 0.20401
+      "volatility": 0.226285
     },
     "VXF": {
-      "cagr": 0.06295,
+      "cagr": 0.068344,
       "description": "Extended market (completion index) -- everything outside the S&P 500",
-      "final_value": 138584.12,
-      "max_drawdown": -0.33241,
-      "sharpe": 0.405,
+      "final_value": 138689.29,
+      "max_drawdown": -0.363936,
+      "sharpe": 0.4093,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 6.87,
-        "beta": 0.6595,
-        "classical_t_statistic": 1.045,
-        "monthly_alpha": 0.005552,
+        "annualized_alpha_pct": 11.576,
+        "beta": 0.6198,
+        "classical_t_statistic": 1.964,
+        "monthly_alpha": 0.00917,
         "months": 59,
-        "newey_west_t_statistic": 1.109,
-        "r_squared": 0.4821
+        "newey_west_t_statistic": 2.291,
+        "r_squared": 0.5174
       },
-      "volatility": 0.20066
+      "volatility": 0.224929
     }
   },
   "benchmarks_unavailable": [],
-  "generated_at": "2026-08-03T06:46:54.135869Z",
+  "generated_at": "2026-08-14T04:28:10.514429Z",
   "method": "every leg is buy-and-hold from the strategy's first execution date with one 10bps entry cost, identical to how backtest_monthly.py prices its SPY leg",
   "schema_version": 1,
   "sector_neutral_composite": {
@@ -249,31 +249,43 @@
   },
   "source": "pipeline/backtest_monthly_results.json + public/data/etf/*.json",
   "strategy": {
-    "cagr": 0.10331,
-    "final_value": 169478.08,
-    "max_drawdown": -0.20764,
-    "sharpe": 0.611,
-    "volatility": 0.19195
+    "cagr": 0.156149,
+    "final_value": 204997.55,
+    "max_drawdown": -0.189802,
+    "sharpe": 0.9205,
+    "volatility": 0.175384
   },
   "summary": {
     "beaten_on_cagr": [
       "IJH",
       "IJH+IWD 50/50",
       "IJR",
+      "IWD",
+      "IWF",
       "IWM",
       "NOBL",
       "RSP",
       "SCHD",
+      "SPY",
+      "VB",
+      "VTV",
+      "VUG",
+      "VXF"
+    ],
+    "beaten_on_cagr_count": "14 of 14",
+    "benchmarks_compared": 14,
+    "significant_positive_alpha_against": [
+      "IJH",
+      "IJR",
+      "IWM",
+      "NOBL",
       "VB",
       "VXF"
     ],
-    "beaten_on_cagr_count": "9 of 14",
-    "benchmarks_compared": 14,
-    "significant_positive_alpha_against": [],
-    "verdict": "no tradeable benchmark in this set is beaten with statistically significant alpha"
+    "verdict": "significant positive alpha against 6 benchmark(s)"
   },
   "window": {
     "initial_capital": 100000.0,
-    "start": "2021-08-02"
+    "start": "2021-09-01"
   }
 }

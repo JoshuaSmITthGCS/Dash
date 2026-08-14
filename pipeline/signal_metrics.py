@@ -26,9 +26,11 @@ its status and the reason, which is a more useful artifact than a plausible numb
 """
 
 import argparse
+from collections import Counter, defaultdict
 import json
 import math
 import os
+import statistics
 from datetime import datetime, timezone
 
 import evaluation
@@ -43,6 +45,11 @@ BACKTEST_PATH = os.path.join(HERE, "backtest_monthly_results.json")
 OPTIMIZER_PATH = os.path.join(HERE, "optimize_weights_results.json")
 PANEL_PATH = os.path.join(HERE, "backtest_signal_panel.json")
 PIT_ROOT = os.path.join(HERE, "pit_store")
+SHADOW_ROOT = os.path.join(HERE, "shadow_store")
+SECTOR_WEIGHT_HISTORY_PATH = os.path.join(
+    HERE, "data", "validation", "sector_weight_history.jsonl")
+UNIVERSE_HISTORY_PATH = os.path.join(HERE, "data", "pit", "universe.jsonl")
+LIVE_EXECUTION_PATH = os.path.join(HERE, "data", "validation", "live_execution.json")
 
 TRADING_DAYS = 252
 MONTHS_PER_YEAR = 12
@@ -57,6 +64,11 @@ MINIMUM_MEAN_IC = evaluation.MEANINGFUL_IC
 MINIMUM_IC_IR = 0.3
 REDUNDANT_LEG_CORRELATION = 0.7
 MAXIMUM_PBO = 0.5
+FEATURE_PSI_MINIMUM_DAYS = 60
+FEATURE_PSI_WINDOW_DAYS = 20
+DIVERGENCE_MINIMUM_OBSERVATIONS = 20
+DIVERGENCE_Z_THRESHOLD = 1.96
+PRICE_STALE_AFTER_HOURS = 36
 
 GROUPS = [
     {"id": "signal", "letter": "A", "title": "Signal quality",
@@ -145,11 +157,65 @@ def _read_json(path):
     if not os.path.exists(path):
         return None
     try:
-        with open(path) as handle:
+        with open(path, encoding="utf-8") as handle:
             return json.load(handle)
     except ValueError:
         LOG.warn(f"Unreadable JSON at {path}")
         return None
+
+
+def _read_jsonl(path):
+    """Read an append-only store while preserving valid rows around a torn line."""
+    if not os.path.exists(path):
+        return []
+    rows = []
+    try:
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    continue
+    except OSError:
+        return []
+    return rows
+
+
+def _parse_time(value):
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+
+
+def point_in_time_days(root=PIT_ROOT):
+    """Latest complete refresh per date, so intraday runs are not extra PSI samples."""
+    days = []
+    if not os.path.isdir(root):
+        return days
+    names = []
+    for item in os.listdir(root):
+        if not item.endswith(".jsonl"):
+            continue
+        try:
+            datetime.strptime(item[:-6], "%Y-%m-%d")
+        except ValueError:
+            continue
+        names.append(item)
+    for name in sorted(names):
+        refreshes = defaultdict(list)
+        for row in _read_jsonl(os.path.join(root, name)):
+            refreshes[row.get("refresh_id")].append(row)
+        if not refreshes:
+            continue
+        latest_id, rows = max(
+            refreshes.items(),
+            key=lambda item: max(str(row.get("recorded_at") or "") for row in item[1]),
+        )
+        days.append({"date": name[:-6], "refresh_id": latest_id, "rows": rows})
+    return days
 
 
 def live_sample(root=PIT_ROOT):
@@ -252,7 +318,8 @@ def signal_metrics(panel):
             value=summary["mean_ic"], detail=summary,
             reads="Spearman correlation of score against forward return.",
             kill_threshold=f"Mean IC < {MINIMUM_MEAN_IC}",
-            breached=summary["mean_ic"] is not None and abs(summary["mean_ic"]) < MINIMUM_MEAN_IC,
+            breached=(summary["mean_ic"] is not None
+                      and summary["mean_ic"] < MINIMUM_MEAN_IC),
             observations=summary["periods"], cadence="Weekly", source="backtest panel"))
 
     primary = decay["horizons"].get(graded) or {}
@@ -260,7 +327,7 @@ def signal_metrics(panel):
     rows.append(metric("ic_ir", "signal", "IC-IR (annualized)", value=icir,
                        reads="Consistency of prediction, not just its average.",
                        kill_threshold=f"IC-IR < {MINIMUM_IC_IR}",
-                       breached=icir is not None and abs(icir) < MINIMUM_IC_IR,
+                       breached=icir is not None and icir < MINIMUM_IC_IR,
                        detail={"horizon": graded, "t_stat": primary.get("t_stat"),
                                "hit_rate": primary.get("hit_rate")},
                        observations=primary.get("periods"), cadence="Weekly",
@@ -274,7 +341,7 @@ def signal_metrics(panel):
 
     legs = evaluation.per_leg_ic(periods, list(weights) or None)
     dead = [leg for leg, summary in legs.items()
-            if summary["mean_ic"] is not None and abs(summary["mean_ic"]) < MINIMUM_MEAN_IC]
+            if summary["mean_ic"] is not None and summary["mean_ic"] < MINIMUM_MEAN_IC]
     rows.append(metric("per_leg_ic", "signal", "Per-leg IC",
                        value=len(dead) if legs else None,
                        display=f"{len(dead)} of {len(legs)} legs below {MINIMUM_MEAN_IC}" if legs else None,
@@ -432,7 +499,53 @@ def _rolling_beta(returns, benchmark, window=60):
     return betas
 
 
-def construction_metrics(backtest, factors):
+def _sector_active_weight_metric(history):
+    if not history:
+        return _pending(
+            "sector_active_weights", "construction", "Sector active weights",
+            "No prospective sector snapshot exists. Run pipeline/sector_weight_history.py; "
+            "historical sectors are not backfilled from today's classifications.",
+            reads="Sector bets against SPY at each recorded production refresh.",
+            cadence="Daily",
+        )
+    latest = history[-1]
+    active = latest.get("active_sector_weights") or {}
+    classified = latest.get("strategy_classified_weight")
+    if not active:
+        return _pending(
+            "sector_active_weights", "construction", "Sector active weights",
+            "The sector history has no comparable strategy and benchmark weights.",
+            reads="Sector bets against SPY at each recorded production refresh.",
+            cadence="Daily",
+        )
+    ranked = sorted(active.items(), key=lambda item: abs(item[1]), reverse=True)
+    sector, largest = ranked[0]
+    history_detail = [
+        {"as_of": row.get("as_of"), "active_sector_weights": row.get("active_sector_weights"),
+         "strategy_classified_weight": row.get("strategy_classified_weight"),
+         "benchmark_classified_weight": row.get("benchmark_classified_weight")}
+        for row in history[-60:]
+    ]
+    return metric(
+        "sector_active_weights", "construction", "Sector active weights",
+        value=round(abs(largest) * 100, 2),
+        display=f"{sector.replace('_', ' ').title()} {largest * 100:+.1f}pp largest",
+        reads="Current production-sector weights minus SPY, retained prospectively by date.",
+        kill_threshold="Strategy sector classification coverage below 80%",
+        breached=classified is not None and classified < 0.8,
+        detail={"as_of": latest.get("as_of"), "strategy": latest.get("strategy"),
+                "benchmark": latest.get("benchmark"), "active_sector_weights": active,
+                "strategy_sector_weights": latest.get("strategy_sector_weights"),
+                "benchmark_sector_weights": latest.get("benchmark_sector_weights"),
+                "strategy_classified_weight": classified,
+                "benchmark_classified_weight": latest.get("benchmark_classified_weight"),
+                "history": history_detail},
+        observations=len(history), cadence="Daily",
+        source="prospective sector-weight history",
+    )
+
+
+def construction_metrics(backtest, factors, sector_history=None):
     rows = []
     portfolio = (backtest or {}).get("portfolio") or {}
     rebalances = portfolio.get("rebalances") or []
@@ -494,16 +607,84 @@ def construction_metrics(backtest, factors):
                        detail={"rebalances": len(drift)}, cadence="Daily",
                        source="backtest rebalances"))
 
-    rows.append(_pending("sector_active_weights", "construction", "Sector active weights",
-                         "Needs a dated benchmark sector-weight series. The lookthrough config "
-                         "carries current holdings only, which cannot be differenced against history.",
-                         reads="Sector bets against the benchmark, daily.", cadence="Daily"))
+    rows.append(_sector_active_weight_metric(sector_history or []))
     return rows
 
 
 # ---------------- C. cost and capacity ----------------
 
-def cost_metrics(backtest, panel):
+def _execution_cost_metrics(execution):
+    """Measured trade diagnostics when an external execution export is supplied.
+
+    The optional file is intentionally not synthesized by the research pipeline. Its rows
+    must come from an order-management or brokerage export and carry decision/fill prices.
+    """
+    execution = execution or {}
+    orders = execution.get("orders") or []
+    filled = [row for row in orders
+              if row.get("decision_price") and row.get("fill_price")
+              and row.get("filled_quantity")]
+    intended_quantity = sum(abs(float(row.get("intended_quantity") or 0)) for row in orders)
+    filled_quantity = sum(abs(float(row.get("filled_quantity") or 0)) for row in orders)
+    shortfalls = []
+    for row in filled:
+        decision = float(row["decision_price"])
+        fill = float(row["fill_price"])
+        side = str(row.get("side") or "buy").lower()
+        bps = ((fill - decision) / decision if side == "buy" else
+               (decision - fill) / decision) * 10_000
+        notional = abs(float(row["filled_quantity"]) * decision)
+        shortfalls.append({"ticker": row.get("ticker"), "bps": round(bps, 3),
+                           "decision_notional": notional})
+    total_notional = sum(row["decision_notional"] for row in shortfalls)
+    shortfall = (sum(row["bps"] * row["decision_notional"] for row in shortfalls)
+                 / total_notional if total_notional else None)
+    fill_rate = filled_quantity / intended_quantity if intended_quantity else None
+    intended = execution.get("intended_positions") or {}
+    actual = execution.get("actual_positions") or {}
+    unpositioned = sorted(ticker for ticker, weight in intended.items()
+                          if float(weight or 0) > 0 and float(actual.get(ticker) or 0) <= 0)
+    source_message = ("Needs pipeline/data/validation/live_execution.json from an order or "
+                      "broker export; the research pipeline does not place trades.")
+    if not execution:
+        return [
+            _pending("implementation_shortfall", "cost", "Implementation shortfall",
+                     source_message, reads="Decision price to fill price, in basis points, per trade.",
+                     requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
+            _pending("fill_rate", "cost", "Fill rate", source_message,
+                     reads="Share of intended quantity that executed.",
+                     requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
+            _pending("unpositioned_signals", "cost", "Signals never positioned", source_message,
+                     reads="Intended positive-weight names absent from actual positions.",
+                     requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
+        ]
+    return [
+        metric("implementation_shortfall", "cost", "Implementation shortfall",
+               value=None if shortfall is None else round(shortfall, 3),
+               display=None if shortfall is None else f"{shortfall:.2f} bps",
+               reads="Notional-weighted adverse move from decision to fill price.",
+               requires_live_sample=True,
+               status="ready" if shortfall is not None else "awaiting_input",
+               status_message=None if shortfall is not None else "No filled order has both prices.",
+               observations=len(shortfalls), cadence="Daily", detail={"orders": shortfalls},
+               source="external execution export"),
+        metric("fill_rate", "cost", "Fill rate", value=fill_rate,
+               display=None if fill_rate is None else f"{fill_rate * 100:.1f}%",
+               reads="Filled quantity divided by intended quantity.", requires_live_sample=True,
+               status="ready" if fill_rate is not None else "awaiting_input",
+               status_message=None if fill_rate is not None else "No intended order quantity supplied.",
+               observations=len(orders), cadence="Daily", source="external execution export"),
+        metric("unpositioned_signals", "cost", "Signals never positioned", value=len(unpositioned),
+               reads="Intended positive-weight names absent from actual positions.",
+               breached=bool(unpositioned), requires_live_sample=True,
+               status="ready" if intended else "awaiting_input",
+               status_message=None if intended else "No intended positions supplied.",
+               detail={"tickers": unpositioned}, observations=len(intended), cadence="Daily",
+               source="external execution export"),
+    ]
+
+
+def cost_metrics(backtest, panel, execution=None):
     rows = []
     portfolio = (backtest or {}).get("portfolio") or {}
     rebalances = portfolio.get("rebalances") or []
@@ -555,18 +736,7 @@ def cost_metrics(backtest, panel):
                        status_message=adv.get("reason"), cadence="Monthly",
                        source="backtest panel"))
 
-    rows.append(_pending("implementation_shortfall", "cost", "Implementation shortfall",
-                         "Needs decision and fill prices per trade, which exist only once orders are placed.",
-                         reads="Decision price to fill price, in basis points, per trade.",
-                         requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"))
-    rows.append(_pending("fill_rate", "cost", "Fill rate",
-                         "Needs order records. No orders have been placed through the pipeline.",
-                         reads="Share of intended trades that actually executed.",
-                         requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"))
-    rows.append(_pending("unpositioned_signals", "cost", "Signals never positioned",
-                         "Needs intended-versus-actual position records.",
-                         reads="Names the model called that never became a position.",
-                         requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"))
+    rows.extend(_execution_cost_metrics(execution))
     return rows
 
 
@@ -700,7 +870,33 @@ def _probability_of_overfitting(optimizer):
 
 # ---------------- E. distribution shape ----------------
 
-def distribution_metrics(backtest, live):
+def live_shadow_returns(root=SHADOW_ROOT):
+    """Per-session net returns from immutable production shadow snapshots."""
+    try:
+        import shadow_portfolios
+        _, matched = shadow_portfolios._strategy_matched("production", root)
+    except (ImportError, OSError, ValueError, KeyError):
+        return {"returns": [], "periods": [], "reason": "Production shadow store is unreadable."}
+    if not matched:
+        return {"returns": [], "periods": [], "reason": "No production shadow snapshots."}
+    defaults = (_read_json(os.path.join(HERE, "config", "shadow_strategies.json")) or {}) \
+        .get("construction_defaults", {})
+    cost_bps = float(defaults.get("spread_bps", 10)) + float(defaults.get("slippage_bps", 10))
+    returns, periods = [], []
+    for gross, turnover, period in zip(matched["returns"], matched["turnover"], matched["periods"]):
+        sessions = period.get("sessions_elapsed")
+        net = float(gross) - float(turnover) * cost_bps / 10_000
+        if not sessions or sessions < 1 or net <= -1:
+            continue
+        daily = (1 + net) ** (1 / sessions) - 1
+        returns.append(daily)
+        periods.append({**period, "gross_return": gross, "net_return": net,
+                        "daily_equivalent_return": daily})
+    return {"returns": returns, "periods": periods, "cost_bps": cost_bps,
+            "reason": None if returns else "No matched, session-dated production returns."}
+
+
+def distribution_metrics(backtest, live, live_return_data=None):
     """Wired now, honest about being unreadable until the live sample exists.
 
     Each metric reports a backtest reference so the machinery is demonstrably working, and
@@ -733,15 +929,36 @@ def distribution_metrics(backtest, live):
         "tail_ratio": ("Tail ratio", "Best tail against worst tail."),
         "gain_to_pain": ("Gain to pain", "Net gain per unit of loss taken."),
     }
-    live_days = live["days"]
-    message = (f"{live_days} live day{'' if live_days == 1 else 's'} of {required}. "
-               "Any reading before roughly six months is decorative.")
-    return [metric(key, "distribution", labels[key][0], value=None,
+    live_return_data = live_return_data or {"returns": []}
+    live_returns = live_return_data.get("returns") or []
+    live_curve, value = [1.0], 1.0
+    for result in live_returns:
+        value *= 1 + result
+        live_curve.append(value)
+    live_values = {
+        "omega": risk_metrics.omega_ratio(live_returns, risk_free),
+        "ulcer_index": risk_metrics.ulcer_index(live_curve),
+        "martin_ratio": risk_metrics.martin_ratio(
+            live_returns, live_curve, risk_free * TRADING_DAYS),
+        "cvar_95": risk_metrics.conditional_value_at_risk(live_returns, 0.95),
+        "skew": risk_metrics.skewness(live_returns),
+        "excess_kurtosis": risk_metrics.excess_kurtosis(live_returns),
+        "tail_ratio": risk_metrics.tail_ratio(live_returns),
+        "gain_to_pain": risk_metrics.gain_to_pain(live_returns),
+    }
+    observations = len(live_returns)
+    readable = observations >= required
+    message = (f"{observations} matched live return period{'' if observations == 1 else 's'} "
+               f"of {required}. Any reading before roughly six months is decorative.")
+    return [metric(key, "distribution", labels[key][0],
+                   value=live_values[key] if readable else None,
                    reads=labels[key][1], requires_live_sample=True,
-                   status="accumulating", status_message=message,
-                   observations=live_days, required_observations=required,
+                   status="ready" if readable else "accumulating",
+                   status_message=None if readable else message,
+                   observations=observations, required_observations=required,
                    backtest_reference=references[key], cadence="Quarterly",
-                   source="live returns once they exist; backtest reference shown")
+                   detail={"live_periods": (live_return_data.get("periods") or [])[-required:]},
+                   source="immutable production shadow returns; backtest reference shown")
             for key in labels]
 
 
@@ -783,12 +1000,174 @@ def population_stability_index(baseline, current, bins=10):
     return round(sum((a - e) * math.log(a / e) for e, a in zip(expected, actual)), 4)
 
 
-def monitoring_metrics(live, ic_validation):
+def feature_psi_from_pit(root=PIT_ROOT, minimum_days=FEATURE_PSI_MINIMUM_DAYS,
+                         window_days=FEATURE_PSI_WINDOW_DAYS):
+    days = point_in_time_days(root)
+    if len(days) < minimum_days:
+        return {"status": "accumulating", "value": None, "days": len(days),
+                "required_days": minimum_days,
+                "reason": (f"Needs {minimum_days} point-in-time days for separated baseline "
+                           f"and current windows; {len(days)} recorded.")}
+    baseline_days, current_days = days[:window_days], days[-window_days:]
+
+    def samples(selected):
+        values = defaultdict(list)
+        for day in selected:
+            for row in day["rows"]:
+                for feature, value in ((row.get("normalized_metric_scores") or {})
+                                       .get("champion") or {}).items():
+                    if value is not None and not isinstance(value, bool):
+                        try:
+                            finite = float(value)
+                        except (TypeError, ValueError):
+                            continue
+                        if math.isfinite(finite):
+                            values[feature].append(finite)
+        return values
+
+    baseline, current = samples(baseline_days), samples(current_days)
+    readings = []
+    for feature in sorted(set(baseline) & set(current)):
+        value = population_stability_index(baseline[feature], current[feature])
+        if value is not None:
+            readings.append({"feature": feature, "psi": value,
+                             "baseline_observations": len(baseline[feature]),
+                             "current_observations": len(current[feature])})
+    readings.sort(key=lambda row: row["psi"], reverse=True)
+    if not readings:
+        return {"status": "awaiting_input", "value": None, "days": len(days),
+                "required_days": minimum_days,
+                "reason": "No feature has enough observations in both PSI windows."}
+    return {"status": "ready", "value": readings[0]["psi"], "days": len(days),
+            "required_days": minimum_days, "worst_feature": readings[0]["feature"],
+            "breached": readings[0]["psi"] > 0.25,
+            "baseline_window": [baseline_days[0]["date"], baseline_days[-1]["date"]],
+            "current_window": [current_days[0]["date"], current_days[-1]["date"]],
+            "features": readings}
+
+
+def data_quality_from_pit(root=PIT_ROOT, universe_path=UNIVERSE_HISTORY_PATH):
+    days = point_in_time_days(root)
+    if not days:
+        return {"status": "awaiting_input", "value": None,
+                "reason": "No point-in-time refresh rows exist."}
+    latest = days[-1]
+    rows = latest["rows"]
+    tickers = [row.get("ticker") for row in rows if row.get("ticker")]
+    duplicates = sum(count - 1 for count in Counter(tickers).values() if count > 1)
+    missing_prices = 0
+    missing_price_tickers = []
+    missing_price_timestamps = 0
+    missing_price_timestamp_tickers = []
+    stale_prices = 0
+    stale_price_tickers = []
+    flags = Counter()
+    for row in rows:
+        raw = row.get("raw_metric_inputs") or {}
+        price = row.get("price", raw.get("price"))
+        if price is None:
+            missing_prices += 1
+            missing_price_tickers.append(row.get("ticker"))
+        for flag in row.get("quality_flags") or []:
+            flags[str(flag)] += 1
+        recorded = _parse_time(row.get("recorded_at"))
+        data_as_of = _parse_time(row.get("data_as_of"))
+        if price is not None and data_as_of is None:
+            missing_price_timestamps += 1
+            missing_price_timestamp_tickers.append(row.get("ticker"))
+        elif recorded and data_as_of:
+            age_hours = (recorded - data_as_of).total_seconds() / 3600
+            if age_hours > PRICE_STALE_AFTER_HOURS:
+                stale_prices += 1
+                stale_price_tickers.append(row.get("ticker"))
+    universe = _read_jsonl(universe_path)
+    latest_universe = universe[-1] if universe else {}
+    critical = missing_prices + missing_price_timestamps + stale_prices + duplicates
+    return {
+        "status": "ready", "value": critical, "date": latest["date"],
+        "refresh_id": latest["refresh_id"], "rows": len(rows),
+        "missing_prices": missing_prices,
+        "missing_price_tickers": sorted(filter(None, missing_price_tickers)),
+        "missing_price_timestamps": missing_price_timestamps,
+        "missing_price_timestamp_tickers": sorted(
+            filter(None, missing_price_timestamp_tickers)),
+        "stale_prices": stale_prices,
+        "stale_price_tickers": sorted(filter(None, stale_price_tickers)),
+        "duplicate_tickers": duplicates,
+        "quality_flags": dict(sorted(flags.items())),
+        "universe_churn": {"added": latest_universe.get("added") or [],
+                           "removed": latest_universe.get("removed") or [],
+                           "observed_at": latest_universe.get("observed_at")},
+        "corporate_action_monitoring": {
+            "status": "not_available",
+            "reason": "No prospective corporate-action event log exists; no miss count is inferred."},
+        "breached": critical > 0,
+    }
+
+
+def live_backtest_divergence(backtest, live_return_data):
+    live_returns = (live_return_data or {}).get("returns") or []
+    backtest_returns = daily_returns_from_history(
+        ((backtest or {}).get("portfolio") or {}).get("history"))
+    if not live_returns or not backtest_returns:
+        return {"status": "awaiting_live_sample", "value": None,
+                "observations": len(live_returns),
+                "reason": (live_return_data or {}).get("reason")
+                or "Needs both matched live and backtest daily returns."}
+    live_mean = statistics.mean(live_returns)
+    backtest_mean = statistics.mean(backtest_returns)
+    deviation = statistics.stdev(backtest_returns) if len(backtest_returns) > 1 else None
+    error = deviation / math.sqrt(len(live_returns)) if deviation else None
+    z_score = (live_mean - backtest_mean) / error if error else None
+    ready = len(live_returns) >= DIVERGENCE_MINIMUM_OBSERVATIONS
+    return {
+        "status": "ready" if ready else "provisional",
+        "value": round((live_mean - backtest_mean) * 10_000, 3),
+        "observations": len(live_returns),
+        "required_observations": DIVERGENCE_MINIMUM_OBSERVATIONS,
+        "live_mean_daily_return": live_mean,
+        "backtest_mean_daily_return": backtest_mean,
+        "divergence_bps_per_day": (live_mean - backtest_mean) * 10_000,
+        "z_score": z_score,
+        "breached": bool(ready and z_score is not None
+                         and abs(z_score) > DIVERGENCE_Z_THRESHOLD),
+        "reason": None if ready else
+        f"Directional only until {DIVERGENCE_MINIMUM_OBSERVATIONS} matched live periods.",
+        "periods": (live_return_data or {}).get("periods") or [],
+    }
+
+
+def position_reconciliation(execution):
+    intended = (execution or {}).get("intended_positions") or {}
+    actual = (execution or {}).get("actual_positions") or {}
+    if not intended or not actual:
+        return {"status": "awaiting_live_sample", "value": None,
+                "reason": ("Needs intended and actual close weights in "
+                           "pipeline/data/validation/live_execution.json.")}
+    rows = []
+    for ticker in sorted(set(intended) | set(actual)):
+        planned = float(intended.get(ticker) or 0)
+        held = float(actual.get(ticker) or 0)
+        rows.append({"ticker": ticker, "intended_weight": planned,
+                     "actual_weight": held, "difference": held - planned})
+    worst = max(rows, key=lambda row: abs(row["difference"]))
+    value = abs(worst["difference"]) * 10_000
+    return {"status": "ready", "value": round(value, 2), "rows": rows,
+            "worst_ticker": worst["ticker"], "breached": value > 10}
+
+
+def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=None,
+                       pit_root=PIT_ROOT, universe_path=UNIVERSE_HISTORY_PATH,
+                       execution=None):
     live_days = live["days"]
     accumulating = (f"{live_days} live day{'' if live_days == 1 else 's'} recorded, "
                     f"{live['refreshes']} refresh{'' if live['refreshes'] == 1 else 'es'}.")
     champion = ((ic_validation or {}).get("variants") or {}).get("champion") or {}
     monthly = champion.get("1M") or {}
+    psi = feature_psi_from_pit(pit_root)
+    divergence = live_backtest_divergence(backtest, live_return_data)
+    quality = data_quality_from_pit(pit_root, universe_path)
+    reconciliation = position_reconciliation(execution)
     rows = [
         metric("live_vs_backtest_ic", "monitoring", "Rolling 60-day live IC versus backtest",
                value=monthly.get("mean_rank_ic"),
@@ -801,30 +1180,46 @@ def monitoring_metrics(live, ic_validation):
                required_observations=monthly.get("minimum_periods"),
                cadence="Weekly", source="prospective IC harness"),
         metric("feature_psi", "monitoring", "Feature distribution PSI",
-               value=None, reads="Detects when the market has moved outside the fitted window.",
+               value=psi.get("value"),
+               display=None if psi.get("value") is None else
+               f"{psi['value']:.3f} worst ({psi.get('worst_feature')})",
+               reads="Detects when the live feature population leaves its earlier PIT window.",
                kill_threshold="PSI above 0.25", requires_live_sample=True,
-               status="accumulating",
-               status_message=("Needs two separated point-in-time windows to difference. " + accumulating),
-               observations=live_days, required_observations=60,
-               cadence="Monthly", source="point-in-time store"),
+               breached=psi.get("breached"), status=psi.get("status"),
+               status_message=psi.get("reason"), detail=psi,
+               observations=psi.get("days"), required_observations=psi.get("required_days"),
+               cadence="Monthly", source="point-in-time normalized feature store"),
         metric("live_vs_backtest_divergence", "monitoring",
-               "Live versus backtest daily return divergence", value=None,
-               reads="Should be roughly zero. Anything else is a bug, not a finding.",
-               kill_threshold="Any persistent non-zero divergence", requires_live_sample=True,
-               status="awaiting_live_sample",
-               status_message="Needs a live daily return series alongside the backtest replay.",
-               observations=live_days, cadence="Daily", source="live returns"),
-        metric("data_quality_counters", "monitoring", "Data quality counters", value=None,
-               reads="Missing bars, stale prices, corporate-action misses, universe churn.",
-               requires_live_sample=True, status="awaiting_live_sample",
-               status_message="Wired to the refresh loop; counts publish from the first full live day.",
-               observations=live_days, cadence="Daily", source="refresh diagnostics"),
-        metric("position_reconciliation", "monitoring", "Position reconciliation", value=None,
+               "Live versus backtest daily return divergence", value=divergence.get("value"),
+               display=None if divergence.get("value") is None else
+               f"{divergence['value']:+.2f} bps/day",
+               reads="Mean prospective production return versus the historical backtest mean.",
+               kill_threshold="Absolute mean divergence above the 95% backtest sampling interval",
+               breached=divergence.get("breached"), requires_live_sample=True,
+               status=divergence.get("status"), status_message=divergence.get("reason"),
+               detail=divergence, observations=divergence.get("observations"),
+               required_observations=divergence.get("required_observations"),
+               cadence="Daily", source="immutable production shadow returns"),
+        metric("data_quality_counters", "monitoring", "Data quality counters",
+               value=quality.get("value"),
+               display=None if quality.get("value") is None else
+               f"{quality['value']} critical refresh issue{'s' if quality['value'] != 1 else ''}",
+               reads="Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
+               kill_threshold="Any missing, unstamped, stale, or duplicate current price row",
+               breached=quality.get("breached"), requires_live_sample=True,
+               status=quality.get("status"), status_message=quality.get("reason"),
+               detail=quality, observations=quality.get("rows"), cadence="Daily",
+               source="point-in-time refresh and universe stores"),
+        metric("position_reconciliation", "monitoring", "Position reconciliation",
+               value=reconciliation.get("value"),
+               display=None if reconciliation.get("value") is None else
+               f"{reconciliation['value']:.1f} bps worst",
                reads="Intended against actual weights at the close.",
-               kill_threshold="Any unexplained weight difference", requires_live_sample=True,
-               status="awaiting_live_sample",
-               status_message="Needs end-of-day broker positions to difference against intended weights.",
-               observations=live_days, cadence="Daily", source="brokerage sync"),
+               kill_threshold="Any unexplained difference above 10 bps",
+               breached=reconciliation.get("breached"), requires_live_sample=True,
+               status=reconciliation.get("status"), status_message=reconciliation.get("reason"),
+               detail=reconciliation, observations=len((execution or {}).get("actual_positions") or {}),
+               cadence="Daily", source="external broker position export"),
     ]
     return rows
 
@@ -832,7 +1227,9 @@ def monitoring_metrics(live, ic_validation):
 # ---------------- report ----------------
 
 def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UNSET,
-                 ic_validation=_UNSET, live=_UNSET):
+                 ic_validation=_UNSET, live=_UNSET, sector_history=_UNSET,
+                 execution=_UNSET, pit_root=PIT_ROOT, shadow_root=SHADOW_ROOT,
+                 universe_path=UNIVERSE_HISTORY_PATH):
     """Assemble the artifact. Any input left unset is read from disk; passing None means
     "this input genuinely does not exist", which is a different thing and must stay so."""
     backtest = _read_json(BACKTEST_PATH) if backtest is _UNSET else backtest
@@ -842,13 +1239,19 @@ def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UN
     ic_validation = (load_json("validation/ic_validation.json")
                      if ic_validation is _UNSET else ic_validation)
     live = live_sample() if live is _UNSET else live
+    sector_history = (_read_jsonl(SECTOR_WEIGHT_HISTORY_PATH)
+                      if sector_history is _UNSET else sector_history)
+    execution = _read_json(LIVE_EXECUTION_PATH) if execution is _UNSET else execution
+    live_return_data = live_shadow_returns(shadow_root)
 
     metrics = (signal_metrics(panel)
-               + construction_metrics(backtest, factors)
-               + cost_metrics(backtest, panel)
+               + construction_metrics(backtest, factors, sector_history)
+               + cost_metrics(backtest, panel, execution)
                + honesty_metrics(backtest, optimizer)
-               + distribution_metrics(backtest, live)
-               + monitoring_metrics(live, ic_validation))
+               + distribution_metrics(backtest, live, live_return_data)
+               + monitoring_metrics(live, ic_validation, backtest=backtest,
+                                    live_return_data=live_return_data, pit_root=pit_root,
+                                    universe_path=universe_path, execution=execution))
     ready = [row for row in metrics if row["status"] in ("ready", "provisional")]
     return {
         "schema_version": 1,
@@ -870,6 +1273,10 @@ def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UN
             "optimizer": os.path.basename(OPTIMIZER_PATH) if optimizer else None,
             "panel": os.path.basename(PANEL_PATH) if panel else None,
             "factors": "factors/french.json" if factors else None,
+            "sector_history": (os.path.relpath(SECTOR_WEIGHT_HISTORY_PATH, HERE)
+                               if sector_history else None),
+            "execution": os.path.relpath(LIVE_EXECUTION_PATH, HERE) if execution else None,
+            "live_returns": "shadow_store/production" if live_return_data.get("returns") else None,
         },
     }
 

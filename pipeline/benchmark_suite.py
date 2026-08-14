@@ -42,7 +42,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 ROOT = os.path.dirname(HERE)
 
-from backtest_monthly import simulate_benchmark  # noqa: E402
+from backtest_monthly import performance_metrics, simulate_benchmark  # noqa: E402
 from p0_q1_benchmark_factor_report import (BACKTEST_PATH, ETF_DIR, load_etf_benchmark,  # noqa: E402
                                            monthly_returns, ols_newey_west)
 
@@ -102,17 +102,16 @@ def blended_history(weights, start_date, initial_capital):
     return [{"date": day, "value": sum(leg[day] for leg in legs.values())} for day in shared]
 
 
-def _metrics_from_history(history):
-    from strategy_diagnostics import _annualized, drawdown_profile, risk_adjusted
-
+def _metrics_from_history(history, initial_capital):
+    """Use the published backtest's daily/calendar metric path for every leg."""
     monthly = monthly_returns([row["date"] for row in history], [row["value"] for row in history])
-    returns = [monthly[month] for month in sorted(monthly)]
+    measured = performance_metrics(history, initial_capital)
     return {
         "final_value": round(history[-1]["value"], 2),
-        "cagr": round(_annualized(returns), 5),
-        "volatility": risk_adjusted(returns).get("annualized_volatility"),
-        "sharpe": risk_adjusted(returns).get("sharpe_zero_rate"),
-        "max_drawdown": drawdown_profile(returns)["max_drawdown"],
+        "cagr": measured.get("cagr"),
+        "volatility": measured.get("annualized_volatility"),
+        "sharpe": measured.get("sharpe_zero_rate"),
+        "max_drawdown": measured.get("maximum_drawdown"),
     }, monthly
 
 
@@ -152,7 +151,8 @@ def build_report(backtest=None):
     portfolio = backtest["portfolio"]
     start_date = portfolio["metrics"]["start_date"]
     initial_capital = portfolio["metrics"]["initial_value"]
-    strategy_metrics, strategy_monthly = _metrics_from_history(portfolio["history"])
+    strategy_metrics, strategy_monthly = _metrics_from_history(
+        portfolio["history"], initial_capital)
 
     legs, missing = {}, []
     for ticker, description in BENCHMARKS.items():
@@ -161,7 +161,7 @@ def build_report(backtest=None):
             continue
         result = simulate_benchmark(load_etf_benchmark(ticker), start_date,
                                     initial_capital, ENTRY_COST_BPS)
-        metrics, monthly = _metrics_from_history(result["history"])
+        metrics, monthly = _metrics_from_history(result["history"], initial_capital)
         legs[ticker] = {
             "description": description,
             **metrics,
@@ -170,7 +170,7 @@ def build_report(backtest=None):
 
     if all(available(ticker) for ticker in BLEND["weights"]):
         metrics, monthly = _metrics_from_history(
-            blended_history(BLEND["weights"], start_date, initial_capital))
+            blended_history(BLEND["weights"], start_date, initial_capital), initial_capital)
         legs[BLEND["name"]] = {
             "description": BLEND["rationale"],
             **metrics,

@@ -229,6 +229,9 @@ jobs:
         # Must follow build_swing_screen.py and the congress/institutional screens: the
         # swing-only and political+institutional strategies select from those files.
         run: python pipeline/shadow_portfolios.py
+      - name: Append prospective production and benchmark sector weights
+        if: steps.refresh_window.outputs.should_run == 'true'
+        run: python pipeline/sector_weight_history.py
       - name: Backtest following disclosed political and institutional trades
         if: steps.refresh_window.outputs.should_run == 'true'
         # Reads the two published disclosure screens and the cached price history, so it
@@ -240,6 +243,19 @@ jobs:
         # Pure aggregation over result files already on disk. Runs last so it picks up every
         # backtest refreshed earlier in this job.
         run: python pipeline/build_backtest_comparison.py || echo "::warning::Backtest comparison build failed; keeping previous backtest-comparison.json"
+      - name: Rebuild signal and research validation artifacts
+        if: steps.refresh_window.outputs.should_run == 'true'
+        run: |
+          python pipeline/score_calibration.py
+          python pipeline/enrichment_bias.py
+          python pipeline/experiment_registry.py
+          python pipeline/signal_metrics.py
+          python pipeline/build_research_evidence.py
+      - name: Refresh the controlled Live v2 representative validation
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.universe_mode == 'full' && steps.refresh_window.outputs.is_rescore != 'true'
+        # The script always writes explicit per-ticker failures before returning nonzero.
+        # Keep that evidence and publish it rather than aborting before the commit step.
+        run: python pipeline/live_v2_validation.py || echo "::warning::One or more controlled Live v2 checks failed; publishing the failure artifact"
       - name: Validate
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/validate_data.py

@@ -1,6 +1,8 @@
+import json
 import os
 import random
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -85,6 +87,16 @@ class HorizonAndCostTests(unittest.TestCase):
         # a month cannot be traded daily, and only the curve shows that.
         self.assertLess(horizons["1d"]["mean_ic"], horizons["21d"]["mean_ic"])
 
+    def test_negative_ic_breaches_a_positive_predictive_threshold(self):
+        panel = synthetic_panel(periods=12, names=30)
+        for period in panel["periods"]:
+            period["forward_returns_by_horizon"]["1d"] = {
+                ticker: -score for ticker, score in period["scores"].items()
+            }
+        row = metrics_by_id(sm.signal_metrics(panel))["rank_ic_1d"]
+        self.assertLess(row["value"], 0)
+        self.assertTrue(row["breached"])
+
     def test_short_horizons_pay_their_cost_far_more_often(self):
         crossover = ev.alpha_cost_crossover(
             {"1d": 0.001, "21d": 0.01}, round_trip_cost_bps=20,
@@ -150,6 +162,83 @@ class PopulationStabilityTests(unittest.TestCase):
     def test_too_small_a_sample_returns_nothing_rather_than_a_number(self):
         self.assertIsNone(sm.population_stability_index([1, 2, 3], [1, 2, 3]))
 
+    def test_feature_psi_uses_separated_point_in_time_windows(self):
+        with tempfile.TemporaryDirectory() as root:
+            for day in range(1, 61):
+                month = 1 + (day - 1) // 28
+                date = f"2026-{month:02d}-{((day - 1) % 28) + 1:02d}"
+                value = float(day % 10) if day <= 20 else (100.0 + day % 10 if day > 40 else 50.0)
+                row = {"ticker": "TEST", "refresh_id": f"r{day}",
+                       "recorded_at": f"{date}T20:00:00+00:00",
+                       "normalized_metric_scores": {"champion": {"valuation": value}}}
+                with open(os.path.join(root, f"{date}.jsonl"), "w") as handle:
+                    handle.write(json.dumps(row) + "\n")
+            result = sm.feature_psi_from_pit(root)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["worst_feature"], "valuation")
+        self.assertTrue(result["breached"])
+
+
+class LiveMonitoringTests(unittest.TestCase):
+    def test_divergence_is_computed_from_shadow_and_backtest_returns(self):
+        history = [{"date": f"2026-01-{index + 1:02d}", "value": value}
+                   for index, value in enumerate([100, 101, 100.5, 102, 101.5, 103, 102.5,
+                                                  104, 103.5, 105, 104.5, 106, 105.5, 107,
+                                                  106.5, 108, 107.5, 109, 108.5, 110, 109.5])]
+        result = sm.live_backtest_divergence(
+            {"portfolio": {"history": history}}, {"returns": [0.02] * 20, "periods": []})
+        self.assertEqual(result["status"], "ready")
+        self.assertGreater(result["value"], 0)
+        self.assertTrue(result["breached"])
+
+    def test_execution_export_populates_cost_and_reconciliation_metrics(self):
+        execution = {
+            "orders": [{"ticker": "A", "side": "buy", "decision_price": 100,
+                        "fill_price": 100.1, "intended_quantity": 10,
+                        "filled_quantity": 8}],
+            "intended_positions": {"A": 0.6, "B": 0.4},
+            "actual_positions": {"A": 0.59, "B": 0.0},
+        }
+        rows = metrics_by_id(sm._execution_cost_metrics(execution))
+        self.assertAlmostEqual(rows["implementation_shortfall"]["value"], 10.0)
+        self.assertAlmostEqual(rows["fill_rate"]["value"], 0.8)
+        self.assertEqual(rows["unpositioned_signals"]["detail"]["tickers"], ["B"])
+        reconciliation = sm.position_reconciliation(execution)
+        self.assertEqual(reconciliation["worst_ticker"], "B")
+        self.assertTrue(reconciliation["breached"])
+
+    def test_current_refresh_quality_counters_are_measured(self):
+        with tempfile.TemporaryDirectory() as root:
+            row = {"ticker": "A", "refresh_id": "r1",
+                   "recorded_at": "2026-01-02T20:00:00+00:00",
+                   "data_as_of": "2026-01-02T19:00:00+00:00", "price": 10,
+                   "quality_flags": []}
+            with open(os.path.join(root, "2026-01-02.jsonl"), "w") as handle:
+                handle.write(json.dumps(row) + "\n")
+            universe = os.path.join(root, "universe.jsonl")
+            with open(universe, "w") as handle:
+                handle.write(json.dumps({"added": ["A"], "removed": []}) + "\n")
+            result = sm.data_quality_from_pit(root, universe)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["value"], 0)
+        self.assertEqual(result["universe_churn"]["added"], ["A"])
+
+
+class SectorWeightMetricTests(unittest.TestCase):
+    def test_latest_prospective_snapshot_publishes_active_weights(self):
+        rows = sm.construction_metrics(None, None, [{
+            "as_of": "2026-08-14T12:00:00+00:00", "strategy": "production",
+            "benchmark": "SPY", "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0,
+            "strategy_sector_weights": {"technology": 0.6, "energy": 0.4},
+            "benchmark_sector_weights": {"technology": 0.4, "energy": 0.6},
+            "active_sector_weights": {"technology": 0.2, "energy": -0.2},
+        }])
+        row = metrics_by_id(rows)["sector_active_weights"]
+        self.assertEqual(row["status"], "ready")
+        self.assertEqual(row["value"], 20.0)
+        self.assertEqual(row["observations"], 1)
+
 
 class ReportTests(unittest.TestCase):
     def setUp(self):
@@ -157,7 +246,9 @@ class ReportTests(unittest.TestCase):
         self.report = sm.build_report(
             backtest=None, optimizer=None, panel=self.panel, factors=None,
             ic_validation=None, live={"days": 18, "refreshes": 18,
-                                      "first_date": "2026-07-20", "last_date": "2026-08-13"})
+                                      "first_date": "2026-07-20", "last_date": "2026-08-13"},
+            pit_root="/definitely/missing/pit", shadow_root="/definitely/missing/shadow",
+            universe_path="/definitely/missing/universe.jsonl")
 
     def test_every_metric_declares_whether_it_needs_a_live_sample(self):
         for row in self.report["metrics"]:
@@ -179,7 +270,7 @@ class ReportTests(unittest.TestCase):
             self.assertTrue(rows[identifier]["requires_live_sample"])
             self.assertEqual(rows[identifier]["status"], "accumulating")
             self.assertIsNone(rows[identifier]["value"])
-            self.assertEqual(rows[identifier]["observations"], 18)
+            self.assertEqual(rows[identifier]["observations"], 0)
 
     def test_a_missing_backtest_is_reported_rather_than_guessed(self):
         rows = metrics_by_id(self.report["metrics"])

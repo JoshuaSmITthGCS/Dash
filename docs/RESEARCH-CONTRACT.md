@@ -106,6 +106,6 @@ had observed 0 of 24 eligible periods across 6 refreshes. See
 This file and its JSON counterpart are a **documentation and centralization layer**. Adding
 them does not, by itself, change any score, any threshold, or any published number — every
 value cited here already governs production behavior at the file/line noted in
-`enforced_in`. Where the contract states a target this codebase doesn't yet meet (trading-day
-horizons, sector-residual labels, tiered transaction costs), that gap is recorded as
+`enforced_in`. Where the contract states a target this codebase doesn't yet meet (the 5-session
+diagnostic and completed tiered transaction-cost scenario reruns), that gap is recorded as
 `"implementation_status": "not_implemented"`, not silently assumed away.
