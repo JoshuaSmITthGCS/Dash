@@ -60,6 +60,18 @@ function pathFor(points, stepped = false) {
 const money = (value) => `$${Math.round(value).toLocaleString('en-US')}`
 const DAY_MS = 24 * 60 * 60 * 1000
 
+function chartDateLabel(value) {
+  const raw = String(value || '')
+  if (raw.includes('T')) {
+    const date = new Date(raw)
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    }
+  }
+  if (!raw) return '–'
+  return raw.slice(0, 10)
+}
+
 // Calendar-day lookback windows rather than fixed point counts: the underlying grid mixes
 // dense recent daily closes with sparser older weekly ones, so a point count can't mean the
 // same span of time at both ends of the series.
@@ -197,7 +209,7 @@ export default function GrowthChart({
         )}
       </div>}
       <div className="chart-scrub-summary" role="status" aria-live="polite">
-        <span>{String(usableDates[displayedIndex]).slice(0, 10)}</span>
+        <span>{chartDateLabel(usableDates[displayedIndex])}</span>
         <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '–' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
       </div>
       <div className="chart-scroll-region" style={{ overflowX: 'auto' }}>
@@ -294,7 +306,7 @@ export default function GrowthChart({
               <text key={index} x={x} y={chartHeight - 8}
                 textAnchor={index === 0 ? 'start' : index === usableDates.length - 1 ? 'end' : 'middle'}
                 fill="var(--text-faint)" fontSize="10" fontFamily="var(--font-mono)">
-                {String(usableDates[index]).slice(0, 10)}
+                {chartDateLabel(usableDates[index])}
               </text>
             )
           })}

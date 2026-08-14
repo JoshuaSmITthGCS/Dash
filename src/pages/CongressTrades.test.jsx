@@ -36,8 +36,14 @@ describe('CongressTrades page', () => {
     render(<MemoryRouter><CongressTrades /></MemoryRouter>)
 
     expect(screen.getByRole('heading', { name: /Politics/ })).toBeVisible()
-    expect(screen.getByText('Jane Doe')).toBeVisible()
-    expect(screen.getByText('John Smith')).toBeVisible()
+    expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('MSFT').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/^Jane Doe$/)).not.toBeInTheDocument()
+    screen.getAllByText(/AAPL|MSFT/)
+      .filter((element) => element.closest('summary'))
+      .forEach((element) => fireEvent.click(element.closest('summary')))
+    expect(screen.getAllByText(/Jane Doe/).some((element) => element.closest('details')?.open)).toBe(true)
+    expect(screen.getAllByText(/John Smith/).some((element) => element.closest('details')?.open)).toBe(true)
     expect(screen.getByText((_, el) => el.className === 'chip' && el.textContent === 'Late filing')).toBeVisible()
     expect(screen.getByText((_, el) => el.className === 'chip' && el.textContent === 'Options trade')).toBeVisible()
   })
@@ -47,7 +53,7 @@ describe('CongressTrades page', () => {
       data: {
         results: [
           trade({ representative: 'Jane Doe', chamber: 'senate' }),
-          trade({ representative: 'John Smith', chamber: 'house' }),
+          trade({ representative: 'John Smith', chamber: 'house', symbol: 'MSFT' }),
         ],
       },
       loading: false, error: null,
@@ -56,8 +62,11 @@ describe('CongressTrades page', () => {
     render(<MemoryRouter><CongressTrades /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Chamber'), { target: { value: 'house' } })
 
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
-    expect(screen.getByText('John Smith')).toBeVisible()
+    expect(screen.queryByText('AAPL')).not.toBeInTheDocument()
+    expect(screen.getAllByText('MSFT').length).toBeGreaterThan(0)
+    const ticker = screen.getAllByText('MSFT').find((element) => element.closest('summary'))
+    fireEvent.click(ticker.closest('summary'))
+    expect(screen.getAllByText(/John Smith/).some((element) => element.closest('details')?.open)).toBe(true)
   })
 
   it('shows an honest empty state when nothing has been collected yet', () => {
@@ -95,8 +104,8 @@ describe('CongressTrades page', () => {
     useData.mockReturnValue({
       data: {
         results: [
-          trade({ representative: 'Laggard', return_since_purchase_pct: 2 }),
-          trade({ representative: 'Winner', return_since_purchase_pct: 45 }),
+          trade({ representative: 'Laggard', symbol: 'LAG', return_since_purchase_pct: 2 }),
+          trade({ representative: 'Winner', symbol: 'WIN', return_since_purchase_pct: 45 }),
         ],
       },
       loading: false, error: null,
@@ -105,8 +114,8 @@ describe('CongressTrades page', () => {
     render(<MemoryRouter><CongressTrades /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'performance' } })
 
-    const names = screen.getAllByText(/Laggard|Winner/).map((el) => el.textContent)
-    expect(names.indexOf('Winner')).toBeLessThan(names.indexOf('Laggard'))
+    const rows = screen.getAllByRole('row').filter((row) => /WIN|LAG/.test(row.textContent))
+    expect(rows[0]).toHaveTextContent('WIN')
   })
   it('says the feed failed rather than implying a quiet week', () => {
     useData.mockReturnValue({

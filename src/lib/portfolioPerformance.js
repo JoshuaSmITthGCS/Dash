@@ -51,6 +51,29 @@ export function actualRecordedValueSeries(snapshots = [], transactions = []) {
   }
 }
 
+/**
+ * Every stored observation from the latest market date, preserving its timestamp instead of
+ * collapsing the day to one close. This is display-only intraday account value: external cash
+ * flows and trading activity can move the line as well as prices, so it is never substituted
+ * into return statistics.
+ */
+export function intradayRecordedValueSeries(snapshots = []) {
+  const rows = snapshots
+    .filter((row) => row?.recordedAt && Number.isFinite(Number(row.value)))
+    .sort((left, right) => String(left.recordedAt).localeCompare(String(right.recordedAt)))
+  if (!rows.length) return null
+  const latestMarketDate = rows.at(-1).marketDate || String(rows.at(-1).recordedAt).slice(0, 10)
+  const latest = rows.filter((row) => (row.marketDate || String(row.recordedAt).slice(0, 10)) === latestMarketDate)
+  if (latest.length < 2) return null
+  return {
+    dates: latest.map((row) => row.recordedAt),
+    values: latest.map((row) => Number(row.value)),
+    frequency: 'intraday',
+    source: 'firestore_portfolio_snapshots',
+    methodology: `Account values recorded during ${latestMarketDate}. ${latest.length} five-minute observations are available.`,
+  }
+}
+
 export const PORTFOLIO_HISTORY_LABELS = {
   actual: 'Your actual recorded value',
   backtest: "Today's basket, backtested",

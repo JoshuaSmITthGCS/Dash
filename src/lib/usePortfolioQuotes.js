@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from './FirebaseAuthContext'
-import { msUntilNextBoundary } from './nightlyRefresh'
+
+export const PORTFOLIO_QUOTE_REFRESH_MS = 5 * 60 * 1000
 
 const storageKey = (userId) => `valuesignal.portfolioQuotes.${userId}`
 
@@ -87,12 +88,10 @@ export function usePortfolioQuotes(symbols) {
     }
   }
 
-  // Refresh immediately whenever the portfolio is opened or the user signs in – reloading
-  // the tab or logging back in shouldn't show stale cached prices until 9pm rolls around –
-  // and then once a day at 9pm local time – after Nasdaq/NYSE after-hours trading has wound
-  // down – for as long as the tab stays open. See src/lib/nightlyRefresh.js for why 9pm.
-  // requestRefresh is read through a ref so the recursive setTimeout chain always calls the
-  // current closure, not whatever it closed over the one time the effect ran.
+  // Refresh immediately whenever the portfolio is opened or the user signs in, then every
+  // five minutes while the tab is visible. Each successful refresh is recorded by the page's
+  // portfolio-tracking effect, producing the denser intraday account-value line requested by
+  // the user. Pausing in a background tab avoids paying for quotes no one is looking at.
   const requestRefreshRef = useRef(requestRefresh)
   useEffect(() => { requestRefreshRef.current = requestRefresh })
 
@@ -101,16 +100,30 @@ export function usePortfolioQuotes(symbols) {
 
   useEffect(() => {
     if (!currentUser || !tickerKey) return undefined
-    let timer
-    const scheduleNext = () => {
-      timer = setTimeout(() => {
+    let timer = null
+    const stop = () => {
+      if (timer) clearInterval(timer)
+      timer = null
+    }
+    const start = () => {
+      stop()
+      if (document.visibilityState === 'hidden') return
+      timer = setInterval(() => requestRefreshRef.current(), PORTFOLIO_QUOTE_REFRESH_MS)
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') stop()
+      else {
         requestRefreshRef.current()
-        scheduleNext()
-      }, msUntilNextBoundary())
+        start()
+      }
     }
     requestRefreshRef.current()
-    scheduleNext()
-    return () => clearTimeout(timer)
+    start()
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [currentUser, tickerKey])
 
   return { ...state, requestRefresh }

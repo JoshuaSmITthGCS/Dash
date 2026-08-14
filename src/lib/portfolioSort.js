@@ -1,4 +1,5 @@
 export const PORTFOLIO_SORT_OPTIONS = [
+  { key: 'day', label: 'Today’s performance' },
   { key: 'allocation', label: 'Allocation' },
   { key: 'ticker', label: 'Ticker' },
   { key: 'company', label: 'Company' },
@@ -16,6 +17,7 @@ export const PORTFOLIO_SORT_OPTIONS = [
 ]
 
 const VALUE_FOR = {
+  day: (position) => position.dayMove?.pct,
   allocation: (position) => position.allocationPct,
   ticker: (position) => position.ticker,
   company: (position) => position.priceInfo?.name,

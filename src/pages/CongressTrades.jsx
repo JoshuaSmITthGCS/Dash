@@ -176,11 +176,10 @@ export default function CongressTrades() {
       ) : (
         <>
         <ResultCards rows={filtered} getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}
-          title={(row) => row.representative || 'Unknown representative'}
-          subtitle={(row) => `${row.chamber || 'Chamber unavailable'}${row.district ? ` · ${row.district}` : ''}`}
+          title={(row) => row.symbol || 'Ticker unavailable'}
+          subtitle={(row) => `${row.transaction_type || 'Transaction'} · ${row.transaction_date || 'date unavailable'}`}
           fields={[
-            { label: 'Issuer', value: (row) => row.asset_description || row.symbol || '–' },
-            { label: 'Type', value: (row) => row.transaction_type || '–' },
+            { label: 'Company and filer', value: (row) => <details className="trade-identity-reveal"><summary>View details</summary><span><b>{row.asset_description || row.symbol || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} · {row.chamber || 'Chamber unavailable'}{row.district ? ` · ${row.district}` : ''}</small></span></details> },
             { label: 'Size', value: (row) => row.amount || '–' },
             { label: 'Traded', value: (row) => row.transaction_date || '–' },
             { label: 'Filed after', value: (row) => row.filing_delay_days != null ? `${row.filing_delay_days}d` : '–' },
@@ -191,7 +190,7 @@ export default function CongressTrades() {
           <table>
             <thead>
               <tr>
-                <th>Representative</th><th>Issuer</th><th>Type</th>
+                <th>Stock</th><th>Type</th>
                 <th className="num">Size</th><th>Traded</th><th>Filed after</th>
                 <th className="num">Since purchase</th><th>Flags</th>
               </tr>
@@ -200,14 +199,7 @@ export default function CongressTrades() {
               {filtered.map((row, index) => (
                 <tr key={`${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}>
                   <td>
-                    <b>{row.representative || '–'}</b>
-                    <small style={{ display: 'block', textTransform: 'capitalize', color: 'var(--text-faint)' }}>
-                      {row.chamber}{row.district ? ` · ${row.district}` : ''}
-                    </small>
-                  </td>
-                  <td>
-                    <span>{row.asset_description || row.symbol || '–'}</span>
-                    {row.symbol && <small className="mono" style={{ display: 'block', color: 'var(--text-faint)' }}>{row.symbol}</small>}
+                    <details className="trade-identity-reveal"><summary><b className="mono">{row.symbol || '–'}</b></summary><span><b>{row.asset_description || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} · {row.chamber}{row.district ? ` · ${row.district}` : ''}</small></span></details>
                   </td>
                   <td>{row.transaction_type || '–'}</td>
                   <td className="mono num">{row.amount || '–'}</td>

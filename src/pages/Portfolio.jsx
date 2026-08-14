@@ -73,6 +73,8 @@ import {
 import { buildPortfolioMetricModel } from '../lib/portfolioMetricModel.js'
 import { combinedEvidence, compareEvidencePeriods, sectionAssessment } from '../lib/metricAssessment.js'
 import prospectiveValidation from '../../pipeline/validation/harness_freeze.json'
+import StockTickerTape from '../components/StockTickerTape.jsx'
+import { dailyMoveForPosition } from '../lib/marketPresentation.js'
 
 const ANALYTICS_SCOPES = [
   { id: 'all_history', label: 'All portfolio history' },
@@ -338,6 +340,7 @@ export default function Portfolio() {
     ...position,
     allocationPct: portfolioStats.totalValue > 0 && position.currentValue != null ? position.currentValue / portfolioStats.totalValue * 100 : null,
     rating: researchRating(position.priceInfo, ratingContext),
+    dayMove: dailyMoveForPosition(position),
   }))
   // Tagged the same way mergePortfolioQuotes tags a holding's live quote, since this is the
   // raw Netlify-function payload rather than something already run through that merge.
@@ -484,8 +487,7 @@ export default function Portfolio() {
   const basis = data?.hypothetical_basis || 500
   const fixedBasisTotal = portfolioFixedBasisVsBenchmark(portfolioStats.positions, priceData, benchmarkHistory, basis)
   const growth = portfolioGrowthSeries(portfolioStats.positions, priceData, benchmarkHistory)
-  const actionable = portfolioPositions.filter(
-    (pos) => pos.recommendation && pos.recommendation.action !== 'HOLD')
+  const actionable = portfolioPositions.filter((pos) => pos.recommendation?.action === 'SELL')
   const exposure = assessPortfolioExposure(portfolioPositions)
   const sortedPositions = sortPortfolioPositions(
     portfolioPositions,
@@ -688,6 +690,7 @@ export default function Portfolio() {
   return (
     <>
       <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={portfolioQuotes.refreshing} />
+      <StockTickerTape positions={portfolioPositions} />
       <div className="page-head">
         <div>
           <span className="eyebrow">Your money</span>
@@ -701,6 +704,7 @@ export default function Portfolio() {
           <div><strong>{syncState.connected ? 'Firebase live sync on' : 'Firebase sync unavailable'}</strong><small>{syncState.connected ? `${currentUser?.email || 'Solo workspace'} · devices update automatically${syncState.lastSyncedAt ? ` · ${new Date(syncState.lastSyncedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}` : ''}` : syncState.error || 'Connecting your solo cloud workspace'}</small></div>
         </div>
       </div>
+      {actionable.length > 0 && <a className="portfolio-sell-alert" href="#sell-signals"><Icon name="bell" size={17} /><span><strong>{actionable.length} sell signal{actionable.length === 1 ? '' : 's'} need review</strong><small>{actionable.map((position) => position.ticker).join(', ')} · Hold positions are not shown here.</small></span><Icon name="chevron" size={16} /></a>}
       {syncMessage && <div className="sync-message" role="status">{syncMessage}</div>}
       {(portfolioQuotes.message || portfolioQuotes.error) && (
         <div className={`sync-message refresh-message ${portfolioQuotes.error ? 'error' : 'success'}`} role="status" aria-live="polite">
@@ -753,17 +757,6 @@ export default function Portfolio() {
           </div>
           <div className="kpi-note">
             {uninvestedCash == null ? 'Sync Fidelity or set a cash balance below' : 'Available for your next purchase'}
-          </div>
-        </div>
-        <div className="card kpi">
-          <div className="kpi-label">Action Needed</div>
-          <div className="kpi-value" style={{ color: actionable.length ? 'var(--warn)' : 'var(--pos)' }}>
-            {actionable.length}
-          </div>
-          <div className="kpi-note">
-            {actionable.length
-              ? actionable.map((pos) => pos.ticker).join(', ')
-              : 'No multi-factor deterioration'}
           </div>
         </div>
       </div>
@@ -821,7 +814,7 @@ export default function Portfolio() {
       </details>
 
       {actionable.length > 0 && (
-        <details className="card card-pad suggested-actions" style={{ marginBottom: 20 }} defaultOpen={preferences.suggestedActionsDefault === 'expanded'}>
+        <details id="sell-signals" className="card card-pad suggested-actions" style={{ marginBottom: 20 }} defaultOpen={preferences.suggestedActionsDefault === 'expanded'}>
           <summary><span><span className="sec-label">Suggested actions</span><strong>{actionable.length} holding{actionable.length === 1 ? '' : 's'} to review</strong></span><Icon name="chevron" /></summary>
           <div style={{ display: 'grid', gap: 10 }}>
             {actionable.map((pos) => (
@@ -966,18 +959,19 @@ export default function Portfolio() {
         />
         <div className="portfolio-mobile-list">
           {sortedPositions.map((pos) => (
-            <article className="holding-card" key={pos.id || pos.ticker}>
+            <article className={`holding-card portfolio-holding-block ${pos.dayMove?.pct == null ? 'neutral' : pos.dayMove.pct >= 0 ? 'positive' : 'negative'}`} key={pos.id || pos.ticker}>
               <div className="holding-card-head">
                 <CompanyLogo company={pos.priceInfo || pos} size={40} /><div><strong>{pos.ticker}</strong><span>{pos.priceInfo?.name || 'Coverage pending'}</span><small>{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</small></div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" />
-                  <ActionPill recommendation={pos.recommendation} />
+                <div className="holding-day-corner">
+                  <strong>{signedPct(pos.dayMove?.pct, 2)}</strong>
+                  <small>{pos.dayMove?.positionDelta == null ? 'Day delta pending' : `${pos.dayMove.positionDelta >= 0 ? '+' : '−'}${money(Math.abs(pos.dayMove.positionDelta), 2)}`}</small>
                 </div>
               </div>
               <div className="holding-value">
+                <div><span>Current price</span><strong>{pos.currentPrice == null ? 'Unavailable' : money(pos.currentPrice, 2)}</strong></div>
                 <div><span>Position value</span><strong>{pos.currentValue == null ? 'Unavailable' : money(pos.currentValue)}</strong></div>
-                <Move value={pos.gainPct} capsule />
               </div>
+              <div className="holding-block-status"><ActionPill recommendation={pos.recommendation} /><RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" /><span className={pos.gainPct >= 0 ? 'positive' : 'negative'}>{signedPct(pos.gainPct)} total return</span></div>
               <small className="as-of-line">As of {pos.priceInfo?.history?.dates?.at(-1) || pos.priceInfo?.data_as_of || 'the latest available close'}</small>
               {editingId === pos.id ? (
                 <MobileSheet open title={`Edit ${pos.ticker}`} onClose={cancelEdit} className="holding-edit-sheet"><div className="holding-edit-form">

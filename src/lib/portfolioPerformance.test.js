@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  intradayRecordedValueSeries,
   actualRecordedValueSeries,
   benchmarkAlternative,
   benchmarkCloseOn,
@@ -36,6 +37,30 @@ describe('actualRecordedValueSeries', () => {
       { recordedAt: '2026-01-03T20:00:00Z', value: 120 },
     ])
     expect(result.dates).toEqual(['2026-01-02', '2026-01-03'])
+  })
+})
+
+describe('intradayRecordedValueSeries', () => {
+  it('preserves every timestamp from the latest market date', () => {
+    const result = intradayRecordedValueSeries([
+      { marketDate: '2026-08-12', recordedAt: '2026-08-12T20:00:00Z', value: 98 },
+      { marketDate: '2026-08-13', recordedAt: '2026-08-13T14:35:00Z', value: 100 },
+      { marketDate: '2026-08-13', recordedAt: '2026-08-13T14:40:00Z', value: 101 },
+      { marketDate: '2026-08-13', recordedAt: '2026-08-13T14:45:00Z', value: 99 },
+    ])
+    expect(result.dates).toEqual([
+      '2026-08-13T14:35:00Z',
+      '2026-08-13T14:40:00Z',
+      '2026-08-13T14:45:00Z',
+    ])
+    expect(result.values).toEqual([100, 101, 99])
+    expect(result.frequency).toBe('intraday')
+  })
+
+  it('waits for two observations before drawing a line', () => {
+    expect(intradayRecordedValueSeries([
+      { marketDate: '2026-08-13', recordedAt: '2026-08-13T14:35:00Z', value: 100 },
+    ])).toBeNull()
   })
 })
 

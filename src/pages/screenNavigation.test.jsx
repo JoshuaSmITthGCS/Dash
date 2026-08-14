@@ -7,9 +7,9 @@ import { MOBILE_NAV } from '../App.jsx'
 const at = (path, ui) => render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>)
 
 describe('screen navigation contract', () => {
-  it('leads the screens rail with the swing screen and lands the Screens tab there', () => {
+  it('leads the screens rail with swing signals and gives Markets its own destination', () => {
     expect(SCREEN_NAV[0]).toEqual(['/screens/swing', 'Swing signals'])
-    expect(MOBILE_NAV.find((item) => item.label === 'Markets').to).toBe('/screens/swing')
+    expect(MOBILE_NAV.find((item) => item.label === 'Markets').to).toBe('/markets')
   })
 
   it('marks the swing screen active when it is open', () => {

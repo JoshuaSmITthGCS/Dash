@@ -39,6 +39,7 @@ const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
 const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
+const Markets = lazy(() => import('./pages/Markets.jsx'))
 
 // Flat strategy paths that predate the Options tab, kept alive as redirects into it.
 const OPTIONS_STRATEGY_IDS = [
@@ -46,15 +47,37 @@ const OPTIONS_STRATEGY_IDS = [
   'collar', 'vertical-spread', 'advanced-strategies',
 ]
 
-const NAV = [
-  { to: '/', label: 'Home', icon: 'overview', end: true },
-  { to: '/research', label: 'Research', icon: 'research' },
-  { to: '/search', label: 'Search', icon: 'search' },
+const NAV_GROUPS = [
+  {
+    label: 'Research', icon: 'research',
+    items: [
+      { to: '/research', label: 'Research overview', icon: 'research' },
+      { to: '/search', label: 'Stock search', icon: 'search' },
+      { to: '/screens/swing', label: 'Swing screen', icon: 'market' },
+      { to: '/screens/fast-growth', label: 'Growth screens', icon: 'market' },
+      { to: '/screens/options', label: 'Options screens', icon: 'market' },
+      { to: '/screens/themes', label: 'Theme exposure', icon: 'research' },
+      { to: '/screens/politics', label: 'Congress trades', icon: 'method' },
+      { to: '/screens/institutional', label: 'Institutional activity', icon: 'method' },
+    ],
+  },
+  {
+    label: 'Figures', icon: 'market',
+    items: [
+      { to: '/portfolio/insights', label: 'Portfolio figures', icon: 'market' },
+      { to: '/portfolio/diversification', label: 'Diversification', icon: 'portfolio' },
+      { to: '/screens/backtests', label: 'Backtest comparison', icon: 'market' },
+      { to: '/screens/validation', label: 'Live validation', icon: 'market' },
+      { to: '/finances', label: 'Financial stats', icon: 'finances' },
+      { to: '/planning', label: 'Planning figures', icon: 'finances' },
+    ],
+  },
+]
+
+const NAV_AFTER_GROUPS = [
+  { to: '/markets', label: 'Markets', icon: 'market' },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
-  { to: '/finances', label: 'Finances', icon: 'finances' },
-  { to: '/planning', label: 'Planning', icon: 'finances' },
-  { to: '/screens/swing', label: 'Screens', icon: 'research' },
   { to: '/alerts', label: 'Alerts', icon: 'bell' },
   { to: '/methodology', label: 'Methodology', icon: 'method' },
   { to: '/glossary', label: 'Glossary', icon: 'glossary' },
@@ -99,7 +122,7 @@ export const MOBILE_NAV = [
   { to: '/', label: 'Home', icon: 'overview', end: true },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/research', label: 'Research', icon: 'research' },
-  { to: '/screens/swing', label: 'Markets', icon: 'market' },
+  { to: '/markets', label: 'Markets', icon: 'market' },
   { to: '/settings', label: 'More', icon: 'more' },
 ]
 
@@ -172,17 +195,15 @@ function AppContent() {
           </button>
         </div>
         <nav className="desktop-nav">
-          {NAV.map((item) => {
-            return (
-              <NavLink key={item.to} to={item.to} end={item.end}
-                onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
-                className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}
-                title={sidebarCollapsed ? item.label : undefined}>
-                <Icon name={item.icon} size={18} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </NavLink>
-            )
+          <NavLink to="/" end className={({ isActive }) => `navlink${isActive ? ' active' : ''}`} title={sidebarCollapsed ? 'Home' : undefined}><Icon name="overview" size={18} />{!sidebarCollapsed && <span>Home</span>}</NavLink>
+          {!sidebarCollapsed && NAV_GROUPS.map((group) => {
+            const active = group.items.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+            return <details className={`nav-group${active ? ' active' : ''}`} key={group.label} open={active || undefined}>
+              <summary><Icon name={group.icon} size={18} /><span>{group.label}</span><Icon name="chevron" size={13} className="nav-group-chevron" /></summary>
+              <div>{group.items.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `nav-sublink${isActive ? ' active' : ''}`}><Icon name={item.icon} size={15} /><span>{item.label}</span></NavLink>)}</div>
+            </details>
           })}
+          {NAV_AFTER_GROUPS.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `navlink${isActive ? ' active' : ''}`} title={sidebarCollapsed ? item.label : undefined}><Icon name={item.icon} size={18} />{!sidebarCollapsed && <span>{item.label}</span>}</NavLink>)}
         </nav>
         {!sidebarCollapsed && <div className="rail-note">
           <span>Research framework</span>
@@ -221,6 +242,7 @@ function AppContent() {
           <Route path="/research" element={<Picks />} />
           <Route path="/search" element={<Search />} />
           <Route path="/market" element={<PolicyRadar />} />
+          <Route path="/markets" element={<Markets />} />
           <Route path="/portfolio" element={cloudPage('Portfolio', '/portfolio', <Portfolio />)} />
           <Route path="/portfolio/diversification" element={cloudPage('Portfolio diversification', '/portfolio', <Diversification />)} />
           <Route path="/portfolio/insights" element={cloudPage('Portfolio insights', '/portfolio', <Insights />)} />
