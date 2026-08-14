@@ -5,12 +5,12 @@ import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useWatchlist } from '../lib/useWatchlist.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
-import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition.js'
+import { buildPortfolioPriceData, mergePortfolioQuotes, mergePositionSnapshots } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
   annualizeReturnPct, BENCHMARKS, compareBenchmarkSeries, concentrationLiquidityScore, currentHoldingsSeries, diversificationScore,
-  enrichPortfolio, latestMarketDayReturn, performanceMetrics, portfolioReturnSummary, portfolioScore,
+  enrichPortfolio, latestMarketDayReturn, performanceMetrics, portfolioScore,
   resilienceIndex, riskFreeAnnualRate, selectPeriod, sliceSeriesFrom,
 } from '../lib/portfolioAnalytics.js'
 import { Loading, Empty, Move, RefreshProgress, Tier } from '../components/Bits.jsx'
@@ -25,10 +25,7 @@ import { liveTodayPortfolioReturn } from '../lib/afterHoursQuotes.js'
 import { rankBreakoutInProgress, rankBuyingTheDip, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
 import BuyingTheDipChart from '../components/BuyingTheDipChart.jsx'
 import {
-  actualRecordedValueSeries,
-  PORTFOLIO_HISTORY_LABELS,
-  recordedPerformanceSeriesForPeriod,
-  selectPortfolioHistorySeries,
+  currentHoldingsPerformanceSeriesForPeriod,
 } from '../lib/portfolioPerformance.js'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
@@ -111,11 +108,11 @@ function HomePortfolioPanel({
   const resolutionNote = chart?.frequency === 'five-minute'
     ? `Every five-minute interval is shown for ${period === '1H' ? 'the last hour' : period === '1W' ? 'the trailing week' : 'the latest trading day'}.`
     : chart?.frequency === 'hourly-close'
-      ? 'Hourly closes keep the contribution-adjusted monthly path responsive.'
+      ? 'Hourly closes keep the current-holdings monthly path responsive.'
       : chart?.frequency === 'daily-close'
-        ? 'Daily closes show the contribution-adjusted three-month path.'
-        : chart?.frequency === 'weekly-close'
-          ? 'Weekly closes show the contribution-adjusted yearly path.'
+        ? 'Daily closes show the current-holdings three-month path.'
+      : chart?.frequency === 'weekly-close'
+          ? 'Weekly closes show the current-holdings yearly path.'
           : period === '1D'
             ? 'Five-minute cloud history is still accumulating; the latest historical fallback is shown.'
             : 'Historical values use saved closes until enough cloud snapshots accumulate.'
@@ -130,8 +127,8 @@ function HomePortfolioPanel({
       <header className="home-performance-head">
         <label><span>Portfolio performance</span><select value={period} onChange={(event) => onPeriodChange(event.target.value)}>{PERIODS.map((item) => <option key={item} value={item}>{PERIOD_LABELS[item]}</option>)}</select></label>
         <div className="home-performance-kpis">
-          <span><small>Portfolio value</small><strong>{money(totalValue)}</strong></span>
-          <span><small>Today</small><strong className={today?.dollarReturn >= 0 ? 'positive' : 'negative'}>{today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)}` : 'Unavailable'}</strong></span>
+          <span><small>Invested value</small><strong>{money(totalValue)}</strong></span>
+          <span><small>Today · regular session</small><strong className={today?.dollarReturn >= 0 ? 'positive' : 'negative'}>{today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)}` : 'Unavailable'}</strong></span>
           <span><small>Total profit · {PERIOD_LABELS[period]}</small><strong className={totalProfit >= 0 ? 'positive' : 'negative'}>{totalProfit == null ? 'Unavailable' : `${totalProfit >= 0 ? '+' : '−'}${money(Math.abs(totalProfit))}`}</strong></span>
         </div>
       </header>
@@ -207,7 +204,7 @@ function ReportProjection({ input, source, money, annualReturnTargetPct, current
     startAge={currentAge}
     retirementAge={retirementAge}
     title="Long-range outcome distribution"
-    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. The dotted median targets ${formatAnnualReturnTarget(annualReturnTargetPct)} annually${liveStrategyReturn ? ' -- your live Strategy return (time-weighted), annualized, and it updates automatically as your portfolio does' : ''}.`}
+    assumptionNote={`${money(contribution)} of annual funding is added in monthly installments. The dotted median targets ${formatAnnualReturnTarget(annualReturnTargetPct)} annually${liveStrategyReturn ? ' -- your current-holdings return, annualized with cash transfers excluded' : ''}.`}
   /><Link className="primary-button planning-home-link" to="/planning">Open Planning</Link></div>
 }
 
@@ -259,7 +256,11 @@ export default function Dashboard() {
   if (!data?.research?.length) return <Empty note="No advisor dataset is available yet." />
 
   const rows = data.research
-  const publishedPrices = buildPortfolioPriceData(data.screen_universe || [], data.portfolio_coverage || [], rows)
+  const publishedPrices = mergePositionSnapshots(
+    buildPortfolioPriceData(data.screen_universe || [], data.portfolio_coverage || [], rows),
+    positions,
+    data.generated_at,
+  )
   // A quote refresh older than the latest published report is stale relative to it (e.g. a
   // fresh nightly pipeline run) and must not override those newer closes on the hero number.
   const quoteRefreshIsNewest = portfolioQuotes.fetchedAt
@@ -267,32 +268,26 @@ export default function Dashboard() {
   const prices = mergePortfolioQuotes(publishedPrices, quoteRefreshIsNewest ? portfolioQuotes.quotes : {})
   const portfolio = enrichPortfolio(positions, prices)
   const holdingsSeries = currentHoldingsSeries(positions, prices, data.benchmark_history?.dates || [])
-  const recordedSeries = actualRecordedValueSeries(tracking.snapshots, tracking.activities)
-  const chartSelection = selectPortfolioHistorySeries(holdingsSeries, recordedSeries)
-  const effectiveChartMode = chartSelection.mode
-  const selected = period === '1H' ? null : selectPeriod(chartSelection.series, period)
+  const selected = period === '1H' ? null : selectPeriod(holdingsSeries, period)
   const selectedBenchmarkSymbols = preferences.defaultBenchmarks || [preferences.defaultBenchmark]
   const selectedBenchmarkSeries = selectedBenchmarkSymbols.map((symbol) => {
     const history = benchmarkReport?.histories?.[symbol]
     const definition = BENCHMARKS.find((item) => item.symbol === symbol)
     return history ? { symbol, label: definition?.label || symbol, dates: history.dates, closes: history.closes } : null
   }).filter(Boolean)
-  const comparison = effectiveChartMode === 'backtest' ? compareBenchmarkSeries(selected, selectedBenchmarkSeries) : null
+  const comparison = compareBenchmarkSeries(selected, selectedBenchmarkSeries)
   const chartedPortfolio = comparison?.portfolio || selected
-  const recordedZoomSeries = recordedPerformanceSeriesForPeriod(tracking.snapshots, tracking.activities, period)
+  const recordedZoomSeries = currentHoldingsPerformanceSeriesForPeriod(tracking.snapshots, positions, prices, period)
   const homeChart = recordedZoomSeries
     ? recordedZoomSeries
     : chartedPortfolio
-  const homeChartLabel = recordedZoomSeries
-    ? 'Deposit-excluded performance'
-    : PORTFOLIO_HISTORY_LABELS[effectiveChartMode]
+  const homeChartLabel = 'Current holdings'
   const homePeriodProfit = homeChart?.dollarReturn
     ?? (homeChart?.values?.length > 1 ? homeChart.values.at(-1) - homeChart.values[0] : null)
   const today = latestMarketDayReturn(holdingsSeries)
-  // Prefer each holding's live price vs. its own previousClose (real-time, updates on every
-  // quote refresh) over the report's close-to-close move, so the headline number on the
-  // report tracks the same live figure the Portfolio page shows after a refresh.
-  const liveToday = quoteRefreshIsNewest ? liveTodayPortfolioReturn(positions, prices) : { available: false }
+  // Prefer each holding's current/session price versus its own previous close. The Fidelity
+  // import supplies the same baseline before the first live quote refresh arrives.
+  const liveToday = liveTodayPortfolioReturn(positions, prices)
   const heroToday = liveToday.available
     ? liveToday
     : today ? { dollarReturn: today.dollarReturn, returnPct: today.returnPct } : null
@@ -320,10 +315,7 @@ export default function Dashboard() {
   }, {})).map(([sector, value]) => ({ sector, value, pct: portfolio.totalValue ? value / portfolio.totalValue * 100 : 0 }))
     .sort((left, right) => right.value - left.value)
 
-  const uninvestedCash = tracking.trackingState?.cashTrackingEnabled ? Number(tracking.trackingState.cashBalance || 0) : 0
-  const trackedAccountValue = portfolio.totalValue + uninvestedCash
-  const cashHistoryComplete = tracking.trackingState?.cashFlowHistoryComplete
-  const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, cashHistoryComplete)
+  const trackedAccountValue = portfolio.totalValue
   const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
     ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
     : null
@@ -333,14 +325,11 @@ export default function Dashboard() {
     preferences.defaultBenchmark,
     fidelityProjectionBaseline(positions),
   )
-  // Prefer the live, contribution-adjusted Strategy return (time-weighted, annualized) as
-  // the outcome-distribution's center so it moves with the portfolio automatically, instead
-  // of the static manual assumption from Finances -- that's still the fallback whenever there
-  // isn't yet enough dated snapshot history for a time-weighted result. No minimum-history
-  // gate: this is wired to move with the account from day one and settles down on its own as
-  // more tracked days accumulate, rather than waiting on an arbitrary threshold.
-  const liveStrategyAnnualReturnPct = returnSummary.strategy.available
-    ? annualizeReturnPct(returnSummary.strategy.returnPct, returnSummary.strategy.startDate, returnSummary.strategy.endDate)
+  // The automatic planning assumption comes from the current basket's price history. Because
+  // quantities are held constant across the series, transfers cannot affect this return.
+  const currentHoldingsPeriod = selectPeriod(holdingsSeries, 'All')
+  const liveStrategyAnnualReturnPct = currentHoldingsPeriod
+    ? annualizeReturnPct(currentHoldingsPeriod.returnPct, currentHoldingsPeriod.startDate, currentHoldingsPeriod.endDate)
     : null
   const annualReturnTargetPct = normalizeAnnualReturnTarget(
     liveStrategyAnnualReturnPct ?? finances.settings.planningAnnualReturnTargetPct,

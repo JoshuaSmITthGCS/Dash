@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  currentHoldingsPerformanceSeriesForPeriod,
   intradayRecordedValueSeries,
   recordedPerformanceSeriesForPeriod,
   recordedValueSeriesForPeriod,
@@ -138,6 +139,49 @@ describe('recordedPerformanceSeriesForPeriod', () => {
       '2026-08-13T14:40:00.000Z',
       '2026-08-13T15:35:00.000Z',
     ])
+    expect(result.frequency).toBe('five-minute')
+  })
+})
+
+describe('currentHoldingsPerformanceSeriesForPeriod', () => {
+  const positions = [
+    { ticker: 'AAA', shares: 2, snapshotPreviousClose: 10 },
+    { ticker: 'BBB', shares: 1, snapshotPreviousClose: 20 },
+  ]
+  const snapshots = [
+    {
+      recordedAt: '2026-08-13T19:55:00.000Z', marketDate: '2026-08-13', value: 9999,
+      prices: [{ ticker: 'AAA', shares: 99, price: 9 }, { ticker: 'BBB', shares: 99, price: 19 }],
+    },
+    {
+      recordedAt: '2026-08-14T13:35:00.000Z', marketDate: '2026-08-14', value: 50040,
+      prices: [{ ticker: 'AAA', shares: 1, price: 10.5 }, { ticker: 'BBB', shares: 1, price: 20 }],
+    },
+    {
+      recordedAt: '2026-08-14T13:40:00.000Z', marketDate: '2026-08-14', value: 50038,
+      prices: [{ ticker: 'AAA', shares: 1, price: 10 }, { ticker: 'BBB', shares: 1, price: 19.5 }],
+    },
+  ]
+
+  it('revalues current shares from stored prices and ignores account value and old shares', () => {
+    const result = currentHoldingsPerformanceSeriesForPeriod(snapshots, positions, {}, '1D')
+
+    expect(result.values).toEqual([40, 41, 39.5])
+    expect(result.dollarReturn).toBe(-0.5)
+    expect(result.methodology).toContain('cash transfers, money market funds, and pending activity are excluded')
+  })
+
+  it('starts Today at the current session rather than using the prior day', () => {
+    const result = currentHoldingsPerformanceSeriesForPeriod(snapshots, positions, {}, '1D')
+
+    expect(result.dates).toHaveLength(3)
+    expect(result.dates.every((date) => date.startsWith('2026-08-14'))).toBe(true)
+  })
+
+  it('keeps a last-hour range inside the latest trading day', () => {
+    const result = currentHoldingsPerformanceSeriesForPeriod(snapshots, positions, {}, '1H')
+
+    expect(result.values).toEqual([41, 39.5])
     expect(result.frequency).toBe('five-minute')
   })
 })

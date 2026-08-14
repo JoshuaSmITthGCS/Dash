@@ -62,7 +62,7 @@ export function groupPortfolioPositions(rows = []) {
   ]))
 }
 
-export function buildPortfolioSnapshot(positions, quotes, cashBalance, recordedAt) {
+export function buildPortfolioSnapshot(positions, quotes, recordedAt) {
   if (!positions?.length) return null
   const priced = positions.map((position) => {
     const quote = quotes?.[position.ticker]
@@ -79,11 +79,9 @@ export function buildPortfolioSnapshot(positions, quotes, cashBalance, recordedA
   if (priced.some((position) => position == null)) return null
 
   const investedValue = priced.reduce((sum, position) => sum + position.value, 0)
-  const cashValue = Number.isFinite(Number(cashBalance)) ? Number(cashBalance) : 0
   return {
-    value: investedValue + cashValue,
+    value: investedValue,
     investedValue,
-    cashValue,
     coveragePct: 100,
     source: 'scheduled_portfolio_price_refresh',
     samplingIntervalMinutes: 5,
@@ -151,18 +149,12 @@ export async function collectScheduledPortfolioSnapshots({
   }
 
   const roots = Object.fromEntries(userIds.map((uid) => [uid, db.collection(PORTFOLIO_COLLECTION).doc(uid)]))
-  const stateRefs = userIds.map((uid) => roots[uid].collection('tracking').doc('state'))
-  const stateDocuments = await db.getAll(...stateRefs)
-  const cashByUser = Object.fromEntries(stateDocuments.map((item, index) => [
-    userIds[index],
-    item.exists && item.data()?.cashTrackingEnabled ? Number(item.data()?.cashBalance || 0) : 0,
-  ]))
   const id = snapshotId(now)
   const writes = []
   const skipped = []
 
   for (const uid of userIds) {
-    const payload = buildPortfolioSnapshot(portfolios[uid], quotes, cashByUser[uid], now)
+    const payload = buildPortfolioSnapshot(portfolios[uid], quotes, now)
     if (!payload) {
       skipped.push(uid)
       continue

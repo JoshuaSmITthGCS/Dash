@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPortfolioPriceData,
   mergePortfolioQuotes,
+  mergePositionSnapshots,
   normalizePortfolioPosition,
   PER_SHARE_COST,
 } from './portfolioPosition'
@@ -18,6 +19,32 @@ describe('buildPortfolioPriceData', () => {
 
     expect(result.EXPE.price).toBe(298.03)
     expect(result.CRUS).toEqual(research[0])
+  })
+})
+
+describe('mergePositionSnapshots', () => {
+  it('uses a newer brokerage snapshot while retaining published history', () => {
+    const result = mergePositionSnapshots({
+      ACGL: { ticker: 'ACGL', price: 95, history: { dates: ['2026-08-13'], closes: [95] } },
+    }, [{
+      ticker: 'ACGL', snapshotPrice: 98.8, snapshotPreviousClose: 98.03,
+      snapshotRecordedAt: '2026-08-14T18:29:00.000Z',
+    }], '2026-08-14T16:00:00.000Z')
+
+    expect(result.ACGL).toMatchObject({
+      price: 98.8,
+      previousClose: 98.03,
+      positionSnapshot: true,
+    })
+    expect(result.ACGL.history.closes).toEqual([95])
+  })
+
+  it('does not replace a newer published price', () => {
+    const result = mergePositionSnapshots({ ACGL: { ticker: 'ACGL', price: 101 } }, [{
+      ticker: 'ACGL', snapshotPrice: 98.8, snapshotRecordedAt: '2026-08-14T18:29:00.000Z',
+    }], '2026-08-15T16:00:00.000Z')
+
+    expect(result.ACGL).toEqual({ ticker: 'ACGL', price: 101 })
   })
 })
 

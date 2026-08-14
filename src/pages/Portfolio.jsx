@@ -17,7 +17,7 @@ import {
   portfolioFixedBasisVsBenchmark,
   portfolioGrowthSeries,
   portfolioVsBenchmark,
-  recordedPerformanceSeriesForPeriod,
+  currentHoldingsPerformanceSeriesForPeriod,
 } from '../lib/portfolioPerformance'
 import Icon from '../components/Icons'
 import { useAdvisorRefresh } from '../lib/useAdvisorRefresh'
@@ -26,7 +26,7 @@ import {
   PORTFOLIO_SORT_OPTIONS,
   sortPortfolioPositions,
 } from '../lib/portfolioSort'
-import { buildPortfolioPriceData, mergePortfolioQuotes } from '../lib/portfolioPosition'
+import { buildPortfolioPriceData, mergePortfolioQuotes, mergePositionSnapshots } from '../lib/portfolioPosition'
 import { buildRatingContext, researchRating } from '../lib/researchRating.js'
 import { explainPortfolioMove } from '../lib/portfolioAttribution.js'
 import PortfolioMoveExplanation from '../components/PortfolioMoveExplanation.jsx'
@@ -45,9 +45,8 @@ import {
   concentrationLiquidityScore,
   currentHoldingsSeries,
   diversificationScore,
+  latestMarketDayReturn,
   performanceMetrics,
-  portfolioReturnSummary,
-  recordedAccountSeries,
   portfolioRiskDecomposition,
   portfolioScore,
   resilienceIndex,
@@ -60,7 +59,6 @@ import {
 import { portfolioAcceleration } from '../lib/portfolioAcceleration.js'
 import { battingAverage, captureRatios } from '../lib/portfolioBenchmarkComparison.js'
 import { shortTermView } from '../lib/portfolioShortTermView.js'
-import PortfolioReturnSummary from '../components/PortfolioReturnSummary.jsx'
 import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
 import { MobileSheet, ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
@@ -81,6 +79,8 @@ import { dailyMoveForPosition } from '../lib/marketPresentation.js'
 import AllocationDonut from '../components/AllocationDonut.jsx'
 import { buildPeerIndex } from '../lib/rankingModels.js'
 import { styleOf } from '../lib/portfolioStyleTilt.js'
+import { liveTodayPortfolioReturn } from '../lib/afterHoursQuotes.js'
+import { REFERENCE_PORTFOLIO_VERSION } from '../lib/referencePortfolio.js'
 import modelSettings from '../../pipeline/config/settings.json'
 
 const ANALYTICS_SCOPES = [
@@ -244,7 +244,7 @@ export default function Portfolio() {
   const { data: selectedBenchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark || 'SPY'}.json`)
 
   const [showAddForm, setShowAddForm] = useState(false)
-  const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0], fundedByNewMoney: true })
+  const [formData, setFormData] = useState({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [syncMessage, setSyncMessage] = useState('')
@@ -259,10 +259,7 @@ export default function Portfolio() {
   const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'all_history'))
   const [summaryPeriod, setSummaryPeriod] = useState('1D')
   const [performancePeriod, setPerformancePeriod] = useState('1M')
-  const [cashForm, setCashForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().split('T')[0], note: '' })
-  const [cashSaving, setCashSaving] = useState(false)
-  const [cashBalanceForm, setCashBalanceForm] = useState('')
-  const referenceCashFlowSyncStarted = useRef(false)
+  const referencePortfolioSyncStarted = useRef(false)
   const refresh = useAdvisorRefresh(
     data?.generated_at,
     reload,
@@ -286,7 +283,11 @@ export default function Portfolio() {
   // Lightweight screen rows are a useful quote fallback for a holding that has been
   // fetched but has not reached full published coverage yet (EXPE is one such case).
   // Full coverage is listed last so it always wins when both versions exist.
-  const publishedPriceData = buildPortfolioPriceData(screenUniverse, portfolioCoverage, research)
+  const publishedPriceData = mergePositionSnapshots(
+    buildPortfolioPriceData(screenUniverse, portfolioCoverage, research),
+    positions,
+    data?.generated_at,
+  )
   const quoteRefreshIsNewest = portfolioQuotes.fetchedAt
     && new Date(portfolioQuotes.fetchedAt) >= new Date(data?.generated_at || 0)
   const priceData = mergePortfolioQuotes(
@@ -300,7 +301,11 @@ export default function Portfolio() {
     const current = priceData[ticker]
     const currentPrice = current?.price ?? pos.snapshotPrice ?? null
     const totalCost = pos.shares * pos.costBasis
-    const currentValue = currentPrice == null ? null : pos.shares * currentPrice
+    const currentValue = current?.positionSnapshot && pos.snapshotValue != null
+      ? Number(pos.snapshotValue)
+      : current?.price != null
+      ? pos.shares * current.price
+      : pos.snapshotValue ?? (currentPrice == null ? null : pos.shares * currentPrice)
     const gain = currentValue == null ? null : currentValue - totalCost
     const trendValues = current?.history?.closes?.filter(Number.isFinite).slice(-22) || []
     const gainPct = gain == null || !totalCost ? null : (gain / totalCost) * 100
@@ -334,16 +339,6 @@ export default function Portfolio() {
     }
   }, { totalCost: 0, totalValue: 0, totalGain: 0, positions: [] })
 
-  const uninvestedCash = tracking.trackingState?.cashTrackingEnabled
-    ? Number(tracking.trackingState.cashBalance || 0)
-    : null
-  const trackedAccountValue = portfolioStats.totalValue + (uninvestedCash || 0)
-  const returnSummary = portfolioReturnSummary(
-    tracking.snapshots,
-    tracking.activities,
-    tracking.trackingState?.cashFlowHistoryComplete,
-  )
-
   // Same percentile-based -5..+5 read used on the Research page (src/lib/researchRating.js),
   // built from the published research pool so a holding rates against the same peers there.
   const ratingContext = buildRatingContext(research)
@@ -353,7 +348,7 @@ export default function Portfolio() {
     rating: researchRating(position.priceInfo, ratingContext),
     dayMove: dailyMoveForPosition(position),
   }))
-  const pricedAccountValue = portfolioStats.totalValue + (uninvestedCash || 0)
+  const pricedAccountValue = portfolioStats.totalValue
   const etfTickers = new Set((etfData?.etfs || []).map((row) => String(row.ticker || '').toUpperCase()))
   const stylePeerIndex = buildPeerIndex(research.filter((row) => !row.is_etf))
   const assetTotals = portfolioPositions.reduce((totals, position) => {
@@ -366,8 +361,7 @@ export default function Portfolio() {
     totals[bucket] = (totals[bucket] || 0) + position.currentValue
     return totals
   }, {})
-  if (uninvestedCash > 0) assetTotals.Cash = uninvestedCash
-  const assetAllocation = ['Long-term stocks', 'Short-term stocks', 'ETFs', 'Cash']
+  const assetAllocation = ['Long-term stocks', 'Short-term stocks', 'ETFs']
     .filter((label) => assetTotals[label] > 0)
     .map((label) => ({
       label,
@@ -400,14 +394,10 @@ export default function Portfolio() {
   const analyticsBenchmarkSeries = selectedPublished || reportBenchmarkSeries
   const scoreHoldingsSeriesFull = currentHoldingsSeries(positions, priceData, analyticsBenchmarkSeries?.dates || [])
   const sinceAlgorithmSeries = sliceSeriesFrom(scoreHoldingsSeriesFull, LIVE_TRACKING_START)
-  const liveAccountSeries = recordedAccountSeries(
+  const summaryRecordedSeries = currentHoldingsPerformanceSeriesForPeriod(
     tracking.snapshots,
-    tracking.activities,
-    tracking.trackingState?.cashFlowHistoryComplete,
-  )
-  const summaryRecordedSeries = recordedPerformanceSeriesForPeriod(
-    tracking.snapshots,
-    tracking.activities,
+    positions,
+    priceData,
     summaryPeriod,
   )
   const summaryFallbackSeries = summaryPeriod === '1H' ? null : selectPeriod(scoreHoldingsSeriesFull, summaryPeriod)
@@ -418,7 +408,7 @@ export default function Portfolio() {
     ?? (summaryChart?.values?.length > 1 && summaryChart.values[0]
       ? (summaryChart.values.at(-1) / summaryChart.values[0] - 1) * 100
       : null)
-  const comparisonSource = liveAccountSeries || scoreHoldingsSeriesFull
+  const comparisonSource = scoreHoldingsSeriesFull
   const visiblePerformancePeriod = selectPeriod(comparisonSource, performancePeriod)
   const visiblePerformanceComparison = compareBenchmarkSeries(
     visiblePerformancePeriod,
@@ -437,7 +427,7 @@ export default function Portfolio() {
   const scoreHoldingsSeries = analyticsScope === 'since_algorithm'
     ? sinceAlgorithmSeries
     : analyticsScope === 'live_algorithm'
-      ? liveAccountSeries
+      ? sinceAlgorithmSeries
       : analyticsScope === 'backtest'
         ? null
         : scoreHoldingsSeriesFull
@@ -559,21 +549,26 @@ export default function Portfolio() {
   // sale from either (only one is visible at a given viewport width) still shows the sheet.
   const sellingPosition = sortedPositions.find((pos) => (pos.id || pos.ticker) === sellingId)
 
-  // The supplied Fidelity cash history belongs with the supplied Fidelity holdings snapshot.
-  // Import once, automatically, after that portfolio is connected; stable document IDs make it safe to retry.
+  const currentSessionMove = liveTodayPortfolioReturn(positions, priceData)
+  const latestDailyMove = latestMarketDayReturn(scoreHoldingsSeriesFull)
+  const todayMove = currentSessionMove.available
+    ? currentSessionMove
+    : latestDailyMove
+
+  // Apply the user's authoritative Fidelity position export once on the signed-in account.
+  // The version marker prevents later manual portfolio edits from being overwritten.
   useEffect(() => {
-    const hasReferencePortfolio = positions.some((position) => position.snapshotSource === 'User-provided brokerage snapshot')
-    const referenceReady = tracking.trackingState?.fidelityHistoryImported && tracking.trackingState?.cashTrackingEnabled
-    if (!syncState.connected || !hasReferencePortfolio || referenceReady || referenceCashFlowSyncStarted.current) return
-    referenceCashFlowSyncStarted.current = true
-    tracking.syncReferenceCashFlows().then((result) => {
-      if (result?.success) setSyncMessage(`${result.count} Fidelity cash-flow records added to Joshua’s portfolio.`)
+    const referenceReady = tracking.trackingState?.referencePortfolioVersion === REFERENCE_PORTFOLIO_VERSION
+    if (previewPortfolio || !syncState.connected || referenceReady || referencePortfolioSyncStarted.current) return
+    referencePortfolioSyncStarted.current = true
+    syncReferencePortfolio().then((result) => {
+      if (result?.success) setSyncMessage(`Fidelity snapshot applied: ${result.added} added · ${result.updated} updated · ${result.removed} removed.`)
       else {
-        referenceCashFlowSyncStarted.current = false
-        setSyncMessage(`Could not add Fidelity cash history: ${result?.error || 'Unknown error'}`)
+        referencePortfolioSyncStarted.current = false
+        setSyncMessage(`Could not apply Fidelity positions: ${result?.error || 'Unknown error'}`)
       }
     })
-  }, [positions, syncState.connected, tracking.trackingState?.fidelityHistoryImported, tracking.trackingState?.cashTrackingEnabled])
+  }, [previewPortfolio, syncReferencePortfolio, syncState.connected, tracking.trackingState?.referencePortfolioVersion])
 
   if (dataLoading || portfolioLoading) return <Loading />
 
@@ -594,22 +589,8 @@ export default function Portfolio() {
       setSyncMessage(`Could not sync position: ${result.error}`)
       return
     }
-    // Money that entered the account specifically to fund this purchase is new invested
-    // capital, not investment return -- without logging it, the tracked account value jumps
-    // by the purchase amount with nothing to explain the jump, and Modified Dietz counts the
-    // whole thing as strategy performance. Skip this when the purchase was funded by cash
-    // already sitting in the tracked uninvested-cash balance (that money was contributed once,
-    // when it was originally deposited).
-    if (formData.fundedByNewMoney) {
-      await tracking.recordActivity({
-        type: 'external_contribution',
-        amount: shares * costBasis,
-        effectiveDate: formData.purchaseDate,
-        note: `${formData.ticker.toUpperCase()} purchase`,
-      })
-    }
     setSyncMessage(`${formData.ticker} saved to your cloud portfolio.`)
-    setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0], fundedByNewMoney: true })
+    setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: new Date().toISOString().split('T')[0] })
     setShowAddForm(false)
   }
 
@@ -617,7 +598,7 @@ export default function Portfolio() {
     setSyncMessage('Syncing…')
     const result = await syncReferencePortfolio()
     setSyncMessage(result.success
-      ? `${result.added} holding${result.added === 1 ? '' : 's'} added · ${result.updated} refreshed${result.removed ? ` · ${result.removed} retired reference holding removed` : ''}`
+      ? `${result.added} added · ${result.updated} updated · ${result.removed} removed from the Aug 14 Fidelity baseline`
       : `Sync failed: ${result.error}`)
   }
 
@@ -646,11 +627,8 @@ export default function Portfolio() {
     setSellForm({ shares: '', price: '', saleDate: new Date().toISOString().split('T')[0] })
   }
 
-  // Selling records two ledger entries and adjusts (or removes) the position, instead of
-  // making the user separately trim shares and log a cash movement by hand: the proceeds
-  // move into tracked uninvested cash (sale_proceeds, not a new contribution -- the money was
-  // already invested), and the realized gain/loss versus cost basis is logged for the
-  // earnings total. Selling all shares removes the holding; selling fewer trims it in place.
+  // Selling adjusts (or removes) the position and records only the realized result. Proceeds
+  // are not tracked as a cash balance; charts continue to reprice the remaining holdings only.
   const saveSell = async (pos) => {
     const sharesSold = parseFloat(sellForm.shares)
     const price = parseFloat(sellForm.price)
@@ -670,32 +648,10 @@ export default function Portfolio() {
       setSyncMessage(`Could not save sale: ${positionResult.error || 'Unknown error'}`)
       return
     }
-    await tracking.recordActivity({ type: 'sale_proceeds', amount: proceeds, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
     await tracking.recordActivity({ type: 'realized_gain', amount: realizedGain, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
     setSellSaving(false)
     cancelSell()
-    setSyncMessage(`Sold ${sharesSold} ${pos.ticker} share${sharesSold === 1 ? '' : 's'} at $${price.toFixed(2)} · ${realizedGain >= 0 ? '+' : '−'}$${Math.abs(realizedGain).toFixed(2)} realized · proceeds added to uninvested cash.`)
-  }
-
-  const handleCashMovement = async (event) => {
-    event.preventDefault()
-    setCashSaving(true)
-    const result = await tracking.recordActivity({ ...cashForm, amount: Number(cashForm.amount) })
-    setCashSaving(false)
-    if (!result.success) { setSyncMessage(`Could not update cash: ${result.error}`); return }
-    const labels = { deposit: 'Deposit added', withdrawal: 'Withdrawal saved', sale_proceeds: 'Sale proceeds moved to cash', stock_purchase: 'Investment deducted from cash' }
-    setCashForm((current) => ({ ...current, amount: '', note: '' }))
-    setSyncMessage(`${labels[cashForm.type]}. Uninvested cash updated.`)
-  }
-
-  const handleCashReconciliation = async (event) => {
-    event.preventDefault()
-    setCashSaving(true)
-    const result = await tracking.setCashBalance({ amount: Number(cashBalanceForm), effectiveDate: new Date().toISOString().split('T')[0], note: 'Manual uninvested cash reconciliation' })
-    setCashSaving(false)
-    if (!result.success) { setSyncMessage(`Could not set cash balance: ${result.error}`); return }
-    setCashBalanceForm('')
-    setSyncMessage('Uninvested cash balance reconciled.')
+    setSyncMessage(`Sold ${sharesSold} ${pos.ticker} share${sharesSold === 1 ? '' : 's'} at $${price.toFixed(2)} · ${realizedGain >= 0 ? '+' : '−'}$${Math.abs(realizedGain).toFixed(2)} realized.`)
   }
 
   const startEdit = (pos) => {
@@ -776,8 +732,8 @@ export default function Portfolio() {
           <label><span>Time range</span><select value={summaryPeriod} onChange={(event) => setSummaryPeriod(event.target.value)}>{SUMMARY_PERIODS.map((period) => <option key={period} value={period}>{PERIOD_NAMES[period]}</option>)}</select></label>
         </header>
         <div className="portfolio-summary-kpis">
-          <span><small>Portfolio value{portfolioQuotes.refreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</small><strong>{trackedAccountValue == null ? '–' : <AnimatedNumber value={trackedAccountValue} format={(value) => money(value, 2)} />}</strong></span>
-          <span><small>Today</small><strong className={moveExplanation.totalReturnPct >= 0 ? 'positive' : 'negative'}>{moveExplanation.totalReturnPct == null ? 'Unavailable' : `${signedPct(moveExplanation.totalReturnPct, 2)} · ${money(Math.abs(portfolioStats.totalValue * moveExplanation.totalReturnPct / 100), 2)}`}</strong></span>
+          <span><small>Invested value{portfolioQuotes.refreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</small><strong>{portfolioStats.totalValue == null ? '–' : <AnimatedNumber value={portfolioStats.totalValue} format={(value) => money(value, 2)} />}</strong></span>
+          <span><small>Today · regular session</small><strong className={todayMove?.dollarReturn >= 0 ? 'positive' : 'negative'}>{todayMove?.dollarReturn == null ? 'Unavailable' : `${todayMove.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(todayMove.dollarReturn), 2)} · ${signedPct(todayMove.returnPct, 2)}`}</strong></span>
           <span><small>Total profit · {PERIOD_NAMES[summaryPeriod]}</small><strong className={summaryProfit >= 0 ? 'positive' : 'negative'}>{summaryProfit == null ? 'Unavailable' : `${summaryProfit >= 0 ? '+' : '−'}${money(Math.abs(summaryProfit), 2)} · ${signedPct(summaryReturnPct, 2)}`}</strong></span>
         </div>
         {summaryChart ? <GrowthChart
@@ -785,9 +741,9 @@ export default function Portfolio() {
           height={390}
           width={1080}
           dates={summaryChart.dates}
-          series={[{ label: 'Deposit-excluded performance', values: summaryChart.values, color: 'var(--series-stock)', emphasis: true }]}
+          series={[{ label: 'Current holdings', values: summaryChart.values, color: 'var(--series-stock)', emphasis: true }]}
           valueFormatter={(value) => money(value, 2)}
-          caption={summaryChart.methodology || 'Current quantities applied to historical prices; deposits are not part of the series.'}
+          caption={summaryChart.methodology || 'Current quantities applied to historical prices; only invested holdings are included.'}
           lineStyle="line"
         /> : <div className="unavailable-panel"><strong>{PERIOD_NAMES[summaryPeriod]} history is still building</strong><p>Two five-minute account observations are needed to draw this range.</p></div>}
       </section>
@@ -804,7 +760,7 @@ export default function Portfolio() {
               <i aria-hidden="true"><span style={{ width: `${item.pct}%` }} /></i>
               <small>{money(item.value, 2)}</small>
             </div>)}</div>
-            <p>Stocks with an active, evidence-backed catalyst are short-term; other stocks are long-term. ETFs and cash remain separate.</p>
+            <p>Stocks with an active, evidence-backed catalyst are short-term; other stocks are long-term. ETFs remain separate.</p>
           </article>
           <article className="portfolio-allocation-card portfolio-sector-card">
             <header><div><span className="eyebrow">By exposure</span><h3>Sector allocation</h3></div><small>ETF look-through where available</small></header>
@@ -820,7 +776,7 @@ export default function Portfolio() {
         </header>
         {performanceIndex ? <div className="portfolio-benchmark-chart">
           <div className="portfolio-benchmark-kpis">
-            <span><small>Your time-weighted return</small><strong className={visiblePerformanceComparison.portfolio.returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.portfolio.returnPct, 2)}</strong></span>
+            <span><small>Time-weighted return</small><strong className={visiblePerformanceComparison.portfolio.returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.portfolio.returnPct, 2)}</strong></span>
             <span><small>{selectedBenchmarkLabel}</small><strong className={visiblePerformanceComparison.benchmarks[0].returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.benchmarks[0].returnPct, 2)}</strong></span>
             <span><small>Difference</small><strong className={visiblePerformanceComparison.portfolio.returnPct - visiblePerformanceComparison.benchmarks[0].returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(visiblePerformanceComparison.portfolio.returnPct - visiblePerformanceComparison.benchmarks[0].returnPct, 2)}</strong></span>
           </div>
@@ -829,16 +785,15 @@ export default function Portfolio() {
             width={1080}
             dates={performanceIndex.dates}
             series={[
-              { label: 'Your time-weighted return', values: performanceIndex.portfolio, color: 'var(--series-stock)', emphasis: true },
+              { label: 'Portfolio TWR', values: performanceIndex.portfolio, color: 'var(--series-stock)', emphasis: true },
               { label: selectedBenchmarkLabel, values: performanceIndex.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
             ]}
             valueFormatter={(value) => signedPct(value - 100, 1)}
-            caption={`Both lines start at 0% on the same market date. Your line removes settled deposits and withdrawals before chaining returns; ${selectedBenchmarkLabel} uses matched daily closes.`}
+            caption={`Both lines start at 0% on the same market date. Your line reprices today's exact shares at matched historical closes, so cash transfers cannot affect it; ${selectedBenchmarkLabel} uses the same dates.`}
             lineStyle="line"
           />
-        </div> : <div className="unavailable-panel"><strong>Comparison history is still building</strong><p>Two shared market dates are needed to compare your time-weighted return with {selectedBenchmarkLabel}.</p></div>}
+        </div> : <div className="unavailable-panel"><strong>Comparison history is still building</strong><p>Two shared market dates are needed to compare your current holdings with {selectedBenchmarkLabel}.</p></div>}
 
-        <PortfolioReturnSummary summary={returnSummary} />
         <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
         <PerformanceMetrics metrics={scorePerformance} benchmarkLabel={selectedBenchmarkLabel} riskFree={riskFree}
           acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
@@ -852,29 +807,6 @@ export default function Portfolio() {
           }} />
       </section>
 
-      <section className="card cash-account" aria-labelledby="cash-account-title">
-        <div className="cash-account-copy">
-          <span className="eyebrow">Buying power</span>
-          <h2 id="cash-account-title">Uninvested cash</h2>
-          <strong>{uninvestedCash == null ? 'Not set' : money(uninvestedCash, 2)}</strong>
-          <p>Deposits and sale proceeds add cash. Withdrawals and new stock purchases use it without changing lifetime contributions. After a trade, edit or add the holding’s shares so total account value stays accurate.</p>
-        </div>
-        <form className="cash-movement-form" onSubmit={handleCashMovement}>
-          <label><span>Cash action</span><select value={cashForm.type} onChange={(event) => setCashForm({ ...cashForm, type: event.target.value })}><option value="deposit">Deposit cash</option><option value="sale_proceeds">Trim / sale proceeds</option><option value="stock_purchase">Buy / invest cash</option><option value="withdrawal">Withdraw cash</option></select></label>
-          <label><span>Amount</span><input type="number" inputMode="decimal" min="0.01" step="0.01" required value={cashForm.amount} onChange={(event) => setCashForm({ ...cashForm, amount: event.target.value })} placeholder="0.00" /></label>
-          <label><span>Date</span><input type="date" required value={cashForm.effectiveDate} onChange={(event) => setCashForm({ ...cashForm, effectiveDate: event.target.value })} /></label>
-          <label><span>Ticker or note</span><input value={cashForm.note} onChange={(event) => setCashForm({ ...cashForm, note: event.target.value })} placeholder="Optional, e.g. trimmed OXY" /></label>
-          <button className="primary-button compact" disabled={cashSaving}>{cashSaving ? 'Saving…' : 'Update cash'}</button>
-        </form>
-        <details className="cash-reconcile">
-          <summary>Cash does not match your brokerage?</summary>
-          <form onSubmit={handleCashReconciliation}>
-            <label><span>Current uninvested cash</span><input type="number" inputMode="decimal" min="0" step="0.01" required value={cashBalanceForm} onChange={(event) => setCashBalanceForm(event.target.value)} placeholder="0.00" /></label>
-            <button className="secondary-button compact" disabled={cashSaving}>Set balance</button>
-          </form>
-        </details>
-      </section>
-
       <details className="card portfolio-actions-menu">
         <summary><span><span className="eyebrow">Data actions</span><strong>Refresh and manage portfolio data</strong></span><span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span></summary>
         <div className="page-actions portfolio-toolbar">
@@ -884,7 +816,7 @@ export default function Portfolio() {
           </div>
           <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}><Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}</button>
           <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze'}</button>
-          <button className="secondary-button" onClick={handleReferenceSync}>Sync holdings</button>
+          <button className="secondary-button" onClick={handleReferenceSync}>Reapply Aug 14 Fidelity snapshot</button>
           <button className="icon-button" onClick={exportPortfolio} aria-label="Export portfolio"><Icon name="download" /></button>
         </div>
       </details>
@@ -941,7 +873,7 @@ export default function Portfolio() {
             <div>
               <span className="eyebrow">Opportunity cost</span>
               <strong>What if I chose the S&amp;P 500–or did not invest?</strong>
-              <small>Same contributions, added on your recorded purchase dates</small>
+              <small>Same cost-basis dollars on your recorded purchase dates</small>
             </div>
             <div className="comparison-summary-side">
               {versusIndex && (
@@ -957,11 +889,11 @@ export default function Portfolio() {
               dates={growth.dates}
               series={[
                 { label: 'My holdings', values: growth.holdings, color: 'var(--series-stock)', emphasis: true },
-                { label: 'S&P 500, same deposits', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
-                { label: 'Deposits held as cash', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
+                { label: 'S&P 500, same cost basis', values: growth.benchmark, color: 'var(--series-benchmark)', dashPattern: '7 5' },
+                { label: 'Cost basis held flat', values: growth.cash, color: 'var(--series-cash)', dashPattern: '2 5' },
               ]}
               title="One-to-one performance from your investment dates"
-              caption={`Each holding starts with its exact cost-basis dollars on its recorded purchase date, then follows that stock’s price return. The S&P receives the identical dollars on the identical date. Cash holds the same deposits. Jumps show new money entering, not investment gains. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `. ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
+              caption={`Each holding starts with its exact cost-basis dollars on its recorded purchase date, then follows that stock’s price return. The S&P receives the identical starting dollars on the identical date; the flat line leaves that cost basis unchanged. Covers ${growth.trackedTickers.length} dated position${growth.trackedTickers.length === 1 ? '' : 's'} from ${growth.firstInvestmentDate}${growth.untrackedCount ? `. ${growth.untrackedCount} missing a usable date or published history` : ''}.`}
               zoomable
             />
           </div>
@@ -1017,11 +949,6 @@ export default function Portfolio() {
             </div>
             <div><button type="submit" className="tab active">Add</button></div>
           </form>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 12, color: 'var(--text-dim)' }}>
-            <input type="checkbox" checked={formData.fundedByNewMoney}
-              onChange={(e) => setFormData({ ...formData, fundedByNewMoney: e.target.checked })} />
-            This purchase is funded by new money, not cash already tracked as uninvested — keeps strategy return from crediting the deposit itself as gain
-          </label>
         </div>
       )}
 

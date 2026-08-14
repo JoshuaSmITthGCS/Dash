@@ -10,7 +10,12 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
-import { planReferencePortfolioSync } from './referencePortfolio'
+import {
+  planReferencePortfolioSync,
+  REFERENCE_PORTFOLIO,
+  REFERENCE_PORTFOLIO_RECORDED_AT,
+  REFERENCE_PORTFOLIO_VERSION,
+} from './referencePortfolio'
 import { normalizePortfolioPosition, PER_SHARE_COST } from './portfolioPosition'
 
 const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
@@ -250,31 +255,62 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Merge the user's supplied brokerage snapshot without duplicating symbols already saved.
-  // Existing positions keep their shares, cost basis, and dates, but receive newer
-  // snapshot metadata and normalized ticker casing.
-  // This is explicit rather than automatic because it writes to the signed-in cloud portfolio.
+  // Reconcile the signed-in portfolio to the user's Aug 14 Fidelity positions export. The
+  // export is the authoritative invested baseline, so this updates quantities and total cost
+  // bases, adds missing symbols, removes symbols no longer present, and stores the export as
+  // an invested-only intraday observation. Money-market cash and pending activity never enter
+  // the position collection or the chart snapshot.
   const syncReferencePortfolio = async () => {
     if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
-      const staleReferencePositions = positions.filter((position) => isRetiredReferencePosition(position.id, position))
-      await Promise.all(staleReferencePositions.map((position) => deleteDoc(doc(db, 'portfolios', currentUser.uid, 'positions', position.id))))
-      const activePositions = positions.filter((position) => !staleReferencePositions.some((stale) => stale.id === position.id))
-      const operations = planReferencePortfolioSync(activePositions)
-      const synced = await Promise.all(operations.map(async (operation) => {
+      const operations = planReferencePortfolioSync(positions)
+      const batch = writeBatch(db)
+      operations.forEach((operation) => {
+        const positionRef = doc(db, 'portfolios', currentUser.uid, 'positions', operation.id)
+        if (operation.kind === 'remove') {
+          batch.delete(positionRef)
+          return
+        }
         const record = operation.kind === 'add'
           ? { ...operation.record, id: operation.id, purchaseDate: '', importedAt }
           : { ...operation.record, syncedAt: importedAt }
-        await setDoc(
-          doc(db, 'portfolios', currentUser.uid, 'positions', operation.id),
-          record,
-          { merge: operation.kind === 'update' }
-        )
-        return { ...operation, record }
+        batch.set(positionRef, record, { merge: operation.kind === 'update' })
+      })
+
+      const investedValue = REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)
+      const prices = REFERENCE_PORTFOLIO.map((position) => ({
+        ticker: position.ticker,
+        shares: position.shares,
+        price: position.snapshotPrice,
+        value: position.snapshotValue,
+        previousClose: position.snapshotPreviousClose,
+        marketTime: REFERENCE_PORTFOLIO_RECORDED_AT,
       }))
-      const added = synced.filter((operation) => operation.kind === 'add').length
-      return { success: true, added, updated: synced.length - added, removed: staleReferencePositions.length }
+      const snapshotId = REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 16).replace(/[:.]/g, '-')
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'intradaySnapshots', snapshotId), {
+        value: investedValue,
+        investedValue,
+        coveragePct: 100,
+        source: 'fidelity_positions_export',
+        recordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
+        marketDate: REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10),
+        positionCount: REFERENCE_PORTFOLIO.length,
+        prices,
+      }, { merge: true })
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
+        referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION,
+        referencePortfolioImportedAt: importedAt,
+      }, { merge: true })
+      await batch.commit()
+
+      return {
+        success: true,
+        added: operations.filter((operation) => operation.kind === 'add').length,
+        updated: operations.filter((operation) => operation.kind === 'update').length,
+        removed: operations.filter((operation) => operation.kind === 'remove').length,
+        version: REFERENCE_PORTFOLIO_VERSION,
+      }
     } catch (error) {
       console.error('Failed to sync reference portfolio:', error)
       return { success: false, error: error.message }

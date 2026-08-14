@@ -152,6 +152,140 @@ const PERFORMANCE_PERIOD_MS = {
   '1Y': 366 * 24 * 60 * 60 * 1000,
 }
 
+function currentSharesByTicker(positions = []) {
+  const shares = new Map()
+  positions.forEach((position) => {
+    const ticker = String(position?.ticker || '').trim().toUpperCase()
+    const quantity = Number(position?.shares)
+    if (!ticker || !Number.isFinite(quantity) || quantity <= 0) return
+    shares.set(ticker, (shares.get(ticker) || 0) + quantity)
+  })
+  return shares
+}
+
+function currentBasketValue(prices = [], sharesByTicker) {
+  const priceByTicker = new Map((prices || []).map((row) => [
+    String(row?.ticker || '').trim().toUpperCase(),
+    row,
+  ]))
+  let value = 0
+  for (const [ticker, shares] of sharesByTicker) {
+    const row = priceByTicker.get(ticker)
+    const price = Number(row?.price)
+    if (!Number.isFinite(price)) return null
+    const recordedShares = Number(row?.shares)
+    const recordedValue = Number(row?.value)
+    value += Number.isFinite(recordedValue) && Math.abs(recordedShares - shares) < 1e-9
+      ? recordedValue
+      : shares * price
+  }
+  return value
+}
+
+function previousCloseBasketValue(positions = [], priceData = {}) {
+  let value = 0
+  for (const position of positions) {
+    const ticker = String(position?.ticker || '').trim().toUpperCase()
+    const shares = Number(position?.shares)
+    const previousClose = Number(priceData[ticker]?.previousClose ?? position?.snapshotPreviousClose)
+    if (!ticker || !Number.isFinite(shares) || shares <= 0) continue
+    if (!Number.isFinite(previousClose) || previousClose <= 0) return null
+    value += shares * previousClose
+  }
+  return value > 0 ? value : null
+}
+
+/**
+ * Reprices today's exact holdings at every stored five-minute quote set. Account-value fields
+ * and cash ledgers are intentionally ignored, so a deposit, withdrawal, money-market balance,
+ * or pending transfer cannot bend the line. Today begins at the regular-session baseline
+ * (the current basket at each security's previous close), never at a trailing 24-hour cutoff.
+ */
+export function currentHoldingsPerformanceSeriesForPeriod(
+  snapshots = [],
+  positions = [],
+  priceData = {},
+  period = '1D',
+) {
+  const sharesByTicker = currentSharesByTicker(positions)
+  if (!sharesByTicker.size) return null
+
+  const allRows = snapshots.flatMap((snapshot) => {
+    const timestamp = Date.parse(snapshot?.recordedAt)
+    const value = currentBasketValue(snapshot?.prices, sharesByTicker)
+    if (!Number.isFinite(timestamp) || !Number.isFinite(value) || value <= 0) return []
+    return [{
+      date: snapshot.recordedAt,
+      marketDate: snapshot.marketDate || String(snapshot.recordedAt).slice(0, 10),
+      timestamp,
+      value,
+    }]
+  }).sort((left, right) => left.timestamp - right.timestamp)
+  if (!allRows.length) return null
+
+  const latest = allRows.at(-1)
+  let rows
+  if (period === '1D') {
+    rows = allRows.filter((row) => row.marketDate === latest.marketDate)
+    const previousCloseValue = previousCloseBasketValue(positions, priceData)
+    if (rows.length && previousCloseValue != null) {
+      rows = [{
+        date: new Date(rows[0].timestamp - 1).toISOString(),
+        marketDate: latest.marketDate,
+        timestamp: rows[0].timestamp - 1,
+        value: previousCloseValue,
+        sessionBaseline: true,
+      }, ...rows]
+    }
+  } else {
+    const duration = PERFORMANCE_PERIOD_MS[period]
+    if (!duration) return null
+    const cutoff = latest.timestamp - duration
+    rows = allRows.filter((row) => row.timestamp >= cutoff)
+    if (period === '1H') {
+      rows = rows.filter((row) => row.marketDate === latest.marketDate)
+      const prior = allRows.filter((row) => row.marketDate === latest.marketDate && row.timestamp < cutoff).at(-1)
+      if (prior) rows.unshift(prior)
+    }
+  }
+  if (rows.length < 2) return null
+
+  let displayed = rows
+  let frequency = 'five-minute'
+  if (period === '1M') {
+    displayed = lastInGroups(rows, (row) => `${row.marketDate}-${new Date(row.timestamp).getUTCHours()}`)
+    frequency = 'hourly-close'
+  } else if (period === '3M') {
+    displayed = lastInGroups(rows, (row) => row.marketDate)
+    frequency = 'daily-close'
+  } else if (period === '1Y') {
+    displayed = lastInGroups(rows, (row) => weekStart(row.marketDate))
+    frequency = 'weekly-close'
+  }
+  if (displayed.length < 2) return null
+
+  const values = displayed.map((row) => row.value)
+  const startValue = values[0]
+  const endValue = values.at(-1)
+  const dollarReturn = endValue - startValue
+  const sessionCopy = period === '1D'
+    ? ` The opening baseline uses the current shares at each holding's previous close for ${latest.marketDate}.`
+    : ''
+  return {
+    dates: displayed.map((row) => row.date),
+    values,
+    startDate: displayed[0].date,
+    endDate: displayed.at(-1).date,
+    startValue,
+    endValue,
+    dollarReturn,
+    returnPct: startValue ? dollarReturn / startValue * 100 : null,
+    frequency,
+    source: 'current_holdings_five_minute_prices',
+    methodology: `${displayed.length} price observations revalue only the shares in your current portfolio; cash transfers, money market funds, and pending activity are excluded.${sessionCopy}`,
+  }
+}
+
 const EXTERNAL_FLOW_TYPES = new Set(['deposit', 'external_contribution', 'withdrawal'])
 
 function settledPerformanceFlows(transactions = []) {

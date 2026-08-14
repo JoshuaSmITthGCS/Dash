@@ -4,16 +4,15 @@ import { useData } from '../lib/useData.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
-import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
+import { buildPortfolioPriceData, mergePositionSnapshots } from '../lib/portfolioPosition.js'
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
-  benchmarkHistoryFromSnapshot, contributionAdjustedPerformance, currentHoldingsSeries,
-  diversificationScore, enrichPortfolio, latestMarketDayReturn, portfolioReturnSummary,
+  benchmarkHistoryFromSnapshot, compareBenchmarkSeries, currentHoldingsSeries,
+  diversificationScore, enrichPortfolio, latestMarketDayReturn, selectPeriod,
 } from '../lib/portfolioAnalytics.js'
 import {
-  alignManyForChart, beatMarketStreak, benchmarkShadowPortfolio, detectMilestones,
-  holdingsVsBenchmark, portfolioMood, purchaseTimingSignal, snapshotDailySeries, tradeStats, valueStreak,
+  holdingsVsBenchmark, portfolioMood, purchaseTimingSignal, tradeStats,
 } from '../lib/traderInsights.js'
 import { Loading, Empty } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
@@ -48,31 +47,25 @@ export default function Insights() {
   if (loading || portfolioLoading || benchmarkReportLoading || !currentUser) return <Loading />
   if (!positions.length) return <Empty note="Add portfolio holdings to see how you're doing versus the market and as a trader." />
 
-  const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
+  const prices = mergePositionSnapshots(
+    buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || []),
+    positions,
+    data?.generated_at,
+  )
   const portfolio = enrichPortfolio(positions, prices)
   const benchmarkHistory = benchmarkHistoryFromSnapshot(benchmarkSnapshot)
     || (data?.benchmark_history?.dates ? { dates: data.benchmark_history.dates, closes: data.benchmark_history.closes, symbol: preferences.defaultBenchmark } : null)
   const benchmarkLabel = preferences.defaultBenchmark
 
-  const uninvestedCash = tracking.trackingState?.cashTrackingEnabled ? Number(tracking.trackingState.cashBalance || 0) : 0
-  const trackedAccountValue = (portfolio.totalValue || 0) + uninvestedCash
-  const contributionPerformance = contributionAdjustedPerformance(trackedAccountValue, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
-  const returnSummary = portfolioReturnSummary(tracking.snapshots, tracking.activities, tracking.trackingState?.cashFlowHistoryComplete)
   const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
 
-  const actualDaily = snapshotDailySeries(tracking.snapshots)
   const marketShadows = MARKET_DESTINATIONS.map((destination) => {
     const published = benchmarkReport?.histories?.[destination.symbol]
     const history = published
       ? { ...published, symbol: destination.symbol }
       : destination.symbol === preferences.defaultBenchmark ? benchmarkHistory : null
-    const shadow = history ? benchmarkShadowPortfolio(tracking.activities, history) : { available: false }
-    return shadow.available ? { ...destination, ...shadow } : null
+    return history ? { ...destination, dates: history.dates, closes: history.closes } : null
   }).filter(Boolean)
-  const chartAligned = alignManyForChart(actualDaily, marketShadows)
-
-  const beatStreak = benchmarkHistory ? beatMarketStreak(tracking.snapshots, benchmarkHistory) : { available: false }
-  const greenStreak = valueStreak(tracking.snapshots)
   const holdingsRanked = benchmarkHistory ? holdingsVsBenchmark(portfolio.positions, benchmarkHistory) : []
 
   const trades = tradeStats(tracking.activities)
@@ -80,10 +73,10 @@ export default function Insights() {
     .map((position) => ({ position, timing: purchaseTimingSignal(position, position.priceInfo?.history) }))
     .filter((row) => row.timing.available)
 
-  const milestones = detectMilestones({ snapshots: tracking.snapshots, trackedAccountValue, contributionPerformance })
-  const mood = portfolioMood({ returnPct: returnSummary.strategy.returnPct, diversificationScore: diversification.score, streak: beatStreak.available ? beatStreak : greenStreak })
-
   const holdingsSeries = currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
+  const holdingsPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
+  const chartComparison = compareBenchmarkSeries(holdingsPeriod, marketShadows)
+  const mood = portfolioMood({ returnPct: holdingsPeriod?.returnPct, diversificationScore: diversification.score, streak: { available: false } })
   const todayMove = latestMarketDayReturn(holdingsSeries)
   const topMover = portfolio.positions
     .map((position) => ({ ...position, dailyMovePct: latestMove(position.priceInfo?.history) }))
@@ -96,9 +89,8 @@ export default function Insights() {
     const lines = [
       `${mood.emoji} ${mood.label} – my portfolio today`,
       todayMove ? `Today: ${signedPct(todayMove.returnPct, 2)} (${money(Math.abs(todayMove.dollarReturn))})` : null,
-      returnSummary.strategy.available ? `Strategy return: ${signedPct(returnSummary.strategy.returnPct, 1)}` : null,
+      holdingsPeriod ? `Current-holdings return: ${signedPct(holdingsPeriod.returnPct, 1)}` : null,
       topMover ? `Biggest mover: ${topMover.ticker} ${signedPct(topMover.dailyMovePct, 1)}` : null,
-      beatStreak.available && beatStreak.days >= 1 ? `${beatStreak.beating ? 'Beating' : 'Trailing'} ${benchmarkLabel} for ${beatStreak.days} day${beatStreak.days === 1 ? '' : 's'} running` : null,
     ].filter(Boolean)
     const text = lines.join('\n')
     try {
@@ -132,10 +124,9 @@ export default function Insights() {
       </div>
       <div className="insights-recap-stats">
         <div><span>Today</span><b style={{ color: moveColor(todayMove?.dollarReturn) }}>{todayMove ? `${signedPct(todayMove.returnPct, 2)} · ${money(Math.abs(todayMove.dollarReturn))}` : '–'}</b></div>
-        <div><span>Strategy return (time-weighted)</span><b style={{ color: moveColor(returnSummary.strategy.returnPct) }}>{returnSummary.strategy.available ? signedPct(returnSummary.strategy.returnPct, 1) : 'Unavailable'}</b></div>
-        <div><span>Your return (money-weighted, includes timing of deposits)</span><b style={{ color: moveColor(returnSummary.moneyWeighted.rate) }}>{returnSummary.moneyWeighted.available ? signedPct(returnSummary.moneyWeighted.rate, 1) : 'Unavailable'}</b></div>
+        <div><span>Current-holdings return</span><b style={{ color: moveColor(holdingsPeriod?.returnPct) }}>{holdingsPeriod ? signedPct(holdingsPeriod.returnPct, 1) : 'Unavailable'}</b></div>
+        <div><span>Invested value</span><b>{money(portfolio.totalValue)}</b></div>
         {topMover && <div><span>Today's biggest mover</span><b style={{ color: moveColor(topMover.dailyMovePct) }}>{topMover.ticker} {signedPct(topMover.dailyMovePct, 1)}</b></div>}
-        {beatStreak.available && beatStreak.days >= 1 && <div><span>{beatStreak.beating ? `Beating ${benchmarkLabel}` : `Trailing ${benchmarkLabel}`}</span><b>{beatStreak.days} day{beatStreak.days === 1 ? '' : 's'} running</b></div>}
       </div>
       {shareStatus && <p className="sr-only" aria-live="polite">{shareStatus}</p>}
       {shareStatus && <p className="insights-share-status" aria-hidden="true">{shareStatus}</p>}
@@ -145,27 +136,27 @@ export default function Insights() {
       <header className="section-heading"><div><span className="eyebrow">Same dollars, different destination</span><h2 id="vs-market-title">You vs. the major indexes
         <InfoTag label="You vs. the major indexes">
           <strong>You vs. the major indexes</strong>
-          <p>Applies your actual deposit and withdrawal history to the S&amp;P 500, Nasdaq-100,
-            Dow Jones, and Russell 2000 instead of your real holdings. Every line uses the same
-            dollars and timing, isolating destination choice from saving behavior.</p>
+          <p>Reprices the shares in your current portfolio across the same dates as the S&amp;P 500,
+            Nasdaq-100, Dow Jones, and Russell 2000. Every line starts from the same invested
+            value; cash transfers are not part of the comparison.</p>
         </InfoTag>
       </h2></div></header>
-      {chartAligned
+      {chartComparison
         ? <GrowthChart
-            dates={chartAligned.dates}
+            dates={chartComparison.dates}
             series={[
-              { label: 'Your account', values: chartAligned.primaryValues, color: 'var(--accent)', emphasis: true },
-              ...marketShadows.map((shadow, index) => ({
-                label: `${shadow.label} (${shadow.symbol})`,
-                values: chartAligned.comparisonValues[index],
-                color: shadow.color,
-                dashPattern: shadow.dashPattern,
+              { label: 'Current holdings', values: chartComparison.portfolio.values, color: 'var(--accent)', emphasis: true },
+              ...chartComparison.benchmarks.map((benchmark, index) => ({
+                label: `${benchmark.label} (${benchmark.symbol})`,
+                values: benchmark.values,
+                color: marketShadows[index].color,
+                dashPattern: marketShadows[index].dashPattern,
               })),
             ]}
-            caption={`On the latest shared recording date, your account was ${money(chartAligned.primaryValues.at(-1))}. The same deposits and withdrawals would be ${marketShadows.map((shadow, index) => `${money(chartAligned.comparisonValues[index].at(-1))} in ${shadow.symbol}`).join(' · ')}.`}
+            caption={`Current shares end at ${money(chartComparison.portfolio.endValue)}. Starting with the same invested value, the index paths end at ${chartComparison.benchmarks.map((benchmark) => `${money(benchmark.endValue)} in ${benchmark.symbol}`).join(' · ')}. Transfers and uninvested cash are excluded.`}
             zoomable
           />
-        : <div className="report-empty-state"><h2>Not enough history yet</h2><p>This chart needs dated deposits/withdrawals and a refreshed portfolio value on more than one day. Keep tracking cash flows and refreshing prices to build it out.</p></div>}
+        : <div className="report-empty-state"><h2>Not enough history yet</h2><p>This chart needs at least two matched market dates for the current holdings and the selected indexes.</p></div>}
     </section>
 
     {holdingsRanked.length > 0 && <section className="report-section" aria-labelledby="holdings-vs-title">
@@ -191,7 +182,7 @@ export default function Insights() {
           <div className="insights-stat-row"><span>Average loss</span><b style={{ color: 'var(--down)' }}>{trades.avgLoss != null ? money(Math.abs(trades.avgLoss)) : '–'}</b></div>
           <div className="insights-stat-row"><span>Best trade</span><b style={{ color: 'var(--up)' }}>{money(trades.best.amount)}</b><small>{trades.best.note || 'No note'}</small></div>
           <div className="insights-stat-row"><span>Worst trade</span><b style={{ color: 'var(--down)' }}>{money(trades.worst.amount)}</b><small>{trades.worst.note || 'No note'}</small></div>
-        </> : <p>Log realized gains and losses on the Portfolio page's cash-flow ledger to see win rate and trade stats here.</p>}
+        </> : <p>Record position sales on the Portfolio page to build realized win-rate and trade statistics.</p>}
       </article>
 
       <article className="card card-pad insights-timing" aria-labelledby="timing-title">
@@ -206,15 +197,5 @@ export default function Insights() {
       </article>
     </section>
 
-    <section className="report-section" aria-labelledby="milestones-title">
-      <header className="section-heading"><div><span className="eyebrow">Progress</span><h2 id="milestones-title">Milestones</h2></div></header>
-      {milestones.length ? <div className="insights-milestones">
-        {milestones.map((milestone) => <div className="insights-milestone" key={milestone.id}>
-          <span aria-hidden="true">🏁</span>
-          <div><strong>{milestone.label}</strong>{milestone.achievedDate && <small>{milestone.achievedDate}</small>}</div>
-        </div>)}
-      </div> : <p className="insights-timing">No milestones reached yet – the first is $500 in tracked account value.</p>}
-      {greenStreak.available && greenStreak.days >= 2 && <p className="insights-streak-note">Account value has moved {greenStreak.direction} for {greenStreak.days} days running.</p>}
-    </section>
   </div>
 }
