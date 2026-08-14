@@ -2242,7 +2242,21 @@ body { background: var(--app-background); }
    ============================================================ */
 .market-heatmap { margin-bottom: var(--section-gap); padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
 .heatmap-svg { display: block; border-radius: var(--control-radius); overflow: hidden; }
-@media (max-width: 620px) { .heatmap-svg { min-height: 260px; } }
+.heatmap-tile { stroke: var(--surface-primary); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.heatmap-tile.positive { fill: var(--positive); }
+.heatmap-tile.negative { fill: var(--negative); }
+.heatmap-tile.neutral { fill: var(--surface-tertiary); }
+.heatmap-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; color: var(--text-secondary); font: 600 10px var(--font-mono); }
+.heatmap-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.heatmap-legend i { width: 9px; height: 9px; border-radius: 2px; }
+.heatmap-legend i.positive { background: var(--positive); }
+.heatmap-legend i.negative { background: var(--negative); }
+.heatmap-legend small { color: var(--text-tertiary); font: inherit; }
+@media (max-width: 620px) {
+  .heatmap-heading { align-items: flex-start; gap: 10px; }
+  .heatmap-legend { justify-content: flex-start; }
+  .heatmap-svg { min-height: 260px; }
+}
 
 /* ============================================================
    Visual upgrade: watchlist & signal sparklines

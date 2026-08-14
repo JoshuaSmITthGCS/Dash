@@ -8,11 +8,12 @@ import { buildPortfolioPriceData, mergePositionSnapshots } from '../lib/portfoli
 import { usePreferences, formatPreferenceMoney } from '../lib/PreferencesContext.jsx'
 import { signedPct } from '../lib/formatters.js'
 import {
-  benchmarkHistoryFromSnapshot, compareBenchmarkSeries, currentHoldingsSeries,
+  benchmarkHistoryFromSnapshot, currentHoldingsSeries,
   diversificationScore, enrichPortfolio, latestMarketDayReturn, selectPeriod,
 } from '../lib/portfolioAnalytics.js'
 import {
-  holdingsVsBenchmark, portfolioMood, purchaseTimingSignal, tradeStats,
+  alignManyForChart, benchmarkShadowPortfolio, holdingsVsBenchmark, portfolioMood,
+  purchaseTimingSignal, snapshotDailySeries, tradeStats,
 } from '../lib/traderInsights.js'
 import { Loading, Empty } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
@@ -59,7 +60,7 @@ export default function Insights() {
 
   const diversification = diversificationScore(portfolio.positions, { etfs: etfData?.etfs || [] })
 
-  const marketShadows = MARKET_DESTINATIONS.map((destination) => {
+  const marketHistories = MARKET_DESTINATIONS.map((destination) => {
     const published = benchmarkReport?.histories?.[destination.symbol]
     const history = published
       ? { ...published, symbol: destination.symbol }
@@ -75,7 +76,29 @@ export default function Insights() {
 
   const holdingsSeries = currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
   const holdingsPeriod = selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All')
-  const chartComparison = compareBenchmarkSeries(holdingsPeriod, marketShadows)
+  const actualDaily = snapshotDailySeries(tracking.snapshots)
+  // The first plotted date must exist in the account and every benchmark. Seeding each
+  // hypothetical index with the account value on that exact date guarantees the headline's
+  // "same dollars" claim is literally true before later deposits/withdrawals are replayed.
+  const comparisonStartIndex = actualDaily.dates.findIndex((date) => marketHistories.every(
+    (history) => history.dates.includes(date),
+  ))
+  const comparisonAccount = comparisonStartIndex >= 0 ? {
+    dates: actualDaily.dates.slice(comparisonStartIndex),
+    values: actualDaily.values.slice(comparisonStartIndex),
+  } : null
+  const comparisonStartDate = comparisonAccount?.dates[0]
+  const comparisonStartingValue = comparisonAccount?.values[0]
+  const marketShadows = comparisonStartDate ? marketHistories.map((history) => ({
+    ...history,
+    ...benchmarkShadowPortfolio(tracking.activities, history, {
+      startDate: comparisonStartDate,
+      startingValue: comparisonStartingValue,
+    }),
+  })).filter((shadow) => shadow.available) : []
+  const chartComparison = marketShadows.length === marketHistories.length
+    ? alignManyForChart(comparisonAccount, marketShadows)
+    : null
   const mood = portfolioMood({ returnPct: holdingsPeriod?.returnPct, diversificationScore: diversification.score, streak: { available: false } })
   const todayMove = latestMarketDayReturn(holdingsSeries)
   const topMover = portfolio.positions
@@ -136,27 +159,27 @@ export default function Insights() {
       <header className="section-heading"><div><span className="eyebrow">Same dollars, different destination</span><h2 id="vs-market-title">You vs. the major indexes
         <InfoTag label="You vs. the major indexes">
           <strong>You vs. the major indexes</strong>
-          <p>Reprices the shares in your current portfolio across the same dates as the S&amp;P 500,
-            Nasdaq-100, Dow Jones, and Russell 2000. Every line starts from the same invested
-            value; cash transfers are not part of the comparison.</p>
+          <p>Starts every index with your account’s exact recorded value on the first shared date,
+            then applies each later settled deposit or withdrawal using its actual amount and
+            effective date. Pending transfers are excluded.</p>
         </InfoTag>
       </h2></div></header>
       {chartComparison
         ? <GrowthChart
             dates={chartComparison.dates}
             series={[
-              { label: 'Current holdings', values: chartComparison.portfolio.values, color: 'var(--accent)', emphasis: true },
-              ...chartComparison.benchmarks.map((benchmark, index) => ({
-                label: `${benchmark.label} (${benchmark.symbol})`,
-                values: benchmark.values,
-                color: marketShadows[index].color,
-                dashPattern: marketShadows[index].dashPattern,
+              { label: 'Your recorded account', values: chartComparison.primaryValues, color: 'var(--accent)', emphasis: true },
+              ...marketShadows.map((shadow, index) => ({
+                label: `${shadow.label} (${shadow.symbol})`,
+                values: chartComparison.comparisonValues[index],
+                color: shadow.color,
+                dashPattern: shadow.dashPattern,
               })),
             ]}
-            caption={`Current shares end at ${money(chartComparison.portfolio.endValue)}. Starting with the same invested value, the index paths end at ${chartComparison.benchmarks.map((benchmark) => `${money(benchmark.endValue)} in ${benchmark.symbol}`).join(' · ')}. Transfers and uninvested cash are excluded.`}
+            caption={`Every line starts at ${money(chartComparison.primaryValues[0])} on ${chartComparison.dates[0]}. On the latest shared recording date, your account is ${money(chartComparison.primaryValues.at(-1))}; applying the same settled deposit and withdrawal amounts on the same dates would leave ${marketShadows.map((shadow, index) => `${money(chartComparison.comparisonValues[index].at(-1))} in ${shadow.symbol}`).join(' · ')}. Pending transfers are excluded.`}
             zoomable
           />
-        : <div className="report-empty-state"><h2>Not enough history yet</h2><p>This chart needs at least two matched market dates for the current holdings and the selected indexes.</p></div>}
+        : <div className="report-empty-state"><h2>Not enough history yet</h2><p>This cash-flow-aware comparison needs your recorded account value on at least two market dates shared by the selected indexes.</p></div>}
     </section>
 
     {holdingsRanked.length > 0 && <section className="report-section" aria-labelledby="holdings-vs-title">

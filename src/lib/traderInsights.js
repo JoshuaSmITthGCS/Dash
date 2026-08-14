@@ -61,22 +61,30 @@ export function alignManyForChart(primary, comparisons = []) {
 }
 
 // Replays the cash-flow ledger as if every deposit bought, and every withdrawal sold,
-// benchmark units at that day's close instead of touching the real portfolio. Gives an
-// apples-to-apples "same dollars, in the index instead" account value series.
-export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
+// benchmark units at that day's close instead of touching the real portfolio. When a
+// starting account value/date is supplied, the shadow is seeded with that exact value and
+// only later flows are replayed. That is the honest comparison for a recorded account whose
+// earlier deposit history may predate the first stored valuation: both lines begin with the
+// same dollars, then receive the same later dollars at the same times.
+export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory, options = {}) {
   const dates = benchmarkHistory?.dates || []
   const closes = benchmarkHistory?.closes || []
+  const requestedStartDate = String(options.startDate || '').slice(0, 10)
+  const seeded = Boolean(requestedStartDate) && finite(options.startingValue) && Number(options.startingValue) > 0
   const flows = cashFlows
     .filter((row) => ['deposit', 'external_contribution', 'withdrawal'].includes(row.type) && finite(row.amount) && row.effectiveDate && !['pending', 'processing'].includes(row.status))
-    .map((row) => ({ type: row.type, amount: Number(row.amount), effectiveDate: row.effectiveDate }))
+    .map((row) => ({ type: row.type, amount: Number(row.amount), effectiveDate: String(row.effectiveDate).slice(0, 10) }))
     .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate))
-  if (!flows.length || dates.length < 2) return { available: false, reason: 'Not enough cash-flow or benchmark history to build a comparison.' }
-  const startIndex = dates.findIndex((date) => date >= flows[0].effectiveDate)
+  if ((!flows.length && !seeded) || dates.length < 2) return { available: false, reason: 'Not enough cash-flow or benchmark history to build a comparison.' }
+  const startDate = seeded ? requestedStartDate : flows[0].effectiveDate
+  const startIndex = dates.findIndex((date, index) => date >= startDate && finite(closes[index]))
   if (startIndex < 0) return { available: false, reason: 'No benchmark history overlaps the cash-flow history.' }
 
-  let units = 0
+  let units = seeded ? Number(options.startingValue) / Number(closes[startIndex]) : 0
   let netContributions = 0
-  const pending = [...flows]
+  // A seeded account value already contains every flow through its starting observation.
+  // Replaying a same-day deposit would count it twice, so only later effective dates enter.
+  const pending = seeded ? flows.filter((flow) => flow.effectiveDate > startDate) : [...flows]
   const outDates = []
   const outValues = []
   for (let index = startIndex; index < dates.length; index += 1) {
@@ -99,7 +107,11 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory) {
     netContributions,
     finalValue: outValues.at(-1),
     symbol: benchmarkHistory.symbol || benchmarkHistory.label,
-    methodology: 'Each settled deposit buys, and each withdrawal sells, benchmark units at that date’s close – the same dollars, invested in the benchmark instead. Pending transfers are excluded.',
+    startingValue: seeded ? Number(options.startingValue) : 0,
+    startDate: outDates[0],
+    methodology: seeded
+      ? 'The benchmark starts with the account’s exact recorded value on the first shared date. Each later settled deposit buys, and each later withdrawal sells, benchmark units at that date’s close. Pending transfers are excluded.'
+      : 'Each settled deposit buys, and each withdrawal sells, benchmark units at that date’s close – the same dollars, invested in the benchmark instead. Pending transfers are excluded.',
   }
 }
 

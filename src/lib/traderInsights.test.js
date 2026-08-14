@@ -59,6 +59,38 @@ describe('benchmarkShadowPortfolio', () => {
     expect(benchmarkShadowPortfolio([], { dates: ['2026-01-01'], closes: [100] }).available).toBe(false)
     expect(benchmarkShadowPortfolio([{ type: 'deposit', amount: 100, effectiveDate: '2026-01-01' }], null).available).toBe(false)
   })
+
+  it('starts from the exact recorded account value and replays only later cash flows', () => {
+    const history = { symbol: 'SPY', dates: ['2026-01-02', '2026-01-03', '2026-01-04'], closes: [100, 110, 120] }
+    const flows = [
+      { type: 'deposit', amount: 900, effectiveDate: '2026-01-01' },
+      { type: 'deposit', amount: 100, effectiveDate: '2026-01-02' },
+      { type: 'deposit', amount: 500, effectiveDate: '2026-01-03' },
+      { type: 'deposit', amount: 50, effectiveDate: '2026-01-04', status: 'processing' },
+    ]
+    const result = benchmarkShadowPortfolio(flows, history, {
+      startDate: '2026-01-02',
+      startingValue: 1000,
+    })
+
+    expect(result.available).toBe(true)
+    expect(result.values[0]).toBe(1000)
+    // The $900 prior deposit and $100 same-day deposit are already represented by the seed.
+    // Only the later settled $500 buys additional units at the Jan. 3 close.
+    expect(result.values[1]).toBeCloseTo(1600, 5)
+    expect(result.values[2]).toBeCloseTo(1745.4545, 4)
+    expect(result.netContributions).toBe(500)
+    expect(result.methodology).toContain('exact recorded value')
+  })
+
+  it('can hold an equal starting value even when no later cash flows exist', () => {
+    const result = benchmarkShadowPortfolio([], {
+      symbol: 'SPY', dates: ['2026-01-02', '2026-01-03'], closes: [100, 105],
+    }, { startDate: '2026-01-02', startingValue: 1000 })
+
+    expect(result.available).toBe(true)
+    expect(result.values).toEqual([1000, 1050])
+  })
 })
 
 describe('tradeStats', () => {

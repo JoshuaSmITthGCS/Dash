@@ -449,7 +449,7 @@ export default function Dashboard() {
 
     <MarketSentimentStrip rows={rows} macro={data?.market?.macro} />
     <MarketPulsePreview data={data} loading={loading} />
-    <MarketHeatmap rows={rows} />
+    <MarketHeatmap positions={portfolio.positions} />
 
     <section className="report-focused-screens" aria-labelledby="focused-screens-title">
       <header className="section-heading"><div><span className="eyebrow">Focused breakdown</span><h2 id="focused-screens-title">Fast growth, value, momentum, reversals, and ETFs</h2></div><Link to="/research">All research →</Link></header>
