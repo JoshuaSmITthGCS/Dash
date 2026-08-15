@@ -67,6 +67,12 @@ describe('ShadowPortfolios', () => {
     expect(screen.getAllByText('0.95%').length).toBeGreaterThan(0)
     expect(screen.getByText(/covers only the 3 sessions every reporting strategy was in the market for/)).toBeInTheDocument()
     expect(screen.getAllByText('15.00% not traded').length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Automatic ranking overview')).toHaveTextContent(
+      'SPY benchmark ranks #1 of 2 on aligned net return at +1.63% over 3 shared sessions',
+    )
+    expect(screen.getByLabelText('Automatic ranking overview')).toHaveTextContent(
+      'Treat the order as an early read; annualized statistics need 20 matched returns.',
+    )
   })
 
   it('does not offer an aligned figure for a strategy that has not started', () => {
@@ -85,5 +91,6 @@ describe('ShadowPortfolios', () => {
     render(<MemoryRouter><ShadowPortfolios /></MemoryRouter>)
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Not started').length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Automatic ranking overview')).toHaveTextContent('No comparable ranking yet')
   })
 })

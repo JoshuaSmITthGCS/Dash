@@ -60,6 +60,12 @@ describe('LiveValidation', () => {
 
   it('leads with signal metrics split by what a live sample gates', () => {
     render(<MemoryRouter><LiveValidation /></MemoryRouter>)
+    expect(screen.getByLabelText('Automatic ranking overview')).toHaveTextContent(
+      '21d is the strongest ready horizon at Rank IC 0.031',
+    )
+    expect(screen.getByLabelText('Automatic ranking overview')).toHaveTextContent(
+      '1 of 1 tested horizon clears the published floor. No published thresholds are breached. Live-only evidence spans 2 days.',
+    )
     expect(screen.getByText('Computable now')).toBeInTheDocument()
     expect(screen.getByText('Needs live sample')).toBeInTheDocument()
     // The sample-free reading is present while the sample-gated one still counts up.

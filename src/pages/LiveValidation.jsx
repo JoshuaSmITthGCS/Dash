@@ -4,10 +4,46 @@ import SignalMetricsPanel from '../components/SignalMetricsPanel.jsx'
 import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
 import InfoTag from '../components/InfoTag.jsx'
+import AutoOverviewLine from '../components/AutoOverviewLine.jsx'
 
 const title = (value = '') => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 const pct = (value) => value == null ? '–' : `${Math.round(Number(value) * 100)}%`
 const score = (value) => value == null ? '–' : Math.round(Number(value))
+
+function rankIcOverview(report, error) {
+  if (error) return {
+    tone: 'caution',
+    text: 'The ranking overview is unavailable because the signal-metrics report could not be read.',
+  }
+
+  const rankMetrics = (report?.metrics || [])
+    .filter((metric) => metric.id?.startsWith('rank_ic_') && metric.status === 'ready'
+      && metric.value != null && Number.isFinite(Number(metric.value)))
+    .sort((left, right) => Number(right.value) - Number(left.value))
+  const breached = Number(report?.summary?.breached) || 0
+  const liveDays = Number(report?.live_sample?.days) || 0
+  const warning = breached
+    ? `Across the full test suite, ${breached} threshold${breached === 1 ? ' is' : 's are'} breached.`
+    : 'No published thresholds are breached.'
+  const sample = liveDays
+    ? ` Live-only evidence spans ${liveDays} day${liveDays === 1 ? '' : 's'}.`
+    : ''
+
+  if (!rankMetrics.length) return {
+    tone: 'caution',
+    text: `No ready Rank IC horizons can be ranked yet. ${warning}${sample}`,
+  }
+
+  const leader = rankMetrics[0]
+  const horizon = leader.label?.match(/\(([^)]+)\)/)?.[1]
+    || leader.id.replace('rank_ic_', '')
+  const clears = rankMetrics.filter((metric) => metric.breached === false).length
+  const horizonLabel = `${rankMetrics.length} tested horizon${rankMetrics.length === 1 ? '' : 's'}`
+  return {
+    tone: breached ? 'caution' : 'positive',
+    text: `${horizon} is the strongest ${horizonLabel === '1 tested horizon' ? 'ready horizon' : 'tested horizon'} at Rank IC ${leader.display || Number(leader.value).toFixed(3)}; ${clears} of ${horizonLabel} clear${clears === 1 ? 's' : ''} the published floor. ${warning}${sample}`,
+  }
+}
 
 function Status({ value }) {
   return <span className={`chip validation-${value}`}>{title(value || 'unavailable')}</span>
@@ -112,9 +148,11 @@ export default function LiveValidation() {
   const { data: evidence, error: evidenceError } = useData('validation/research_evidence.json')
   const { data: signalMetrics, loading: signalLoading, error: signalError } = useData('validation/signal_metrics.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
+  const overview = rankIcOverview(signalMetrics, signalError)
   return <><ScreenNavigation />
     <div className="page-head"><div><span className="eyebrow">Controlled staging refresh</span><h1 className="page-title">Live v2 validation</h1>
       <p className="page-sub">Provider lineage, applicability, confidence gates, and independent decision layers. This view never replaces production output.</p></div></div>
+    <AutoOverviewLine tone={overview.tone}>{overview.text}</AutoOverviewLine>
     <SignalMetricsPanel report={signalMetrics} error={signalError} />
     <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
