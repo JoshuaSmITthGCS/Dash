@@ -291,6 +291,7 @@ export default function Portfolio({ view = 'summary' }) {
   const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'all_history'))
   const [summaryPeriod, setSummaryPeriod] = useState('1D')
   const [performancePeriod, setPerformancePeriod] = useState('1M')
+  const [attributionPeriod, setAttributionPeriod] = useState('1D')
   const [essentialOnly, setEssentialOnly] = useState(true)
   const [suggestedActionsOpen, setSuggestedActionsOpen] = useState(preferences.suggestedActionsDefault === 'expanded')
   const referencePortfolioSyncStarted = useRef(false)
@@ -409,7 +410,10 @@ export default function Portfolio({ view = 'summary' }) {
   const benchmarkQuote = quoteRefreshIsNewest && portfolioQuotes.quotes?.SPY
     ? { ...portfolioQuotes.quotes.SPY, portfolioQuote: true }
     : null
-  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory, { benchmarkQuote })
+  const moveExplanation = explainPortfolioMove(portfolioPositions, benchmarkHistory, {
+    benchmarkQuote,
+    period: attributionPeriod,
+  })
   const reportBenchmarkSeries = asValueSeries(benchmarkAnalyticsHistory, 504)
   const candidateInputs = [
     { symbol: 'SPY', label: 'S&P 500', snapshot: spySnapshot },
@@ -1383,7 +1387,12 @@ export default function Portfolio({ view = 'summary' }) {
         <header className="portfolio-section-heading">
           <div><span className="portfolio-section-number">03</span><div><span className="eyebrow">Evidence</span><h2 id="portfolio-data-overview-title">Data overview</h2></div></div>
         </header>
-        <PortfolioMoveExplanation attribution={moveExplanation} benchmarkLabel="S&P 500" />
+        <PortfolioMoveExplanation
+          attribution={moveExplanation}
+          benchmarkLabel="S&P 500"
+          period={attributionPeriod}
+          onPeriodChange={setAttributionPeriod}
+        />
         <PerformanceMetrics metrics={scorePerformance} benchmarkLabel={selectedBenchmarkLabel} riskFree={riskFree}
           acceleration={scoreAcceleration} capture={scoreCapture} batting={scoreBatting} underwater={scoreUnderwater}
           shortTerm={scoreShortTerm} risk={scoreRisk} model={scoreMetricModel} statistics={scoreStatistics}

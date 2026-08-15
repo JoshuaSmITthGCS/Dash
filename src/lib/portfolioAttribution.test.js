@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { explainPortfolioMove } from './portfolioAttribution.js'
+import { ATTRIBUTION_PERIODS, explainPortfolioMove } from './portfolioAttribution.js'
 
 const benchmarkHistory = { closes: [500, 505] } // +1% today
 
@@ -139,5 +139,177 @@ describe('portfolio move attribution', () => {
       benchmarkQuote: { portfolioQuote: true, price: 515, previousClose: 500 },
     })
     expect(result.reconciles).toBe(true)
+  })
+})
+
+const DAY_MS = 24 * 60 * 60 * 1000
+const END_DATE = '2026-08-14'
+
+/** Daily dated closes ending on END_DATE; `priceAt` receives 0 for the oldest observation. */
+const datedSeries = (count, priceAt) => {
+  const end = Date.parse(`${END_DATE}T00:00:00Z`)
+  const dates = []
+  const closes = []
+  for (let offset = count - 1; offset >= 0; offset -= 1) {
+    dates.push(new Date(end - offset * DAY_MS).toISOString().slice(0, 10))
+    closes.push(priceAt(count - 1 - offset))
+  }
+  return { dates, closes }
+}
+
+// Flat until the final observation, so a window's return is whatever that last close says.
+const flatThenMove = (count, endPrice, basePrice = 100) =>
+  datedSeries(count, (index) => (index === count - 1 ? endPrice : basePrice))
+
+const datedBenchmark = flatThenMove(400, 101) // +1% across any window that ends today
+
+const datedPosition = (ticker, overrides = {}) => ({
+  ticker,
+  name: `${ticker} Inc`,
+  shares: 10,
+  allocationPct: 100,
+  priceInfo: {
+    sector: 'Technology',
+    history: flatThenMove(400, 110),
+    technical_detail: { beta: 1.2 },
+  },
+  ...overrides,
+})
+
+describe('portfolio move attribution over a longer window', () => {
+  it('offers today, week, month, three months and a year', () => {
+    expect(ATTRIBUTION_PERIODS.map((entry) => entry.key)).toEqual(['1D', '1W', '1M', '3M', '1Y'])
+  })
+
+  it.each(['1W', '1M', '3M', '1Y'])('resolves the published window it actually measured for %s', (period) => {
+    const days = ATTRIBUTION_PERIODS.find((entry) => entry.key === period).days
+    const result = explainPortfolioMove([datedPosition('AAPL')], datedBenchmark, { period })
+
+    expect(result.available).toBe(true)
+    expect(result.endDate).toBe(END_DATE)
+    expect(result.period).toBe(period)
+    // Never shorter than requested: the start snaps to the last close at or before the target.
+    expect(result.spanDays).toBeGreaterThanOrEqual(days)
+    expect(result.windowTruncated).toBe(false)
+  })
+
+  it('measures each holding from the resolved start close rather than yesterday', () => {
+    const result = explainPortfolioMove([datedPosition('AAPL')], datedBenchmark, { period: '1M' })
+    const [holding] = result.holdings
+
+    expect(holding.returnPct).toBeCloseTo(10, 6) // 100 -> 110 across the window
+    expect(result.benchmarkReturnPct).toBeCloseTo(1, 6)
+    // weight 1, beta 1.2, benchmark +1% -> market 1.2, idiosyncratic 10 - 1.2 = 8.8
+    expect(holding.marketComponentPct).toBeCloseTo(1.2, 6)
+    expect(holding.idiosyncraticComponentPct).toBeCloseTo(8.8, 6)
+  })
+
+  it.each(['1W', '1M', '3M', '1Y'])('market plus idiosyncratic still reconciles exactly for %s', (period) => {
+    const positions = [
+      datedPosition('AAPL', { allocationPct: 60 }),
+      datedPosition('MSFT', {
+        allocationPct: 40, shares: 5,
+        priceInfo: { sector: 'Energy', history: flatThenMove(400, 92, 100), technical_detail: { beta: 0.8 } },
+      }),
+    ]
+    const result = explainPortfolioMove(positions, datedBenchmark, { period })
+
+    expect(result.reconciles).toBe(true)
+    expect(result.marketPct + result.idiosyncraticPct).toBeCloseTo(result.totalReturnPct, 9)
+  })
+
+  it('weights by start-of-window value, so a winner is not credited twice', () => {
+    // Both opened the window worth $1,000. One doubled, the other was flat: the basket went
+    // 2,000 -> 3,000, i.e. +50%. Today's allocations (66.7/33.3) would report +66.7%.
+    const doubled = datedPosition('WIN', {
+      allocationPct: 66.67, shares: 10,
+      priceInfo: { sector: 'Technology', history: flatThenMove(400, 200, 100), technical_detail: { beta: 1 } },
+    })
+    const flat = datedPosition('FLAT', {
+      allocationPct: 33.33, shares: 10,
+      priceInfo: { sector: 'Energy', history: flatThenMove(400, 100, 100), technical_detail: { beta: 1 } },
+    })
+    const result = explainPortfolioMove([doubled, flat], datedBenchmark, { period: '3M' })
+
+    expect(result.weightBasis).toBe('start_of_period')
+    expect(result.holdings[0].weight).toBeCloseTo(0.5, 6)
+    expect(result.totalReturnPct).toBeCloseTo(50, 6)
+  })
+
+  it('falls back to current allocation and says so when share counts are missing', () => {
+    const noShares = datedPosition('AAPL', { shares: null, allocationPct: 40 })
+    const result = explainPortfolioMove([noShares], datedBenchmark, { period: '1M' })
+
+    expect(result.weightBasis).toBe('current_allocation')
+    expect(result.holdings[0].weight).toBeCloseTo(0.4, 6)
+  })
+
+  it('flags a window truncated by the published history instead of relabelling it', () => {
+    const shortBenchmark = flatThenMove(30, 101)
+    const shortPosition = datedPosition('AAPL', {
+      priceInfo: { sector: 'Technology', history: flatThenMove(30, 110), technical_detail: { beta: 1.2 } },
+    })
+    const result = explainPortfolioMove([shortPosition], shortBenchmark, { period: '1Y' })
+
+    expect(result.available).toBe(true)
+    expect(result.windowTruncated).toBe(true)
+    expect(result.spanDays).toBe(29)
+  })
+
+  it('flags a holding bought after the window opened rather than dropping it', () => {
+    const recent = datedPosition('NEW', { purchaseDate: END_DATE })
+    const result = explainPortfolioMove([recent], datedBenchmark, { period: '3M' })
+
+    expect(result.partialHoldings).toEqual(['NEW'])
+    expect(result.holdings[0].available).toBe(true)
+  })
+
+  it('does not flag a holding bought before the window opened', () => {
+    const old = datedPosition('OLD', { purchaseDate: '2020-01-01' })
+    const result = explainPortfolioMove([old], datedBenchmark, { period: '3M' })
+    expect(result.partialHoldings).toEqual([])
+  })
+
+  it('closes the window on a live quote when one has been fetched', () => {
+    const live = datedPosition('AAPL', {
+      priceInfo: {
+        sector: 'Technology', history: flatThenMove(400, 110), technical_detail: { beta: 1.2 },
+        portfolioQuote: true, price: 120, previousClose: 110,
+      },
+    })
+    const result = explainPortfolioMove([live], datedBenchmark, {
+      period: '1M',
+      benchmarkQuote: { portfolioQuote: true, price: 102, previousClose: 101 },
+    })
+
+    expect(result.holdings[0].returnPct).toBeCloseTo(20, 6) // 100 -> live 120, not the 110 close
+    expect(result.benchmarkReturnPct).toBeCloseTo(2, 6)
+  })
+
+  it('excludes a holding whose history does not reach the window start and reports coverage', () => {
+    const covered = datedPosition('AAPL', { allocationPct: 70 })
+    const tooNew = datedPosition('IPO', {
+      allocationPct: 30,
+      priceInfo: { sector: 'Technology', history: flatThenMove(3, 110), technical_detail: { beta: 1 } },
+    })
+    const result = explainPortfolioMove([covered, tooNew], datedBenchmark, { period: '3M' })
+
+    expect(result.unpriced).toEqual(['IPO'])
+    expect(result.pricedCount).toBe(1)
+    expect(result.holdingCount).toBe(2)
+    expect(result.coveragePct).toBeCloseTo(70, 6)
+  })
+
+  it('is unavailable, with the window named, when no benchmark history covers it', () => {
+    const result = explainPortfolioMove([datedPosition('AAPL')], null, { period: '1Y' })
+    expect(result.available).toBe(false)
+    expect(result.reason).toMatch(/year/i)
+    expect(result.period).toBe('1Y')
+  })
+
+  it('treats an unknown period as today rather than failing', () => {
+    const result = explainPortfolioMove([position('AAPL')], benchmarkHistory, { period: '7Y' })
+    expect(result.period).toBe('1D')
+    expect(result.available).toBe(true)
   })
 })
