@@ -132,11 +132,18 @@ recent common trading days. Screenshots in `design/directions/shots/`.
 ### Phase 6 — metadata + type floor (partial) ✅
 - Open Graph / Twitter / robots / color-scheme tags; manifest colours aligned to
   the new dark canvas.
-- **11px floor actually closed.** A browser sweep found 1,748 elements still
-  rendering below 11px *after* the CSS was clean — `.direction-value > span` at
+- **11px floor closed in the DOM, NOT in SVG.** A browser sweep found 1,748 elements
+  still rendering below 11px *after* the CSS was clean — `.direction-value > span` at
   `.7em` computed to 8.4px (1,002 occurrences on `/research` alone) and four SVG
-  axis labels set `fontSize="10"` as an attribute. Both fixed. The sweep across
-  seven routes now reports **0 sub-11px elements and 0 unnamed controls**.
+  axis labels set `fontSize="10"` as an attribute. Both fixed, and DOM text is clean
+  across every route swept.
+
+  **That sweep's SVG result was wrong, and the "0 sub-11px" claim below it was too.**
+  It read `getComputedStyle().fontSize`, which for SVG returns the *specified* size in
+  user units. A chart with `viewBox="0 0 1080 360"` and `width="100%"` scales its
+  contents, so `fontSize="11"` inside it paints at 8.9px in a 900px container. Setting
+  the attribute to 11 satisfied the old sweep without changing what a reader sees.
+  Measured, corrected sweep in §2 — `design/typefloor.mjs`.
 
 ---
 
@@ -144,11 +151,64 @@ recent common trading days. Screenshots in `design/directions/shots/`.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · NOT STARTED · largest remaining piece
-Every page inherits the new tokens and card system, but no page has had its own
-composition work. Per the plan, in traffic order: Dashboard → Portfolio → Picks →
-SwingScreen + screens family → Finances/Planning/Insights/Watchlist/Markets →
+### SVG type floor — OPEN, and it is a `DESIGN.md` hard-rule breach
+`design/typefloor.mjs` measures **rendered** size (specified size × the element's
+screen CTM scale) rather than the specified size, and gates CI on it (`exit 1`).
+Every violation in the app is this one class — DOM text is clean:
+
+| Component | Specified | Renders at 1440px | Renders at 820px |
+|---|---|---|---|
+| `GrowthChart` axis labels | 11px | **8.9px** | **7.6px** |
+| `ProjectionPanel` axis + marker | 11px | **8.1px** | **4.2px** |
+| `MarketHeatmap` tile labels | 8–10px | 11–13.8px ✅ | **6.8px** |
+
+Affects `/`, `/portfolio`, `/portfolio/performance`, `/markets` — anywhere a chart
+renders. `/research` is clean.
+
+The fix is a chart-system change, not a per-page one, so it was **not** attempted
+inside the Dashboard pass. Two options:
+1. Compensate only the font size — `fontSize={11 / scale}` with the container measured
+   by a `ResizeObserver`. Smallest diff; labels grow in user space on narrow
+   containers, so collision needs checking at every breakpoint.
+2. Make the viewBox track the container width so scale is always 1. More correct — the
+   tooltip box, paddings and marker offsets are all hardcoded px that currently scale
+   too — but it re-tunes the geometry of every chart at every width.
+
+Do this with the `dataviz` skill loaded, and re-run `design/typefloor.mjs` after.
+
+### Phase 5 — page-by-page pass · DASHBOARD DONE · rest not started
+Per the plan, in traffic order: ~~Dashboard~~ → Portfolio → Picks → SwingScreen +
+screens family → Finances/Planning/Insights/Watchlist/Markets →
 Methodology/Glossary/Settings/Alerts → empty states.
+
+**Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
+27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
+verified in light and dark at 1280/1440/390px with no horizontal overflow:
+
+- **Stopped duplicating the metrics apparatus.** `PerformanceMetrics` on the Dashboard
+  rendered the full four-tab, three-section, evidence-matrix workspace — mostly
+  "? Insufficient" cards — from just `metrics`. Replaced with
+  `PerformanceEvidenceSummary` (exported from the same file, so it shares
+  `buildPortfolioMetricModel` / `sectionAssessment` / `combinedEvidence`): the read, the
+  headline Sharpe/drawdown, the counts, the bar, and a link through. −1,900px.
+- **One market read instead of three.** `MarketSentimentStrip` restated macro regime
+  and top mover 6,000px below where `HomeMarketSummary` already showed them. Deleted;
+  its one unique field (research leader) folded into the top strip, and the universe
+  count moved to the page-head eyebrow where dataset metadata belongs. Its dead CSS and
+  motion rules are gone too.
+- **Scope switch moved above what it scopes.** The "since live tracking" toggle sat
+  *between* the score gauges and the metrics, but drives both.
+- **Orphaned 5th screen card.** An odd screen count left the last card beside an empty
+  half-column; it now takes the full row with its list two-up, and the ETF screen shows
+  4 rows so the 2×2 fills. The coupling is commented at both ends.
+- **Dead second column.** `.report-two-column` stretched the short opportunity card down
+  the full height of the projection panel next to it; now `align-items: start`.
+- **Empty Market-pulse tiles** no longer render a `--fs-2xl` dash at the same weight as a
+  real reading, and say "Not published in this run" rather than "Period unavailable".
+
+Also fixed: `design/appshot.mjs` and `design/a11ycheck.mjs` passed `viewportSize` to
+`newPage`, which is not an option there — **every screenshot and a11y check in the
+redesign ran at the default 1280×720, not the 1440×1000 they claim.** Now `viewport`.
 
 Specific known gaps:
 - No shared screen-page skeleton, so 15+ screen routes each invent a layout.
@@ -158,7 +218,7 @@ Specific known gaps:
   disclosure (pills → expandable evidence → modal) is not built.
 
 **`Portfolio.jsx` is now decomposed** (Phase 2d, below), so Phase 5's Portfolio
-pass can work on one view at a time. Start there or at Dashboard.
+pass can work on one view at a time. That is the next page in traffic order.
 
 ### Phase 2d — decompose the giants · PORTFOLIO DONE
 | File | Lines |
@@ -305,12 +365,14 @@ one value per theme, not three.
 ```bash
 npm run lint && npm test && npm run build     # must all pass
 
-npm run dev                                    # then, in another shell:
+npx vite --port 5175 --strictPort              # the port all three scripts assume
 node design/appshot.mjs                        # ROUTES='[["/","home"]]' TAG='x-' to target
 node design/a11ycheck.mjs                      # keyboard + modal + unnamed-control check
+node design/typefloor.mjs                      # 11px floor, DOM *and* scaled SVG; exits 1 on breach
 ```
-`design/appshot.mjs` and `design/a11ycheck.mjs` both hardcode a Playwright path
-from the npx cache — fix that path if it moves.
+All three hardcode a Playwright path from the npx cache — fix it if that moves.
+Add `?portfolioPreview=1` to any portfolio-bearing route or it renders its empty
+state locally (Firebase is offline; see below).
 
 ### Local dev caveats
 - **Firebase is offline locally**, so Portfolio, Diversification and Finances

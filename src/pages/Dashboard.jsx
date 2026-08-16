@@ -27,7 +27,7 @@ import BuyingTheDipChart from '../components/BuyingTheDipChart.jsx'
 import {
   currentHoldingsPerformanceSeriesForPeriod,
 } from '../lib/portfolioPerformance.js'
-import PerformanceMetrics from '../components/PerformanceMetrics.jsx'
+import { PerformanceEvidenceSummary } from '../components/PerformanceMetrics.jsx'
 import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import { applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
@@ -48,36 +48,15 @@ const PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
 const PERIOD_LABELS = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year' }
 const interfaceConfig = modelSettings.interface
 
-function MarketSentimentStrip({ rows, macro }) {
-  const regime = macro?.regime
-  const leader = rows[0]
-  const withChange = rows.filter((row) => row.dayChange != null)
-  const topMover = withChange.length ? withChange.reduce((best, row) => Math.abs(row.dayChange) > Math.abs(best.dayChange) ? row : best) : null
-  const regimeTone = regime?.label === 'Supportive' || regime?.label === 'Neutral-Supportive' ? 'positive' : regime?.label === 'Restrictive' || regime?.label === 'Neutral-Restrictive' ? 'negative' : 'neutral'
-  return (
-    <div className="sentiment-strip" aria-label="Market sentiment at a glance">
-      <div className="sentiment-pill">
-        <span className={`sentiment-dot ${regimeTone}`} aria-hidden="true" />
-        <div><small>Macro regime</small><b>{regime?.label || 'Pending'}</b></div>
-      </div>
-      {leader && <div className="sentiment-pill">
-        <div><small>Research leader</small><b>{leader.ticker} · {leader.score}</b></div>
-      </div>}
-      {topMover && <div className="sentiment-pill">
-        <div><small>Top mover</small><b className={topMover.dayChange >= 0 ? 'positive' : 'negative'}>{topMover.ticker} {topMover.dayChange >= 0 ? '+' : ''}{topMover.dayChange.toFixed(1)}%</b></div>
-      </div>}
-      <div className="sentiment-pill">
-        <div><small>Universe</small><b>{rows.length} names</b></div>
-      </div>
-    </div>
-  )
-}
-
 function ScoreCard({ label, result, note }) {
   return <article className="report-score-card"><ScoreGauge score={result?.score || 0} available={result?.available} label={label} provisional={result?.provisional} reason={result?.reason} /><div><h3>{label}</h3><p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p></div></article>
 }
 
-function HomeMarketSummary({ rows, macro }) {
+// The single market read on this page. It absorbed the old `MarketSentimentStrip`,
+// which restated macro regime and top mover 6,000px further down; the only fields
+// unique to that strip were the research leader (here) and the universe size (now
+// in the page-head eyebrow, where dataset metadata belongs).
+function HomeMarketSummary({ rows, macro, researchLeader }) {
   const ranked = rankDailyStocks(rows)
   const sectors = rankDailySectors(rows)
   const session = marketType(rows)
@@ -85,8 +64,9 @@ function HomeMarketSummary({ rows, macro }) {
   return <section className="home-market-summary" aria-label="Market summary">
     <div className={`home-market-type ${session.tone}`}><span aria-hidden="true" /><div><small>Today’s market</small><strong>{session.label}</strong></div></div>
     <div><small>Market breadth</small><strong>{session.breadthPct == null ? 'Pending' : `${session.breadthPct.toFixed(0)}% advancing`}</strong></div>
-    <div><small>Hottest sector</small><strong>{sectors[0]?.sector || 'Pending'}{sectors[0] && ` · ${signedPct(sectors[0].averagePct)}`}</strong></div>
-    <div><small>Top covered stock</small><strong>{leader ? `${leader.ticker} · ${signedPct(leader.dailyMove.pct)}` : 'Pending'}</strong></div>
+    <div><small>Hottest sector</small><strong title={sectors[0]?.sector || undefined}>{sectors[0]?.sector || 'Pending'}{sectors[0] && ` · ${signedPct(sectors[0].averagePct)}`}</strong></div>
+    <div><small>Biggest mover</small><strong>{leader ? `${leader.ticker} · ${signedPct(leader.dailyMove.pct)}` : 'Pending'}</strong></div>
+    <div><small>Research leader</small><strong>{researchLeader ? `${researchLeader.ticker} · ${researchLeader.score}` : 'Pending'}</strong></div>
     <div><small>Macro backdrop</small><strong>{macro?.regime?.label || 'Pending'}</strong></div>
     <Link to="/markets">Open Markets <Icon name="arrow" size={15} /></Link>
   </section>
@@ -182,11 +162,13 @@ function MarketPulsePreview({ data, loading }) {
     ['Fed funds', macro.federal_funds_rate, '%'],
     ['Inflation', macro.inflation, '%'],
   ]
+  // A series with no published value gets a muted tile rather than a full-size dash:
+  // an empty reading should not carry the same visual weight as a real one.
   return <section className="report-section report-market-pulse" aria-labelledby="report-market-pulse-title">
     <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/market">News and context →</Link></header>
     {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse here on the Report…</div> : <div className="report-market-grid">
-      <article><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
-      {items.map(([label, point, suffix]) => <article key={label}><span>{label}</span><strong>{point?.value ?? '–'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Period unavailable'}</p></article>)}
+      <article className={regime?.score == null ? 'is-unavailable' : undefined}><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
+      {items.map(([label, point, suffix]) => <article key={label} className={point?.value == null ? 'is-unavailable' : undefined}><span>{label}</span><strong>{point?.value ?? '–'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Not published in this run'}</p></article>)}
     </div>}
   </section>
 }
@@ -365,7 +347,10 @@ export default function Dashboard() {
     { title: 'Value near 52-week lows', kicker: 'Value turnarounds', note: 'Quality plus a positive latest week', rows: rankValueTurnarounds(screenRows, 3), metric: (row) => ({ label: 'Above low', value: row.screen.aboveLow }), to: '/screens/quality-value' },
     { title: 'Recent momentum', kicker: 'Momentum', note: 'Positive week and month', rows: rankMomentum(screenRows, 3), metric: (row) => ({ label: '20 days', value: row.screen.monthReturn }), to: '/screens/momentum' },
     { title: 'Short-term reversals', kicker: 'Reversal', note: '20-day pullback turning up', rows: rankReversal(screenRows, 3), metric: (row) => ({ label: 'This week', value: row.screen.weekReturn }), to: '/screens/matrix' },
-    { title: 'Top ETFs', kicker: 'Fund screens', note: 'Performance, risk, cost and liquidity', rows: rankGrowingEtfs(etfData?.etfs || [], 3), metric: (row) => ({ label: '1 year', value: row.returns?.['1y'] }), loading: etfLoading, to: '/research' },
+    // Last of an odd number of screens, so its card takes the full row and runs its list
+    // two-up (see `.report-screen-grid > :last-child:nth-child(odd)`). Four rows fill that
+    // 2x2 exactly — keep this count even for as long as the screen count stays odd.
+    { title: 'Top ETFs', kicker: 'Fund screens', note: 'Performance, risk, cost and liquidity', rows: rankGrowingEtfs(etfData?.etfs || [], 4), metric: (row) => ({ label: '1 year', value: row.returns?.['1y'] }), loading: etfLoading, to: '/research' },
   ]
 
   const saveCustomization = () => { setWidgets(draftWidgets); window.history.replaceState({}, '', '/'); window.location.reload() }
@@ -374,7 +359,7 @@ export default function Dashboard() {
     <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={pullRefreshing} />
     {customize && <Customizer widgets={draftWidgets} onChange={setDraftWidgets} onDone={saveCustomization} />}
     <header className="page-head report-head">
-      <div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)}</span><h1 className="page-title">Portfolio Overview</h1><p className="page-sub">Traceable daily-close analytics</p></div>
+      <div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)} · {rows.length} names covered</span><h1 className="page-title">Portfolio Overview</h1><p className="page-sub">Traceable daily-close analytics</p></div>
       <div className="report-head-actions">
         {currentUser && <button type="button" className="secondary-button home-universe-refresh" onClick={universeRefresh.requestFullRefresh} disabled={universeRefresh.refreshing}
           title="Rebuild research for the complete covered universe">
@@ -390,7 +375,7 @@ export default function Dashboard() {
       {universeRefresh.message && <div className={`sync-message refresh-message ${universeRefresh.status}`} role="status" aria-live="polite">{universeRefresh.message}</div>}
     </div>}
 
-    <HomeMarketSummary rows={[...rows, ...(data.portfolio_coverage || [])]} macro={data?.market?.macro} />
+    <HomeMarketSummary rows={[...rows, ...(data.portfolio_coverage || [])]} macro={data?.market?.macro} researchLeader={leader} />
 
     {!hasPortfolioAccess || !positions.length ? <section className="report-empty-state"><span className="eyebrow">Portfolio report</span><h2>{hasPortfolioAccess ? 'Add holdings to unlock your report' : 'Cloud portfolio is offline'}</h2><p>{hasPortfolioAccess ? 'Portfolio analytics appear after holdings and per-share cost basis are available.' : authError || 'Firebase is connecting to your solo workspace.'}</p>{hasPortfolioAccess ? <Link className="primary-button" to="/portfolio">Add holdings</Link> : <button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button>}</section> : <>
       {actionable.length > 0 && <Link className="home-sell-notification" to="/portfolio"><Icon name="bell" size={17} /><span><strong>{actionable.length} sell signal{actionable.length === 1 ? '' : 's'} need review</strong><small>{actionable.map((row) => row.ticker).join(', ')} · Hold positions are intentionally excluded.</small></span><Icon name="chevron" size={16} /></Link>}
@@ -409,13 +394,17 @@ export default function Dashboard() {
       <div className="dashboard-customize-bar"><a className="secondary-button compact" href="/?customize=1"><Icon name="grip" size={15} /> Reorder widgets</a></div>
       <div className="dashboard-widget-stack">
       <DashboardWidget id="metric-grid" widgets={preferences.widgets}>
-      <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest. ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown and ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>The portfolio score remains provisional whenever a component is missing. Standard performance statistics are reported separately and are not converted into a grade.</p></details>}</section>
-
-      <div className="settings-row live-tracking-setting" style={{ marginBottom: 14 }}>
-        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the ratios below, instead of applying today's holdings to the full history.</span>{sinceLiveTrackingOnly && <LiveTrackingCountdown dates={liveHoldingsSeries?.dates} />}</div>
+      {/* The scope switch sits above everything it scopes — it drives the score gauges
+          and the evidence summary alike, and used to sit between them. */}
+      <div className="settings-row live-tracking-setting">
+        <div><strong>Since live tracking started only</strong><span>Excludes the backtested history before {LIVE_TRACKING_START} from the scores and evidence below, instead of applying today's holdings to the full history.</span>{sinceLiveTrackingOnly && <LiveTrackingCountdown dates={liveHoldingsSeries?.dates} />}</div>
         <label className="switch"><input type="checkbox" checked={sinceLiveTrackingOnly} onChange={(e) => setSinceLiveTrackingOnly(e.target.checked)} /><span aria-hidden="true" /></label>
       </div>
-      <PerformanceMetrics metrics={performance} benchmarkLabel={preferences.defaultBenchmark} riskFree={riskFree} />
+      <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Portfolio scores</span><h2>Decision-quality snapshot</h2></div><Link to="/portfolio/diversification">View diversification →</Link></header><div className="report-score-grid"><ScoreCard label="Portfolio score" result={overall} note={`${overall.reason} ${overall.available ? `${overall.strongest} is strongest. ${overall.weakest} has the most room to improve.` : ''}`} /><ScoreCard label="Diversification" result={diversification} note={`${diversification.warnings.length ? diversification.warnings[0] : 'No major concentration warning in covered holdings.'}`} /><ScoreCard label="Resilience" result={resilience} note={resilience.available ? `${Math.abs(resilience.maxDrawdown).toFixed(1)}% maximum drawdown and ${resilience.volatility.toFixed(1)}% annualized volatility.` : ''} /></div>{overall.available && <details className="score-method"><summary>How the portfolio score is built</summary><div>{Object.entries(overall.components).map(([label, value]) => <span key={label}><b>{label.replace(/([A-Z])/g, ' $1')}</b><em>{value == null ? 'Unavailable' : `${Math.round(value)}/100`}</em></span>)}</div><p>The portfolio score remains provisional whenever a component is missing. Standard performance statistics are reported separately and are not converted into a grade.</p></details>}</section>
+
+      {/* The full metric apparatus lives on Portfolio → Data overview. This is the read
+          and its counts, linking through — not a second copy of that page. */}
+      <PerformanceEvidenceSummary metrics={performance} />
       </DashboardWidget>
 
       <DashboardWidget id="allocation" widgets={preferences.widgets}>
@@ -454,7 +443,6 @@ export default function Dashboard() {
 
     <BuyingTheDipChart rows={dipRows} />
 
-    <MarketSentimentStrip rows={rows} macro={data?.market?.macro} />
     <MarketPulsePreview data={data} loading={loading} />
     <MarketHeatmap positions={portfolio.positions} />
 

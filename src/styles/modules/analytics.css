@@ -38,6 +38,13 @@
 .evidence-bar i { display: block; height: 100%; }.evidence-bar .positive { background: var(--pos); }.evidence-bar .neutral { background: var(--text-faint); }.evidence-bar .negative { background: var(--neg); }
 .analytics-takeaway { margin: var(--sp-2) 0 var(--sp-0-5); color: var(--text-secondary); font-size: var(--fs-xs); line-height: 1.5; }
 .analytics-sample { display: block; color: var(--text-tertiary); font-size: var(--fs-2xs); }
+
+/* Compact form of `.analytics-overall` for surfaces that link to the full analysis
+   rather than restate it (the Dashboard). Same counts, same bar, one headline. */
+.evidence-summary { margin-bottom: var(--section-gap); padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
+.evidence-summary > .section-heading { margin-bottom: var(--sp-2); }
+.evidence-summary-headline { margin: 0 0 var(--sp-3); font: var(--fw-bold) var(--fs-xl)/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.evidence-summary .analytics-takeaway { margin-bottom: 0; }
 .analytics-drivers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-1-5); margin: var(--sp-3) 0; }
 .performance-metrics > .analytics-drivers { display: grid; overflow: visible; border: 0; border-radius: 0; background: transparent; }
 .analytics-drivers span { min-width: 0; padding: var(--sp-2) var(--sp-2-5); border: 1px solid var(--border-subtle); border-radius: 10px; color: var(--text-secondary); font-size: var(--fs-2xs); overflow-wrap: anywhere; }

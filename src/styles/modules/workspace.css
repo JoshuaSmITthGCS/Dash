@@ -28,7 +28,7 @@
 .nav-sublink.active { border-left-color: var(--brand-primary); color: var(--brand-primary); font-weight: var(--fw-bold); }
 
 .home-market-summary {
-  min-height: 54px; display: grid; grid-template-columns: 1.2fr repeat(4, minmax(112px, 1fr)) auto; align-items: center;
+  min-height: 54px; display: grid; grid-template-columns: 1.15fr repeat(5, minmax(96px, 1fr)) auto; align-items: center;
   gap: 0; overflow: hidden; margin: 0 0 var(--sp-3); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary);
 }
 .home-market-summary > div { min-width: 0; padding: var(--sp-2-5) var(--sp-3); border-right: 1px solid var(--border-subtle); }
@@ -225,7 +225,6 @@
 .report-hero-grid > *,
 .report-score-grid > *,
 .report-screen-grid > *,
-.sentiment-strip > *,
 .report-two-column > *,
 .dashboard-widget {
   animation: card-reveal var(--duration-slow, 350ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)) both;
@@ -248,14 +247,12 @@
   .report-hero-grid > *,
   .report-score-grid > *,
   .report-screen-grid > *,
-  .sentiment-strip > *,
   .report-two-column > *,
   .dashboard-widget { animation: none; }
 }
 :root[data-motion="on"] .report-hero-grid > *,
 :root[data-motion="on"] .report-score-grid > *,
 :root[data-motion="on"] .report-screen-grid > *,
-:root[data-motion="on"] .sentiment-strip > *,
 :root[data-motion="on"] .report-two-column > *,
 :root[data-motion="on"] .dashboard-widget { animation: none; }
 

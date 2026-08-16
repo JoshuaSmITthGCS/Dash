@@ -522,6 +522,15 @@ done and 5 is not started. What is left, and why:
   static ones should become classes; the computed ones (bar widths, chart
   geometry, `--widget-order`) stay.
 
+### SVG type floor — open hard-rule breach
+`DESIGN.md` forbids text below 11px "including SVG labels". Charts set
+`fontSize="11"` as an attribute, but a fixed `viewBox` with `width="100%"` scales it:
+`GrowthChart` axis labels paint at **8.9px** (1440px) / **7.6px** (820px),
+`ProjectionPanel` at **8.1px / 4.2px**, `MarketHeatmap` at **6.8px** below 1100px.
+DOM text is clean — this class only. `node design/typefloor.mjs` measures rendered
+size and exits non-zero. Fix is chart-system-wide; see `docs/REDESIGN-STATUS.md` §2
+for the two options.
+
 ### Phase 4 — data visualization
 Shipped: palette validation for all four palettes, and the correlation heatmap.
 Not shipped, with reasons:

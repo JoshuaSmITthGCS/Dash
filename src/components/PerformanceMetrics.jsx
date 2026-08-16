@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import modelSettings from '../../pipeline/config/settings.json'
 import MetricCard from './MetricCard.jsx'
 import SignalMetricsPanel from './SignalMetricsPanel.jsx'
@@ -74,6 +75,32 @@ function EvidenceBar({ summary }) {
 
 function Driver({ label, metric }) {
   return <span><b>{label}</b>{metric ? metric.name.toLowerCase() : 'None measured'}</span>
+}
+
+/**
+ * The overall read, its counts, and the two headline ratios — no cards, no tabs.
+ * For surfaces that should point at the full analysis rather than restate it
+ * (the Dashboard); the same model and assessment functions back both.
+ */
+export function PerformanceEvidenceSummary({ metrics, to = '/portfolio/data-overview' }) {
+  const model = buildPortfolioMetricModel({ performance: metrics })
+  const overall = combinedEvidence([
+    { id: 'standard', metrics: model.standard, summary: sectionAssessment('standard', model.standard) },
+    { id: 'comparison', metrics: model.comparison, summary: sectionAssessment('comparison', model.comparison) },
+    { id: 'fast', metrics: model.fast, summary: sectionAssessment('fast', model.fast) },
+  ])
+  return (
+    <section className="evidence-summary" aria-labelledby="evidence-summary-title">
+      <header className="section-heading">
+        <div><span className="eyebrow">Performance evidence</span><h2 id="evidence-summary-title">Overall evidence: {overall.read}</h2></div>
+        <Link to={to}>Full analysis →</Link>
+      </header>
+      <p className="evidence-summary-headline">{collapsedSummary(metrics)}</p>
+      <EvidenceCounts counts={overall.counts} />
+      <EvidenceBar summary={overall} />
+      <p className="analytics-takeaway">{overall.narrative}</p>
+    </section>
+  )
 }
 
 function AnalyticsSection({ id, eyebrow, title, metrics, summary, sampleNote, defaultCore = 3 }) {

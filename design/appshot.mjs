@@ -6,7 +6,7 @@ const tag = process.env.TAG || ''
 const b = await chromium.launch()
 for (const [route, name] of routes) {
   for (const theme of themes) {
-    const p = await b.newPage({ viewportSize: { width: 1440, height: 1000 }, deviceScaleFactor: 1 })
+    const p = await b.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 })
     const errs = []
     p.on('pageerror', e => errs.push(String(e).slice(0, 200)))
     p.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 200)) })

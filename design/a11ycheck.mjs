@@ -1,7 +1,7 @@
 import { chromium } from '/Users/eyerise/.npm/_npx/1ac161d228dd2210/node_modules/playwright/index.mjs'
 const BASE = 'http://localhost:5175'
 const b = await chromium.launch()
-const p = await b.newPage({ viewportSize: { width: 1440, height: 1000 } })
+const p = await b.newPage({ viewport: { width: 1440, height: 1000 } })
 await p.addInitScript(() => localStorage.setItem('valuesignal.ui-preferences.v1', JSON.stringify({ version: 5, theme: 'light' })))
 
 // 1. skip link is the first stop

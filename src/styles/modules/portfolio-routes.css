@@ -154,14 +154,8 @@
 /* ============================================================
    Visual upgrade: market sentiment strip
    ============================================================ */
-.sentiment-strip { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-bottom: var(--section-gap); }
-.sentiment-pill { display: flex; align-items: center; gap: var(--sp-1-5); padding: var(--sp-1-5) var(--sp-2-5); border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-primary); }
-.sentiment-pill small { display: block; color: var(--text-tertiary); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .04em; }
-.sentiment-pill b { display: block; font: var(--fw-bold) var(--fs-2xs) var(--font-mono); }
-.sentiment-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--text-faint); }
-.sentiment-dot.positive { background: var(--positive); }
-.sentiment-dot.negative { background: var(--negative); }
-@media (max-width: 620px) { .sentiment-strip { gap: var(--sp-1); }.sentiment-pill { padding: var(--sp-1) var(--sp-2); } }
+/* The market sentiment strip was folded into `.home-market-summary` — it restated the
+   macro regime and top mover the page already showed, 6,000px further down. */
 
 /* ============================================================
    Visual upgrade: card hover depth effects
