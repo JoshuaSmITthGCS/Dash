@@ -75,6 +75,31 @@ describe('ShadowPortfolios', () => {
     )
   })
 
+  it('plots a risk/return scatter point for every strategy with both aligned return and drawdown', () => {
+    useData.mockReturnValue({
+      loading: false,
+      error: null,
+      data: {
+        aligned_window: { observations: 3, window_start: '2026-08-03', window_end: '2026-08-07' },
+        strategies: [
+          {
+            strategy: 'SPY benchmark', net_return: 3.0728, snapshots: 8, observations: 4,
+            max_drawdown: -8.2, aligned: { net_return: 1.626, observations: 3 },
+            evidence_status: 'Accumulating',
+          },
+          {
+            strategy: 'Momentum sleeve', net_return: 0.9615, snapshots: 6, observations: 3,
+            max_drawdown: -12.4, aligned: { net_return: 0.9471, observations: 3 },
+            evidence_status: 'Accumulating',
+          },
+        ],
+      },
+    })
+
+    render(<MemoryRouter><ShadowPortfolios /></MemoryRouter>)
+    expect(screen.getByRole('img', { name: /Max drawdown versus Aligned net return scatter, 2 points/ })).toBeInTheDocument()
+  })
+
   it('does not offer an aligned figure for a strategy that has not started', () => {
     useData.mockReturnValue({
       loading: false,

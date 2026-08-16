@@ -3,6 +3,7 @@ import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import DataTable from '../components/DataTable.jsx'
 import AutoOverviewLine from '../components/AutoOverviewLine.jsx'
+import ScatterChart from '../components/ScatterChart.jsx'
 
 const metric = (value, suffix = '', row, minimum = 1) => {
   if (value != null) return `${Number(value).toFixed(2)}${suffix}`
@@ -77,6 +78,16 @@ export default function ShadowPortfolios() {
         <article><span>Implementation cost</span><strong>{live[0]?.cost_bps ?? 20} bps</strong><small>spread plus slippage</small></article>
       </section>
       {alignedWindow.observations > 0 && <p className="disclaimer">Each card below reports a strategy over its own collection window, which differs by strategy. Use the aligned net return to compare them: it covers only the {alignedWindow.observations} session{alignedWindow.observations === 1 ? '' : 's'} every reporting strategy was in the market for.</p>}
+      <ScatterChart
+        points={live
+          .filter((row) => row.max_drawdown != null && row.aligned?.net_return != null)
+          .map((row) => ({ id: row.strategy, label: row.strategy, x: row.max_drawdown, y: row.aligned.net_return }))}
+        xLabel="Max drawdown"
+        yLabel="Aligned net return"
+        xFormatter={(value) => `${value.toFixed(1)}%`}
+        yFormatter={signedReturn}
+        caption="Max drawdown versus aligned net return, one point per reporting strategy"
+      />
       <DataTable
         className="shadow-performance-table"
         rows={strategies}
