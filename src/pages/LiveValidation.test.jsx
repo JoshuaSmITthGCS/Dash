@@ -72,4 +72,23 @@ describe('LiveValidation', () => {
     expect(screen.getByText('0.031')).toBeInTheDocument()
     expect(screen.getByText('2 live days recorded.')).toBeInTheDocument()
   })
+
+  it('plots champion versus challenger mean rank IC by horizon once both have ready values', () => {
+    useData.mockImplementation((name) => {
+      if (name.includes('ic_validation')) {
+        return { data: {
+          snapshot_refreshes: 3,
+          variants: {
+            champion: { '1M': { ...accumulating, mean_rank_ic: 0.032 }, '3M': { ...accumulating, mean_rank_ic: 0.021 } },
+            challenger: { '1M': { ...accumulating, mean_rank_ic: 0.018 }, '3M': { ...accumulating, mean_rank_ic: -0.004 } },
+          },
+        }, loading: false, error: null }
+      }
+      if (name.includes('signal_metrics')) return { data: signalMetrics, loading: false, error: null }
+      return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
+    })
+
+    render(<MemoryRouter><LiveValidation /></MemoryRouter>)
+    expect(screen.getByRole('img', { name: /Champion versus Challenger, 2 groups/ })).toBeInTheDocument()
+  })
 })

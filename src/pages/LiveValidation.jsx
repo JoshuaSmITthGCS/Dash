@@ -5,6 +5,9 @@ import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
 import InfoTag from '../components/InfoTag.jsx'
 import AutoOverviewLine from '../components/AutoOverviewLine.jsx'
+import PairedBarChart from '../components/PairedBarChart.jsx'
+
+const HORIZON_ORDER = ['1M', '3M', '6M', '12M']
 
 const title = (value = '') => String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 const pct = (value) => value == null ? '–' : `${Math.round(Number(value) * 100)}%`
@@ -131,10 +134,30 @@ function VariantValidation({ name, horizons = {} }) {
 function ICValidation({ data, error }) {
   if (error) return <section className="card etf-state" role="alert"><strong>IC validation unavailable</strong><span>Run the prospective validation harness. {error.message}</span></section>
   const variants = data?.variants || {}
+  const allHorizons = [...new Set([
+    ...Object.keys(variants.champion || {}),
+    ...Object.keys(variants.challenger || {}),
+  ])].sort((left, right) => {
+    const leftIndex = HORIZON_ORDER.indexOf(left)
+    const rightIndex = HORIZON_ORDER.indexOf(right)
+    if (leftIndex === -1 && rightIndex === -1) return left.localeCompare(right)
+    if (leftIndex === -1) return 1
+    if (rightIndex === -1) return -1
+    return leftIndex - rightIndex
+  })
   return <section className="ic-validation-section">
     <header className="section-heading"><div><span className="eyebrow">Prospective evidence</span><h2>Champion versus challenger</h2>
       <p>Point-in-time scores accumulate before returns are known. ICIR stays hidden until 24 monthly periods exist.</p></div>
       <span className="chip">{data?.snapshot_refreshes || 0} snapshots</span></header>
+    <PairedBarChart
+      groups={allHorizons.map((horizon) => ({
+        label: horizon,
+        values: [variants.champion?.[horizon]?.mean_rank_ic, variants.challenger?.[horizon]?.mean_rank_ic],
+      }))}
+      seriesLabels={['Champion', 'Challenger']}
+      yFormatter={icValue}
+      caption="Mean rank IC, champion versus challenger, by horizon"
+    />
     <div className="ic-variant-grid">
       {Object.entries(variants).map(([name, horizons]) => <VariantValidation key={name} name={name} horizons={horizons} />)}
     </div>
