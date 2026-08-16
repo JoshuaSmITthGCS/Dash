@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import SwingScreen from './SwingScreen'
 import { useData } from '../lib/useData'
@@ -409,8 +409,8 @@ describe('SwingScreen readability', () => {
     showEveryNumber()
     const strength = screen.getByText('Very strong')
     expect(strength).toBeVisible()
-    expect(strength.closest('td').getAttribute('title')).toMatch(/99th percentile/)
-    expect(strength.closest('td').getAttribute('title')).toMatch(/composite \+1\.42/)
+    expect(strength.closest('.swing-strength-cell').getAttribute('title')).toMatch(/99th percentile/)
+    expect(strength.closest('.swing-strength-cell').getAttribute('title')).toMatch(/composite \+1\.42/)
   })
 
   it('names the leg actually carrying each row', () => {
@@ -493,7 +493,7 @@ describe('SwingScreen upside and trend', () => {
     })]
     useData.mockReturnValue({ data, loading: false, error: null })
     renderScreen()
-    const cell = screen.getByText('+0.48%').closest('td')
+    const cell = screen.getByText('+0.48%').closest('.swing-upside')
     expect(cell.getAttribute('title')).toMatch(/usually moved \+8\.20%/)
     expect(cell.getAttribute('title')).toMatch(/middle half -4\.10% to \+19\.60%/)
     expect(cell.getAttribute('title')).toMatch(/up in 63% of 335 overlapping windows/)
@@ -576,5 +576,24 @@ describe('SwingScreen verdict and upside agree', () => {
     useData.mockReturnValue({ data, loading: false, error: null })
     renderScreen()
     expect(screen.getByText('Worth buying')).toBeVisible()
+  })
+
+  it('sorts rank ascending on first click, not descending', () => {
+    useData.mockReturnValue({ data: payload({ results: [row({ ticker: 'AAA', rank: 2 }), row({ ticker: 'BBB', rank: 1 })] }), loading: false, error: null })
+    renderScreen()
+    const rankHeader = screen.getByRole('columnheader', { name: /Rank/ })
+    fireEvent.click(within(rankHeader).getByRole('button'))
+    expect(rankHeader).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('applies swing-row-suppressed to a row with suppressed short interest', () => {
+    useData.mockReturnValue({
+      data: payload({ results: [row({ ticker: 'AAA', short_interest: { suppressed: true, reasons: [], short_percent_of_float: null, days_to_cover: null } })] }),
+      loading: false, error: null,
+    })
+    const { container } = renderScreen()
+    const suppressedRow = container.querySelector('tr.swing-row-suppressed')
+    expect(suppressedRow).not.toBeNull()
+    expect(suppressedRow.textContent).toMatch(/AAA/)
   })
 })

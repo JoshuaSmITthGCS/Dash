@@ -216,7 +216,7 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 
 /* Signal strength as a word plus a bar. The exact percentile and composite z are on the
    cell's title, so the precise number is one hover away rather than gone. */
-.swing-strength-cell { min-width: 104px; }
+.swing-strength-cell { display: inline-block; min-width: 104px; }
 .swing-strength-label { display: block; font-size: var(--fs-2xs); }
 .swing-strength-label.high { color: var(--tier-high); }
 .swing-strength-label.neutral { color: var(--text-dim); }

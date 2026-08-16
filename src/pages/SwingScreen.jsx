@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { Empty, Loading, Move } from '../components/Bits.jsx'
 import { ScreenNavigation } from './ResearchScreen.jsx'
-import ResultCards from '../components/ResultCards.jsx'
+import DataTable from '../components/DataTable.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import InfoTag from '../components/InfoTag.jsx'
@@ -334,16 +334,16 @@ function EvidencePanel({ data, legs = LEGS, tier = null }) {
 
 function LegCell({ leg, detail }) {
   if (!leg || !leg.applied) {
-    return <td className="mono num swing-leg-missing" title="Not resolvable on this row – it contributes nothing at its declared weight, which pulls the composite toward neutral rather than rescaling the legs that did resolve.">–</td>
+    return <span className="mono swing-leg-missing" title="Not resolvable on this row – it contributes nothing at its declared weight, which pulls the composite toward neutral rather than rescaling the legs that did resolve.">–</span>
   }
   const announced = detail?.pead_announced_on
     ? ` · announced ${detail.pead_announced_on}, ${detail.pead_age_trading_days} sessions ago`
     : ''
   return (
-    <td className={`mono num${leg.z > 0 ? ' up' : leg.z < 0 ? ' down' : ''}`}
+    <span className={`mono${leg.z > 0 ? ' up' : leg.z < 0 ? ' down' : ''}`}
       title={`${Math.round(leg.weight * 100)}% declared weight · ${(leg.contribution >= 0 ? '+' : '')}${leg.contribution.toFixed(2)} of the composite${announced}`}>
       {z(leg.z)}
-    </td>
+    </span>
   )
 }
 
@@ -402,45 +402,6 @@ function shortInterestLabel(row) {
   return '–'
 }
 
-/**
- * A sortable column header.
- *
- * The sort indicator is aria-hidden and the direction is carried on `aria-sort` instead, so a
- * screen reader announces the column by its name and its sort state rather than reading a
- * triangle, and so the accessible name stays stable while the direction changes.
- */
-function SortHeader({ column, sort, onSort, className }) {
-  const active = sort.key === column.key
-  return (
-    <th scope="col" className={className}
-      aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
-      <button type="button" className={`swing-sort${active ? ' is-active' : ''}`}
-        onClick={() => onSort(column.key)}
-        title={column.hint || `Sort by ${column.label}`}>
-        {column.label}
-        <span aria-hidden="true" className="swing-sort-caret">
-          {active ? (sort.dir === 'asc' ? '▲' : '▼') : '↕'}
-        </span>
-      </button>
-    </th>
-  )
-}
-
-// Nulls always sort last regardless of direction. A name with no cost estimate is not the
-// cheapest name in the book, and letting it sort to the top of an ascending cost column is
-// exactly the reading error the cost columns exist to prevent.
-const compareBy = (accessor, dir) => (left, right) => {
-  const a = accessor(left)
-  const b = accessor(right)
-  if (a == null && b == null) return 0
-  if (a == null) return 1
-  if (b == null) return -1
-  if (typeof a === 'string' || typeof b === 'string') {
-    return dir === 'asc' ? String(a).localeCompare(String(b)) : String(b).localeCompare(String(a))
-  }
-  return dir === 'asc' ? a - b : b - a
-}
-
 export default function SwingScreen() {
   const { data, loading, error } = useData('screens/swing.json')
   const { preferences } = usePreferences()
@@ -448,7 +409,6 @@ export default function SwingScreen() {
     sector: 'all', cap: 'all', liquidity: 0, coverage: 0, membership: 'all', shortInterest: 'all',
   })
   const [tierKey, setTierKey] = useState(null)
-  const [sort, setSort] = useState({ key: 'rank', dir: 'asc' })
   const [view, setView] = useState('simple')
 
   // A published snapshot from before the horizon split has no `tiers`, so the single-book path
@@ -482,8 +442,8 @@ export default function SwingScreen() {
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
 
   // Every column the table can sort on, with the accessor beside the label so the two cannot
-  // drift apart. `defaultDir` is the direction that answers the question the column is usually
-  // asked: best first for a score, cheapest first for a cost.
+  // drift apart. `defaultSortDir` is the direction that answers the question the column is
+  // usually asked: best first for a score, cheapest first for a cost.
   //
   // `full` marks the columns that only appear in the detailed view. Nothing is removed by the
   // simple view, it is deferred: the plain columns are derived from the numeric ones, so the
@@ -491,67 +451,61 @@ export default function SwingScreen() {
   // "why", which are different questions asked at different moments.
   const columns = useMemo(() => [
     {
-      key: 'rank', label: 'Rank', get: (row) => row.rank, defaultDir: 'asc',
-      cell: (row) => <td key="rank">#{row.rank}</td>,
+      key: 'rank', label: 'Rank', sortValue: (row) => row.rank, defaultSortDir: 'asc',
+      cell: (row) => `#${row.rank}`,
     },
     {
-      key: 'ticker', label: 'Ticker', get: (row) => row.ticker, defaultDir: 'asc',
-      cell: (row) => (
-        <td key="ticker"><b>{row.ticker}</b><span className="swing-row-name">{row.name}</span></td>
-      ),
+      key: 'ticker', label: 'Ticker', sortValue: (row) => row.ticker, defaultSortDir: 'asc',
+      cell: (row) => <><b>{row.ticker}</b><span className="swing-row-name">{row.name}</span></>,
     },
     {
-      key: 'verdict', label: 'Verdict', defaultDir: 'desc',
+      key: 'verdict', label: 'Verdict', defaultSortDir: 'desc',
       hint: 'Where this row stands once ranking, eligibility and cost are combined.',
-      get: (row) => VERDICT_ORDER[verdictFor(row).label] ?? -1,
+      sortValue: (row) => VERDICT_ORDER[verdictFor(row).label] ?? -1,
       cell: (row) => {
         const verdict = verdictFor(row)
-        return (
-          <td key="verdict">
-            <span className={`tier ${verdict.tone}`} title={verdict.title}>{verdict.label}</span>
-          </td>
-        )
+        return <span className={`tier ${verdict.tone}`} title={verdict.title}>{verdict.label}</span>
       },
     },
     {
-      key: 'percentile', label: 'Signal', defaultDir: 'desc', num: true, full: true,
+      key: 'percentile', label: 'Signal', defaultSortDir: 'desc', numeric: true, full: true,
       hint: 'Rank within this tier, in words. The exact percentile and composite z stay on the row.',
-      get: (row) => row.percentile,
+      sortValue: (row) => row.percentile,
       cell: (row) => {
         const strength = strengthFor(row.percentile)
         return (
-          <td key="percentile" className="swing-strength-cell"
+          <span className="swing-strength-cell"
             title={`${row.percentile == null ? 'unranked' : `${row.percentile.toFixed(0)}th percentile`} in this tier · composite ${z(row.composite_z)}`}>
             <span className={`swing-strength-label ${strength.tone}`}>{strength.label}</span>
             <span className="swing-strength-track" aria-hidden="true">
               <span className={`swing-strength-fill ${strength.tone}`} style={{ width: `${strength.width}%` }} />
             </span>
-          </td>
+          </span>
         )
       },
     },
     {
-      key: 'driver', label: 'Driven by', defaultDir: 'asc',
+      key: 'driver', label: 'Driven by', defaultSortDir: 'asc',
       hint: 'The leg contributing most to this row’s score.',
-      get: (row) => topDriver(row).label,
+      sortValue: (row) => topDriver(row).label,
       cell: (row) => {
         const driver = topDriver(row)
-        return <td key="driver" className="swing-driver" title={driver.title}>{driver.label}</td>
+        return <span className="swing-driver" title={driver.title}>{driver.label}</span>
       },
     },
     ...(tier ? [
       {
-        key: 'upside', label: 'Upside', num: true, defaultDir: 'desc',
+        key: 'upside', label: 'Upside', numeric: true, defaultSortDir: 'desc',
         hint: 'How far this name usually travels over a window this long, plus the model’s '
           + 'edge, less its round-trip cost. The size comes almost entirely from the name’s '
           + 'own past travel, which is measured but is not a forecast.',
-        get: (row) => row.economics_predicted_upside_pct,
+        sortValue: (row) => row.economics_predicted_upside_pct,
         cell: (row) => {
           const usual = row.economics_typical_move_pct
           const low = row.economics_usual_low_pct
           const high = row.economics_usual_high_pct
           return (
-            <td key="upside" className="mono num swing-upside"
+            <span className="mono swing-upside"
               title={usual == null
                 ? `No usable price history over ${tier.target_hold_sessions} sessions, so this is the modelled edge alone.`
                 : `Over ${tier.target_hold_sessions} sessions this name has usually moved ${upside(usual)}`
@@ -565,97 +519,91 @@ export default function SwingScreen() {
               {low == null ? null : (
                 <span className="swing-upside-range">{upside(low)} to {upside(high)}</span>
               )}
-            </td>
+            </span>
           )
         },
       },
       {
-        key: 'round_trip', label: 'Cost to trade', num: true, defaultDir: 'asc', full: true,
+        key: 'round_trip', label: 'Cost to trade', numeric: true, defaultSortDir: 'asc', full: true,
         hint: 'Estimated cost in bps of buying and selling this name at this book size. '
           + 'The spread term is a liquidity-tiered proxy, not a measured spread.',
-        get: (row) => row.economics_round_trip_bps,
+        sortValue: (row) => row.economics_round_trip_bps,
         cell: (row) => (
-          <td key="round_trip" className="mono num"
+          <span className="mono"
             title={`${row.economics_liquidity_tier || 'unknown'} liquidity tier at ${millions(row.economics_position_dollars)} per position`}>
             {row.economics_round_trip_bps == null ? '–' : row.economics_round_trip_bps.toFixed(1)}
-          </td>
+          </span>
         ),
       },
     ] : []),
     {
-      key: 'trend', label: 'Trend', defaultDir: 'desc',
+      key: 'trend', label: 'Trend', defaultSortDir: 'desc',
       hint: 'Where the price sits in its own 52-week range. Descriptive context, never a '
         + 'scoring leg.',
-      get: (row) => row.trend?.range_position_52w ?? null,
+      sortValue: (row) => row.trend?.range_position_52w ?? null,
       cell: (row) => {
         const trend = row.trend
-        if (!trend) return <td key="trend" className="swing-trend">–</td>
+        if (!trend) return <span className="swing-trend">–</span>
         return (
-          <td key="trend" className={`swing-trend ${TREND_TONE[trend.state] || 'neutral'}`}
+          <span className={`swing-trend ${TREND_TONE[trend.state] || 'neutral'}`}
             title={`${Math.round(trend.range_position_52w * 100)}% of the way up its 52-week range`
               + ` · ${trend.above_ma20 ? 'above' : 'below'} the 20-session average`
               + ` · ${trend.above_ma60 ? 'above' : 'below'} the 60-session average`}>
             {trend.label}
-          </td>
+          </span>
         )
       },
     },
     {
-      key: 'sector', label: 'Sector', get: (row) => row.sector, defaultDir: 'asc', full: true,
-      cell: (row) => <td key="sector">{row.sector || '–'}</td>,
+      key: 'sector', label: 'Sector', sortValue: (row) => row.sector, defaultSortDir: 'asc', full: true,
+      cell: (row) => row.sector || '–',
     },
     {
-      key: 'composite_z', label: 'Composite', get: (row) => row.composite_z, defaultDir: 'desc',
-      num: true, full: true,
-      cell: (row) => <td key="composite_z" className="mono num score-cell">{z(row.composite_z)}</td>,
+      key: 'composite_z', label: 'Composite', sortValue: (row) => row.composite_z, defaultSortDir: 'desc',
+      numeric: true, full: true,
+      cell: (row) => <span className="mono score-cell">{z(row.composite_z)}</span>,
     },
     ...legs.map(([key, label]) => ({
-      key: `leg:${key}`, label, num: true, defaultDir: 'desc', full: true,
+      key: `leg:${key}`, label, numeric: true, defaultSortDir: 'desc', full: true,
       hint: `${LEG_PHRASES[key] || label}: standardized score for this leg across the tier.`,
-      get: (row) => row.legs?.[key]?.applied ? row.legs[key].z : null,
-      cell: (row) => <LegCell key={key} leg={row.legs?.[key]}
+      sortValue: (row) => row.legs?.[key]?.applied ? row.legs[key].z : null,
+      cell: (row) => <LegCell leg={row.legs?.[key]}
         detail={key === 'pead_drift' ? row.pead_detail : null} />,
     })),
     {
-      key: 'coverage', label: 'Data', get: (row) => row.coverage, defaultDir: 'desc',
-      num: true, full: true,
+      key: 'coverage', label: 'Data', sortValue: (row) => row.coverage, defaultSortDir: 'desc',
+      numeric: true, full: true,
       hint: 'Share of this tier’s declared weight that actually resolved on this row.',
-      cell: (row) => <td key="coverage" className="mono num">{pct((row.coverage || 0) * 100)}</td>,
+      cell: (row) => <span className="mono">{pct((row.coverage || 0) * 100)}</span>,
     },
     {
-      key: 'return_20d', label: '20-day', get: (row) => row.raw_factors?.return_20d,
-      defaultDir: 'desc', num: true, full: true,
-      cell: (row) => <td key="return_20d" className="num"><Move pct={row.raw_factors?.return_20d} /></td>,
+      key: 'return_20d', label: '20-day', sortValue: (row) => row.raw_factors?.return_20d,
+      defaultSortDir: 'desc', numeric: true, full: true,
+      cell: (row) => <Move pct={row.raw_factors?.return_20d} />,
     },
     {
-      key: 'liquidity', label: 'Liquidity', get: (row) => row.median_dollar_volume_60d,
-      defaultDir: 'desc', num: true, full: true,
-      cell: (row) => <td key="liquidity" className="mono num">{millions(row.median_dollar_volume_60d)}</td>,
+      key: 'liquidity', label: 'Liquidity', sortValue: (row) => row.median_dollar_volume_60d,
+      defaultSortDir: 'desc', numeric: true, full: true,
+      cell: (row) => <span className="mono">{millions(row.median_dollar_volume_60d)}</span>,
     },
     {
       key: 'short_interest', label: 'Short interest', full: true,
-      get: (row) => row.short_interest?.short_percent_of_float ?? null, defaultDir: 'desc',
+      sortValue: (row) => row.short_interest?.short_percent_of_float ?? null, defaultSortDir: 'desc',
       cell: (row) => (
-        <td key="short_interest" className={row.short_interest?.suppressed ? 'swing-suppressed-cell' : ''}>
+        <span className={row.short_interest?.suppressed ? 'swing-suppressed-cell' : undefined}>
           {shortInterestLabel(row)}
-        </td>
+        </span>
       ),
     },
     {
       key: 'flags', label: 'Flags', full: true,
-      get: (row) => (row.reason_codes || []).join(', '), defaultDir: 'asc',
-      cell: (row) => <td key="flags">{(row.reason_codes || []).join(', ') || '–'}</td>,
+      sortValue: (row) => (row.reason_codes || []).join(', '), defaultSortDir: 'asc',
+      cell: (row) => (row.reason_codes || []).join(', ') || '–',
     },
   ], [legs, tier])
 
   const shown = view === 'full' ? columns : columns.filter((column) => !column.full)
-
-  const onSort = (key) => setSort((current) => current.key === key
-    ? { key, dir: current.dir === 'asc' ? 'desc' : 'asc' }
-    : { key, dir: columns.find((column) => column.key === key)?.defaultDir || 'desc' })
-
-  const active = columns.find((column) => column.key === sort.key)
-  const rows = active ? [...filtered].sort(compareBy(active.get, sort.dir)) : filtered
+  const rows = filtered
 
   return <>
     <ScreenNavigation />
@@ -748,27 +696,6 @@ export default function SwingScreen() {
       {data?.status === 'unavailable' ? (
         <Empty note={`Unavailable: ${data.reason_code}`} />
       ) : !rows.length ? <Empty note="No name matches these filters." /> : <>
-        <ResultCards rows={rows} getKey={(row) => row.ticker} variant={preferences.mobileResearchView}
-          title={(row) => `#${row.rank} · ${row.ticker}`}
-          subtitle={(row) => row.sector || 'Unclassified'}
-          fields={preferences.mobileResearchView === 'detailed' ? [
-            { label: 'Composite', value: (row) => z(row.composite_z) },
-            { label: 'Percentile', value: (row) => row.percentile == null ? '–' : row.percentile.toFixed(0) },
-            ...legs.map(([key, label]) => ({
-              label, value: (row) => row.legs?.[key]?.applied ? z(row.legs[key].z) : '–',
-            })),
-            ...(tier ? [{ label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) }] : []),
-            { label: 'Signal coverage', value: (row) => pct((row.coverage || 0) * 100) },
-            { label: 'Short interest', value: (row) => shortInterestLabel(row) },
-            { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
-          ] : [
-            { label: 'Composite', value: (row) => z(row.composite_z) },
-            { label: 'Percentile', value: (row) => row.percentile == null ? '–' : row.percentile.toFixed(0) },
-            ...(tier ? [{ label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) }] : []),
-            { label: 'Signal coverage', value: (row) => pct((row.coverage || 0) * 100) },
-            { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
-          ]} />
-
         <div className="swing-view-toggle">
           <span id="swing-view-label">Columns</span>
           <div role="group" aria-labelledby="swing-view-label">
@@ -788,19 +715,35 @@ export default function SwingScreen() {
           </span>
         </div>
 
-        <div className="research-table card"><table>
-          <thead><tr>
-            {shown.map((column) => (
-              <SortHeader key={column.key} column={column} sort={sort} onSort={onSort}
-                className={column.num ? 'num' : undefined} />
-            ))}
-          </tr></thead>
-          <tbody>{rows.map((row) => (
-            <tr key={row.ticker} className={row.short_interest?.suppressed ? 'swing-row-suppressed' : ''}>
-              {shown.map((column) => column.cell(row))}
-            </tr>
-          ))}</tbody>
-        </table></div>
+        <DataTable
+          rows={rows}
+          getKey={(row) => row.ticker}
+          columns={shown}
+          rowClassName={(row) => (row.short_interest?.suppressed ? 'swing-row-suppressed' : undefined)}
+          className="research-table card"
+          mobile={{
+            variant: preferences.mobileResearchView,
+            title: (row) => `#${row.rank} · ${row.ticker}`,
+            subtitle: (row) => row.sector || 'Unclassified',
+            fields: preferences.mobileResearchView === 'detailed' ? [
+              { label: 'Composite', value: (row) => z(row.composite_z) },
+              { label: 'Percentile', value: (row) => row.percentile == null ? '–' : row.percentile.toFixed(0) },
+              ...legs.map(([key, label]) => ({
+                label, value: (row) => row.legs?.[key]?.applied ? z(row.legs[key].z) : '–',
+              })),
+              ...(tier ? [{ label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) }] : []),
+              { label: 'Signal coverage', value: (row) => pct((row.coverage || 0) * 100) },
+              { label: 'Short interest', value: (row) => shortInterestLabel(row) },
+              { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
+            ] : [
+              { label: 'Composite', value: (row) => z(row.composite_z) },
+              { label: 'Percentile', value: (row) => row.percentile == null ? '–' : row.percentile.toFixed(0) },
+              ...(tier ? [{ label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) }] : []),
+              { label: 'Signal coverage', value: (row) => pct((row.coverage || 0) * 100) },
+              { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
+            ],
+          }}
+        />
       </>}
 
       <p className="disclaimer">
