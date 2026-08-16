@@ -17,7 +17,7 @@ const FLAG_LABELS = {
 const pct = (value) => value == null ? '–' : `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
 
 function FlagChip({ flag }) {
-  if (!flag) return <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>
+  if (!flag) return <span className="mono text-faint">–</span>
   return <span className={`chip ${flag.includes('ACCUMULATION') ? 'pos' : 'neg'}`}>
     {FLAG_LABELS[flag] || flag}
   </span>
