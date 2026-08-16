@@ -47,7 +47,7 @@ export function StopLossNote({ stopLoss }) {
   const close = stopLoss.distancePct != null && stopLoss.distancePct <= 5
   const past = stopLoss.distancePct != null && stopLoss.distancePct < 0
   return (
-    <span className="mono stop-loss-note" style={{ color: past ? 'var(--neg)' : close ? 'var(--warn)' : 'var(--text-faint)', fontSize: 12 }}>
+    <span className="mono stop-loss-note" style={{ color: past ? 'var(--neg)' : close ? 'var(--warn)' : 'var(--text-faint)' }}>
       Stop ${stopLoss.bindingPrice.toFixed(2)}
       {stopLoss.distancePct != null && (
         past ? ` · ${Math.abs(stopLoss.distancePct).toFixed(1)}% past it` : ` · ${stopLoss.distancePct.toFixed(1)}% away`

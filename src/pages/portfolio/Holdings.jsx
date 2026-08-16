@@ -8,9 +8,9 @@ import { BenchmarkTable, FixedBasisTable } from './ComparisonTables.jsx'
 
 function AddPositionForm({ formData, setFormData, onSubmit }) {
   return (
-    <div className="card" style={{ marginBottom: 20, padding: 20 }}>
-      <h3 style={{ marginBottom: 16 }}>Add New Position</h3>
-      <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: 12, alignItems: 'end' }}>
+    <div className="card add-position-card">
+      <h3>Add New Position</h3>
+      <form onSubmit={onSubmit} className="add-position-form">
         <div>
           <label className="field-label" htmlFor="position-ticker">Ticker</label>
           <input id="position-ticker" type="text" placeholder="AAPL" value={formData.ticker} required
@@ -108,7 +108,7 @@ export default function Holdings({
         </div>
       </header>
 
-      <div className="filters" style={{ marginBottom: 20 }}>
+      <div className="filters filters--gap">
         <button className={`tab ${viewMode === 'holdings' ? 'active' : ''}`} onClick={() => onViewModeChange('holdings')}>
           My Holdings
         </button>
@@ -118,7 +118,7 @@ export default function Holdings({
         <button className={`tab ${viewMode === 'hypothetical' ? 'active' : ''}`} onClick={() => onViewModeChange('hypothetical')}>
           ${basis} Calculator
         </button>
-        <button className="tab active" onClick={() => forms.setShowAddForm(!forms.showAddForm)} style={{ marginLeft: 'auto' }}>
+        <button className="tab active add-position-toggle" onClick={() => forms.setShowAddForm(!forms.showAddForm)}>
           + Add Position
         </button>
       </div>

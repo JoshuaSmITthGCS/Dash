@@ -1,6 +1,7 @@
 // View 01 — Summary. Account KPIs and value chart, the holdings section, the sell-signal
 // queue, concentration warnings, and the allocation split.
 
+import { Link } from 'react-router-dom'
 import GrowthChart from '../../components/GrowthChart'
 import Icon from '../../components/Icons'
 import AnimatedNumber from '../../components/AnimatedNumber.jsx'
@@ -94,6 +95,7 @@ function AllocationSection({ assetAllocation, sectorAllocation, totalValue }) {
         <article className="portfolio-allocation-card portfolio-sector-card">
           <header><div><span className="eyebrow">By exposure</span><h3>Sector allocation</h3></div><small>ETF look-through where available</small></header>
           {sectorAllocation.length ? <AllocationDonut sectors={sectorAllocation} totalLabel={money(totalValue)} /> : <div className="unavailable-panel"><strong>Sector data unavailable</strong><p>Priced holdings with sector coverage will appear here.</p></div>}
+          <Link to="/portfolio/diversification" className="sector-card-link">Full concentration &amp; correlation breakdown →</Link>
         </article>
       </div>
     </section>

@@ -2,7 +2,7 @@
 
 **Companion to `docs/REDESIGN-PLAN.md`. Read both.**
 Last updated 2026-08-16 · Phases 0–4 and 6 as merged in `8a1d073f`, plus the
-Portfolio decomposition (Phase 2d) on top.
+Portfolio decomposition (Phase 2d) and the SVG type-floor fix (`dc1dc3f6`) on top.
 
 This file exists so a new session can pick the redesign up without re-deriving what
 was already decided or repeating measurements. It records what is done, what is
@@ -129,7 +129,7 @@ recent common trading days. Screenshots in `design/directions/shots/`.
   accessible name stating the number *and its meaning in words*, live-region
   hover readout, and a table view carrying the same numbers.
 
-### Phase 6 — metadata + type floor (partial) ✅
+### Phase 6 — metadata + type floor ✅ (perf/motion/rescore still open, see §2)
 - Open Graph / Twitter / robots / color-scheme tags; manifest colours aligned to
   the new dark canvas.
 - **11px floor closed in the DOM, NOT in SVG.** A browser sweep found 1,748 elements
@@ -143,15 +143,8 @@ recent common trading days. Screenshots in `design/directions/shots/`.
   user units. A chart with `viewBox="0 0 1080 360"` and `width="100%"` scales its
   contents, so `fontSize="11"` inside it paints at 8.9px in a 900px container. Setting
   the attribute to 11 satisfied the old sweep without changing what a reader sees.
-  Measured, corrected sweep in §2 — `design/typefloor.mjs`.
 
----
-
-## 2. What is left
-
-Ordered by value. Everything below is also summarised in `TODO.md`.
-
-### SVG type floor — FIXED
+### SVG type floor ✅
 Was a `DESIGN.md` hard-rule breach on every route that draws a chart. `fontSize="11"`
 inside `viewBox="0 0 920 360"` rendered into a 743px box paints at 8.9px, and
 `getComputedStyle` still reports 11 because that is the specified size in *user units* —
@@ -170,7 +163,7 @@ does the measuring; `GrowthChart`, `ProjectionFanChart` and `MarketHeatmap` cons
 
 `node design/typefloor.mjs` reports **0 violations across 10 routes × 3 widths**
 (1440/1100/390), plus the stock-detail modal checked separately. It exits non-zero, so
-it can gate CI.
+it can gate CI — not yet wired into `.github/workflows/ci.yml`'s `site` job.
 
 Three things that fell out of it, worth not re-breaking:
 
@@ -195,8 +188,35 @@ the down-scaling.
 `design/typefloor.mjs` opens every `<details>` before measuring, so collapsed sections
 are audited in the state a reader actually sees.
 
-### Phase 5 — page-by-page pass · DASHBOARD DONE · rest not started
-Per the plan, in traffic order: ~~Dashboard~~ → Portfolio → Picks → SwingScreen +
+### Phase 5 — Portfolio (done)
+Second page in traffic order, after Dashboard. `ComparisonTables.jsx`'s two raw
+`<table>`s now run on `DataTable` (one shared column set, `rowClassName` — new
+`DataTable` prop, see below — for the bold TOTAL row), which incidentally fixed a
+mobile-overflow gap neither table had a scroll wrapper for. Fixed a real
+`DESIGN.md` breach: the edit-sheet's cost-basis-unit select was `fontSize: 9`,
+below the 11px floor, and duplicated (with the bug) a pattern `AddPositionForm`
+already had right — both now share `.field-mode-select`. 6 more static inline
+styles converted to classes. Sector allocation is drawn on Summary, Dashboard,
+and Diversification — Dashboard already links through to Diversification instead
+of duplicating; Summary's copy stays (it's the one place you see your own
+allocation while managing it) and now also links through, rather than being cut.
+
+`DataTable` gained a `rowClassName(row, index)` prop (`src/components/DataTable.jsx`)
+for pinned/summary rows — the remaining Phase 2c migrations (SwingScreen's
+suppressed rows, ResearchEvidence's pinned self-row) reuse it instead of each
+inventing a workaround. Verified: `npm run lint && npm test && npm run build`
+green, `design/typefloor.mjs` 0 violations across all default routes (including
+`/portfolio?portfolioPreview=1`, which now exercises the fixed select),
+`design/a11ycheck.mjs` 0 unnamed controls.
+
+---
+
+## 2. What is left
+
+Ordered by value. Everything below is also summarised in `TODO.md`.
+
+### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · rest not started
+Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → Picks → SwingScreen +
 screens family → Finances/Planning/Insights/Watchlist/Markets →
 Methodology/Glossary/Settings/Alerts → empty states.
 

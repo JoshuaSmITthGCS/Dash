@@ -18,6 +18,17 @@
 .sync-message { margin: calc(-1 * var(--sp-3)) 0 var(--sp-5); color: var(--text-dim); font-size: var(--fs-xs); }
 .filters { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin: var(--sp-4) 0; }.tab { min-height: 34px; padding: 0 var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--surface-secondary); color: var(--text-dim); font-size: var(--fs-xs); }.tab.active { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: var(--fw-bold); }
 .portfolio-mobile-list { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.add-position-card { margin-bottom: var(--sp-5); padding: var(--sp-5); }
+.add-position-card h3 { margin-bottom: var(--sp-4); }
+.add-position-form { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: var(--sp-3); align-items: end; }
+.add-position-toggle { margin-left: auto; }
+.filters--gap { margin-bottom: var(--sp-5); }
+.stop-loss-note { font-size: var(--fs-xs); }
+.comparison-total-row { font-weight: var(--fw-bold); }
+.comparison-empty-cell { padding: var(--sp-10) 0; text-align: center; opacity: .5; }
+.comparison-footnote { margin-top: var(--sp-3); color: var(--text-faint); font-size: var(--fs-xs); }
+.callout--tables-gap { margin: 0 0 var(--sp-4); }
+.sector-card-link { display: inline-block; margin-top: var(--sp-3); color: var(--brand-primary); font-size: var(--fs-xs); font-weight: var(--fw-bold); }
 .portfolio-sort-toolbar { display: none; align-items: end; justify-content: flex-end; gap: var(--sp-2-5); margin: 0 0 var(--sp-3); }
 .portfolio-sort-toolbar label > span { display: block; margin-bottom: var(--sp-1); color: var(--text-faint); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .1em; }
 .portfolio-sort-toolbar select { min-width: 190px; min-height: 44px; padding: 0 var(--sp-8) 0 var(--sp-3); border: 1px solid var(--border-lit); border-radius: var(--control-radius); background: var(--bg-elev); color: var(--text); }

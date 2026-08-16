@@ -515,9 +515,10 @@ done and 5 is not started. What is left, and why:
   forms hook). Rendered DOM verified byte-identical across all three views.
   `SwingScreen.jsx` (839) and `Picks.jsx` (816) still hold view + data + sort logic
   in one file.
-- **Four tables not yet on `DataTable`:** Picks, SwingScreen, Portfolio, and the
-  three evidence tables in `ResearchEvidence.jsx`. The system and nine
-  migrations are in; these four are mechanical but large.
+- **Three tables not yet on `DataTable`:** Picks, SwingScreen, and the three
+  evidence tables in `ResearchEvidence.jsx`. Portfolio's two comparison tables
+  migrated as part of the Phase 5 Portfolio pass below. The system and ten
+  migrations are in; these three are mechanical but large.
 - **Inline-style diet.** 167 `style={{}}` sites remain (down from ~340). The
   static ones should become classes; the computed ones (bar widths, chart
   geometry, `--widget-order`) stay.
@@ -548,11 +549,15 @@ Not shipped, with reasons:
   bars, projection fan revival, score-history line in the modal. All have the
   data; none are built.
 
-### Phase 5 — page-by-page pass
-Not started. Every page now inherits the new tokens and card system, but the
-per-page composition work (hierarchy, one headline number per widget, the shared
-screen-page skeleton, real empty states for `InstitutionalActivity`'s permanent
-`results: []`) has not been done.
+### Phase 5 — page-by-page pass — Dashboard and Portfolio done
+Every page now inherits the new tokens and card system; the per-page composition
+work (hierarchy, one headline number per widget, the shared screen-page skeleton,
+real empty states for `InstitutionalActivity`'s permanent `results: []`) is done
+for Dashboard and Portfolio, not started for the rest. Portfolio: comparison
+tables moved to `DataTable`, a real 11px-floor bug fixed (holding-card cost-basis
+select was `fontSize: 9`), 6 static inline styles converted to classes,
+sector-allocation card links through to Diversification. Next in traffic order:
+Picks.
 
 ### Smaller items
 - **`og:image` and `og:url` are root-relative** in `index.html` because the
