@@ -30,7 +30,8 @@ table { width: 100%; border-collapse: collapse; }
 thead { position: sticky; top: 0; z-index: 2; background: var(--bg-elev); }
 th { padding: var(--sp-3) var(--sp-3); border-bottom: 1px solid var(--border-lit); color: var(--text-faint); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-align: left; text-transform: uppercase; letter-spacing: .1em; }
 td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: var(--fs-xs); } tbody tr:hover { background: var(--bg-hover); }
-.num { text-align: right; font-variant-numeric: tabular-nums; }.score-cell { color: var(--accent); font-weight: var(--fw-bold); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.cusip-cell, .faint-cell { color: var(--text-faint); }.score-cell { color: var(--accent); font-weight: var(--fw-bold); }
 .rank { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }.table-company b, .table-company span, .table-company small { display: block; }.table-company b { font-size: var(--fs-lg); }.table-company span { color: var(--text-dim); }.table-company small { color: var(--text-faint); font-size: var(--fs-2xs); }
 .research-mobile-list { display: none; }
 .research-mobile-card { padding: var(--sp-5); }
@@ -230,14 +231,27 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 
 /* Sortable headers. The button carries the click target and the caret, the th carries
    aria-sort, so the accessible name stays the column name in every sort state. */
-.swing-sort {
+/* The one sortable header. .swing-sort is the original class name, kept so the
+   pages that have not yet migrated to DataTable keep their styling. */
+.data-table-sort, .swing-sort {
+  min-height: 32px;
   display: inline-flex; align-items: center; gap: var(--sp-1); padding: 0; cursor: pointer;
   border: 0; background: none; color: inherit; font: inherit; text-align: inherit;
 }
-.swing-sort:hover { color: var(--text); }
-.swing-sort.is-active { color: var(--accent); }
-.swing-sort-caret { color: var(--text-faint); font-size: var(--fs-2xs); }
-.swing-sort.is-active .swing-sort-caret { color: var(--accent); }
+.num .data-table-sort { justify-content: flex-end; width: 100%; }
+.data-table-sort:hover, .swing-sort:hover { color: var(--text-primary); }
+.data-table-sort.is-active, .swing-sort.is-active { color: var(--brand-primary); }
+.data-table-caret, .swing-sort-caret { color: var(--text-faint); font-size: var(--fs-2xs); }
+.data-table-sort.is-active .data-table-caret,
+.swing-sort.is-active .swing-sort-caret { color: var(--brand-primary); }
+
+/* Wide tables scroll inside their own container rather than pushing the page. */
+.data-table { max-width: 100%; overflow-x: auto; }
+.data-table > table { width: 100%; border-collapse: collapse; }
+.data-table caption {
+  padding-bottom: var(--sp-2); color: var(--text-tertiary); text-align: left;
+  font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: var(--tracking-eyebrow);
+}
 .portfolio-move-explanation { margin-bottom: var(--section-gap); }
 .portfolio-move-explanation header { margin-bottom: var(--sp-3); }
 .portfolio-move-explanation h2 { margin: var(--sp-1) 0 0; font: var(--fw-bold) var(--fs-2xl) var(--font-mono); }

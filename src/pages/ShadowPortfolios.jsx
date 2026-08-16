@@ -1,7 +1,7 @@
 import { ScreenNavigation } from './ResearchScreen'
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
-import ResultCards from '../components/ResultCards.jsx'
+import DataTable from '../components/DataTable.jsx'
 import AutoOverviewLine from '../components/AutoOverviewLine.jsx'
 
 const metric = (value, suffix = '', row, minimum = 1) => {
@@ -77,22 +77,41 @@ export default function ShadowPortfolios() {
         <article><span>Implementation cost</span><strong>{live[0]?.cost_bps ?? 20} bps</strong><small>spread plus slippage</small></article>
       </section>
       {alignedWindow.observations > 0 && <p className="disclaimer">Each card below reports a strategy over its own collection window, which differs by strategy. Use the aligned net return to compare them: it covers only the {alignedWindow.observations} session{alignedWindow.observations === 1 ? '' : 's'} every reporting strategy was in the market for.</p>}
-      <ResultCards rows={strategies} getKey={(row) => row.strategy}
-        title={(row) => row.strategy} subtitle={(row) => row.evidence_status || 'Insufficient observations'}
-        fields={[
-          { label: 'Aligned net return', value: (row) => aligned(row, 'net_return') },
-          { label: 'Net return (own window)', value: (row) => metric(row.net_return, '%', row) },
-          { label: 'CAGR', value: (row) => metric(row.cagr, '%', row, annualizedMinimum) },
-          { label: 'Sharpe', value: (row) => metric(row.sharpe, '', row, annualizedMinimum) },
-          { label: 'Sortino', value: (row) => metric(row.sortino, '', row, annualizedMinimum) },
-          { label: 'Max drawdown', value: (row) => metric(row.max_drawdown, '%', row) },
-          { label: 'Turnover', value: (row) => metric(row.turnover, '%', row) },
-          { label: 'Coverage change', value: (row) => row.composition_change != null ? `${Number(row.composition_change).toFixed(2)}% not traded` : '—' },
-          { label: 'Observations', value: (row) => `${row.observations || 0} returns · ${row.snapshots || 0} snapshots` },
-          { label: 'Window', value: windowLabel },
-        ]} />
-      <div className="research-table card shadow-performance-table"><table><thead><tr><th>Strategy</th><th className="num">Aligned net return</th><th className="num">Net return (own window)</th><th className="num">CAGR</th><th className="num">Sharpe</th><th className="num">Sortino</th><th className="num">Max drawdown</th><th className="num">Turnover</th><th className="num">Coverage change</th><th className="num">Observations</th><th>Evidence status</th></tr></thead>
-        <tbody>{strategies.map((row) => <tr key={row.strategy}><td><b>{row.strategy}</b><small className="shadow-window">{windowLabel(row)}</small></td><td className="num">{aligned(row, 'net_return')}</td><td className="num">{metric(row.net_return, '%', row)}</td><td className="num">{metric(row.cagr, '%', row, annualizedMinimum)}</td><td className="num">{metric(row.sharpe, '', row, annualizedMinimum)}</td><td className="num">{metric(row.sortino, '', row, annualizedMinimum)}</td><td className="num">{metric(row.max_drawdown, '%', row)}</td><td className="num">{metric(row.turnover, '%', row)}</td><td className="num">{row.composition_change != null ? `${Number(row.composition_change).toFixed(2)}% not traded` : '—'}</td><td className="num">{row.observations || 0}<small className="shadow-window">{row.snapshots || 0} snapshots</small></td><td><span className={`shadow-evidence-status ${row.observations ? 'live' : ''}`}>{row.evidence_status || 'Insufficient observations'}</span></td></tr>)}</tbody></table></div>
+      <DataTable
+        className="shadow-performance-table"
+        rows={strategies}
+        getKey={(row) => row.strategy}
+        defaultSort={{ key: 'aligned', dir: 'desc' }}
+        columns={[
+          { key: 'strategy', label: 'Strategy', sortValue: (row) => row.strategy,
+            cell: (row) => <><b>{row.strategy}</b><small className="shadow-window">{windowLabel(row)}</small></> },
+          { key: 'aligned', label: 'Aligned net return', numeric: true,
+            sortValue: (row) => row.aligned?.net_return ?? null, cell: (row) => aligned(row, 'net_return') },
+          { key: 'net_return', label: 'Net return (own window)', numeric: true,
+            cell: (row) => metric(row.net_return, '%', row) },
+          { key: 'cagr', label: 'CAGR', numeric: true,
+            cell: (row) => metric(row.cagr, '%', row, annualizedMinimum) },
+          { key: 'sharpe', label: 'Sharpe', numeric: true,
+            cell: (row) => metric(row.sharpe, '', row, annualizedMinimum) },
+          { key: 'sortino', label: 'Sortino', numeric: true,
+            cell: (row) => metric(row.sortino, '', row, annualizedMinimum) },
+          { key: 'max_drawdown', label: 'Max drawdown', numeric: true,
+            cell: (row) => metric(row.max_drawdown, '%', row) },
+          { key: 'turnover', label: 'Turnover', numeric: true,
+            cell: (row) => metric(row.turnover, '%', row) },
+          { key: 'composition_change', label: 'Coverage change', numeric: true,
+            cell: (row) => row.composition_change != null ? `${Number(row.composition_change).toFixed(2)}% not traded` : '\u2014' },
+          { key: 'observations', label: 'Observations', numeric: true,
+            cell: (row) => <>{row.observations || 0}<small className="shadow-window">{row.snapshots || 0} snapshots</small></> },
+          { key: 'evidence_status', label: 'Evidence status', sortable: false,
+            cell: (row) => <span className={`shadow-evidence-status ${row.observations ? 'live' : ''}`}>{row.evidence_status || 'Insufficient observations'}</span> },
+        ]}
+        mobile={{
+          titleColumn: 'strategy',
+          title: (row) => row.strategy,
+          subtitle: (row) => row.evidence_status || 'Insufficient observations',
+        }}
+      />
       </>}
     <p className="disclaimer">Signal comparisons use identical weighting and declared costs. A return is recorded only when the price tape advances to a new market session, so a refresh that re-reads the same closes adds no observation. Coverage change reports weight that entered because more of the universe became priced, which is disclosed rather than charged as turnover. Annualized statistics remain gated until {annualizedMinimum} matched returns exist; promotion remains gated until 36 monthly observations. Full-strategy comparisons are labeled separately.</p>
   </>

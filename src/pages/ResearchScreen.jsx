@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useData } from '../lib/useData'
 import { Empty, Loading } from '../components/Bits'
-import ResultCards from '../components/ResultCards.jsx'
+import DataTable from '../components/DataTable.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
@@ -83,25 +83,46 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
       </div></ResponsiveControlPanel>
       {data?.coverage_note ? <p className="disclaimer" role="note">{data.coverage_note}</p> : null}
       {!rows.length ? <Empty note={data?.status === 'unavailable' ? `Unavailable: ${data.reason_code}` : 'No results match these filters.'} /> : <>
-      <ResultCards rows={rows} getKey={(row) => row.ticker} variant={preferences.mobileResearchView}
-        title={(row) => `#${row.rank ?? '–'} · ${row.ticker}`}
-        subtitle={(row) => row.peer_group || row.sector || 'Unclassified'}
-        fields={preferences.mobileResearchView === 'detailed' ? [
-          { label: 'Classification', value: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
-          { label: 'Percentile', value: (row) => number(row.percentile) },
-          { label: 'Structural', value: (row) => number(row.structural_score) },
-          { label: 'Tactical', value: (row) => number(row.tactical_score) },
-          { label: 'Confidence', value: (row) => `${number((row.confidence || 0) * 100)}%` },
-          { label: 'Warnings', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
-        ] : [
-          { label: 'Classification', value: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
-          { label: 'Composite', value: (row) => number(row.percentile) },
-          { label: 'Confidence', value: (row) => `${number((row.confidence || 0) * 100)}%` },
-        ]} />
-      <div className="research-table card"><table>
-        <thead><tr><th>Rank</th><th>Ticker</th><th>Classification</th><th>Peer group</th><th className="num">Percentile</th><th className="num">Structural</th><th className="num">Tactical</th><th className="num">Confidence</th><th>Warnings</th></tr></thead>
-        <tbody>{rows.map((row) => <tr key={row.ticker}><td>#{row.rank ?? '–'}</td><td><b>{row.ticker}</b></td><td>{row.classification || (row.eligibility ? 'Eligible' : 'Ineligible')}</td><td>{row.peer_group || '–'}</td><td className="mono num">{number(row.percentile)}</td><td className="mono num">{number(row.structural_score)}</td><td className="mono num">{number(row.tactical_score)}</td><td className="mono num">{number((row.confidence || 0) * 100)}%</td><td>{(row.reason_codes || []).join(', ') || '–'}</td></tr>)}</tbody>
-      </table></div></>}
+      <DataTable
+        rows={rows}
+        getKey={(row) => row.ticker}
+        columns={[
+          { key: 'rank', label: 'Rank', cell: (row) => `#${row.rank ?? '\u2013'}` },
+          { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
+          { key: 'classification', label: 'Classification',
+            cell: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
+          { key: 'peer_group', label: 'Peer group', cell: (row) => row.peer_group || '\u2013' },
+          { key: 'percentile', label: 'Percentile', numeric: true,
+            cell: (row) => <span className="mono">{number(row.percentile)}</span> },
+          { key: 'structural_score', label: 'Structural', numeric: true,
+            cell: (row) => <span className="mono">{number(row.structural_score)}</span> },
+          { key: 'tactical_score', label: 'Tactical', numeric: true,
+            cell: (row) => <span className="mono">{number(row.tactical_score)}</span> },
+          { key: 'confidence', label: 'Confidence', numeric: true,
+            cell: (row) => <span className="mono">{number((row.confidence || 0) * 100)}%</span> },
+          { key: 'reason_codes', label: 'Warnings', sortable: false,
+            cell: (row) => (row.reason_codes || []).join(', ') || 'None' },
+        ]}
+        mobile={{
+          variant: preferences.mobileResearchView,
+          title: (row) => `#${row.rank ?? '\u2013'} \u00b7 ${row.ticker}`,
+          subtitle: (row) => row.peer_group || row.sector || 'Unclassified',
+          // Rank, ticker and peer group are already the card's title and subtitle,
+          // so neither mobile view repeats them as fields.
+          fields: preferences.mobileResearchView === 'detailed' ? [
+            { label: 'Classification', value: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
+            { label: 'Percentile', value: (row) => number(row.percentile) },
+            { label: 'Structural', value: (row) => number(row.structural_score) },
+            { label: 'Tactical', value: (row) => number(row.tactical_score) },
+            { label: 'Confidence', value: (row) => `${number((row.confidence || 0) * 100)}%` },
+            { label: 'Warnings', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
+          ] : [
+            { label: 'Classification', value: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
+            { label: 'Composite', value: (row) => number(row.percentile) },
+            { label: 'Confidence', value: (row) => `${number((row.confidence || 0) * 100)}%` },
+          ],
+        }}
+      /></>}
       <p className="disclaimer">Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}. Rankings are hypotheses for prospective validation, not claims of outperformance.</p>
     </>}
   </>
