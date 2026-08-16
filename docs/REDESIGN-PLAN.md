@@ -1,5 +1,11 @@
 # ValueSignal UI Redesign Plan
 
+> **⚠️ Execution status: see `docs/REDESIGN-STATUS.md` first.**
+> Phases 0, 1 and 3 are complete and merged; 2 and 4 are partial; 5 is not started.
+> That file also records four corrections to this plan — including a stale
+> dead-component list in Appendix A that will break the build if followed.
+
+
 **Status:** ready to execute · **Authored:** 2026-08-15 by Claude Fable 5 (audit + planning pass)
 **Executor:** Claude Opus sessions in this repo, one phase per session (phases 1–3 may share a session)
 **Scope:** frontend only (`src/`, `index.html`). No pipeline, schema, or `public/data/*` changes.

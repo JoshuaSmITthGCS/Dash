@@ -502,6 +502,9 @@ mistakes them for oversights.
 
 ## Redesign follow-ups (from the `docs/REDESIGN-PLAN.md` execution, 2026-08-15)
 
+> Full handoff — what is done, what is left, and four corrections to the plan
+> itself — is in `docs/REDESIGN-STATUS.md`. Read that before continuing the work.
+
 Phases 0, 1, 3 and the metadata pass are complete. Phases 2 and 4 are partly
 done and 5 is not started. What is left, and why:
 
