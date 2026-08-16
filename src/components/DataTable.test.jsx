@@ -73,6 +73,13 @@ describe('DataTable', () => {
     expect(onSort).toHaveBeenCalledWith({ key: 'score', dir: 'desc' })
   })
 
+  it('applies rowClassName to the matching <tr>, leaving others unset', () => {
+    render(<DataTable columns={COLUMNS} rows={ROWS} getKey={(row) => row.ticker}
+      rowClassName={(row) => (row.ticker === 'BBB' ? 'is-total' : undefined)} />)
+    const rows = screen.getAllByRole('row').slice(1) // drop the header row
+    expect(rows.map((row) => row.className)).toEqual(['', 'is-total', ''])
+  })
+
   it('renders the empty state instead of an empty table', () => {
     render(<DataTable columns={COLUMNS} rows={[]} empty={<p>No rows clear this screen.</p>} />)
     expect(screen.queryByRole('table')).toBeNull()

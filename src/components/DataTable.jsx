@@ -29,6 +29,10 @@ import MobileVirtualList from './MobileVirtualList.jsx'
  *
  * Mobile config maps the same rows onto ResultCards; when it is omitted the
  * table simply scrolls horizontally, which is the right answer for a matrix.
+ *
+ * rowClassName  optional (row, index) => className, applied to the desktop <tr>.
+ *               Use it for a pinned or summary row (a TOTAL row, a suppressed
+ *               row) that needs different styling than the rest of the body.
  */
 export default function DataTable({
   columns,
@@ -43,6 +47,7 @@ export default function DataTable({
   mobile = null,
   mobileBreakpoint = '(max-width: 900px)',
   virtualizeFrom = 50,
+  rowClassName,
 }) {
   const [uncontrolledSort, setUncontrolledSort] = useState(defaultSort)
   const isControlled = controlledSort !== undefined
@@ -144,7 +149,7 @@ export default function DataTable({
         </thead>
         <tbody>
           {ordered.map((row, index) => (
-            <tr key={getKey(row, index)}>
+            <tr key={getKey(row, index)} className={rowClassName?.(row, index) || undefined}>
               {columns.map((column) => (
                 <td key={column.key || column.label} className={column.numeric ? 'num' : undefined}>
                   {column.cell ? column.cell(row, index) : row[column.key]}
