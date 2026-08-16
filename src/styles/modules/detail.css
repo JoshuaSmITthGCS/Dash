@@ -63,6 +63,11 @@
 .stock-detail-expanded { display: grid; gap: var(--sp-4); margin-top: var(--sp-4); }
 .stock-shadow-detail { display: grid; gap: var(--sp-4); }
 .stock-peer-context { padding: var(--sp-3); border: 1px solid var(--border-subtle); border-radius: var(--control-radius); color: var(--text-secondary); font-size: var(--fs-2xs); }
+.evidence-footnote { color: var(--text-faint); font-size: var(--fs-xs); margin-top: var(--sp-1-5); }
+.stock-tab-panel { display: grid; gap: var(--sp-5); }
+.evidence-collapsed-note { color: var(--text-faint); font-size: var(--fs-xs); }
+.metric-coverage-note { display: block; opacity: .65; }
+.callout--modal-gap { margin-top: var(--sp-6); }
 
 .projection-grid-line, .projection-y-label { display: none; }
 .projection-median-line { stroke-width: 2; stroke-dasharray: 5 6; }
