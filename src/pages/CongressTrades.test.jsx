@@ -48,6 +48,26 @@ describe('CongressTrades page', () => {
     expect(screen.getByText((_, el) => el.className === 'chip' && el.textContent === 'Options trade')).toBeVisible()
   })
 
+  it('plots disclosed volume by month, summing the reported amount-range midpoint', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [
+          trade({ transaction_date: '2026-06-01', amount_lower: 15000, amount_upper: 50000 }), // midpoint 32500
+          trade({ symbol: 'MSFT', transaction_date: '2026-06-15', amount_lower: 1000, amount_upper: 15000 }), // midpoint 8000
+          trade({ symbol: 'GOOG', transaction_date: '2026-07-01', amount_lower: 50000, amount_upper: 100000 }), // midpoint 75000
+        ],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+
+    expect(screen.getByRole('img', { name: /Disclosed volume by period, 2 periods/ })).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Table' })[0])
+    expect(screen.getByText('$40,500')).toBeInTheDocument() // 32500 + 8000, June
+    expect(screen.getByText('$75,000')).toBeInTheDocument() // July
+  })
+
   it('filters by chamber', () => {
     useData.mockReturnValue({
       data: {

@@ -6,6 +6,7 @@ import { useScreenRefresh } from '../lib/useScreenRefresh'
 import { ScreenNavigation } from './ResearchScreen'
 import DataTable from '../components/DataTable.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
+import BarTimeline from '../components/BarTimeline.jsx'
 
 const FLAG_LABELS = {
   LATE_FILING: 'Late filing',
@@ -42,6 +43,26 @@ export function emptyNote(data) {
   return 'No disclosures collected yet – this screen updates weekly.'
 }
 
+// One point per calendar month of the disclosed trade's transaction date (when the
+// trade happened, not when it was disclosed), summing each row's amount-range midpoint
+// — the disclosure forms report a band, not an exact dollar figure, so the midpoint is
+// the least-wrong single number to add across rows.
+function monthlyVolume(rows) {
+  const byMonth = new Map()
+  rows.forEach((row) => {
+    const month = (row.transaction_date || '').slice(0, 7)
+    if (!month) return
+    const lower = row.amount_lower
+    const upper = row.amount_upper
+    if (lower == null && upper == null) return
+    const midpoint = lower != null && upper != null ? (lower + upper) / 2 : (lower ?? upper)
+    byMonth.set(month, (byMonth.get(month) || 0) + midpoint)
+  })
+  return [...byMonth.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([month, value]) => ({ id: month, label: month, value }))
+}
+
 function FlagChips({ flags }) {
   if (!flags?.length) return <span className="mono text-faint">–</span>
   return <div className="congress-flag-row">
@@ -71,6 +92,7 @@ export default function CongressTrades() {
   }, [rows, filters])
 
   const update = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }))
+  const volumeByMonth = useMemo(() => monthlyVolume(rows), [rows])
 
   return <>
     <ScreenNavigation />
@@ -147,6 +169,13 @@ export default function CongressTrades() {
           </div>
         </div>
       )}
+
+      <BarTimeline
+        points={volumeByMonth}
+        yLabel="Disclosed volume"
+        yFormatter={compactMoney}
+        caption="Disclosed trade volume by month, midpoint of each disclosure's reported amount range"
+      />
 
       <ResponsiveControlPanel label="Filter and sort" title="Filter disclosures"><div className="screen-filters" aria-label="Disclosure filters">
         <label>Chamber
