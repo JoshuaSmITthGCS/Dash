@@ -127,7 +127,7 @@ export default function GrowthChart({
     : availableLines[0]?.values.map((_, index) => String(index)) || []
   if (!availableLines.length || fullDates.length < 2) {
     return (
-      <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+      <div className="card card-pad chart-empty-state">
         No comparable price history yet – it appears after the next data refresh.
       </div>
     )
@@ -193,7 +193,7 @@ export default function GrowthChart({
   const endMarkerY = (value) => pad.top + innerHeight - ((value - bounds.min) / (bounds.max - bounds.min || 1)) * innerHeight
 
   return (
-    <figure className={className} style={{ margin: 0 }}>
+    <figure className={`chart-figure ${className}`.trim()}>
       {(title || (zoomable && availableRanges.length > 1)) && <div className="chart-heading">
         {title && <figcaption>{title}
           {description && <InfoTag label={title}><strong>{title}</strong><p>{description}</p></InfoTag>}
@@ -217,7 +217,7 @@ export default function GrowthChart({
         <span>{chartDateLabel(usableDates[displayedIndex])}</span>
         <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '–' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
       </div>
-      <div className="chart-scroll-region" ref={plotRef} style={{ overflowX: 'auto' }}>
+      <div className="chart-scroll-region" ref={plotRef}>
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
           width="100%"
@@ -240,7 +240,8 @@ export default function GrowthChart({
             else if (event.key === 'End') setActiveIndex(usableDates.length - 1)
             else setActiveIndex((value) => Math.max(0, Math.min(usableDates.length - 1, (value ?? usableDates.length - 1) + (event.key === 'ArrowRight' ? 1 : -1))))
           }}
-          style={{ display: 'block', minWidth: 320, touchAction: 'pan-y' }}
+          className="chart-plot-svg"
+          style={{ minWidth: MIN_CHART_WIDTH }}
         >
           {!minimal && ticks.map((tick, index) => {
             const y = pad.top + (index / (ticks.length - 1)) * innerHeight
@@ -324,34 +325,34 @@ export default function GrowthChart({
         </svg>
       </div>
 
-      <div className="chart-legend" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10 }}>
+      <div className="chart-legend">
         {lines.map((line) => {
           const values = line.values.filter((value) => value != null)
           const latest = values[values.length - 1]
           return (
-            <div key={line.label} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12 }}>
-              <span style={{
-                width: 16, height: 0, borderTop: `3px ${line.dashPattern ? 'dashed' : 'solid'} ${line.color}`,
+            <div key={line.label} className="chart-legend-item">
+              <span className="chart-legend-swatch" style={{
+                borderTop: `3px ${line.dashPattern ? 'dashed' : 'solid'} ${line.color}`,
                 opacity: line.dashPattern || line.dashed ? 0.85 : 1,
               }} />
-              <span style={{ color: 'var(--text-dim)' }}>{line.label}</span>
-              <span className="mono" style={{ fontWeight: 600 }}>{valueFormatter(latest)}</span>
+              <span className="chart-legend-label">{line.label}</span>
+              <span className="mono chart-legend-value">{valueFormatter(latest)}</span>
             </div>
           )
         })}
         {visibleEndMarkers.map((marker) => <div key={marker.label} className="chart-marker-legend">
           <span className="chart-marker-key" style={{ color: marker.color || 'var(--warning)' }} />
-          <span style={{ color: 'var(--text-dim)' }}>{marker.label}</span>
-          <span className="mono" style={{ fontWeight: 600 }}>{valueFormatter(marker.value)}</span>
+          <span className="chart-legend-label">{marker.label}</span>
+          <span className="mono chart-legend-value">{valueFormatter(marker.value)}</span>
         </div>)}
       </div>
       {earningsMarker?.value != null && (
-        <p style={{ marginTop: 4, fontSize: 12, color: earningsMarker.value >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
+        <p className="chart-earnings-note" style={{ color: earningsMarker.value >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
           ○ {earningsMarker.label}
         </p>
       )}
       {caption && (
-        <p className="chart-figure-caption" style={{ marginTop: 8, fontSize: 12, color: 'var(--text-faint)' }}>{caption}</p>
+        <p className="chart-figure-caption">{caption}</p>
       )}
     </figure>
   )
