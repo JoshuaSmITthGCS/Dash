@@ -22,7 +22,7 @@ function AddPositionForm({ formData, setFormData, onSubmit }) {
             onChange={(e) => setFormData({ ...formData, shares: e.target.value })} />
         </div>
         <div>
-          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6, marginBottom: 4, fontSize: 13 }}>
+          <label className="field-row-label">
             <span>Cost basis</span>
             <select className="field-mode-select" value={formData.costMode}
               aria-label="Cost basis units"

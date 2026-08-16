@@ -45,10 +45,10 @@ export default function HoldingCard({ pos, essentialOnly, forms, onSelectStock }
                 onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
             </label>
             <label>
-              <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span className="field-mode-row">
                 Cost basis
                 <select value={editForm.costMode} onChange={(e) => setEditForm({ ...editForm, costMode: e.target.value })}
-                  style={{ minHeight: 'auto', height: 18, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 9, textTransform: 'none', letterSpacing: 0 }}>
+                  className="field-mode-select">
                   <option value="share">$/share</option>
                   <option value="total">Total $</option>
                 </select>
