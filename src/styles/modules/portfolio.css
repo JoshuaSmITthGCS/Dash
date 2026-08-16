@@ -162,6 +162,8 @@
 }
 .empty-state { min-height: 260px; display: grid; place-content: center; justify-items: center; text-align: center; color: var(--text-dim); }.empty-state h2 { margin-top: var(--sp-3); }.empty-state p { margin-top: var(--sp-1); color: var(--text-faint); }
 .news-card { display: grid; gap: var(--sp-2-5); }.news-card p, .body-copy { color: var(--text-dim); }.news-context { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }.news-discovery-note { margin: calc(-1 * var(--sp-1)) 0 var(--sp-3); font-size: var(--fs-2xs); }.sec-label { display: flex; align-items: center; gap: var(--sp-2-5); margin: var(--sp-5) 0 var(--sp-3); color: var(--text-faint); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .12em; }.sec-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.sec-label--section { margin-top: var(--sp-6); }
+.methodology-section-gap { margin-top: var(--sp-4); }
 .body-copy--gap { margin-bottom: var(--sp-3); }
 .callout { margin: 0 0 var(--sp-5); padding: var(--sp-4) var(--sp-4); border-left: 3px solid var(--accent); border-radius: 0 14px 14px 0; background: var(--bg-elev); color: var(--text-dim); }.callout strong { color: var(--text); }
 .callout--gap { margin-top: var(--sp-5); }

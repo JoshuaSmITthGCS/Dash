@@ -104,7 +104,7 @@ export default function Methodology() {
       </section>
     </div>
 
-    <div className="grid grid-2" style={{ marginTop: 18 }}>
+    <div className="grid grid-2 methodology-section-gap">
       <section className="card card-pad">
         <div className="sec-label">Theme exposure is a separate screen</div>
         <p className="body-copy">
@@ -139,7 +139,7 @@ export default function Methodology() {
       </section>
     </div>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Fundamental framework</div>
+    <div className="sec-label sec-label--section">Fundamental framework</div>
     <div className="grid grid-2">
       {Object.entries(CATEGORIES).map(([key, [title, body]]) => (
         <section className="card card-pad" key={key}>
@@ -149,9 +149,9 @@ export default function Methodology() {
       ))}
     </div>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Modifiers</div>
+    <div className="sec-label sec-label--section">Modifiers</div>
     <section className="card card-pad">
-      <p className="body-copy" style={{ marginBottom: 12 }}>
+      <p className="body-copy body-copy--gap">
         Applied after the published blend and reported on every company. They refine a ranking,
         they are capped so they can never outweigh the fundamental evidence behind it.
       </p>
@@ -160,7 +160,7 @@ export default function Methodology() {
       </ul>
     </section>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Published model version</div>
+    <div className="sec-label sec-label--section">Published model version</div>
     <section className="card card-pad model-version-card">
       <dl>
         <div><dt>Semantic version</dt><dd>{version?.semantic_version || data?.model_version || 'Pending refresh'}</dd></div>
@@ -170,9 +170,9 @@ export default function Methodology() {
       </dl>
     </section>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Active guidance and shadow policy</div>
+    <div className="sec-label sec-label--section">Active guidance and shadow policy</div>
     <section className="card card-pad">
-      <p className="body-copy" style={{ marginBottom: 12 }}>
+      <p className="body-copy body-copy--gap">
         The active legacy policy requires agreement across business fundamentals, market behaviour,
         and positioning or sentiment before it trims or sells. Its fixed factor-count sizing remains
         visible while the replacement policy is evaluated.
@@ -186,7 +186,7 @@ export default function Methodology() {
       </p>
     </section>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Benchmark comparison</div>
+    <div className="sec-label sec-label--section">Benchmark comparison</div>
     <section className="card card-pad">
       <p className="body-copy">
         Every hypothetical return is measured against the same dollars invested in the S&P 500 over
@@ -196,7 +196,7 @@ export default function Methodology() {
       </p>
     </section>
 
-    <div className="sec-label" style={{ marginTop: 28 }}>Provider and parser coverage</div>
+    <div className="sec-label sec-label--section">Provider and parser coverage</div>
     <section className="capability-grid" aria-label="Metric availability">
       {Object.entries(capabilities).map(([key, capability]) => (
         <article className="capability-card" key={key}>
