@@ -33,9 +33,6 @@ body { background: var(--app-background); }
 .overview-heading h1 { font: var(--fw-bold) var(--fs-2xl)/1.1 var(--font-display); letter-spacing: -.03em; }
 .overview-heading p { max-width: 620px; margin-top: var(--sp-1); color: var(--text-secondary); font-size: var(--fs-sm); }
 .overview-heading .eyebrow { margin-bottom: var(--sp-1); }
-.dashboard-widget-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--section-gap); align-items: start; }
-.dashboard-widget { min-width: 0; grid-column: span 6; }
-.dashboard-widget.widget-small { grid-column: span 3; }.dashboard-widget.widget-medium { grid-column: span 6; }.dashboard-widget.widget-large { grid-column: span 8; }.dashboard-widget.widget-full { grid-column: 1 / -1; }
 .dashboard-widget.editing { padding: var(--sp-1); border: 1px dashed var(--brand-primary); border-radius: calc(var(--card-radius) + 5px); background: color-mix(in srgb, var(--brand-soft) 38%, transparent); }
 .widget-edit-banner { min-height: 38px; display: flex; align-items: center; gap: var(--sp-1-5); padding: 0 var(--sp-1-5); color: var(--brand-primary); font-size: var(--fs-xs); }
 .widget-edit-banner span { flex: 1; font-weight: var(--fw-bold); }.widget-edit-banner small { font: var(--fs-2xs) var(--font-mono); text-transform: uppercase; }
@@ -99,7 +96,7 @@ body { background: var(--app-background); }
 .switch { position: relative; width: 40px; height: 22px; flex: none; }.switch input { position: absolute; opacity: 0; }.switch > span { position: absolute; inset: 0; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface-tertiary); transition: background var(--duration-fast), border-color var(--duration-fast); }.switch > span::after { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; border-radius: 50%; background: var(--text-tertiary); transition: transform var(--duration-fast), background var(--duration-fast); }.switch input:checked + span { border-color: var(--brand-primary); background: var(--brand-soft); }.switch input:checked + span::after { transform: translateX(18px); background: var(--brand-primary); }.switch input:focus-visible + span { outline: 2px solid var(--brand-primary); outline-offset: 2px; }.switch input:disabled + span { opacity: .5; }.compact-switch { transform: scale(.9); }
 
 @media (max-width: 1180px) {
-  .overview-layout.customize-active { grid-template-columns: 1fr; }.customizer-panel { position: static; grid-row: 1; }.customizer-list { max-height: none; }.dashboard-widget.widget-large { grid-column: span 12; }
+  .overview-layout.customize-active { grid-template-columns: 1fr; }.customizer-panel { position: static; grid-row: 1; }.customizer-list { max-height: none; }
   .watchlist-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -110,7 +107,6 @@ body { background: var(--app-background); }
   .mobile-nav-item { min-width: 0; flex: 1; min-height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-0-5); border: 0; border-radius: var(--control-radius); color: var(--text-tertiary); font-size: var(--fs-2xs); font-weight: var(--fw-semibold); }.mobile-nav-item.active { background: var(--brand-soft); color: var(--brand-primary); }.mobile-nav-icon { height: 20px; display: grid; place-items: center; }
   .data-status { margin-bottom: var(--sp-4); }.source-health { display: none; }
   .overview-heading { align-items: flex-start; flex-direction: column; gap: var(--sp-3); }.overview-heading .secondary-button { width: 100%; }
-  .dashboard-widget-grid { grid-template-columns: 1fr; }.dashboard-widget, .dashboard-widget.widget-small, .dashboard-widget.widget-medium, .dashboard-widget.widget-large, .dashboard-widget.widget-full { grid-column: 1; }
   .summary-footer { grid-template-columns: repeat(2, 1fr); }.summary-footer > div:nth-child(2) { border-right: 0; }.summary-footer > div:nth-child(-n+2) { border-bottom: 1px solid var(--border-subtle); }
   .overview-metric-grid { grid-template-columns: repeat(2, 1fr); }.overview-metric-grid .overview-metric:nth-child(2) { border-right: 0; }.overview-metric-grid .overview-metric:nth-child(-n+2) { border-bottom: 1px solid var(--border-subtle); }
   .portfolio-summary { grid-template-columns: 1fr 1fr; }.portfolio-value-card { grid-column: 1 / -1; }.page-actions { width: 100%; overflow-x: auto; padding-bottom: var(--sp-1); }.page-head { align-items: flex-start; flex-direction: column; }

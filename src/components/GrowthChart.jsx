@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useMediaQuery } from '../lib/useMediaQuery.js'
 import InfoTag from './InfoTag.jsx'
 
 /**
@@ -12,23 +13,6 @@ import InfoTag from './InfoTag.jsx'
 const DEFAULT_PAD = { top: 16, right: 14, bottom: 26, left: 52 }
 const MINIMAL_PAD = { top: 18, right: 8, bottom: 30, left: 8 }
 
-function useMediaQuery(query) {
-  const getMatches = () => typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia(query).matches
-  const [matches, setMatches] = useState(getMatches)
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
-    const media = window.matchMedia(query)
-    const update = () => setMatches(media.matches)
-    update()
-    media.addEventListener?.('change', update)
-    return () => media.removeEventListener?.('change', update)
-  }, [query])
-
-  return matches
-}
 
 function scalePoints(series, dates, width, height, bounds, pad = DEFAULT_PAD) {
   const { min, max } = bounds

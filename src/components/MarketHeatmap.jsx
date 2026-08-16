@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react'
+import { useId } from 'react'
+import { useMediaQuery } from '../lib/useMediaQuery.js'
 import { dailyMoveForPosition } from '../lib/marketPresentation.js'
 
 /**
@@ -9,23 +10,6 @@ import { dailyMoveForPosition } from '../lib/marketPresentation.js'
 
 const finite = (value) => value !== null && value !== '' && Number.isFinite(Number(value))
 
-function useMediaQuery(query) {
-  const getMatches = () => typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia(query).matches
-  const [matches, setMatches] = useState(getMatches)
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
-    const media = window.matchMedia(query)
-    const update = () => setMatches(media.matches)
-    update()
-    media.addEventListener?.('change', update)
-    return () => media.removeEventListener?.('change', update)
-  }, [query])
-
-  return matches
-}
 
 function squarify(items, x, y, width, height) {
   const total = items.reduce((sum, item) => sum + item.weight, 0)
