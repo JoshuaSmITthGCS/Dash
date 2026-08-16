@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
 import ETFComparisonPanel from './ETFComparisonPanel'
@@ -10,6 +10,7 @@ import AnalysisLayers from './AnalysisLayers'
 import RecommendationShadowPanel from './RecommendationShadowPanel'
 import DipWatchBadge from './DipWatchBadge'
 import useBodyScrollLock from '../lib/useBodyScrollLock'
+import { useDialog } from '../lib/useDialog.js'
 import ResearchRadarChart from './ResearchRadarChart'
 import Icon from './Icons'
 import SetupQualityBreakdown from './SetupQualityBreakdown'
@@ -120,12 +121,9 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
   const { data: fullResearch } = useData(suppliedStock && !suppliedStock.explainability ? 'advisor.json' : null)
 
   useBodyScrollLock(!!suppliedStock)
-
-  useEffect(() => {
-    const handleEscape = (e) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [onClose])
+  // Escape, focus trap, initial focus and focus restore — see src/lib/useDialog.js.
+  const dialogRef = useDialog(!!suppliedStock, onClose)
+  const titleId = useId()
 
   if (!suppliedStock) return null
   // Browse/portfolio routes open immediately from report.json. Once the deep snapshot arrives,
@@ -189,10 +187,23 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
   const chartDates = scopedSeries ? scopedSeries.dates : (stock.history?.dates || benchmarkHistory?.dates)
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal stock-modal" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="modal-overlay"
+      role="presentation"
+      // pointerdown on the layer itself, so a drag that starts inside the dialog
+      // and releases on the backdrop does not close it mid-selection.
+      onPointerDown={(event) => { if (event.target === event.currentTarget) onClose() }}
+    >
+      <div
+        ref={dialogRef}
+        className="modal stock-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex="-1"
+      >
         <header className="stock-detail-head">
-          <div><span className="eyebrow">Company research</span><h2>{stock.ticker}</h2><p>{stock.name} · {stock.industry || stock.sector || 'Unclassified'}</p>{dataAsOf && <small>As of {String(dataAsOf).slice(0, 10)}</small>}</div>
+          <div><span className="eyebrow">Company research</span><h2 id={titleId}>{stock.ticker}</h2><p>{stock.name} · {stock.industry || stock.sector || 'Unclassified'}</p>{dataAsOf && <small>As of {String(dataAsOf).slice(0, 10)}</small>}</div>
           <WatchlistToggleButton stock={stock} />
           <button className="icon-button" onClick={onClose} aria-label="Close stock research"><Icon name="close" /></button>
         </header>

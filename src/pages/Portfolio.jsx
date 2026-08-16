@@ -819,31 +819,34 @@ export default function Portfolio({ view = 'summary' }) {
           <h3 style={{ marginBottom: 16 }}>Add New Position</h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: 12, alignItems: 'end' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Ticker</label>
-              <input type="text" placeholder="AAPL" value={formData.ticker} required
+              <label className="field-label" htmlFor="position-ticker">Ticker</label>
+              <input id="position-ticker" type="text" placeholder="AAPL" value={formData.ticker} required
                 onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Shares</label>
-              <input type="number" step="0.001" placeholder="10" value={formData.shares} required
+              <label className="field-label" htmlFor="position-shares">Shares</label>
+              <input id="position-shares" type="number" step="0.001" placeholder="10" value={formData.shares} required
                 onChange={(e) => setFormData({ ...formData, shares: e.target.value })} />
             </div>
             <div>
               <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6, marginBottom: 4, fontSize: 13 }}>
                 <span>Cost basis</span>
-                <select value={formData.costMode} onChange={(e) => setFormData({ ...formData, costMode: e.target.value })}
-                  style={{ minHeight: 'auto', height: 20, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 10 }}>
+                <select className="field-mode-select" value={formData.costMode}
+                  aria-label="Cost basis units"
+                  onChange={(e) => setFormData({ ...formData, costMode: e.target.value })}>
                   <option value="share">$/share</option>
                   <option value="total">Total $</option>
                 </select>
               </label>
-              <input type="number" step="0.01" placeholder={formData.costMode === 'total' ? '200.00' : '150.00'}
+              <input type="number" step="0.01" id="position-cost"
+                aria-label={formData.costMode === 'total' ? 'Total cost basis in dollars' : 'Cost basis per share in dollars'}
+                placeholder={formData.costMode === 'total' ? '200.00' : '150.00'}
                 value={formData.costBasis} required
                 onChange={(e) => setFormData({ ...formData, costBasis: e.target.value })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Purchase Date</label>
-              <input type="date" value={formData.purchaseDate} required
+              <label className="field-label" htmlFor="position-date">Purchase Date</label>
+              <input id="position-date" type="date" value={formData.purchaseDate} required
                 onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })} />
             </div>
             <div><button type="submit" className="tab active">Add</button></div>

@@ -205,6 +205,17 @@ body { overscroll-behavior-y: contain; }
 /* The score tile is inset but rail-sized, so it takes the control radius. */
 .report-score-card { border-radius: var(--control-radius); }
 
+/* Form field label. Was an inline style repeated 17 times across two forms,
+   none of which were associated with their control. */
+.field-label {
+  display: block; margin-bottom: var(--sp-1);
+  color: var(--text-secondary); font-size: var(--fs-sm); font-weight: var(--fw-medium);
+}
+.field-mode-select {
+  min-height: auto; height: 20px; padding: 0 var(--sp-0-5);
+  border: 0; background: transparent; color: var(--text-tertiary); font-size: var(--fs-2xs);
+}
+
 .card-pad { padding: var(--card-padding); }
 .grid { display: grid; gap: var(--section-gap); }.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); margin: var(--sp-6) 0 var(--sp-3); }
