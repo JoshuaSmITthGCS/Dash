@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useMediaQuery } from '../lib/useMediaQuery.js'
 import InfoTag from './InfoTag.jsx'
 
 /**
@@ -12,23 +13,6 @@ import InfoTag from './InfoTag.jsx'
 const DEFAULT_PAD = { top: 16, right: 14, bottom: 26, left: 52 }
 const MINIMAL_PAD = { top: 18, right: 8, bottom: 30, left: 8 }
 
-function useMediaQuery(query) {
-  const getMatches = () => typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia(query).matches
-  const [matches, setMatches] = useState(getMatches)
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined
-    const media = window.matchMedia(query)
-    const update = () => setMatches(media.matches)
-    update()
-    media.addEventListener?.('change', update)
-    return () => media.removeEventListener?.('change', update)
-  }, [query])
-
-  return matches
-}
 
 function scalePoints(series, dates, width, height, bounds, pad = DEFAULT_PAD) {
   const { min, max } = bounds
@@ -245,7 +229,7 @@ export default function GrowthChart({
                 <line className="chart-grid-line" x1={pad.left} x2={chartWidth - pad.right} y1={y} y2={y}
                   stroke="var(--border)" strokeWidth="1" />
                 <text className="chart-axis-label" x={pad.left - 8} y={y + 4} textAnchor="end"
-                  fill="var(--text-faint)" fontSize="10" fontFamily="var(--font-mono)">
+                  fill="var(--text-faint)" fontSize="11" fontFamily="var(--font-mono)">
                   {valueFormatter(tick)}
                 </text>
               </g>
@@ -306,7 +290,7 @@ export default function GrowthChart({
             return (
               <text key={index} x={x} y={chartHeight - 8}
                 textAnchor={index === 0 ? 'start' : index === usableDates.length - 1 ? 'end' : 'middle'}
-                fill="var(--text-faint)" fontSize="10" fontFamily="var(--font-mono)">
+                fill="var(--text-faint)" fontSize="11" fontFamily="var(--font-mono)">
                 {chartDateLabel(usableDates[index])}
               </text>
             )
@@ -314,8 +298,8 @@ export default function GrowthChart({
           {activeIndex != null && <g className="chart-tooltip">
             <line x1={activeX} x2={activeX} y1={pad.top} y2={chartHeight - pad.bottom} stroke="var(--text-faint)" strokeDasharray="3 3" />
             <rect x={Math.max(pad.left, Math.min(chartWidth - 174, activeX - 76))} y={8} width="160" height={22 + lines.length * 17} rx="8" fill="var(--surface-primary)" stroke="var(--border-strong)" />
-            <text x={Math.max(pad.left + 8, Math.min(chartWidth - 166, activeX - 68))} y="24" fill="var(--text-primary)" fontSize="10" fontFamily="var(--font-mono)">{String(usableDates[activeIndex]).slice(0, 10)}</text>
-            {lines.map((line, index) => <text key={line.label} x={Math.max(pad.left + 8, Math.min(chartWidth - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="10" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '–' : valueFormatter(line.values[activeIndex])}</text>)}
+            <text x={Math.max(pad.left + 8, Math.min(chartWidth - 166, activeX - 68))} y="24" fill="var(--text-primary)" fontSize="11" fontFamily="var(--font-mono)">{String(usableDates[activeIndex]).slice(0, 10)}</text>
+            {lines.map((line, index) => <text key={line.label} x={Math.max(pad.left + 8, Math.min(chartWidth - 166, activeX - 68))} y={41 + index * 17} fill={line.color} fontSize="11" fontFamily="var(--font-mono)">{line.label}: {line.values[activeIndex] == null ? '–' : valueFormatter(line.values[activeIndex])}</text>)}
           </g>}
         </svg>
       </div>

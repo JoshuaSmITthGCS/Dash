@@ -4,7 +4,7 @@ import { Empty, Loading, Move, RefreshProgress } from '../components/Bits'
 import Icon from '../components/Icons.jsx'
 import { useScreenRefresh } from '../lib/useScreenRefresh'
 import { ScreenNavigation } from './ResearchScreen'
-import ResultCards from '../components/ResultCards.jsx'
+import DataTable from '../components/DataTable.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 const FLAG_LABELS = {
@@ -174,47 +174,32 @@ export default function CongressTrades() {
       {!filtered.length ? (
         <Empty note={rows.length ? 'No disclosures match these filters.' : emptyNote(data)} />
       ) : (
-        <>
-        <ResultCards rows={filtered} getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}
-          title={(row) => row.symbol || 'Ticker unavailable'}
-          subtitle={(row) => `${row.transaction_type || 'Transaction'} · ${row.transaction_date || 'date unavailable'}`}
-          fields={[
-            { label: 'Company and filer', value: (row) => <details className="trade-identity-reveal"><summary>View details</summary><span><b>{row.asset_description || row.symbol || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} · {row.chamber || 'Chamber unavailable'}{row.district ? ` · ${row.district}` : ''}</small></span></details> },
-            { label: 'Size', value: (row) => row.amount || '–' },
-            { label: 'Traded', value: (row) => row.transaction_date || '–' },
-            { label: 'Filed after', value: (row) => row.filing_delay_days != null ? `${row.filing_delay_days}d` : '–' },
-            { label: 'Since purchase', value: (row) => row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : '–' },
-            { label: 'Flags', value: (row) => <FlagChips flags={row.flags} /> },
-          ]} />
-        <div className="research-table card">
-          <table>
-            <thead>
-              <tr>
-                <th>Stock</th><th>Type</th>
-                <th className="num">Size</th><th>Traded</th><th>Filed after</th>
-                <th className="num">Since purchase</th><th>Flags</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row, index) => (
-                <tr key={`${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}>
-                  <td>
-                    <details className="trade-identity-reveal"><summary><b className="mono">{row.symbol || '–'}</b></summary><span><b>{row.asset_description || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} · {row.chamber}{row.district ? ` · ${row.district}` : ''}</small></span></details>
-                  </td>
-                  <td>{row.transaction_type || '–'}</td>
-                  <td className="mono num">{row.amount || '–'}</td>
-                  <td className="mono">{row.transaction_date || '–'}</td>
-                  <td className="mono">{row.filing_delay_days != null ? `${row.filing_delay_days}d` : '–'}</td>
-                  <td className="num">
-                    {row.return_since_purchase_pct != null ? <Move pct={row.return_since_purchase_pct} /> : <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>}
-                  </td>
-                  <td><FlagChips flags={row.flags} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </>
+        <DataTable
+          rows={filtered}
+          getKey={(row, index) => `${row.representative}-${row.symbol}-${row.transaction_date}-${index}`}
+          columns={[
+            { key: 'symbol', label: 'Stock', cell: (row) => (
+              <details className="trade-identity-reveal">
+                <summary><b className="mono">{row.symbol || '\u2013'}</b></summary>
+                <span><b>{row.asset_description || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} \u00b7 {row.chamber}{row.district ? ` \u00b7 ${row.district}` : ''}</small></span>
+              </details>) },
+            { key: 'transaction_type', label: 'Type', cell: (row) => row.transaction_type || '\u2013' },
+            { key: 'amount', label: 'Size', numeric: true, cell: (row) => <span className="mono">{row.amount || '\u2013'}</span> },
+            { key: 'transaction_date', label: 'Traded', cell: (row) => <span className="mono">{row.transaction_date || '\u2013'}</span> },
+            { key: 'filing_delay_days', label: 'Filed after',
+              cell: (row) => <span className="mono">{row.filing_delay_days != null ? `${row.filing_delay_days}d` : '\u2013'}</span> },
+            { key: 'return_since_purchase_pct', label: 'Since purchase', numeric: true,
+              cell: (row) => row.return_since_purchase_pct != null
+                ? <Move pct={row.return_since_purchase_pct} />
+                : <span className="mono faint-cell">\u2013</span> },
+            { key: 'flags', label: 'Flags', sortable: false, cell: (row) => <FlagChips flags={row.flags} /> },
+          ]}
+          mobile={{
+            titleColumn: 'symbol',
+            title: (row) => row.symbol || 'Ticker unavailable',
+            subtitle: (row) => `${row.transaction_type || 'Transaction'} \u00b7 ${row.transaction_date || 'date unavailable'}`,
+          }}
+        />
       )}
 
       <p className="disclaimer">

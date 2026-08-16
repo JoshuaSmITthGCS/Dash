@@ -187,18 +187,18 @@ export default function Finances() {
           <div className="sec-label">Add income or expense</div>
           <form onSubmit={handleAddBudgetItem} className="finance-form finance-form-budget">
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
-              <input type="text" placeholder="Paycheck" value={budgetForm.name} required
+              <label className="field-label" htmlFor="fin-budget-name">Name</label>
+              <input id="fin-budget-name" type="text" placeholder="Paycheck" value={budgetForm.name} required
                 onChange={(e) => setBudgetForm({ ...budgetForm, name: e.target.value })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Monthly amount</label>
-              <input type="number" step="0.01" placeholder="500" value={budgetForm.amount} required
+              <label className="field-label" htmlFor="fin-budget-amount">Monthly amount</label>
+              <input id="fin-budget-amount" type="number" step="0.01" placeholder="500" value={budgetForm.amount} required
                 onChange={(e) => setBudgetForm({ ...budgetForm, amount: e.target.value })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Type</label>
-              <select value={budgetForm.type} onChange={(e) => setBudgetForm({ ...budgetForm, type: e.target.value })}>
+              <label className="field-label" htmlFor="fin-budget-type">Type</label>
+              <select id="fin-budget-type" value={budgetForm.type} onChange={(e) => setBudgetForm({ ...budgetForm, type: e.target.value })}>
                 <option value="income">Income</option>
                 <option value="expense">Expense</option>
               </select>
@@ -246,13 +246,13 @@ export default function Finances() {
             <div className="sec-label">Add a pool</div>
             <form onSubmit={handleAddPool} className="finance-form finance-form-pool">
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
-                <input type="text" placeholder="Emergency fund" value={poolForm.name} required
+                <label className="field-label" htmlFor="fin-pool-name">Name</label>
+                <input id="fin-pool-name" type="text" placeholder="Emergency fund" value={poolForm.name} required
                   onChange={(e) => setPoolForm({ ...poolForm, name: e.target.value })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Percent</label>
-                <input type="number" step="1" min="0" max="100" placeholder="30" value={poolForm.percent} required
+                <label className="field-label" htmlFor="fin-pool-percent">Percent</label>
+                <input id="fin-pool-percent" type="number" step="1" min="0" max="100" placeholder="30" value={poolForm.percent} required
                   onChange={(e) => setPoolForm({ ...poolForm, percent: e.target.value })} />
               </div>
               <div><button type="submit" className="tab active">Add pool</button></div>
@@ -283,8 +283,8 @@ export default function Finances() {
             <div className="sec-label">Log a deposit</div>
             <form onSubmit={handleDeposit} className="finance-form finance-form-deposit">
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Amount to split</label>
-                <input type="number" step="0.01" placeholder={budgetSummary.leftover > 0 ? budgetSummary.leftover.toFixed(0) : '0'}
+                <label className="field-label" htmlFor="fin-deposit-amount">Amount to split</label>
+                <input id="fin-deposit-amount" type="number" step="0.01" placeholder={budgetSummary.leftover > 0 ? budgetSummary.leftover.toFixed(0) : '0'}
                   value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} />
               </div>
               <div><button type="submit" className="tab active" disabled={!finances.pools.length}>Add to pools</button></div>
@@ -306,38 +306,38 @@ export default function Finances() {
             <div className="sec-label">Assumptions</div>
             <div className="grid grid-3" style={{ gap: 12 }}>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Current age</label>
-                <input type="number" value={finances.settings.currentAge}
+                <label className="field-label" htmlFor="fin-current-age">Current age</label>
+                <input id="fin-current-age" type="number" value={finances.settings.currentAge}
                   onChange={(e) => finances.updateSettings({ currentAge: parseInt(e.target.value, 10) || 0 })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Retirement age</label>
-                <input type="number" min={minimumRetirementAge} max={maximumRetirementAge} value={retirementAge}
+                <label className="field-label" htmlFor="fin-retire-age">Retirement age</label>
+                <input id="fin-retire-age" type="number" min={minimumRetirementAge} max={maximumRetirementAge} value={retirementAge}
                   onChange={(e) => finances.updateSettings({ retireAge: parseInt(e.target.value, 10) || 0 })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Inflation %</label>
-                <input type="number" step="0.1" value={finances.settings.inflationPct}
+                <label className="field-label" htmlFor="fin-inflation">Inflation %</label>
+                <input id="fin-inflation" type="number" step="0.1" value={finances.settings.inflationPct}
                   onChange={(e) => finances.updateSettings({ inflationPct: parseFloat(e.target.value) || 0 })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Current savings</label>
-                <input type="number" step="1" value={finances.settings.currentSavings}
+                <label className="field-label" htmlFor="fin-savings">Current savings</label>
+                <input id="fin-savings" type="number" step="1" value={finances.settings.currentSavings}
                   onChange={(e) => finances.updateSettings({ currentSavings: parseFloat(e.target.value) || 0 })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Monthly contribution</label>
-                <input type="number" step="1" value={finances.settings.monthlyContribution}
+                <label className="field-label" htmlFor="fin-contribution">Monthly contribution</label>
+                <input id="fin-contribution" type="number" step="1" value={finances.settings.monthlyContribution}
                   onChange={(e) => finances.updateSettings({ monthlyContribution: parseFloat(e.target.value) || 0 })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Plan through age</label>
-                <input type="number" min={finances.settings.retireAge} max="120" value={finances.settings.retirementEndAge}
+                <label className="field-label" htmlFor="fin-end-age">Plan through age</label>
+                <input id="fin-end-age" type="number" min={finances.settings.retireAge} max="120" value={finances.settings.retirementEndAge}
                   onChange={(e) => finances.updateSettings({ retirementEndAge: parseInt(e.target.value, 10) || projectionConfig.default_retirement_end_age })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Monthly retirement spending</label>
-                <input type="number" min="0" step="100" value={finances.settings.monthlyWithdrawal}
+                <label className="field-label" htmlFor="fin-withdrawal">Monthly retirement spending</label>
+                <input id="fin-withdrawal" type="number" min="0" step="100" value={finances.settings.monthlyWithdrawal}
                   onChange={(e) => finances.updateSettings({ monthlyWithdrawal: parseFloat(e.target.value) || 0 })} />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
@@ -362,13 +362,13 @@ export default function Finances() {
             {accounts.length > 0 && <nav className="finance-account-tabs" aria-label="Retirement accounts">{accounts.map((account, index) => <button type="button" className={(selectedAccountId || accounts[0]?.id) === account.id ? 'active' : ''} key={account.id} onClick={() => { setSelectedAccountId(account.id); document.getElementById(`finance-account-${account.id}`)?.scrollIntoView({ block: 'nearest' }) }}><span>{account.name}<small>{accountTypeLabel(account.type)}</small></span>{index === 0 && <Icon name="chevron" size={16} />}</button>)}</nav>}
             <form onSubmit={handleAddAccount} className="finance-form finance-form-account">
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Name</label>
-                <input type="text" placeholder="Fidelity 401(k)" value={accountForm.name} required
+                <label className="field-label" htmlFor="fin-account-name">Name</label>
+                <input id="fin-account-name" type="text" placeholder="Fidelity 401(k)" value={accountForm.name} required
                   onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })} />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Type</label>
-                <select value={accountForm.type} onChange={(e) => setAccountForm({ ...accountForm, type: e.target.value })}>
+                <label className="field-label" htmlFor="fin-account-type">Type</label>
+                <select id="fin-account-type" value={accountForm.type} onChange={(e) => setAccountForm({ ...accountForm, type: e.target.value })}>
                   {ACCOUNT_TYPES.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
                 </select>
               </div>
@@ -403,8 +403,8 @@ export default function Finances() {
                       </div>
                     )}
                     <div style={{ marginTop: 8 }}>
-                      <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Annual contribution</label>
-                      <input type="number" step="1" min="0" value={contributed}
+                      <label className="field-label" htmlFor={`fin-account-${account.id}-contribution`}>Annual contribution</label>
+                      <input type="number" step="1" min="0" id={`fin-account-${account.id}-contribution`} value={contributed}
                         onChange={(e) => finances.updateAccountContribution(account.id, parseFloat(e.target.value) || 0)} />
                     </div>
                   </div>

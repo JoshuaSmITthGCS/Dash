@@ -222,32 +222,6 @@ function PortfolioSortToolbar({ sort, selectedLabel, onSortKey, onToggleDirectio
   return <ResponsiveControlPanel label={`Sort: ${selectedLabel || 'holdings'}`} title="Sort holdings">{controls}</ResponsiveControlPanel>
 }
 
-function SortableHeader({ sortKey, sort, onSort, children, numeric = false, info }) {
-  const active = sort.key === sortKey
-  return (
-    <th
-      scope="col"
-      className={numeric ? 'num' : undefined}
-      aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
-    >
-      <button
-        className={`sort-header ${active ? 'active' : ''}`}
-        onClick={() => onSort(sortKey)}
-      >
-        {children}
-        <span className="sort-arrows" aria-hidden="true">
-          <i className={`sort-arrow up ${active && sort.direction === 'asc' ? 'selected' : ''}`} />
-          <i className={`sort-arrow down ${active && sort.direction === 'desc' ? 'selected' : ''}`} />
-        </span>
-      </button>
-      {/* Outside the button, not inside it - <details> is interactive content and
-          invalid inside a <button>, and a click would otherwise bubble up and trigger
-          a sort toggle instead of opening the info panel. */}
-      {info}
-    </th>
-  )
-}
-
 export default function Portfolio({ view = 'summary' }) {
   const { currentUser } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
@@ -845,31 +819,34 @@ export default function Portfolio({ view = 'summary' }) {
           <h3 style={{ marginBottom: 16 }}>Add New Position</h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: 12, alignItems: 'end' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Ticker</label>
-              <input type="text" placeholder="AAPL" value={formData.ticker} required
+              <label className="field-label" htmlFor="position-ticker">Ticker</label>
+              <input id="position-ticker" type="text" placeholder="AAPL" value={formData.ticker} required
                 onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Shares</label>
-              <input type="number" step="0.001" placeholder="10" value={formData.shares} required
+              <label className="field-label" htmlFor="position-shares">Shares</label>
+              <input id="position-shares" type="number" step="0.001" placeholder="10" value={formData.shares} required
                 onChange={(e) => setFormData({ ...formData, shares: e.target.value })} />
             </div>
             <div>
               <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 6, marginBottom: 4, fontSize: 13 }}>
                 <span>Cost basis</span>
-                <select value={formData.costMode} onChange={(e) => setFormData({ ...formData, costMode: e.target.value })}
-                  style={{ minHeight: 'auto', height: 20, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 10 }}>
+                <select className="field-mode-select" value={formData.costMode}
+                  aria-label="Cost basis units"
+                  onChange={(e) => setFormData({ ...formData, costMode: e.target.value })}>
                   <option value="share">$/share</option>
                   <option value="total">Total $</option>
                 </select>
               </label>
-              <input type="number" step="0.01" placeholder={formData.costMode === 'total' ? '200.00' : '150.00'}
+              <input type="number" step="0.01" id="position-cost"
+                aria-label={formData.costMode === 'total' ? 'Total cost basis in dollars' : 'Cost basis per share in dollars'}
+                placeholder={formData.costMode === 'total' ? '200.00' : '150.00'}
                 value={formData.costBasis} required
                 onChange={(e) => setFormData({ ...formData, costBasis: e.target.value })} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: 4, fontSize: 13 }}>Purchase Date</label>
-              <input type="date" value={formData.purchaseDate} required
+              <label className="field-label" htmlFor="position-date">Purchase Date</label>
+              <input id="position-date" type="date" value={formData.purchaseDate} required
                 onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })} />
             </div>
             <div><button type="submit" className="tab active">Add</button></div>
@@ -887,7 +864,7 @@ export default function Portfolio({ view = 'summary' }) {
         />
         <div className={`portfolio-mobile-list portfolio-stock-grid ${essentialOnly ? 'essential' : 'expanded'}`}>
           {sortedPositions.map((pos) => (
-            <article className={`portfolio-stock-tile ${pos.dayMove?.pct == null ? 'neutral' : pos.dayMove.pct >= 0 ? 'positive' : 'negative'}`} key={pos.id || pos.ticker}>
+            <article className={`portfolio-stock-tile ${pos.dayMove?.pct == null ? 'tone-flat' : pos.dayMove.pct >= 0 ? 'tone-up' : 'tone-down'}`} key={pos.id || pos.ticker}>
               <button type="button" className="portfolio-stock-primary" onClick={() => pos.priceInfo && setSelectedStock(pos)} disabled={!pos.priceInfo}
                 aria-label={`${pos.ticker}, ${signedPct(pos.dayMove?.pct, 2)} today, ${pos.currentPrice == null ? 'price unavailable' : `${money(pos.currentPrice, 2)} per share`}${pos.priceInfo ? '. Open research' : ''}`}>
                 <span className="portfolio-stock-identity">
@@ -966,117 +943,6 @@ export default function Portfolio({ view = 'summary' }) {
             </article>
           ))}
           {sortedPositions.length === 0 && <div className="portfolio-holdings-empty">No positions yet. Add a position to start tracking.</div>}
-        </div>
-        <div className="card card-pad table-wrap portfolio-table">
-          <table>
-            <thead>
-              <tr>
-                <SortableHeader sortKey="ticker" sort={portfolioSort} onSort={setSortKey}>Ticker</SortableHeader>
-                <SortableHeader sortKey="company" sort={portfolioSort} onSort={setSortKey}>Company</SortableHeader>
-                <SortableHeader sortKey="signal" sort={portfolioSort} onSort={setSortKey}>Signal</SortableHeader>
-                <th scope="col">Stop-loss</th>
-                <SortableHeader numeric sortKey="shares" sort={portfolioSort} onSort={setSortKey}>Shares</SortableHeader>
-                <SortableHeader numeric sortKey="cost" sort={portfolioSort} onSort={setSortKey}>Avg. cost/share</SortableHeader>
-                <SortableHeader numeric sortKey="price" sort={portfolioSort} onSort={setSortKey}>Price</SortableHeader>
-                <SortableHeader numeric sortKey="value" sort={portfolioSort} onSort={setSortKey}>Value</SortableHeader>
-                <SortableHeader numeric sortKey="allocation" sort={portfolioSort} onSort={setSortKey}>Allocation</SortableHeader>
-                <SortableHeader numeric sortKey="gain" sort={portfolioSort} onSort={setSortKey}>Gain/Loss</SortableHeader>
-                <SortableHeader numeric sortKey="return" sort={portfolioSort} onSort={setSortKey}>Return</SortableHeader>
-                <SortableHeader numeric sortKey="score" sort={portfolioSort} onSort={setSortKey}>Score</SortableHeader>
-                <SortableHeader numeric sortKey="rating" sort={portfolioSort} onSort={setSortKey}
-                  info={<InfoTag label="Rating" align="right">
-                    <strong>Rating</strong>
-                    <p>-5 (worst) to +5 (best), a percentile read of the research score against the
-                      pool of stocks or ETFs it competes in - see src/lib/researchRating.js.</p>
-                  </InfoTag>}
-                >Rating</SortableHeader>
-                <SortableHeader numeric sortKey="trend" sort={portfolioSort} onSort={setSortKey}
-                  info={<InfoTag label="1M trend" align="right">
-                    <strong>1-month trend</strong>
-                    <p>Trailing 30-day price movement for this holding, shown as a mini line chart -
-                      direction and shape only, not a substitute for the full research score.</p>
-                  </InfoTag>}
-                >1M trend</SortableHeader>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedPositions.map((pos) => (
-                <tr key={pos.id || pos.ticker}>
-                  <td className="mono">{pos.ticker}</td>
-                  <td>{pos.priceInfo?.name || '–'}</td>
-                  <td><ActionPill recommendation={pos.recommendation} /></td>
-                  <td>{pos.stopLoss ? <StopLossNote stopLoss={pos.stopLoss} /> : <span className="mono">–</span>}</td>
-                  <td className="mono num">
-                    {editingId === pos.id
-                      ? <input className="inline-edit-input table-edit-input" type="number" step="0.001" min="0" value={editForm.shares}
-                          onChange={(e) => setEditForm({ ...editForm, shares: e.target.value })} />
-                      : pos.shares}
-                  </td>
-                  <td className="mono num">
-                    {editingId === pos.id
-                      ? (
-                        <div style={{ display: 'grid', gap: 2, justifyItems: 'end' }}>
-                          <select value={editForm.costMode} onChange={(e) => setEditForm({ ...editForm, costMode: e.target.value })}
-                            style={{ minHeight: 'auto', height: 16, padding: '0 2px', border: 0, background: 'transparent', color: 'var(--text-faint)', fontSize: 8, textTransform: 'none', letterSpacing: 0 }}>
-                            <option value="share">$/share</option>
-                            <option value="total">Total $</option>
-                          </select>
-                          <input className="inline-edit-input table-edit-input" type="number" step="0.01" min="0" value={editForm.costBasis}
-                            onChange={(e) => setEditForm({ ...editForm, costBasis: e.target.value })} />
-                        </div>
-                      )
-                      : `$${pos.costBasis.toFixed(2)}`}
-                  </td>
-                  <td className="mono num">{pos.currentPrice == null ? '–' : `$${pos.currentPrice.toFixed(2)}`}</td>
-                  <td className="mono num">{pos.currentValue == null ? '–' : money(pos.currentValue)}</td>
-                  <td className="mono num">{pos.allocationPct == null ? '–' : `${pos.allocationPct.toFixed(1)}%`}</td>
-                  <td className="mono num" style={{ color: moveColor(pos.gain) }}>
-                    {pos.gain == null ? '–' : `${pos.gain >= 0 ? '+' : '−'}${money(Math.abs(pos.gain))}`}
-                  </td>
-                  <td className="num"><Move value={pos.gainPct} /></td>
-                  <td className="mono num score-cell">{pos.priceInfo?.score ?? '–'}</td>
-                  <td className="num"><RatingBadge value={pos.rating} title="-5 (worst) to +5 (best) vs. its research pool" /></td>
-                  <td className="num portfolio-trend-cell">
-                    {pos.trendValues.length > 1 ? (
-                      <>
-                        <Sparkline values={pos.trendValues} label={`${pos.ticker} one-month price trend`} height={34} />
-                        <Move value={pos.trendPct} />
-                      </>
-                    ) : <span className="mono">–</span>}
-                  </td>
-                  <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {editingId === pos.id ? (
-                      <>
-                        <button className="chip button-chip" onClick={() => saveEdit(pos.id)} disabled={editSaving}>
-                          {editSaving ? 'Saving…' : 'Save'}
-                        </button>
-                        <button className="chip button-chip" onClick={cancelEdit} disabled={editSaving}>Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        {pos.priceInfo && (
-                          <button className="chip button-chip" onClick={() => setSelectedStock(pos)}>Details</button>
-                        )}
-                        <button className="chip button-chip" onClick={() => startEdit(pos)}>Edit</button>
-                        <button className="chip button-chip" onClick={() => startSell(pos)}>Sell</button>
-                        <button className="chip button-chip" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
-                          {removingId === pos.id ? 'Removing…' : 'Remove'}
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {portfolioStats.positions.length === 0 && (
-                <tr>
-                  <td colSpan="14" style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>
-                    No positions yet. Click "+ Add Position" to start tracking.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
         </div>
         {sellingPosition && (
           <MobileSheet open title={`Sell ${sellingPosition.ticker}`} onClose={cancelSell} className="holding-edit-sheet">

@@ -8,6 +8,7 @@ import { formatPreferenceMoney, usePreferences } from '../lib/PreferencesContext
 import { Loading, Empty } from '../components/Bits.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import InfoTag from '../components/InfoTag.jsx'
+import CorrelationHeatmap from '../components/CorrelationHeatmap.jsx'
 
 const COLORS = ['#315f49', '#64866d', '#8ba692', '#b5c6b8', '#c89b64', '#92735d', '#7c8992', '#b0aaa1']
 
@@ -78,7 +79,7 @@ export default function Diversification() {
           opposite) to +1 (moved in lockstep). High correlation across most pairs means the portfolio
           has less real diversification than its holding count suggests, even if sectors differ.</p>
       </InfoTag>
-    </h2></div><span className="settings-value">Diversification ratio {result.diversificationRatio == null ? 'Unavailable' : result.diversificationRatio.toFixed(2)}</span></header><div className="correlation-table-wrap"><table className="correlation-table"><thead><tr><th scope="col">Holding</th>{result.correlation.tickers.map((ticker) => <th scope="col" key={ticker}>{ticker}</th>)}</tr></thead><tbody>{result.correlation.tickers.map((ticker, rowIndex) => <tr key={ticker}><th scope="row">{ticker}</th>{result.correlation.matrix[rowIndex].map((value, columnIndex) => <td key={result.correlation.tickers[columnIndex]}>{value.toFixed(2)}</td>)}</tr>)}</tbody></table></div></section>}
+    </h2></div><span className="settings-value">Diversification ratio {result.diversificationRatio == null ? 'Unavailable' : result.diversificationRatio.toFixed(2)}</span></header><CorrelationHeatmap tickers={result.correlation.tickers} matrix={result.correlation.matrix} observations={result.correlation.observations} caption={`Pairwise correlation of ${result.correlation.tickers.length} holdings`} /></section>}
     <section className="report-section"><header className="section-heading"><div><span className="eyebrow">Covariance decomposition</span><h2>What carries the risk
       <InfoTag label="What carries the risk">
         <strong>What carries the risk</strong>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ScreenNavigation } from './ResearchScreen'
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
-import ResultCards from '../components/ResultCards.jsx'
+import DataTable from '../components/DataTable.jsx'
 
 const percent = (value, digits = 2) => value == null ? '—' : `${Number(value).toFixed(digits)}%`
 const rate = (value) => value == null ? '—' : `${(Number(value) * 100).toFixed(1)}%`
@@ -53,35 +53,33 @@ function SuccessCell({ row }) {
 
 function MethodTable({ rows, group }) {
   const portfolioLike = group === 'held_portfolio' || group === 'contribution_flows'
-  return <div className="research-table card backtest-compare-table"><table>
-    <thead><tr>
-      <th>Method</th>
-      <th className="num">Success rate</th>
-      {portfolioLike && <th className="num">Beat SPY</th>}
-      <th className="num">Total return</th>
-      {portfolioLike && <th className="num">vs SPY</th>}
-      <th className="num">{group === 'rank_quality' ? 'Mean IC' : 'CAGR'}</th>
-      <th className="num">Sharpe</th>
-      <th className="num">Max drawdown</th>
-      <th className="num">Observations</th>
-      <th>Window</th>
-    </tr></thead>
-    <tbody>{rows.map((row) => <tr key={row.id}>
-      <td><b>{row.label}</b>
-        {statusLabel(row) && <small className="backtest-status-flag">{statusLabel(row)}</small>}
-        <small className="backtest-features">{(row.features || []).join(' · ')}</small></td>
-      <td className="num"><SuccessCell row={row} /></td>
-      {portfolioLike && <td className="num">{rate(row.beat_benchmark_rate)}</td>}
-      <td className="num">{percent(row.total_return_pct)}</td>
-      {portfolioLike && <td className="num">{row.excess_return_pct == null ? '—'
-        : <span className={row.excess_return_pct >= 0 ? 'pos' : 'neg'}>{percent(row.excess_return_pct)}</span>}</td>}
-      <td className="num">{group === 'rank_quality' ? number(row.mean_ic, 4) : percent(row.cagr_pct)}</td>
-      <td className="num">{number(row.sharpe ?? row.deflated_sharpe, 3)}</td>
-      <td className="num">{percent(row.max_drawdown_pct)}</td>
-      <td className="num">{count(row.periods_measured)}</td>
-      <td><small className="shadow-window">{windowLabel(row)}</small></td>
-    </tr>)}</tbody>
-  </table></div>
+  const columns = [
+    { key: 'label', label: 'Method', cell: (row) => <><b>{row.label}</b>
+      {statusLabel(row) && <small className="backtest-status-flag">{statusLabel(row)}</small>}
+      <small className="backtest-features">{(row.features || []).join(' \u00b7 ')}</small></> },
+    { key: 'success_rate', label: 'Success rate', numeric: true, cell: (row) => <SuccessCell row={row} /> },
+    portfolioLike && { key: 'beat_benchmark_rate', label: 'Beat SPY', numeric: true, cell: (row) => rate(row.beat_benchmark_rate) },
+    { key: 'total_return_pct', label: 'Total return', numeric: true, cell: (row) => percent(row.total_return_pct) },
+    portfolioLike && { key: 'excess_return_pct', label: 'vs SPY', numeric: true,
+      cell: (row) => row.excess_return_pct == null ? '\u2014'
+        : <span className={row.excess_return_pct >= 0 ? 'pos' : 'neg'}>{percent(row.excess_return_pct)}</span> },
+    group === 'rank_quality'
+      ? { key: 'mean_ic', label: 'Mean IC', numeric: true, cell: (row) => number(row.mean_ic, 4) }
+      : { key: 'cagr_pct', label: 'CAGR', numeric: true, cell: (row) => percent(row.cagr_pct) },
+    { key: 'sharpe', label: 'Sharpe', numeric: true,
+      sortValue: (row) => row.sharpe ?? row.deflated_sharpe ?? null,
+      cell: (row) => number(row.sharpe ?? row.deflated_sharpe, 3) },
+    { key: 'max_drawdown_pct', label: 'Max drawdown', numeric: true, cell: (row) => percent(row.max_drawdown_pct) },
+    { key: 'periods_measured', label: 'Observations', numeric: true, cell: (row) => count(row.periods_measured) },
+    { key: 'window', label: 'Window', sortable: false, cell: (row) => <small className="shadow-window">{windowLabel(row)}</small> },
+  ].filter(Boolean)
+  return <DataTable className="backtest-compare-table" rows={rows} getKey={(row) => row.id}
+    columns={columns}
+    mobile={{
+      titleColumn: 'label',
+      title: (row) => row.label,
+      subtitle: (row) => statusLabel(row) || (row.features || []).join(' \u00b7 '),
+    }} />
 }
 
 export default function BacktestComparison() {
@@ -145,21 +143,6 @@ export default function BacktestComparison() {
       {groups.map(([group, rows]) => <section key={group} className="backtest-compare-group">
         <h2 className="section-title">{GROUP_TITLES[group] || group}</h2>
         <p className="backtest-group-note">{data?.comparable_groups?.[group]}</p>
-        <ResultCards rows={rows} getKey={(row) => row.id}
-          title={(row) => row.label}
-          subtitle={(row) => statusLabel(row) || (row.features || []).join(' · ')}
-          fields={[
-            { label: 'Success rate', value: (row) => row.success_rate == null ? '—'
-              : `${rate(row.success_rate)} (${BASIS_LABELS[row.success_rate_basis] || row.success_rate_basis})` },
-            { label: 'Beat SPY', value: (row) => rate(row.beat_benchmark_rate), hideEmpty: true },
-            { label: 'Total return', value: (row) => percent(row.total_return_pct) },
-            { label: 'vs SPY', value: (row) => percent(row.excess_return_pct), hideEmpty: true },
-            { label: 'CAGR', value: (row) => percent(row.cagr_pct), hideEmpty: true },
-            { label: 'Sharpe', value: (row) => number(row.sharpe ?? row.deflated_sharpe, 3) },
-            { label: 'Max drawdown', value: (row) => percent(row.max_drawdown_pct) },
-            { label: 'Observations', value: (row) => count(row.periods_measured) },
-            { label: 'Window', value: windowLabel },
-          ]} />
         <MethodTable rows={rows} group={group} />
       </section>)}
 
@@ -169,19 +152,21 @@ export default function BacktestComparison() {
           read. This is co-occurrence across methods, not attribution: methods share inputs and
           cover different windows, so use it to decide what to investigate, never as evidence
           that a feature caused a result.</p>
-        <div className="research-table card backtest-compare-table"><table>
-          <thead><tr><th>Feature</th><th className="num">Mean success rate</th>
-            <th className="num">Range</th><th className="num">Methods</th>
-            <th>Measured as</th><th>Methods reading it</th></tr></thead>
-          <tbody>{rollup.map((row) => <tr key={`${row.feature}-${row.success_rate_basis}`}>
-            <td><b>{row.feature}</b></td>
-            <td className="num">{rate(row.mean_success_rate)}</td>
-            <td className="num">{rate(row.minimum_success_rate)} – {rate(row.maximum_success_rate)}</td>
-            <td className="num">{row.methods}</td>
-            <td><span className="shadow-evidence-status">{BASIS_LABELS[row.success_rate_basis] || row.success_rate_basis}</span></td>
-            <td><small className="backtest-features">{(row.method_labels || []).join(' · ')}</small></td>
-          </tr>)}</tbody>
-        </table></div>
+        <DataTable className="backtest-compare-table" rows={rollup}
+          getKey={(row) => `${row.feature}-${row.success_rate_basis}`}
+          columns={[
+            { key: 'feature', label: 'Feature', cell: (row) => <b>{row.feature}</b> },
+            { key: 'mean_success_rate', label: 'Mean success rate', numeric: true, cell: (row) => rate(row.mean_success_rate) },
+            { key: 'range', label: 'Range', numeric: true, sortable: false,
+              cell: (row) => `${rate(row.minimum_success_rate)} \u2013 ${rate(row.maximum_success_rate)}` },
+            { key: 'methods', label: 'Methods', numeric: true, cell: (row) => row.methods },
+            { key: 'success_rate_basis', label: 'Measured as',
+              cell: (row) => <span className="shadow-evidence-status">{BASIS_LABELS[row.success_rate_basis] || row.success_rate_basis}</span> },
+            { key: 'method_labels', label: 'Methods reading it', sortable: false,
+              cell: (row) => <small className="backtest-features">{(row.method_labels || []).join(' \u00b7 ')}</small> },
+          ]}
+          mobile={{ titleColumn: 'feature', title: (row) => row.feature,
+            subtitle: (row) => BASIS_LABELS[row.success_rate_basis] || row.success_rate_basis }} />
         {!rollup.length && <p className="backtest-group-note">No method has published a success
           rate yet, so there is nothing to roll up.</p>}
       </section>

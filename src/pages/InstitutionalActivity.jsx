@@ -4,7 +4,7 @@ import { useScreenRefresh } from '../lib/useScreenRefresh'
 import { Empty, Loading, RefreshProgress } from '../components/Bits'
 import Icon from '../components/Icons.jsx'
 import { ScreenNavigation } from './ResearchScreen'
-import ResultCards from '../components/ResultCards.jsx'
+import DataTable from '../components/DataTable.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
 
 const FLAG_LABELS = {
@@ -141,41 +141,26 @@ export default function InstitutionalActivity() {
             ? 'Nothing to show – the last collection run did not complete, so this is not a statement that no manager moved a position.'
             : 'No flagged activity yet – this screen updates monthly.'} />
       ) : (
-        <>
-        <ResultCards rows={filtered} getKey={(row, index) => `${row.ticker}-${row.cusip}-${index}`}
-          title={(row) => row.ticker || 'Unknown ticker'}
-          subtitle={(row) => row.cusip}
-          fields={[
-            { label: 'Managers added', value: (row) => row.managers_added ?? '–' },
-            { label: 'Managers dropped', value: (row) => row.managers_dropped ?? '–' },
-            { label: 'Share change', value: (row) => pct(row.share_change_pct) },
-            { label: 'Flag', value: (row) => <FlagChip flag={row.flag} /> },
-          ]} />
-        <div className="research-table card">
-          <table>
-            <thead>
-              <tr>
-                <th>Ticker</th><th>CUSIP</th>
-                <th className="num">Managers added</th><th className="num">Managers dropped</th>
-                <th className="num">Share change</th><th>Flag</th><th>Filed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row, index) => (
-                <tr key={`${row.ticker}-${row.cusip}-${index}`}>
-                  <td><b>{row.ticker || '–'}</b></td>
-                  <td className="mono" style={{ color: 'var(--text-faint)' }}>{row.cusip || '–'}</td>
-                  <td className="mono num">{row.managers_added ?? '–'}</td>
-                  <td className="mono num">{row.managers_dropped ?? '–'}</td>
-                  <td className="num">{pct(row.share_change_pct)}</td>
-                  <td><FlagChip flag={row.flag} /></td>
-                  <td className="mono">{row.as_of || '–'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        </>
+        <DataTable
+          rows={filtered}
+          getKey={(row, index) => `${row.ticker}-${row.cusip}-${index}`}
+          columns={[
+            { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker || '\u2013'}</b> },
+            { key: 'cusip', label: 'CUSIP', cell: (row) => <span className="mono cusip-cell">{row.cusip || '\u2013'}</span> },
+            { key: 'managers_added', label: 'Managers added', numeric: true,
+              cell: (row) => <span className="mono">{row.managers_added ?? '\u2013'}</span> },
+            { key: 'managers_dropped', label: 'Managers dropped', numeric: true,
+              cell: (row) => <span className="mono">{row.managers_dropped ?? '\u2013'}</span> },
+            { key: 'share_change_pct', label: 'Share change', numeric: true, cell: (row) => pct(row.share_change_pct) },
+            { key: 'flag', label: 'Flag', cell: (row) => <FlagChip flag={row.flag} /> },
+            { key: 'as_of', label: 'Filed', cell: (row) => <span className="mono">{row.as_of || '\u2013'}</span> },
+          ]}
+          mobile={{
+            titleColumn: 'ticker',
+            title: (row) => row.ticker || 'Unknown ticker',
+            subtitle: (row) => row.cusip,
+          }}
+        />
       )}
 
       <p className="disclaimer">

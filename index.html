@@ -4,11 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ValueSignal — Fundamentals-first investment research</title>
-    <meta name="description" content="Explainable company research across valuation, quality, financial health, growth, market behavior, and news sentiment." />
+    <meta name="description" content="Explainable company research across valuation, quality, financial health, growth, market behavior, and news sentiment. Every score shows the evidence and the coverage behind it." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Share previews. og:url and og:image want absolute URLs; they are root-relative
+         here because the deploy domain is not committed to this repo. See TODO.md. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ValueSignal" />
+    <meta property="og:title" content="ValueSignal — Fundamentals-first investment research" />
+    <meta property="og:description" content="Explainable company research across valuation, quality, financial health, growth, market behavior, and news sentiment." />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:image:alt" content="ValueSignal" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ValueSignal — Fundamentals-first investment research" />
+    <meta name="twitter:description" content="Explainable company research across valuation, quality, financial health, growth, market behavior, and news sentiment." />
+    <meta name="twitter:image" content="/icons/icon-512.png" />
 
     <!-- iPhone home-screen app behavior: full-screen standalone launch, matching status bar, real icon -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#f1f3f1" id="theme-color-meta" />
+    <meta name="theme-color" content="#eceff0" id="theme-color-meta" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ValueSignal" />
@@ -19,7 +35,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <script>
@@ -28,7 +44,7 @@
           const saved = JSON.parse(localStorage.getItem('valuesignal.ui-preferences.v1') || '{}')
           const dark = saved.theme === 'dark' || (saved.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-          document.querySelector('#theme-color-meta').content = dark ? '#07110c' : '#f1f3f1'
+          document.querySelector('#theme-color-meta').content = dark ? '#0b100e' : '#eceff0'
         } catch { document.documentElement.dataset.theme = 'light' }
       })()
     </script>

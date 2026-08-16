@@ -149,7 +149,14 @@ function HomePortfolioPanel({
 function DashboardWidget({ id, widgets, children }) {
   const widget = widgets.find((item) => item.id === id)
   if (!widget?.visible) return null
-  return <div className={`dashboard-widget dashboard-widget-${id}`} style={{ order: widget.order }}>{children}</div>
+  // The reading order is published as a custom property rather than as `order`
+  // directly, so a media query can reorder widgets for mobile with an ordinary
+  // rule. Setting `order` inline meant the mobile override needed !important.
+  return (
+    <div className={`dashboard-widget dashboard-widget-${id}`} style={{ '--widget-order': widget.order }}>
+      {children}
+    </div>
+  )
 }
 
 function FocusedScreenCard({ title, kicker, note, rows, metric, loading, to, style }) {

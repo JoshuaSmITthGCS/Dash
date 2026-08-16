@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction A · Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DIRECTION A — "LEDGER"  ·  Refined incumbent
+   Keeps the institutional cool-gray + deep-green/mint identity.
+   Fixes what the audit found: a real type scale, a real spacing
+   scale, flat outlined surfaces, and one honest signature —
+   the coverage meter under every score.
+   ============================================================ */
+
+:root {
+  /* --- surfaces (unchanged identity) --- */
+  --canvas:        #f4f5f7;
+  --shelf:         #eceef1;
+  --card:          #ffffff;
+  --sunken:        #e8eaed;
+  --border:        #d0d4d8;
+  --border-soft:   #e2e5e8;
+  --border-strong: #b4b9be;
+
+  /* --- ink: 4 levels, all AA on --card --- */
+  --ink:      #0f1114;   /* 17.6:1 */
+  --ink-2:    #4d565f;   /* 7.6:1  */
+  --ink-3:    #656e77;   /* 5.5:1  — was #7a838c (4.1:1, failed) */
+  --ink-mute: #7d868f;   /* 4.1:1  — decorative only, never body */
+
+  /* --- accent: one, deep green --- */
+  --accent:      #1a2e24;
+  --accent-soft: #e2ece6;
+  --accent-ink:  #ffffff;
+
+  /* --- semantic --- */
+  --pos: #0a6f53;  --pos-soft: #e2f5ec;
+  --neg: #b83c37;  --neg-soft: #fcebea;
+  --warn:#8a5f0e;  --warn-soft:#fff2d2;
+
+  /* --- diverging scale for the heatmap (gray midpoint at 0) --- */
+  --div-n3:#2c5f7a; --div-n2:#5e8ba1; --div-n1:#a3bcc9;
+  --div-0: #dcdfe2;
+  --div-p1:#c9b48c; --div-p2:#a8874f; --div-p3:#7d5f2b;
+
+  /* --- TYPE SCALE (the fix: 11px hard floor, 8 steps) --- */
+  --fs-2xs: 11px;  /* eyebrows, th, units — uppercase + tracked */
+  --fs-xs:  12px;  /* dense table cells, captions */
+  --fs-sm:  13px;  /* secondary copy, labels */
+  --fs-base:14px;  /* body */
+  --fs-lg:  16px;  /* card titles */
+  --fs-xl:  20px;  /* section titles */
+  --fs-2xl: 26px;  /* page title */
+  --fs-hero:40px;  /* headline figures */
+
+  /* --- SPACING SCALE (4px grid) --- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
+
+  --r-sm:4px; --r-md:6px; --r-lg:8px;
+  --rail:212px;
+  --font: 'Instrument Sans', system-ui, sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+}
+
+html[data-theme="dark"] {
+  --canvas:#090d0b; --shelf:#0f1512; --card:#131a16; --sunken:#0c110e;
+  --border:#2a322c; --border-soft:#1e2420; --border-strong:#3a443c;
+  --ink:#e8ece9; --ink-2:#a7b2aa; --ink-3:#8c988f; --ink-mute:#74807a;
+  --accent:#83e6b3; --accent-soft:#162820; --accent-ink:#07130d;
+  --pos:#58d795; --pos-soft:#0f2a1c;
+  --neg:#ff746d; --neg-soft:#2e1614;
+  --warn:#eab83f; --warn-soft:#2c2410;
+  --div-n3:#6fb4d8; --div-n2:#4a7f9c; --div-n1:#2e5265;
+  --div-0:#232a26;
+  --div-p1:#4d3f26; --div-p2:#8a6c34; --div-p3:#d3ad5c;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);
+     font-size:var(--fs-base);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,figure{margin:0}
+b,strong{font-weight:600}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.eyebrow{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.08em;
+         font-weight:600;color:var(--ink-3)}
+a{color:inherit}
+
+/* ---------- direction chrome (mockup only) ---------- */
+.spec{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:var(--sp-5);
+      padding:var(--sp-3) var(--sp-6);background:var(--card);
+      border-bottom:1px solid var(--border);flex-wrap:wrap}
+.spec h1{font-size:var(--fs-sm);font-weight:600;letter-spacing:-.01em}
+.spec h1 span{color:var(--ink-3);font-weight:400}
+.spec p{font-size:var(--fs-xs);color:var(--ink-2);max-width:46ch}
+.swatches{display:flex;gap:2px;margin-left:auto}
+.swatches i{width:26px;height:22px;border-radius:2px;border:1px solid var(--border-soft)}
+.spec button{font:inherit;font-size:var(--fs-xs);font-weight:500;padding:6px var(--sp-3);
+    border:1px solid var(--border);border-radius:var(--r-md);background:var(--card);
+    color:var(--ink);cursor:pointer}
+.spec button:hover{border-color:var(--border-strong)}
+
+/* ---------- shell: left rail + content ---------- */
+.shell{display:grid;grid-template-columns:var(--rail) 1fr;min-height:100vh}
+.rail{border-right:1px solid var(--border);background:var(--canvas);
+      padding:var(--sp-5) var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-5)}
+.brand{display:flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-2)}
+.brand i{width:22px;height:22px;border-radius:var(--r-sm);background:var(--accent);
+         display:grid;place-items:center;color:var(--accent-ink);font-size:var(--fs-2xs);
+         font-weight:600;font-family:var(--mono)}
+.brand b{font-size:var(--fs-base);letter-spacing:-.015em}
+.nav-group{display:flex;flex-direction:column;gap:1px}
+.nav-group>.eyebrow{padding:0 var(--sp-2) var(--sp-1)}
+.nav-group a{display:flex;justify-content:space-between;align-items:center;
+   padding:7px var(--sp-2);border-radius:var(--r-md);font-size:var(--fs-sm);
+   color:var(--ink-2);text-decoration:none}
+.nav-group a:hover{background:var(--shelf);color:var(--ink)}
+.nav-group a[aria-current]{background:var(--accent-soft);color:var(--ink);font-weight:500}
+.nav-group a em{font-style:normal;font-size:var(--fs-2xs);color:var(--ink-3);
+   font-family:var(--mono)}
+.rail-foot{margin-top:auto;padding:var(--sp-3) var(--sp-2);border-top:1px solid var(--border-soft);
+   font-size:var(--fs-2xs);color:var(--ink-3);line-height:1.6}
+
+.main{padding:var(--sp-6) var(--sp-8) var(--sp-12);display:flex;flex-direction:column;
+      gap:var(--sp-8);max-width:1180px}
+
+/* ---------- page head ---------- */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-6)}
+.page-head h2{font-size:var(--fs-2xl);letter-spacing:-.02em;line-height:1.15}
+.page-head p{font-size:var(--fs-sm);color:var(--ink-2);margin-top:2px}
+
+/* ---------- SIGNATURE: the stat ledger ---------- */
+/* Headline figures sit on one hairline-ruled row. Every score that the
+   model computes from partial data carries a coverage meter directly
+   under it — the product's central caveat, made visual instead of legal. */
+.ledger{display:grid;grid-template-columns:repeat(4,1fr);
+        border:1px solid var(--border);border-radius:var(--r-lg);background:var(--card)}
+.ledger>div{padding:var(--sp-4) var(--sp-5);border-left:1px solid var(--border-soft)}
+.ledger>div:first-child{border-left:0}
+.ledger .eyebrow{display:block;margin-bottom:var(--sp-2)}
+.ledger .fig{font-size:var(--fs-hero);font-weight:600;line-height:1;letter-spacing:-.03em;
+             display:flex;align-items:baseline;gap:6px}
+.ledger .fig small{font-size:var(--fs-sm);font-weight:500;color:var(--ink-3);
+                   letter-spacing:0}
+.ledger .sub{font-size:var(--fs-xs);color:var(--ink-2);margin-top:var(--sp-2)}
+.cov{margin-top:var(--sp-3)}
+.cov-bar{height:3px;border-radius:2px;background:var(--sunken);overflow:hidden;display:flex}
+.cov-bar i{display:block;background:var(--accent)}
+.cov-bar i.gap{background:repeating-linear-gradient(90deg,var(--border) 0 2px,transparent 2px 4px)}
+.cov-label{font-size:var(--fs-2xs);color:var(--ink-3);margin-top:5px;display:flex;
+           justify-content:space-between;gap:var(--sp-3);font-family:var(--mono)}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);
+    padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--border-soft)}
+.card-head h3{font-size:var(--fs-lg);letter-spacing:-.01em}
+.card-head .eyebrow{display:block;margin-bottom:2px}
+.card-head a{font-size:var(--fs-sm);color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.card-head a:hover{color:var(--ink);text-decoration:underline}
+.card-body{padding:var(--sp-5)}
+
+.grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:var(--sp-4)}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4)}
+
+/* ---------- chart ---------- */
+.chart-wrap{padding:var(--sp-4) var(--sp-5) var(--sp-5)}
+.chart-kpis{display:flex;gap:var(--sp-8);padding:0 var(--sp-5) var(--sp-4)}
+.chart-kpis>span{display:flex;flex-direction:column;gap:3px}
+.chart-kpis .eyebrow{font-size:var(--fs-2xs)}
+.chart-kpis b{font-size:var(--fs-xl);letter-spacing:-.02em}
+svg .grid{stroke:var(--border-soft);stroke-width:1}
+svg .axis{fill:var(--ink-3);font-size:10px;font-family:var(--mono)}
+.chart-note{font-size:var(--fs-xs);color:var(--ink-3);padding:var(--sp-3) var(--sp-5) 0;
+   border-top:1px solid var(--border-soft);margin:var(--sp-4) 0 0}
+
+/* ---------- leader list ---------- */
+.leaders{display:flex;flex-direction:column}
+.leaders>a{display:grid;grid-template-columns:20px 1fr 64px 52px;align-items:center;
+   gap:var(--sp-3);padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--border-soft);
+   text-decoration:none}
+.leaders>a:last-child{border-bottom:0}
+.leaders>a:hover{background:var(--shelf)}
+.rank{font-family:var(--mono);font-size:var(--fs-2xs);color:var(--ink-3)}
+.co b{display:block;font-size:var(--fs-base);letter-spacing:-.01em}
+.co span{display:block;font-size:var(--fs-xs);color:var(--ink-3);white-space:nowrap;
+   overflow:hidden;text-overflow:ellipsis;max-width:19ch}
+.score{font-family:var(--mono);font-size:var(--fs-lg);font-weight:600;text-align:right;
+   letter-spacing:-.02em}
+
+/* ---------- pills / stance ---------- */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-2xs);
+   font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;
+   border-radius:var(--r-sm);border:1px solid transparent}
+.pill.attractive{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+html[data-theme="dark"] .pill.attractive{color:var(--accent)}
+.pill.hold{background:var(--shelf);color:var(--ink-2);border-color:var(--border-soft)}
+.pill.watch{background:var(--warn-soft);color:var(--warn)}
+
+/* ---------- macro bullets ---------- */
+.bullets{display:flex;flex-direction:column;gap:var(--sp-4)}
+.bullet .row{display:flex;justify-content:space-between;align-items:baseline;
+   margin-bottom:6px;font-size:var(--fs-sm)}
+.bullet .row b{font-family:var(--mono);font-size:var(--fs-base)}
+.bullet .track{position:relative;height:8px;background:var(--sunken);border-radius:2px}
+.bullet .track i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:2px}
+.bullet .track u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);
+   text-decoration:none}
+.bullet small{display:block;font-size:var(--fs-2xs);color:var(--ink-3);margin-top:5px}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse}
+thead th{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.07em;
+   font-weight:600;color:var(--ink-3);text-align:left;padding:var(--sp-2) var(--sp-3);
+   border-bottom:1px solid var(--border);white-space:nowrap;background:var(--card)}
+thead th.n{text-align:right}
+tbody td{padding:var(--sp-3);border-bottom:1px solid var(--border-soft);font-size:var(--fs-sm)}
+tbody td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--shelf)}
+tbody tr:last-child td{border-bottom:0}
+.tick{font-family:var(--mono);font-weight:600;font-size:var(--fs-base);letter-spacing:-.01em}
+.co-name{color:var(--ink-2);font-size:var(--fs-xs);display:block}
+.sortable{cursor:pointer;user-select:none}
+.sortable[aria-sort]{color:var(--ink)}
+.sortable[aria-sort]::after{content:"▾";margin-left:4px;font-size:9px}
+
+/* score cell = number + micro coverage rule */
+.score-cell{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px}
+.score-cell b{font-size:var(--fs-base);font-weight:600}
+.score-cell i{display:block;height:2px;width:44px;background:var(--sunken);border-radius:1px}
+.score-cell i span{display:block;height:100%;background:var(--accent);border-radius:1px}
+
+/* ---------- heatmap ---------- */
+.heat{display:grid;gap:2px;max-width:660px}
+.heat-cell.diag{background:var(--sunken)!important;color:var(--ink-3)!important}
+.heat-cell{aspect-ratio:1;border-radius:2px;display:grid;place-items:center;
+   font-family:var(--mono);font-size:var(--fs-2xs);font-weight:500}
+.heat-lab{display:grid;place-items:center;font-family:var(--mono);font-size:var(--fs-2xs);
+   color:var(--ink-3);font-weight:600}
+.heat-lab.row{justify-content:end;padding-right:var(--sp-2)}
+.legend{display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-4);
+   font-size:var(--fs-2xs);color:var(--ink-3);font-family:var(--mono)}
+.legend .ramp{display:flex;height:8px;border-radius:2px;overflow:hidden;width:180px}
+.legend .ramp i{flex:1}
+.seg-toggle{display:inline-flex;border:1px solid var(--border);border-radius:var(--r-md);
+   overflow:hidden}
+.seg-toggle button{font:inherit;font-size:var(--fs-xs);padding:5px var(--sp-3);border:0;
+   background:var(--card);color:var(--ink-2);cursor:pointer}
+.seg-toggle button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);font-weight:500}
+
+.disclaimer{font-size:var(--fs-xs);color:var(--ink-3);border-top:1px solid var(--border-soft);
+   padding-top:var(--sp-3)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (max-width:900px){.shell{grid-template-columns:1fr}.rail{display:none}
+  .ledger{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="spec">
+  <h1>Direction A <span>· Ledger</span></h1>
+  <p>Refine the institution it already is: same cool-gray and deep green, but every figure sits on a ruled ledger and carries the coverage it was computed from.</p>
+  <div class="swatches" id="sw"></div>
+  <button id="themeBtn" type="button">Dark</button>
+</div>
+
+<div class="shell">
+  <nav class="rail">
+    <div class="brand"><i>VS</i><b>ValueSignal</b></div>
+    <div class="nav-group">
+      <span class="eyebrow">Overview</span>
+      <a href="#dash" aria-current="page">Dashboard</a>
+      <a href="#">Portfolio</a>
+      <a href="#">Watchlist</a>
+    </div>
+    <div class="nav-group">
+      <span class="eyebrow">Research</span>
+      <a href="#picks">Picks <em>40</em></a>
+      <a href="#">Library <em>927</em></a>
+      <a href="#">Funds <em>125</em></a>
+    </div>
+    <div class="nav-group">
+      <span class="eyebrow">Screens</span>
+      <a href="#">Fast growth</a>
+      <a href="#">Quality value</a>
+      <a href="#">Momentum</a>
+      <a href="#">Shadow portfolios</a>
+    </div>
+    <div class="nav-group">
+      <span class="eyebrow">Evidence</span>
+      <a href="#div">Diversification</a>
+      <a href="#">Live validation</a>
+      <a href="#">Methodology</a>
+    </div>
+    <div class="rail-foot">
+      Model <span class="num">3.2.0</span><br>
+      Close <span class="num">2026-08-14</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section id="dash">
+      <div class="page-head" style="margin-bottom:var(--sp-5)">
+        <div>
+          <span class="eyebrow">Latest close · 2026-08-14</span>
+          <h2>Research overview</h2>
+          <p>Fundamentals first, then market behavior. Nothing here is a trade instruction.</p>
+        </div>
+        <div class="seg-toggle">
+          <button type="button" aria-pressed="true">1M</button>
+          <button type="button">3M</button>
+          <button type="button" >1Y</button>
+        </div>
+      </div>
+
+      <div class="ledger" id="ledger"></div>
+
+      <div class="grid-2" style="margin-top:var(--sp-4)">
+        <article class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Benchmark path</span><h3>SPY · 98 daily closes</h3></div>
+            <a href="#">Open markets →</a>
+          </div>
+          <div class="chart-kpis" id="chartKpis"></div>
+          <div class="chart-wrap"><svg id="spark" viewBox="0 0 720 220" width="100%" height="220"
+             role="img" aria-label="SPY closing price over the last 98 trading days"></svg></div>
+          <p class="chart-note">Daily closes as published in <span class="num">report.json</span>. Portfolio lines apply current quantities to past closes and do not reconstruct trades, deposits, or dividends.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Top of book</span><h3>Highest research scores</h3></div>
+            <a href="#picks">All 40 →</a>
+          </div>
+          <div class="leaders" id="leaders"></div>
+        </article>
+      </div>
+
+      <div class="grid-2" style="margin-top:var(--sp-4)">
+        <article class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Macro regime · FRED</span><h3>The current backdrop</h3></div>
+            <a href="#">Methodology →</a>
+          </div>
+          <div class="card-body"><div class="bullets" id="macro"></div></div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div><span class="eyebrow">Coverage</span><h3>What the model could measure</h3></div>
+          </div>
+          <div class="card-body">
+            <div class="bullets" id="coverage"></div>
+            <p class="disclaimer" style="margin-top:var(--sp-5)">
+              A score is only as good as the metrics behind it. Names below the enrichment
+              shortlist never get financial statements fetched, so their fundamentals score
+              rests on price-based multiples alone.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================== PICKS TABLE ===================== -->
+    <section id="picks">
+      <div class="page-head" style="margin-bottom:var(--sp-4)">
+        <div>
+          <span class="eyebrow">Research library</span>
+          <h2>Picks</h2>
+          <p>40 published names, ranked by research score.</p>
+        </div>
+        <div class="seg-toggle">
+          <button type="button" aria-pressed="true">All</button>
+          <button type="button">Attractive</button>
+          <button type="button">Watch</button>
+        </div>
+      </div>
+      <div class="card" style="overflow:hidden">
+        <table>
+          <thead><tr>
+            <th scope="col" class="sortable">Company</th>
+            <th scope="col">Sector</th>
+            <th scope="col">Stance</th>
+            <th scope="col" class="n sortable" aria-sort="descending">Score</th>
+            <th scope="col" class="n">Fundamentals</th>
+            <th scope="col" class="n">Behavior</th>
+            <th scope="col" class="n">Price</th>
+            <th scope="col" class="n">Trend</th>
+          </tr></thead>
+          <tbody id="picksBody"></tbody>
+        </table>
+      </div>
+      <p class="disclaimer" style="margin-top:var(--sp-3)">
+        The rule under each score is metric coverage, not confidence in the outcome.
+        Solid = measured, dotted = not available for this name.
+      </p>
+    </section>
+
+    <!-- ===================== DIVERSIFICATION ===================== -->
+    <section id="div">
+      <div class="page-head" style="margin-bottom:var(--sp-4)">
+        <div>
+          <span class="eyebrow">Portfolio · trailing 250 daily returns</span>
+          <h2>Pairwise correlation</h2>
+          <p>Eight holdings with enough common history to correlate.</p>
+        </div>
+        <div class="seg-toggle">
+          <button type="button" aria-pressed="true">Heatmap</button>
+          <button type="button">Table</button>
+        </div>
+      </div>
+      <article class="card">
+        <div class="card-body">
+          <div class="heat" id="heat"></div>
+          <div class="legend">
+            <span>−1.0</span>
+            <span class="ramp" id="ramp"></span>
+            <span>+1.0</span>
+            <span style="margin-left:var(--sp-4);color:var(--ink-2)">
+              Gray = uncorrelated. 250 common observations.
+            </span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.VS
+const $ = (id) => document.getElementById(id)
+
+/* ---- palette strip ---- */
+const SW = ['--canvas','--card','--border','--ink','--ink-3','--accent','--pos','--neg']
+$('sw').innerHTML = SW.map(v => `<i style="background:var(${v})" title="${v}"></i>`).join('')
+
+/* ---- theme ---- */
+$('themeBtn').onclick = () => {
+  const dark = document.documentElement.dataset.theme === 'dark'
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark'
+  $('themeBtn').textContent = dark ? 'Dark' : 'Light'
+  drawChart()
+}
+
+/* ---- SIGNATURE: coverage meter ---- */
+function covMeter(pct, note) {
+  const p = Math.round(pct * 100)
+  return `<div class="cov">
+    <div class="cov-bar"><i style="width:${p}%"></i><i class="gap" style="width:${100-p}%"></i></div>
+    <div class="cov-label"><span>${p}% measured</span><span>${note}</span></div>
+  </div>`
+}
+
+/* ---- ledger ---- */
+const leader = D.research[0]
+const attractive = D.research.filter(r => r.stance === 'ATTRACTIVE').length
+$('ledger').innerHTML = `
+  <div>
+    <span class="eyebrow">Universe scored</span>
+    <div class="fig num">${D.universe_count}<small>names</small></div>
+    <div class="sub">Top 150 get financial statements fetched</div>
+    ${covMeter(150 / D.universe_count, 'enriched')}
+  </div>
+  <div>
+    <span class="eyebrow">Research leader</span>
+    <div class="fig num">${leader.score}<small>/100</small></div>
+    <div class="sub">${leader.ticker} · ${leader.name}</div>
+    ${covMeter(leader.coverage, 'fundamental metrics')}
+  </div>
+  <div>
+    <span class="eyebrow">Macro regime</span>
+    <div class="fig num">${D.macro.score}<small>/100</small></div>
+    <div class="sub">${D.macro.label[0].toUpperCase()+D.macro.label.slice(1)} · FRED, through ${D.macro.freshness_date}</div>
+    ${covMeter(D.macro.coverage, 'of 5 series')}
+  </div>
+  <div>
+    <span class="eyebrow">10-year treasury</span>
+    <div class="fig num">${D.rates.treasury_10y.annual_percent}<small>%</small></div>
+    <div class="sub">Fed funds ${D.rates.fed_funds.annual_percent}% · ${D.rates.treasury_10y.as_of}</div>
+    ${covMeter(1, 'DGS10 · daily')}
+  </div>`
+
+/* ---- chart ---- */
+const bench = D.benchmark
+$('chartKpis').innerHTML = (() => {
+  const c = bench.closes, first = c[0], last = c[c.length-1]
+  const chg = (last/first - 1) * 100
+  const hi = Math.max(...c), lo = Math.min(...c)
+  return `
+   <span><span class="eyebrow">Latest close</span><b class="num">$${last.toFixed(2)}</b></span>
+   <span><span class="eyebrow">Period change</span><b class="num" style="color:var(--${chg>=0?'pos':'neg'})">${chg>=0?'+':'−'}${Math.abs(chg).toFixed(2)}%</b></span>
+   <span><span class="eyebrow">Range</span><b class="num">$${lo.toFixed(0)}–$${hi.toFixed(0)}</b></span>`
+})()
+
+function drawChart() {
+  const c = bench.closes, W = 720, H = 220, PL = 44, PR = 10, PT = 12, PB = 26
+  const hi = Math.max(...c), lo = Math.min(...c), pad = (hi-lo)*0.1
+  const y0 = lo - pad, y1 = hi + pad
+  const x = i => PL + i * (W-PL-PR) / (c.length-1)
+  const y = v => PT + (1 - (v-y0)/(y1-y0)) * (H-PT-PB)
+  const ticks = [y0, (y0+y1)/2, y1]
+  let s = ''
+  ticks.forEach(t => {
+    s += `<line class="grid" x1="${PL}" x2="${W-PR}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/>`
+    s += `<text class="axis" x="${PL-8}" y="${(y(t)+3).toFixed(1)}" text-anchor="end">${t.toFixed(0)}</text>`
+  })
+  const line = c.map((v,i) => `${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  const area = `${line} L${x(c.length-1).toFixed(1)} ${H-PB} L${PL} ${H-PB} Z`
+  s += `<path d="${area}" fill="var(--accent-soft)" opacity=".55"/>`
+  s += `<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="1.75"
+         stroke-linejoin="round" stroke-linecap="round"/>`
+  s += `<circle cx="${x(c.length-1).toFixed(1)}" cy="${y(c[c.length-1]).toFixed(1)}" r="3.2"
+         fill="var(--accent)"/>`
+  ;[0, Math.floor(c.length/2), c.length-1].forEach(i => {
+    s += `<text class="axis" x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="${i===0?'start':i===c.length-1?'end':'middle'}">${bench.dates[i].slice(5)}</text>`
+  })
+  $('spark').innerHTML = s
+}
+drawChart()
+
+/* ---- sparkline helper ---- */
+function sparkPath(vals, w = 56, h = 18) {
+  if (!vals || vals.length < 2) return ''
+  const hi = Math.max(...vals), lo = Math.min(...vals), r = (hi-lo) || 1
+  const d = vals.map((v,i) => `${i?'L':'M'}${(i*w/(vals.length-1)).toFixed(1)} ${(h - (v-lo)/r*h).toFixed(1)}`).join(' ')
+  const up = vals[vals.length-1] >= vals[0]
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}"
+    fill="none" stroke="var(--${up?'pos':'neg'})" stroke-width="1.4" stroke-linejoin="round"/></svg>`
+}
+
+/* ---- leaders ---- */
+$('leaders').innerHTML = D.research.slice(0,7).map((r,i) => `
+  <a href="#">
+    <span class="rank">${String(i+1).padStart(2,'0')}</span>
+    <span class="co"><b>${r.ticker}</b><span>${r.name}</span></span>
+    ${sparkPath(r.spark, 64, 20)}
+    <span class="score">${r.score.toFixed(1)}</span>
+  </a>`).join('')
+
+/* ---- macro bullets ---- */
+const F = D.macro.factors
+$('macro').innerHTML = [
+  ['Rates', F.rates, 'DGS10 · DFF'],
+  ['Inflation', F.inflation, 'CPIAUCSL'],
+  ['Labor', F.labor, 'UNRATE · SAHM'],
+].map(([label, f, src]) => `
+  <div class="bullet">
+    <div class="row"><span>${label}</span><b>${f.score}<span style="color:var(--ink-3);font-size:var(--fs-xs)">/100</span></b></div>
+    <div class="track"><i style="width:${f.score}%"></i><u style="left:calc(${D.macro.score}% - 1px)"></u></div>
+    <small>${f.label} · ${src} · as of ${f.as_of}. The tick marks the composite regime, ${D.macro.score}.</small>
+  </div>`).join('')
+
+/* ---- coverage bullets ---- */
+const cats = ['valuation','profitability','financial_health','growth','capital_allocation','accounting_quality']
+const covByCat = cats.map(c => {
+  const vals = D.research.map(r => r.categories[c]).filter(v => v != null)
+  return { cat: c, pct: vals.length / D.research.length, avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null }
+})
+$('coverage').innerHTML = covByCat.map(c => `
+  <div class="bullet">
+    <div class="row"><span>${c.cat.replace(/_/g,' ').replace(/^\w/, m=>m.toUpperCase())}</span>
+      <b>${c.avg == null ? '—' : c.avg.toFixed(0)}</b></div>
+    <div class="track"><i style="width:${(c.pct*100).toFixed(0)}%"></i></div>
+    <small>${Math.round(c.pct*100)}% of the ${D.research.length} published names have this category measured</small>
+  </div>`).join('')
+
+/* ---- picks table ---- */
+$('picksBody').innerHTML = D.research.map(r => `
+  <tr>
+    <td><span class="tick">${r.ticker}</span><span class="co-name">${r.name}</span></td>
+    <td style="color:var(--ink-2)">${r.sector}</td>
+    <td><span class="pill ${r.stance.toLowerCase()}">${r.stance}</span></td>
+    <td class="n"><span class="score-cell"><b>${r.score.toFixed(1)}</b>
+      <i><span style="width:${Math.round(r.coverage*100)}%"></span></i></span></td>
+    <td class="n">${r.components.fundamentals?.toFixed(1) ?? '—'}</td>
+    <td class="n">${r.components.market_behavior?.toFixed(1) ?? '—'}</td>
+    <td class="n">$${r.price.toFixed(2)}</td>
+    <td class="n">${sparkPath(r.spark, 56, 18)}</td>
+  </tr>`).join('')
+
+/* ---- heatmap ---- */
+const C = D.corr
+const RAMP = ['--div-n3','--div-n2','--div-n1','--div-0','--div-p1','--div-p2','--div-p3']
+function bucket(v) {
+  if (v <= -0.5) return 0; if (v <= -0.25) return 1; if (v < -0.08) return 2
+  if (v <= 0.08) return 3; if (v < 0.35) return 4; if (v < 0.6) return 5; return 6
+}
+const n = C.tickers.length
+const heat = $('heat')
+heat.style.gridTemplateColumns = `56px repeat(${n}, minmax(0,1fr))`
+let html = `<div></div>` + C.tickers.map(t => `<div class="heat-lab">${t}</div>`).join('')
+C.matrix.forEach((row, i) => {
+  html += `<div class="heat-lab row">${C.tickers[i]}</div>`
+  row.forEach((v, j) => {
+    const b = bucket(v)
+    const ink = (b === 0 || b === 6) ? '#fff' : 'var(--ink)'
+    html += `<div class="heat-cell${i===j?' diag':''}" style="background:var(${RAMP[b]});color:${ink}"
+      title="${C.tickers[i]} vs ${C.tickers[j]}: ${v.toFixed(2)}">${i===j?'—':v.toFixed(2)}</div>`
+  })
+})
+heat.innerHTML = html
+$('ramp').innerHTML = RAMP.map(v => `<i style="background:var(${v})"></i>`).join('')
+</script>
+</body>
+</html>

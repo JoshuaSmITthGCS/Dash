@@ -59,6 +59,8 @@ const NAV_GROUPS = [
       { to: '/screens/themes', label: 'Theme exposure', icon: 'research' },
       { to: '/screens/politics', label: 'Congress trades', icon: 'method' },
       { to: '/screens/institutional', label: 'Institutional activity', icon: 'method' },
+      { to: '/screens/early-session', label: 'Early session', icon: 'market' },
+      { to: '/screens/shadow', label: 'Shadow portfolios', icon: 'market' },
     ],
   },
   {
@@ -76,6 +78,9 @@ const NAV_GROUPS = [
 
 const NAV_AFTER_GROUPS = [
   { to: '/markets', label: 'Markets', icon: 'market' },
+  // /market is the news reader, not a second markets page. It had no nav entry and
+  // was reachable only from one Dashboard link; the label says what it actually is.
+  { to: '/market', label: 'News', icon: 'method' },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/alerts', label: 'Alerts', icon: 'bell' },

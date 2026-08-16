@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Approved direction · Studio + coverage + tape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   APPROVED DIRECTION — resolved 2026-08-15
+   Base:       C "Studio" surfaces — tinted, elevated, larger radii
+   Type:       14px base, Instrument Sans only (no second family)
+   Signatures: coverage meter (A) + evidence rail (C) + score tape (B)
+   See design/direction-approved.md for the decision record.
+   This file is the visual reference for DESIGN.md and Phase 5.
+   ============================================================ */
+
+:root {
+  /* --- surfaces: tinted toward the brand hue, never neutral gray --- */
+  --canvas:   #eceff0;
+  --surface:  #fbfcfc;
+  --raised:   #ffffff;
+  --sunken:   #e3e8e7;
+  --border:   #dbe1e0;
+  --border-soft:#e8ecec;
+
+  /* --- ink: four levels, all AA on --surface --- */
+  --ink:      #101614;
+  --ink-2:    #4b5552;
+  --ink-3:    #5c6864;   /* raised from #64706c: 4.16:1 on --sunken failed AA */
+  --ink-mute: #7f8b87;
+
+  --accent:      #17513c;
+  --accent-2:    #2f7a5c;
+  --accent-soft: #e3f0e9;
+  --accent-ink:  #ffffff;
+
+  --pos:#0a6f53; --pos-soft:#e2f5ec;
+  --neg:#b83c37; --neg-soft:#fbeae9;
+  --warn:#8a5f0e; --warn-soft:#fdf2d8;
+
+  --div-n3:#2c6b7f; --div-n2:#5f97a6; --div-n1:#a6c5cb;
+  --div-0: #dfe4e3;
+  --div-p1:#c9b791; --div-p2:#a68a55; --div-p3:#795c2c;
+
+  /* --- elevation: hue-tinted, layered. Elevation is the default. --- */
+  --shadow-1: 0 1px 2px rgba(16,40,32,.05), 0 2px 6px rgba(16,40,32,.045);
+  --shadow-2: 0 1px 2px rgba(16,40,32,.05), 0 6px 16px rgba(16,40,32,.07),
+              0 18px 38px rgba(16,40,32,.05);
+  --ring: 0 0 0 1px rgba(16,40,32,.055);
+
+  /* --- TYPE: 14px base, 11px floor, one family --- */
+  --fs-2xs: 11px;   --fs-xs:  12px;   --fs-sm:  13px;   --fs-base:14px;
+  --fs-lg:  16px;   --fs-xl:  20px;   --fs-2xl: 26px;   --fs-hero:38px;
+
+  /* --- SPACING: 4px grid --- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
+
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --r-xl:18px;
+  --font:'Instrument Sans', system-ui, sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+  --ease:cubic-bezier(.23,1,.32,1);
+  --dur-fast:150ms; --dur:220ms;
+}
+
+html[data-theme="dark"] {
+  --canvas:#0b100e; --surface:#141b18; --raised:#1a231f; --sunken:#101614;
+  --border:#28322d; --border-soft:#1f2823;
+  --ink:#e9eeeb; --ink-2:#a5b0ab; --ink-3:#8b9791; --ink-mute:#75817c;
+  --accent:#7fe3b0; --accent-2:#5cba8e; --accent-soft:#16281f; --accent-ink:#07130d;
+  --pos:#58d795; --pos-soft:#0f2a1c;
+  --neg:#ff746d; --neg-soft:#2c1614;
+  --warn:#eab83f; --warn-soft:#2a2310;
+  --div-n3:#6fb4ce; --div-n2:#457d90; --div-n1:#2a4c56;
+  --div-0:#222b27;
+  --div-p1:#4a3f27; --div-p2:#856d36; --div-p3:#cba95d;
+  /* depth shadows don't read on dark — collapse to rings */
+  --shadow-1: 0 0 0 1px rgba(255,255,255,.05);
+  --shadow-2: 0 0 0 1px rgba(255,255,255,.07), 0 12px 32px rgba(0,0,0,.45);
+  --ring: 0 0 0 1px rgba(255,255,255,.05);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);
+     font-size:var(--fs-base);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.eyebrow{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.09em;
+   font-weight:600;color:var(--ink-3)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;border-radius:var(--r-sm)}
+
+/* ---------- reference chrome (mockup only) ---------- */
+.spec{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:var(--sp-5);
+   padding:var(--sp-3) var(--sp-6);background:var(--raised);box-shadow:var(--shadow-1);flex-wrap:wrap}
+.spec h1{font-size:var(--fs-sm);font-weight:600}
+.spec h1 span{color:var(--ink-3);font-weight:400}
+.spec p{font-size:var(--fs-xs);color:var(--ink-2);max-width:52ch}
+.swatches{display:flex;gap:3px;margin-left:auto}
+.swatches i{width:26px;height:22px;border-radius:5px;box-shadow:var(--ring)}
+.spec button{font:inherit;font-size:var(--fs-xs);font-weight:500;padding:6px var(--sp-3);border:0;
+   border-radius:var(--r-sm);background:var(--sunken);color:var(--ink);cursor:pointer;
+   transition:transform var(--dur-fast) var(--ease)}
+.spec button:active{transform:scale(.97)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:224px minmax(0,1fr) 332px;align-items:start;
+   gap:var(--sp-5);padding:var(--sp-5);max-width:1620px;margin:0 auto}
+.rail{position:sticky;top:72px;display:flex;flex-direction:column;gap:var(--sp-5);
+   padding:var(--sp-4);background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-1)}
+.brand{display:flex;align-items:center;gap:var(--sp-3);padding:0 var(--sp-2)}
+.brand i{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;
+   place-items:center;color:var(--accent-ink);font-family:var(--mono);font-size:var(--fs-2xs);
+   font-weight:600;box-shadow:var(--shadow-1)}
+.brand b{font-size:var(--fs-base);letter-spacing:-.015em}
+.brand small{display:block;font-size:var(--fs-2xs);color:var(--ink-3);font-family:var(--mono)}
+.nav{display:flex;flex-direction:column;gap:1px}
+.nav>.eyebrow{padding:0 var(--sp-3) var(--sp-2)}
+.nav a{display:flex;align-items:center;justify-content:space-between;padding:7px var(--sp-3);
+   border-radius:var(--r-md);font-size:var(--fs-sm);color:var(--ink-2);text-decoration:none;
+   transition:background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease)}
+.nav a:hover{background:var(--sunken);color:var(--ink)}
+.nav a[aria-current]{background:var(--raised);color:var(--ink);font-weight:600;box-shadow:var(--shadow-1)}
+.nav a em{font-style:normal;font-size:var(--fs-2xs);font-family:var(--mono);color:var(--ink-3)}
+
+.main{display:flex;flex-direction:column;gap:var(--sp-5);min-width:0}
+
+.card{background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-1);overflow:hidden}
+.card--lift{box-shadow:var(--shadow-2)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);
+   padding:var(--sp-5) var(--sp-5) var(--sp-4)}
+.card-head h3{font-size:var(--fs-lg);letter-spacing:-.015em}
+.card-head .eyebrow{display:block;margin-bottom:3px}
+.card-head a{font-size:var(--fs-sm);color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.card-head a:hover{color:var(--ink)}
+.card-body{padding:0 var(--sp-5) var(--sp-5)}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-5);
+   padding:var(--sp-1) var(--sp-2) 0}
+.page-head h2{font-size:var(--fs-2xl);letter-spacing:-.025em;line-height:1.2}
+.page-head p{font-size:var(--fs-sm);color:var(--ink-2);margin-top:2px}
+
+/* ---------- SIGNATURE 1: coverage meter ---------- */
+.cov{margin-top:var(--sp-3)}
+.cov-bar{height:3px;border-radius:2px;background:var(--sunken);overflow:hidden;display:flex}
+.cov-bar i{display:block;background:var(--accent-2)}
+.cov-bar i.gap{background:repeating-linear-gradient(90deg,var(--border) 0 2px,transparent 2px 4px)}
+.cov-label{display:flex;justify-content:space-between;gap:var(--sp-3);margin-top:5px;
+   font-family:var(--mono);font-size:var(--fs-2xs);color:var(--ink-3)}
+.cov-label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- KPI tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4)}
+.tile{background:var(--raised);border-radius:var(--r-lg);padding:var(--sp-4) var(--sp-5) var(--sp-5);
+   box-shadow:var(--shadow-1)}
+.tile .eyebrow{display:block;margin-bottom:var(--sp-3)}
+.tile b{font-size:var(--fs-hero);font-weight:600;letter-spacing:-.03em;line-height:1;display:flex;
+   align-items:baseline;gap:5px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tile b small{font-family:var(--font);font-size:var(--fs-sm);font-weight:500;color:var(--ink-3);
+   letter-spacing:0}
+.tile p{font-size:var(--fs-xs);color:var(--ink-2);margin-top:var(--sp-2);min-height:2.6em}
+
+/* ---------- SIGNATURE 3: score tape ---------- */
+.tape-ctx{position:relative;height:12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.tape-ctx u{position:absolute;bottom:0;width:1px;height:4px;background:var(--border);
+   text-decoration:none}
+.tape-ctx .win{position:absolute;bottom:0;height:12px;border-radius:3px;background:var(--accent-2);
+   opacity:.18;box-shadow:0 0 0 1px var(--accent-2)}
+.tape-ctx-scale,.tape-scale{display:flex;justify-content:space-between;font-family:var(--mono);
+   font-size:var(--fs-2xs);color:var(--ink-3)}
+.tape-ctx-scale{margin-bottom:var(--sp-6)}
+.tape-axis{position:relative;height:104px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.tape-tick{position:absolute;bottom:0;width:1px;background:var(--ink-mute);transform:translateX(-.5px);
+   border-radius:1px}
+.tape-tick.hi{background:var(--accent-2);width:2px}
+.tape-mark{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:var(--fs-2xs);
+   font-weight:600;white-space:nowrap;color:var(--ink)}
+.tape-mark::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:7px;
+   background:var(--border)}
+.tape-cap{font-size:var(--fs-xs);color:var(--ink-3);margin-top:var(--sp-3);max-width:76ch;
+   text-wrap:pretty}
+/* per-row mini tape, same window as above */
+.rowtape{position:relative;display:block;height:13px;width:88px;border-bottom:1px solid var(--border)}
+.rowtape i{position:absolute;bottom:0;width:2px;height:10px;background:var(--accent-2);border-radius:1px}
+.rowtape u{position:absolute;bottom:0;width:1px;height:4px;background:var(--border);text-decoration:none}
+
+/* ---------- chart ---------- */
+.kpis{display:flex;gap:var(--sp-8);padding:0 var(--sp-5) var(--sp-4)}
+.kpis>span{display:flex;flex-direction:column;gap:3px}
+.kpis b{font-size:var(--fs-xl);letter-spacing:-.02em;font-family:var(--mono);
+   font-variant-numeric:tabular-nums}
+svg .grid{stroke:var(--border-soft)}
+svg .axis{fill:var(--ink-3);font-size:10px;font-family:var(--mono)}
+.note{font-size:var(--fs-xs);color:var(--ink-3);padding:var(--sp-3) var(--sp-5) 0;text-wrap:pretty}
+
+/* ---------- rows ---------- */
+.rows{display:flex;flex-direction:column;padding:0 var(--sp-2) var(--sp-3)}
+.row-btn{display:grid;grid-template-columns:24px 1fr 92px 56px;align-items:center;gap:var(--sp-3);
+   padding:var(--sp-2) var(--sp-3);border:0;background:none;border-radius:var(--r-md);font:inherit;
+   color:inherit;text-align:left;cursor:pointer;width:100%;
+   transition:background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease)}
+.row-btn:hover{background:var(--sunken)}
+.row-btn:active{transform:scale(.995)}
+.row-btn[aria-pressed="true"]{background:var(--accent-soft)}
+.rank{font-family:var(--mono);font-size:var(--fs-2xs);color:var(--ink-3)}
+.co b{display:block;font-size:var(--fs-base);letter-spacing:-.01em}
+.co span{display:block;font-size:var(--fs-xs);color:var(--ink-3);overflow:hidden;
+   text-overflow:ellipsis;white-space:nowrap;max-width:22ch}
+.scorepill{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:var(--fs-sm);
+   font-weight:600;padding:3px 8px;border-radius:999px;background:var(--sunken);text-align:center}
+.row-btn[aria-pressed="true"] .scorepill{background:var(--accent);color:var(--accent-ink)}
+
+/* ---------- SIGNATURE 2: evidence rail ---------- */
+.evidence{position:sticky;top:72px;background:var(--raised);border-radius:var(--r-xl);
+   box-shadow:var(--shadow-2);overflow:hidden;display:flex;flex-direction:column}
+.ev-head{padding:var(--sp-5) var(--sp-5) var(--sp-4);background:var(--surface)}
+.ev-head .eyebrow{display:block;margin-bottom:var(--sp-2)}
+.ev-title{display:flex;align-items:baseline;gap:var(--sp-3)}
+.ev-title h3{font-size:var(--fs-xl);letter-spacing:-.02em;font-family:var(--mono);font-weight:600}
+.ev-title span{font-size:var(--fs-xs);color:var(--ink-3)}
+.ev-name{font-size:var(--fs-sm);color:var(--ink-2);margin-top:2px}
+.ev-score{display:flex;align-items:baseline;gap:var(--sp-2);margin-top:var(--sp-4)}
+.ev-score b{font-size:var(--fs-hero);font-weight:600;letter-spacing:-.03em;font-family:var(--mono);
+   line-height:1}
+.ev-score small{font-size:var(--fs-sm);color:var(--ink-3)}
+.ev-body{padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-5)}
+.ev-sec>.eyebrow{display:block;margin-bottom:var(--sp-3)}
+.catbar{display:flex;flex-direction:column;gap:var(--sp-3)}
+.catbar>div{display:grid;grid-template-columns:1fr 40px;gap:var(--sp-2) var(--sp-3);align-items:center}
+.catbar span{font-size:var(--fs-xs);color:var(--ink-2)}
+.catbar b{font-family:var(--mono);font-size:var(--fs-xs);text-align:right;
+   font-variant-numeric:tabular-nums}
+.catbar .track{grid-column:1/-1;height:5px;border-radius:3px;background:var(--sunken);overflow:hidden}
+.catbar .track i{display:block;height:100%;border-radius:3px;background:var(--accent-2);
+   transition:width .35s var(--ease)}
+.catbar .track i.none{width:100%!important;
+   background:repeating-linear-gradient(90deg,var(--border) 0 3px,transparent 3px 6px)}
+.ev-list{display:flex;flex-direction:column;gap:var(--sp-2);margin:0;padding:0;
+   font-size:var(--fs-sm);color:var(--ink-2)}
+.ev-list li{list-style:none;padding-left:var(--sp-4);position:relative;text-wrap:pretty}
+.ev-list li::before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;
+   border-radius:2px;background:var(--accent-2)}
+.ev-foot{margin-top:auto;padding:var(--sp-4) var(--sp-5);background:var(--surface);
+   font-size:var(--fs-xs);color:var(--ink-3);text-wrap:pretty}
+.ev-cta{display:block;text-align:center;padding:9px;border-radius:var(--r-md);background:var(--accent);
+   color:var(--accent-ink);font-size:var(--fs-sm);font-weight:600;text-decoration:none;
+   margin-top:var(--sp-3);transition:transform var(--dur-fast) var(--ease)}
+.ev-cta:active{transform:scale(.98)}
+
+/* ---------- tables ---------- */
+.tablewrap{padding:0 var(--sp-2) var(--sp-2)}
+table{width:100%;border-collapse:separate;border-spacing:0}
+thead th{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+   color:var(--ink-3);text-align:left;padding:var(--sp-2) var(--sp-3);white-space:nowrap}
+thead th.n{text-align:right}
+tbody td{padding:var(--sp-2) var(--sp-3);font-size:var(--fs-sm);border-top:1px solid var(--border-soft)}
+tbody td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer;transition:background var(--dur-fast) var(--ease)}
+tbody tr:hover td{background:var(--sunken)}
+tbody tr[aria-selected="true"] td{background:var(--accent-soft)}
+tbody tr:first-child td{border-top:1px solid var(--border)}
+.tick{font-family:var(--mono);font-weight:600;font-size:var(--fs-base)}
+.co-name{color:var(--ink-3);font-size:var(--fs-xs);display:block}
+.chip{display:inline-flex;align-items:center;font-size:var(--fs-2xs);font-weight:600;
+   text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:999px;
+   background:var(--accent-soft);color:var(--accent)}
+.score-cell{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px}
+.score-cell b{font-size:var(--fs-lg);font-weight:600}
+.score-cell i{display:flex;height:3px;width:48px;border-radius:2px;background:var(--sunken);
+   overflow:hidden}
+.score-cell i span{display:block;height:100%;background:var(--accent-2)}
+.score-cell i span.gap{background:repeating-linear-gradient(90deg,var(--border) 0 2px,transparent 2px 4px)}
+
+/* ---------- heatmap ---------- */
+.heat{display:grid;gap:3px;max-width:660px}
+.heat-cell{aspect-ratio:1;border-radius:6px;display:grid;place-items:center;font-family:var(--mono);
+   font-size:var(--fs-2xs);font-weight:500;transition:transform var(--dur-fast) var(--ease)}
+.heat-cell:hover{transform:scale(1.08);box-shadow:var(--shadow-1);z-index:2}
+.heat-cell.diag{background:var(--sunken)!important;color:var(--ink-3)!important}
+.heat-lab{display:grid;place-items:center;font-family:var(--mono);font-size:var(--fs-2xs);
+   color:var(--ink-3);font-weight:600}
+.heat-lab.row{justify-content:end;padding-right:var(--sp-2)}
+.legend{display:flex;align-items:center;gap:var(--sp-3);margin-top:var(--sp-5);font-size:var(--fs-2xs);
+   color:var(--ink-3);font-family:var(--mono);flex-wrap:wrap}
+.legend .ramp{display:flex;height:8px;border-radius:4px;overflow:hidden;width:200px}
+.legend .ramp i{flex:1}
+.seg{display:inline-flex;background:var(--sunken);border-radius:var(--r-md);padding:3px}
+.seg button{font:inherit;font-size:var(--fs-xs);padding:4px var(--sp-3);border:0;background:none;
+   color:var(--ink-2);cursor:pointer;border-radius:7px}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--ink);font-weight:600;
+   box-shadow:var(--shadow-1)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:1320px){.shell{grid-template-columns:minmax(0,1fr) 320px}.rail{display:none}}
+@media (max-width:960px){.shell{grid-template-columns:1fr}.evidence{position:static}
+  .tiles{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="spec">
+  <h1>Approved direction <span>· Studio surfaces · 14px · coverage + rail + tape</span></h1>
+  <p>Direction C's tinted, elevated surfaces at today's density, carrying all three signatures: the coverage meter under every score, the evidence rail on the right, and the score tape that shows how narrow the published range really is.</p>
+  <div class="swatches" id="sw"></div>
+  <button id="themeBtn" type="button">Dark</button>
+</div>
+
+<div class="shell">
+
+  <nav class="rail">
+    <div class="brand"><i>VS</i><div><b>ValueSignal</b><small>3.2.0 · 08-14</small></div></div>
+    <div class="nav">
+      <span class="eyebrow">Overview</span>
+      <a href="#" aria-current="page">Dashboard</a><a href="#">Portfolio</a>
+      <a href="#">Watchlist</a><a href="#">Planning</a>
+    </div>
+    <div class="nav">
+      <span class="eyebrow">Research</span>
+      <a href="#picks">Picks <em>40</em></a><a href="#">Library <em>927</em></a>
+      <a href="#">Funds <em>125</em></a>
+    </div>
+    <div class="nav">
+      <span class="eyebrow">Evidence</span>
+      <a href="#div">Diversification</a><a href="#">Live validation</a><a href="#">Methodology</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-head">
+      <div><span class="eyebrow">Latest close · 2026-08-14</span><h2>Research overview</h2>
+        <p>Fundamentals first, then market behavior and news. Research only — not advice.</p></div>
+      <div class="seg"><button type="button" aria-pressed="true">1M</button>
+        <button type="button">3M</button><button type="button">1Y</button></div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <article class="card">
+      <div class="card-head">
+        <div><span class="eyebrow">Distribution</span><h3>Where the published book actually sits</h3></div>
+        <a href="#picks">Open picks →</a>
+      </div>
+      <div class="card-body">
+        <div class="tape-ctx" id="tapeCtx"></div>
+        <div class="tape-ctx-scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        <div class="tape-axis" id="tapeAxis"></div>
+        <div class="tape-scale" id="tapeScale"></div>
+        <p class="tape-cap" id="tapeCap"></p>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div><span class="eyebrow">Benchmark path</span><h3>SPY · 98 daily closes</h3></div>
+        <a href="#">Open markets →</a>
+      </div>
+      <div class="kpis" id="chartKpis"></div>
+      <div style="padding:0 var(--sp-3) var(--sp-3)">
+        <svg id="spark" viewBox="0 0 720 220" width="100%" height="220" role="img"
+             aria-label="SPY closing price over the last 98 trading days"></svg>
+      </div>
+      <p class="note" style="padding-bottom:var(--sp-5)">Daily closes as published in report.json.
+        Portfolio lines apply current quantities to past closes and do not reconstruct trades,
+        deposits, withdrawals, taxes, fees, or dividends.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div><span class="eyebrow">Top of book</span><h3>Highest research scores</h3></div>
+        <a href="#picks">All 40 →</a>
+      </div>
+      <div class="rows" id="leaders"></div>
+    </article>
+
+    <div class="page-head" id="picks" style="margin-top:var(--sp-4)">
+      <div><span class="eyebrow">Research library</span><h2>Picks</h2>
+        <p>Select any row — the rail shows the evidence behind its score.</p></div>
+      <div class="seg"><button type="button" aria-pressed="true">All</button>
+        <button type="button">Attractive</button><button type="button">Watch</button></div>
+    </div>
+    <article class="card">
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Stance</th>
+            <th scope="col">On the tape</th>
+            <th scope="col" class="n">Fundamentals</th><th scope="col" class="n">Behavior</th>
+            <th scope="col" class="n">Price</th><th scope="col" class="n">Score</th>
+          </tr></thead>
+          <tbody id="picksBody"></tbody>
+        </table>
+      </div>
+      <p class="note" style="padding-bottom:var(--sp-4)">The rule under each score is metric
+        coverage, not confidence in the outcome. Solid = measured, dashed = not available for
+        this name.</p>
+    </article>
+
+    <div class="page-head" id="div" style="margin-top:var(--sp-4)">
+      <div><span class="eyebrow">Portfolio · trailing 250 daily returns</span>
+        <h2>Pairwise correlation</h2>
+        <p>Eight holdings with enough common history to correlate.</p></div>
+      <div class="seg"><button type="button" aria-pressed="true">Heatmap</button>
+        <button type="button">Table</button></div>
+    </div>
+    <article class="card card--lift">
+      <div class="card-body" style="padding-top:var(--sp-5)">
+        <div class="heat" id="heat"></div>
+        <div class="legend"><span>−1.0</span><span class="ramp" id="ramp"></span><span>+1.0</span>
+          <span style="color:var(--ink-2)">Gray at zero · 250 observations</span></div>
+      </div>
+    </article>
+  </main>
+
+  <aside class="evidence" id="evidence" aria-live="polite"></aside>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.VS, $ = id => document.getElementById(id)
+
+$('sw').innerHTML = ['--canvas','--surface','--raised','--sunken','--border','--ink','--ink-3','--accent','--accent-2','--accent-soft']
+  .map(v => `<i style="background:var(${v})" title="${v}"></i>`).join('')
+$('themeBtn').onclick = () => {
+  const dark = document.documentElement.dataset.theme === 'dark'
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark'
+  $('themeBtn').textContent = dark ? 'Dark' : 'Light'
+  drawChart()
+}
+
+/* ---------- SIGNATURE 1: coverage meter ---------- */
+function covMeter(pct, left, right) {
+  const p = Math.round(pct * 100)
+  return `<div class="cov">
+    <div class="cov-bar"><i style="width:${p}%"></i><i class="gap" style="width:${100-p}%"></i></div>
+    <div class="cov-label"><span>${left.replace('%p', p)}</span><span>${right}</span></div></div>`
+}
+
+const lead = D.research[0]
+$('tiles').innerHTML = [
+  ['Universe scored', D.universe_count, 'names', 'Top 150 get financial statements fetched',
+    150 / D.universe_count, '%p% enriched', '150 / 927'],
+  ['Research leader', lead.score.toFixed(1), '/100', `${lead.ticker} · ${lead.name}`,
+    lead.coverage, '%p% measured', 'fundamentals'],
+  ['Macro regime', D.macro.score, '/100', `${D.macro.label} · FRED through ${D.macro.freshness_date}`,
+    D.macro.coverage, '%p% measured', '4 / 5 series'],
+  ['10-year treasury', D.rates.treasury_10y.annual_percent, '%',
+    `Fed funds ${D.rates.fed_funds.annual_percent}% · ${D.rates.treasury_10y.as_of}`,
+    1, '%p% measured', 'DGS10 daily'],
+].map(([l,v,u,p,cov,cl,cr]) => `<div class="tile"><span class="eyebrow">${l}</span>
+  <b>${v}<small>${u}</small></b><p>${p}</p>${covMeter(cov, cl, cr)}</div>`).join('')
+
+/* ---------- SIGNATURE 3: score tape ---------- */
+const S = D.research.map(r => r.score)
+const LO = Math.min(...S), HI = Math.max(...S)
+const W0 = Math.floor(LO) - 1, W1 = Math.ceil(HI) + 1
+const at = s => ((s - W0) / (W1 - W0)) * 100
+
+$('tapeCtx').innerHTML = [0,25,50,75,100].map(p => `<u style="left:${p}%"></u>`).join('')
+  + `<div class="win" style="left:${W0}%;width:${W1-W0}%"></div>`
+;(() => {
+  let last = -Infinity, h = ''
+  D.research.forEach((r,i) => {
+    const x = at(r.score), top = i < 3
+    h += `<div class="tape-tick${top?' hi':''}" style="left:${x}%;height:${top?66:42}px"
+           title="${r.ticker} ${r.score}"></div>`
+    if (i < 6 && x - last > 7) { h += `<div class="tape-mark" style="left:${x}%;bottom:${top?74:50}px">${r.ticker}</div>`; last = x }
+  })
+  $('tapeAxis').innerHTML = h
+})()
+$('tapeScale').innerHTML = [0,.25,.5,.75,1].map(f => `<span>${(W0+(W1-W0)*f).toFixed(0)}</span>`).join('')
+$('tapeCap').textContent =
+  `Each rule is one published company, plotted on a ${W0}–${W1} window — the strip above shows how ` +
+  `little of the 0–100 scale that is. All ${D.research.length} published names fall within ` +
+  `${(HI-LO).toFixed(1)} points of each other. Read the cluster before the ranking.`
+
+/* ---------- chart ---------- */
+const bench = D.benchmark
+$('chartKpis').innerHTML = (() => {
+  const c = bench.closes, chg = (c[c.length-1]/c[0]-1)*100
+  return [['Latest close','$'+c[c.length-1].toFixed(2)],
+          ['Period change',(chg>=0?'+':'−')+Math.abs(chg).toFixed(2)+'%'],
+          ['Range','$'+Math.min(...c).toFixed(0)+'–$'+Math.max(...c).toFixed(0)]]
+    .map(([l,v],i)=>`<span><span class="eyebrow">${l}</span><b${i===1?` style="color:var(--${chg>=0?'pos':'neg'})"`:''}>${v}</b></span>`).join('')
+})()
+function drawChart(){
+  const c=bench.closes, W=720,H=220,PL=46,PR=10,PT=14,PB=26
+  const hi=Math.max(...c), lo=Math.min(...c), pad=(hi-lo)*.12, y0=lo-pad, y1=hi+pad
+  const x=i=>PL+i*(W-PL-PR)/(c.length-1), y=v=>PT+(1-(v-y0)/(y1-y0))*(H-PT-PB)
+  let s=`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="var(--accent-2)" stop-opacity=".22"/>
+    <stop offset="100%" stop-color="var(--accent-2)" stop-opacity="0"/></linearGradient></defs>`
+  ;[y0,(y0+y1)/2,y1].forEach(t=>{
+    s+=`<line class="grid" x1="${PL}" x2="${W-PR}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/>`
+    s+=`<text class="axis" x="${PL-8}" y="${(y(t)+3).toFixed(1)}" text-anchor="end">${t.toFixed(0)}</text>`})
+  const line=c.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  s+=`<path d="${line} L${x(c.length-1).toFixed(1)} ${H-PB} L${PL} ${H-PB} Z" fill="url(#g)"/>`
+  s+=`<path d="${line}" fill="none" stroke="var(--accent-2)" stroke-width="1.9"
+       stroke-linejoin="round" stroke-linecap="round"/>`
+  s+=`<circle cx="${x(c.length-1).toFixed(1)}" cy="${y(c[c.length-1]).toFixed(1)}" r="4"
+       fill="var(--raised)" stroke="var(--accent-2)" stroke-width="2"/>`
+  ;[0,Math.floor(c.length/2),c.length-1].forEach(i=>{
+    s+=`<text class="axis" x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="${i===0?'start':i===c.length-1?'end':'middle'}">${bench.dates[i].slice(5)}</text>`})
+  $('spark').innerHTML=s
+}
+drawChart()
+
+/* ---------- SIGNATURE 2: evidence rail ---------- */
+const CATS = [['valuation','Valuation'],['profitability','Profitability'],
+  ['financial_health','Financial health'],['growth','Growth'],
+  ['capital_allocation','Capital allocation'],['accounting_quality','Accounting quality']]
+function bars(pairs){
+  return `<div class="catbar">${pairs.map(([l,v]) => `<div><span>${l}</span>
+    <b>${v==null?'—':v.toFixed(0)}</b>
+    <div class="track">${v==null?'<i class="none"></i>':`<i style="width:${v}%"></i>`}</div></div>`).join('')}</div>`
+}
+function renderEvidence(r){
+  $('evidence').innerHTML = `
+    <div class="ev-head">
+      <span class="eyebrow">Evidence</span>
+      <div class="ev-title"><h3>${r.ticker}</h3><span>${r.sector}</span></div>
+      <p class="ev-name">${r.name} · ${r.industry}</p>
+      <div class="ev-score"><b>${r.score.toFixed(1)}</b><small>research score · ${r.stance.toLowerCase()}</small></div>
+      ${covMeter(r.coverage, '%p% measured', 'fundamental metrics')}
+    </div>
+    <div class="ev-body">
+      <div class="ev-sec"><span class="eyebrow">Score composition</span>
+        ${bars([['Fundamentals', r.components.fundamentals],
+                ['Market behavior', r.components.market_behavior],
+                ['News sentiment', r.components.news_sentiment]])}</div>
+      <div class="ev-sec"><span class="eyebrow">Fundamental categories</span>
+        ${bars(CATS.map(([k,l]) => [l, r.categories[k]]))}</div>
+      <div class="ev-sec"><span class="eyebrow">Why it scores here</span>
+        <ul class="ev-list">${r.strengths.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+    </div>
+    <div class="ev-foot">Dashed bars are categories the pipeline could not measure for this name —
+      not zeros. A name outside the 150-name enrichment shortlist is scored on price-based
+      multiples alone.
+      <a class="ev-cta" href="#">Open full research</a></div>`
+}
+renderEvidence(lead)
+
+function sel(t){
+  const r = D.research.find(x => x.ticker === t); if (!r) return
+  renderEvidence(r)
+  document.querySelectorAll('.row-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t===t)))
+  document.querySelectorAll('tbody tr').forEach(tr => tr.setAttribute('aria-selected', String(tr.dataset.t===t)))
+}
+
+$('leaders').innerHTML = D.research.slice(0,6).map((r,i) => `
+  <button class="row-btn" type="button" data-t="${r.ticker}" aria-pressed="${i===0}">
+    <span class="rank">${String(i+1).padStart(2,'0')}</span>
+    <span class="co"><b>${r.ticker}</b><span>${r.name}</span></span>
+    <span class="rowtape">${[0,25,50,75,100].map(p=>`<u style="left:${p}%"></u>`).join('')}
+      <i style="left:${at(r.score).toFixed(1)}%"></i></span>
+    <span class="scorepill">${r.score.toFixed(1)}</span>
+  </button>`).join('')
+
+$('picksBody').innerHTML = D.research.map((r,i) => {
+  const p = Math.round(r.coverage*100)
+  return `<tr data-t="${r.ticker}" aria-selected="${i===0}" tabindex="0">
+    <td><span class="tick">${r.ticker}</span><span class="co-name">${r.name}</span></td>
+    <td style="color:var(--ink-2)">${r.sector}</td>
+    <td><span class="chip">${r.stance}</span></td>
+    <td><span class="rowtape" title="${r.score} on a ${W0}–${W1} scale">
+      ${[0,25,50,75,100].map(q=>`<u style="left:${q}%"></u>`).join('')}
+      <i style="left:${at(r.score).toFixed(1)}%"></i></span></td>
+    <td class="n">${r.components.fundamentals?.toFixed(1) ?? '—'}</td>
+    <td class="n">${r.components.market_behavior?.toFixed(1) ?? '—'}</td>
+    <td class="n">$${r.price.toFixed(2)}</td>
+    <td class="n"><span class="score-cell"><b>${r.score.toFixed(1)}</b>
+      <i title="${p}% of applicable metrics measured"><span style="width:${p}%"></span><span class="gap" style="width:${100-p}%"></span></i></span></td>
+  </tr>`}).join('')
+
+document.addEventListener('click', e => { const t = e.target.closest('[data-t]'); if (t) sel(t.dataset.t) })
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return
+  const t = e.target.closest('tr[data-t]'); if (t) { e.preventDefault(); sel(t.dataset.t) }
+})
+
+/* ---------- heatmap ---------- */
+const C=D.corr, RAMP=['--div-n3','--div-n2','--div-n1','--div-0','--div-p1','--div-p2','--div-p3']
+const bucket=v=>v<=-.5?0:v<=-.25?1:v<-.08?2:v<=.08?3:v<.35?4:v<.6?5:6
+const n=C.tickers.length, heat=$('heat')
+heat.style.gridTemplateColumns=`54px repeat(${n}, minmax(0,1fr))`
+let html=`<div></div>`+C.tickers.map(t=>`<div class="heat-lab">${t}</div>`).join('')
+C.matrix.forEach((row,i)=>{
+  html+=`<div class="heat-lab row">${C.tickers[i]}</div>`
+  row.forEach((v,j)=>{
+    const b=bucket(v), ink=(b===0||b===6)?'#fff':'var(--ink)'
+    html+=`<div class="heat-cell${i===j?' diag':''}" style="background:var(${RAMP[b]});color:${ink}"
+      title="${C.tickers[i]} vs ${C.tickers[j]}: ${v.toFixed(2)}">${i===j?'—':v.toFixed(2)}</div>`})
+})
+heat.innerHTML=html
+$('ramp').innerHTML=RAMP.map(v=>`<i style="background:var(${v})"></i>`).join('')
+</script>
+</body>
+</html>

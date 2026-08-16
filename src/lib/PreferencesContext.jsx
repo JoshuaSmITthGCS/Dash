@@ -4,15 +4,27 @@ import modelSettings from '../../pipeline/config/settings.json'
 
 export const PREFERENCES_KEY = 'valuesignal.ui-preferences.v1'
 
+/**
+ * Accent palette. `value` is the light-theme accent, `dark` the dark-theme one.
+ *
+ * `ink` and `inkDark` are the text color placed ON a filled accent surface, and
+ * they differ per theme because the dark accents are light colors: white text on
+ * any of them lands between 1.5:1 and 2.1:1, far below AA. Each `inkDark` clears
+ * 8.9:1 against its own accent.
+ *
+ * Only --brand-primary is published per accent; --brand-secondary (the chart and
+ * meter mark) is derived from it in variables.css so a new accent needs one
+ * value per theme, not three.
+ */
 export const ACCENTS = {
-  valuesignal: { label: 'ValueSignal Green', value: '#315f49', dark: '#8eae91', ink: '#ffffff' },
-  emerald: { label: 'Emerald', value: '#087f5b', dark: '#69dbb0', ink: '#ffffff' },
-  blue: { label: 'Blue', value: '#2463a6', dark: '#82b7ed', ink: '#ffffff' },
-  indigo: { label: 'Indigo', value: '#4b57a5', dark: '#aab3ff', ink: '#ffffff' },
-  violet: { label: 'Violet', value: '#73509b', dark: '#c8a8e8', ink: '#ffffff' },
-  coral: { label: 'Coral', value: '#a94d45', dark: '#ffaaa2', ink: '#ffffff' },
-  amber: { label: 'Amber', value: '#8a6518', dark: '#e9c56b', ink: '#ffffff' },
-  monochrome: { label: 'Monochrome', value: '#3f4942', dark: '#c7cec9', ink: '#ffffff' },
+  valuesignal: { label: 'ValueSignal Green', value: '#17513c', dark: '#7fe3b0', ink: '#ffffff', inkDark: '#07130d' },
+  emerald: { label: 'Emerald', value: '#087f5b', dark: '#69dbb0', ink: '#ffffff', inkDark: '#04140e' },
+  blue: { label: 'Blue', value: '#2463a6', dark: '#82b7ed', ink: '#ffffff', inkDark: '#08131f' },
+  indigo: { label: 'Indigo', value: '#4b57a5', dark: '#aab3ff', ink: '#ffffff', inkDark: '#0d1024' },
+  violet: { label: 'Violet', value: '#73509b', dark: '#c8a8e8', ink: '#ffffff', inkDark: '#170f21' },
+  coral: { label: 'Coral', value: '#a94d45', dark: '#ffaaa2', ink: '#ffffff', inkDark: '#220b09' },
+  amber: { label: 'Amber', value: '#8a6518', dark: '#e9c56b', ink: '#ffffff', inkDark: '#1d1503' },
+  monochrome: { label: 'Monochrome', value: '#3f4942', dark: '#c7cec9', ink: '#ffffff', inkDark: '#10130f' },
 }
 
 export const DEFAULT_WIDGETS = [
@@ -153,14 +165,15 @@ export function PreferencesProvider({ children }) {
     root.dataset.chartStyle = preferences.chartStyle
     root.dataset.chartAnimation = preferences.chartAnimation
     root.dataset.chartLabels = preferences.largerChartLabels ? 'large' : 'standard'
-    root.style.setProperty('--brand-primary', resolvedTheme === 'dark' ? accent.dark : accent.value)
-    root.style.setProperty('--brand-secondary', resolvedTheme === 'dark' ? accent.dark : accent.value)
-    root.style.setProperty('--accent', resolvedTheme === 'dark' ? accent.dark : accent.value)
-    root.style.setProperty('--accent-dim', resolvedTheme === 'dark' ? accent.dark : accent.value)
-    root.style.setProperty('--series-stock', resolvedTheme === 'dark' ? accent.dark : accent.value)
-    root.style.setProperty('--accent-ink', accent.ink)
+    const isDark = resolvedTheme === 'dark'
+    // Only the primary is published. --brand-secondary, --accent-dim and
+    // --series-stock derive from it in variables.css, so they stay in step with
+    // whichever accent is active without three more inline writes.
+    root.style.setProperty('--brand-primary', isDark ? accent.dark : accent.value)
+    root.style.setProperty('--accent', isDark ? accent.dark : accent.value)
+    root.style.setProperty('--accent-ink', isDark ? accent.inkDark : accent.ink)
     const themeMeta = document.getElementById('theme-color-meta')
-    themeMeta?.setAttribute('content', resolvedTheme === 'dark' ? '#07110c' : '#f1f3f1')
+    themeMeta?.setAttribute('content', isDark ? '#0b100e' : '#eceff0')
     try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences)) } catch { /* storage can be unavailable */ }
   }, [preferences, resolvedTheme])
 

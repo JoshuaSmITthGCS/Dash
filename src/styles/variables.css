@@ -1,52 +1,187 @@
+/* ============================================================================
+   ValueSignal design tokens
+   Governed by DESIGN.md at the repo root. Values here are normative; see
+   design/direction-approved.md for how the direction was chosen.
+
+   Everything the interface renders resolves through these custom properties.
+   Do not write a raw hex, px font-size, or px spacing value anywhere else.
+
+   Accent tokens (--brand-primary, --accent, --series-stock, --accent-ink) are
+   set INLINE on :root by src/lib/PreferencesContext.jsx, so a rule in this
+   file can never win against them. Change accents in ACCENTS there.
+   ============================================================================ */
+
 :root {
   color-scheme: light dark;
-  /* Institutional light palette -- cool grays, not warm beige */
-  --surface-canvas-bg: #f4f5f7;
-  --surface-canvas-border: #d4d8dc;
-  --surface-shelf-bg: #eceef1;
-  --surface-shelf-border: #c6cad0;
-  --surface-card-bg: #ffffff;
-  --surface-card-border: #d0d4d8;
-  --surface-sheet-bg: #f8f9fa;
-  --surface-sheet-border: #b4b9be;
+
+  /* --- surfaces: one hue family, lightness is the only axis ---------------- */
+  --surface-canvas-bg: #eceff0;   /* the page */
+  --surface-shelf-bg: #e3e8e7;    /* inset: control fills, row hover, tracks */
+  --surface-card-bg: #fbfcfc;     /* a container on the page */
+  --surface-raised-bg: #ffffff;   /* a container above its neighbours */
+  --surface-sheet-bg: var(--surface-raised-bg);
+
+  --surface-canvas-border: var(--border-subtle);
+  --surface-shelf-border: var(--border-default);
+  --surface-card-border: var(--border-default);
+  --surface-sheet-border: var(--border-strong);
+
   --app-background: var(--surface-canvas-bg);
-  --app-background-tint: #e8eaed;
+  --app-background-tint: #e7ebeb;
   --surface-primary: var(--surface-card-bg);
   --surface-secondary: var(--surface-shelf-bg);
-  --surface-tertiary: #e4e6e9;
-  --text-primary: #0f1114;
-  --text-secondary: #555d66;
-  --text-tertiary: #7a838c;
-  --border-subtle: var(--surface-canvas-border);
-  --border-default: var(--surface-card-border);
-  --border-strong: var(--surface-sheet-border);
-  --brand-primary: #1a2e24;
-  --brand-secondary: #4a5c52;
-  --brand-soft: #e2ece6;
-  --positive: #0a7a5c;
-  --positive-soft: #e2f5ec;
-  --negative: #c9423d;
-  --negative-soft: #fcebea;
-  --warning: #9b6c10;
-  --warning-soft: #fff2d2;
-  --navigation-background: rgba(244, 245, 247, .94);
-  --chart-grid: #dfe2e5;
+  --surface-tertiary: var(--surface-raised-bg);
+
+  /* --- ink: four levels, every one AA on all four surfaces ----------------- */
+  --text-primary: #101614;    /* 17.8:1 on card */
+  --text-secondary: #4b5552;  /*  7.5:1 on card */
+  --text-tertiary: #5c6864;   /*  5.7:1 on card, 4.7:1 on shelf */
+  --text-faint: #7f8b87;      /* decorative only — never body, never alone */
+
+  --border-subtle: #e8ecec;
+  --border-default: #dbe1e0;
+  --border-strong: #c2cbc8;
+
+  /* --- brand: one accent. --brand-primary is overwritten inline. ----------- */
+  --brand-primary: #17513c;
+  --brand-soft: #e3f0e9;
+  --accent-ink: #ffffff;
+  /* Data marks need more luminance against a surface than a fill needs behind
+     text, so the chart/meter accent is derived one step lighter from whichever
+     accent the user picked. color-mix reads the inline value at compute time. */
+  --brand-secondary: color-mix(in srgb, var(--brand-primary) 78%, #ffffff);
+
+  /* --- semantic: state, never series --------------------------------------- */
+  --positive: #0a6f53;  --positive-soft: #e2f5ec;
+  --negative: #b83c37;  --negative-soft: #fbeae9;
+  --warning: #8a5f0e;   --warning-soft: #fdf2d8;
+
+  /* --- chart series: fixed order, one hue per series ------------------------ */
+  --series-stock: var(--brand-secondary);
+  --series-benchmark: #2b6cc4;
+  --series-benchmark-2: #c25a12;
+  --series-benchmark-3: #8b3fa8;
+  --series-cash: #7a7016;
+  --chart-grid: var(--border-subtle);
+
+  /* --- diverging: signed quantities, neutral midpoint at zero --------------- */
+  --diverging-neg-3: #2c6b7f;
+  --diverging-neg-2: #5f97a6;
+  --diverging-neg-1: #a6c5cb;
+  --diverging-zero: #dfe4e3;
+  --diverging-pos-1: #c9b791;
+  --diverging-pos-2: #a68a55;
+  --diverging-pos-3: #795c2c;
+
+  /* --- sector palette ------------------------------------------------------- */
+  --sector-tech: #923558;
+  --sector-health: #88b55a;
+  --sector-finance: #3057a3;
+  --sector-consumer-disc: #ea846f;
+  --sector-consumer-staples: #007046;
+  --sector-energy: #aa93ed;
+  --sector-industrials: #8a4700;
+  --sector-materials: #00bdc0;
+  --sector-real-estate: #803c80;
+  --sector-utilities: #baa535;
+  --sector-comm: #006694;
+
+  /* --- TYPE SCALE -----------------------------------------------------------
+     11px is the hard floor for every string the product renders, including
+     table headers, units, and sublabels. Hierarchy comes from size + weight +
+     color together, never size alone. */
+  --fs-2xs: 11px;   /* eyebrows, th, units — uppercase + tracked */
+  --fs-xs: 12px;    /* captions, dense metadata */
+  --fs-sm: 13px;    /* labels, secondary copy, table cells */
+  --fs-base: 14px;  /* body */
+  --fs-lg: 16px;    /* card titles */
+  --fs-xl: 20px;    /* section titles */
+  --fs-2xl: 26px;   /* page titles */
+  --fs-hero: 38px;  /* headline figures */
+  --fs-display: clamp(30px, 4vw, 44px);
+  --fs-mega: clamp(44px, 7vw, 76px);  /* the one number a page is about */
+
+  /* Only these four weights are loaded. Anything else is synthesized. */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-normal: 1.5;
+  --tracking-eyebrow: .09em;
+  --tracking-tight: -.02em;
+  --tracking-figure: -.03em;
+
+  --font-display: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+
+  /* --- SPACING SCALE --------------------------------------------------------
+     4px grid, with half-steps below 12px where interface micro-spacing
+     genuinely needs them (chip padding, icon gaps). Nothing outside this scale
+     may appear in a padding, margin, gap, or inset value. */
+  --sp-px: 1px;
+  --sp-0-5: 2px;
+  --sp-1: 4px;
+  --sp-1-5: 6px;
+  --sp-2: 8px;
+  --sp-2-5: 10px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+
+  /* Density preference moves exactly these three, and nothing else. */
+  --card-padding: var(--sp-5);
+  --section-gap: var(--sp-5);
+  --row-height: 52px;
+
+  /* --- shape --------------------------------------------------------------- */
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-full: 999px;
+  --control-radius: var(--r-sm);
+  --card-radius: var(--r-xl);
+
+  /* --- elevation: two levels, tinted toward the surface hue ---------------- */
+  --shadow-1: 0 1px 2px rgba(16, 40, 32, .05), 0 2px 6px rgba(16, 40, 32, .045);
+  --shadow-2: 0 1px 2px rgba(16, 40, 32, .05), 0 6px 16px rgba(16, 40, 32, .07),
+              0 18px 38px rgba(16, 40, 32, .05);
+  --ring: 0 0 0 1px rgba(16, 40, 32, .055);
+  --surface-shadow: var(--shadow-1);
+
   --outline-width: 1px;
   --outline-color: var(--border-default);
   --outline-color-hover: var(--border-strong);
   --outline-color-focus: var(--brand-primary);
+  --navigation-background: color-mix(in srgb, var(--surface-canvas-bg) 94%, transparent);
+  --scrim: rgba(16, 22, 20, .52);
 
-  /* Tighter radii -- institutional, not bubbly */
-  --card-radius: 8px;
-  --control-radius: 6px;
+  /* --- motion -------------------------------------------------------------- */
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 350ms;
+  --ease-default: cubic-bezier(.4, 0, .2, 1);
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
 
-  /* Denser spacing */
-  --card-padding: 16px;
-  --section-gap: 12px;
-  --row-height: 52px;
-  --surface-shadow: none;
+  /* --- shell layout -------------------------------------------------------- */
+  --sidebar-width: 224px;
+  --sidebar-collapsed-width: 56px;
+  --topbar-height: 48px;
+  --evidence-width: 332px;
 
-  /* Compatibility aliases */
+  /* --- compatibility aliases ------------------------------------------------
+     Kept so existing rules and inline styles keep resolving. New code uses the
+     semantic name above, not the alias. */
   --bg: var(--app-background);
   --bg-elev: var(--surface-secondary);
   --bg-card: var(--surface-primary);
@@ -58,11 +193,9 @@
   --border-lit: var(--border-strong);
   --text: var(--text-primary);
   --text-dim: var(--text-secondary);
-  --text-faint: var(--text-tertiary);
   --accent: var(--brand-primary);
   --accent-dim: var(--brand-secondary);
   --accent-glow: color-mix(in srgb, var(--brand-primary) 14%, transparent);
-  --accent-ink: #ffffff;
   --tier-high: var(--brand-primary);
   --tier-watch: var(--warning);
   --tier-neutral: var(--text-secondary);
@@ -72,95 +205,79 @@
   --pos: var(--positive);
   --neg: var(--negative);
   --warn: var(--warning);
-  --series-stock: var(--brand-primary);
-  --series-benchmark: #4674a8;
-  --series-benchmark-2: #75579b;
-  --series-benchmark-3: #9a641f;
-  --series-cash: #806b62;
+  --shadow: var(--surface-shadow);
   --pill-positive-bg: var(--positive);
   --pill-positive-ink: #ffffff;
   --pill-positive-arrow-bg: #ffffff;
-  --pill-positive-arrow-ink: #0c6840;
+  --pill-positive-arrow-ink: #0a6f53;
   --pill-negative-bg: var(--negative);
   --pill-negative-ink: #ffffff;
   --pill-negative-arrow-bg: #ffffff;
-  --pill-negative-arrow-ink: #a72e2a;
-  --font-display: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
-  --font-body: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
-  --r-sm: 5px;
-  --r-md: var(--control-radius);
-  --r-lg: var(--card-radius);
-  --r-xl: calc(var(--card-radius) + 4px);
-  --shadow: var(--surface-shadow);
-  --scrim: rgba(15, 17, 20, .52);
-
-  /* Motion tokens */
-  --duration-fast: 150ms;
-  --duration-normal: 220ms;
-  --duration-slow: 350ms;
-  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-
-  /* Sector palette */
-  --sector-tech: #4674a8;
-  --sector-health: #5d9b7c;
-  --sector-finance: #7a6da8;
-  --sector-consumer-disc: #c47a3a;
-  --sector-consumer-staples: #6b8e5f;
-  --sector-energy: #b55b4f;
-  --sector-industrials: #5a7a9c;
-  --sector-materials: #8a7352;
-  --sector-real-estate: #6d6d9e;
-  --sector-utilities: #4a907a;
-  --sector-comm: #9b6c6c;
-
-  /* Shell layout */
-  --sidebar-width: 220px;
-  --sidebar-collapsed-width: 56px;
-  --topbar-height: 48px;
+  --pill-negative-arrow-ink: #a2332e;
 }
 
+/* ============================================================================
+   Dark theme — same roles, same hierarchy, inverted lightness. One hue.
+   ============================================================================ */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --surface-canvas-bg: #090D0B;
-  --surface-canvas-border: #1e2420;
-  --surface-shelf-bg: #0f1512;
-  --surface-shelf-border: #2a322c;
-  --surface-card-bg: #131a16;
-  --surface-card-border: #2a322c;
-  --surface-sheet-bg: #1a211d;
-  --surface-sheet-border: #3a443c;
-  --app-background: var(--surface-canvas-bg);
-  --app-background-tint: #0c110e;
-  --surface-primary: var(--surface-card-bg);
-  --surface-secondary: var(--surface-shelf-bg);
-  --surface-tertiary: var(--surface-sheet-bg);
-  --text-primary: #e8ece9;
-  --text-secondary: #99a49d;
-  --text-tertiary: #6b776f;
-  --border-subtle: var(--surface-canvas-border);
-  --border-default: var(--surface-card-border);
-  --border-strong: var(--surface-sheet-border);
-  /* Mint accent for dark mode */
-  --brand-primary: #83E6B3;
-  --brand-secondary: #5cba8e;
-  --brand-soft: #162820;
-  --positive: #58d795;
-  --positive-soft: #0f2a1c;
-  --negative: #ff746d;
-  --negative-soft: #2e1614;
-  --warning: #eab83f;
-  --warning-soft: #2c2410;
-  --navigation-background: rgba(9, 13, 11, .94);
-  --chart-grid: #1e2822;
-  --surface-shadow: none;
-  --accent-ink: #090D0B;
-  --series-stock: #83E6B3;
-  --series-benchmark: #86aef7;
-  --series-benchmark-2: #c5a1ee;
-  --series-benchmark-3: #f0bd70;
-  --series-cash: #c6aca4;
+
+  --surface-canvas-bg: #0b100e;
+  --surface-shelf-bg: #101614;
+  --surface-card-bg: #141b18;
+  --surface-raised-bg: #1a231f;
+  --app-background-tint: #0d1210;
+
+  --text-primary: #e9eeeb;
+  --text-secondary: #a5b0ab;
+  --text-tertiary: #8b9791;
+  --text-faint: #75817c;
+
+  --border-subtle: #1f2823;
+  --border-default: #28322d;
+  --border-strong: #3a443c;
+
+  --brand-primary: #7fe3b0;
+  --brand-soft: #16281f;
+  --accent-ink: #07130d;
+  /* On dark the accent is already light, so the data mark steps DOWN to keep
+     it distinguishable from the accent used as ink. */
+  --brand-secondary: color-mix(in srgb, var(--brand-primary) 80%, #0b100e);
+
+  --positive: #58d795;  --positive-soft: #0f2a1c;
+  --negative: #ff746d;  --negative-soft: #2c1614;
+  --warning: #eab83f;   --warning-soft: #2a2310;
+
+  --series-benchmark: #4a8ada;
+  --series-benchmark-2: #c76329;
+  --series-benchmark-3: #9566d4;
+  --series-cash: #93862f;
+
+  --sector-tech: #954f00;
+  --sector-health: #1dab7b;
+  --sector-finance: #477203;
+  --sector-consumer-disc: #00a0d4;
+  --sector-consumer-staples: #8a438a;
+  --sector-energy: #00aaae;
+  --sector-industrials: #6a50a7;
+  --sector-materials: #d8705b;
+  --sector-real-estate: #9d3b60;
+  --sector-utilities: #a89207;
+  --sector-comm: #3660af;
+
+  --diverging-neg-3: #6fb4ce;
+  --diverging-neg-2: #457d90;
+  --diverging-neg-1: #2a4c56;
+  --diverging-zero: #222b27;
+  --diverging-pos-1: #4a3f27;
+  --diverging-pos-2: #856d36;
+  --diverging-pos-3: #cba95d;
+
+  /* Depth shadows do not read on dark — the ring carries the same ordering. */
+  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .05);
+  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .07), 0 12px 32px rgba(0, 0, 0, .45);
+  --ring: 0 0 0 1px rgba(255, 255, 255, .05);
+
   --scrim: rgba(0, 4, 2, .82);
   --pill-positive-ink: #07160f;
   --pill-negative-ink: #2a0705;
@@ -170,20 +287,82 @@
   --pill-negative-arrow-ink: #ff8d87;
 }
 
-:root[data-corners="compact"] { --card-radius: 6px; --control-radius: 4px; }
-:root[data-corners="extra-rounded"] { --card-radius: 12px; --control-radius: 8px; }
-:root[data-density="compact"] { --card-padding: 12px; --section-gap: 8px; --row-height: 44px; }
-:root[data-density="spacious"] { --card-padding: 20px; --section-gap: 16px; --row-height: 58px; }
-:root[data-surface="soft"] { --border-default: var(--border-subtle); --surface-shadow: none; }
-:root[data-surface="elevated"] { --surface-shadow: 0 1px 3px rgba(15,20,18,.04), 0 8px 24px rgba(15,20,18,.06); }
-:root[data-contrast="high"] { --border-default: var(--border-strong); --text-secondary: var(--text-primary); }
-
+/* Same values for the system-preference path, which carries no data-theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --surface-canvas-bg: #090D0B; --surface-shelf-bg: #0f1512; --surface-card-bg: #131a16;
-    --app-background: var(--surface-canvas-bg); --surface-primary: var(--surface-card-bg); --surface-secondary: var(--surface-shelf-bg);
-    --text-primary: #e8ece9; --text-secondary: #99a49d; --text-tertiary: #6b776f;
-    --border-default: #2a322c; --brand-primary: #83E6B3; --brand-soft: #162820;
-    --accent-ink: #090D0B; --series-stock: #83E6B3;
+    color-scheme: dark;
+    --surface-canvas-bg: #0b100e;
+    --surface-shelf-bg: #101614;
+    --surface-card-bg: #141b18;
+    --surface-raised-bg: #1a231f;
+    --app-background-tint: #0d1210;
+    --text-primary: #e9eeeb;
+    --text-secondary: #a5b0ab;
+    --text-tertiary: #8b9791;
+    --text-faint: #75817c;
+    --border-subtle: #1f2823;
+    --border-default: #28322d;
+    --border-strong: #3a443c;
+    --brand-primary: #7fe3b0;
+    --brand-soft: #16281f;
+    --accent-ink: #07130d;
+    --brand-secondary: color-mix(in srgb, var(--brand-primary) 80%, #0b100e);
+    --positive: #58d795;  --positive-soft: #0f2a1c;
+    --negative: #ff746d;  --negative-soft: #2c1614;
+    --warning: #eab83f;   --warning-soft: #2a2310;
+    --series-benchmark: #86aef7;
+    --series-benchmark-2: #c5a1ee;
+    --series-benchmark-3: #f0bd70;
+    --series-cash: #c6aca4;
+    --diverging-neg-3: #6fb4ce;
+    --diverging-neg-2: #457d90;
+    --diverging-neg-1: #2a4c56;
+    --diverging-zero: #222b27;
+    --diverging-pos-1: #4a3f27;
+    --diverging-pos-2: #856d36;
+    --diverging-pos-3: #cba95d;
+    --shadow-1: 0 0 0 1px rgba(255, 255, 255, .05);
+    --shadow-2: 0 0 0 1px rgba(255, 255, 255, .07), 0 12px 32px rgba(0, 0, 0, .45);
+    --ring: 0 0 0 1px rgba(255, 255, 255, .05);
+    --scrim: rgba(0, 4, 2, .82);
+    --pill-positive-ink: #07160f;
+    --pill-negative-ink: #2a0705;
+    --pill-positive-arrow-bg: #07160f;
+    --pill-positive-arrow-ink: #69e2a2;
+    --pill-negative-arrow-bg: #2a0705;
+    --pill-negative-arrow-ink: #ff8d87;
   }
+}
+
+/* ============================================================================
+   User preferences. Each one moves tokens, never per-site values.
+   ============================================================================ */
+:root[data-corners="compact"] { --r-sm: 5px; --r-md: 6px; --r-lg: 8px; --r-xl: 10px; }
+:root[data-corners="extra-rounded"] { --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 24px; }
+
+:root[data-density="compact"] {
+  --card-padding: var(--sp-3);
+  --section-gap: var(--sp-3);
+  --row-height: 44px;
+}
+:root[data-density="spacious"] {
+  --card-padding: var(--sp-6);
+  --section-gap: var(--sp-6);
+  --row-height: 58px;
+}
+
+/* Elevation is the default. "soft" flattens it for readers who prefer it. */
+:root[data-surface="soft"] {
+  --surface-shadow: none;
+  --shadow-1: none;
+  --shadow-2: none;
+  --border-default: var(--border-strong);
+}
+:root[data-surface="elevated"] { --surface-shadow: var(--shadow-2); }
+
+:root[data-contrast="high"] {
+  --border-default: var(--border-strong);
+  --text-secondary: var(--text-primary);
+  --text-tertiary: var(--text-secondary);
+  --text-faint: var(--text-tertiary);
 }

@@ -7,7 +7,7 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import InfoTag from '../components/InfoTag.jsx'
-import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import DataTable from '../components/DataTable.jsx'
 
 const SOURCE_LABEL = {
   published_leader: 'Published leader',
@@ -40,35 +40,32 @@ function ThemeCard({ row, index, onOpen }) {
 }
 
 function ThemeTable({ rows, onOpen }) {
-  return <>
-    <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={250}
-      renderItem={(row, index) => <ThemeCard row={row} index={index} onOpen={onOpen} />} />
-    <div className="research-table card"><table>
-    <thead><tr>
-      <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th>
-      <th scope="col">Research rating</th>
-      <th scope="col" className="num">Exposure</th>
-      <th scope="col" className="num">Opportunity</th>
-      <th scope="col">Leading signals</th>
-      <th scope="col">Eligible</th>
-      <th scope="col"><span className="sr-only">Open</span></th>
-    </tr></thead>
-    <tbody>{rows.map((row, index) => <tr key={row.ticker}>
-      <td className="rank">#{index + 1}</td>
-      <td><div className="table-company company-with-logo">
-        <CompanyLogo company={row} size={34} />
-        <div><b>{row.ticker}</b><span>{row.name}{row.candidate_source && <span className="chip"> {SOURCE_LABEL[row.candidate_source] || row.candidate_source}</span>}</span></div>
-      </div></td>
-      <td>{row.sector || '–'}</td>
-      <td>{row.stance ? <Tier label={row.stance} /> : '–'}</td>
-      <td className="mono num">{row.theme_exposure_score ?? '–'}</td>
-      <td className="mono num">{row.opportunity_score ?? '–'}</td>
-      <td>{(row.leading_signals_fired || []).length || '–'}</td>
-      <td>{row.eligible ? 'Yes' : 'No'}</td>
-      <td><button className="icon-button" onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
-    </tr>)}</tbody>
-  </table></div>
-  </>
+  return <DataTable
+    rows={rows}
+    getKey={(row) => row.ticker}
+    columns={[
+      { key: 'rank', label: 'Rank', sortable: false, cell: (row, index) => <span className="rank">#{index + 1}</span> },
+      { key: 'ticker', label: 'Company', cell: (row) => (
+        <div className="table-company company-with-logo">
+          <CompanyLogo company={row} size={34} />
+          <div><b>{row.ticker}</b><span>{row.name}{row.candidate_source && <span className="chip"> {SOURCE_LABEL[row.candidate_source] || row.candidate_source}</span>}</span></div>
+        </div>) },
+      { key: 'sector', label: 'Sector', cell: (row) => row.sector || '\u2013' },
+      { key: 'stance', label: 'Research rating', cell: (row) => row.stance ? <Tier label={row.stance} /> : '\u2013' },
+      { key: 'theme_exposure_score', label: 'Exposure', numeric: true,
+        cell: (row) => <span className="mono">{row.theme_exposure_score ?? '\u2013'}</span> },
+      { key: 'opportunity_score', label: 'Opportunity', numeric: true,
+        cell: (row) => <span className="mono">{row.opportunity_score ?? '\u2013'}</span> },
+      { key: 'leading_signals_fired', label: 'Leading signals',
+        sortValue: (row) => (row.leading_signals_fired || []).length,
+        cell: (row) => (row.leading_signals_fired || []).length || '\u2013' },
+      { key: 'eligible', label: 'Eligible', cell: (row) => row.eligible ? 'Yes' : 'No' },
+      { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+        cell: (row) => <button className="icon-button" onClick={() => onOpen(row)}
+          aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button> },
+    ]}
+    mobile={{ estimateSize: 250, renderItem: (row, index) => <ThemeCard row={row} index={index} onOpen={onOpen} /> }}
+  />
 }
 
 export default function ThemeExposureScreen() {

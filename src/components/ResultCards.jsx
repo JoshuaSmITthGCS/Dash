@@ -37,10 +37,14 @@ function VirtualResultCards(props) {
 }
 
 /**
- * Shared responsive representation for table results. Lists above 50 rows use
- * dynamic window virtualization so mobile routes do not mount every card.
+ * Shared responsive representation for table results. Long lists use dynamic
+ * window virtualization so mobile routes do not mount every card.
+ *
+ * `forceMobile` skips the internal breakpoint check: DataTable has already
+ * decided which of the two trees to mount, and letting this component decide a
+ * second time would render nothing on desktop and mount both on mobile.
  */
-export default function ResultCards(props) {
+export default function ResultCards({ forceMobile = false, virtualizeFrom = 50, ...props }) {
   const [mobile, setMobile] = useState(() => window.matchMedia?.('(max-width: 900px)').matches ?? false)
   useEffect(() => {
     const query = window.matchMedia?.('(max-width: 900px)')
@@ -49,8 +53,8 @@ export default function ResultCards(props) {
     query.addEventListener?.('change', update)
     return () => query.removeEventListener?.('change', update)
   }, [])
-  if (!mobile) return null
-  if (props.rows.length > 50) return <VirtualResultCards {...props} />
+  if (!forceMobile && !mobile) return null
+  if (props.rows.length > virtualizeFrom) return <VirtualResultCards {...props} />
   return <div className="result-card-list">{props.rows.map((row, index) =>
     <ResultCard key={props.getKey(row, index)} {...props} row={row} index={index} />)}</div>
 }

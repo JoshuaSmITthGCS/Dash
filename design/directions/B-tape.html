@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction B · Tape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DIRECTION B — "TAPE"  ·  Terminal editorial
+   Bloomberg meets print. Near-monochrome: grays carry all
+   structure, one accent carries meaning. No card borders —
+   hairline rules and whitespace do the grouping. Bricolage
+   Grotesque (already loaded in index.html, currently unused)
+   becomes --font-display for headline figures.
+   Signature: the score tape — rank becomes a position on a
+   0–100 axis, not just a number in a column.
+   ============================================================ */
+
+:root {
+  /* neutral, untinted — the identity is structure, not hue */
+  --paper:     #f7f7f6;
+  --paper-2:   #ffffff;
+  --sunken:    #ececeb;
+  --rule:      #dcdcda;
+  --rule-firm: #b9b9b6;
+  --rule-hair: #e8e8e6;
+
+  --ink:      #14161a;
+  --ink-2:    #4a4e54;
+  --ink-3:    #63686e;   /* 5.7:1 on paper */
+  --ink-mute: #83888e;
+
+  --accent:      #0f3d2c;   /* the only chromatic decision */
+  --accent-soft: #dfeae4;
+  --accent-ink:  #ffffff;
+
+  --pos:#0a6f53; --neg:#b3352f; --warn:#8a5f0e;
+
+  --div-n3:#33607c; --div-n2:#6b93a8; --div-n1:#aec3ce;
+  --div-0: #e0e0de;
+  --div-p1:#c8b48f; --div-p2:#a68950; --div-p3:#75592a;
+
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:13px; --fs-base:14px;
+  --fs-lg:17px; --fs-xl:22px; --fs-2xl:30px; --fs-hero:56px; --fs-mega:76px;
+
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+
+  --font:   'Instrument Sans', system-ui, sans-serif;
+  --display:'Bricolage Grotesque', 'Instrument Sans', sans-serif;
+  --mono:   'IBM Plex Mono', ui-monospace, monospace;
+}
+
+html[data-theme="dark"] {
+  --paper:#0a0b0b; --paper-2:#101212; --sunken:#161818;
+  --rule:#26292a; --rule-firm:#3d4142; --rule-hair:#1b1e1e;
+  --ink:#eceeec; --ink-2:#a8adaa; --ink-3:#8d9390; --ink-mute:#767c79;
+  --accent:#7fe3b0; --accent-soft:#14251d; --accent-ink:#07130d;
+  --pos:#58d795; --neg:#ff746d; --warn:#eab83f;
+  --div-n3:#78bade; --div-n2:#4a7f9c; --div-n1:#2c4d5e;
+  --div-0:#242726;
+  --div-p1:#4a3d26; --div-p2:#856831; --div-p3:#cfa957;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);
+     font-size:var(--fs-base);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,figure{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.disp{font-family:var(--display);font-weight:800;letter-spacing:-.035em;
+      font-variant-numeric:tabular-nums;line-height:.92}
+.eyebrow{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.12em;
+         font-weight:600;color:var(--ink-3)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- direction chrome (mockup only) ---------- */
+.spec{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:var(--sp-5);
+      padding:var(--sp-3) var(--sp-6);background:var(--paper-2);
+      border-bottom:1px solid var(--rule-firm);flex-wrap:wrap}
+.spec h1{font-size:var(--fs-sm);font-weight:600}
+.spec h1 span{color:var(--ink-3);font-weight:400}
+.spec p{font-size:var(--fs-xs);color:var(--ink-2);max-width:46ch}
+.swatches{display:flex;gap:2px;margin-left:auto}
+.swatches i{width:26px;height:22px;border:1px solid var(--rule)}
+.spec button{font:inherit;font-size:var(--fs-xs);font-weight:500;padding:6px var(--sp-3);
+    border:1px solid var(--rule-firm);background:var(--paper-2);color:var(--ink);cursor:pointer}
+
+/* ---------- top bar + tab strip (no left rail) ---------- */
+.topbar{display:flex;align-items:center;gap:var(--sp-5);padding:var(--sp-4) var(--sp-8);
+        border-bottom:1px solid var(--ink)}
+.wordmark{font-family:var(--display);font-weight:800;font-size:var(--fs-xl);
+          letter-spacing:-.04em}
+.wordmark em{font-style:normal;color:var(--accent)}
+.topbar .meta{margin-left:auto;display:flex;gap:var(--sp-6);font-size:var(--fs-2xs);
+   font-family:var(--mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+.topbar .meta b{color:var(--ink);font-weight:500;display:block;letter-spacing:0;
+   text-transform:none;font-size:var(--fs-sm)}
+
+.tabs{display:flex;gap:0;padding:0 var(--sp-8);border-bottom:1px solid var(--rule);
+      overflow-x:auto;background:var(--paper)}
+.tabs a{padding:var(--sp-3) var(--sp-4);font-size:var(--fs-sm);color:var(--ink-3);
+   text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;
+   margin-bottom:-1px}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+
+.wrap{max-width:1140px;margin:0 auto;padding:var(--sp-10) var(--sp-8) var(--sp-16)}
+.block{padding-top:var(--sp-12);margin-top:var(--sp-12);border-top:1px solid var(--ink)}
+.block:first-child{padding-top:0;margin-top:0;border-top:0}
+.block-head{display:flex;align-items:baseline;justify-content:space-between;
+   gap:var(--sp-6);margin-bottom:var(--sp-8)}
+.block-head h2{font-family:var(--display);font-weight:600;font-size:var(--fs-2xl);
+   letter-spacing:-.03em}
+.block-head p{font-size:var(--fs-sm);color:var(--ink-2);margin-top:var(--sp-1);max-width:56ch}
+.block-head a{font-size:var(--fs-sm);color:var(--ink-2);text-decoration:none;
+   border-bottom:1px solid var(--rule-firm);white-space:nowrap}
+.block-head a:hover{color:var(--ink);border-color:var(--ink)}
+
+/* ---------- the masthead figure ---------- */
+.masthead{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+   gap:var(--sp-12);align-items:start;padding-bottom:var(--sp-8);
+   border-bottom:1px solid var(--rule)}
+.masthead .lead .eyebrow{display:block;margin-bottom:var(--sp-3)}
+.masthead .fig{font-family:var(--display);font-weight:800;font-size:var(--fs-mega);
+   letter-spacing:-.045em;line-height:.86;display:flex;align-items:baseline;gap:var(--sp-3)}
+.masthead .fig sup{font-family:var(--font);font-size:var(--fs-lg);font-weight:600;
+   letter-spacing:0;color:var(--ink-3);top:-.7em;position:relative}
+.masthead .lead p{font-size:var(--fs-base);color:var(--ink-2);margin-top:var(--sp-4);
+   max-width:44ch;text-wrap:pretty}
+.masthead .lead svg{margin-top:var(--sp-6);max-width:420px;display:block}
+.lead-list{list-style:none;margin:var(--sp-5) 0 0;padding:0;display:flex;
+   flex-direction:column;gap:0;max-width:46ch}
+.lead-list li{font-size:var(--fs-sm);color:var(--ink-2);padding:var(--sp-2) 0;
+   border-top:1px solid var(--rule-hair);display:flex;gap:var(--sp-3);text-wrap:pretty}
+.lead-list li b{font-family:var(--mono);font-size:var(--fs-2xs);color:var(--ink-3);
+   font-weight:500;flex:none;padding-top:2px}
+.rundown{display:flex;flex-direction:column}
+.rundown div{display:flex;align-items:baseline;justify-content:space-between;
+   gap:var(--sp-4);padding:var(--sp-3) 0;border-top:1px solid var(--rule-hair)}
+.rundown div:first-child{border-top:0}
+.rundown span{font-size:var(--fs-sm);color:var(--ink-2)}
+.rundown b{font-family:var(--mono);font-size:var(--fs-lg);font-weight:500;
+   font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.rundown em{font-style:normal;font-size:var(--fs-2xs);color:var(--ink-3);
+   font-family:var(--mono);display:block;text-align:right}
+
+/* ---------- SIGNATURE: the score tape ---------- */
+/* Every published name plotted on one 0–100 axis. Rank stops being a
+   column of digits and becomes distance: you see the cluster, the gap,
+   and the tail before you read a single ticker. */
+.tape{padding:var(--sp-8) 0 0}
+/* context strip: the whole 0–100 scale, with the occupied window bracketed */
+.tape-ctx{position:relative;height:14px;border-bottom:1px solid var(--rule-firm);
+   margin-bottom:var(--sp-2)}
+.tape-ctx u{position:absolute;bottom:0;width:1px;height:5px;background:var(--rule-firm);
+   text-decoration:none}
+.tape-ctx .win{position:absolute;bottom:0;height:14px;background:var(--accent);opacity:.16;
+   border-left:1px solid var(--accent);border-right:1px solid var(--accent)}
+.tape-ctx-scale{display:flex;justify-content:space-between;font-family:var(--mono);
+   font-size:var(--fs-2xs);color:var(--ink-3);margin-bottom:var(--sp-6)}
+/* the zoomed tape */
+.tape-axis{position:relative;height:132px;border-bottom:1px solid var(--ink);
+   margin-bottom:var(--sp-2)}
+.tape-tick{position:absolute;bottom:0;width:1px;background:var(--ink-mute);
+   transform:translateX(-.5px)}
+.tape-tick.hi{background:var(--accent);width:2px}
+.tape-mark{position:absolute;transform:translateX(-50%);font-family:var(--mono);
+   font-size:var(--fs-2xs);font-weight:600;white-space:nowrap;color:var(--ink)}
+.tape-mark::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:8px;
+   background:var(--rule-firm)}
+.tape-scale{display:flex;justify-content:space-between;font-family:var(--mono);
+   font-size:var(--fs-2xs);color:var(--ink-3)}
+.tape-cap{font-size:var(--fs-xs);color:var(--ink-3);margin-top:var(--sp-3);max-width:74ch;
+   text-wrap:pretty}
+
+/* ---------- chart ---------- */
+.chart-row{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:var(--sp-10);
+   align-items:start}
+svg .grid{stroke:var(--rule-hair)}
+svg .axis{fill:var(--ink-3);font-size:10px;font-family:var(--mono)}
+.kpis{display:flex;flex-direction:column;gap:var(--sp-5)}
+.kpis>div{border-top:1px solid var(--rule);padding-top:var(--sp-3)}
+.kpis .eyebrow{display:block;margin-bottom:var(--sp-2)}
+.kpis b{font-family:var(--display);font-weight:600;font-size:var(--fs-xl);
+   letter-spacing:-.03em;display:block}
+.kpis small{font-size:var(--fs-xs);color:var(--ink-3);display:block;margin-top:2px}
+
+/* ---------- macro strip ---------- */
+.macro{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-8);
+   margin-top:var(--sp-8);padding-top:var(--sp-6);border-top:1px solid var(--rule)}
+.macro .eyebrow{display:block;margin-bottom:var(--sp-2)}
+.macro .fig{font-family:var(--display);font-weight:800;font-size:var(--fs-hero);
+   letter-spacing:-.04em;line-height:.9}
+.macro .track{height:2px;background:var(--rule);margin:var(--sp-3) 0 var(--sp-2);position:relative}
+.macro .track i{position:absolute;inset:0 auto 0 0;background:var(--accent);height:2px}
+.macro .track u{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--ink);
+   text-decoration:none}
+.macro small{font-size:var(--fs-xs);color:var(--ink-3)}
+
+/* ---------- tables (hairline, no container) ---------- */
+table{width:100%;border-collapse:collapse}
+thead th{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.1em;
+   font-weight:600;color:var(--ink-3);text-align:left;padding:var(--sp-2) var(--sp-3);
+   border-bottom:1px solid var(--ink);white-space:nowrap}
+thead th:first-child{padding-left:0} thead th:last-child{padding-right:0}
+thead th.n{text-align:right}
+tbody td{padding:var(--sp-3);border-bottom:1px solid var(--rule-hair);font-size:var(--fs-sm)}
+tbody td:first-child{padding-left:0} tbody td:last-child{padding-right:0}
+tbody td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tbody tr:hover td{background:var(--sunken)}
+.tick-sym{font-family:var(--display);font-weight:600;font-size:var(--fs-lg);
+   letter-spacing:-.02em}
+.co-name{color:var(--ink-3);font-size:var(--fs-xs);display:block;margin-top:1px}
+.score-big{font-family:var(--display);font-weight:800;font-size:var(--fs-xl);
+   letter-spacing:-.035em}
+.stance{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.1em;
+   font-weight:600;color:var(--accent)}
+.stance::before{content:"▍";margin-right:4px}
+/* inline mini-tape inside the row: where this name sits on 0–100 */
+.rowtape{position:relative;height:14px;width:96px;border-bottom:1px solid var(--rule)}
+.rowtape i{position:absolute;bottom:0;width:2px;height:11px;background:var(--accent)}
+.rowtape u{position:absolute;bottom:0;width:1px;height:5px;background:var(--rule-firm);
+   text-decoration:none}
+
+/* ---------- heatmap ---------- */
+.heat{display:grid;gap:1px;background:var(--rule-hair);border:1px solid var(--rule-hair);
+   max-width:660px}
+.heat-cell.diag{background:var(--sunken)!important;color:var(--ink-3)!important}
+.heat-cell{aspect-ratio:1;display:grid;place-items:center;font-family:var(--mono);
+   font-size:var(--fs-2xs);font-weight:500}
+.heat-lab{display:grid;place-items:center;font-family:var(--display);font-weight:600;
+   font-size:var(--fs-xs);color:var(--ink-2);background:var(--paper)}
+.heat-lab.row{justify-content:end;padding-right:var(--sp-2)}
+.legend{display:flex;align-items:center;gap:var(--sp-3);margin-top:var(--sp-4);
+   font-size:var(--fs-2xs);color:var(--ink-3);font-family:var(--mono)}
+.legend .ramp{display:flex;height:6px;width:200px}
+.legend .ramp i{flex:1}
+.seg{display:inline-flex;border-bottom:1px solid var(--rule-firm)}
+.seg button{font:inherit;font-size:var(--fs-xs);padding:4px var(--sp-3);border:0;
+   background:none;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;
+   margin-bottom:-1px}
+.seg button[aria-pressed="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.disclaimer{font-size:var(--fs-xs);color:var(--ink-3);margin-top:var(--sp-4);max-width:80ch;
+   text-wrap:pretty}
+@media (max-width:900px){.masthead,.chart-row,.macro{grid-template-columns:1fr;gap:var(--sp-6)}
+  :root{--fs-mega:52px;--fs-hero:40px}}
+</style>
+</head>
+<body>
+
+<div class="spec">
+  <h1>Direction B <span>· Tape</span></h1>
+  <p>A terminal that reads like print. Grays build every structure, one green carries every meaning, and rank becomes a position on an axis instead of a column of digits.</p>
+  <div class="swatches" id="sw"></div>
+  <button id="themeBtn" type="button">Dark</button>
+</div>
+
+<header class="topbar">
+  <div class="wordmark">VALUE<em>SIGNAL</em></div>
+  <div class="meta">
+    <span>Close<b class="num">2026-08-14</b></span>
+    <span>Universe<b class="num">927</b></span>
+    <span>Model<b class="num">3.2.0</b></span>
+  </div>
+</header>
+<nav class="tabs">
+  <a href="#dash" aria-current="page">Overview</a>
+  <a href="#">Portfolio</a>
+  <a href="#picks">Picks</a>
+  <a href="#">Library</a>
+  <a href="#">Funds</a>
+  <a href="#">Screens</a>
+  <a href="#div">Diversification</a>
+  <a href="#">Validation</a>
+  <a href="#">Methodology</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section class="block" id="dash">
+    <div class="masthead">
+      <div class="lead">
+        <span class="eyebrow">Research leader · latest close</span>
+        <div class="fig" id="leadFig"></div>
+        <p id="leadCopy"></p>
+        <svg id="leadSpark" viewBox="0 0 420 74" width="100%" height="74" role="img"
+             aria-label="Research-score history for the leading name"></svg>
+        <ul class="lead-list" id="leadList"></ul>
+      </div>
+      <div class="rundown" id="rundown"></div>
+    </div>
+
+    <!-- SIGNATURE -->
+    <div class="tape">
+      <span class="eyebrow">All 40 published scores, plotted</span>
+      <div class="tape-ctx" id="tapeCtx"></div>
+      <div class="tape-ctx-scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+      <div class="tape-axis" id="tapeAxis"></div>
+      <div class="tape-scale" id="tapeScale"></div>
+      <p class="tape-cap" id="tapeCap"></p>
+    </div>
+
+    <div style="margin-top:var(--sp-12);padding-top:var(--sp-8);border-top:1px solid var(--rule)">
+      <div class="block-head">
+        <div><h2>Benchmark path</h2><p>SPY, 98 daily closes as published.</p></div>
+        <a href="#">Open markets →</a>
+      </div>
+      <div class="chart-row">
+        <svg id="spark" viewBox="0 0 760 240" width="100%" height="240" role="img"
+             aria-label="SPY closing price over the last 98 trading days"></svg>
+        <div class="kpis" id="chartKpis"></div>
+      </div>
+    </div>
+
+    <div class="macro" id="macro"></div>
+    <p class="disclaimer">Macro regime from Federal Reserve Economic Data (FRED), Federal Reserve Bank of
+      St. Louis. This product uses the FRED® API but is not endorsed or certified by the Bank.
+      The vertical rule on each track marks the composite regime score.</p>
+  </section>
+
+  <!-- ===================== PICKS ===================== -->
+  <section class="block" id="picks">
+    <div class="block-head">
+      <div><h2>Picks</h2><p>Forty published names carrying full evidence, ranked by research score.</p></div>
+      <div class="seg">
+        <button type="button" aria-pressed="true">Score</button>
+        <button type="button">Fundamentals</button>
+        <button type="button">Sector</button>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th scope="col">Company</th>
+        <th scope="col">Sector</th>
+        <th scope="col">Stance</th>
+        <th scope="col">Position on tape</th>
+        <th scope="col" class="n">Fundamentals</th>
+        <th scope="col" class="n">Behavior</th>
+        <th scope="col" class="n">Price</th>
+        <th scope="col" class="n">Score</th>
+      </tr></thead>
+      <tbody id="picksBody"></tbody>
+    </table>
+    <p class="disclaimer">Research screens, not trade instructions. Confirm current prices, liquidity,
+      news, and your own risk limits before acting.</p>
+  </section>
+
+  <!-- ===================== DIVERSIFICATION ===================== -->
+  <section class="block" id="div">
+    <div class="block-head">
+      <div><h2>Pairwise correlation</h2><p>Eight holdings with 250 common daily returns.</p></div>
+      <div class="seg">
+        <button type="button" aria-pressed="true">Heatmap</button>
+        <button type="button">Table</button>
+      </div>
+    </div>
+    <div class="heat" id="heat"></div>
+    <div class="legend">
+      <span>−1.0</span><span class="ramp" id="ramp"></span><span>+1.0</span>
+      <span style="margin-left:var(--sp-4)">Neutral gray at zero</span>
+    </div>
+    <p class="disclaimer">Correlation runs from −1 (moved opposite) to +1 (moved in lockstep).
+      High correlation across most pairs means the portfolio holds fewer independent bets than
+      it holds tickers.</p>
+  </section>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.VS, $ = id => document.getElementById(id)
+
+$('sw').innerHTML = ['--paper','--paper-2','--rule','--ink','--ink-3','--accent','--pos','--neg']
+  .map(v => `<i style="background:var(${v})" title="${v}"></i>`).join('')
+$('themeBtn').onclick = () => {
+  const dark = document.documentElement.dataset.theme === 'dark'
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark'
+  $('themeBtn').textContent = dark ? 'Dark' : 'Light'
+  drawChart()
+}
+
+const lead = D.research[0]
+$('leadFig').innerHTML = `${lead.score.toFixed(1)}<sup>/100 · ${lead.ticker}</sup>`
+$('leadCopy').textContent = `${lead.name}. ${lead.strengths[0]}. ${Math.round(lead.coverage*100)}% of the applicable fundamental metrics were available for this name; the rest were suppressed as inapplicable to its sector profile.`
+
+$('leadList').innerHTML = lead.strengths
+  .map((s,i) => `<li><b>${String(i+1).padStart(2,'0')}</b><span>${s}</span></li>`).join('')
+
+;(() => {                                    // leader's own 24-point close history
+  const v = lead.spark, W = 420, H = 74
+  const hi = Math.max(...v), lo = Math.min(...v), r = (hi - lo) || 1
+  const x = i => i * W / (v.length - 1), y = k => 6 + (1 - (k - lo) / r) * (H - 12)
+  const d = v.map((k,i) => `${i?'L':'M'}${x(i).toFixed(1)} ${y(k).toFixed(1)}`).join(' ')
+  $('leadSpark').innerHTML =
+    `<line class="grid" x1="0" x2="${W}" y1="${y(v[0]).toFixed(1)}" y2="${y(v[0]).toFixed(1)}"/>` +
+    `<path d="${d}" fill="none" stroke="var(--ink)" stroke-width="1.4"/>` +
+    `<circle cx="${x(v.length-1)}" cy="${y(v[v.length-1]).toFixed(1)}" r="3" fill="var(--accent)"/>` +
+    `<text class="axis" x="0" y="${H-1}">${v.length} published closes</text>` +
+    `<text class="axis" x="${W}" y="${H-1}" text-anchor="end">$${v[v.length-1].toFixed(2)}</text>`
+})()
+
+$('rundown').innerHTML = [
+  ['Published names', D.research.length, 'with full evidence'],
+  ['Universe scored', D.universe_count, 'preliminary pass'],
+  ['Macro regime', D.macro.score, `${D.macro.label} · ${D.macro.freshness_date}`],
+  ['10-year treasury', D.rates.treasury_10y.annual_percent + '%', 'DGS10 · ' + D.rates.treasury_10y.as_of],
+  ['Fed funds', D.rates.fed_funds.annual_percent + '%', 'DFF · ' + D.rates.fed_funds.as_of],
+].map(([l, v, n]) => `<div><span>${l}</span><b>${v}<em>${n}</em></b></div>`).join('')
+
+/* ---- SIGNATURE: the tape ----
+   Every published score is between 79.2 and 88.8, so a raw 0–100 axis would
+   collapse the whole book into one smudge. Two tiers instead: a context strip
+   that shows exactly how narrow that window is, then the window itself, zoomed. */
+;(() => {
+  const scores = D.research.map(r => r.score)
+  const lo = Math.min(...scores), hi = Math.max(...scores)
+  const w0 = Math.floor(lo) - 1, w1 = Math.ceil(hi) + 1        // zoom window
+  const at = s => ((s - w0) / (w1 - w0)) * 100
+
+  $('tapeCtx').innerHTML =
+    [0,25,50,75,100].map(p => `<u style="left:${p}%"></u>`).join('') +
+    `<div class="win" style="left:${w0}%;width:${w1-w0}%"></div>`
+
+  // label the top few, but only where they will not collide
+  let lastLabel = -Infinity, lane = 0, h = ''
+  D.research.forEach((r, i) => {
+    const x = at(r.score), hi3 = i < 3
+    h += `<div class="tape-tick${hi3?' hi':''}" style="left:${x}%;height:${hi3?84:52}px"
+            title="${r.ticker} ${r.score}"></div>`
+    if (i < 6 && x - lastLabel > 7) {
+      h += `<div class="tape-mark" style="left:${x}%;bottom:${(hi3?92:60) + lane*0}px">${r.ticker}</div>`
+      lastLabel = x
+    }
+    lane = 0
+  })
+  $('tapeAxis').innerHTML = h
+  $('tapeScale').innerHTML = [0,.25,.5,.75,1]
+    .map(f => `<span>${(w0 + (w1-w0)*f).toFixed(0)}</span>`).join('')
+  $('tapeCap').textContent =
+    `Each rule is one published company, plotted on a ${w0}–${w1} window — the strip above shows how` +
+    ` little of the 0–100 scale that is. All ${D.research.length} published names fall within` +
+    ` ${(hi-lo).toFixed(1)} points of each other. Read the cluster before the ranking.`
+})()
+
+/* ---- chart ---- */
+const bench = D.benchmark
+$('chartKpis').innerHTML = (() => {
+  const c = bench.closes, chg = (c[c.length-1]/c[0] - 1) * 100
+  return [
+    ['Latest close', '$' + c[c.length-1].toFixed(2), bench.dates[bench.dates.length-1]],
+    ['Period change', (chg>=0?'+':'−') + Math.abs(chg).toFixed(2) + '%', `${bench.dates[0]} → ${bench.dates[bench.dates.length-1]}`],
+    ['Observations', c.length, 'daily closes'],
+  ].map(([l,v,n]) => `<div><span class="eyebrow">${l}</span><b>${v}</b><small>${n}</small></div>`).join('')
+})()
+
+function drawChart(){
+  const c = bench.closes, W=760, H=240, PL=46, PR=8, PT=14, PB=26
+  const hi=Math.max(...c), lo=Math.min(...c), pad=(hi-lo)*.1, y0=lo-pad, y1=hi+pad
+  const x=i=>PL+i*(W-PL-PR)/(c.length-1), y=v=>PT+(1-(v-y0)/(y1-y0))*(H-PT-PB)
+  let s=''
+  ;[y0,(y0+y1)/2,y1].forEach(t=>{
+    s+=`<line class="grid" x1="${PL}" x2="${W-PR}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/>`
+    s+=`<text class="axis" x="${PL-8}" y="${(y(t)+3).toFixed(1)}" text-anchor="end">${t.toFixed(0)}</text>`
+  })
+  const line=c.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  s+=`<path d="${line}" fill="none" stroke="var(--ink)" stroke-width="1.4"/>`
+  s+=`<line x1="${PL}" x2="${W-PR}" y1="${y(c[0]).toFixed(1)}" y2="${y(c[0]).toFixed(1)}"
+       stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 3"/>`
+  s+=`<circle cx="${x(c.length-1).toFixed(1)}" cy="${y(c[c.length-1]).toFixed(1)}" r="3" fill="var(--accent)"/>`
+  ;[0,Math.floor(c.length/2),c.length-1].forEach(i=>{
+    s+=`<text class="axis" x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="${i===0?'start':i===c.length-1?'end':'middle'}">${bench.dates[i].slice(5)}</text>`})
+  $('spark').innerHTML=s
+}
+drawChart()
+
+/* ---- macro ---- */
+const F = D.macro.factors
+$('macro').innerHTML = [['Rates',F.rates],['Inflation',F.inflation],['Labor',F.labor]]
+  .map(([l,f]) => `<div>
+    <span class="eyebrow">${l}</span>
+    <div class="fig">${f.score}</div>
+    <div class="track"><i style="width:${f.score}%"></i><u style="left:${D.macro.score}%"></u></div>
+    <small>${f.label} · as of ${f.as_of}</small>
+  </div>`).join('')
+
+/* ---- picks ---- */
+/* the row tape reuses the same zoom window as the signature above */
+const _s = D.research.map(r => r.score)
+const W0 = Math.floor(Math.min(..._s)) - 1, W1 = Math.ceil(Math.max(..._s)) + 1
+const at2 = s => ((s - W0) / (W1 - W0)) * 100
+$('picksBody').innerHTML = D.research.map(r => `
+  <tr>
+    <td><span class="tick-sym">${r.ticker}</span><span class="co-name">${r.name}</span></td>
+    <td style="color:var(--ink-2)">${r.sector}</td>
+    <td><span class="stance">${r.stance}</span></td>
+    <td><span class="rowtape" title="${r.score} on a ${W0}–${W1} scale">
+      ${[0,25,50,75,100].map(p=>`<u style="left:${p}%"></u>`).join('')}
+      <i style="left:${at2(r.score).toFixed(1)}%"></i></span></td>
+    <td class="n">${r.components.fundamentals?.toFixed(1) ?? '—'}</td>
+    <td class="n">${r.components.market_behavior?.toFixed(1) ?? '—'}</td>
+    <td class="n">$${r.price.toFixed(2)}</td>
+    <td class="n"><span class="score-big">${r.score.toFixed(1)}</span></td>
+  </tr>`).join('')
+
+/* ---- heatmap ---- */
+const C = D.corr
+const RAMP=['--div-n3','--div-n2','--div-n1','--div-0','--div-p1','--div-p2','--div-p3']
+const bucket=v=>v<=-.5?0:v<=-.25?1:v<-.08?2:v<=.08?3:v<.35?4:v<.6?5:6
+const n=C.tickers.length, heat=$('heat')
+heat.style.gridTemplateColumns=`52px repeat(${n}, minmax(0,1fr))`
+let html=`<div class="heat-lab"></div>`+C.tickers.map(t=>`<div class="heat-lab">${t}</div>`).join('')
+C.matrix.forEach((row,i)=>{
+  html+=`<div class="heat-lab row">${C.tickers[i]}</div>`
+  row.forEach((v,j)=>{
+    const b=bucket(v), ink=(b===0||b===6)?'#fff':'var(--ink)'
+    html+=`<div class="heat-cell${i===j?' diag':''}" style="background:var(${RAMP[b]});color:${ink}"
+      title="${C.tickers[i]} vs ${C.tickers[j]}: ${v.toFixed(2)}">${i===j?'—':v.toFixed(2)}</div>`
+  })
+})
+heat.innerHTML=html
+$('ramp').innerHTML=RAMP.map(v=>`<i style="background:var(${v})"></i>`).join('')
+</script>
+</body>
+</html>
