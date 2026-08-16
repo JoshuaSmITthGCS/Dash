@@ -1,3 +1,5 @@
+import DataTable from './DataTable.jsx'
+
 /**
  * The evidence behind the Research Score, surfaced where a reader can act on it.
  *
@@ -58,6 +60,30 @@ export function BenchmarkPanel({ panel }) {
     return <NotGenerated panel={panel} name="Benchmark comparison" />
   }
   const strategy = panel.strategy || {}
+  const rows = [
+    {
+      key: '__self__', name: 'ValueSignal', cagr: strategy.cagr, volatility: strategy.volatility,
+      sharpe: strategy.sharpe, max_drawdown: strategy.max_drawdown,
+      beta: null, annualized_alpha_pct: null, newey_west_t_statistic: null, significant: false, isSelf: true,
+    },
+    ...panel.rows.map((row) => ({ key: row.name, ...row })),
+  ]
+  const columns = [
+    { key: 'name', label: 'Benchmark', sortable: false, rowHeader: true, cell: (row) => <span title={row.description}>{row.name}</span> },
+    { key: 'cagr', label: 'CAGR', sortable: false, cell: (row) => pct(row.cagr, 2) },
+    { key: 'volatility', label: 'Vol', sortable: false, cell: (row) => pct(row.volatility, 2) },
+    { key: 'sharpe', label: 'Sharpe', sortable: false, cell: (row) => num(row.sharpe, 3) },
+    { key: 'max_drawdown', label: 'Max DD', sortable: false, cell: (row) => pct(row.max_drawdown, 2) },
+    { key: 'beta', label: 'Beta', sortable: false, cell: (row) => (row.isSelf ? '–' : num(row.beta)) },
+    {
+      key: 'annualized_alpha_pct', label: 'Alpha', sortable: false,
+      cell: (row) => (row.isSelf ? '–' : row.annualized_alpha_pct == null ? '–' : `${row.annualized_alpha_pct > 0 ? '+' : ''}${num(row.annualized_alpha_pct)}%`),
+    },
+    {
+      key: 'newey_west_t_statistic', label: 'NW t', sortable: false,
+      cell: (row) => (row.isSelf ? '–' : <span className={row.significant ? 'evidence-significant' : undefined}>{num(row.newey_west_t_statistic)}</span>),
+    },
+  ]
   return <section className="card evidence-panel">
     <header className="section-heading">
       <div><span className="eyebrow">Could an ETF have done this?</span>
@@ -67,30 +93,13 @@ export function BenchmarkPanel({ panel }) {
       <span className="chip">{panel.summary?.beaten_on_cagr_count} beaten on CAGR</span>
     </header>
     <div className="evidence-table-scroll">
-      <table className="evidence-table">
-        <thead><tr>
-          <th scope="col">Benchmark</th><th scope="col">CAGR</th><th scope="col">Vol</th>
-          <th scope="col">Sharpe</th><th scope="col">Max DD</th><th scope="col">Beta</th>
-          <th scope="col">Alpha</th><th scope="col">NW t</th>
-        </tr></thead>
-        <tbody>
-          <tr className="evidence-row-self">
-            <th scope="row">ValueSignal</th>
-            <td>{pct(strategy.cagr, 2)}</td><td>{pct(strategy.volatility, 2)}</td>
-            <td>{num(strategy.sharpe, 3)}</td><td>{pct(strategy.max_drawdown, 2)}</td>
-            <td>–</td><td>–</td><td>–</td>
-          </tr>
-          {panel.rows.map((row) => <tr key={row.name}>
-            <th scope="row" title={row.description}>{row.name}</th>
-            <td>{pct(row.cagr, 2)}</td><td>{pct(row.volatility, 2)}</td>
-            <td>{num(row.sharpe, 3)}</td><td>{pct(row.max_drawdown, 2)}</td>
-            <td>{num(row.beta)}</td>
-            <td>{row.annualized_alpha_pct == null ? '–' : `${row.annualized_alpha_pct > 0 ? '+' : ''}${num(row.annualized_alpha_pct)}%`}</td>
-            <td className={row.significant ? 'evidence-significant' : undefined}>
-              {num(row.newey_west_t_statistic)}</td>
-          </tr>)}
-        </tbody>
-      </table>
+      <DataTable
+        className="evidence-table"
+        rows={rows}
+        getKey={(row) => row.key}
+        columns={columns}
+        rowClassName={(row) => (row.isSelf ? 'evidence-row-self' : undefined)}
+      />
     </div>
     <p className="evidence-note">{panel.summary?.verdict}</p>
   </section>
@@ -179,21 +188,20 @@ export function CostPanel({ panel }) {
       <div><dt>Published CAGR at 10bps</dt><dd>{pct(flat.cagr, 2)}</dd></div>
     </dl>
     <div className="evidence-table-scroll">
-      <table className="evidence-table">
-        <thead><tr>
-          <th scope="col">Scenario</th><th scope="col">One-way</th>
-          <th scope="col">Total cost</th><th scope="col">vs flat 10bps</th>
-        </tr></thead>
-        <tbody>
-          {(panel.scenarios || []).map((row) => <tr key={row.scenario}>
-            <th scope="row">{title(row.scenario)}</th>
-            <td>{num(row.cost_bps, 2)} bps</td>
-            <td>{row.total_cost == null ? '–' : `$${Math.round(row.total_cost).toLocaleString()}`}</td>
-            <td>{row.drag_vs_realized_flat == null ? '–'
-              : `${row.drag_vs_realized_flat > 0 ? '+' : ''}$${Math.round(row.drag_vs_realized_flat).toLocaleString()}`}</td>
-          </tr>)}
-        </tbody>
-      </table>
+      <DataTable
+        className="evidence-table"
+        rows={panel.scenarios || []}
+        getKey={(row) => row.scenario}
+        columns={[
+          { key: 'scenario', label: 'Scenario', sortable: false, rowHeader: true, cell: (row) => title(row.scenario) },
+          { key: 'cost_bps', label: 'One-way', sortable: false, cell: (row) => `${num(row.cost_bps, 2)} bps` },
+          { key: 'total_cost', label: 'Total cost', sortable: false, cell: (row) => (row.total_cost == null ? '–' : `$${Math.round(row.total_cost).toLocaleString()}`) },
+          {
+            key: 'drag_vs_realized_flat', label: 'vs flat 10bps', sortable: false,
+            cell: (row) => (row.drag_vs_realized_flat == null ? '–' : `${row.drag_vs_realized_flat > 0 ? '+' : ''}$${Math.round(row.drag_vs_realized_flat).toLocaleString()}`),
+          },
+        ]}
+      />
     </div>
     <p className="evidence-note">{panel.never_present_gross_as_net}</p>
   </section>
@@ -212,21 +220,17 @@ export function CalibrationPanel({ panel }) {
     </header>
     {measured
       ? <div className="evidence-table-scroll">
-        <table className="evidence-table">
-          <thead><tr>
-            <th scope="col">Score band</th><th scope="col">n</th>
-            <th scope="col">Median residual</th><th scope="col">Beat sector</th>
-          </tr></thead>
-          <tbody>
-            {panel.fixed_score_bands.filter((band) => band.status === 'measured')
-              .map((band) => <tr key={band.bucket}>
-                <th scope="row">{band.bucket}</th>
-                <td>{band.observations}</td>
-                <td>{signedPct(band.median_residual_return)}</td>
-                <td>{pct(band.beat_sector_rate)}</td>
-              </tr>)}
-          </tbody>
-        </table>
+        <DataTable
+          className="evidence-table"
+          rows={panel.fixed_score_bands.filter((band) => band.status === 'measured')}
+          getKey={(row) => row.bucket}
+          columns={[
+            { key: 'bucket', label: 'Score band', sortable: false, rowHeader: true, cell: (row) => row.bucket },
+            { key: 'observations', label: 'n', sortable: false, cell: (row) => row.observations },
+            { key: 'median_residual_return', label: 'Median residual', sortable: false, cell: (row) => signedPct(row.median_residual_return) },
+            { key: 'beat_sector_rate', label: 'Beat sector', sortable: false, cell: (row) => pct(row.beat_sector_rate) },
+          ]}
+        />
       </div>
       : <p className="evidence-note">
         No score bucket has enough closed forward windows to report an outcome distribution.

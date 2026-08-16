@@ -67,6 +67,13 @@ describe('BenchmarkPanel', () => {
     render(<BenchmarkPanel panel={{ status: 'not_generated', reason: 'not built' }} />)
     expect(screen.getByText(/Benchmark comparison not generated/i)).toBeInTheDocument()
   })
+
+  it('pins the ValueSignal self-row with the evidence-row-self class', () => {
+    render(<BenchmarkPanel panel={benchmarks} />)
+    const selfRow = screen.getByRole('rowheader', { name: 'ValueSignal' }).closest('tr')
+    expect(selfRow).toHaveClass('evidence-row-self')
+    expect(screen.getByRole('rowheader', { name: 'VTV' })).toBeInTheDocument()
+  })
 })
 
 describe('FactorPanel', () => {
