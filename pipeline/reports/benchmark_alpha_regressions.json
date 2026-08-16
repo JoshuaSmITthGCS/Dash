@@ -4,7 +4,7 @@
       "cagr": 0.08917,
       "description": "S&P MidCap 400 -- the strategy's actual size band",
       "final_value": 152588.97,
-      "max_drawdown": -0.241046,
+      "max_drawdown": -0.241047,
       "sharpe": 0.5346,
       "strategy_versus_this_benchmark": {
         "annualized_alpha_pct": 8.775,
@@ -20,7 +20,7 @@
     "IJH+IWD 50/50": {
       "cagr": 0.104535,
       "description": "matches the realized beta 0.79 / SMB 0.455 profile the six-factor regression measured, using a fixed 50/50 rather than a fitted mix",
-      "final_value": 163539.31,
+      "final_value": 163539.32,
       "max_drawdown": -0.204946,
       "sharpe": 0.6764,
       "strategy_versus_this_benchmark": {
@@ -37,7 +37,7 @@
     "IJR": {
       "cagr": 0.075671,
       "description": "S&P SmallCap 600",
-      "final_value": 143459.02,
+      "final_value": 143459.0,
       "max_drawdown": -0.280241,
       "sharpe": 0.4519,
       "strategy_versus_this_benchmark": {
@@ -54,7 +54,7 @@
     "IWD": {
       "cagr": 0.1191,
       "description": "Russell 1000 Value",
-      "final_value": 174489.64,
+      "final_value": 174489.65,
       "max_drawdown": -0.190394,
       "sharpe": 0.8369,
       "strategy_versus_this_benchmark": {
@@ -66,12 +66,12 @@
         "newey_west_t_statistic": 1.189,
         "r_squared": 0.6385
       },
-      "volatility": 0.148535
+      "volatility": 0.148534
     },
     "IWF": {
       "cagr": 0.122776,
       "description": "Russell 1000 Growth",
-      "final_value": 177343.02,
+      "final_value": 177343.07,
       "max_drawdown": -0.327226,
       "sharpe": 0.6426,
       "strategy_versus_this_benchmark": {
@@ -86,16 +86,16 @@
       "volatility": 0.21846
     },
     "IWM": {
-      "cagr": 0.073243,
+      "cagr": 0.07325,
       "description": "Russell 2000 -- small cap",
-      "final_value": 141864.03,
+      "final_value": 141868.7,
       "max_drawdown": -0.319116,
       "sharpe": 0.4289,
       "strategy_versus_this_benchmark": {
         "annualized_alpha_pct": 11.255,
         "beta": 0.6263,
         "classical_t_statistic": 2.001,
-        "monthly_alpha": 0.008928,
+        "monthly_alpha": 0.008927,
         "months": 59,
         "newey_west_t_statistic": 2.481,
         "r_squared": 0.5593
@@ -105,7 +105,7 @@
     "NOBL": {
       "cagr": 0.06709,
       "description": "S&P 500 Dividend Aristocrats -- quality proxy",
-      "final_value": 137885.86,
+      "final_value": 137885.84,
       "max_drawdown": -0.179209,
       "sharpe": 0.5232,
       "strategy_versus_this_benchmark": {
@@ -124,17 +124,17 @@
       "description": "S&P 500 equal weight -- breadth-matched",
       "final_value": 154683.61,
       "max_drawdown": -0.213844,
-      "sharpe": 0.629,
+      "sharpe": 0.6285,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 7.773,
-        "beta": 0.8647,
+        "annualized_alpha_pct": 7.779,
+        "beta": 0.8642,
         "classical_t_statistic": 1.488,
-        "monthly_alpha": 0.006258,
+        "monthly_alpha": 0.006262,
         "months": 59,
-        "newey_west_t_statistic": 1.832,
-        "r_squared": 0.6162
+        "newey_west_t_statistic": 1.833,
+        "r_squared": 0.6159
       },
-      "volatility": 0.162322
+      "volatility": 0.162212
     },
     "SCHD": {
       "cagr": 0.098943,
@@ -173,9 +173,9 @@
     "VB": {
       "cagr": 0.079278,
       "description": "CRSP US small cap",
-      "final_value": 145854.83,
+      "final_value": 145854.85,
       "max_drawdown": -0.281541,
-      "sharpe": 0.474,
+      "sharpe": 0.4741,
       "strategy_versus_this_benchmark": {
         "annualized_alpha_pct": 10.101,
         "beta": 0.7131,
@@ -207,7 +207,7 @@
     "VUG": {
       "cagr": 0.125674,
       "description": "CRSP US large growth",
-      "final_value": 179619.65,
+      "final_value": 179619.68,
       "max_drawdown": -0.35613,
       "sharpe": 0.6395,
       "strategy_versus_this_benchmark": {
@@ -224,7 +224,7 @@
     "VXF": {
       "cagr": 0.068344,
       "description": "Extended market (completion index) -- everything outside the S&P 500",
-      "final_value": 138689.29,
+      "final_value": 138689.33,
       "max_drawdown": -0.363936,
       "sharpe": 0.4093,
       "strategy_versus_this_benchmark": {
@@ -241,7 +241,7 @@
   },
   "benchmarks_unavailable": [],
   "generated_at": "2026-08-14T04:28:10.514429Z",
-  "method": "every leg is buy-and-hold from the strategy's first execution date with one 10bps entry cost, identical to how backtest_monthly.py prices its SPY leg",
+  "method": "every leg is buy-and-hold from the strategy's first execution date to its last, with one 10bps entry cost, identical to how backtest_monthly.py prices its SPY leg",
   "schema_version": 1,
   "sector_neutral_composite": {
     "built": false,
@@ -285,6 +285,7 @@
     "verdict": "significant positive alpha against 6 benchmark(s)"
   },
   "window": {
+    "end": "2026-08-13",
     "initial_capital": 100000.0,
     "start": "2021-09-01"
   }
