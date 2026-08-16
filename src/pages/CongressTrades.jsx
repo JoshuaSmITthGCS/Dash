@@ -43,8 +43,8 @@ export function emptyNote(data) {
 }
 
 function FlagChips({ flags }) {
-  if (!flags?.length) return <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>
-  return <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+  if (!flags?.length) return <span className="mono text-faint">–</span>
+  return <div className="congress-flag-row">
     {flags.map((flag) => <span key={flag} className="chip">{FLAG_LABELS[flag] || flag}</span>)}
   </div>
 }

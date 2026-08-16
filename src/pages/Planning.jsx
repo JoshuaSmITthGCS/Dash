@@ -195,7 +195,7 @@ export default function Planning() {
       <p>{liveTargetActive
         ? `Your current-holdings return, annualized from ${currentHoldingsPeriod.startDate} to ${currentHoldingsPeriod.endDate}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
         : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12, color: 'var(--text-dim)' }}>
+      <label className="planning-inline-note">
         <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
         Track my current-holdings return{liveStrategyAnnualReturnPct == null ? ' -- unavailable until there are at least two dated market values' : ''}
       </label>

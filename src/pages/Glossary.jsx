@@ -204,9 +204,9 @@ export default function Glossary() {
     </div>
 
     {filtered.map((group) => (
-      <section key={group.title} style={{ marginTop: 28 }}>
+      <section key={group.title} className="sec-label--section">
         <div className="sec-label">{group.title}</div>
-        {group.note && <p className="body-copy" style={{ margin: '-4px 0 12px', color: 'var(--text-dim)' }}>{group.note}</p>}
+        {group.note && <p className="body-copy glossary-group-note">{group.note}</p>}
         <div className="card card-pad">
           <dl className="glossary-list">
             {group.terms.map(([term, def]) => (

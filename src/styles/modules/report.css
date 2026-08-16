@@ -343,6 +343,7 @@
 /* Shared table fallback cards and responsive financial forms. */
 .result-card-list { display: none; }
 .congress-kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: var(--sp-5); }
+.congress-flag-row { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); }
 .finance-form { display: grid; gap: var(--sp-3); align-items: end; margin-bottom: var(--sp-5); }
 .finance-form-budget { grid-template-columns: 2fr 1fr 1fr auto; }
 .finance-form-pool, .finance-form-account { grid-template-columns: 2fr 1fr auto; }

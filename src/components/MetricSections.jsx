@@ -174,7 +174,7 @@ export default function MetricSections({ stock, sections = SECTIONS }) {
 
   if (!rendered.length) {
     return (
-      <p style={{ color: 'var(--text-faint)', fontSize: 13 }}>
+      <p className="metric-section-empty">
         Extended metrics appear here once the pipeline has derived this company’s financial statements.
       </p>
     )
@@ -182,12 +182,12 @@ export default function MetricSections({ stock, sections = SECTIONS }) {
 
   const exceptions = Object.entries(status).filter(([, detail]) => detail.status !== 'applied')
   return (
-    <div style={{ display: 'grid', gap: 22 }}>
+    <div className="metric-sections-list">
       {rendered.map((section) => (
         <section key={section.title}>
           <div className="sec-label">{section.title}</div>
           {section.note && (
-            <p style={{ color: 'var(--text-dim)', fontSize: 12.5, margin: '-6px 0 12px' }}>{section.note}</p>
+            <p className="metric-section-note">{section.note}</p>
           )}
           <div className="metric-detail-grid">
             {section.resolved.map((metric) => <Metric key={metric.key} {...metric} />)}
