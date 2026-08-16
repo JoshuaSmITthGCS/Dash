@@ -1,7 +1,8 @@
 # Redesign status — continuation notes
 
 **Companion to `docs/REDESIGN-PLAN.md`. Read both.**
-Last updated 2026-08-15 · all work below is merged to `main` (merge commit `8a1d073f`).
+Last updated 2026-08-16 · Phases 0–4 and 6 as merged in `8a1d073f`, plus the
+Portfolio decomposition (Phase 2d) on top.
 
 This file exists so a new session can pick the redesign up without re-deriving what
 was already decided or repeating measurements. It records what is done, what is
@@ -156,20 +157,51 @@ Specific known gaps:
 - Picks still shows 112 keys per row as 8 flat metric pills — the layered
   disclosure (pills → expandable evidence → modal) is not built.
 
-**Recommendation: decompose `Portfolio.jsx` first** (below). Phase 5's Portfolio
-pass is much cheaper afterwards.
+**`Portfolio.jsx` is now decomposed** (Phase 2d, below), so Phase 5's Portfolio
+pass can work on one view at a time. Start there or at Dashboard.
 
-### Phase 2d — decompose the giants · NOT STARTED
+### Phase 2d — decompose the giants · PORTFOLIO DONE
 | File | Lines |
 |---|---|
-| `src/pages/Portfolio.jsx` | 1,288 (three views in one file) |
+| ~~`src/pages/Portfolio.jsx`~~ | ~~1,288~~ → **233** (see below) |
 | `src/pages/SwingScreen.jsx` | 839 |
 | `src/pages/Picks.jsx` | 816 |
 
-Plan calls for `portfolio/Summary.jsx`, `portfolio/Performance.jsx`,
-`portfolio/DataOverview.jsx` + shared hooks. Pure refactor; behaviour and tests
-preserved. The plan suggests running `improve-react` first to decide where the
-seams go.
+`Portfolio.jsx` is now a shell that loads data, derives the view models once, and
+renders one of three views. Everything else moved to `src/pages/portfolio/`:
+
+| | |
+|---|---|
+| `format.js` | money/percent formatters, period constants, `perShareCost` |
+| `portfolioModels.js` | **pure** — `buildPriceModel`, `buildHoldingsModel`, `buildBenchmarkModel` |
+| `portfolioAnalyticsModel.js` | **pure** — every `score*` statistic the Data overview renders |
+| `usePortfolioForms.js` | the whole write path: add / edit / sell / remove / Fidelity sync |
+| `PortfolioBits.jsx` | nav, `Move`, `StopLossNote`, sort toolbar |
+| `Summary.jsx` / `Performance.jsx` / `DataOverview.jsx` | the three views |
+| `Holdings.jsx`, `HoldingCard.jsx`, `ComparisonTables.jsx` | the holdings section |
+
+Two things worth knowing:
+
+- **Verified rather than assumed.** The rendered DOM of all three views was dumped
+  from a real browser before and after (with every `<details>` forced open) and is
+  **byte-identical**. 13 new unit tests cover the two pure model modules, which were
+  untestable while they lived inside the component.
+- **One deliberate non-cosmetic change.** `buildAnalyticsModel` — factor regression,
+  deflated statistics, regime conditioning, the whole metric model — used to run on
+  every portfolio route and was rendered only by Data overview. It is now gated on
+  `view === 'data'`. Output is unchanged; Summary and Performance just stop paying
+  for it.
+- Cost: the Portfolio chunk grew 114.6 → 118.7 kB raw (+1.6 kB gzip) from module
+  boundaries and prop plumbing.
+
+Not yet gated: the `useData` fetches for `factors/french.json`,
+`validation/signal_metrics.json` and the four ETF benchmark snapshots are also
+Data-overview-only for the most part. `useData(null)` is a no-op, so gating them is
+easy — but `candidateInputs` feeds the Performance view's benchmark *label*
+fallback, so it is not a pure change and was left alone.
+
+`SwingScreen.jsx` and `Picks.jsx` are unchanged. The plan suggests running
+`improve-react` first to decide where their seams go.
 
 ### Phase 2c — four tables still off `DataTable`
 `Picks.jsx`, `SwingScreen.jsx`, `Portfolio.jsx`, and the three evidence tables in
@@ -255,6 +287,7 @@ Worth knowing so nobody "restores" them:
 | Direction record | `design/direction-approved.md`, reference `design/directions/D-approved.html` |
 | Table system | `src/components/DataTable.jsx`, `src/lib/dataTableSort.js` |
 | Dialog behaviour | `src/lib/useDialog.js` |
+| Portfolio views | `src/pages/Portfolio.jsx` (shell) → `src/pages/portfolio/` |
 
 ### Load-bearing constraint
 **The 11 CSS modules are imported in the original source order and the cascade

@@ -509,10 +509,12 @@ Phases 0, 1, 3 and the metadata pass are complete. Phases 2 and 4 are partly
 done and 5 is not started. What is left, and why:
 
 ### Phase 2 — component consolidation
-- **Decompose the giants.** `Portfolio.jsx` (1,286 lines, three views),
-  `SwingScreen.jsx` (839) and `Picks.jsx` (816) still hold view + data + sort
-  logic in one file. Plan calls for `portfolio/Summary|Performance|DataOverview`
-  plus shared hooks.
+- **Decompose the giants.** ~~`Portfolio.jsx` (1,286 lines, three views)~~ **done**
+  — split into a 233-line shell plus `src/pages/portfolio/` (Summary, Performance,
+  DataOverview, Holdings, HoldingCard, ComparisonTables, two pure model modules, a
+  forms hook). Rendered DOM verified byte-identical across all three views.
+  `SwingScreen.jsx` (839) and `Picks.jsx` (816) still hold view + data + sort logic
+  in one file.
 - **Four tables not yet on `DataTable`:** Picks, SwingScreen, Portfolio, and the
   three evidence tables in `ResearchEvidence.jsx`. The system and nine
   migrations are in; these four are mechanical but large.
