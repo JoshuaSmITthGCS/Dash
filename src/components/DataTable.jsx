@@ -33,6 +33,10 @@ import MobileVirtualList from './MobileVirtualList.jsx'
  * rowClassName  optional (row, index) => className, applied to the desktop <tr>.
  *               Use it for a pinned or summary row (a TOTAL row, a suppressed
  *               row) that needs different styling than the rest of the body.
+ * rowHeader      renders this column's body cell as <th scope="row"> instead
+ *                of <td> — use for the column that identifies the row.
+ * defaultSortDir the direction a fresh click on this column's header sorts
+ *                to. Defaults to 'desc'.
  */
 export default function DataTable({
   columns,
@@ -55,7 +59,8 @@ export default function DataTable({
   const isMobile = useMediaQuery(mobileBreakpoint)
 
   const handleSort = (key) => {
-    const next = nextSort(sort, key)
+    const column = columns.find((item) => item.key === key)
+    const next = nextSort(sort, key, column?.defaultSortDir || 'desc')
     if (isControlled) onSort?.(next)
     else setUncontrolledSort(next)
   }
@@ -150,11 +155,15 @@ export default function DataTable({
         <tbody>
           {ordered.map((row, index) => (
             <tr key={getKey(row, index)} className={rowClassName?.(row, index) || undefined}>
-              {columns.map((column) => (
-                <td key={column.key || column.label} className={column.numeric ? 'num' : undefined}>
-                  {column.cell ? column.cell(row, index) : row[column.key]}
-                </td>
-              ))}
+              {columns.map((column) => {
+                const content = column.cell ? column.cell(row, index) : row[column.key]
+                const cellClassName = column.numeric ? 'num' : undefined
+                return column.rowHeader ? (
+                  <th key={column.key || column.label} scope="row" className={cellClassName}>{content}</th>
+                ) : (
+                  <td key={column.key || column.label} className={cellClassName}>{content}</td>
+                )
+              })}
             </tr>
           ))}
         </tbody>

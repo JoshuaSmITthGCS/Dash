@@ -80,6 +80,25 @@ describe('DataTable', () => {
     expect(rows.map((row) => row.className)).toEqual(['', 'is-total', ''])
   })
 
+  it('renders a rowHeader column as <th scope="row">, other columns as <td>', () => {
+    const columns = [
+      { key: 'name', label: 'Name', rowHeader: true },
+      { key: 'score', label: 'Score', numeric: true },
+    ]
+    render(<DataTable columns={columns} rows={[{ name: 'Alpha', score: 1 }]} getKey={(row) => row.name} />)
+    const bodyRow = screen.getAllByRole('row')[1]
+    const rowHeader = within(bodyRow).getByRole('rowheader')
+    expect(rowHeader).toHaveTextContent('Alpha')
+    expect(rowHeader.tagName).toBe('TH')
+  })
+
+  it('starts a column at its own defaultSortDir on first click', () => {
+    const columns = [{ key: 'ticker', label: 'Ticker', defaultSortDir: 'asc' }]
+    render(<DataTable columns={columns} rows={ROWS} getKey={(row) => row.ticker} />)
+    fireEvent.click(within(screen.getByRole('columnheader')).getByRole('button'))
+    expect(screen.getByRole('columnheader')).toHaveAttribute('aria-sort', 'ascending')
+  })
+
   it('renders the empty state instead of an empty table', () => {
     render(<DataTable columns={COLUMNS} rows={[]} empty={<p>No rows clear this screen.</p>} />)
     expect(screen.queryByRole('table')).toBeNull()
