@@ -154,7 +154,7 @@ export default function Finances() {
         </div>
       </div>
 
-      <div className="grid grid-3" style={{ marginBottom: 20 }}>
+      <div className="grid grid-3 finance-kpi-row">
         <div className="card kpi">
           <div className="kpi-label">Monthly Leftover</div>
           <div className="kpi-value" style={{ color: budgetSummary.leftover >= 0 ? 'var(--pos)' : 'var(--neg)' }}>
@@ -208,31 +208,31 @@ export default function Finances() {
 
           <div className="sec-label">Income</div>
           {finances.budgetItems.filter((item) => item.type === 'income').length === 0 && (
-            <p className="body-copy" style={{ marginBottom: 12 }}>No income items yet.</p>
+            <p className="body-copy body-copy--gap">No income items yet.</p>
           )}
           {finances.budgetItems.filter((item) => item.type === 'income').map((item) => (
             <div key={item.id} className="finance-item-row">
               <span>{item.name}</span>
-              <span className="mono" style={{ color: 'var(--pos)' }}>{money(item.amount)}</span>
+              <span className="mono finance-amount-in">{money(item.amount)}</span>
               <button className="text-button danger" onClick={() => finances.removeBudgetItem(item.id)}>Remove</button>
             </div>
           ))}
 
           <div className="sec-label">Expenses</div>
           {finances.budgetItems.filter((item) => item.type === 'expense').length === 0 && (
-            <p className="body-copy" style={{ marginBottom: 12 }}>No expense items yet.</p>
+            <p className="body-copy body-copy--gap">No expense items yet.</p>
           )}
           {finances.budgetItems.filter((item) => item.type === 'expense').map((item) => (
             <div key={item.id} className="finance-item-row">
               <span>{item.name}</span>
-              <span className="mono" style={{ color: 'var(--neg)' }}>{money(item.amount)}</span>
+              <span className="mono finance-amount-out">{money(item.amount)}</span>
               <button className="text-button danger" onClick={() => finances.removeBudgetItem(item.id)}>Remove</button>
             </div>
           ))}
 
-          <div className="callout" style={{ marginTop: 20 }}>
+          <div className="callout callout--gap">
             <strong>{money(budgetSummary.leftover)}</strong> left over each month.{' '}
-            <button className="text-button" style={{ padding: 0, minHeight: 'auto' }}
+            <button className="text-button text-button--inline"
               onClick={() => finances.updateSettings({ monthlyContribution: Math.max(0, Math.round(budgetSummary.leftover)) })}>
               Use as retirement contribution
             </button>
@@ -242,7 +242,7 @@ export default function Finances() {
 
       {tab === 'pools' && (
         <>
-          <div className="card card-pad" style={{ marginBottom: 20 }}>
+          <div className="card card-pad finance-panel-gap">
             <div className="sec-label">Add a pool</div>
             <form onSubmit={handleAddPool} className="finance-form finance-form-pool">
               <div>
@@ -259,7 +259,7 @@ export default function Finances() {
             </form>
           </div>
 
-          <div className="card card-pad" style={{ marginBottom: 20 }}>
+          <div className="card card-pad finance-panel-gap">
             {finances.pools.length === 0 ? (
               <p className="body-copy">Add at least one pool to start splitting deposits.</p>
             ) : (
@@ -267,11 +267,11 @@ export default function Finances() {
                 <div key={pool.id} className="finance-pool-row">
                   <div className="finance-pool-head">
                     <span>{pool.name}</span>
-                    <span className="mono" style={{ color: 'var(--text-faint)' }}>{pool.percent}%</span>
+                    <span className="mono finance-muted">{pool.percent}%</span>
                   </div>
                   <div className="pool-bar"><div className="pool-bar-fill" style={{ width: `${Math.min(100, pool.percent)}%` }} /></div>
                   <div className="finance-pool-foot">
-                    <span className="mono" style={{ fontWeight: 600 }}>{money(pool.balance, 2)} saved</span>
+                    <span className="mono finance-pool-balance">{money(pool.balance, 2)} saved</span>
                     <button className="text-button danger" onClick={() => finances.removePool(pool.id)}>Remove</button>
                   </div>
                 </div>
@@ -290,7 +290,7 @@ export default function Finances() {
               <div><button type="submit" className="tab active" disabled={!finances.pools.length}>Add to pools</button></div>
             </form>
             {depositPreview.some((pool) => pool.share > 0) && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              <div className="finance-deposit-preview">
                 {depositPreview.map((pool) => (
                   <span key={pool.id} className="chip">{pool.name}: {money(pool.share, 2)}</span>
                 ))}
@@ -302,9 +302,9 @@ export default function Finances() {
 
       {tab === 'retirement' && (
         <>
-          <div className="card card-pad" style={{ marginBottom: 20 }}>
+          <div className="card card-pad finance-panel-gap">
             <div className="sec-label">Assumptions</div>
-            <div className="grid grid-3" style={{ gap: 12 }}>
+            <div className="grid grid-3 finance-assumptions-grid">
               <div>
                 <label className="field-label" htmlFor="fin-current-age">Current age</label>
                 <input id="fin-current-age" type="number" value={finances.settings.currentAge}
@@ -340,22 +340,22 @@ export default function Finances() {
                 <input id="fin-withdrawal" type="number" min="0" step="100" value={finances.settings.monthlyWithdrawal}
                   onChange={(e) => finances.updateSettings({ monthlyWithdrawal: parseFloat(e.target.value) || 0 })} />
               </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label htmlFor="retirement-return-target" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 4, fontSize: 13 }}><span>Annual return target</span><strong>{formatAnnualReturnTarget(displayedAnnualReturnTargetPct)}</strong></label>
+              <div className="finance-field-full">
+                <label htmlFor="retirement-return-target" className="finance-range-label"><span>Annual return target</span><strong>{formatAnnualReturnTarget(displayedAnnualReturnTargetPct)}</strong></label>
                 <input id="retirement-return-target" type="range" min={returnTargetRange.minimumPct} max={returnTargetRange.maximumPct} step={returnTargetRange.stepPct} value={displayedAnnualReturnTargetPct}
                   onChange={(event) => setReturnTargetDraft(Number(event.target.value))} onPointerUp={commitReturnTarget} onKeyUp={commitReturnTarget} />
                 <small className="body-copy">Sets the dotted median for retirement. {returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year.` : 'Historical returns set the uncertainty around your target.'}</small>
               </div>
             </div>
-            <button className="text-button" style={{ padding: 0, minHeight: 'auto', marginTop: 12 }}
+            <button className="text-button text-button--inline-gap"
               onClick={() => finances.updateSettings({ currentSavings: Math.round(portfolioValue) })}>
               Sync current savings from portfolio ({money(portfolioValue)})
             </button>
           </div>
 
-          <div className="card card-pad" style={{ marginBottom: 20 }}>
+          <div className="card card-pad finance-panel-gap">
             <div className="sec-label">Retirement & investing accounts</div>
-            <p className="body-copy" style={{ marginBottom: 12 }}>
+            <p className="body-copy body-copy--gap">
               Track contribution room against the 2026 IRS limits for each account.
               Roth IRA room can phase out at higher incomes. This assumes you're eligible.
             </p>
@@ -385,7 +385,7 @@ export default function Finances() {
                 return (
                   <div key={account.id} id={`finance-account-${account.id}`} className={`finance-pool-row${(selectedAccountId || accounts[0]?.id) === account.id ? ' selected-account' : ''}`}>
                     <div className="finance-pool-head">
-                      <span>{account.name} <span className="mono" style={{ color: 'var(--text-faint)', fontWeight: 400 }}>· {accountTypeLabel(account.type)}</span></span>
+                      <span>{account.name} <span className="mono finance-account-type">· {accountTypeLabel(account.type)}</span></span>
                       <button className="text-button danger" onClick={() => finances.removeAccount(account.id)}>Remove</button>
                     </div>
                     {limit ? (
@@ -393,16 +393,16 @@ export default function Finances() {
                         <div className="pool-bar"><div className="pool-bar-fill" style={{ width: `${pct}%` }} /></div>
                         <div className="finance-pool-foot">
                           <span className="mono">{money(contributed)} of {money(limit)} maxed ({pct.toFixed(0)}%)</span>
-                          <span className="mono" style={{ color: 'var(--text-faint)' }}>{money(Math.max(0, limit - contributed))} room left</span>
+                          <span className="mono finance-muted">{money(Math.max(0, limit - contributed))} room left</span>
                         </div>
                       </>
                     ) : (
                       <div className="finance-pool-foot">
                         <span className="mono">{money(contributed)} contributed this year</span>
-                        <span className="mono" style={{ color: 'var(--text-faint)' }}>No IRS cap</span>
+                        <span className="mono finance-muted">No IRS cap</span>
                       </div>
                     )}
-                    <div style={{ marginTop: 8 }}>
+                    <div className="finance-account-contribution">
                       <label className="field-label" htmlFor={`fin-account-${account.id}-contribution`}>Annual contribution</label>
                       <input type="number" step="1" min="0" id={`fin-account-${account.id}-contribution`} value={contributed}
                         onChange={(e) => finances.updateAccountContribution(account.id, parseFloat(e.target.value) || 0)} />
@@ -413,9 +413,9 @@ export default function Finances() {
             )}
 
             {accounts.length > 0 && (
-              <div className="callout" style={{ marginTop: 20 }}>
+              <div className="callout callout--gap">
                 <strong>{money(monthlyFromAccounts, 2)}/mo</strong> equivalent across all accounts ({money(totalAnnualFromAccounts)}/yr).{' '}
-                <button className="text-button" style={{ padding: 0, minHeight: 'auto' }}
+                <button className="text-button text-button--inline"
                   onClick={() => finances.updateSettings({ monthlyContribution: Math.round(monthlyFromAccounts) })}>
                   Use as retirement contribution
                 </button>
@@ -423,7 +423,7 @@ export default function Finances() {
             )}
           </div>
 
-          <div className="grid grid-3" style={{ marginBottom: 20 }}>
+          <div className="grid grid-3 finance-kpi-row">
             <div className="card kpi">
               <div className="kpi-label">Median at Retirement</div>
               <div className="kpi-value">{projection.loading ? 'Simulating…' : money(projectedMedian)}</div>
@@ -434,7 +434,7 @@ export default function Finances() {
             </div>
             <div className="card kpi">
               <div className="kpi-label">Savings Last Through Age {finances.settings.retirementEndAge}</div>
-              <div className="kpi-value" style={{ color: 'var(--pos)' }}>{successProbability == null ? '–' : `${(successProbability * 100).toFixed(0)}%`}</div>
+              <div className="kpi-value kpi-value--positive">{successProbability == null ? '–' : `${(successProbability * 100).toFixed(0)}%`}</div>
               <div className="kpi-note">Given {money(finances.settings.monthlyWithdrawal)} monthly spending</div>
             </div>
           </div>

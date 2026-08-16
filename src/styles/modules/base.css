@@ -237,6 +237,8 @@ body { overscroll-behavior-y: contain; }
 .primary-button.compact, .secondary-button { min-height: 34px; padding-inline: var(--sp-3); font-size: var(--fs-xs); }
 .secondary-button { background: var(--surface-secondary); border-color: var(--border); color: var(--text); }
 .secondary-button:hover { background: var(--bg-hover); }.text-button { min-height: 34px; background: transparent; padding-inline: var(--sp-2-5); }
+.text-button--inline { padding: 0; min-height: auto; }
+.text-button--inline-gap { padding: 0; min-height: auto; margin-top: var(--sp-3); }
 .chip, .tier, .action-pill {
   display: inline-flex; align-items: center; width: fit-content; border: 1px solid var(--border); border-radius: 4px;
   padding: var(--sp-0-5) var(--sp-1-5); background: var(--surface-secondary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap;
