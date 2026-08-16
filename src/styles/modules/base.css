@@ -239,6 +239,8 @@ body { overscroll-behavior-y: contain; }
 .secondary-button:hover { background: var(--bg-hover); }.text-button { min-height: 34px; background: transparent; padding-inline: var(--sp-2-5); }
 .text-button--inline { padding: 0; min-height: auto; }
 .text-button--inline-gap { padding: 0; min-height: auto; margin-top: var(--sp-3); }
+.muted-mono-note { color: var(--text-faint); font-family: var(--font-mono); font-size: var(--fs-xs); }
+.text-faint { color: var(--text-faint); }
 .chip, .tier, .action-pill {
   display: inline-flex; align-items: center; width: fit-content; border: 1px solid var(--border); border-radius: 4px;
   padding: var(--sp-0-5) var(--sp-1-5); background: var(--surface-secondary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap;

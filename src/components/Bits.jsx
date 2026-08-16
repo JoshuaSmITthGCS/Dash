@@ -34,7 +34,7 @@ const FACTOR_MAX = {
 export function ScoreBreakdown({ breakdown }) {
   if (!breakdown) return null
   return (
-    <div style={{ display: 'grid', gap: 7 }}>
+    <div className="factor-bar-list">
       {Object.entries(breakdown).map(([k, v]) => (
         <div className="bar-row" key={k}>
           <span className="bar-lab">{FACTOR_LABELS[k] || k}</span>
@@ -89,11 +89,11 @@ export function Lag({ days }) {
 }
 
 export function Loading({ label = 'loading data' }) {
-  return <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>◍ {label}…</div>
+  return <div className="card card-pad muted-mono-note">◍ {label}…</div>
 }
 
 export function Empty({ note }) {
-  return <div className="card card-pad" style={{ color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{note || 'No data yet – run the pipeline.'}</div>
+  return <div className="card card-pad muted-mono-note">{note || 'No data yet – run the pipeline.'}</div>
 }
 
 export function RefreshProgress({ active, elapsedLabel, percent = 0, stage }) {

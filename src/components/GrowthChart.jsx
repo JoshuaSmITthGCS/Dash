@@ -127,7 +127,7 @@ export default function GrowthChart({
     : availableLines[0]?.values.map((_, index) => String(index)) || []
   if (!availableLines.length || fullDates.length < 2) {
     return (
-      <div className="card card-pad chart-empty-state">
+      <div className="card card-pad muted-mono-note">
         No comparable price history yet – it appears after the next data refresh.
       </div>
     )

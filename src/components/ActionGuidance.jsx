@@ -4,7 +4,7 @@ const money = (value) => (value == null ? '–' : `$${value.toFixed(2)}`)
 
 /** Compact action chip for tables and card headers. */
 export function ActionPill({ recommendation }) {
-  if (!recommendation) return <span className="mono" style={{ color: 'var(--text-faint)' }}>–</span>
+  if (!recommendation) return <span className="mono text-faint">–</span>
   const style = actionStyle(recommendation.action)
   return (
     <span
@@ -32,7 +32,7 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
       className="action-panel"
       style={{ borderColor: style.color, background: `color-mix(in srgb, ${style.color} 7%, transparent)` }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+      <div className="action-panel-head">
         <h4 style={{ color: style.color }}>{style.icon} {actionHeadline(recommendation)}</h4>
         <span className="chip">
           {fromStopLoss
@@ -41,7 +41,7 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
         </span>
       </div>
 
-      <p style={{ color: 'var(--text-dim)', fontSize: 13 }}>
+      <p className="action-summary-text">
         {recommendation.summary || style.blurb}
       </p>
 
@@ -73,7 +73,7 @@ export default function ActionGuidance({ recommendation, position, stopLoss }) {
       )}
       {stopLoss?.explanation && <p className="position-risk-explanation">{stopLoss.explanation}</p>}
 
-      <small style={{ color: 'var(--text-faint)', fontSize: 11 }}>
+      <small className="action-disclaimer-text">
         {fromStopLoss
           ? 'This guidance comes from a high-water-mark position rule, not the business thesis. The company\'s own fundamentals, market behaviour, and sentiment may still read Hold.'
           : 'Guidance never moves off Hold on price action alone, or on a single headline. Two of three independent factors – business fundamentals, market behaviour, and positioning/sentiment – have to agree first.'}
