@@ -106,7 +106,7 @@ function InsiderActivityView({ insider }) {
           <span className="negative">{sells} sell{sells === 1 ? '' : 's'}</span>
         </div>
       </div>
-      <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
+      <p className="evidence-footnote">
         {insider.records_reviewed} Form 4 filing{insider.records_reviewed === 1 ? '' : 's'} reviewed. Routine,
         scheduled trades are weighted down in the score; this grouping is raw counts, not the scored signal.
       </p>
@@ -294,9 +294,9 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
         </div>
 
         {tab === 'evidence' && (
-          <div style={{ display: 'grid', gap: 20 }}>
+          <div className="stock-tab-panel">
             {!showMore && (
-              <p style={{ color: 'var(--text-faint)', fontSize: 12.5 }}>
+              <p className="evidence-collapsed-note">
                 Score breakdowns, fundamental categories, the evidence list, modifiers, and insider activity are
                 collapsed. Use “Explore the evidence” above to expand them.
               </p>
@@ -320,7 +320,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
               {Object.keys(categories).length > 0 && (
                 <div>
                   <div className="sec-label">Fundamental categories</div>
-                  <div className="component-scores" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+                  <div className="component-scores component-scores--fluid">
                     {Object.entries(categories).map(([key, value]) => {
                       // A category score renormalizes onto whatever metrics resolved, so a
                       // 90 built from 2 of 8 metrics and one built from all 8 read the same
@@ -331,7 +331,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
                           <span>{key.replace(/_/g, ' ')}</span>
                           <b>{value == null ? '–' : Math.round(value)}</b>
                           {evidence != null && evidence.metrics_applicable > 0 && (
-                            <small style={{ display: 'block', opacity: 0.65 }}>
+                            <small className="metric-coverage-note">
                               {evidence.metrics_used}/{evidence.metrics_applicable} metrics
                             </small>
                           )}
@@ -362,7 +362,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
                   <ul className="method-list">
                     {stock.modifiers.notes.map((note) => <li key={note}>{note}</li>)}
                   </ul>
-                  <p style={{ color: 'var(--text-faint)', fontSize: 12, marginTop: 6 }}>
+                  <p className="evidence-footnote">
                     Applied on top of the {stock.base_score ?? '–'} evidence score. Modifiers refine
                     a ranking; they never outweigh the fundamentals behind it.
                   </p>
@@ -375,7 +375,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
         {tab === 'metrics' && <MetricSections stock={stock} />}
 
         {tab === 'performance' && (
-          <div style={{ display: 'grid', gap: 20 }}>
+          <div className="stock-tab-panel">
             {isEtf ? <>
               <ETFComparisonPanel ticker={stock.ticker} />
               {chartSeries.length > 0 && <details className="card card-pad">
@@ -450,7 +450,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
           </div>
         )}
 
-        <div className="callout" style={{ marginTop: 24 }}>
+        <div className="callout callout--modal-gap">
           <strong>Disclaimer:</strong> Algorithmic research from quantitative metrics, not financial
           advice. Verify the filings and your own suitability before acting.
         </div>
