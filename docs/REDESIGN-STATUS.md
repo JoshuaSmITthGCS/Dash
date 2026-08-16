@@ -209,6 +209,25 @@ green, `design/typefloor.mjs` 0 violations across all default routes (including
 `/portfolio?portfolioPreview=1`, which now exercises the fixed select),
 `design/a11ycheck.mjs` 0 unnamed controls.
 
+### Phase 2c — all four remaining tables migrated to DataTable ✅
+`ResearchEvidence.jsx`'s three tables, `SwingScreen.jsx`, and `Picks.jsx`'s
+`ResearchPool` all now run on `DataTable`. Two more capabilities added to
+support them: `rowHeader` (a column renders as `<th scope="row">`, preserving
+the row-identity semantics `ResearchEvidence`'s tables already had) and
+per-column `defaultSortDir` (SwingScreen's columns each have a sensible first
+click direction — rank ascending, most numeric columns descending — which a
+single global default would have flattened). SwingScreen's locally duplicated
+`compareBy`/`SortHeader` are deleted in favor of the shared `dataTableSort.js`
+and `DataTable`'s own header. Every migrated column stays `sortable: false`
+where the original had no header-click sort (Portfolio's comparison tables,
+ResearchEvidence, Picks) — that remains a scope decision for later, not a
+side effect of the port. Two always-mounted mobile fallbacks (SwingScreen's
+`ResultCards`, Picks' `MobileVirtualList`) are replaced by `DataTable`'s own
+mobile config, so exactly one tree mounts on every migrated page. Verified:
+lint/test/build green (759 tests), `typefloor.mjs` 0 violations on `/research`
+(Picks), `/screens/swing`, and `/screens/validation` (ResearchEvidence via
+LiveValidation) individually and in the default sweep.
+
 ---
 
 ## 2. What is left
@@ -301,13 +320,6 @@ fallback, so it is not a pure change and was left alone.
 
 `SwingScreen.jsx` and `Picks.jsx` are unchanged. The plan suggests running
 `improve-react` first to decide where their seams go.
-
-### Phase 2c — four tables still off `DataTable`
-`Picks.jsx`, `SwingScreen.jsx`, `Portfolio.jsx`, and the three evidence tables in
-`ResearchEvidence.jsx`. Mechanical now the system exists — follow any of the nine
-migrated pages as a template. (`Diversification.jsx` and `CorrelationHeatmap.jsx`
-also match a `<table>` grep, but those are the heatmap's own table view and are
-already correct.)
 
 ### Phase 2e — inline-style diet
 **167 sites** remain, down from ~340. Keep computed values (bar widths,

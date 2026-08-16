@@ -515,10 +515,10 @@ done and 5 is not started. What is left, and why:
   forms hook). Rendered DOM verified byte-identical across all three views.
   `SwingScreen.jsx` (839) and `Picks.jsx` (816) still hold view + data + sort logic
   in one file.
-- **Three tables not yet on `DataTable`:** Picks, SwingScreen, and the three
-  evidence tables in `ResearchEvidence.jsx`. Portfolio's two comparison tables
-  migrated as part of the Phase 5 Portfolio pass below. The system and ten
-  migrations are in; these three are mechanical but large.
+- **All tables now on `DataTable`.** Picks, SwingScreen, and ResearchEvidence's
+  three evidence tables migrated; Portfolio's two comparison tables migrated
+  in the Phase 5 pass. `DataTable` gained `rowClassName`, `rowHeader`, and
+  per-column `defaultSortDir` along the way.
 - **Inline-style diet.** 167 `style={{}}` sites remain (down from ~340). The
   static ones should become classes; the computed ones (bar widths, chart
   geometry, `--widget-order`) stay.
