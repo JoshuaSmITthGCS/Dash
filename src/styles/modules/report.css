@@ -327,6 +327,17 @@
 .backtest-compare-group { margin-bottom: var(--sp-8); }
 .backtest-compare-group .section-title { margin: 0 0 var(--sp-1-5); font: var(--fw-bold) var(--fs-sm) var(--font-mono); }
 .backtest-group-note { margin: 0 0 var(--sp-3); max-width: 78ch; color: var(--text-tertiary); font: var(--fs-2xs)/1.6 var(--font-mono); }
+.dot-plot { margin: 0 0 var(--sp-4); }
+.dot-plot-rows { display: grid; gap: var(--sp-1-5); }
+.dot-plot-row { display: grid; grid-template-columns: minmax(100px, .35fr) 1fr auto; align-items: center; gap: var(--sp-2); }
+.dot-plot-label { overflow: hidden; color: var(--text-dim); font-size: var(--fs-xs); text-overflow: ellipsis; white-space: nowrap; }
+.dot-plot-track { position: relative; height: var(--sp-1); border-radius: 999px; background: var(--border); }
+.dot-plot-zero { position: absolute; top: -3px; width: 1px; height: calc(var(--sp-1) + 6px); background: var(--border-strong); transform: translateX(-50%); }
+.dot-plot-dot { position: absolute; top: 50%; width: 10px; height: 10px; border: 2px solid var(--surface-primary); border-radius: 50%; background: var(--series-stock); transform: translate(-50%, -50%); }
+.dot-plot-dot.pos { background: var(--pos); }
+.dot-plot-dot.neg { background: var(--neg); }
+.dot-plot-value { min-width: 56px; color: var(--text-primary); font-size: var(--fs-xs); text-align: right; }
+.dot-plot-axis-label { margin-top: var(--sp-1); color: var(--text-faint); font-size: var(--fs-2xs); text-align: right; }
 .backtest-compare-table td { vertical-align: top; }
 .backtest-compare-table table { min-width: 1040px; }
 .backtest-features { display: block; margin-top: var(--sp-1); color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.45; }

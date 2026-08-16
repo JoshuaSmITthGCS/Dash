@@ -3,6 +3,7 @@ import { ScreenNavigation } from './ResearchScreen'
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import DataTable from '../components/DataTable.jsx'
+import DotPlot from '../components/DotPlot.jsx'
 
 const percent = (value, digits = 2) => value == null ? '—' : `${Number(value).toFixed(digits)}%`
 const rate = (value) => value == null ? '—' : `${(Number(value) * 100).toFixed(1)}%`
@@ -140,11 +141,30 @@ export default function BacktestComparison() {
 
       <p className="disclaimer" role="note">{data?.interpretation}</p>
 
-      {groups.map(([group, rows]) => <section key={group} className="backtest-compare-group">
-        <h2 className="section-title">{GROUP_TITLES[group] || group}</h2>
-        <p className="backtest-group-note">{data?.comparable_groups?.[group]}</p>
-        <MethodTable rows={rows} group={group} />
-      </section>)}
+      {groups.map(([group, rows]) => {
+        const measuredRows = rows.filter((row) => row.status === 'measured')
+        const dotRows = group === 'rank_quality'
+          ? measuredRows.filter((row) => row.mean_ic != null)
+            .map((row) => ({ id: row.id, label: row.label, value: row.mean_ic }))
+          : measuredRows.filter((row) => row.success_rate != null)
+            .map((row) => ({ id: row.id, label: row.label, value: row.success_rate * 100 }))
+        return (
+          <section key={group} className="backtest-compare-group">
+            <h2 className="section-title">{GROUP_TITLES[group] || group}</h2>
+            <p className="backtest-group-note">{data?.comparable_groups?.[group]}</p>
+            {dotRows.length > 1 && (
+              <DotPlot
+                rows={dotRows}
+                xLabel={group === 'rank_quality' ? 'Mean IC' : 'Success rate'}
+                xFormatter={group === 'rank_quality' ? (value) => number(value, 4) : (value) => `${value.toFixed(1)}%`}
+                domain={group === 'rank_quality' ? null : { min: 0, max: 100 }}
+                caption={`${GROUP_TITLES[group] || group}, ${group === 'rank_quality' ? 'mean IC' : 'success rate'} by method`}
+              />
+            )}
+            <MethodTable rows={rows} group={group} />
+          </section>
+        )
+      })}
 
       <section className="backtest-compare-group">
         <h2 className="section-title">Success rate by feature</h2>

@@ -77,6 +77,22 @@ describe('BacktestComparison', () => {
     expect(screen.getAllByText('trades profitable').length).toBeGreaterThan(0)
   })
 
+  it('shows a success-rate dot plot for a group with more than one measured method', () => {
+    renderPage()
+
+    expect(screen.getByText('Research score, top 20 monthly', { selector: '.dot-plot-label' })).toBeInTheDocument()
+    expect(screen.getByText('Swing signals only', { selector: '.dot-plot-label' })).toBeInTheDocument()
+    expect(screen.getByText('65.0%', { selector: '.dot-plot-value' })).toBeInTheDocument()
+  })
+
+  it('does not show a dot plot for a group with only one measured method', () => {
+    renderPage()
+
+    // option_trades has exactly one measured row (Covered call) in this fixture
+    const optionSection = screen.getByRole('heading', { name: 'Option strategies' }).closest('section')
+    expect(optionSection.querySelector('.dot-plot')).toBeNull()
+  })
+
   it('reports a cash-heavy strategy as untraded rather than as a zero percent success rate', () => {
     renderPage()
 
