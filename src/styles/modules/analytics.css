@@ -177,3 +177,59 @@ details.signal-group { margin-top: var(--sp-2); padding: 0; border: 1px solid va
   .hero-research { padding: var(--sp-4); border-radius: var(--card-radius); }
   .hero-score-row > div:first-child > strong { font-size: var(--fs-display); }
 }
+
+/* ============================================================================
+   Correlation heatmap (CorrelationHeatmap.jsx)
+   Diverging scale, neutral gray at zero, values printed in every cell, and a
+   table view that carries the same numbers.
+   ============================================================================ */
+.correlation-figure { margin: 0; }
+.correlation-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4);
+  margin-bottom: var(--sp-3); flex-wrap: wrap;
+}
+.correlation-readout {
+  margin: 0; min-height: 1.5em; color: var(--text-secondary); font-size: var(--fs-sm);
+}
+.correlation-toggle { display: inline-flex; background: var(--surface-shelf-bg); border-radius: var(--r-md); padding: var(--sp-0-5); }
+.correlation-toggle button {
+  min-height: 30px; padding: 0 var(--sp-3); border: 0; border-radius: var(--r-sm);
+  background: none; color: var(--text-secondary); font: inherit; font-size: var(--fs-xs); cursor: pointer;
+}
+.correlation-toggle button[aria-pressed="true"] {
+  background: var(--surface-raised-bg); color: var(--text-primary);
+  font-weight: var(--fw-semibold); box-shadow: var(--shadow-1);
+}
+
+.correlation-grid {
+  display: grid; gap: var(--sp-0-5); max-width: 660px;
+  grid-template-columns: 54px repeat(var(--corr-columns), minmax(0, 1fr));
+}
+.correlation-label {
+  display: grid; place-items: center;
+  color: var(--text-tertiary); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono);
+}
+.correlation-label-row { justify-content: end; padding-right: var(--sp-2); }
+.correlation-cell {
+  aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm);
+  font: var(--fw-medium) var(--fs-2xs) var(--font-mono); cursor: default;
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+.correlation-cell.is-active { transform: scale(1.06); box-shadow: var(--shadow-1); z-index: 2; }
+.correlation-cell.is-diagonal { background: var(--surface-shelf-bg); color: var(--text-faint); }
+.correlation-cell:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; z-index: 3; }
+
+.correlation-legend {
+  display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-4); flex-wrap: wrap;
+  color: var(--text-tertiary); font: var(--fs-2xs) var(--font-mono);
+}
+.correlation-ramp { display: flex; width: 200px; height: 8px; border-radius: var(--r-full); overflow: hidden; }
+.correlation-ramp i { flex: 1; }
+.correlation-legend small { margin-left: var(--sp-2); font-family: var(--font-body); }
+
+@media (prefers-reduced-motion: reduce) { .correlation-cell { transition: none; } }
+@media (max-width: 620px) {
+  /* Narrower row labels, but the cell text stays on the scale — the number in
+     the cell is the evidence, and 11px is the floor. */
+  .correlation-grid { grid-template-columns: 42px repeat(var(--corr-columns), minmax(0, 1fr)); }
+}

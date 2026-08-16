@@ -58,10 +58,10 @@
 
   /* --- chart series: fixed order, one hue per series ------------------------ */
   --series-stock: var(--brand-secondary);
-  --series-benchmark: #4674a8;
-  --series-benchmark-2: #75579b;
-  --series-benchmark-3: #9a641f;
-  --series-cash: #806b62;
+  --series-benchmark: #2b6cc4;
+  --series-benchmark-2: #c25a12;
+  --series-benchmark-3: #8b3fa8;
+  --series-cash: #7a7016;
   --chart-grid: var(--border-subtle);
 
   /* --- diverging: signed quantities, neutral midpoint at zero --------------- */
@@ -74,17 +74,17 @@
   --diverging-pos-3: #795c2c;
 
   /* --- sector palette ------------------------------------------------------- */
-  --sector-tech: #4674a8;
-  --sector-health: #5d9b7c;
-  --sector-finance: #7a6da8;
-  --sector-consumer-disc: #c47a3a;
-  --sector-consumer-staples: #6b8e5f;
-  --sector-energy: #b55b4f;
-  --sector-industrials: #5a7a9c;
-  --sector-materials: #8a7352;
-  --sector-real-estate: #6d6d9e;
-  --sector-utilities: #4a907a;
-  --sector-comm: #9b6c6c;
+  --sector-tech: #923558;
+  --sector-health: #88b55a;
+  --sector-finance: #3057a3;
+  --sector-consumer-disc: #ea846f;
+  --sector-consumer-staples: #007046;
+  --sector-energy: #aa93ed;
+  --sector-industrials: #8a4700;
+  --sector-materials: #00bdc0;
+  --sector-real-estate: #803c80;
+  --sector-utilities: #baa535;
+  --sector-comm: #006694;
 
   /* --- TYPE SCALE -----------------------------------------------------------
      11px is the hard floor for every string the product renders, including
@@ -248,10 +248,22 @@
   --negative: #ff746d;  --negative-soft: #2c1614;
   --warning: #eab83f;   --warning-soft: #2a2310;
 
-  --series-benchmark: #86aef7;
-  --series-benchmark-2: #c5a1ee;
-  --series-benchmark-3: #f0bd70;
-  --series-cash: #c6aca4;
+  --series-benchmark: #4a8ada;
+  --series-benchmark-2: #c76329;
+  --series-benchmark-3: #9566d4;
+  --series-cash: #93862f;
+
+  --sector-tech: #954f00;
+  --sector-health: #1dab7b;
+  --sector-finance: #477203;
+  --sector-consumer-disc: #00a0d4;
+  --sector-consumer-staples: #8a438a;
+  --sector-energy: #00aaae;
+  --sector-industrials: #6a50a7;
+  --sector-materials: #d8705b;
+  --sector-real-estate: #9d3b60;
+  --sector-utilities: #a89207;
+  --sector-comm: #3660af;
 
   --diverging-neg-3: #6fb4ce;
   --diverging-neg-2: #457d90;
