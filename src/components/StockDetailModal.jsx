@@ -54,7 +54,7 @@ function CoverageScoreDial({ score, dataCoverage }) {
   const dash = dial.minimum_dash + safeCoverage * (dial.maximum_dash - dial.minimum_dash)
   const gap = dial.maximum_gap - safeCoverage * (dial.maximum_gap - dial.minimum_gap)
   const opacity = dial.minimum_opacity + safeCoverage * (1 - dial.minimum_opacity)
-  return <div className="confidence-score-dial" style={{ width: dial.size }}>
+  return <div className="confidence-score-dial" style={{ '--dial-size': `${dial.size}px` }}>
     <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeCoverage * 100)} percent data coverage`}>
       <circle className="score-dial-track" cx={dial.center} cy={dial.center} r={dial.radius} strokeWidth={dial.stroke_width} />
       <defs><mask id={maskId}><circle cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" stroke="white" strokeWidth={dial.stroke_width} fill="none" strokeDasharray={`${safeScore} ${100 - safeScore}`} /></mask></defs>

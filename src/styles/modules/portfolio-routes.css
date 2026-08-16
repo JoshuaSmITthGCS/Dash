@@ -1,0 +1,253 @@
+/* ============================================================================
+   portfolio-routes.css
+   Portfolio route navigation, sticky data actions, progressive dashboard
+   hierarchy, and the portfolio hero.
+
+   Source order across these modules is load-bearing: they were split out of a
+   single stylesheet and are imported in this order by index.css. Move a rule
+   between modules only if you have checked what it overrides.
+   ============================================================================ */
+
+/* Portfolio: route navigation, sticky data actions, and progressive dashboard hierarchy */
+.portfolio-sticky-tools {
+  position: sticky; top: 8px; z-index: 40; min-width: 0; display: flex; align-items: center; gap: var(--sp-2-5);
+  margin: 0 0 var(--sp-4); padding: var(--sp-1-5); border: 1px solid var(--border-default); border-radius: var(--card-radius);
+  background: color-mix(in srgb, var(--surface-primary) 94%, transparent); box-shadow: var(--surface-shadow); backdrop-filter: blur(16px);
+}
+.portfolio-section-nav { min-width: 0; flex: 1; margin: 0; padding: 0; }
+.portfolio-section-nav a { min-height: 44px; padding-inline: var(--sp-3); font-weight: var(--fw-bold); }
+.portfolio-sticky-actions { flex: none; display: flex; align-items: center; gap: var(--sp-1-5); }
+.portfolio-sticky-actions .portfolio-sticky-refresh { min-height: 44px; white-space: nowrap; }
+.portfolio-data-menu { position: relative; }
+.portfolio-data-menu > summary {
+  min-height: 44px; display: inline-flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-3); list-style: none; cursor: pointer;
+  border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-secondary); color: var(--text-secondary); font-size: var(--fs-2xs); font-weight: var(--fw-bold);
+}
+.portfolio-data-menu > summary::-webkit-details-marker { display: none; }
+.portfolio-data-menu > summary svg { transition: transform var(--duration-fast) var(--ease-default); }
+.portfolio-data-menu[open] > summary { color: var(--brand-primary); border-color: color-mix(in srgb, var(--brand-primary) 45%, var(--border-default)); }
+.portfolio-data-menu[open] > summary svg { transform: rotate(90deg); }
+.portfolio-data-popover {
+  position: absolute; z-index: 45; top: calc(100% + 8px); right: 0; width: min(680px, calc(100vw - 48px));
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); padding: var(--sp-3);
+  border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: 0 18px 48px rgba(10, 18, 14, .16);
+}
+.portfolio-data-popover button { min-height: 44px; justify-content: flex-start; }
+.portfolio-data-status { grid-column: 1 / -1; padding: var(--sp-1) var(--sp-1) var(--sp-2); border-bottom: 1px solid var(--border-subtle); }
+.portfolio-data-status .eyebrow { margin-bottom: var(--sp-0-5); }
+.portfolio-data-status time { color: var(--text-secondary); font: var(--fs-2xs) var(--font-mono); }
+.portfolio-dashboard-section { margin-bottom: var(--sp-6); }
+.portfolio-section-heading { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); margin-bottom: var(--sp-3); }
+.portfolio-section-heading > div { display: flex; align-items: center; gap: var(--sp-3); }
+.portfolio-section-heading h2 { margin-top: var(--sp-0-5); font: var(--fw-bold) var(--fs-2xl)/1.1 var(--font-display); letter-spacing: -.025em; }
+.portfolio-section-number { min-width: 34px; color: var(--brand-primary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); }
+.portfolio-section-heading label { display: grid; gap: var(--sp-1); color: var(--text-tertiary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .07em; }
+.portfolio-section-heading select { min-width: 150px; min-height: 44px; padding: 0 var(--sp-8) 0 var(--sp-2-5); border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-primary); color: var(--text-primary); }
+.portfolio-summary-section, .portfolio-performance-section { overflow: hidden; padding: 0 var(--card-padding) var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
+.portfolio-summary-section > .portfolio-section-heading, .portfolio-performance-section > .portfolio-section-heading { margin: 0 calc(var(--card-padding) * -1) var(--sp-3); padding: 0 var(--card-padding); border-bottom: 1px solid var(--border-subtle); }
+.portfolio-summary-kpis, .portfolio-benchmark-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; margin-bottom: var(--sp-2); border: 1px solid var(--border-subtle); border-radius: var(--control-radius); background: var(--border-subtle); gap: var(--sp-px); }
+.portfolio-summary-kpis > span, .portfolio-benchmark-kpis > span { min-width: 0; display: grid; gap: var(--sp-1); padding: var(--sp-3) var(--sp-3); background: var(--surface-secondary); }
+.portfolio-summary-kpis small, .portfolio-benchmark-kpis small { display: flex; align-items: center; gap: var(--sp-1); color: var(--text-tertiary); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .05em; }
+.portfolio-summary-kpis strong, .portfolio-benchmark-kpis strong { overflow: hidden; font: var(--fw-bold) var(--fs-lg) var(--font-mono); font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.portfolio-summary-chart { padding-top: var(--sp-1-5); }
+.portfolio-summary-chart .chart-scrub-summary { margin-inline: var(--sp-10); }
+.portfolio-holdings-section { margin-bottom: var(--sp-5); }
+.portfolio-subsection-heading { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); margin-bottom: var(--sp-2-5); }
+.portfolio-subsection-heading h2, .portfolio-subsection-heading h3 { margin-top: var(--sp-0-5); font: var(--fw-bold) var(--fs-xl)/1.15 var(--font-display); letter-spacing: -.02em; }
+.portfolio-subsection-heading > span { color: var(--text-tertiary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); }
+.portfolio-holdings-heading-actions { display: flex; align-items: center; gap: var(--sp-4); }
+.portfolio-holdings-heading-actions > span { color: var(--text-tertiary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); white-space: nowrap; }
+.portfolio-essential-control { min-height: 44px; display: flex; align-items: center; gap: var(--sp-2-5); cursor: pointer; }
+.portfolio-essential-control > span:first-child { text-align: right; }
+.portfolio-essential-control strong, .portfolio-essential-control small { display: block; }
+.portfolio-essential-control strong { color: var(--text-primary); font-size: var(--fs-2xs); }
+.portfolio-essential-control small { margin-top: var(--sp-0-5); color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.portfolio-holdings-section > .filters { margin-top: 0; }
+.suggested-actions { margin-bottom: var(--sp-5); }
+.portfolio-suggested-list { display: grid; gap: var(--sp-2-5); }
+.portfolio-suggested-row { min-height: 48px; display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2-5) var(--sp-3); padding-bottom: var(--sp-2-5); border-bottom: 1px solid var(--border-subtle); }
+.portfolio-suggested-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.portfolio-suggested-row > span:not(.action-pill) { min-width: 200px; flex: 1; color: var(--text-secondary); font-size: var(--fs-xs); }
+.portfolio-suggested-row > small { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.portfolio-suggested-empty { padding: var(--sp-1) 0; color: var(--text-secondary); font-size: var(--fs-xs); }
+.portfolio-concentration-card { margin-bottom: var(--sp-5); border-color: color-mix(in srgb, var(--warning) 55%, var(--border-default)); }
+.portfolio-concentration-list { display: grid; gap: var(--sp-2); }
+.portfolio-concentration-list > div { display: flex; align-items: center; gap: var(--sp-3); }
+.portfolio-concentration-list > div > span:first-child { color: var(--warning); font-weight: var(--fw-bold); }
+.portfolio-concentration-list > div > span:last-child { color: var(--text-secondary); font-size: var(--fs-xs); }
+.portfolio-concentration-card > p { margin-top: var(--sp-2-5); color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.5; }
+.portfolio-allocation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--section-gap); }
+.portfolio-allocation-card { min-width: 0; padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
+.portfolio-allocation-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.portfolio-allocation-card h3 { margin-top: var(--sp-0-5); font: var(--fw-bold) var(--fs-xl) var(--font-display); }
+.portfolio-allocation-card > header > small { max-width: 150px; color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.4; text-align: right; }
+.portfolio-allocation-card > p { margin-top: var(--sp-4); color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.55; }
+.portfolio-asset-bars { display: grid; gap: var(--sp-4); }
+.portfolio-asset-bars > div > div { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--fs-2xs); }
+.portfolio-asset-bars strong { font: var(--fw-bold) var(--fs-xs) var(--font-mono); }
+.portfolio-asset-bars i { height: 9px; display: block; overflow: hidden; margin: var(--sp-1-5) 0 var(--sp-1); border-radius: 999px; background: var(--surface-tertiary); }
+.portfolio-asset-bars i span { height: 100%; display: block; border-radius: inherit; background: var(--brand-primary); }
+.portfolio-asset-bars small { color: var(--text-tertiary); font: var(--fs-2xs) var(--font-mono); }
+.portfolio-sector-card .allocation-donut-widget { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: center; gap: var(--sp-4); }
+.portfolio-sector-card .donut-legend { grid-template-columns: 1fr; align-content: center; }
+.portfolio-benchmark-chart { margin-bottom: var(--section-gap); padding: var(--sp-3); border: 1px solid var(--border-subtle); border-radius: var(--control-radius); background: var(--surface-secondary); }
+.portfolio-performance-section > .portfolio-return-summary, .portfolio-performance-section > .portfolio-move-explanation, .portfolio-performance-section > .performance-metrics { margin-bottom: var(--section-gap); }
+.portfolio-performance-section > :last-child { margin-bottom: 0; }
+.portfolio-data-overview-section > .portfolio-section-heading { border-bottom: 1px solid var(--border-subtle); }
+.portfolio-data-overview-section .analytics-toolbar { position: static; }
+
+@media (max-width: 900px) {
+  .portfolio-sector-card .allocation-donut-widget { grid-template-columns: 1fr; }
+  .portfolio-sector-card .donut-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .portfolio-sticky-tools { align-items: stretch; flex-direction: column; }
+  .portfolio-section-nav { width: 100%; }
+  .portfolio-sticky-actions { width: 100%; }
+  .portfolio-sticky-actions > button, .portfolio-data-menu { flex: 1; }
+  .portfolio-data-menu > summary { width: 100%; justify-content: center; }
+  .portfolio-data-popover { right: 0; width: calc(100vw - 44px); }
+  .portfolio-allocation-grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); overflow-x: auto; padding-bottom: var(--sp-1-5); scroll-snap-type: x proximity; }
+  .portfolio-allocation-card { scroll-snap-align: start; }
+  .portfolio-summary-kpis strong, .portfolio-benchmark-kpis strong { font-size: var(--fs-xs); }
+}
+
+@media (max-width: 560px) {
+  .portfolio-dashboard-section { margin-bottom: var(--sp-5); }
+  :root .portfolio-section-heading { min-height: 0; align-items: stretch; flex-direction: column; padding-block: var(--sp-3); }
+  .portfolio-section-heading label, .portfolio-section-heading select { width: 100%; }
+  .portfolio-summary-kpis, .portfolio-benchmark-kpis { grid-template-columns: 1fr 1fr; }
+  .portfolio-summary-kpis > span:first-child, .portfolio-benchmark-kpis > span:first-child { grid-column: 1 / -1; }
+  .portfolio-summary-kpis strong, .portfolio-benchmark-kpis strong { font-size: var(--fs-2xs); }
+  .portfolio-summary-chart .chart-scrub-summary { margin-inline: 0; }
+  .portfolio-allocation-card > header { flex-direction: column; }
+  .portfolio-allocation-card > header > small { max-width: none; text-align: left; }
+  .portfolio-sector-card .donut-legend { grid-template-columns: 1fr; }
+  .portfolio-data-popover { grid-template-columns: 1fr; }
+  .portfolio-data-status { grid-column: 1; }
+  .portfolio-sticky-refresh span { display: inline; }
+  .portfolio-subsection-heading { align-items: flex-start; }
+  .portfolio-holdings-heading-actions { align-items: flex-end; flex-direction: column; gap: var(--sp-0-5); }
+  .portfolio-suggested-row > span:not(.action-pill) { min-width: 100%; }
+}
+
+/* ============================================================
+   Visual upgrade: score gauge
+   ============================================================ */
+.score-gauge { position: relative; display: grid; justify-items: center; }
+.score-gauge-svg { display: block; width: 100%; max-width: 130px; height: auto; }
+.gauge-fill-arc { transition: stroke-dasharray var(--duration-slow) var(--ease-out); }
+.gauge-readout { margin-top: calc(-1 * var(--sp-4)); text-align: center; }
+.gauge-readout strong { display: block; font: var(--fw-bold) var(--fs-2xl)/1 var(--font-mono); }
+.gauge-readout > span { display: block; margin-top: var(--sp-0-5); color: var(--text-tertiary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
+.gauge-readout .provisional-badge { margin-top: var(--sp-1); }
+.report-score-card { display: grid; gap: var(--sp-2); justify-items: center; text-align: center; }
+.report-score-card h3 { font-size: var(--fs-sm); }
+.report-score-card p { color: var(--text-secondary); font-size: var(--fs-2xs); line-height: 1.5; }
+@media (max-width: 620px) {
+  .report-score-card { grid-template-columns: 80px minmax(0, 1fr); justify-items: start; text-align: left; }
+  .score-gauge-svg { max-width: 72px; }
+  .gauge-readout strong { font-size: var(--fs-xl); }
+}
+
+/* ============================================================
+   Visual upgrade: market sentiment strip
+   ============================================================ */
+.sentiment-strip { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-bottom: var(--section-gap); }
+.sentiment-pill { display: flex; align-items: center; gap: var(--sp-1-5); padding: var(--sp-1-5) var(--sp-2-5); border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-primary); }
+.sentiment-pill small { display: block; color: var(--text-tertiary); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .04em; }
+.sentiment-pill b { display: block; font: var(--fw-bold) var(--fs-2xs) var(--font-mono); }
+.sentiment-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--text-faint); }
+.sentiment-dot.positive { background: var(--positive); }
+.sentiment-dot.negative { background: var(--negative); }
+@media (max-width: 620px) { .sentiment-strip { gap: var(--sp-1); }.sentiment-pill { padding: var(--sp-1) var(--sp-2); } }
+
+/* ============================================================
+   Visual upgrade: card hover depth effects
+   ============================================================ */
+.report-screen-card,
+.candidate-card,
+.trend-card,
+.signal-rail-card,
+.theme-rail-card,
+.watch-preview-row { transition: transform var(--duration-fast) var(--ease-default), box-shadow var(--duration-fast) var(--ease-default), border-color var(--duration-fast) var(--ease-default), background var(--duration-fast) var(--ease-default); }
+.report-screen-card:hover,
+.signal-rail-card:hover,
+.theme-rail-card:hover,
+.candidate-card:hover,
+.trend-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.watch-preview-row:hover { background: var(--surface-secondary); border-radius: var(--control-radius); }
+[data-theme="dark"] .report-screen-card:hover,
+[data-theme="dark"] .signal-rail-card:hover,
+[data-theme="dark"] .theme-rail-card:hover,
+[data-theme="dark"] .candidate-card:hover,
+[data-theme="dark"] .trend-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+
+/* Portfolio hero -- clean, no gradient glow */
+.hero-sparkline { width: 100%; max-width: 200px; margin: var(--sp-1) 0; opacity: .5; }
+
+/* ============================================================
+   Visual upgrade: insights mood card gradient
+   ============================================================ */
+.dashboard-pulse.mood-positive { border-left: 3px solid var(--positive); }
+.dashboard-pulse.mood-negative { border-left: 3px solid var(--negative); }
+.dashboard-pulse.mood-neutral { border-left: 3px solid var(--brand-primary); }
+
+/* ============================================================
+   Visual upgrade: evidence bar & metric card enhancement
+   ============================================================ */
+.evidence-bar { height: 8px; border-radius: 999px; }
+.evidence-bar i { border-radius: 999px; }
+.evidence-bar i:first-child { border-radius: 999px 0 0 999px; }
+.evidence-bar i:last-child { border-radius: 0 999px 999px 0; }
+.trend-bars { fill: currentColor; }
+.trend-improving .trend-bars { fill: var(--positive); }
+.trend-deteriorating .trend-bars { fill: var(--negative); }
+.trend-stable .trend-bars { fill: var(--text-tertiary); }
+[data-metric-card] { border-left-width: 4px; }
+
+/* ============================================================
+   Visual upgrade: portfolio return summary bars
+   ============================================================ */
+.return-bar { display: block; height: 6px; margin: var(--sp-1-5) 0 var(--sp-1); border-radius: 999px; }
+.return-bar.positive { background: var(--positive); }
+.return-bar.negative { background: var(--negative); }
+
+/* ============================================================
+   Visual upgrade: focused screen card accent + logos
+   ============================================================ */
+
+/* ============================================================
+   Visual upgrade: market heatmap
+   ============================================================ */
+.market-heatmap { margin-bottom: var(--section-gap); padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
+.heatmap-svg { display: block; border-radius: var(--control-radius); overflow: hidden; }
+.heatmap-tile { stroke: var(--surface-primary); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.heatmap-tile.positive { fill: var(--positive); }
+.heatmap-tile.negative { fill: var(--negative); }
+.heatmap-tile.neutral { fill: var(--surface-tertiary); }
+.heatmap-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2) var(--sp-3); color: var(--text-secondary); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); }
+.heatmap-legend span { display: inline-flex; align-items: center; gap: var(--sp-1); }
+.heatmap-legend i { width: 9px; height: 9px; border-radius: 2px; }
+.heatmap-legend i.positive { background: var(--positive); }
+.heatmap-legend i.negative { background: var(--negative); }
+.heatmap-legend small { color: var(--text-tertiary); font: inherit; }
+@media (max-width: 620px) {
+  .heatmap-heading { align-items: flex-start; gap: var(--sp-2-5); }
+  .heatmap-legend { justify-content: flex-start; }
+  .heatmap-svg { height: auto; }
+}
+
+/* ============================================================
+   Visual upgrade: watchlist & signal sparklines
+   ============================================================ */
+.watch-sparkline { width: 60px; height: 28px; flex: none; }
+.watch-row-stats { display: grid; justify-items: end; gap: var(--sp-0-5); }
+.watch-row-stats > b { font: var(--fw-bold) var(--fs-sm) var(--font-mono); }
+.signal-sparkline { width: 100%; height: 48px; margin: calc(-1 * var(--sp-1)) 0 var(--sp-2); opacity: .6; }
+
+/* ============================================================
+   Visual upgrade: rolling sharpe fill
+   ============================================================ */
+.rolling-sharpe-fill { vector-effect: non-scaling-stroke; }
