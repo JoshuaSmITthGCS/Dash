@@ -15,6 +15,11 @@ import { useElementWidth } from '../lib/useElementWidth.js'
 
 const HEIGHT = 320
 const PAD = { top: 16, right: 20, bottom: 34, left: 52 }
+// Beyond this many points, making every circle its own tab stop turns "reach the rest
+// of the page" into dozens or hundreds of key presses. The Table view — always one
+// click away — is the keyboard-accessible enumeration past this size; the chart stays
+// mouse-hoverable at any size.
+const KEYBOARD_FOCUS_LIMIT = 40
 const TONE_VAR = {
   high: '--tier-high', watch: '--tier-watch', neutral: '--tier-neutral', cool: '--tier-cool',
 }
@@ -60,9 +65,12 @@ export default function ScatterChart({
   const xTicks = [bounds.xMin, (bounds.xMin + bounds.xMax) / 2, bounds.xMax]
   const yTicks = [bounds.yMax, (bounds.yMax + bounds.yMin) / 2, bounds.yMin]
 
+  const keyboardFocusable = usable.length <= KEYBOARD_FOCUS_LIMIT
   const readout = hover
     ? `${hover.label}: ${xLabel} ${xFormatter(hover.x)}, ${yLabel} ${yFormatter(hover.y)}`
-    : `${usable.length} point${usable.length === 1 ? '' : 's'}. Hover or tab to a point for its values.`
+    : `${usable.length} point${usable.length === 1 ? '' : 's'}. ${keyboardFocusable
+      ? 'Hover or tab to a point for its values.'
+      : 'Hover a point for its values, or use the Table view to reach every point by keyboard.'}`
 
   return (
     <figure className={`correlation-figure ${className}`.trim()} aria-labelledby={titleId}>
@@ -126,11 +134,11 @@ export default function ScatterChart({
                   key={point.id ?? point.label}
                   cx={plotX(point.x)} cy={plotY(point.y)} r={active ? 6 : 4.5}
                   fill={color} stroke="var(--surface-primary)" strokeWidth="1.5"
-                  tabIndex="0"
+                  tabIndex={keyboardFocusable ? '0' : undefined}
                   onMouseEnter={() => setHover({ ...point, id: point.id ?? point.label })}
-                  onFocus={() => setHover({ ...point, id: point.id ?? point.label })}
+                  onFocus={keyboardFocusable ? () => setHover({ ...point, id: point.id ?? point.label }) : undefined}
                   onMouseLeave={() => setHover(null)}
-                  onBlur={() => setHover(null)}
+                  onBlur={keyboardFocusable ? () => setHover(null) : undefined}
                 >
                   <title>{point.label}: {xLabel} {xFormatter(point.x)}, {yLabel} {yFormatter(point.y)}</title>
                 </circle>

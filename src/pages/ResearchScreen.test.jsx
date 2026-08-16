@@ -62,6 +62,35 @@ describe('ResearchScreen', () => {
     expect(screen.getByText(/NO_SCORED_UNIVERSE/)).toBeVisible()
   })
 
+  it('plots a structural/tactical quadrant scatter only when both axes are published', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'success',
+        results: [
+          row({ ticker: 'AAA', structural_score: 80, tactical_score: 60, classification: 'high-conviction candidate' }),
+          row({ ticker: 'BBB', structural_score: 40, tactical_score: 20, classification: 'avoid' }),
+        ],
+      },
+      loading: false, error: null,
+    })
+
+    renderScreen()
+
+    expect(screen.getByRole('img', { name: /Structural versus Tactical scatter, 2 points/ })).toBeInTheDocument()
+    expect(screen.getByText('High-conviction candidate')).toBeInTheDocument()
+  })
+
+  it('does not render the quadrant scatter when no row publishes both axes', () => {
+    useData.mockReturnValue({
+      data: { status: 'success', results: [row()] }, // tactical_score: null in the default fixture
+      loading: false, error: null,
+    })
+
+    renderScreen()
+
+    expect(screen.queryByRole('img', { name: /scatter/ })).toBeNull()
+  })
+
   it('separates "no results" from "filtered everything out"', () => {
     useData.mockReturnValue({
       data: { status: 'success', results: [row({ sector: 'Technology' })] },

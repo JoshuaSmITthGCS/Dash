@@ -48,6 +48,18 @@ describe('ScatterChart', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('stops making individual points keyboard-focusable past the tab-stop limit, and points to Table instead', () => {
+    const many = Array.from({ length: 50 }, (_, index) => ({ id: `T${index}`, label: `T${index}`, x: index, y: index }))
+    const { container } = render(<ScatterChart points={many} xLabel="X" yLabel="Y" />)
+    expect(container.querySelectorAll('circle[tabindex]').length).toBe(0)
+    expect(screen.getByText(/use the Table view to reach every point by keyboard/)).toBeInTheDocument()
+  })
+
+  it('keeps individual points keyboard-focusable at or under the tab-stop limit', () => {
+    const { container } = render(<ScatterChart points={POINTS} xLabel="X" yLabel="Y" />)
+    expect(container.querySelectorAll('circle[tabindex="0"]').length).toBe(POINTS.length)
+  })
+
   it('colors points by tone and shows a legend when categories are provided', () => {
     render(<ScatterChart
       points={[{ id: 'A', label: 'A', x: 1, y: 1, tone: 'high' }, { id: 'B', label: 'B', x: 2, y: 2, tone: 'cool' }]}

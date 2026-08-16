@@ -5,6 +5,7 @@ import { Empty, Loading } from '../components/Bits'
 import DataTable from '../components/DataTable.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { ResponsiveControlPanel } from '../components/MobileSheet.jsx'
+import ScatterChart from '../components/ScatterChart.jsx'
 
 // Every options screen collapses into the single "Options" tab below; the individual
 // strategies live on the sub-nav that page renders (OPTIONS_NAV), so the top-level row
@@ -38,6 +39,26 @@ export const OPTIONS_NAV = [
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'
 const number = (value) => value == null ? '–' : Number(value).toFixed(1)
+
+// Structural-vs-tactical is the one screen whose rows carry both axes of the quadrant
+// scatter. Tone follows the model's own classification, not a re-derived threshold.
+const CLASSIFICATION_TONE = {
+  'high-conviction candidate': 'high',
+  'quality company, wait': 'watch',
+  'tactical-only candidate': 'neutral',
+  avoid: 'cool',
+}
+const CLASSIFICATION_LEGEND = [
+  { tone: 'high', label: 'High-conviction candidate' },
+  { tone: 'watch', label: 'Quality company, wait' },
+  { tone: 'neutral', label: 'Tactical-only candidate' },
+  { tone: 'cool', label: 'Avoid' },
+]
+function median(values) {
+  const sorted = [...values].sort((left, right) => left - right)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
 
 export function ScreenNavigation() {
   return <nav className="screen-nav" aria-label="Research screens">{SCREEN_NAV.map(([to, label]) =>
@@ -83,6 +104,26 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
       </div></ResponsiveControlPanel>
       {data?.coverage_note ? <p className="disclaimer" role="note">{data.coverage_note}</p> : null}
       {!rows.length ? <Empty note={data?.status === 'unavailable' ? `Unavailable: ${data.reason_code}` : 'No results match these filters.'} /> : <>
+      {rows.some((row) => row.structural_score != null && row.tactical_score != null) && (
+        <ScatterChart
+          points={rows
+            .filter((row) => row.structural_score != null && row.tactical_score != null)
+            .map((row) => ({
+              id: row.ticker, label: row.ticker, x: row.structural_score, y: row.tactical_score,
+              tone: CLASSIFICATION_TONE[row.classification],
+            }))}
+          xLabel="Structural"
+          yLabel="Tactical"
+          xFormatter={(value) => value.toFixed(0)}
+          yFormatter={(value) => value.toFixed(0)}
+          quadrant={{
+            x: median(rows.filter((row) => row.structural_score != null).map((row) => row.structural_score)),
+            y: median(rows.filter((row) => row.tactical_score != null).map((row) => row.tactical_score)),
+          }}
+          legend={CLASSIFICATION_LEGEND}
+          caption="Structural score versus tactical score, one point per name, split at the median of each"
+        />
+      )}
       <DataTable
         rows={rows}
         getKey={(row) => row.ticker}
