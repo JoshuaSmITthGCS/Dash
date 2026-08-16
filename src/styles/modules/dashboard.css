@@ -55,7 +55,7 @@
 .hero-score-row > div:first-child > small { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }
 .confidence-ring { width: 100px; aspect-ratio: 1; display: grid; place-content: center; border-radius: 50%; text-align: center; background: radial-gradient(circle closest-side, #153024 82%, transparent 84% 100%), conic-gradient(var(--accent) var(--confidence), var(--border) 0); }
 .analysis-layers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); margin: 0 0 var(--sp-5); }
-.analysis-layer-card { padding: var(--sp-4); border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elev); }
+.analysis-layer-card { padding: var(--sp-4); }
 .analysis-layer-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--sp-3); }
 .analysis-layer-heading strong { display: block; margin-top: var(--sp-0-5); font-size: var(--fs-2xl); }
 .analysis-layer-card > p { margin: var(--sp-2) 0 var(--sp-3); color: var(--text-dim); font-size: var(--fs-xs); line-height: 1.5; }
@@ -75,21 +75,14 @@
 .chart-caption { display: flex; justify-content: space-between; margin-bottom: var(--sp-3); color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
 .sparkline { display: block; width: 100%; overflow: visible; }.sparkline-empty { display: grid; place-items: center; width: 100%; border: 1px dashed var(--border-lit); border-radius: var(--card-radius); color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); background: rgba(0,0,0,.08); }
 .candidate-carousel { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: var(--sp-3); overflow-x: auto; padding-bottom: var(--sp-2); scroll-snap-type: x mandatory; scrollbar-width: thin; }
-.candidate-card {
-  min-width: 0; min-height: 240px; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); scroll-snap-align: start; text-align: left;
-  border: 1px solid var(--border); border-radius: var(--card-radius); background: var(--bg-card); box-shadow: var(--shadow);
-}
+.candidate-card { min-width: 0; min-height: 240px; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); scroll-snap-align: start; text-align: left; }
 .candidate-card:hover { border-color: var(--border-lit); }.candidate-top { justify-content: space-between; }
 .candidate-ticker, .candidate-name { display: block; }.candidate-ticker { font: var(--fw-bold) var(--fs-xl) var(--font-display); letter-spacing: -.02em; }.candidate-name { color: var(--text-dim); font-size: var(--fs-2xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .candidate-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }.candidate-metrics > div { display: grid; gap: var(--sp-0-5); }
 .candidate-metrics span { color: var(--text-faint); font-size: var(--fs-2xs); }.candidate-metrics b, .candidate-metrics .mono { font: var(--fw-bold) var(--fs-base) var(--font-mono); }
 .candidate-action { display: flex; justify-content: space-between; align-items: center; margin-top: auto; color: var(--accent); font-size: var(--fs-2xs); font-weight: var(--fw-bold); }
 .trend-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-2-5); }
-.trend-card {
-  min-width: 0; min-height: 180px; padding: var(--sp-3); display: grid; gap: var(--sp-3); text-align: left;
-  border: 1px solid var(--border); border-radius: var(--card-radius); background: var(--bg-card); box-shadow: var(--shadow);
-  transition: background var(--duration-fast), border-color var(--duration-fast);
-}
+.trend-card { min-width: 0; min-height: 180px; padding: var(--sp-3); display: grid; gap: var(--sp-3); text-align: left; transition: background var(--duration-fast), border-color var(--duration-fast); }
 .trend-card:hover { border-color: var(--border-lit); background: var(--bg-hover); }
 .trend-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-2); }
 .trend-card-head strong, .trend-card-head span { display: block; }
@@ -128,7 +121,7 @@
 .summary-grid strong { display: block; margin: var(--sp-2) 0 var(--sp-1); font: var(--fw-bold) var(--fs-hero) var(--font-display); letter-spacing: -.04em; }.summary-grid .summary-word { font-size: var(--fs-xl); line-height: 1.15; }
 .dashboard-columns { display: grid; grid-template-columns: 1.15fr .85fr; gap: var(--sp-5); margin-top: var(--sp-10); }
 .macro-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }
-.macro-card { padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--card-radius); background: var(--bg-card); }
+.macro-card { padding: var(--sp-4); }
 .macro-top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-1-5); color: var(--text-dim); font-size: var(--fs-2xs); }
 .macro-card > strong { display: block; margin: var(--sp-3) 0 var(--sp-1); font: var(--fw-bold) var(--fs-2xl) var(--font-mono); }
 .fred-notice { margin-top: var(--sp-2-5); color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.5; }

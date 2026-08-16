@@ -126,27 +126,85 @@ body { overscroll-behavior-y: contain; }
 .page-actions { display: flex; align-items: center; gap: var(--sp-2); }
 .result-count { min-width: 80px; padding: var(--sp-2-5) var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--surface-secondary); text-align: center; }
 .result-count strong, .result-count span { display: block; }.result-count strong { font: var(--fw-bold) var(--fs-xl) var(--font-mono); }.result-count span { color: var(--text-faint); font-size: var(--fs-2xs); text-transform: uppercase; }
-/* The one card. Every surface that reads as a card resolves here: background,
-   border, radius, and resting elevation. Page-level card classes may position a
-   card in a grid; they may not restate any of these four properties. */
-.card, .watchlist-card, .research-mobile-card, .holding-card {
+/* ============================================================================
+   THE CARD SYSTEM
+
+   One surface definition. Every class below is a card and inherits background,
+   border, radius and resting elevation from here — page-level card classes are
+   layout hooks (grid placement, internal composition) and must not restate any
+   of those four properties. Before this consolidation 26 classes restated them
+   through interchangeable token aliases (--bg-card / --surface-primary /
+   --surface-card-bg all being the same colour), which is how the app ended up
+   with a card whose radius was 23px and two whose shadow referenced a token
+   that was never defined.
+
+   Modifiers:
+     .card--inset        recessed onto the shelf surface rather than raised
+     .card--compact      control-sized radius, for cards inside a rail
+     .card--interactive  lifts on hover; use on cards that are a link or button
+   ============================================================================ */
+.card,
+.watchlist-card, .research-mobile-card, .holding-card,
+.trend-card, .candidate-card,
+.overview-card, .portfolio-overview-card, .portfolio-value-card,
+.portfolio-allocation-card,
+.settings-card, .capability-card, .macro-card,
+.report-chart-card, .report-screen-card, .planning-card, .opportunity-card,
+.allocation-card, .result-card,
+.home-performance-card, .market-stat-card, .market-chart-card, .market-search-card,
+.alert-rule-builder, .alert-events, .alert-rules, .alert-preferences {
   background: var(--surface-card-bg);
   border: 1px solid var(--surface-card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--surface-shadow);
 }
+
+/* Recessed tiles: same border and radius, shelf background, no lift. */
+.card--inset, .profile-card, .analysis-layer-card, .report-score-card {
+  background: var(--surface-shelf-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--card-radius);
+  box-shadow: none;
+}
+
+/* Cards that live inside a rail take the control radius so they nest correctly. */
+.card--compact, .signal-rail-card, .theme-rail-card {
+  background: var(--surface-card-bg);
+  border: 1px solid var(--surface-card-border);
+  border-radius: var(--control-radius);
+  box-shadow: none;
+}
+
 /* Shelf surfaces sit under cards, not on them: recessed, never elevated. */
 .report-hero-grid, .report-section, .home-research-shelves, .projection-panel {
   background: var(--surface-shelf-bg);
   border-color: var(--surface-shelf-border);
   box-shadow: none;
 }
+
 /* Sheets float above everything. */
 .modal, .mobile-sheet {
   background: var(--surface-sheet-bg);
   border-color: var(--surface-sheet-border);
   box-shadow: var(--shadow-2);
 }
+
+/* A card the reader can act on. Transform and box-shadow only. */
+.card--interactive, .trend-card, .candidate-card,
+.report-screen-card, .signal-rail-card, .theme-rail-card, .profile-card {
+  transition: box-shadow var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+.card--interactive:hover, .trend-card:hover, .candidate-card:hover,
+.report-screen-card:hover, .signal-rail-card:hover, .theme-rail-card:hover,
+.profile-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-2);
+}
+
+/* The score tile is inset but rail-sized, so it takes the control radius. */
+.report-score-card { border-radius: var(--control-radius); }
+
 .card-pad { padding: var(--card-padding); }
 .grid { display: grid; gap: var(--section-gap); }.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); margin: var(--sp-6) 0 var(--sp-3); }

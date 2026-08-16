@@ -77,7 +77,7 @@
 .portfolio-concentration-list > div > span:last-child { color: var(--text-secondary); font-size: var(--fs-xs); }
 .portfolio-concentration-card > p { margin-top: var(--sp-2-5); color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.5; }
 .portfolio-allocation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--section-gap); }
-.portfolio-allocation-card { min-width: 0; padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); box-shadow: var(--surface-shadow); }
+.portfolio-allocation-card { min-width: 0; padding: var(--card-padding); }
 .portfolio-allocation-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .portfolio-allocation-card h3 { margin-top: var(--sp-0-5); font: var(--fw-bold) var(--fs-xl) var(--font-display); }
 .portfolio-allocation-card > header > small { max-width: 150px; color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.4; text-align: right; }

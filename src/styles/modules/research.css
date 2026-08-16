@@ -33,7 +33,7 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .num { text-align: right; font-variant-numeric: tabular-nums; }.score-cell { color: var(--accent); font-weight: var(--fw-bold); }
 .rank { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }.table-company b, .table-company span, .table-company small { display: block; }.table-company b { font-size: var(--fs-lg); }.table-company span { color: var(--text-dim); }.table-company small { color: var(--text-faint); font-size: var(--fs-2xs); }
 .research-mobile-list { display: none; }
-.research-mobile-card { padding: var(--sp-5); border: 1px solid var(--border); border-radius: var(--card-radius); background: var(--bg-card); }
+.research-mobile-card { padding: var(--sp-5); }
 .research-pool + .research-pool { margin-top: var(--sp-6); }
 .research-pool-title { display: flex; align-items: center; gap: var(--sp-2); margin: 0 0 var(--sp-3); font: var(--fw-bold) var(--fs-lg) var(--font-display); }
 .research-pool-count { padding: var(--sp-0-5) var(--sp-2); border-radius: 999px; background: var(--bg-elev); color: var(--text-faint); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); }
