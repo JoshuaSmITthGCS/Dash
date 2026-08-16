@@ -1,6 +1,9 @@
+import datetime
+import json
 import os
 import sys
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -68,6 +71,54 @@ class BlendTests(unittest.TestCase):
         self.assertEqual(set(bs.BLEND["weights"].values()), {0.5})
 
 
+class WindowTests(unittest.TestCase):
+    """Guards the defect where a nightly ETF refresh silently repriced every benchmark.
+
+    ``public/data/etf/*.json`` is rewritten by the scheduled refresh; the backtest artifact is
+    frozen until someone re-runs the backtest. So the ETF files routinely hold days the
+    strategy's own history does not, and an unbounded leg is priced over a longer window than
+    the strategy it is being compared against.
+    """
+
+    def _series(self, start, closes):
+        """A synthetic daily price series starting at ``start``, one row per calendar day."""
+        day = datetime.date.fromisoformat(start)
+        dates = []
+        for _ in closes:
+            dates.append(day.isoformat())
+            day += datetime.timedelta(days=1)
+        return {"dates": dates, "closes": list(closes)}
+
+    def test_a_leg_ignores_prices_published_after_the_strategy_last_day(self):
+        series = self._series("2021-09-01", [100.0] * 5 + [999.0] * 5)
+        with mock.patch.object(bs, "load_etf_benchmark", return_value=series):
+            history = bs.leg_history("SPY", "2021-09-01", "2021-09-05", 100_000.0)
+
+        self.assertEqual(history[-1]["date"], "2021-09-05")
+        self.assertEqual([row["value"] for row in history], [99_900.0] * 5)
+
+    def test_extending_the_price_series_does_not_move_a_leg(self):
+        closes = [100.0, 101.0, 102.0, 103.0, 104.0]
+        short = self._series("2021-09-01", closes)
+        extended = self._series("2021-09-01", closes + [50.0, 200.0])
+
+        legs = []
+        for series in (short, extended):
+            with mock.patch.object(bs, "load_etf_benchmark", return_value=series):
+                legs.append(bs.leg_history("SPY", "2021-09-01", "2021-09-05", 100_000.0))
+        self.assertEqual(legs[0], legs[1])
+
+    def test_the_report_declares_the_window_it_priced(self):
+        if not os.path.exists(bs.BACKTEST_PATH):
+            self.skipTest("backtest artifact not present in this checkout")
+        with open(bs.BACKTEST_PATH, encoding="utf-8") as handle:
+            backtest = json.load(handle)
+        report = bs.build_report(backtest)
+
+        self.assertEqual(report["window"]["end"], backtest["portfolio"]["history"][-1]["date"])
+        self.assertEqual(report["window"]["start"], backtest["portfolio"]["metrics"]["start_date"])
+
+
 class CommittedDataTests(unittest.TestCase):
     def test_every_configured_benchmark_is_committed(self):
         missing = [ticker for ticker in bs.BENCHMARKS if not bs.available(ticker)]
@@ -90,11 +141,13 @@ class CommittedDataTests(unittest.TestCase):
         """A sanity check that this module's return path matches the committed backtest's."""
         if not os.path.exists(bs.BACKTEST_PATH):
             self.skipTest("backtest artifact not present in this checkout")
-        import json
-        with open(bs.BACKTEST_PATH) as handle:
+        with open(bs.BACKTEST_PATH, encoding="utf-8") as handle:
             expected = json.load(handle)["benchmark_spy"]["metrics"]["cagr"]
         report = bs.build_report()
-        self.assertAlmostEqual(report["benchmarks"]["SPY"]["cagr"], expected, places=6)
+        self.assertAlmostEqual(
+            report["benchmarks"]["SPY"]["cagr"], expected, places=6,
+            msg=("this module reprices SPY over the committed backtest's own window, so a "
+                 "mismatch means the ETF history was revised, not merely extended"))
 
     def test_summary_only_claims_significance_at_the_conventional_bar(self):
         if not os.path.exists(bs.BACKTEST_PATH):

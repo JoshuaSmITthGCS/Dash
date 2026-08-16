@@ -13,10 +13,10 @@ had by buying one liquid ETF?** Those are different bars, and the second is the 
 this product actually faces.
 
 Every benchmark leg is priced identically to how `backtest_monthly.py` already prices its SPY
-leg -- `simulate_benchmark()`, buy-and-hold from the strategy's own first execution date, one
-10bps entry cost, no further trading -- so the legs are directly comparable on start date,
-capital and cost treatment. Reuses `p0_q1_benchmark_factor_report`'s loaders and OLS rather
-than reimplementing them.
+leg -- `simulate_benchmark()`, buy-and-hold from the strategy's own first execution date to its
+own last day, one 10bps entry cost, no further trading -- so the legs are directly comparable
+on start date, end date, capital and cost treatment. Reuses `p0_q1_benchmark_factor_report`'s
+loaders and OLS rather than reimplementing them.
 
 No network access. A sector-neutral composite is still not built, for the reason given in
 `docs/P0-Q1-BENCHMARK.md`: only 193 of the 397 tickers that passed through the portfolio have a
@@ -85,7 +85,22 @@ def available(ticker):
     return os.path.exists(os.path.join(ETF_DIR, f"{ticker}.json"))
 
 
-def blended_history(weights, start_date, initial_capital):
+def leg_history(ticker, start_date, end_date, initial_capital):
+    """One buy-and-hold leg, truncated to the strategy's own window.
+
+    ``public/data/etf/*.json`` is refreshed nightly while the backtest artifact this module
+    reads is frozen until someone re-runs the backtest, so the committed ETF files routinely
+    run past the strategy's last day. Left unbounded, every leg would be priced over a longer
+    window than the strategy it is compared against -- and each refresh would silently move
+    the published benchmark CAGRs. Cutting at ``end_date`` keeps start date, capital, cost
+    treatment *and* end date identical across the strategy and every leg.
+    """
+    result = simulate_benchmark(load_etf_benchmark(ticker), start_date, initial_capital,
+                                ENTRY_COST_BPS)
+    return [row for row in result["history"] if row["date"] <= end_date]
+
+
+def blended_history(weights, start_date, end_date, initial_capital):
     """Monthly-return blend of two buy-and-hold legs, rebalanced never.
 
     Each leg is simulated exactly as a standalone benchmark, then combined at fixed weights on
@@ -95,9 +110,8 @@ def blended_history(weights, start_date, initial_capital):
     """
     legs = {}
     for ticker, weight in weights.items():
-        result = simulate_benchmark(load_etf_benchmark(ticker), start_date,
-                                    initial_capital * weight, ENTRY_COST_BPS)
-        legs[ticker] = {row["date"]: row["value"] for row in result["history"]}
+        history = leg_history(ticker, start_date, end_date, initial_capital * weight)
+        legs[ticker] = {row["date"]: row["value"] for row in history}
     shared = sorted(set.intersection(*(set(leg) for leg in legs.values())))
     return [{"date": day, "value": sum(leg[day] for leg in legs.values())} for day in shared]
 
@@ -150,6 +164,8 @@ def build_report(backtest=None):
             backtest = json.load(handle)
     portfolio = backtest["portfolio"]
     start_date = portfolio["metrics"]["start_date"]
+    # The strategy's own last day, not "whatever the ETF files happen to hold today".
+    end_date = portfolio["history"][-1]["date"]
     initial_capital = portfolio["metrics"]["initial_value"]
     strategy_metrics, strategy_monthly = _metrics_from_history(
         portfolio["history"], initial_capital)
@@ -159,9 +175,8 @@ def build_report(backtest=None):
         if not available(ticker):
             missing.append(ticker)
             continue
-        result = simulate_benchmark(load_etf_benchmark(ticker), start_date,
-                                    initial_capital, ENTRY_COST_BPS)
-        metrics, monthly = _metrics_from_history(result["history"], initial_capital)
+        history = leg_history(ticker, start_date, end_date, initial_capital)
+        metrics, monthly = _metrics_from_history(history, initial_capital)
         legs[ticker] = {
             "description": description,
             **metrics,
@@ -170,7 +185,8 @@ def build_report(backtest=None):
 
     if all(available(ticker) for ticker in BLEND["weights"]):
         metrics, monthly = _metrics_from_history(
-            blended_history(BLEND["weights"], start_date, initial_capital), initial_capital)
+            blended_history(BLEND["weights"], start_date, end_date, initial_capital),
+            initial_capital)
         legs[BLEND["name"]] = {
             "description": BLEND["rationale"],
             **metrics,
@@ -187,9 +203,10 @@ def build_report(backtest=None):
         "schema_version": 1,
         "generated_at": backtest.get("generated_at"),
         "source": "pipeline/backtest_monthly_results.json + public/data/etf/*.json",
-        "method": ("every leg is buy-and-hold from the strategy's first execution date with one "
-                   "10bps entry cost, identical to how backtest_monthly.py prices its SPY leg"),
-        "window": {"start": start_date, "initial_capital": initial_capital},
+        "method": ("every leg is buy-and-hold from the strategy's first execution date to its "
+                   "last, with one 10bps entry cost, identical to how backtest_monthly.py "
+                   "prices its SPY leg"),
+        "window": {"start": start_date, "end": end_date, "initial_capital": initial_capital},
         "strategy": strategy_metrics,
         "benchmarks": legs,
         "benchmarks_unavailable": missing,
