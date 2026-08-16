@@ -499,3 +499,56 @@ mistakes them for oversights.
 - **Price momentum must never contribute to theme exposure.** Enforced in three places
   (config validation, scoring, and `validate_data.py`). If a future change needs one of
   those relaxed, that is the signal to stop, not to relax it.
+
+## Redesign follow-ups (from the `docs/REDESIGN-PLAN.md` execution, 2026-08-15)
+
+Phases 0, 1, 3 and the metadata pass are complete. Phases 2 and 4 are partly
+done and 5 is not started. What is left, and why:
+
+### Phase 2 — component consolidation
+- **Decompose the giants.** `Portfolio.jsx` (1,286 lines, three views),
+  `SwingScreen.jsx` (839) and `Picks.jsx` (816) still hold view + data + sort
+  logic in one file. Plan calls for `portfolio/Summary|Performance|DataOverview`
+  plus shared hooks.
+- **Four tables not yet on `DataTable`:** Picks, SwingScreen, Portfolio, and the
+  three evidence tables in `ResearchEvidence.jsx`. The system and nine
+  migrations are in; these four are mechanical but large.
+- **Inline-style diet.** 167 `style={{}}` sites remain (down from ~340). The
+  static ones should become classes; the computed ones (bar widths, chart
+  geometry, `--widget-order`) stay.
+
+### Phase 4 — data visualization
+Shipped: palette validation for all four palettes, and the correlation heatmap.
+Not shipped, with reasons:
+- **Bullet charts for `validation/signal_metrics.json`** — the plan assumed
+  `value` + numeric `kill_threshold` on a shared scale. In the published data
+  `kill_threshold` is prose for 17 of the 23 metrics that have one (e.g.
+  "Non-monotonic quantiles are fragile"), only 6 parse numerically, 14 values
+  are null, and the 40 metrics span incomparable scales. Drawing it needs a
+  pipeline change that publishes a numeric threshold and a comparison basis, or
+  a different form. Do not fake the numbers.
+- Risk/return scatter (ShadowPortfolios), dot-plot small multiples
+  (BacktestComparison), paired bars (LiveValidation), quadrant scatter
+  (ResearchScreen), congress volume timeline, macro bullet trio, factor-exposure
+  bars, projection fan revival, score-history line in the modal. All have the
+  data; none are built.
+
+### Phase 5 — page-by-page pass
+Not started. Every page now inherits the new tokens and card system, but the
+per-page composition work (hierarchy, one headline number per widget, the shared
+screen-page skeleton, real empty states for `InstitutionalActivity`'s permanent
+`results: []`) has not been done.
+
+### Smaller items
+- **`og:image` and `og:url` are root-relative** in `index.html` because the
+  deploy domain is not committed to this repo. Facebook and Twitter want
+  absolute URLs — set them once the domain is known.
+- **Nine unreachable source files remain** (~2,020 lines): `evidenceStrength`,
+  `labelDistribution`, `nightlyRefresh`, `pipelineGuardrails`, `sentimentEngine`,
+  `usePortfolio`, `scoreBands` (kept: CLAUDE.md cites its test as the example
+  command), plus the two deliberate stubs `fidelityConnectorStub` and
+  `securityStub`. Decide keep-or-delete per file.
+- **`advisor.json` is 37 MB** and is fetched by Search, Watchlist and Finances.
+  Phase 6 item 1 — check whether `report.json` (6.5 MB) covers their fields.
+- **`score-history.json` (31 MB) and `diagnostics.json` (4.9 MB)** are committed
+  and read by nothing.

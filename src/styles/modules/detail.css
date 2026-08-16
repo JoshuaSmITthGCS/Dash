@@ -12,7 +12,9 @@
 .planning-goals, .sequence-risk-panel { box-shadow: none; }
 
 .direction-value { display: inline-flex; align-items: center; gap: var(--sp-1); font-variant-numeric: tabular-nums; }
-.direction-value > span { font-size: .7em; }
+/* The aria-hidden direction glyph. Was .7em, which computed to 8.4px inside a
+   12px cell — the only thing in the app still rendering below the 11px floor. */
+.direction-value > span { font-size: var(--fs-2xs); }
 .value-capsule { min-height: 32px; justify-content: center; padding: 0 var(--sp-2-5); border-radius: var(--r-full); }
 .value-capsule.pos { background: var(--positive); color: var(--pill-positive-ink); }
 .value-capsule.neg { background: var(--negative); color: var(--pill-negative-ink); }
