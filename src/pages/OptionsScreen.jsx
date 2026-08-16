@@ -5,7 +5,7 @@ import { OptionsNavigation, ScreenNavigation } from './ResearchScreen.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
-import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import DataTable from '../components/DataTable.jsx'
 import BacktestSummary from '../components/BacktestSummary.jsx'
 
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
@@ -141,38 +141,31 @@ export default function OptionsScreen() {
           : 'No ticker currently clears the multi-day options screen. Check back after the next data refresh.'} />
       ) : !rows.length ? (
         <Empty note="No candidate matches the current filters." />
-      ) : <>
-        <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={330}
-          renderItem={(row) => <OptionIdeaCard row={row} onOpen={openResearch} />} />
-
-        <div className="research-table card">
-          <table>
-            <thead><tr>
-              <th scope="col">Rank</th><th scope="col">Ticker</th><th scope="col">Sector</th>
-              <th scope="col">Side</th><th scope="col" className="num">Strike</th><th scope="col">Expiration</th>
-              <th scope="col" className="num">DTE</th><th scope="col" className="num">IV</th>
-              <th scope="col" className="num">IV / RV</th><th scope="col" className="num">Spread</th>
-              <th scope="col" className="num">Open int.</th><th scope="col" className="num">Score</th>
-              <th scope="col"><span className="sr-only">Open</span></th>
-            </tr></thead>
-            <tbody>{rows.map((row) => <tr key={row.ticker}>
-              <td className="rank">#{row.rank}</td>
-              <td><b>{row.ticker}</b></td>
-              <td>{row.sector || '–'}</td>
-              <td><Tier label={row.option_type === 'put' ? 'Put' : 'Call'} /></td>
-              <td className="num mono">{money(row.strike)}</td>
-              <td>{dateLabel(row.expiration)}</td>
-              <td className="num mono">{row.days_to_expiration}</td>
-              <td className="num mono">{pct(row.implied_volatility)}</td>
-              <td className="num mono">{number(row.implied_realized_vol_ratio, 2)}×</td>
-              <td className="num mono">{pct(row.spread_pct)}</td>
-              <td className="num mono">{row.open_interest ?? '–'}</td>
-              <td className="mono num score-cell">{number(row.score, 2)}</td>
-              <td><button className="icon-button" onClick={() => openResearch(row)} aria-label={`Open ${row.ticker} research`}><Icon name="chevron" /></button></td>
-            </tr>)}</tbody>
-          </table>
-        </div>
-      </>}
+      ) : (
+        <DataTable
+          rows={rows}
+          getKey={(row) => row.ticker}
+          columns={[
+            { key: 'rank', label: 'Rank', cell: (row) => <span className="rank">#{row.rank}</span> },
+            { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
+            { key: 'sector', label: 'Sector', cell: (row) => row.sector || '\u2013' },
+            { key: 'option_type', label: 'Side', cell: (row) => <Tier label={row.option_type === 'put' ? 'Put' : 'Call'} /> },
+            { key: 'strike', label: 'Strike', numeric: true, cell: (row) => <span className="mono">{money(row.strike)}</span> },
+            { key: 'expiration', label: 'Expiration', cell: (row) => dateLabel(row.expiration) },
+            { key: 'days_to_expiration', label: 'DTE', numeric: true, cell: (row) => <span className="mono">{row.days_to_expiration}</span> },
+            { key: 'implied_volatility', label: 'IV', numeric: true, cell: (row) => <span className="mono">{pct(row.implied_volatility)}</span> },
+            { key: 'implied_realized_vol_ratio', label: 'IV / RV', numeric: true,
+              cell: (row) => <span className="mono">{number(row.implied_realized_vol_ratio, 2)}\u00d7</span> },
+            { key: 'spread_pct', label: 'Spread', numeric: true, cell: (row) => <span className="mono">{pct(row.spread_pct)}</span> },
+            { key: 'open_interest', label: 'Open int.', numeric: true, cell: (row) => <span className="mono">{row.open_interest ?? '\u2013'}</span> },
+            { key: 'score', label: 'Score', numeric: true, cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },
+            { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+              cell: (row) => <button className="icon-button" onClick={() => openResearch(row)}
+                aria-label={`Open ${row.ticker} research`}><Icon name="chevron" /></button> },
+          ]}
+          mobile={{ estimateSize: 330, renderItem: (row) => <OptionIdeaCard row={row} onOpen={openResearch} /> }}
+        />
+      )}
       <p className="disclaimer">
         Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}.
         Rankings are hypotheses for prospective validation, not claims of outperformance. Implied volatility, spreads,

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMediaQuery } from '../lib/useMediaQuery.js'
 import { nextSort, sortRows } from '../lib/dataTableSort.js'
 import ResultCards from './ResultCards.jsx'
+import MobileVirtualList from './MobileVirtualList.jsx'
 
 /**
  * The one table entry point.
@@ -62,6 +63,20 @@ export default function DataTable({
   )
 
   if (!ordered.length && empty) return empty
+
+  if (isMobile && mobile?.renderItem) {
+    // A page with a bespoke mobile card (not a label/value list) keeps it, and
+    // still gets virtualization from the same place as every other table.
+    return (
+      <MobileVirtualList
+        className={mobile.className || 'research-mobile-list'}
+        items={ordered}
+        getKey={getKey}
+        renderItem={mobile.renderItem}
+        estimateSize={mobile.estimateSize}
+      />
+    )
+  }
 
   if (isMobile && mobile) {
     // Card fields default to the columns themselves, so a column added to the

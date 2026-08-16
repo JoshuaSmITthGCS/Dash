@@ -28,21 +28,31 @@ const advisorData = {
 }
 
 describe('Theme Exposure screen', () => {
-  it('renders both the mobile card list and the desktop table for the same rows', () => {
-    // .research-table is hidden outright below 900px in global.css, and MobileVirtualList
-    // itself only mounts its cards when matchMedia reports a mobile viewport - without a
-    // card fallback in the DOM, a phone would show an empty page below the intro copy.
+  // DataTable mounts exactly one representation of the rows. Both directions are
+  // asserted because the failure that matters is a viewport rendering neither:
+  // before DataTable this page mounted both trees and hid one with CSS.
+  const withViewport = (matches, assertion) => {
     const originalMatchMedia = window.matchMedia
-    window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} })
+    window.matchMedia = () => ({ matches, addEventListener() {}, removeEventListener() {} })
     useData.mockImplementation(() => ({ data: advisorData, loading: false, error: null }))
-
     render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
-
-    expect(document.querySelector('.research-mobile-list')).toBeTruthy()
-    expect(document.querySelectorAll('.research-mobile-card').length).toBeGreaterThan(0)
-    expect(document.querySelector('.research-table table')).toBeTruthy()
-
+    assertion()
     window.matchMedia = originalMatchMedia
+  }
+
+  it('renders the card list and no table below the mobile breakpoint', () => {
+    withViewport(true, () => {
+      expect(document.querySelector('.research-mobile-list')).toBeTruthy()
+      expect(document.querySelectorAll('.research-mobile-card').length).toBeGreaterThan(0)
+      expect(document.querySelector('table')).toBeNull()
+    })
+  })
+
+  it('renders the table and no card list above the mobile breakpoint', () => {
+    withViewport(false, () => {
+      expect(document.querySelector('table')).toBeTruthy()
+      expect(document.querySelector('.research-mobile-list')).toBeNull()
+    })
   })
 
   it('splits rows into Leaders and Connected, not yet re-rated by candidate_source', () => {

@@ -7,7 +7,7 @@ import CompanyLogo from '../components/CompanyLogo.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
-import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import DataTable from '../components/DataTable.jsx'
 
 function BreakoutCard({ row, index, onOpen }) {
   return <article className="research-mobile-card" key={row.ticker}>
@@ -107,54 +107,55 @@ export default function FastGrowthScreen() {
           ? 'No name is accelerating sharply enough to clear this screen in the latest report.'
           : 'No name clears the emerging-growth measurables in the latest report.'} />
       ) : <>
-        <MobileVirtualList className="research-mobile-list" items={filtered} getKey={(row) => row.ticker} estimateSize={250}
-          renderItem={(row, index) => view === 'breakout'
-            ? <BreakoutCard row={row} index={index} onOpen={setSelectedStock} />
-            : <EmergingGrowthCard row={row} index={index} onOpen={setSelectedStock} />} />
-
-        <div className="research-table card">
-          <table>
-            {view === 'breakout' ? (
-              <>
-                <thead><tr>
-                  <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Research rating</th>
-                  <th scope="col" className="num">5-day return</th><th scope="col" className="num">20-day return</th>
-                  <th scope="col" className="num">Acceleration</th><th scope="col" className="num">Score</th><th scope="col"><span className="sr-only">Open</span></th>
-                </tr></thead>
-                <tbody>{filtered.map((row, index) => <tr key={row.ticker}>
-                  <td className="rank">#{index + 1}</td>
-                  <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span></div></div></td>
-                  <td>{row.sector || '–'}</td>
-                  <td><Tier label={row.stance} /></td>
-                  <td className="num"><Move pct={row.screen.weekReturn} /></td>
-                  <td className="num"><Move pct={row.screen.monthReturn} /></td>
-                  <td className="num"><Move pct={row.screen.acceleration} /></td>
-                  <td className="mono num score-cell">{row.score}</td>
-                  <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
-                </tr>)}</tbody>
-              </>
-            ) : (
-              <>
-                <thead><tr>
-                  <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Research rating</th>
-                  <th scope="col" className="num">Revenue growth</th><th scope="col" className="num">Relative strength</th>
-                  <th scope="col">Vol. contracting</th><th scope="col" className="num">Score</th><th scope="col"><span className="sr-only">Open</span></th>
-                </tr></thead>
-                <tbody>{filtered.map((row, index) => <tr key={row.ticker}>
-                  <td className="rank">#{index + 1}</td>
-                  <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span></div></div></td>
-                  <td>{row.sector || '–'}</td>
-                  <td><Tier label={row.stance} /></td>
-                  <td className="num"><Move pct={row.screen.revenueGrowth != null ? row.screen.revenueGrowth * 100 : null} /></td>
-                  <td className="num"><Move pct={row.screen.relativeStrength} /></td>
-                  <td>{row.screen.volatilityContracting == null ? '–' : row.screen.volatilityContracting ? 'Yes' : 'No'}</td>
-                  <td className="mono num score-cell">{row.score}</td>
-                  <td><button className="icon-button" onClick={() => setSelectedStock(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
-                </tr>)}</tbody>
-              </>
-            )}
-          </table>
-        </div>
+        <DataTable
+          rows={filtered}
+          getKey={(row) => row.ticker}
+          columns={view === 'breakout' ? [
+            { key: 'rank', label: 'Rank', sortable: false, cell: (row, index) => <span className="rank">#{index + 1}</span> },
+            { key: 'ticker', label: 'Company', cell: (row) => (
+              <div className="table-company company-with-logo"><CompanyLogo company={row} size={34} />
+                <div><b>{row.ticker}</b><span>{row.name}</span></div></div>) },
+            { key: 'sector', label: 'Sector', cell: (row) => row.sector || '\u2013' },
+            { key: 'stance', label: 'Research rating', cell: (row) => <Tier label={row.stance} /> },
+            { key: 'weekReturn', label: '5-day return', numeric: true,
+              sortValue: (row) => row.screen.weekReturn, cell: (row) => <Move pct={row.screen.weekReturn} /> },
+            { key: 'monthReturn', label: '20-day return', numeric: true,
+              sortValue: (row) => row.screen.monthReturn, cell: (row) => <Move pct={row.screen.monthReturn} /> },
+            { key: 'acceleration', label: 'Acceleration', numeric: true,
+              sortValue: (row) => row.screen.acceleration, cell: (row) => <Move pct={row.screen.acceleration} /> },
+            { key: 'score', label: 'Score', numeric: true,
+              cell: (row) => <span className="mono score-cell">{row.score}</span> },
+            { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+              cell: (row) => <button className="icon-button" onClick={() => setSelectedStock(row)}
+                aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button> },
+          ] : [
+            { key: 'rank', label: 'Rank', sortable: false, cell: (row, index) => <span className="rank">#{index + 1}</span> },
+            { key: 'ticker', label: 'Company', cell: (row) => (
+              <div className="table-company company-with-logo"><CompanyLogo company={row} size={34} />
+                <div><b>{row.ticker}</b><span>{row.name}</span></div></div>) },
+            { key: 'sector', label: 'Sector', cell: (row) => row.sector || '\u2013' },
+            { key: 'stance', label: 'Research rating', cell: (row) => <Tier label={row.stance} /> },
+            { key: 'revenueGrowth', label: 'Revenue growth', numeric: true,
+              sortValue: (row) => row.screen.revenueGrowth,
+              cell: (row) => <Move pct={row.screen.revenueGrowth != null ? row.screen.revenueGrowth * 100 : null} /> },
+            { key: 'relativeStrength', label: 'Relative strength', numeric: true,
+              sortValue: (row) => row.screen.relativeStrength, cell: (row) => <Move pct={row.screen.relativeStrength} /> },
+            { key: 'volatilityContracting', label: 'Vol. contracting',
+              sortValue: (row) => row.screen.volatilityContracting,
+              cell: (row) => row.screen.volatilityContracting == null ? '\u2013' : row.screen.volatilityContracting ? 'Yes' : 'No' },
+            { key: 'score', label: 'Score', numeric: true,
+              cell: (row) => <span className="mono score-cell">{row.score}</span> },
+            { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+              cell: (row) => <button className="icon-button" onClick={() => setSelectedStock(row)}
+                aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button> },
+          ]}
+          mobile={{
+            estimateSize: 250,
+            renderItem: (row, index) => view === 'breakout'
+              ? <BreakoutCard row={row} index={index} onOpen={setSelectedStock} />
+              : <EmergingGrowthCard row={row} index={index} onOpen={setSelectedStock} />,
+          }}
+        />
       </>}
       <p className="disclaimer">
         {view === 'breakout'

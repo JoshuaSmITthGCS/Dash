@@ -6,7 +6,7 @@ import { STRATEGY_SCREENS } from '../lib/strategyScreenConfigs.js'
 import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
-import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import DataTable from '../components/DataTable.jsx'
 import BacktestSummary from '../components/BacktestSummary.jsx'
 
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
@@ -191,34 +191,30 @@ export default function StrategyScreen({ id }) {
           : 'No ticker currently clears this screen. Check back after the next data refresh.'} />
       ) : !rows.length ? (
         <Empty note="No candidate matches the current filters." />
-      ) : <>
-        <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => `${row.ticker}-${row.strategy || ''}-${row.rank}`} estimateSize={360}
-          renderItem={(row) => <StrategyCard row={row} config={config} onOpen={openResearch} />} />
-
-        <div className="research-table card">
-          <table>
-            <thead><tr>
-              <th scope="col">Rank</th><th scope="col">Ticker</th><th scope="col">Sector</th>
-              {strategies.length > 1 && <th scope="col">Strategy</th>}
-              <th scope="col">Legs</th><th scope="col">Expiration</th><th scope="col" className="num">DTE</th>
-              <th scope="col" className="num">Capital</th><th scope="col" className="num">Score</th>
-              <th scope="col"><span className="sr-only">Open</span></th>
-            </tr></thead>
-            <tbody>{rows.map((row) => <tr key={`${row.ticker}-${row.strategy || ''}-${row.rank}`}>
-              <td className="rank">#{row.rank}</td>
-              <td><b>{row.ticker}</b></td>
-              <td>{row.sector || '–'}</td>
-              {strategies.length > 1 && <td>{config.strategyLabel(row)}</td>}
-              <td>{legsSummary(row.legs)}</td>
-              <td>{dateLabel(row.expiration)}</td>
-              <td className="num mono">{row.days_to_expiration}</td>
-              <td className="num mono">{dollars(row.capital_required)}</td>
-              <td className="mono num score-cell">{number(row.score, 2)}</td>
-              <td><button className="icon-button" onClick={() => openResearch(row)} aria-label={`Open ${row.ticker} research`}><Icon name="chevron" /></button></td>
-            </tr>)}</tbody>
-          </table>
-        </div>
-      </>}
+      ) : (
+        <DataTable
+          rows={rows}
+          getKey={(row) => `${row.ticker}-${row.strategy || ''}-${row.rank}`}
+          columns={[
+            { key: 'rank', label: 'Rank', cell: (row) => <span className="rank">#{row.rank}</span> },
+            { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
+            { key: 'sector', label: 'Sector', cell: (row) => row.sector || '\u2013' },
+            strategies.length > 1 && { key: 'strategy', label: 'Strategy', cell: (row) => config.strategyLabel(row) },
+            { key: 'legs', label: 'Legs', sortable: false, cell: (row) => legsSummary(row.legs) },
+            { key: 'expiration', label: 'Expiration', cell: (row) => dateLabel(row.expiration) },
+            { key: 'days_to_expiration', label: 'DTE', numeric: true,
+              cell: (row) => <span className="mono">{row.days_to_expiration}</span> },
+            { key: 'capital_required', label: 'Capital', numeric: true,
+              cell: (row) => <span className="mono">{dollars(row.capital_required)}</span> },
+            { key: 'score', label: 'Score', numeric: true,
+              cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },
+            { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+              cell: (row) => <button className="icon-button" onClick={() => openResearch(row)}
+                aria-label={`Open ${row.ticker} research`}><Icon name="chevron" /></button> },
+          ].filter(Boolean)}
+          mobile={{ estimateSize: 360, renderItem: (row) => <StrategyCard row={row} config={config} onOpen={openResearch} /> }}
+        />
+      )}
       <p className="disclaimer">
         Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}.
         Rankings are hypotheses for prospective validation, not claims of outperformance. Prices, implied volatility,
