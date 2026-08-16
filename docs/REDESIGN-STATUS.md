@@ -228,6 +228,49 @@ lint/test/build green (759 tests), `typefloor.mjs` 0 violations on `/research`
 (Picks), `/screens/swing`, and `/screens/validation` (ResearchEvidence via
 LiveValidation) individually and in the default sweep.
 
+### Phase 2e — inline-style diet ✅
+161 sites at the start of this pass (the previously-recorded 167 was stale —
+`MarketHeatmap.jsx`/`ProjectionFanChart.jsx` had already dropped to 0 by the
+SVG type-floor fix). Computed values stay inline exactly as the rule says
+(bar/fill widths, `--widget-order`/`--success`/`--dial-size` custom
+properties, every `moveColor()`/`actionStyle()`-derived color, SVG chart
+geometry) — roughly 78 sites across `Insights.jsx`, `StockDetailModal.jsx`,
+`PortfolioMoveExplanation.jsx`, `GrowthChart.jsx`, `Diversification.jsx`,
+`Dashboard.jsx`, `PerformanceMetrics.jsx`, `ActionGuidance.jsx` and a long
+tail of one-or-two-site files. Everything else converted to classes:
+`Finances.jsx` (27), `StockDetailModal.jsx` (8), `GrowthChart.jsx` (12),
+`Methodology.jsx` (9), plus `Bits.jsx`, `ActionGuidance.jsx`,
+`MetricSections.jsx`, `Glossary.jsx`, `CongressTrades.jsx`,
+`InstitutionalActivity.jsx`, and `Planning.jsx` (Portfolio's files were
+already done in the Phase 5 pass).
+
+Two off-scale values (18px, 28px, both exact ties between adjacent tokens)
+rounded **down** per the Phase 1 convention already established for this
+codebase. One shared class was renamed mid-pass — `.chart-empty-state`
+became `.muted-mono-note` (`base.css`) once it turned out `Bits.jsx`'s
+`Loading`/`Empty` components, used across most of the app, needed the
+identical rule; a chart-scoped name would have been misleading there.
+`.component-scores--fluid` needed a compound selector
+(`.component-scores.component-scores--fluid`) to keep beating a mobile
+breakpoint override in `controls.css` that the original inline style had
+always won against by specificity alone.
+
+Found and fixed one real, unrelated `DESIGN.md` floor violation while
+verifying a route this pass touched: `.trade-identity-reveal`'s `<small>`
+(`workspace.css`, `CongressTrades.jsx`) had no explicit font-size, so it
+inherited the browser's `0.8em` default against a ~12px ancestor and
+rendered at 9.6px. Confirmed pre-existing (present 15 commits back, from
+the Phase 1c stylesheet split) — not introduced by this pass, but cheap to
+fix while already there. Verified: lint/test/build green,
+`design/typefloor.mjs` 0 violations on every route checked (default sweep
+plus `/methodology`, `/glossary`, `/screens/politics` individually),
+`design/a11ycheck.mjs` 0 unnamed controls, visual check in both themes via
+`appshot.mjs` for `/methodology` and `/glossary` and a scripted modal
+screenshot for `StockDetailModal`. Not verified in-browser:
+`Finances.jsx` and `GrowthChart.jsx`'s Dashboard usage both require
+Firebase-backed data that's offline in local dev (same known limitation as
+Portfolio/Diversification) — lint/test/build stood in for those two.
+
 ---
 
 ## 2. What is left
@@ -320,12 +363,6 @@ fallback, so it is not a pure change and was left alone.
 
 `SwingScreen.jsx` and `Picks.jsx` are unchanged. The plan suggests running
 `improve-react` first to decide where their seams go.
-
-### Phase 2e — inline-style diet
-**167 sites** remain, down from ~340. Keep computed values (bar widths,
-`--widget-order`, chart geometry); move static ones to classes.
-Worst offenders: `Finances.jsx` 30, `Portfolio.jsx` 23, `StockDetailModal.jsx` 16,
-`GrowthChart.jsx` 15, `Methodology.jsx` 10, `Insights.jsx` 10.
 
 ### Phase 4 — 10 charts unbuilt
 All have their data shipped. In the plan's build order, minus the blocked one:

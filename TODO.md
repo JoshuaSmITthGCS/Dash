@@ -505,8 +505,11 @@ mistakes them for oversights.
 > Full handoff — what is done, what is left, and four corrections to the plan
 > itself — is in `docs/REDESIGN-STATUS.md`. Read that before continuing the work.
 
-Phases 0, 1, 3 and the metadata pass are complete. Phases 2 and 4 are partly
-done and 5 is not started. What is left, and why:
+Phases 0, 1, 3, 2c, 2e and the metadata/type-floor pass are complete. Phase 2
+is mostly done (table migrations and the inline-style diet are finished;
+decomposing `SwingScreen.jsx`/`Picks.jsx` into smaller files is not). Phase 4
+is partly done; Phase 5 has Dashboard and Portfolio done, the rest not
+started. What is left, and why:
 
 ### Phase 2 — component consolidation
 - **Decompose the giants.** ~~`Portfolio.jsx` (1,286 lines, three views)~~ **done**
@@ -519,9 +522,15 @@ done and 5 is not started. What is left, and why:
   three evidence tables migrated; Portfolio's two comparison tables migrated
   in the Phase 5 pass. `DataTable` gained `rowClassName`, `rowHeader`, and
   per-column `defaultSortDir` along the way.
-- **Inline-style diet.** 167 `style={{}}` sites remain (down from ~340). The
-  static ones should become classes; the computed ones (bar widths, chart
-  geometry, `--widget-order`) stay.
+- **Inline-style diet — done.** All flagged static sites converted to
+  classes app-wide (Finances, StockDetailModal, GrowthChart, Methodology,
+  Bits, ActionGuidance, MetricSections, Glossary, CongressTrades,
+  InstitutionalActivity, Planning; Portfolio's files done in the Phase 5
+  pass). Computed values — bar/fill widths, `--widget-order`-style custom
+  properties, data-derived colors, SVG chart geometry — correctly stay
+  inline, ~78 sites. Also fixed one real pre-existing 11px-floor
+  violation found in passing (`.trade-identity-reveal`'s unstyled
+  `<small>`, `workspace.css`).
 
 ### SVG type floor — fixed
 `DESIGN.md` forbids text below 11px "including SVG labels". Charts set `fontSize="11"`
