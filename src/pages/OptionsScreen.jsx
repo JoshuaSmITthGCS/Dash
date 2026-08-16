@@ -7,6 +7,7 @@ import StockDetailModal from '../components/StockDetailModal.jsx'
 import WatchlistToggleButton from '../components/WatchlistToggleButton.jsx'
 import DataTable from '../components/DataTable.jsx'
 import BacktestSummary from '../components/BacktestSummary.jsx'
+import CrossStrategyComparison from '../components/CrossStrategyComparison.jsx'
 
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
 const pct = (value, digits = 1) => value == null ? '–' : `${(value * 100).toFixed(digits)}%`
@@ -90,7 +91,19 @@ export default function OptionsScreen() {
     return new Map(rows.map((row) => [row.ticker, row]))
   }, [advisor])
 
-  const sourceRows = (data?.results || []).filter((row) => row.eligibility)
+  // The published screen has occasionally carried the exact same contract at two adjacent
+  // ranks (same ticker/side/strike/expiration, identical score) — a pipeline dedup gap, not
+  // a display choice. Never show a reader the same idea twice; keep whichever copy is
+  // ranked first (results already arrive rank-ordered).
+  const seenContracts = new Set()
+  const sourceRows = (data?.results || [])
+    .filter((row) => row.eligibility)
+    .filter((row) => {
+      const key = `${row.ticker}-${row.option_type}-${row.strike}-${row.expiration}`
+      if (seenContracts.has(key)) return false
+      seenContracts.add(key)
+      return true
+    })
   const sectors = useMemo(() => [...new Set(sourceRows.map((row) => row.sector).filter(Boolean))].sort(), [sourceRows])
   const rows = sourceRows
     .filter((row) => optionType === 'all' || row.option_type === optionType)
@@ -122,6 +135,7 @@ export default function OptionsScreen() {
     </div>
 
     <BacktestSummary file="screens/options-backtest.json" />
+    <CrossStrategyComparison />
 
     <div className="research-toolbar">
       <label><span className="sr-only">Direction</span><select value={optionType} onChange={(event) => setOptionType(event.target.value)}>
@@ -144,7 +158,7 @@ export default function OptionsScreen() {
       ) : (
         <DataTable
           rows={rows}
-          getKey={(row) => row.ticker}
+          getKey={(row) => `${row.ticker}-${row.option_type}-${row.strike}-${row.expiration}`}
           columns={[
             { key: 'rank', label: 'Rank', cell: (row) => <span className="rank">#{row.rank}</span> },
             { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
