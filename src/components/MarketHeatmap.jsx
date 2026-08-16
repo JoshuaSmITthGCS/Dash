@@ -1,5 +1,6 @@
-import { useId } from 'react'
+import { useId, useRef } from 'react'
 import { useMediaQuery } from '../lib/useMediaQuery.js'
+import { useElementWidth } from '../lib/useElementWidth.js'
 import { dailyMoveForPosition } from '../lib/marketPresentation.js'
 
 /**
@@ -127,21 +128,26 @@ function signedChange(change) {
 export default function MarketHeatmap({ positions = [] }) {
   const titleId = useId()
   const compact = useMediaQuery('(max-width: 620px)')
+  const plotRef = useRef(null)
+  // The viewBox width tracks the container, so the scale is 1 and these sizes are real px.
+  // They used to be 8–10 in a 720-unit viewBox: scaled *up* to 12–16px on a wide screen but
+  // down to 6.8px below 1100px, which is what the 11px floor was catching.
+  const measuredWidth = useElementWidth(plotRef, null)
   const sectors = buildPortfolioSectorHeatmap(positions)
   if (!sectors.length) return null
 
-  const W = compact ? 360 : 720
+  const W = Math.max(320, measuredWidth ?? (compact ? 360 : 720))
   const H = compact ? 260 : 340
   const fontSize = compact
-    ? { sector: 12, move: 11, allocation: 10, tickers: 9 }
-    : { sector: 10, move: 9, allocation: 8, tickers: 8 }
+    ? { sector: 13, move: 12, allocation: 11, tickers: 11 }
+    : { sector: 14, move: 13, allocation: 11, tickers: 11 }
   const rects = squarify(sectors, 0, 0, W, H)
   const summary = sectors
     .map((sector) => `${sector.sector} ${sector.allocationPct.toFixed(1)}% allocation, ${signedChange(sector.avgChange)}`)
     .join('; ')
 
   return (
-    <section className="market-heatmap" aria-labelledby={titleId}>
+    <section className="market-heatmap" ref={plotRef} aria-labelledby={titleId}>
       <header className="section-heading heatmap-heading">
         <div><span className="eyebrow">Your portfolio · Today</span><h2 id={titleId}>Sector heatmap</h2></div>
         <div className="heatmap-legend" aria-label="Heatmap legend">
@@ -156,28 +162,31 @@ export default function MarketHeatmap({ positions = [] }) {
           const tone = toneForChange(rect.avgChange)
           const textColor = textColorForTone(tone)
           const label = `${rect.sector}: ${rect.allocationPct.toFixed(1)}% allocation, ${signedChange(rect.avgChange)}`
-          const showLabel = rect.w > 50 && rect.h > 35
+          const showLabel = rect.w > 64 && rect.h > 44
+          // ~0.62em per character in the display face, so the cutoff follows the label size
+          // rather than the 10px it happened to be when these numbers were first picked.
+          const maxChars = Math.floor(rect.w / (fontSize.sector * 0.62))
           return (
             <g key={rect.sector} data-sector={rect.sector} data-tone={tone} data-allocation-pct={rect.allocationPct.toFixed(1)}>
               <rect className={`heatmap-tile ${tone}`} x={rect.x + 1} y={rect.y + 1}
                 width={Math.max(0, rect.w - 2)} height={Math.max(0, rect.h - 2)} rx="6" />
               {showLabel && <>
-                <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 - 10}
+                <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 - 15}
                   textAnchor="middle" fill={textColor} fontSize={fontSize.sector} fontWeight="700" fontFamily="var(--font-display)">
-                  {rect.sector.length > rect.w / 7 ? `${rect.sector.slice(0, Math.max(2, Math.floor(rect.w / 7)))}…` : rect.sector}
+                  {rect.sector.length > maxChars ? `${rect.sector.slice(0, Math.max(2, maxChars))}…` : rect.sector}
                 </text>
                 <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 5}
                   textAnchor="middle" fill={textColor} fontSize={fontSize.move} fontWeight="700" fontFamily="var(--font-mono)">
                   {signedChange(rect.avgChange)}
                 </text>
-                {rect.h > 54 && (
-                  <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 20}
+                {rect.h > 68 && (
+                  <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 26}
                     textAnchor="middle" fill={textColor} fillOpacity=".82" fontSize={fontSize.allocation} fontFamily="var(--font-mono)">
                     {rect.allocationPct.toFixed(1)}% allocated
                   </text>
                 )}
-                {rect.h > 78 && rect.w > 90 && (
-                  <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 34}
+                {rect.h > 96 && rect.w > 110 && (
+                  <text x={rect.x + rect.w / 2} y={rect.y + rect.h / 2 + 45}
                     textAnchor="middle" fill={textColor} fillOpacity=".7" fontSize={fontSize.tickers} fontFamily="var(--font-mono)">
                     {rect.tickers.join(' · ')}
                   </text>

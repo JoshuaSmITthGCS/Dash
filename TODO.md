@@ -522,14 +522,15 @@ done and 5 is not started. What is left, and why:
   static ones should become classes; the computed ones (bar widths, chart
   geometry, `--widget-order`) stay.
 
-### SVG type floor — open hard-rule breach
-`DESIGN.md` forbids text below 11px "including SVG labels". Charts set
-`fontSize="11"` as an attribute, but a fixed `viewBox` with `width="100%"` scales it:
-`GrowthChart` axis labels paint at **8.9px** (1440px) / **7.6px** (820px),
-`ProjectionPanel` at **8.1px / 4.2px**, `MarketHeatmap` at **6.8px** below 1100px.
-DOM text is clean — this class only. `node design/typefloor.mjs` measures rendered
-size and exits non-zero. Fix is chart-system-wide; see `docs/REDESIGN-STATUS.md` §2
-for the two options.
+### SVG type floor — fixed
+`DESIGN.md` forbids text below 11px "including SVG labels". Charts set `fontSize="11"`
+as an attribute, but a fixed `viewBox` with `width="100%"` scaled it: `GrowthChart`
+painted at 8.9px/7.6px, `ProjectionFanChart` at 8.1px/4.2px, `MarketHeatmap` at 6.8px
+below 1100px. Fixed by making the viewBox track the measured container width
+(`src/lib/useElementWidth.js`), so the scale is 1 and px means px. Also recovered 69px
+of letterboxed chart height and un-clipped the y-axis labels. `node design/typefloor.mjs`
+now reports 0 across 10 routes × 3 widths and exits non-zero on regression — worth
+wiring into the `site` CI job.
 
 ### Phase 4 — data visualization
 Shipped: palette validation for all four palettes, and the correlation heatmap.

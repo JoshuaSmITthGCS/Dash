@@ -151,30 +151,49 @@ recent common trading days. Screenshots in `design/directions/shots/`.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### SVG type floor — OPEN, and it is a `DESIGN.md` hard-rule breach
-`design/typefloor.mjs` measures **rendered** size (specified size × the element's
-screen CTM scale) rather than the specified size, and gates CI on it (`exit 1`).
-Every violation in the app is this one class — DOM text is clean:
+### SVG type floor — FIXED
+Was a `DESIGN.md` hard-rule breach on every route that draws a chart. `fontSize="11"`
+inside `viewBox="0 0 920 360"` rendered into a 743px box paints at 8.9px, and
+`getComputedStyle` still reports 11 because that is the specified size in *user units* —
+so the attribute could never be edited into compliance while the viewBox width differed
+from the box width.
 
-| Component | Specified | Renders at 1440px | Renders at 820px |
-|---|---|---|---|
-| `GrowthChart` axis labels | 11px | **8.9px** | **7.6px** |
-| `ProjectionPanel` axis + marker | 11px | **8.1px** | **4.2px** |
-| `MarketHeatmap` tile labels | 8–10px | 11–13.8px ✅ | **6.8px** |
+Fixed by making the **viewBox width track the measured container width**, so the scale is
+exactly 1 and every px inside a chart means that many px. `src/lib/useElementWidth.js`
+does the measuring; `GrowthChart`, `ProjectionFanChart` and `MarketHeatmap` consume it.
 
-Affects `/`, `/portfolio`, `/portfolio/performance`, `/markets` — anywhere a chart
-renders. `/research` is clean.
+| Component | Before (1440px / 820px) | After |
+|---|---|---|
+| `GrowthChart` axis labels | 8.9px / 7.6px | 11px |
+| `ProjectionFanChart` axis + marker | 8.1px / 4.2px | 11px |
+| `MarketHeatmap` tile labels | 12–15.6px / 6.8px | 11–14px |
 
-The fix is a chart-system change, not a per-page one, so it was **not** attempted
-inside the Dashboard pass. Two options:
-1. Compensate only the font size — `fontSize={11 / scale}` with the container measured
-   by a `ResizeObserver`. Smallest diff; labels grow in user space on narrow
-   containers, so collision needs checking at every breakpoint.
-2. Make the viewBox track the container width so scale is always 1. More correct — the
-   tooltip box, paddings and marker offsets are all hardcoded px that currently scale
-   too — but it re-tunes the geometry of every chart at every width.
+`node design/typefloor.mjs` reports **0 violations across 10 routes × 3 widths**
+(1440/1100/390), plus the stock-detail modal checked separately. It exits non-zero, so
+it can gate CI.
 
-Do this with the `dataviz` skill loaded, and re-run `design/typefloor.mjs` after.
+Three things that fell out of it, worth not re-breaking:
+
+- **`GrowthChart` was letterboxing 69px of its own declared height.** `height={360}` with
+  a scaled viewBox meant only 291px was ever drawn, centred, with dead bands above and
+  below. Charts now fill the height they reserve.
+- **Y-axis labels were clipped to `,178.00`.** The gutter was a fixed 52px and
+  "$24,178.00" is ~66px of 11px mono. It is now sized from the actual tick strings.
+- **`MarketHeatmap` was relying on being scaled *up*.** Its labels were specified at 8–10
+  and only cleared the floor because a wide container magnified them 1.56×. Specified
+  sizes raised to 11–14, with the label offsets, the `showLabel` gates and the truncation
+  cutoff re-derived from the font size rather than the 10px they were first tuned for.
+
+Two gotchas the fix had to handle, both worth knowing before touching this again:
+a chart inside a **closed `<details>`** still gets a layout box but Chromium skips
+`ResizeObserver` callbacks for skipped content, so `useElementWidth` measures once
+directly on mount as well as observing; and `ProjectionFanChart` must **not** clamp its
+viewBox to a minimum width the way `GrowthChart` does, because it clips
+(`overflow-x: hidden`) where `GrowthChart` scrolls — clamping would silently reintroduce
+the down-scaling.
+
+`design/typefloor.mjs` opens every `<details>` before measuring, so collapsed sections
+are audited in the state a reader actually sees.
 
 ### Phase 5 — page-by-page pass · DASHBOARD DONE · rest not started
 Per the plan, in traffic order: ~~Dashboard~~ → Portfolio → Picks → SwingScreen +

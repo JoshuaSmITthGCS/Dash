@@ -1,5 +1,9 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useElementWidth } from '../lib/useElementWidth.js'
 
+// Seed width only: the drawn width tracks the container so the viewBox scale stays 1 and
+// the CSS-set label sizes (`--fs-2xs`) render at their stated px. At the fixed 720 viewBox
+// they were being scaled to 8.1px on the Dashboard and 4.2px at an 820px viewport.
 const WIDTH = 720
 const HEIGHT = 300
 const PAD = { top: 18, right: 18, bottom: 42, left: 62 }
@@ -16,8 +20,13 @@ function linePath(points, key, x, y) {
 
 export default function ProjectionFanChart({ fan = [], startAge = null, retirementAge = null, money }) {
   const [selectedIndex, setSelectedIndex] = useState(null)
+  const figureRef = useRef(null)
+  // No floor here, unlike GrowthChart: this figure clips rather than scrolls
+  // (`.projection-fan-chart { overflow-x: hidden }`), so clamping the viewBox above the
+  // container width would just reintroduce the down-scaling this is meant to remove.
+  const width = useElementWidth(figureRef, WIDTH)
   if (fan.length < 2) return null
-  const plotWidth = WIDTH - PAD.left - PAD.right
+  const plotWidth = width - PAD.left - PAD.right
   const plotHeight = HEIGHT - PAD.top - PAD.bottom
   const lastMonth = fan.at(-1).month || 1
   const maximum = Math.max(1, ...fan.map((point) => point.p90 || 0))
@@ -39,14 +48,14 @@ export default function ProjectionFanChart({ fan = [], startAge = null, retireme
     setSelectedIndex((current) => Math.max(0, Math.min(fan.length - 1, (current ?? 0) + (event.key === 'ArrowRight' ? 1 : -1))))
   }
 
-  return <figure className="projection-fan-chart" tabIndex="0" onKeyDown={moveSelection}>
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-labelledby="projection-fan-title projection-fan-description" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); scrub(event) }} onPointerMove={(event) => { if (event.buttons || event.pointerType === 'touch') scrub(event) }}>
+  return <figure className="projection-fan-chart" ref={figureRef} tabIndex="0" onKeyDown={moveSelection}>
+    <svg viewBox={`0 0 ${width} ${HEIGHT}`} role="img" aria-labelledby="projection-fan-title projection-fan-description" onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); scrub(event) }} onPointerMove={(event) => { if (event.buttons || event.pointerType === 'touch') scrub(event) }}>
       <title id="projection-fan-title">Projected balance percentile fan</title>
       <desc id="projection-fan-description">The wide band spans the 10th to 90th percentile, the inner band spans the 25th to 75th percentile, and the line is the median.</desc>
       {[0, 0.5, 1].map((fraction) => {
         const value = maximum * fraction
         return <g key={fraction}>
-          <line className="projection-grid-line" x1={PAD.left} x2={WIDTH - PAD.right} y1={y(value)} y2={y(value)} />
+          <line className="projection-grid-line" x1={PAD.left} x2={width - PAD.right} y1={y(value)} y2={y(value)} />
           <text className="projection-axis-label projection-y-label" x={PAD.left - 9} y={y(value) + 4} textAnchor="end">{money(value)}</text>
         </g>
       })}

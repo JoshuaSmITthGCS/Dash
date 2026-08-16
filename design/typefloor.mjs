@@ -32,6 +32,11 @@ for (const [route, name] of ROUTES) {
     const page = await browser.newPage({ viewport: { width, height: 1000 } })
     await page.goto(BASE + route, { waitUntil: 'networkidle' }).catch(() => {})
     await page.waitForTimeout(2200)
+    // Audit collapsed sections in the state a reader actually sees them in. A closed
+    // <details> still lays out a box, so measuring it shut reports the scale of content
+    // nobody is looking at — and misses whatever it looks like once opened.
+    await page.evaluate(() => document.querySelectorAll('details').forEach((el) => { el.open = true }))
+    await page.waitForTimeout(700)
     const rows = await page.evaluate((floor) => {
       const out = []
       // `className` on an SVG element is an SVGAnimatedString, not a string, so read the

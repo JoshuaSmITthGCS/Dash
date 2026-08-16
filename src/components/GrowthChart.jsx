@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMediaQuery } from '../lib/useMediaQuery.js'
+import { useElementWidth } from '../lib/useElementWidth.js'
 import InfoTag from './InfoTag.jsx'
 
 /**
@@ -11,7 +12,12 @@ import InfoTag from './InfoTag.jsx'
  */
 
 const DEFAULT_PAD = { top: 16, right: 14, bottom: 26, left: 52 }
+// Advance width of the 11px monospace axis face, used to size the y-axis gutter.
+const AXIS_CHAR_WIDTH = 6.6
 const MINIMAL_PAD = { top: 18, right: 8, bottom: 30, left: 8 }
+// Matches the `minWidth` on the <svg>: below this the scroll region scrolls rather than
+// letting the coordinate space collapse.
+const MIN_CHART_WIDTH = 320
 
 
 function scalePoints(series, dates, width, height, bounds, pad = DEFAULT_PAD) {
@@ -102,8 +108,18 @@ export default function GrowthChart({
   const [zoom, setZoom] = useState('all')
   const [activeIndex, setActiveIndex] = useState(null)
   const mobileViewport = useMediaQuery('(max-width: 620px)')
+  const plotRef = useRef(null)
   const chartHeight = mobileViewport && mobileHeight != null ? mobileHeight : height
-  const chartWidth = mobileViewport && mobileWidth != null ? mobileWidth : width
+  // The viewBox tracks the box the chart is actually drawn into, so the scale is 1 and
+  // every px below — `fontSize="11"`, the paddings, the tooltip card — renders at that
+  // size. With a fixed viewBox width the whole chart was scaled by container/width, which
+  // pushed the axis labels under the 11px floor and letterboxed 69px of dead space into
+  // the declared height. `width`/`mobileWidth` now only seed the first paint.
+  const measuredWidth = useElementWidth(plotRef, null)
+  const chartWidth = Math.max(
+    MIN_CHART_WIDTH,
+    measuredWidth ?? (mobileViewport && mobileWidth != null ? mobileWidth : width),
+  )
   const availableLines = series.filter((line) =>
     Array.isArray(line.values) && line.values.some((value) => value != null))
   const fullDates = dates.length
@@ -136,9 +152,13 @@ export default function GrowthChart({
   const max = Math.max(...allValues)
   const bounds = { min: min - (max - min) * 0.08 || 0, max: max + (max - min) * 0.08 }
   const ticks = [bounds.max, (bounds.max + bounds.min) / 2, bounds.min]
+  // The y-axis gutter has to hold the widest formatted tick. At the old fixed 52 it did
+  // not — "$24,178.00" is ~66px of 11px mono, so every chart clipped its axis labels to
+  // ",178.00". Sized from the actual tick strings now that a px in here is a real px.
+  const axisLabelWidth = Math.max(...ticks.map((tick) => String(valueFormatter(tick)).length)) * AXIS_CHAR_WIDTH
   const pad = minimal
     ? { ...MINIMAL_PAD, top: mobileViewport && mobileTopInset != null ? mobileTopInset : MINIMAL_PAD.top }
-    : DEFAULT_PAD
+    : { ...DEFAULT_PAD, left: Math.min(Math.round(axisLabelWidth) + 14, Math.round(chartWidth / 3)) }
   const innerHeight = chartHeight - pad.top - pad.bottom
   const chartStyle = lineStyle || document.documentElement.dataset.chartStyle || 'line'
 
@@ -197,7 +217,7 @@ export default function GrowthChart({
         <span>{chartDateLabel(usableDates[displayedIndex])}</span>
         <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '–' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
       </div>
-      <div className="chart-scroll-region" style={{ overflowX: 'auto' }}>
+      <div className="chart-scroll-region" ref={plotRef} style={{ overflowX: 'auto' }}>
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
           width="100%"
