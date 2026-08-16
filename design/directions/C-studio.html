@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direction C · Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DIRECTION C — "STUDIO"  ·  Soft-depth analytics
+   Elevation becomes the default, not an option. Surfaces are
+   tinted toward the brand hue and lift on layered shadows tinted
+   the same way — never pure black. Larger radii, 15px base,
+   calmer density.
+   Signature: the evidence rail — a persistent right column that
+   answers "why is this scored that way" for whatever row you
+   touch, so the 112 keys behind each name stop being a modal.
+   ============================================================ */
+
+:root {
+  /* tinted neutrals — every surface carries a trace of the brand hue */
+  --canvas:   #eceff0;
+  --surface:  #fbfcfc;
+  --raised:   #ffffff;
+  --sunken:   #e3e8e7;
+  --border:   #dbe1e0;
+  --border-soft:#e8ecec;
+
+  --ink:      #101614;
+  --ink-2:    #4b5552;
+  --ink-3:    #64706c;
+  --ink-mute: #7f8b87;
+
+  --accent:      #17513c;
+  --accent-2:    #2f7a5c;
+  --accent-soft: #e3f0e9;
+  --accent-ink:  #ffffff;
+
+  --pos:#0a6f53; --pos-soft:#e2f5ec;
+  --neg:#b83c37; --neg-soft:#fbeae9;
+  --warn:#8a5f0e; --warn-soft:#fdf2d8;
+
+  --div-n3:#2c6b7f; --div-n2:#5f97a6; --div-n1:#a6c5cb;
+  --div-0: #dfe4e3;
+  --div-p1:#c9b791; --div-p2:#a68a55; --div-p3:#795c2c;
+
+  /* tinted elevation — hue-matched, never neutral black */
+  --shadow-1: 0 1px 2px rgba(16,40,32,.05), 0 2px 6px rgba(16,40,32,.045);
+  --shadow-2: 0 1px 2px rgba(16,40,32,.05), 0 6px 16px rgba(16,40,32,.07),
+              0 18px 38px rgba(16,40,32,.05);
+  --ring: 0 0 0 1px rgba(16,40,32,.055);
+
+  --fs-2xs:11px; --fs-xs:12.5px; --fs-sm:13.5px; --fs-base:15px;
+  --fs-lg:17px; --fs-xl:21px; --fs-2xl:28px; --fs-hero:38px;
+
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px;
+
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --r-xl:18px;
+  --font:'Instrument Sans', system-ui, sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+  --ease:cubic-bezier(.23,1,.32,1);
+}
+
+html[data-theme="dark"] {
+  --canvas:#0b100e; --surface:#141b18; --raised:#1a231f; --sunken:#101614;
+  --border:#28322d; --border-soft:#1f2823;
+  --ink:#e9eeeb; --ink-2:#a5b0ab; --ink-3:#8b9791; --ink-mute:#75817c;
+  --accent:#7fe3b0; --accent-2:#5cba8e; --accent-soft:#16281f; --accent-ink:#07130d;
+  --pos:#58d795; --pos-soft:#0f2a1c;
+  --neg:#ff746d; --neg-soft:#2c1614;
+  --warn:#eab83f; --warn-soft:#2a2310;
+  --div-n3:#6fb4ce; --div-n2:#457d90; --div-n1:#2a4c56;
+  --div-0:#222b27;
+  --div-p1:#4a3f27; --div-p2:#856d36; --div-p3:#cba95d;
+  /* depth shadows don't read on dark — collapse to a ring */
+  --shadow-1: 0 0 0 1px rgba(255,255,255,.05);
+  --shadow-2: 0 0 0 1px rgba(255,255,255,.07), 0 12px 32px rgba(0,0,0,.45);
+  --ring: 0 0 0 1px rgba(255,255,255,.05);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);
+     font-size:var(--fs-base);line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.eyebrow{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.09em;
+   font-weight:600;color:var(--ink-3)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;border-radius:var(--r-sm)}
+
+/* ---------- direction chrome (mockup only) ---------- */
+.spec{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:var(--sp-5);
+   padding:var(--sp-3) var(--sp-6);background:var(--raised);box-shadow:var(--shadow-1);
+   flex-wrap:wrap}
+.spec h1{font-size:var(--fs-sm);font-weight:600}
+.spec h1 span{color:var(--ink-3);font-weight:400}
+.spec p{font-size:var(--fs-xs);color:var(--ink-2);max-width:46ch}
+.swatches{display:flex;gap:3px;margin-left:auto}
+.swatches i{width:26px;height:22px;border-radius:5px;box-shadow:var(--ring)}
+.spec button{font:inherit;font-size:var(--fs-xs);font-weight:500;padding:6px var(--sp-3);
+   border:0;border-radius:var(--r-sm);background:var(--sunken);color:var(--ink);cursor:pointer;
+   transition:transform .12s var(--ease)}
+.spec button:active{transform:scale(.97)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr) 336px;
+   align-items:start;gap:var(--sp-6);padding:var(--sp-6);max-width:1560px;margin:0 auto}
+.rail{position:sticky;top:76px;display:flex;flex-direction:column;gap:var(--sp-5);
+   padding:var(--sp-5) var(--sp-4);background:var(--surface);border-radius:var(--r-xl);
+   box-shadow:var(--shadow-1)}
+.brand{display:flex;align-items:center;gap:var(--sp-3);padding:0 var(--sp-2)}
+.brand i{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;
+   place-items:center;color:var(--accent-ink);font-family:var(--mono);font-size:var(--fs-xs);
+   font-weight:600;box-shadow:var(--shadow-1)}
+.brand b{font-size:var(--fs-base);letter-spacing:-.015em}
+.brand small{display:block;font-size:var(--fs-2xs);color:var(--ink-3);font-family:var(--mono)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav>.eyebrow{padding:0 var(--sp-3) var(--sp-2)}
+.nav a{display:flex;align-items:center;justify-content:space-between;padding:9px var(--sp-3);
+   border-radius:var(--r-md);font-size:var(--fs-sm);color:var(--ink-2);text-decoration:none;
+   transition:background .14s var(--ease), color .14s var(--ease)}
+.nav a:hover{background:var(--sunken);color:var(--ink)}
+.nav a[aria-current]{background:var(--raised);color:var(--ink);font-weight:600;
+   box-shadow:var(--shadow-1)}
+.nav a em{font-style:normal;font-size:var(--fs-2xs);font-family:var(--mono);color:var(--ink-3)}
+
+.main{display:flex;flex-direction:column;gap:var(--sp-6);min-width:0}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-1);
+   overflow:hidden}
+.card--lift{box-shadow:var(--shadow-2)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4);
+   padding:var(--sp-5) var(--sp-6) var(--sp-4)}
+.card-head h3{font-size:var(--fs-lg);letter-spacing:-.015em}
+.card-head .eyebrow{display:block;margin-bottom:3px}
+.card-head a{font-size:var(--fs-sm);color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.card-head a:hover{color:var(--ink)}
+.card-body{padding:0 var(--sp-6) var(--sp-6)}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-6);
+   padding:var(--sp-2) var(--sp-2) 0}
+.page-head h2{font-size:var(--fs-2xl);letter-spacing:-.025em;line-height:1.2}
+.page-head p{font-size:var(--fs-sm);color:var(--ink-2);margin-top:3px}
+
+/* ---------- KPI tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4)}
+.tile{background:var(--raised);border-radius:var(--r-lg);padding:var(--sp-5);
+   box-shadow:var(--shadow-1)}
+.tile .eyebrow{display:block;margin-bottom:var(--sp-3)}
+.tile b{font-size:var(--fs-hero);font-weight:600;letter-spacing:-.03em;line-height:1;
+   display:flex;align-items:baseline;gap:5px;font-family:var(--mono);
+   font-variant-numeric:tabular-nums}
+.tile b small{font-family:var(--font);font-size:var(--fs-sm);font-weight:500;
+   color:var(--ink-3);letter-spacing:0}
+.tile p{font-size:var(--fs-xs);color:var(--ink-3);margin-top:var(--sp-3)}
+
+/* ---------- chart ---------- */
+.kpis{display:flex;gap:var(--sp-8);padding:0 var(--sp-6) var(--sp-4)}
+.kpis>span{display:flex;flex-direction:column;gap:3px}
+.kpis b{font-size:var(--fs-xl);letter-spacing:-.02em;font-family:var(--mono);
+   font-variant-numeric:tabular-nums}
+svg .grid{stroke:var(--border-soft)}
+svg .axis{fill:var(--ink-3);font-size:10px;font-family:var(--mono)}
+
+/* ---------- rows / list ---------- */
+.rows{display:flex;flex-direction:column;padding:0 var(--sp-3) var(--sp-3)}
+.row-btn{display:grid;grid-template-columns:26px 1fr auto auto;align-items:center;gap:var(--sp-3);
+   padding:var(--sp-3) var(--sp-3);border:0;background:none;border-radius:var(--r-md);
+   font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;
+   transition:background .14s var(--ease), transform .14s var(--ease)}
+.row-btn:hover{background:var(--sunken)}
+.row-btn:active{transform:scale(.995)}
+.row-btn[aria-pressed="true"]{background:var(--accent-soft)}
+.rank{font-family:var(--mono);font-size:var(--fs-2xs);color:var(--ink-3)}
+.co b{display:block;font-size:var(--fs-base);letter-spacing:-.01em}
+.co span{display:block;font-size:var(--fs-xs);color:var(--ink-3);overflow:hidden;
+   text-overflow:ellipsis;white-space:nowrap;max-width:20ch}
+.scorepill{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:var(--fs-sm);
+   font-weight:600;padding:4px 9px;border-radius:999px;background:var(--sunken)}
+.row-btn[aria-pressed="true"] .scorepill{background:var(--accent);color:var(--accent-ink)}
+
+/* ---------- SIGNATURE: the evidence rail ---------- */
+.evidence{position:sticky;top:76px;background:var(--raised);border-radius:var(--r-xl);
+   box-shadow:var(--shadow-2);overflow:hidden;display:flex;flex-direction:column}
+.ev-head{padding:var(--sp-5) var(--sp-5) var(--sp-4);background:var(--surface)}
+.ev-head .eyebrow{display:block;margin-bottom:var(--sp-2)}
+.ev-title{display:flex;align-items:baseline;gap:var(--sp-3)}
+.ev-title h3{font-size:var(--fs-xl);letter-spacing:-.02em;font-family:var(--mono);
+   font-weight:600}
+.ev-title span{font-size:var(--fs-xs);color:var(--ink-3)}
+.ev-name{font-size:var(--fs-sm);color:var(--ink-2);margin-top:2px}
+.ev-score{display:flex;align-items:baseline;gap:var(--sp-2);margin-top:var(--sp-4)}
+.ev-score b{font-size:var(--fs-hero);font-weight:600;letter-spacing:-.03em;
+   font-family:var(--mono);line-height:1}
+.ev-score small{font-size:var(--fs-sm);color:var(--ink-3)}
+.ev-body{padding:var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-5)}
+.ev-sec .eyebrow{display:block;margin-bottom:var(--sp-3)}
+.catbar{display:flex;flex-direction:column;gap:var(--sp-3)}
+.catbar>div{display:grid;grid-template-columns:1fr 40px;gap:var(--sp-3);align-items:center}
+.catbar span{font-size:var(--fs-xs);color:var(--ink-2)}
+.catbar .track{grid-column:1/-1;height:6px;border-radius:3px;background:var(--sunken);
+   overflow:hidden;margin-top:-6px}
+.catbar .track i{display:block;height:100%;border-radius:3px;background:var(--accent-2);
+   transition:width .35s var(--ease)}
+.catbar .track i.none{background:repeating-linear-gradient(90deg,var(--border) 0 3px,transparent 3px 6px);
+   width:100%!important}
+.catbar b{font-family:var(--mono);font-size:var(--fs-xs);text-align:right;
+   font-variant-numeric:tabular-nums}
+.ev-list{display:flex;flex-direction:column;gap:var(--sp-2);font-size:var(--fs-sm);
+   color:var(--ink-2)}
+.ev-list li{list-style:none;padding-left:var(--sp-4);position:relative;text-wrap:pretty}
+.ev-list li::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:6px;
+   border-radius:2px;background:var(--accent-2)}
+.ev-foot{margin-top:auto;padding:var(--sp-4) var(--sp-5);background:var(--surface);
+   font-size:var(--fs-xs);color:var(--ink-3);text-wrap:pretty}
+.ev-cta{display:block;text-align:center;padding:10px;border-radius:var(--r-md);
+   background:var(--accent);color:var(--accent-ink);font-size:var(--fs-sm);font-weight:600;
+   text-decoration:none;margin-top:var(--sp-3);transition:transform .12s var(--ease)}
+.ev-cta:active{transform:scale(.98)}
+
+/* ---------- tables ---------- */
+.tablewrap{padding:0 var(--sp-3) var(--sp-3)}
+table{width:100%;border-collapse:separate;border-spacing:0}
+thead th{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+   color:var(--ink-3);text-align:left;padding:var(--sp-3);white-space:nowrap}
+thead th.n{text-align:right}
+tbody td{padding:var(--sp-3);font-size:var(--fs-sm);border-top:1px solid var(--border-soft)}
+tbody td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer;transition:background .14s var(--ease)}
+tbody tr:hover td{background:var(--sunken)}
+tbody tr[aria-selected="true"] td{background:var(--accent-soft)}
+tbody tr:first-child td{border-top:1px solid var(--border)}
+.tick{font-family:var(--mono);font-weight:600;font-size:var(--fs-base)}
+.co-name{color:var(--ink-3);font-size:var(--fs-xs);display:block}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-2xs);font-weight:600;
+   text-transform:uppercase;letter-spacing:.06em;padding:4px 9px;border-radius:999px;
+   background:var(--accent-soft);color:var(--accent)}
+html[data-theme="dark"] .chip{color:var(--accent)}
+
+/* ---------- heatmap ---------- */
+.heat{display:grid;gap:3px;max-width:660px}
+.heat-cell.diag{background:var(--sunken)!important;color:var(--ink-3)!important}
+.heat-cell{aspect-ratio:1;border-radius:6px;display:grid;place-items:center;
+   font-family:var(--mono);font-size:var(--fs-2xs);font-weight:500;
+   transition:transform .14s var(--ease)}
+.heat-cell:hover{transform:scale(1.08);box-shadow:var(--shadow-1);z-index:2}
+.heat-lab{display:grid;place-items:center;font-family:var(--mono);font-size:var(--fs-2xs);
+   color:var(--ink-3);font-weight:600}
+.heat-lab.row{justify-content:end;padding-right:var(--sp-2)}
+.legend{display:flex;align-items:center;gap:var(--sp-3);margin-top:var(--sp-5);
+   font-size:var(--fs-2xs);color:var(--ink-3);font-family:var(--mono)}
+.legend .ramp{display:flex;height:8px;border-radius:4px;overflow:hidden;width:200px}
+.legend .ramp i{flex:1}
+.seg{display:inline-flex;background:var(--sunken);border-radius:var(--r-md);padding:3px}
+.seg button{font:inherit;font-size:var(--fs-xs);padding:5px var(--sp-3);border:0;
+   background:none;color:var(--ink-2);cursor:pointer;border-radius:7px}
+.seg button[aria-pressed="true"]{background:var(--raised);color:var(--ink);font-weight:600;
+   box-shadow:var(--shadow-1)}
+.note{font-size:var(--fs-xs);color:var(--ink-3);padding:var(--sp-4) var(--sp-6) 0;
+   text-wrap:pretty}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:1280px){.shell{grid-template-columns:minmax(0,1fr) 320px}.rail{display:none}}
+@media (max-width:960px){.shell{grid-template-columns:1fr}.evidence{position:static}
+  .tiles{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="spec">
+  <h1>Direction C <span>· Studio</span></h1>
+  <p>Calmer, lifted, and always explaining itself: a persistent evidence rail answers “why that score” for whatever row you touch, so the 112 fields behind each name stop living in a modal.</p>
+  <div class="swatches" id="sw"></div>
+  <button id="themeBtn" type="button">Dark</button>
+</div>
+
+<div class="shell">
+
+  <nav class="rail">
+    <div class="brand"><i>VS</i><div><b>ValueSignal</b><small>3.2.0 · 08-14</small></div></div>
+    <div class="nav">
+      <span class="eyebrow">Overview</span>
+      <a href="#" aria-current="page">Dashboard</a>
+      <a href="#">Portfolio</a>
+      <a href="#">Watchlist</a>
+      <a href="#">Planning</a>
+    </div>
+    <div class="nav">
+      <span class="eyebrow">Research</span>
+      <a href="#picks">Picks <em>40</em></a>
+      <a href="#">Library <em>927</em></a>
+      <a href="#">Funds <em>125</em></a>
+    </div>
+    <div class="nav">
+      <span class="eyebrow">Evidence</span>
+      <a href="#div">Diversification</a>
+      <a href="#">Live validation</a>
+      <a href="#">Methodology</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">Latest close · 2026-08-14</span>
+        <h2>Research overview</h2>
+        <p>Fundamentals first, then market behavior and news. Research only — not advice.</p>
+      </div>
+      <div class="seg">
+        <button type="button" aria-pressed="true">1M</button>
+        <button type="button">3M</button>
+        <button type="button">1Y</button>
+      </div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <article class="card">
+      <div class="card-head">
+        <div><span class="eyebrow">Benchmark path</span><h3>SPY · 98 daily closes</h3></div>
+        <a href="#">Open markets →</a>
+      </div>
+      <div class="kpis" id="chartKpis"></div>
+      <div style="padding:0 var(--sp-4) var(--sp-4)">
+        <svg id="spark" viewBox="0 0 720 230" width="100%" height="230" role="img"
+           aria-label="SPY closing price over the last 98 trading days"></svg>
+      </div>
+      <p class="note" style="padding-bottom:var(--sp-5)">Daily closes as published in report.json.
+        Portfolio lines apply current quantities to past closes and do not reconstruct trades,
+        deposits, withdrawals, taxes, fees, or dividends.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div><span class="eyebrow">Top of book</span><h3>Highest research scores</h3></div>
+        <a href="#picks">All 40 →</a>
+      </div>
+      <div class="rows" id="leaders"></div>
+    </article>
+
+    <!-- ===================== PICKS ===================== -->
+    <div class="page-head" id="picks" style="margin-top:var(--sp-6)">
+      <div><span class="eyebrow">Research library</span><h2>Picks</h2>
+        <p>Select any row — the rail on the right shows the evidence behind its score.</p></div>
+      <div class="seg">
+        <button type="button" aria-pressed="true">All</button>
+        <button type="button">Attractive</button>
+        <button type="button">Watch</button>
+      </div>
+    </div>
+    <article class="card">
+      <div class="tablewrap">
+        <table>
+          <thead><tr>
+            <th scope="col">Company</th><th scope="col">Sector</th><th scope="col">Stance</th>
+            <th scope="col" class="n">Fundamentals</th><th scope="col" class="n">Behavior</th>
+            <th scope="col" class="n">Coverage</th><th scope="col" class="n">Price</th>
+            <th scope="col" class="n">Score</th>
+          </tr></thead>
+          <tbody id="picksBody"></tbody>
+        </table>
+      </div>
+    </article>
+
+    <!-- ===================== DIVERSIFICATION ===================== -->
+    <div class="page-head" id="div" style="margin-top:var(--sp-6)">
+      <div><span class="eyebrow">Portfolio · trailing 250 daily returns</span>
+        <h2>Pairwise correlation</h2>
+        <p>Eight holdings with enough common history to correlate.</p></div>
+      <div class="seg">
+        <button type="button" aria-pressed="true">Heatmap</button>
+        <button type="button">Table</button>
+      </div>
+    </div>
+    <article class="card card--lift">
+      <div class="card-body" style="padding-top:var(--sp-6)">
+        <div class="heat" id="heat"></div>
+        <div class="legend">
+          <span>−1.0</span><span class="ramp" id="ramp"></span><span>+1.0</span>
+          <span style="margin-left:var(--sp-4);color:var(--ink-2)">Gray at zero · 250 observations</span>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <!-- ===================== SIGNATURE: EVIDENCE RAIL ===================== -->
+  <aside class="evidence" id="evidence" aria-live="polite"></aside>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.VS, $ = id => document.getElementById(id)
+
+$('sw').innerHTML = ['--canvas','--surface','--raised','--border','--ink','--ink-3','--accent','--accent-soft']
+  .map(v => `<i style="background:var(${v})" title="${v}"></i>`).join('')
+$('themeBtn').onclick = () => {
+  const dark = document.documentElement.dataset.theme === 'dark'
+  document.documentElement.dataset.theme = dark ? 'light' : 'dark'
+  $('themeBtn').textContent = dark ? 'Dark' : 'Light'
+  drawChart()
+}
+
+/* ---- tiles ---- */
+const lead = D.research[0]
+$('tiles').innerHTML = [
+  ['Universe scored', D.universe_count, 'names', `${D.research.length} published with full evidence`],
+  ['Research leader', lead.score.toFixed(1), '/100', `${lead.ticker} · ${lead.name}`],
+  ['Macro regime', D.macro.score, '/100', `${D.macro.label} · FRED through ${D.macro.freshness_date}`],
+  ['10-year treasury', D.rates.treasury_10y.annual_percent, '%', `Fed funds ${D.rates.fed_funds.annual_percent}% · ${D.rates.treasury_10y.as_of}`],
+].map(([l,v,u,p]) => `<div class="tile"><span class="eyebrow">${l}</span>
+  <b>${v}<small>${u}</small></b><p>${p}</p></div>`).join('')
+
+/* ---- chart ---- */
+const bench = D.benchmark
+$('chartKpis').innerHTML = (() => {
+  const c = bench.closes, chg = (c[c.length-1]/c[0]-1)*100
+  return [['Latest close','$'+c[c.length-1].toFixed(2)],
+          ['Period change',(chg>=0?'+':'−')+Math.abs(chg).toFixed(2)+'%'],
+          ['Range','$'+Math.min(...c).toFixed(0)+'–$'+Math.max(...c).toFixed(0)]]
+    .map(([l,v],i) => `<span><span class="eyebrow">${l}</span><b${i===1?` style="color:var(--${chg>=0?'pos':'neg'})"`:''}>${v}</b></span>`).join('')
+})()
+
+function drawChart(){
+  const c=bench.closes, W=720,H=230,PL=46,PR=10,PT=14,PB=26
+  const hi=Math.max(...c), lo=Math.min(...c), pad=(hi-lo)*.12, y0=lo-pad, y1=hi+pad
+  const x=i=>PL+i*(W-PL-PR)/(c.length-1), y=v=>PT+(1-(v-y0)/(y1-y0))*(H-PT-PB)
+  let s=`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="var(--accent-2)" stop-opacity=".24"/>
+    <stop offset="100%" stop-color="var(--accent-2)" stop-opacity="0"/></linearGradient></defs>`
+  ;[y0,(y0+y1)/2,y1].forEach(t=>{
+    s+=`<line class="grid" x1="${PL}" x2="${W-PR}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/>`
+    s+=`<text class="axis" x="${PL-8}" y="${(y(t)+3).toFixed(1)}" text-anchor="end">${t.toFixed(0)}</text>`})
+  const line=c.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  s+=`<path d="${line} L${x(c.length-1).toFixed(1)} ${H-PB} L${PL} ${H-PB} Z" fill="url(#g)"/>`
+  s+=`<path d="${line}" fill="none" stroke="var(--accent-2)" stroke-width="2"
+       stroke-linejoin="round" stroke-linecap="round"/>`
+  s+=`<circle cx="${x(c.length-1).toFixed(1)}" cy="${y(c[c.length-1]).toFixed(1)}" r="4"
+       fill="var(--raised)" stroke="var(--accent-2)" stroke-width="2"/>`
+  ;[0,Math.floor(c.length/2),c.length-1].forEach(i=>{
+    s+=`<text class="axis" x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="${i===0?'start':i===c.length-1?'end':'middle'}">${bench.dates[i].slice(5)}</text>`})
+  $('spark').innerHTML=s
+}
+drawChart()
+
+/* ---- SIGNATURE: evidence rail ---- */
+const CATS = [['valuation','Valuation'],['profitability','Profitability'],
+  ['financial_health','Financial health'],['growth','Growth'],
+  ['capital_allocation','Capital allocation'],['accounting_quality','Accounting quality']]
+
+function renderEvidence(r) {
+  $('evidence').innerHTML = `
+    <div class="ev-head">
+      <span class="eyebrow">Evidence</span>
+      <div class="ev-title"><h3>${r.ticker}</h3><span>${r.sector}</span></div>
+      <p class="ev-name">${r.name} · ${r.industry}</p>
+      <div class="ev-score"><b>${r.score.toFixed(1)}</b><small>research score · ${r.stance.toLowerCase()}</small></div>
+    </div>
+    <div class="ev-body">
+      <div class="ev-sec">
+        <span class="eyebrow">Score composition</span>
+        <div class="catbar">
+          ${[['Fundamentals', r.components.fundamentals], ['Market behavior', r.components.market_behavior],
+             ['News sentiment', r.components.news_sentiment]].map(([l,v]) => `
+            <div><span>${l}</span><b>${v == null ? '—' : v.toFixed(1)}</b>
+              <div class="track">${v == null ? '<i class="none"></i>' : `<i style="width:${v}%"></i>`}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="ev-sec">
+        <span class="eyebrow">Fundamental categories</span>
+        <div class="catbar">
+          ${CATS.map(([k,l]) => { const v = r.categories[k]; return `
+            <div><span>${l}</span><b>${v == null ? '—' : v.toFixed(0)}</b>
+              <div class="track">${v == null ? '<i class="none"></i>' : `<i style="width:${v}%"></i>`}</div></div>`}).join('')}
+        </div>
+      </div>
+      <div class="ev-sec">
+        <span class="eyebrow">Why it scores here</span>
+        <ul class="ev-list">${r.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+      </div>
+    </div>
+    <div class="ev-foot">
+      ${Math.round(r.coverage*100)}% of the applicable fundamental metrics were available for this
+      name. Dashed bars are categories the pipeline could not measure — not zeros.
+      <a class="ev-cta" href="#">Open full research</a>
+    </div>`
+}
+renderEvidence(lead)
+
+/* ---- leaders (rail-driving) ---- */
+function sel(ticker) {
+  const r = D.research.find(x => x.ticker === ticker)
+  renderEvidence(r)
+  document.querySelectorAll('.row-btn').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.t === ticker)))
+  document.querySelectorAll('tbody tr').forEach(tr =>
+    tr.setAttribute('aria-selected', String(tr.dataset.t === ticker)))
+}
+$('leaders').innerHTML = D.research.slice(0,6).map((r,i) => `
+  <button class="row-btn" type="button" data-t="${r.ticker}" aria-pressed="${i===0}">
+    <span class="rank">${String(i+1).padStart(2,'0')}</span>
+    <span class="co"><b>${r.ticker}</b><span>${r.name}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--ink-3)">${r.sector}</span>
+    <span class="scorepill">${r.score.toFixed(1)}</span>
+  </button>`).join('')
+
+/* ---- picks ---- */
+$('picksBody').innerHTML = D.research.map((r,i) => `
+  <tr data-t="${r.ticker}" aria-selected="${i===0}" tabindex="0">
+    <td><span class="tick">${r.ticker}</span><span class="co-name">${r.name}</span></td>
+    <td style="color:var(--ink-2)">${r.sector}</td>
+    <td><span class="chip">${r.stance}</span></td>
+    <td class="n">${r.components.fundamentals?.toFixed(1) ?? '—'}</td>
+    <td class="n">${r.components.market_behavior?.toFixed(1) ?? '—'}</td>
+    <td class="n">${Math.round(r.coverage*100)}%</td>
+    <td class="n">$${r.price.toFixed(2)}</td>
+    <td class="n"><b style="font-size:var(--fs-lg)">${r.score.toFixed(1)}</b></td>
+  </tr>`).join('')
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-t]'); if (t) sel(t.dataset.t)
+})
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return
+  const t = e.target.closest('tr[data-t]'); if (t) { e.preventDefault(); sel(t.dataset.t) }
+})
+
+/* ---- heatmap ---- */
+const C=D.corr, RAMP=['--div-n3','--div-n2','--div-n1','--div-0','--div-p1','--div-p2','--div-p3']
+const bucket=v=>v<=-.5?0:v<=-.25?1:v<-.08?2:v<=.08?3:v<.35?4:v<.6?5:6
+const n=C.tickers.length, heat=$('heat')
+heat.style.gridTemplateColumns=`54px repeat(${n}, minmax(0,1fr))`
+let html=`<div></div>`+C.tickers.map(t=>`<div class="heat-lab">${t}</div>`).join('')
+C.matrix.forEach((row,i)=>{
+  html+=`<div class="heat-lab row">${C.tickers[i]}</div>`
+  row.forEach((v,j)=>{
+    const b=bucket(v), ink=(b===0||b===6)?'#fff':'var(--ink)'
+    html+=`<div class="heat-cell${i===j?' diag':''}" style="background:var(${RAMP[b]});color:${ink}"
+      title="${C.tickers[i]} vs ${C.tickers[j]}: ${v.toFixed(2)}">${i===j?'—':v.toFixed(2)}</div>`})
+})
+heat.innerHTML=html
+$('ramp').innerHTML=RAMP.map(v=>`<i style="background:var(${v})"></i>`).join('')
+</script>
+</body>
+</html>

@@ -8,7 +8,7 @@
 
     <!-- iPhone home-screen app behavior: full-screen standalone launch, matching status bar, real icon -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#f1f3f1" id="theme-color-meta" />
+    <meta name="theme-color" content="#eceff0" id="theme-color-meta" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ValueSignal" />
@@ -19,7 +19,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <script>
@@ -28,7 +28,7 @@
           const saved = JSON.parse(localStorage.getItem('valuesignal.ui-preferences.v1') || '{}')
           const dark = saved.theme === 'dark' || (saved.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-          document.querySelector('#theme-color-meta').content = dark ? '#07110c' : '#f1f3f1'
+          document.querySelector('#theme-color-meta').content = dark ? '#0b100e' : '#eceff0'
         } catch { document.documentElement.dataset.theme = 'light' }
       })()
     </script>
