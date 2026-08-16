@@ -19,7 +19,7 @@ import { buildRatingContext, researchRating } from '../lib/researchRating.js'
 import { styleOf, currentStyleTilt, styleBoost } from '../lib/portfolioStyleTilt.js'
 import { currentSectorTilt, sectorOpportunity, sectorBoost } from '../lib/portfolioSectorTilt.js'
 import { buildValueGrowthContext, valueGrowthScore } from '../lib/valueGrowthScore.js'
-import MobileVirtualList from '../components/MobileVirtualList.jsx'
+import DataTable from '../components/DataTable.jsx'
 import { entryTiming } from '../lib/entryTiming.js'
 import { useAlerts } from '../lib/useAlerts.js'
 
@@ -375,6 +375,54 @@ function ResearchCard({ row, rank, onOpen, held, buying, buyStatus, onBuy, alert
   )
 }
 
+function picksColumns({ modelActive, onOpen, onBuy, buyingTicker, heldTickers, alertingTicker, alertStatuses, onSetAlert }) {
+  return [
+    { key: 'rank', label: 'Rank', sortable: false, cell: (row, index) => <span className="rank">{`#${index + 1}`}</span> },
+    {
+      key: 'company', label: 'Company', sortable: false,
+      cell: (row) => <div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div>,
+    },
+    {
+      key: 'type', label: 'Type', sortable: false,
+      cell: (row) => <><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></>,
+    },
+    { key: 'stance', label: 'Stance', sortable: false, cell: (row) => <Tier label={row.stance} /> },
+    {
+      key: 'rating', label: 'Rating', sortable: false,
+      cell: (row) => <RatingBadge value={row.rating} title="-5 (worst) to +5 (best), a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), pulled toward 0 the less confident the underlying data is." />,
+    },
+    {
+      key: 'signal', label: 'Signal', sortable: false,
+      cell: (row) => (row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />),
+    },
+    ...(modelActive ? [
+      { key: 'model_score', label: 'Model score', sortable: false, numeric: true, cell: (row) => <span className="mono score-cell">{row.modelScore ? Math.round(row.modelScore.score) : '–'}</span> },
+      { key: 'model_reason', label: 'Why it ranks here', sortable: false, cell: (row) => <span className="lens-reason-cell">{modelReason(row) || '–'}</span> },
+    ] : []),
+    { key: 'score', label: 'Score', sortable: false, numeric: true, cell: (row) => <span className="mono score-cell">{row.score}</span> },
+    { key: 'fundamentals', label: 'Fundamentals', sortable: false, numeric: true, cell: (row) => <span className="mono">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</span> },
+    { key: 'return_20d', label: '20-day return', sortable: false, numeric: true, cell: (row) => <Move pct={row.technical_detail?.return_20d} /> },
+    { key: 'confidence', label: 'Confidence', sortable: false, numeric: true, cell: (row) => <span className="mono">{finite(row.data_coverage) ? `${Math.round(row.data_coverage * 100)}%` : '–'}</span> },
+    {
+      key: 'timing', label: 'Timing', sortable: false,
+      cell: (row) => <EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
+        alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} />,
+    },
+    { key: 'portfolio_pct', label: '% of my portfolio', sortable: false, numeric: true, cell: (row) => <span className="mono">{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</span> },
+    {
+      key: 'portfolio', label: 'Portfolio', sortable: false,
+      cell: (row) => (heldTickers.has(row.ticker)
+        ? <span className="holding-chip held">Bought</span>
+        : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => onBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>),
+    },
+    { key: 'watchlist', label: <span className="sr-only">Watchlist</span>, sortable: false, cell: (row) => <WatchlistToggleButton stock={row} size={17} /> },
+    {
+      key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+      cell: (row) => <button className="icon-button" onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button>,
+    },
+  ]
+}
+
 function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatuses, onBuy,
                        alertingTicker, alertStatuses, onSetAlert, sort }) {
   if (!rows.length) return null
@@ -382,49 +430,21 @@ function ResearchPool({ label, rows, onOpen, heldTickers, buyingTicker, buyStatu
   return (
     <section className="research-pool" aria-label={label}>
       {label && <h2 className="research-pool-title">{label} <span className="research-pool-count">{rows.length}</span></h2>}
-      <MobileVirtualList className="research-mobile-list" items={rows} getKey={(row) => row.ticker} estimateSize={390}
-        renderItem={(row, index) => <ResearchCard row={row}
-          rank={index + 1} onOpen={onOpen}
-          held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
-          buyStatus={buyStatuses[row.ticker]} onBuy={onBuy}
-          alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} />} />
-      <div className="research-table card">
-        <table>
-          <thead><tr>
-            <th scope="col">Rank</th><th scope="col">Company</th><th scope="col">Type</th><th scope="col">Stance</th><th scope="col">Rating</th><th scope="col">Signal</th>
-            {modelActive && <th scope="col">Model score</th>}
-            {modelActive && <th scope="col">Why it ranks here</th>}
-            <th scope="col" className="num">Score</th><th scope="col" className="num">Fundamentals</th>
-            <th scope="col" className="num">20-day return</th><th scope="col" className="num">Confidence</th><th scope="col">Timing</th>
-            <th scope="col" className="num">% of my portfolio</th><th scope="col">Portfolio</th>
-            <th scope="col"><span className="sr-only">Watchlist</span></th><th scope="col"><span className="sr-only">Open</span></th>
-          </tr></thead>
-          <tbody>{rows.map((row, index) => (
-            <tr key={row.ticker}>
-              <td className="rank">#{index + 1}</td>
-              <td><div className="table-company company-with-logo"><CompanyLogo company={row} size={34} /><div><b>{row.ticker}</b><span>{row.name}</span><small>{row.sector || 'Unclassified'}</small></div></div></td>
-              <td><span className="chip asset-chip">{row.is_etf ? 'ETF' : 'Stock'}</span> <ScreenChips row={row} /></td>
-              <td><Tier label={row.stance} /></td>
-              <td><RatingBadge value={row.rating} title="-5 (worst) to +5 (best), a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), pulled toward 0 the less confident the underlying data is." /></td>
-              <td>{row.is_etf ? '–' : <ActionPill recommendation={getRecommendation(row)} />}</td>
-              {modelActive && <td className="mono num score-cell">{row.modelScore ? Math.round(row.modelScore.score) : '–'}</td>}
-              {modelActive && <td className="lens-reason-cell">{modelReason(row) || '–'}</td>}
-              <td className="mono num score-cell">{row.score}</td>
-              <td className="mono num">{row.components?.fundamentals == null ? '–' : Math.round(row.components.fundamentals)}</td>
-              <td className="num"><Move pct={row.technical_detail?.return_20d} /></td>
-              <td className="mono num">{finite(row.data_coverage) ? `${Math.round(row.data_coverage * 100)}%` : '–'}</td>
-              <td><EntryTimingAction row={row} alerting={alertingTicker === row.ticker}
-                alertStatus={alertStatuses[row.ticker]} onSetAlert={onSetAlert} /></td>
-              <td className="mono num">{row.portfolioPct == null ? '–' : `${row.portfolioPct.toFixed(1)}%`}</td>
-              <td>{heldTickers.has(row.ticker)
-                ? <span className="holding-chip held">Bought</span>
-                : <button className="primary-button compact research-table-buy" disabled={buyingTicker === row.ticker || !row.price} onClick={() => onBuy(row)}>{buyingTicker === row.ticker ? 'Adding…' : 'Buy $100'}</button>}</td>
-              <td><WatchlistToggleButton stock={row} size={17} /></td>
-              <td><button className="icon-button" onClick={() => onOpen(row)} aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button></td>
-            </tr>
-          ))}</tbody>
-        </table>
-      </div>
+      <DataTable
+        rows={rows}
+        getKey={(row) => row.ticker}
+        columns={picksColumns({ modelActive, onOpen, onBuy, buyingTicker, heldTickers, alertingTicker, alertStatuses, onSetAlert })}
+        className="research-table card"
+        mobile={{
+          renderItem: (row, index) => <ResearchCard row={row}
+            rank={index + 1} onOpen={onOpen}
+            held={heldTickers.has(row.ticker)} buying={buyingTicker === row.ticker}
+            buyStatus={buyStatuses[row.ticker]} onBuy={onBuy}
+            alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={onSetAlert} />,
+          className: 'research-mobile-list',
+          estimateSize: 390,
+        }}
+      />
     </section>
   )
 }

@@ -173,6 +173,32 @@ describe('Picks research page', () => {
     expect(tickers.some((text) => text.includes('AAPL'))).toBe(false)
   })
 
+  it('renders 15 columns by default and 17 when a ranking model is active', () => {
+    useData.mockImplementation((file) => {
+      if (file === 'report.json') {
+        return {
+          data: {
+            research: [stock({ score: 90 })],
+            screen_universe: [{
+              ticker: 'MU', name: 'Micron', sector: 'Technology', score: 50,
+              components: { fundamentals: 50 }, technical_detail: { return_5d: 4, return_20d: 5 },
+              evidence_summary: { event_count: 1, news_score: 92, dominant_age_trading_days: 0 },
+            }],
+          },
+          loading: false,
+        }
+      }
+      return { data: { etfs: [] }, loading: false }
+    })
+
+    render(<MemoryRouter><Picks /></MemoryRouter>)
+    const headerCount = () => within(document.querySelector('.research-table thead')).getAllByRole('columnheader').length
+    expect(headerCount()).toBe(15)
+
+    fireEvent.change(screen.getByLabelText('Sort research'), { target: { value: 'catalyst' } })
+    expect(headerCount()).toBe(17)
+  })
+
   it('a model list is capped at the top 20 even when far more names clear the gate', () => {
     const qualifier = (index) => ({
       ticker: `T${index}`, name: `Ticker ${index}`, sector: 'Technology', industry: 'Semiconductors',
