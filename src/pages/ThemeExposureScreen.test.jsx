@@ -66,6 +66,43 @@ describe('Theme Exposure screen', () => {
     expect(screen.getAllByText('MU').length).toBeGreaterThan(0)
   })
 
+  it('plots the mean resolved score per signal across the theme leaders', () => {
+    const withSignals = {
+      research: advisorData.research,
+      screen_universe: advisorData.screen_universe,
+      theme_screen: {
+        themes: [{
+          id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', thesis: 'A capex cycle.',
+          rows: [
+            {
+              ticker: 'NVDA', name: 'NVIDIA', theme_exposure_score: 85, opportunity_score: 60,
+              eligible: true, candidate_source: 'published_leader',
+              signals: [
+                { name: 'filing_keyword_density_trend', score: 100, weight: 0.2, leading: true },
+                { name: 'hyperscaler_capex_growth', score: 90, weight: 0.15, leading: true },
+              ],
+            },
+            {
+              ticker: 'AMD', name: 'AMD', theme_exposure_score: 70, opportunity_score: 55,
+              eligible: true, candidate_source: 'published_leader',
+              signals: [
+                { name: 'filing_keyword_density_trend', score: 60, weight: 0.2, leading: true },
+              ],
+            },
+          ],
+        }],
+      },
+    }
+    useData.mockImplementation(() => ({ data: withSignals, loading: false, error: null }))
+
+    render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+    expect(screen.getByText('Mean signal score among leaders (0-100)')).toBeInTheDocument()
+    expect(screen.getByText('Filing Keyword Density Trend · leading')).toBeInTheDocument()
+    expect(screen.getByText('Hyperscaler Capex Growth · leading')).toBeInTheDocument()
+    expect(screen.getByText('80', { selector: '.dot-plot-value' })).toBeInTheDocument() // mean of 100 and 60
+  })
+
   it('shows an empty state instead of crashing when no theme produced scored rows', () => {
     useData.mockImplementation(() => ({
       data: { research: [], screen_universe: [], theme_screen: { themes: [], unavailable_reason: 'no signals' } },

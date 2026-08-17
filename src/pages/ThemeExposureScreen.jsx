@@ -8,6 +8,31 @@ import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import InfoTag from '../components/InfoTag.jsx'
 import DataTable from '../components/DataTable.jsx'
+import DotPlot from '../components/DotPlot.jsx'
+
+const signalTitle = (name = '') => name.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+
+// Average resolved score per declared signal, across whichever rows the caller
+// considers eligible for the read (leaders, here) — never across every candidate,
+// which would let unscreened sector-peer noise drag the average around. A signal
+// only enters the result once at least one row actually resolved it.
+function signalScoreRows(rows) {
+  const totals = new Map()
+  rows.forEach((row) => {
+    (row.signals || []).forEach((signal) => {
+      if (signal.score == null) return
+      const entry = totals.get(signal.name) || { sum: 0, count: 0, leading: signal.leading }
+      entry.sum += signal.score
+      entry.count += 1
+      totals.set(signal.name, entry)
+    })
+  })
+  return [...totals.entries()].map(([name, { sum, count, leading }]) => ({
+    id: name,
+    label: `${signalTitle(name)}${leading ? ' · leading' : ''}`,
+    value: sum / count,
+  }))
+}
 
 const SOURCE_LABEL = {
   published_leader: 'Published leader',
@@ -145,7 +170,18 @@ export default function ThemeExposureScreen() {
           </h3>
           {!leaders.length
             ? <p className="disclaimer">No published leader or holding cleared this theme's signal minimum yet.</p>
-            : <ThemeTable rows={leaders} onOpen={setSelectedStock} />}
+            : <>
+              <ThemeTable rows={leaders} onOpen={setSelectedStock} />
+              {signalScoreRows(leaders).length > 1 && (
+                <DotPlot
+                  rows={signalScoreRows(leaders)}
+                  xLabel="Mean signal score among leaders (0-100)"
+                  xFormatter={(value) => value.toFixed(0)}
+                  domain={{ min: 0, max: 100 }}
+                  caption={`${theme.display_name}: mean resolved score per signal, across this theme's leaders`}
+                />
+              )}
+            </>}
 
           <h3>Connected, not yet re-rated
             <InfoTag label="Connected, not yet re-rated">
