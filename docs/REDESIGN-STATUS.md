@@ -540,17 +540,16 @@ test exercised a virtualized list closely enough to hit the gap.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · PICKS + SWINGSCREEN LIGHT-TOUCH · rest not started
+### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO + SCREENS FAMILY DONE · rest not started
 Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
-~~SwingScreen~~ → rest of the screens family →
+~~SwingScreen~~ → ~~rest of the screens family~~ →
 Finances/Planning/Insights/Watchlist/Markets →
-Methodology/Glossary/Settings/Alerts → empty states. Picks and SwingScreen are
-struck because their passes are complete, not because they got the
-Dashboard-style rebuild treatment — see §1, each needed one real bug fixed, not
-a restructure. Next: the rest of the screens family (`FastGrowthScreen`,
-`OptionsScreen` + its 7 `StrategyScreen` variants, `ResearchScreen`-backed
-screens, `CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
-`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`).
+Methodology/Glossary/Settings/Alerts → empty states. Picks, SwingScreen, and
+the rest of the screens family are struck because their passes are complete,
+not because they got the Dashboard-style rebuild treatment — see §1. Most of
+the screens family needed nothing (already well-built); three real bugs were
+found and fixed across the batch. Next in traffic order: Finances, Planning,
+Insights, Watchlist, Markets.
 
 **Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
 27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
@@ -583,8 +582,14 @@ redesign ran at the default 1280×720, not the 1440×1000 they claim.** Now `vie
 
 Specific known gaps:
 - No shared screen-page skeleton, so 15+ screen routes each invent a layout.
-- `InstitutionalActivity` ships `results: []` permanently and renders a blank
-  table rather than explaining the 13F cadence.
+- ~~`InstitutionalActivity` ships `results: []` permanently and renders a blank
+  table rather than explaining the 13F cadence.~~ **stale — already fixed
+  elsewhere.** `results: []` is still true (checked `institutional-13f.json`
+  directly), but the "blank table" part isn't: `InstitutionalActivity.jsx:139-142`
+  already renders `<Empty note="No flagged activity yet – this screen updates
+  monthly." />`, plus four summary tiles (managers reviewed/configured, CUSIPs
+  mapped, amendments seen) giving real context. Confirmed live via screenshot
+  during the screens-family pass (§1, below) — not a table at all.
 - ~~Picks still shows 112 keys per row as 8 flat metric pills~~ **stale — already
   built.** Rereading `Picks.jsx`'s `ResearchCard`/`picksColumns` found the layered
   disclosure already exists: mobile cards show 4 headline metrics, an "expand"
@@ -647,6 +652,49 @@ and the nested `<details>`, not two fragments. Switched `<p>` → `<div>`
 (`.disclaimer` is a plain class selector, and this variant is already used in
 `Picks.jsx`/`Methodology.jsx`, so not a new pattern). Verified: lint/test/build
 green (789 tests, SwingScreen's own 37), `typefloor.mjs`/`a11ycheck.mjs` clean.
+
+**Rest of the screens family — pass done, three real bugs found and fixed.**
+Screened all 17 remaining screen routes: `FastGrowthScreen`, `OptionsScreen` +
+its 7 `StrategyScreen` variants, the four `ResearchScreen`-backed screens
+(momentum/quality-value/earnings/matrix), `EarlySessionResearch`,
+`CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
+`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`. Method: a batch
+Playwright pass checking every route for console errors, `\u` escape
+artifacts in rendered text (see below — cheap to check for once one instance
+turned up), and horizontal overflow, then a visual spot-check of a sample.
+14 of 17 routes came back clean — screenshotted and confirmed genuinely
+well-built already (good hierarchy, working chart/table toggles, contextual
+empty states), no changes made. Three real bugs found in the other 3:
+
+- **`OptionsScreen.jsx`'s IV/RV column literally rendered `1.11×`** —
+  the six characters, not the `×` symbol. `×` only resolves as an escape
+  sequence inside a JS string or template literal; written as bare JSX text
+  (no surrounding quotes) it's just text. The mobile card's own IV/RV cell,
+  a few lines away, already used the real `×` character and rendered fine —
+  same bug pattern, one path fixed, one not. Fixed by switching to the
+  literal character, matching the working path.
+- **`CongressTrades.jsx` had the identical mistake** — one cell rendered
+  literal `–` instead of an en dash, while four sibling cells in the same
+  column array correctly wrote `'–'` (quoted, so the escape resolves).
+  Same fix.
+- **`ResearchScreen.jsx` (shared by momentum/quality-value/earnings/matrix)
+  had a real duplicate-key React warning on `/screens/momentum` only.**
+  Traced to `screens/momentum.json` directly (not assumed): 23 tickers appear
+  twice each at *different* ranks and percentiles — e.g. DINO at both #11
+  (92.31) and #12 (93.16) — a genuine pipeline scoring anomaly, not a simple
+  republish-the-same-row gap like the earlier `OptionsScreen` case. The
+  visible symptom was a `"125 results"` count that was actually 102 unique
+  names. Deduped defensively in the shared component (keep the first,
+  better-ranked occurrence), same pattern as the earlier `OptionsScreen` fix.
+  **The pipeline-side root cause — why momentum scores a name twice — is not
+  fixed and is out of scope for this pass.**
+
+Also corrected a stale gap note in this doc (above): `InstitutionalActivity`'s
+`results: []` is still genuinely empty (checked the data file directly), but
+the doc's claim that it renders "a blank table" was wrong — it already shows
+a proper contextual empty state plus four summary tiles. Verified: lint/test
+green (789 tests), full build, `typefloor.mjs`/`a11ycheck.mjs` clean on the
+touched routes.
 
 ### Phase 2d — decompose the giants · PORTFOLIO DONE · SwingScreen/Picks reassessed, not decomposed
 | File | Lines |

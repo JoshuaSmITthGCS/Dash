@@ -569,29 +569,40 @@ components (`ScatterChart`, `DotPlot`, used across 6 pages) plus
   published anywhere short of the 31 MB `score-history.json` this doc already
   says not to fetch in the browser. Needs a pipeline change, out of scope here.
 
-### Phase 5 — page-by-page pass — Dashboard, Portfolio, Picks, SwingScreen done
+### Phase 5 — page-by-page pass — Dashboard, Portfolio, and the whole screens family done
 Every page now inherits the new tokens and card system; the per-page composition
-work (hierarchy, one headline number per widget, the shared screen-page skeleton,
-real empty states for `InstitutionalActivity`'s permanent `results: []`) is done
-for Dashboard, Portfolio, Picks, and SwingScreen, not started for the rest.
+work (hierarchy, one headline number per widget, real empty states) is done for
+Dashboard, Portfolio, Picks, SwingScreen, and the rest of the screens family
+(17 more routes), not started for the rest of the app.
+
 Portfolio: comparison tables moved to `DataTable`, a real 11px-floor bug fixed
 (holding-card cost-basis select was `fontSize: 9`), 6 static inline styles
 converted to classes, sector-allocation card links through to Diversification.
 Picks: found (via DataTable's desktop `<table>` mounting all 1,002 rows
 unvirtualized — fixed, see below) and fixed one real hierarchy bug — the
 Bucket planner, a secondary what-if tool, rendered above the research list the
-page's own copy says is its job, pushing every company card below the fold on
-every viewport; reordered, no logic changes. SwingScreen: found and fixed one
-real `<details>`-inside-`<p>` HTML-nesting bug in the closing disclaimer
-(confirmed via a real `validateDOMNesting` console warning — it silently split
-the disclaimer paragraph and dropped its styling on the second half); switched
-to the `<div className="disclaimer">` variant already used elsewhere. Neither
-page needed Portfolio-style decomposition or a hierarchy rebuild — both are
-already well-built single-view pages; see Phase 2 above. Next in traffic
-order: the rest of the screens family (`FastGrowthScreen`, `OptionsScreen` + 7
-`StrategyScreen` variants, the `ResearchScreen`-backed screens,
-`CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
-`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`).
+page's own copy says is its job. SwingScreen: found and fixed one real
+`<details>`-inside-`<p>` HTML-nesting bug (confirmed via a `validateDOMNesting`
+console warning) that silently split the closing disclaimer and dropped its
+styling on the second half.
+
+Rest of the screens family: 14 of 17 routes came back clean from a batch
+Playwright scan (console errors, `\u`-escape artifacts, horizontal overflow)
+plus a visual spot-check — already well-built, no changes. Three real bugs in
+the other 3: `OptionsScreen.jsx` and `CongressTrades.jsx` each had one cell
+rendering a literal `×`/`–` as six characters of text instead of the
+`×`/`–` symbol — a `\u` escape only resolves inside a JS string, not bare JSX
+text; `ResearchScreen.jsx` (shared by 4 screens) had a real duplicate-key React
+warning traced to `screens/momentum.json` carrying 23 tickers twice each at
+different ranks/percentiles (e.g. DINO at #11/92.31 and #12/93.16) — deduped
+defensively in the component, pipeline root cause left open. Also corrected a
+stale doc claim that `InstitutionalActivity` renders a blank table for its
+permanent `results: []` — it already shows a proper contextual empty state.
+
+None of Picks/SwingScreen/the screens family needed Portfolio-style
+decomposition or a hierarchy rebuild — all already well-built single-view
+pages; see Phase 2 above. Next in traffic order: Finances, Planning, Insights,
+Watchlist, Markets.
 
 ### Phase 6 — dead code + payload — done
 Eight of nine unreachable lib files deleted (`evidenceStrength`,
