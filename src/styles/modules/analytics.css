@@ -134,6 +134,11 @@ details.signal-group { margin-top: var(--sp-2); padding: 0; border: 1px solid va
 .signal-metric-wide { margin: var(--sp-2-5) 0 0; font: var(--fw-bold) var(--fs-sm)/1.5 var(--font-mono); overflow-wrap: anywhere; }
 .signal-group-note { margin: calc(-1 * var(--sp-1)) var(--sp-3) var(--sp-2-5); color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.45; }
 .signal-metric-state, .signal-metric-reference { margin: var(--sp-2) 0 0; color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.45; }
+.signal-metric-bullet { margin-top: var(--sp-2); }
+.signal-metric-bullet-track { position: relative; display: block; height: var(--sp-1); border-radius: 999px; background: var(--border); }
+.signal-metric-bullet-threshold { position: absolute; top: -3px; width: 2px; height: calc(var(--sp-1) + 6px); background: var(--text-faint); transform: translateX(-50%); }
+.signal-metric-bullet-value { position: absolute; top: 50%; width: 10px; height: 10px; border: 2px solid var(--surface-primary); border-radius: 50%; background: var(--pos); transform: translate(-50%, -50%); }
+.signal-metric-bullet-value.breached { background: var(--neg); }
 .signal-metric-reference { font-family: var(--font-mono); }
 .signal-metric > footer { display: flex; flex-wrap: wrap; gap: var(--sp-1-5) var(--sp-3); margin-top: var(--sp-2-5); color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
 .signal-kill.breached { color: var(--neg); }

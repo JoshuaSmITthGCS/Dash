@@ -100,6 +100,28 @@ describe('SignalMetricsPanel', () => {
     expect(now.read).toBeGreaterThan(0)
   })
 
+  it('draws a bullet chart only for metrics the pipeline gave a real numeric threshold', () => {
+    render(<SignalMetricsPanel report={published} />)
+    // feature_psi carries a threshold but no value yet (awaiting its live sample) --
+    // rightly excluded, since there is nothing to draw a bullet against.
+    const withThreshold = published.metrics.filter(
+      (metric) => metric.kill_threshold_value != null && typeof metric.value === 'number',
+    )
+    const withoutThreshold = published.metrics.filter(
+      (metric) => metric.kill_threshold_value == null && metric.kill_threshold,
+    )
+    expect(withThreshold.length).toBeGreaterThan(0)
+    expect(withoutThreshold.length).toBeGreaterThan(0) // e.g. quantile_spread, per_leg_ic
+    withThreshold.forEach((metric) => {
+      const card = screen.getByText(metric.label).closest('article')
+      expect(card.querySelector('.signal-metric-bullet')).not.toBeNull()
+    })
+    withoutThreshold.forEach((metric) => {
+      const card = screen.getByText(metric.label).closest('article')
+      expect(card.querySelector('.signal-metric-bullet')).toBeNull()
+    })
+  })
+
   it('says which command publishes the artifact when it is missing', () => {
     render(<SignalMetricsPanel report={null} error={{ message: 'not found' }} />)
     expect(screen.getByText(/pipeline\/signal_metrics.py/)).toBeInTheDocument()

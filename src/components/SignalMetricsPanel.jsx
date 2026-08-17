@@ -27,6 +27,28 @@ function metricTooltip(metric) {
   return Object.entries(METRIC_TOOLTIPS).find(([key]) => id.includes(key))?.[1] || null
 }
 
+// A bullet chart, one per metric that publishes a real numeric threshold on the same
+// scale as its value (see signal_metrics.py's kill_threshold_value/comparison — never
+// derived from the prose kill_threshold, never fabricated for a metric that lacks one).
+// aria-hidden because it repeats information the card already states in text: the value,
+// the kill_threshold sentence, and the breached tone are all read independently of this bar.
+function MetricBullet({ metric }) {
+  if (metric.kill_threshold_value == null || !metric.comparison || typeof metric.value !== 'number') return null
+  const { value, kill_threshold_value: threshold } = metric
+  const low = Math.min(0, value, threshold)
+  const high = Math.max(value, threshold, low + 0.0001) * 1.15
+  const span = high - low || 1
+  const pct = (point) => Math.max(0, Math.min(100, ((point - low) / span) * 100))
+  return (
+    <div className="signal-metric-bullet" aria-hidden="true">
+      <span className="signal-metric-bullet-track">
+        <i className="signal-metric-bullet-threshold" style={{ left: `${pct(threshold)}%` }} />
+        <i className={`signal-metric-bullet-value${metric.breached ? ' breached' : ''}`} style={{ left: `${pct(value)}%` }} />
+      </span>
+    </div>
+  )
+}
+
 function Metric({ metric, hideState = false }) {
   const tone = metricTone(metric)
   const progress = sampleProgress(metric)
@@ -47,6 +69,7 @@ function Metric({ metric, hideState = false }) {
         </div>
       </header>
       {wide && <p className="signal-metric-wide">{text}</p>}
+      <MetricBullet metric={metric} />
       {state && !hideState && <p className="signal-metric-state">{state}</p>}
       {metric.backtest_reference != null && (
         <p className="signal-metric-reference">
