@@ -11,8 +11,8 @@ forward-only "start here."
 
 ## What's done (as of today)
 
-Everything through Phase 5's page-by-page pass up to and including
-Finances/Planning/Insights/Watchlist/Markets is complete, plus all of Phase 6
+Everything through Phase 5's page-by-page pass — now including the last four
+pages, Methodology/Glossary/Settings/Alerts — is complete, plus all of Phase 6
 (dead code, payload, motion, rubric rescore — the app scored **18/20**, up
 from 12/20). Full breakdown is `docs/REDESIGN-STATUS.md` §1; the short version:
 
@@ -42,6 +42,12 @@ from 12/20). Full breakdown is `docs/REDESIGN-STATUS.md` §1; the short version:
   - Two stale doc claims corrected (Picks' metric disclosure, Institutional
     Activity's empty state) — both already fixed in code, the doc just
     hadn't caught up.
+  - `Methodology.jsx`'s weight-stack bar clipped the `news_sentiment` label
+    mid-word — its 4% segment (fixed in `pipeline/config/settings.json`,
+    permanent, not a data artifact) was too narrow for "4% news" to fit on
+    one line. Fixed by dropping the label text below a width threshold
+    (bare "4%", full label in a `title` tooltip) plus a defensive
+    nowrap/ellipsis CSS floor for any future narrow segment.
 
 All of the above is committed to `main` with full verification each time:
 `npm run lint && npm test && npm run build`, `design/typefloor.mjs` (11px
@@ -52,14 +58,7 @@ live screenshots in both themes wherever the page isn't Firebase-gated.
 
 In priority order:
 
-### 1. Phase 5's last four pages: Methodology, Glossary, Settings, Alerts
-Same traffic-order pass, same method as everything above: screenshot in both
-themes, batch-scan for console errors / `\u`-escape artifacts / horizontal
-overflow, read the source if something looks off, fix only what's actually
-broken. Given the pattern so far, expect these to be mostly clean — check
-before assuming otherwise.
-
-### 2. Empty states — a pass of its own
+### 1. Empty states — a pass of its own
 The original plan calls this out as the last item in the Phase 5 traffic
 order, separate from any single page: a sweep across the whole app for empty
 states that render nothing useful (a blank table, a bare dash) instead of
@@ -69,7 +68,7 @@ above); there may be others. `grep -rn "results.length ? \|!.*\.length &&"
 src/pages/` is a reasonable starting point to find candidates, but verify
 each one live rather than assuming from the grep.
 
-### 3. Phase 4 remainder — real gaps, not chart-building tasks
+### 2. Phase 4 remainder — real gaps, not chart-building tasks
 Two separate things, both documented in full in `docs/REDESIGN-STATUS.md`'s
 Phase 4 section:
 
@@ -99,7 +98,7 @@ Phase 4 section:
   **Do not fake or approximate any of these** — that rule is stated in
   `metric()`'s own docstring and was followed strictly the first time.
 
-### 4. Smaller
+### 3. Smaller
 - `og:image`/`og:url` in `index.html` are root-relative because the deploy
   domain isn't committed to this repo — needs an absolute URL once the
   domain is known. One-line fix, just needs the actual domain.

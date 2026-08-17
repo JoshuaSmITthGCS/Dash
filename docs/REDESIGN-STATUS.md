@@ -540,15 +540,16 @@ test exercised a virtualized list closely enough to hit the gap.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO + SCREENS FAMILY + FINANCES/PLANNING/INSIGHTS/WATCHLIST/MARKETS DONE · rest not started
+### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO + SCREENS FAMILY + FINANCES/PLANNING/INSIGHTS/WATCHLIST/MARKETS + METHODOLOGY/GLOSSARY/SETTINGS/ALERTS DONE · empty-states pass not started
 Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
 ~~SwingScreen~~ → ~~rest of the screens family~~ →
 ~~Finances/Planning/Insights/Watchlist/Markets~~ →
-Methodology/Glossary/Settings/Alerts → empty states. Everything through
-Markets is struck because its pass is complete, not because it got the
+~~Methodology/Glossary/Settings/Alerts~~ → empty states. Everything through
+Alerts is struck because its pass is complete, not because it got the
 Dashboard-style rebuild treatment — see §1. Most of it needed nothing (already
 well-built); a handful of real bugs were found and fixed along the way. Next
-in traffic order: Methodology, Glossary, Settings, Alerts.
+in traffic order: the empty-states sweep called out separately in the
+original plan.
 
 **Finances/Planning/Insights/Watchlist/Markets — pass done, no changes needed.**
 Batch-scanned all 5 routes in both themes (console errors, `\u`-escape
@@ -564,6 +565,36 @@ offline in this dev environment, same known limitation as Portfolio and
 Diversification) — confirmed each is a real, well-designed empty state with
 a working "Reconnect Firebase" affordance, not a blank page. Verified: lint/
 test/build green, no code changed this pass.
+
+**Methodology/Glossary/Settings/Alerts — pass done, one real bug found and
+fixed.** Same method as the two passes above: all four routes read in full,
+screenshotted in both themes, batch-scanned for console errors, `\u`-escape
+artifacts, and horizontal overflow (0px at 1440/1100/820/390px on every
+route). `Glossary.jsx` and `Settings.jsx` were clean on inspection — no
+changes. `Alerts.jsx` correctly renders its "Cloud data is offline" empty
+state locally (same known Firebase-offline limitation as the rest of the
+cloud-gated pages; its generic `authError` copy mentioning "portfolio" on a
+non-portfolio page was already reviewed and accepted during the
+Finances/Planning/Insights/Watchlist pass above — not new).
+
+One real bug in **`Methodology.jsx`**: the "Overall research score" weight
+bar renders each blend component's label *inside* its own colored segment
+(`.weight-stack`), sized to that component's percentage. `news_sentiment` is
+fixed at 4% in `pipeline/config/settings.json` (`fundamentals: 0.78,
+market_behavior: 0.18, news_sentiment: 0.04`) — a segment far too narrow to
+fit "4% news" on one line. The text wrapped and was clipped mid-word by the
+bar's `overflow: hidden`, rendering as broken "4% new" with the trailing "s"
+cut off, on *every* page load — not a data artifact, a permanent config
+value. Confirmed visually via cropped screenshot before and after. Fixed two
+ways: `Methodology.jsx` now shows just the bare percentage (`4%`) when a
+segment is under 10% wide, with the full "4% news sentiment" label available
+via a `title` tooltip; `.weight-stack > div` in `portfolio.css` also gained
+`white-space: nowrap; overflow: hidden; text-overflow: ellipsis` as a
+defensive floor, so any future weight-config change that produces another
+narrow segment degrades to a clean ellipsis instead of wrapped, clipped text.
+Verified: lint/test/build green (789 tests), `typefloor.mjs` clean at three
+widths on all four routes, `a11ycheck.mjs` clean, before/after crops
+confirming the fix in both themes.
 
 **Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
 27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
