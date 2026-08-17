@@ -636,6 +636,23 @@ SwingScreen, screens family, Finances/Planning/Insights/Watchlist/Markets,
 Methodology/Glossary/Settings/Alerts) was never in this pass's scope and is still
 not started (see `docs/REDESIGN-STATUS.md` §2).
 
+### Post-rescore — DataTable desktop virtualization — done
+The rescore's recorded-but-deferred gap ("desktop table path isn't virtualized")
+turned out to be more widespread than it looked: found while starting Picks' page
+pass that `/research` renders ~877 unfiltered rows by default and none of them were
+windowed — same gap independently confirmed on `FastGrowthScreen` (~880 rows),
+`CongressTrades` (~1,160), and three `ResearchScreen` screens (~300 rows each).
+Fixed in `DataTable.jsx` with a real `<table>`-safe "padding row" virtualizer (two
+spacer `<tr>`s, no row hacks), covering both scroll contexts in this codebase
+(internally-clipped tables like `.research-table`, and window-scrolled ones). A real
+bug surfaced mid-fix and got fixed too: detecting "internally scrolling" from
+`getComputedStyle().overflowY` is wrong (CSS silently computes that to `auto` on
+any box with non-`visible` overflow-x, which every `DataTable` has), so the first
+version virtualized every table against the wrong scroll context. Switched to a
+geometry check (`scrollHeight > clientHeight`) instead. Verified against all 5 large
+tables via Playwright (wheel-scroll, keyboard PageDown, cold flick-scroll); small
+tables (~10 of DataTable's ~12 consumers) are untouched by the change.
+
 ### Smaller items
 - **`og:image` and `og:url` are root-relative** in `index.html` because the
   deploy domain is not committed to this repo. Facebook and Twitter want

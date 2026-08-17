@@ -494,6 +494,46 @@ Methodology/Glossary/Settings/Alerts were never in this pass's scope and remain
 "not started," exactly as §2 already says. Don't read this rescore as covering
 pages it didn't touch.
 
+### Post-rescore — DataTable desktop virtualization ✅
+Found while starting Phase 5's next page (Picks): the rescore's recorded gap
+("DataTable's desktop `<table>` has no virtualization") was precisely
+quantified and fixed. `src/components/DataTable.jsx` now virtualizes the
+desktop `<table>` past `virtualizeFrom` rows (default 50, matching the
+existing mobile threshold), using the standard "two padding `<tr>`s" technique
+so a real semantic `<table>` stays intact — no `position:absolute`/`transform`
+row hacks. Two scroll contexts exist in this codebase and both are handled: an
+element-scoped `@tanstack/react-virtual` instance for a table that's genuinely
+height-clipped (`.research-table`'s `72dvh` internal scroll, used by Picks and
+SwingScreen), a window-scoped one otherwise (every other table, which grows
+with the page).
+
+**Real bug found and fixed inside the fix.** The first implementation detected
+"is this an internally-scrolling table" from `getComputedStyle(...).overflowY`
+— which is wrong: CSS computes `overflow-y` to `auto` on *any* box whose
+`overflow-x` is non-`visible`, even with no height constraint at all (the box
+can't clip one axis and leave the other fully unclipped), and `.data-table`'s
+base rule sets `overflow-x: auto` unconditionally. That made every DataTable
+instance register as "internally scrolling," which pointed the element-scoped
+virtualizer at containers that don't actually clip — their measured height
+equals their full content height, so the virtualizer concluded "everything is
+in view" and rendered all rows anyway. Caught by testing against real pages,
+not the unit tests (all 15 passed against this broken version too, since they
+don't assert on rendered geometry). Fixed by detecting from rendered geometry
+(`scrollHeight > clientHeight`) instead of declared style.
+
+Verified against all 5 real large-table pages found in a targeted audit
+(`FastGrowthScreen` ~880 rows, `CongressTrades` up to ~1,160, three
+`ResearchScreen`-backed screens ~300 rows each, plus Picks) via Playwright:
+row counts stay small (11-42) through wheel-scroll, keyboard PageDown, and a
+cold single-flick jump; sorting still works; no visual gaps/overlaps scrolling
+through hundreds of rows. Small tables (the majority of DataTable's ~12
+consumers) are unaffected — same code path as before, gated entirely on
+`virtualizeFrom`. `npm run lint && npm test && npm run build` green (789
+tests, +3 new), `design/typefloor.mjs`/`design/a11ycheck.mjs` clean. Also
+added a `ResizeObserver` stub to `src/test/setup.js` — jsdom doesn't implement
+it, which `@tanstack/react-virtual`'s dynamic measurement needs, and no prior
+test exercised a virtualized list closely enough to hit the gap.
+
 ---
 
 ## 2. What is left
@@ -538,11 +578,31 @@ Specific known gaps:
 - No shared screen-page skeleton, so 15+ screen routes each invent a layout.
 - `InstitutionalActivity` ships `results: []` permanently and renders a blank
   table rather than explaining the 13F cadence.
-- Picks still shows 112 keys per row as 8 flat metric pills — the layered
-  disclosure (pills → expandable evidence → modal) is not built.
+- ~~Picks still shows 112 keys per row as 8 flat metric pills~~ **stale — already
+  built.** Rereading `Picks.jsx`'s `ResearchCard`/`picksColumns` found the layered
+  disclosure already exists: mobile cards show 4 headline metrics, an "expand"
+  toggle reveals `MetricPills` + strengths/risks, and a "Full research" button
+  opens the modal. Whoever wrote this note was looking at a state that's since
+  changed, or looking at the wrong layer — leaving this struck rather than
+  silently deleting it, since the note directly contradicted the code.
 
 **`Portfolio.jsx` is now decomposed** (Phase 2d, below), so Phase 5's Portfolio
-pass can work on one view at a time. That is the next page in traffic order.
+pass can work on one view at a time.
+
+**Picks (started, infra fix only — visual/hierarchy pass not done).** Found while
+starting Picks: `/research`'s default (non-model) sort renders the *entire*
+scored universe — ~877 unfiltered stock rows — and `DataTable`'s desktop
+`<table>` had no virtualization at all, only its mobile card path did. Confirmed
+via measurement, not assumption: a Playwright check showed the mobile view
+scrolling to **395,000px** of page height (correct, if extreme — its virtualizer
+really does window the DOM, ~12-18 cards mounted at a time) while the desktop
+table silently mounted **1,002 real `<tr>` elements** inside its own 72dvh
+internal-scroll region on every load. The same gap was independently confirmed
+on `FastGrowthScreen` (~880 rows), `CongressTrades` (up to ~1,160), and three
+`ResearchScreen`-backed screens (~300 rows each) — five pages total, not just
+Picks. Fixed at the shared `DataTable` level (below), not per-page. The actual
+Phase 5 visual/hierarchy pass on Picks — the thing this note started out to do
+— has not happened yet.
 
 ### Phase 2d — decompose the giants · PORTFOLIO DONE
 | File | Lines |
