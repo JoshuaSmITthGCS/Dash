@@ -15,6 +15,7 @@ import {
 } from '../lib/portfolioAnalytics.js'
 import { Loading, Empty, Move, RefreshProgress, Tier } from '../components/Bits.jsx'
 import GrowthChart from '../components/GrowthChart.jsx'
+import DotPlot from '../components/DotPlot.jsx'
 import InfoTag from '../components/InfoTag.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import Icon from '../components/Icons.jsx'
@@ -154,6 +155,8 @@ function FocusedScreenCard({ title, kicker, note, rows, metric, loading, to, sty
   </article>
 }
 
+const MACRO_FACTOR_LABELS = [['rates', 'Rates'], ['inflation', 'Inflation'], ['labor', 'Labor']]
+
 function MarketPulsePreview({ data, loading }) {
   const macro = data?.market?.macro || {}
   const regime = macro.regime
@@ -162,14 +165,31 @@ function MarketPulsePreview({ data, loading }) {
     ['Fed funds', macro.federal_funds_rate, '%'],
     ['Inflation', macro.inflation, '%'],
   ]
+  const factorRows = MACRO_FACTOR_LABELS
+    .map(([key, label]) => {
+      const factor = regime?.factors?.[key]
+      return factor?.score == null ? null : { id: key, label: `${label} · ${factor.label}`, value: factor.score }
+    })
+    .filter(Boolean)
   // A series with no published value gets a muted tile rather than a full-size dash:
   // an empty reading should not carry the same visual weight as a real one.
   return <section className="report-section report-market-pulse" aria-labelledby="report-market-pulse-title">
     <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/market">News and context →</Link></header>
-    {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse here on the Report…</div> : <div className="report-market-grid">
-      <article className={regime?.score == null ? 'is-unavailable' : undefined}><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
-      {items.map(([label, point, suffix]) => <article key={label} className={point?.value == null ? 'is-unavailable' : undefined}><span>{label}</span><strong>{point?.value ?? '–'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Not published in this run'}</p></article>)}
-    </div>}
+    {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse here on the Report…</div> : <>
+      <div className="report-market-grid">
+        <article className={regime?.score == null ? 'is-unavailable' : undefined}><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
+        {items.map(([label, point, suffix]) => <article key={label} className={point?.value == null ? 'is-unavailable' : undefined}><span>{label}</span><strong>{point?.value ?? '–'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Not published in this run'}</p></article>)}
+      </div>
+      {factorRows.length > 1 && (
+        <DotPlot
+          rows={factorRows}
+          xLabel="Factor score (0-100, higher is more supportive)"
+          xFormatter={(value) => value.toFixed(1)}
+          domain={{ min: 0, max: 100 }}
+          caption="What the FRED regime score is composed of: rates, inflation, and labor factor scores"
+        />
+      )}
+    </>}
   </section>
 }
 

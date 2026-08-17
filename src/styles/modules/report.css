@@ -327,7 +327,7 @@
 .backtest-compare-group { margin-bottom: var(--sp-8); }
 .backtest-compare-group .section-title { margin: 0 0 var(--sp-1-5); font: var(--fw-bold) var(--fs-sm) var(--font-mono); }
 .backtest-group-note { margin: 0 0 var(--sp-3); max-width: 78ch; color: var(--text-tertiary); font: var(--fs-2xs)/1.6 var(--font-mono); }
-.dot-plot { margin: 0 0 var(--sp-4); }
+.dot-plot { margin: var(--sp-4) 0; }
 .dot-plot-rows { display: grid; gap: var(--sp-1-5); }
 .dot-plot-row { display: grid; grid-template-columns: minmax(100px, .35fr) 1fr auto; align-items: center; gap: var(--sp-2); }
 .dot-plot-label { overflow: hidden; color: var(--text-dim); font-size: var(--fs-xs); text-overflow: ellipsis; white-space: nowrap; }
