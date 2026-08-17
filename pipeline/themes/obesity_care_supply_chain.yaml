@@ -12,9 +12,26 @@ theme:
     and the one already priced as such; the constraint is held by their suppliers, whose
     capacity additions are contracted years ahead and disclosed as capex and obligations.
 
-  seed_tickers: [TMO, DHR, WST, BDX, STE, RVTY, A, MTD, ICUI]
+  # Anchors are admitted to their own theme whatever a vendor calls them, so these are the
+  # names whose tie to injectable manufacturing is direct: containment and delivery systems,
+  # bioprocessing, sterilization, and the two large tools suppliers whose bioprocess consumables
+  # gate a fill-finish line. General lab-instrument makers were left out - they sell into every
+  # therapeutic area equally, which is exposure to life sciences, not to this constraint.
+  seed_tickers: [WST, BDX, TMO, DHR, STE, ICUI]
   expand_via_tnic: true
   sectors: [Healthcare, Basic Materials, Industrials]
+  # Matched as case-insensitive substrings against the finer industry classification. The
+  # constraint is manufacturing, so this is the constraint's supply chain: bioprocessing and
+  # analytical tools, delivery devices, containment, the contract manufacturers, and the
+  # peptide chemistry. "Drug manufacturers - general" is deliberately absent - the franchise
+  # owners are this theme's spenders, named in the capex universe below, not its exposure.
+  industries:
+    - "medical instruments & supplies"
+    - "medical devices"
+    - "diagnostics & research"
+    - "drug manufacturers - specialty & generic"   # CDMOs
+    - "specialty chemicals"                        # peptide API, excipients
+    - "packaging & containers"                     # vials, stoppers, closures
   keywords:
     include:
       - "GLP-1"

@@ -97,9 +97,12 @@ Six themes ship today: AI infrastructure, grid & electrification, allied rearmam
 capacity, the metabolic-care supply chain, and water infrastructure. Two rules keep a keyword list
 from standing in for exposure. A signal that declares a spender `universe` is measured on those
 spenders, so it is identical for every candidate — it describes the demand driver and can never be
-the evidence that one particular company is exposed. And each theme declares the sectors its supply
-chain can sit in, because filing language alone will happily rank a bank as top exposure to a
-hardware buildout on the strength of its own data centers. Since a company can clear several themes
+the evidence that one particular company is exposed. And each theme declares the industries its
+supply chain is actually built by — semiconductors, electrical equipment, engineering and
+construction for an accelerator buildout — not just the sectors, because filing language alone will
+rank a bank as top exposure to a hardware buildout on the strength of its own data centers, and a
+sector cannot tell a chip-equipment maker from a trucking company. A theme's own anchors are always
+in scope, since a market-wide taxonomy understates some of them. Since a company can clear several themes
 at once, the screen groups those crossings explicitly: convergence and correlated concentration are
 the same fact read two ways.
 

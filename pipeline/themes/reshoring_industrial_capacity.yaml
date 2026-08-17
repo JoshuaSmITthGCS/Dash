@@ -12,9 +12,28 @@ theme:
     for years before the facility produces anything, and those contractors and equipment
     makers book it as backlog while the operator books only the capex.
 
-  seed_tickers: [AMAT, LRCX, KLAC, ENTG, TER, ROK, EME, FIX, PWR, DOV, ITW]
+  # Anchors are admitted to their own theme whatever a vendor calls them, so these are the
+  # unambiguous ones: fab tooling and materials, the automation that runs a plant, and the
+  # contractors who build it. Dover and Illinois Tool Works were dropped - diversified
+  # industrials whose exposure to a plant buildout is real but not what anchors a theme.
+  seed_tickers: [AMAT, LRCX, KLAC, ENTG, TER, ROK, EME, FIX, PWR]
   expand_via_tnic: true
   sectors: [Industrials, Technology, Basic Materials]
+  # Matched as case-insensitive substrings against the finer industry classification. What a
+  # plant is actually made of and by: the process equipment, the builders, the automation, the
+  # structural inputs. Freight and distribution move the output and are deliberately absent.
+  industries:
+    - "semiconductor"                # fab tooling and the fabs themselves
+    - "specialty industrial machinery"
+    - "engineering & construction"
+    - "building products & equipment"
+    - "building materials"
+    - "electrical equipment"
+    - "industrial distribution"
+    - "metal fabrication"
+    - "farm & heavy construction machinery"
+    - "scientific & technical instruments"   # process control and metrology
+    - "steel"
   keywords:
     include:
       - "reshoring"

@@ -16,6 +16,15 @@ theme:
   seed_tickers: [LMT, RTX, GD, NOC, LHX, HII, TDG, HWM, CW]
   expand_via_tnic: true
   sectors: [Industrials, Technology]
+  # Matched as case-insensitive substrings against the finer industry classification. Primes
+  # and their subsystem suppliers, the sensor makers, and the services firms that hold the
+  # classified programs - not the rest of Industrials, which shares a sector and nothing else.
+  industries:
+    - "aerospace & defense"
+    - "scientific & technical instruments"   # sensors, guidance, test
+    - "information technology services"      # mission systems integrators
+    - "specialty business services"          # defense services primes
+    - "metal fabrication"                    # airframe and munitions structures
   keywords:
     include:
       - "munitions"

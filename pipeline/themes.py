@@ -183,26 +183,51 @@ def normalize_theme(theme):
         "seed_tickers": [str(t).upper() for t in theme.get("seed_tickers") or []],
         "sic_codes": theme.get("sic_codes") or [],
         "sectors": [str(sector).strip().lower() for sector in theme.get("sectors") or []],
+        "industries": [str(term).strip().lower() for term in theme.get("industries") or []],
     }
 
 
 def in_theme_scope(theme, row):
-    """Whether a company is even a candidate for this theme, by declared sector scope.
+    """Whether a company is even a candidate for this theme, by declared scope.
 
     A filing-language screen with no scope will happily rank a regional bank as top exposure
     to an AI hardware buildout: banks describe their own data centers, and a theme-wide capex
     reading then supplies the corroborating signal, so the row clears the minimum on evidence
-    that says nothing about building accelerators. ``sectors`` in the theme file bounds the
-    population up front - declaring where a supply chain can physically live, which is a
-    statement about the theme rather than a score adjustment, and cheap: an out-of-scope name
-    never triggers a filing fetch at all.
+    that says nothing about building accelerators. Scope bounds the population up front -
+    declaring where a supply chain can physically live, which is a statement about the theme
+    rather than a score adjustment, and cheap: an out-of-scope name never triggers a filing
+    fetch at all.
 
-    Themes that declare no scope are unbounded, exactly as before.
+    Two levels, because one is not enough. ``sectors`` is the outer bound, and it is coarse:
+    a chip-equipment maker, a trucking company and a landscaping distributor are all
+    "Industrials", so sector alone still admits names that build none of it. ``industries``
+    matches the finer Yahoo classification (``Semiconductors``, ``Electrical Equipment &
+    Parts``, ``Utilities - Regulated Water``), as case-insensitive substrings so a theme
+    declares ``semiconductor`` once instead of chasing every spelling of
+    "Semiconductor Equipment & Materials". Both must pass when both are declared.
+
+    A theme's own ``seed_tickers`` are always in scope. They are the anchors the config author
+    declared by name, and a vendor taxonomy built for the whole market routinely understates
+    what one of them does: Eaton, whose data-center power business is the reason the AI theme
+    names it, is filed under "Specialty Industrial Machinery" alongside pump and compressor
+    makers. Admitting that industry wholesale to keep one anchor would drag in every machinery
+    company in the market; naming the anchor is the narrower, more honest exception. It still
+    only makes the company a candidate - its filing evidence decides everything after that.
+
+    A row whose industry never resolved falls back to the sector bound rather than being
+    dropped, since an absent classification is not evidence of anything. Themes that declare
+    no scope are unbounded, exactly as before.
     """
-    scope = theme.get("sectors") or ()
-    if not scope:
+    if str(row.get("ticker") or "").upper() in set(theme.get("seed_tickers") or ()):
         return True
-    return str(row.get("sector") or "").strip().lower() in set(scope)
+    sectors = theme.get("sectors") or ()
+    if sectors and str(row.get("sector") or "").strip().lower() not in set(sectors):
+        return False
+    industries = theme.get("industries") or ()
+    industry = str(row.get("industry") or "").strip().lower()
+    if not industries or not industry:
+        return True
+    return any(term in industry for term in industries)
 
 
 # ---------------- signal normalization ----------------
@@ -396,6 +421,29 @@ def _ranking_key(item):
 LEADER_SOURCES = ("published_leader", "portfolio")
 
 
+def report_scope(themes, rows):
+    """Log how many candidates each level of scope admits, and complain when one admits none.
+
+    The industry terms are matched against a vendor's classification strings, so a renamed or
+    mistyped term would otherwise fail silently and invisibly: the theme would simply publish
+    nothing, which is indistinguishable from a theme whose signals did not resolve. Comparing
+    the two levels makes that specific failure legible - a sector bound admitting a crowd
+    while the industry terms admit nobody is a broken term list, not a quiet market.
+    """
+    rows = list(rows)
+    classified = sum(1 for row in rows if row.get("industry"))
+    for theme in themes:
+        sector_only = sum(1 for row in rows
+                          if in_theme_scope({**theme, "industries": []}, row))
+        admitted = sum(1 for row in rows if in_theme_scope(theme, row))
+        LOG.info(f"{theme['id']}: {admitted} candidates in scope "
+                 f"({sector_only} by sector, {classified}/{len(rows)} rows classified)")
+        if theme.get("industries") and sector_only and not admitted:
+            LOG.warn(f"{theme['id']}: industry scope admitted none of {sector_only} "
+                     "sector-eligible candidates - check the `industries` terms against the "
+                     "classification the provider actually returns")
+
+
 def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISHED_ROWS_PER_GROUP):
     """Score every row against every theme and assemble the leaderboard payload.
 
@@ -415,6 +463,7 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
     by_ticker = {row.get("ticker"): row for row in rows if row.get("ticker")}
     per_theme = {theme["id"]: [] for theme in themes}
     per_ticker = {}
+    report_scope(themes, by_ticker.values())
 
     for ticker, row in by_ticker.items():
         valuation_percentile = row.get("valuation_expensiveness_percentile")
@@ -473,6 +522,7 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
             "status": theme.get("status"),
             "version": theme.get("version"),
             "sectors": theme.get("sectors") or [],
+            "industries": theme.get("industries") or [],
             "guardrails": theme["guardrails"],
             "signals": [{"name": signal["name"], "weight": signal["weight"],
                          "leading": signal["leading"],

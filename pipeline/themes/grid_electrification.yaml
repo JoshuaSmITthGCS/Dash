@@ -14,12 +14,32 @@ theme:
     utility whose rate base grows at the end of it.
 
   # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
-  seed_tickers: [ETN, PWR, HUBB, EMR, PNR, AME, ROK, ACM]
+  # Anchors are admitted to their own theme regardless of how a vendor classifies them, so
+  # these are only names whose grid exposure is unambiguous: power management and distribution
+  # gear, the contractors who build transmission, and the structures it hangs on. Pentair,
+  # Ametek and Rockwell were dropped from this list - water treatment, instruments and factory
+  # automation are their own themes, not this one.
+  seed_tickers: [ETN, PWR, HUBB, EMR, ACM, GNRC, VMI]
   expand_via_tnic: true
   # Where this supply chain can physically sit. A filing-language screen with no scope ranks
   # any company that happens to describe its own data centers; a grid buildout is built by
   # industrials and equipment makers and paid for by utilities.
   sectors: [Industrials, Utilities, Technology, Basic Materials]
+  # Matched as case-insensitive substrings against the finer industry classification. The
+  # chain is the equipment, the people who install it, the wire it is made of, and the
+  # utilities whose rate base pays for all of it.
+  industries:
+    - "electrical equipment"         # transformers, switchgear, distribution gear
+    - "specialty industrial machinery"
+    - "engineering & construction"   # transmission and substation contractors
+    - "building products & equipment"
+    - "industrial distribution"      # electrical distributors
+    - "metal fabrication"
+    - "copper"                       # conductor
+    - "utilities - regulated electric"
+    - "utilities - diversified"
+    - "utilities - independent power producers"
+    - "utilities - renewable"
   keywords:
     include:
       - "transformer"

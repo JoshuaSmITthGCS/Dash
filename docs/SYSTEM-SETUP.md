@@ -344,8 +344,11 @@ supply chain, and water infrastructure.
 Two further scoping rules, both added when the single-theme screen was widened: a signal
 declaring a `universe` is measured on the spenders rather than the candidate, so it describes
 the demand driver but cannot confirm that any particular company is exposed; and each theme
-declares the `sectors` its supply chain can sit in, so filing language alone cannot rank a bank
-as top exposure to a hardware buildout. **Coverage caveat:** with no curated segment or
+declares both the `sectors` and the `industries` its supply chain is built by, matched against
+the Yahoo classification carried on every scored row, so filing language alone cannot rank a
+bank as top exposure to a hardware buildout and a sector cannot pass a trucking company off as
+one. Seed tickers are always in scope, and `themes.report_scope` warns when an industry list
+admits nobody. **Coverage caveat:** with no curated segment or
 named-customer maps wired in and no transcript source, the only signals that resolve broadly in
 production are the filing-keyword trend and the spenders' capex, so most published rows rest on
 roughly a third of their theme's declared signal weight — the `confidence` field on each row

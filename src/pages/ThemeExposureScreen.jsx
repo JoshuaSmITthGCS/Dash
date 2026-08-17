@@ -92,7 +92,7 @@ function ThemeCard({ row, index, onOpen }) {
     </div>
     <dl className="research-card-metrics">
       <div><dt>Exposure</dt><dd>{row.theme_exposure_score ?? '–'}</dd></div>
-      <div><dt>Sector</dt><dd>{row.sector || '–'}</dd></div>
+      <div><dt>Industry</dt><dd>{row.industry || row.sector || '–'}</dd></div>
       <div><dt>Leading signals</dt><dd>{(row.leading_signals_fired || []).length || '–'}</dd></div>
     </dl>
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
@@ -110,7 +110,14 @@ function ThemeTable({ rows, onOpen }) {
           <CompanyLogo company={row} size={34} />
           <div><b>{row.ticker}</b><span>{row.name}{row.candidate_source && <span className="chip"> {SOURCE_LABEL[row.candidate_source] || row.candidate_source}</span>}</span></div>
         </div>) },
-      { key: 'sector', label: 'Sector', cell: (row) => row.sector || '\u2013' },
+      // Industry, not just sector: the whole question a reader has about a theme row is
+      // whether the company actually builds any of it, and "Industrials" cannot answer that
+      // for a chip-equipment maker and a trucking company alike. It is also the field the
+      // theme's own scope is matched on, so this is the screen showing its working.
+      { key: 'industry', label: 'Industry',
+        sortValue: (row) => row.industry || row.sector || '',
+        cell: (row) => <span className="table-industry"><b>{row.industry || row.sector || '\u2013'}</b>
+          {row.industry && row.sector && <span>{row.sector}</span>}</span> },
       { key: 'stance', label: 'Research rating', cell: (row) => row.stance ? <Tier label={row.stance} /> : '\u2013' },
       { key: 'theme_exposure_score', label: 'Exposure', numeric: true,
         cell: (row) => <span className="mono">{row.theme_exposure_score ?? '\u2013'}</span> },
@@ -142,7 +149,7 @@ function CrossThemeCard({ row, index, onOpen }) {
     <dl className="research-card-metrics">
       <div><dt>Best opportunity</dt><dd>{row.bestOpportunity ?? '–'}</dd></div>
       <div><dt>Weakest evidence</dt><dd>{row.weakestConfidence == null ? '–' : `${Math.round(row.weakestConfidence * 100)}%`}</dd></div>
-      <div><dt>Sector</dt><dd>{row.sector || '–'}</dd></div>
+      <div><dt>Industry</dt><dd>{row.industry || row.sector || '–'}</dd></div>
     </dl>
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>
@@ -159,7 +166,10 @@ function CrossThemeTable({ rows, onOpen }) {
           <CompanyLogo company={row} size={34} />
           <div><b>{row.ticker}</b><span>{row.name}</span></div>
         </div>) },
-      { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
+      { key: 'industry', label: 'Industry',
+        sortValue: (row) => row.industry || row.sector || '',
+        cell: (row) => <span className="table-industry"><b>{row.industry || row.sector || '–'}</b>
+          {row.industry && row.sector && <span>{row.sector}</span>}</span> },
       { key: 'themeCount', label: 'Themes', numeric: true, cell: (row) => <span className="mono">{row.themeCount}</span> },
       { key: 'themes', label: 'Where it crosses', sortable: false,
         cell: (row) => <span className="table-chip-list">{row.themes.map((theme) => (
@@ -304,10 +314,22 @@ export default function ThemeExposureScreen() {
             <div className="research-card-badges">
               <span className="chip">{theme.count ?? theme.rows.length} scored</span>
               <span className="chip">{theme.eligible_count ?? 0} cleared the guardrails</span>
-              {(theme.sectors || []).length > 0 && (
-                <span className="chip">Scope: {theme.sectors.map(titleCase).join(', ')}</span>
-              )}
             </div>
+            {(theme.industries || theme.sectors || []).length > 0 && (
+              <p className="disclaimer theme-scope">
+                <b>Built by:</b> {(theme.industries?.length ? theme.industries : theme.sectors).map(titleCase).join(' · ')}
+                <InfoTag label="Built by">
+                  <strong>Built by</strong>
+                  <p>The industries this theme's supply chain can sit in. A company outside them
+                    is never scored against the theme and never costs a filing read, however
+                    much its own filings talk about the trend - which is what stopped banks and
+                    insurers ranking as top exposure to an accelerator buildout, and what keeps
+                    a trucking company out of a theme it happens to share a sector with.</p>
+                  <p>Membership makes a name a candidate, nothing more. Exposure and
+                    eligibility still come from its own filing evidence.</p>
+                </InfoTag>
+              </p>
+            )}
           </header>
 
           <h3>Leaders <GroupCount shown={leaders.length} total={theme.group_counts?.leaders} />

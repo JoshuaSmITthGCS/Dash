@@ -48,6 +48,7 @@ const multiThemeData = {
       {
         id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', thesis: 'A capex cycle.',
         count: 12, eligible_count: 9, sectors: ['technology', 'industrials'],
+        industries: ['semiconductor', 'electrical equipment'],
         group_counts: { leaders: 9, connected: 3 },
         rows: [{
           ticker: 'NVDA', name: 'NVIDIA', theme_exposure_score: 85, opportunity_score: 60,
@@ -166,6 +167,31 @@ describe('Theme Exposure screen', () => {
     // ETN clears both themes; NVDA clears one, so it is not a crossing point.
     expect(within(crossing).getAllByText('ETN').length).toBeGreaterThan(0)
     expect(within(crossing).queryByText('NVDA')).toBeNull()
+  })
+
+  it('names the industries a theme is built by, not just its sectors', () => {
+    useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+    render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+    expect(screen.getByText(/Semiconductor · Electrical Equipment/)).toBeInTheDocument()
+  })
+
+  it('shows each row s industry, since a sector cannot say whether a name builds any of it', () => {
+    useData.mockImplementation(() => ({
+      data: {
+        ...multiThemeData,
+        research: [{ ticker: 'NVDA', name: 'NVIDIA', sector: 'Technology', industry: 'Semiconductors', score: 90 },
+          { ticker: 'ETN', name: 'Eaton', sector: 'Industrials', industry: 'Electrical Equipment & Parts', score: 80 }],
+      },
+      loading: false,
+      error: null,
+    }))
+
+    render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+    expect(screen.getAllByText('Semiconductors').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Electrical Equipment & Parts').length).toBeGreaterThan(0)
   })
 
   it('says how much of a group it is showing when the pipeline truncated it', () => {

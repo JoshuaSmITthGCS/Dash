@@ -26,6 +26,21 @@ theme:
   # in the same words, and the theme-wide capex reading then supplied the second signal, so a
   # row cleared the minimum on evidence that said nothing about building any of it.
   sectors: [Technology, Industrials, Utilities]
+  # The outer sector bound is coarse enough to keep admitting names that build none of it: a
+  # chip-equipment maker and a trucking company are both "Industrials". These match the finer
+  # industry classification as case-insensitive substrings, and they are the actual chain -
+  # the silicon, the boards and optics it ships on, the boxes it lands in, the power and
+  # cooling that runs it, and the contractors who build the halls. Software is deliberately
+  # absent: this theme is the buildout upstream of the spending, not what runs on it.
+  industries:
+    - "semiconductor"                # Semiconductors; Semiconductor Equipment & Materials
+    - "electronic components"
+    - "computer hardware"
+    - "communication equipment"      # networking silicon, optics
+    - "electrical equipment"         # power distribution, thermal management
+    - "engineering & construction"   # data-center construction
+    - "utilities - regulated electric"
+    - "utilities - independent power producers"
   keywords:
     include:
       - "accelerated computing"

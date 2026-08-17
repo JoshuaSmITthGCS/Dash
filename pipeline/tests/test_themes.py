@@ -66,8 +66,12 @@ class ThemeConfigTests(unittest.TestCase):
                 self.assertAlmostEqual(sum(s["weight"] for s in theme["signals"]), 1.0, places=4)
                 self.assertEqual(theme["guardrails"]["max_price_momentum_contribution"], 0.0)
                 # Unscoped themes rank on filing language alone, which is how a bank ends up
-                # published as top exposure to a hardware buildout.
+                # published as top exposure to a hardware buildout. Sector alone is not
+                # enough either - it cannot separate a chip-equipment maker from a trucking
+                # company - so a shipped theme declares both levels.
                 self.assertTrue(theme["sectors"], "shipped themes must declare a sector scope")
+                self.assertTrue(theme["industries"],
+                                "shipped themes must declare the industries they are built by")
                 self.assertTrue(theme["seed_tickers"])
                 self.assertTrue((theme.get("keywords") or {}).get("include"))
 
@@ -92,6 +96,169 @@ class ThemeConfigTests(unittest.TestCase):
         by_name = {signal["name"]: signal for signal in theme["signals"]}
         self.assertFalse(by_name["filing_keyword_density_trend"]["theme_level"])
         self.assertTrue(by_name["spender_capex_growth"]["theme_level"])
+
+
+class IndustryScopeTests(unittest.TestCase):
+    """Whether the names a theme admits are really that theme's supply chain.
+
+    Industry strings are the vendor's own, copied from published rows, so these also pin the
+    format the substring terms are matched against ("Banks - Regional", "Semiconductors",
+    "Electrical Equipment & Parts").
+    """
+
+    # What each shipped theme should and should not adopt. The AI rows are the case that
+    # motivated scoping at all: a chipmaker belongs in an accelerator buildout and a bank
+    # does not, however much its 10-K talks about its own data centers.
+    CASES = {
+        "ai_infrastructure": {
+            "in": ["Semiconductors", "Semiconductor Equipment & Materials",
+                   "Electronic Components", "Communication Equipment", "Computer Hardware",
+                   "Electrical Equipment & Parts", "Engineering & Construction",
+                   "Utilities - Regulated Electric"],
+            "out": ["Banks - Regional", "Banks - Diversified", "Credit Services",
+                    "Insurance - Property & Casualty", "Trucking", "Railroads",
+                    "Software - Application", "Asset Management", "Restaurants"],
+        },
+        "grid_electrification": {
+            "in": ["Electrical Equipment & Parts", "Engineering & Construction",
+                   "Utilities - Regulated Electric", "Industrial Distribution", "Copper"],
+            "out": ["Banks - Regional", "Trucking", "Semiconductors", "Biotechnology"],
+        },
+        "defense_rearmament": {
+            "in": ["Aerospace & Defense", "Scientific & Technical Instruments",
+                   "Information Technology Services"],
+            "out": ["Trucking", "Banks - Regional", "Utilities - Regulated Electric",
+                    "Semiconductors"],
+        },
+        "reshoring_industrial_capacity": {
+            "in": ["Semiconductor Equipment & Materials", "Specialty Industrial Machinery",
+                   "Engineering & Construction", "Steel"],
+            "out": ["Banks - Regional", "Trucking", "Railroads", "Biotechnology"],
+        },
+        "obesity_care_supply_chain": {
+            "in": ["Medical Instruments & Supplies", "Medical Devices",
+                   "Diagnostics & Research", "Specialty Chemicals"],
+            "out": ["Banks - Regional", "Drug Manufacturers - General",   # the spenders
+                    "Medical Care Facilities", "Healthcare Plans", "Trucking"],
+        },
+        "water_infrastructure": {
+            "in": ["Specialty Industrial Machinery", "Pollution & Treatment Controls",
+                   "Utilities - Regulated Water", "Metal Fabrication"],
+            "out": ["Banks - Regional", "Trucking", "Semiconductors",
+                    "Utilities - Regulated Electric"],
+        },
+    }
+
+    # Sector is only the outer bound, so scope has to be exercised through the theme's real
+    # sector list too; an industry that cannot occur in the theme's sectors is unreachable.
+    SECTOR_OF = {
+        "Semiconductors": "Technology", "Semiconductor Equipment & Materials": "Technology",
+        "Electronic Components": "Technology", "Communication Equipment": "Technology",
+        "Computer Hardware": "Technology", "Software - Application": "Technology",
+        "Scientific & Technical Instruments": "Technology",
+        "Information Technology Services": "Technology",
+        "Electrical Equipment & Parts": "Industrials",
+        "Engineering & Construction": "Industrials", "Trucking": "Industrials",
+        "Railroads": "Industrials", "Industrial Distribution": "Industrials",
+        "Specialty Industrial Machinery": "Industrials", "Aerospace & Defense": "Industrials",
+        "Pollution & Treatment Controls": "Industrials", "Metal Fabrication": "Industrials",
+        "Utilities - Regulated Electric": "Utilities",
+        "Utilities - Regulated Water": "Utilities",
+        "Banks - Regional": "Financial Services", "Banks - Diversified": "Financial Services",
+        "Credit Services": "Financial Services", "Asset Management": "Financial Services",
+        "Insurance - Property & Casualty": "Financial Services",
+        "Medical Instruments & Supplies": "Healthcare", "Medical Devices": "Healthcare",
+        "Diagnostics & Research": "Healthcare", "Biotechnology": "Healthcare",
+        "Drug Manufacturers - General": "Healthcare", "Healthcare Plans": "Healthcare",
+        "Medical Care Facilities": "Healthcare",
+        "Specialty Chemicals": "Basic Materials", "Steel": "Basic Materials",
+        "Copper": "Basic Materials", "Restaurants": "Consumer Cyclical",
+    }
+
+    def _row(self, industry):
+        return {"ticker": "X", "industry": industry, "sector": self.SECTOR_OF[industry]}
+
+    def test_each_theme_admits_its_supply_chain_and_refuses_the_rest(self):
+        by_id = {theme["id"]: theme for theme in themes.load_themes()}
+        for theme_id, expectations in self.CASES.items():
+            theme = by_id[theme_id]
+            for industry in expectations["in"]:
+                with self.subTest(theme=theme_id, admits=industry):
+                    self.assertTrue(themes.in_theme_scope(theme, self._row(industry)))
+            for industry in expectations["out"]:
+                with self.subTest(theme=theme_id, refuses=industry):
+                    self.assertFalse(themes.in_theme_scope(theme, self._row(industry)))
+
+    def test_a_declared_anchor_is_in_scope_whatever_the_vendor_calls_it(self):
+        # Eaton's real case: it anchors the AI theme for its data-center power business and is
+        # classified "Specialty Industrial Machinery", which that theme deliberately does not
+        # admit - adding the industry to keep one anchor would drag in every pump and
+        # compressor maker in the market.
+        theme = next(t for t in themes.load_themes() if t["id"] == "ai_infrastructure")
+        eaton = {"ticker": "ETN", "sector": "Industrials",
+                 "industry": "Specialty Industrial Machinery"}
+        self.assertTrue(themes.in_theme_scope(theme, eaton))
+        # A different company in the same industry stays out.
+        self.assertFalse(themes.in_theme_scope(
+            theme, {"ticker": "DOV", "sector": "Industrials",
+                    "industry": "Specialty Industrial Machinery"}))
+
+    def test_every_shipped_theme_admits_its_own_anchors(self):
+        # A theme whose declared anchors fail its own scope is self-inconsistent: peer
+        # expansion is seeded from those anchors, so the theme would be built around names it
+        # refuses to publish.
+        for theme in themes.load_themes():
+            for seed in theme["seed_tickers"]:
+                with self.subTest(theme=theme["id"], seed=seed):
+                    self.assertTrue(themes.in_theme_scope(
+                        theme, {"ticker": seed, "sector": "Financial Services",
+                                "industry": "Banks - Regional"}),
+                        "a declared anchor must survive its own theme's scope")
+
+    def test_an_unclassified_row_falls_back_to_the_sector_bound(self):
+        # An absent classification is not evidence of anything, so it must not silently drop
+        # a name the sector bound would have admitted.
+        theme = build(sectors=["Technology"], industries=["semiconductor"])
+        self.assertTrue(themes.in_theme_scope(theme, {"sector": "Technology"}))
+        self.assertFalse(themes.in_theme_scope(theme, {"sector": "Financial Services"}))
+
+    def test_industry_terms_match_case_insensitively_as_substrings(self):
+        theme = build(sectors=["Technology"], industries=["semiconductor"])
+        self.assertTrue(themes.in_theme_scope(
+            theme, {"sector": "Technology", "industry": "Semiconductor Equipment & Materials"}))
+        self.assertFalse(themes.in_theme_scope(
+            theme, {"sector": "Technology", "industry": "Software - Infrastructure"}))
+
+    def test_the_sector_bound_still_applies_when_an_industry_term_would_match(self):
+        theme = build(sectors=["Technology"], industries=["equipment"])
+        self.assertFalse(themes.in_theme_scope(
+            theme, {"sector": "Industrials", "industry": "Farm & Heavy Construction Machinery Equipment"}))
+
+    def test_a_term_list_that_admits_nobody_is_reported_rather_than_silently_empty(self):
+        # The failure this catches: a renamed or mistyped vendor classification would drop
+        # every candidate, and an empty theme is otherwise indistinguishable from one whose
+        # signals did not resolve.
+        import contextlib
+        import io
+
+        theme = build(sectors=["Technology"], industries=["semiconducter"])   # typo, on purpose
+        rows = [{"ticker": "CHIP", "sector": "Technology", "industry": "Semiconductors"}]
+        log = io.StringIO()
+        with contextlib.redirect_stdout(log):     # LOG writes through stdout
+            themes.report_scope([theme], rows)
+        self.assertIn("industry scope admitted none", log.getvalue())
+
+    def test_a_working_term_list_reports_its_count_without_complaining(self):
+        import contextlib
+        import io
+
+        theme = build(sectors=["Technology"], industries=["semiconductor"])
+        rows = [{"ticker": "CHIP", "sector": "Technology", "industry": "Semiconductors"}]
+        log = io.StringIO()
+        with contextlib.redirect_stdout(log):
+            themes.report_scope([theme], rows)
+        self.assertIn("1 candidates in scope", log.getvalue())
+        self.assertNotIn("admitted none", log.getvalue())
 
 
 class ThemeScopeTests(unittest.TestCase):

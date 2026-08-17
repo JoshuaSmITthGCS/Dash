@@ -311,3 +311,8 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .theme-index small { color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.4; }
 .table-chip-list { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .table-chip-list .chip { white-space: normal; text-transform: none; letter-spacing: 0; }
+.table-industry { display: grid; }
+.table-industry b { font-size: var(--fs-2xs); }
+.table-industry span { color: var(--text-faint); font-size: var(--fs-2xs); }
+.theme-scope { margin-top: var(--sp-1); }
+.theme-scope b { color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; font-size: var(--fs-2xs); }

@@ -880,10 +880,19 @@ Two scoping rules keep filing language from standing in for exposure:
   It contributes to the score and describes the demand driver, but it cannot satisfy
   `require_leading_signal_confirmation` — a constant has no cross-sectional information, and
   accepting it as confirmation confirmed every company at once.
-- **Sector scope.** Each theme declares `sectors`, the sectors its supply chain can sit in.
-  Out-of-scope names are not scored against the theme and never trigger a filing fetch. Without
-  it, banks and insurers ranked as top exposure to the AI hardware buildout on the strength of
-  describing their own data centers.
+- **Scope, at two grains.** Each theme declares `sectors` (the outer bound) and `industries`
+  (the supply chain itself, matched as case-insensitive substrings against the row's Yahoo
+  industry — `semiconductor` matches both `Semiconductors` and `Semiconductor Equipment &
+  Materials`). Both must pass. Sector alone was not enough: it cannot separate a chip-equipment
+  maker from a trucking company, since both are "Industrials". A row whose industry never
+  resolved falls back to the sector bound, and a theme's own `seed_tickers` are always in scope
+  — a vendor taxonomy built for the whole market understates some anchors (Eaton's data-center
+  power business is filed under "Specialty Industrial Machinery"), and naming the anchor is
+  narrower than admitting its whole industry. Out-of-scope names are not scored and never
+  trigger a filing fetch. Without any of this, banks and insurers ranked as top exposure to the
+  AI hardware buildout on the strength of describing their own data centers.
+  `themes.report_scope` logs what each level admits and warns when an industry list admits
+  nobody, so a renamed vendor classification cannot empty a theme silently.
 
 Six themes ship: `ai_infrastructure`, `grid_electrification`, `defense_rearmament`,
 `reshoring_industrial_capacity`, `obesity_care_supply_chain`, `water_infrastructure`. Each

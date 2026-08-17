@@ -15,6 +15,18 @@ theme:
   seed_tickers: [XYL, PNR, WTS, IEX, AOS, VMI, TTEK, ACM, ECL]
   expand_via_tnic: true
   sectors: [Industrials, Utilities, Basic Materials]
+  # Matched as case-insensitive substrings against the finer industry classification. Pumps,
+  # valves, meters and filtration; the pipe itself; the engineers who design the replacement
+  # programs; the treatment chemistry; and the utilities whose rate base funds it.
+  industries:
+    - "specialty industrial machinery"       # pumps, valves, flow control
+    - "pollution & treatment controls"
+    - "engineering & construction"
+    - "building products & equipment"
+    - "metal fabrication"                    # pipe, hydrants, fittings
+    - "specialty chemicals"                  # treatment chemistry
+    - "waste management"
+    - "utilities - regulated water"
   keywords:
     include:
       - "PFAS"
