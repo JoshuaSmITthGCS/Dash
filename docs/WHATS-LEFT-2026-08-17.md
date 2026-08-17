@@ -67,15 +67,29 @@ live screenshots in both themes wherever the page isn't Firebase-gated.
 
 In priority order:
 
-### 1. Empty states — a pass of its own
-The original plan calls this out as the last item in the Phase 5 traffic
-order, separate from any single page: a sweep across the whole app for empty
-states that render nothing useful (a blank table, a bare dash) instead of
-explaining why. Two examples already found and fixed this way
-(`InstitutionalActivity` turned out to already be fine on inspection — see
-above); there may be others. `grep -rn "results.length ? \|!.*\.length &&"
-src/pages/` is a reasonable starting point to find candidates, but verify
-each one live rather than assuming from the grep.
+### 1. Empty states — done (2026-08-17), one real bug found and fixed
+Swept the app for empty states that render nothing useful (a blank table, a
+bare dash) instead of explaining why — the last item in the Phase 5 traffic
+order, per the original plan. Full account in `docs/REDESIGN-STATUS.md` §1;
+short version: every `DataTable` caller across the screens family, Portfolio,
+and the remaining routes was traced by hand (not just grepped) to confirm
+each one either can't render zero rows in practice (fixed, config-driven
+rosters like `ShadowPortfolios`/`BacktestComparison`) or already guards
+`!rows.length` with a contextual `<Empty>`/inline message before reaching
+`DataTable`. One real gap: `portfolio/ComparisonTables.jsx`'s `BenchmarkTable`
+(the "Vs S&P 500" tab) had no empty-state check at all, while its sibling
+`FixedBasisTable` (the "$N Calculator" tab, same file) already guarded
+`positionCount === 0` with a "No positions yet" message — an asymmetric fix
+from whenever that sibling gap was closed. With zero positions, `BenchmarkTable`
+would have rendered a live `DataTable` with column headers and no rows, no
+explanation. Fixed by adding the same guard `FixedBasisTable` already had.
+Not visually reachable in this sandbox (Portfolio is Firebase-gated and the
+dev-only `?portfolioPreview=1` bypass always seeds 4 mock positions, never
+zero — see `pipeline/config/settings.json`'s `interface.mobile_preview_positions`),
+so verified instead with a unit test mirroring `FixedBasisTable`'s existing
+one (`ComparisonTables.test.jsx`), plus a live screenshot confirming no
+regression to the populated case. Everything else swept clean — no other
+changes made this pass.
 
 ### 2. Phase 4 remainder — real gaps, not chart-building tasks
 Two separate things, both documented in full in `docs/REDESIGN-STATUS.md`'s
@@ -139,6 +153,35 @@ already provide one:
 ```bash
 npx playwright install chromium --with-deps    # only if chromium.launch() errors
 ```
+
+**Two gotchas hit running this in a fresh claude.ai/code sandbox on 2026-08-17,
+neither a code bug — both environment setup:**
+
+- **No `.env.local` crashes the whole app, not just the Firebase-gated pages.**
+  `src/lib/firebase.js` calls `getAuth(app)` at module load; with no
+  `VITE_FIREBASE_API_KEY` at all (undefined, not just a placeholder), Firebase's
+  own synchronous format check throws before React ever mounts — `#root` stays
+  empty on every route, including ones with no Firebase dependency. `cp
+  .env.example .env.local` (per this repo's own setup step above) fixes it: the
+  example file's placeholder values are non-empty and colon-free, which is all
+  the synchronous check requires — the graceful "Cloud data is offline" gate
+  only kicks in once `getAuth` can construct successfully and its actual network
+  calls fail. Restart `vite` after creating the file; it doesn't hot-reload env vars.
+- **The sandbox's pre-installed Chromium can be a different revision than the
+  pinned `playwright-core` expects**, and `npx playwright install chromium`
+  hits a proxy-blocked host (`cdn.playwright.dev`, 403) trying to fetch the
+  matching one. Symptom: `chromium.launch()` throws
+  `Executable doesn't exist at .../chromium_headless_shell-<rev>`. Workaround —
+  launch the pre-installed binary directly instead of the one the package
+  resolves by default: `chromium.launch({ executablePath:
+  '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-dev-shm-usage'] })`.
+  The revision mismatch didn't break anything (CDP is compatible across close
+  Chrome versions); without `--no-sandbox` as root in a container, Chromium
+  silently produced blank white screenshots instead of erroring. This needed
+  copying the three `design/*.mjs` scripts to add the override, running them,
+  then deleting the copies — don't commit a hardcoded `/opt/pw-browsers` path
+  into the tracked scripts, that's exactly the machine-specific-path problem
+  the earlier `playwright-core` portability fix (see "what's done" above) removed.
 
 Everything else in this doc — reading source, grepping, running the dev
 server on a free port, running lint/test/build, committing, pushing — needs

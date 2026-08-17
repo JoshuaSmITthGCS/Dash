@@ -1,8 +1,9 @@
 # Redesign status — continuation notes
 
 **Companion to `docs/REDESIGN-PLAN.md`. Read both.**
-Last updated 2026-08-16 · Phases 0–4 and 6 as merged in `8a1d073f`, plus the
-Portfolio decomposition (Phase 2d) and the SVG type-floor fix (`dc1dc3f6`) on top.
+Last updated 2026-08-17 · Phases 0–4 and 6 as merged in `8a1d073f`, plus the
+Portfolio decomposition (Phase 2d), the SVG type-floor fix (`dc1dc3f6`), and
+the Phase 5 empty-states pass on top.
 
 This file exists so a new session can pick the redesign up without re-deriving what
 was already decided or repeating measurements. It records what is done, what is
@@ -534,22 +535,75 @@ added a `ResizeObserver` stub to `src/test/setup.js` — jsdom doesn't implement
 it, which `@tanstack/react-virtual`'s dynamic measurement needs, and no prior
 test exercised a virtualized list closely enough to hit the gap.
 
+### Phase 5 — empty-states pass ✅ · one real bug found and fixed
+The last item in the plan's Phase 5 traffic order: a sweep across the whole
+app for empty states that render nothing useful (a blank table, a bare dash)
+instead of explaining why. `grep -rn "results.length ? \|!.*\.length &&"
+src/pages/` surfaced the candidates already covered by name in earlier passes
+(Glossary, PolicyRadar, Search, BacktestComparison, Picks, Watchlist — all
+already have contextual `<Empty>`/inline messages, confirmed live). The
+grep's blind spot is exactly the pattern that mattered here: components that
+render a `DataTable` with no `!rows.length` guard at all, so an empty array
+falls through to the shared component instead of a page's own empty-state
+JSX. Traced every `DataTable` caller in `src/pages/` by hand (not just
+grepped) to answer, for each one, "can this actually receive zero rows, and
+if so, is it guarded": `SwingScreen`, `FastGrowthScreen`, `ThemeExposureScreen`,
+`CongressTrades`, `OptionsScreen`/`StrategyScreen`, `InstitutionalActivity`,
+`ResearchScreen`, `Picks` all already wrap their table in `!rows.length ?
+<Empty ... /> : <DataTable ... />`. `ShadowPortfolios` and `BacktestComparison`
+render fixed, config-driven rosters (10 strategies, 15 backtest methods
+respectively, confirmed by reading the published JSON directly) that can't
+reach zero in practice short of the whole file going missing, which is
+already handled by a separate `error` state.
+
+One real gap, in `src/pages/portfolio/ComparisonTables.jsx`: `BenchmarkTable`
+(the "Vs S&P 500" tab) had no empty-state check, while its sibling
+`FixedBasisTable` in the same file (the "$N Calculator" tab) already guarded
+`positionCount === 0` with a "No positions yet. Click '+ Add Position' to
+start tracking." message — visible proof the two were built at different
+times and the guard never got carried over to the first tab. With zero
+portfolio positions, `BenchmarkTable` would render a live `DataTable` with
+column headers and a callout/footnote around an empty body — the exact "blank
+table" pattern this pass exists to catch. Fixed by adding the identical
+`sortedPositions.length === 0` guard `FixedBasisTable` already had, same
+message. Not visually reachable in this sandbox: Portfolio is Firebase-gated
+and the dev-only `?portfolioPreview=1` bypass always seeds 4 mock positions
+(`pipeline/config/settings.json`'s `interface.mobile_preview_positions`),
+never zero. Verified instead with a new unit test in
+`ComparisonTables.test.jsx` mirroring `FixedBasisTable`'s existing empty-state
+test, plus a live screenshot of the populated case in both themes confirming
+no regression (`?portfolioPreview=1`, "Vs S&P 500" tab clicked). `npm run
+lint && npm test && npm run build` green (791 tests, +1 new),
+`design/a11ycheck.mjs` clean, `design/typefloor.mjs` clean (0 violations
+across home/portfolio/portfolio-performance/research/markets × 3 widths).
+
+Two environment-only gotchas hit running this pass in a fresh claude.ai/code
+sandbox — neither a code bug, both documented in `docs/WHATS-LEFT-2026-08-17.md`
+in full: no `.env.local` crashes the whole app (not just Firebase-gated
+pages) rather than degrading gracefully, because `getAuth()`'s synchronous
+format check throws on a genuinely-missing key, not just an invalid one; and
+the sandbox's pre-installed Chromium revision didn't match what the pinned
+`playwright-core` expected, with the network fetch of the matching revision
+blocked by the proxy — worked around by launching the pre-installed binary
+via `executablePath` in throwaway copies of the three `design/*.mjs` scripts,
+never committed.
+
 ---
 
 ## 2. What is left
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO + SCREENS FAMILY + FINANCES/PLANNING/INSIGHTS/WATCHLIST/MARKETS + METHODOLOGY/GLOSSARY/SETTINGS/ALERTS DONE · empty-states pass not started
+### Phase 5 — page-by-page pass · ALL DONE, including the empty-states sweep
 Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
 ~~SwingScreen~~ → ~~rest of the screens family~~ →
 ~~Finances/Planning/Insights/Watchlist/Markets~~ →
-~~Methodology/Glossary/Settings/Alerts~~ → empty states. Everything through
-Alerts is struck because its pass is complete, not because it got the
-Dashboard-style rebuild treatment — see §1. Most of it needed nothing (already
-well-built); a handful of real bugs were found and fixed along the way. Next
-in traffic order: the empty-states sweep called out separately in the
-original plan.
+~~Methodology/Glossary/Settings/Alerts~~ → ~~empty states~~. Everything is
+struck because its pass is complete, not because it got the Dashboard-style
+rebuild treatment — see §1. Most of it needed nothing (already well-built); a
+handful of real bugs were found and fixed along the way, most recently the
+empty-states sweep's `BenchmarkTable` fix (§1, above). Phase 5 is done; next
+up is the Phase 4 remainder, below.
 
 **Finances/Planning/Insights/Watchlist/Markets — pass done, no changes needed.**
 Batch-scanned all 5 routes in both themes (console errors, `\u`-escape

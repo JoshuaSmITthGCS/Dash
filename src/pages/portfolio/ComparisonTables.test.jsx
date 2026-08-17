@@ -47,6 +47,13 @@ describe('BenchmarkTable', () => {
     const totalRow = screen.getByText('TOTAL').closest('tr')
     expect(totalRow).toHaveClass('comparison-total-row')
   })
+
+  it('renders the empty state instead of a table when there are no positions', () => {
+    setViewport(false)
+    render(<BenchmarkTable sortedPositions={[]} versusIndex={null} onPurchaseDateChange={vi.fn()} />)
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByText(/No positions yet/)).toBeInTheDocument()
+  })
 })
 
 describe('FixedBasisTable', () => {
