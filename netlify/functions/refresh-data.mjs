@@ -38,6 +38,8 @@ export const SCREEN_WORKFLOWS = {
   research: { workflow: 'refresh-advisor.yml', acceptsInputs: true, label: 'research refresh' },
   congress: { workflow: 'congress-trades.yml', acceptsInputs: false, label: 'Congressional disclosure collection' },
   institutional: { workflow: 'institutional-13f.yml', acceptsInputs: false, label: 'institutional 13F collection' },
+  filings: { workflow: 'sec-filings.yml', acceptsInputs: false, label: '10-K/10-Q, DEF 14A, and 8-K filing collection' },
+  'inside-information': { workflow: 'inside-information.yml', acceptsInputs: false, label: 'Inside Information merge' },
 }
 
 // Step weights per workflow, used to turn a job's completed steps into a percentage. The

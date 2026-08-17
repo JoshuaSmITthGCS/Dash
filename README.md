@@ -82,6 +82,29 @@ schedule, and historically uninformative) and **opportunistic**. Only opportunis
 Clusters of independent buyers count for more than one large buyer, buys count for more than sells,
 and the signal decays over one to three months.
 
+### SEC filing signals
+
+`pipeline/build_filings_screen.py` polls SEC EDGAR every 3 days for 10-K/10-Q, DEF 14A, and
+8-K activity on the currently scored shortlist and publishes `public/data/screens/filings.json`;
+`pipeline/edgar_filing_signals.py` classifies materiality from the filing's own **form or Item
+code**, never from parsing filing text. Three bounded, decaying, penalty-only modifiers read it:
+
+- **8-K materiality** (up to −4): a fixed lookup of SEC's own 8-K Item codes with a
+  well-established negative reading — bankruptcy (Item 1.03), a restatement (Item 4.02), a
+  delisting notice (Item 3.01), material impairment, accelerated debt, exit costs, an auditor
+  change, or a dilutive unregistered sale. Only the single freshest qualifying filing scores.
+  Nothing on Form 8-K is scored positive — no Item code reliably means good news the way these
+  reliably mean bad.
+- **Proxy signal** (up to −2): only a contested election (`DEFC14A`) scores — an unambiguous
+  governance conflict. Additional soliciting material (`DEFA14A`) is published as a flag but
+  never scored; the form code alone can't separate a genuine activist situation from routine
+  solicitation updates.
+- **Filing integrity** (up to −3): an `NT 10-K`/`NT 10-Q` (notification the company could not
+  file on time) is a well-documented distress or accounting-problem signal on its own. An
+  on-time 10-K/10-Q carries no score signal by itself — 10-K/10-Q filings themselves never
+  appear more than quarterly regardless of how often this polls; the 3-day cadence exists so a
+  late-filing notice is caught within days rather than a full quarter later.
+
 ### Theme exposure
 
 `pipeline/themes/*.yaml` declares structural trends; adding one is a config file, not a code change.

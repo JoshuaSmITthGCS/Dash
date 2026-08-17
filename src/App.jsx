@@ -35,6 +35,7 @@ const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
 const InstitutionalActivity = lazy(() => import('./pages/InstitutionalActivity.jsx'))
+const InsideInformation = lazy(() => import('./pages/InsideInformation.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
@@ -315,6 +316,7 @@ function AppContent() {
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
           <Route path="/screens/politics" element={<CongressTrades />} />
           <Route path="/screens/institutional" element={<InstitutionalActivity />} />
+          <Route path="/screens/inside-information" element={<InsideInformation />} />
           <Route path="/screens/themes" element={<ThemeExposureScreen />} />
           <Route path="/screens/backtests" element={<BacktestComparison />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />

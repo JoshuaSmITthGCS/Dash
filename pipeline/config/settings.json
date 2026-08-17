@@ -1098,6 +1098,24 @@
       "max_points": 4.0,
       "min_trade_value": 15000.0,
       "extraordinary_bonus": 2.0
+    },
+    "filing_8k": {
+      "_comment": "8-K Item-code materiality (pipeline/edgar_filing_signals.py), classified from SEC's own item taxonomy - never parsed from filing text. Penalty-only: bankruptcy, restatement, delisting, impairment, accelerated debt, exit costs, auditor change, and dilutive unregistered sales each carry a documented negative reading; nothing on Form 8-K is scored positive, since no item code reliably means good news the way these reliably mean bad. Only the single freshest qualifying filing is scored. Reads the 3-day-published SEC filings screen, not a live fetch.",
+      "max_penalty": 4.0,
+      "half_life_days": 30,
+      "max_age_days": 90
+    },
+    "proxy_signal": {
+      "_comment": "Contested proxy elections (DEFC14A form code, pipeline/edgar_filing_signals.py) - an unambiguous governance conflict. Penalty-only. Additional soliciting material (DEFA14A) is published as a flag but never scored: the form code alone can't separate a genuine activist situation from routine solicitation updates. Reads the 3-day-published SEC filings screen, not a live fetch.",
+      "max_penalty": 2.0,
+      "half_life_days": 45,
+      "max_age_days": 180
+    },
+    "filing_integrity": {
+      "_comment": "Late 10-K/10-Q notification (NT 10-K/NT 10-Q form code, pipeline/edgar_filing_signals.py) - a well-documented distress or accounting-problem signal on its own. Penalty-only; an on-time 10-K/10-Q carries no score signal by itself. Reads the 3-day-published SEC filings screen, not a live fetch.",
+      "max_penalty": 3.0,
+      "half_life_days": 30,
+      "max_age_days": 120
     }
   },
   "bucket_weights": {
