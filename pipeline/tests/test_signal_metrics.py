@@ -129,6 +129,47 @@ class HorizonAndCostTests(unittest.TestCase):
         self.assertEqual(ev.rank_autocorrelation(flipped)["mean_autocorrelation"], -1.0)
 
 
+class NumericKillThresholdTests(unittest.TestCase):
+    """kill_threshold_value/comparison must be a real, same-scale-as-value pair or absent
+    entirely -- never a number derived from the prose kill_threshold string, and never
+    populated for a metric where no such pair exists (a bullet chart built from a fabricated
+    threshold is worse than no chart)."""
+
+    def test_metric_leaves_the_numeric_pair_unset_unless_the_caller_provides_it(self):
+        row = sm.metric("example", "signal", "Example", value=1.0)
+        self.assertIsNone(row["kill_threshold_value"])
+        self.assertIsNone(row["comparison"])
+
+    def test_metric_carries_the_numeric_pair_through_when_provided(self):
+        row = sm.metric("example", "signal", "Example", value=1.0,
+                        kill_threshold_value=0.5, comparison="lt")
+        self.assertEqual(row["kill_threshold_value"], 0.5)
+        self.assertEqual(row["comparison"], "lt")
+
+    def test_rank_ic_publishes_its_threshold_on_the_same_scale_as_its_value(self):
+        panel = synthetic_panel()
+        row = metrics_by_id(sm.signal_metrics(panel))["rank_ic_1d"]
+        self.assertEqual(row["kill_threshold_value"], sm.MINIMUM_MEAN_IC)
+        self.assertEqual(row["comparison"], "lt")
+        # The pair has to actually agree with `breached`, or a bullet chart drawn from it
+        # would show a bar crossing the threshold line while the badge says "not breached".
+        self.assertEqual(row["value"] < row["kill_threshold_value"], row["breached"])
+
+    def test_ic_ir_publishes_its_threshold_on_the_same_scale_as_its_value(self):
+        panel = synthetic_panel()
+        row = metrics_by_id(sm.signal_metrics(panel))["ic_ir"]
+        self.assertEqual(row["kill_threshold_value"], sm.MINIMUM_IC_IR)
+        self.assertEqual(row["comparison"], "lt")
+
+    def test_metrics_with_no_numeric_form_stay_unset(self):
+        # quantile_spread's threshold is a shape condition (monotonic or not), not a
+        # magnitude -- there is no number to compare `value` against.
+        panel = synthetic_panel()
+        row = metrics_by_id(sm.signal_metrics(panel))["quantile_spread"]
+        self.assertIsNone(row["kill_threshold_value"])
+        self.assertIsNone(row["comparison"])
+
+
 class SharpeHonestyTests(unittest.TestCase):
     def test_probabilistic_sharpe_rises_with_sample_length(self):
         short = ev.probabilistic_sharpe_ratio(0.05, observations=30)

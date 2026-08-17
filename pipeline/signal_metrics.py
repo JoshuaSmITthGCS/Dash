@@ -66,9 +66,12 @@ REDUNDANT_LEG_CORRELATION = 0.7
 MAXIMUM_PBO = 0.5
 FEATURE_PSI_MINIMUM_DAYS = 60
 FEATURE_PSI_WINDOW_DAYS = 20
+FEATURE_PSI_KILL_THRESHOLD = 0.25
 DIVERGENCE_MINIMUM_OBSERVATIONS = 20
 DIVERGENCE_Z_THRESHOLD = 1.96
 PRICE_STALE_AFTER_HOURS = 36
+MAXIMUM_PERCENT_OF_ADV = 5
+SEARCH_SURVIVAL_MINIMUM = 0.95
 
 GROUPS = [
     {"id": "signal", "letter": "A", "title": "Signal quality",
@@ -108,10 +111,22 @@ _UNSET = object()
 # ---------------- metric construction ----------------
 
 def metric(identifier, group, label, *, value=None, display=None, reads=None,
-           kill_threshold=None, breached=None, cadence=None, requires_live_sample=False,
+           kill_threshold=None, kill_threshold_value=None, comparison=None,
+           breached=None, cadence=None, requires_live_sample=False,
            status=None, status_message=None, detail=None, source=None,
            observations=None, required_observations=None, backtest_reference=None):
-    """One published metric. ``status`` is derived from the value unless stated."""
+    """One published metric. ``status`` is derived from the value unless stated.
+
+    ``kill_threshold`` is the prose description shown next to the metric; it has never
+    been guaranteed to be a number, and for several metrics it fundamentally cannot be
+    (a shape condition, a comparison against a quantity this pipeline doesn't compute
+    yet). ``kill_threshold_value`` + ``comparison`` are the numeric, same-scale-as-``value``
+    pair a bullet chart needs, and are populated only where that pair genuinely exists and
+    means the same thing as ``value`` -- never derived from ``kill_threshold`` text, and
+    never fabricated for a metric that doesn't have one. ``comparison`` is ``"lt"``
+    (breach when ``value < kill_threshold_value``) or ``"gt"`` (breach when
+    ``value > kill_threshold_value``).
+    """
     if status is None:
         status = "ready" if value is not None else "unavailable"
     return {
@@ -122,6 +137,8 @@ def metric(identifier, group, label, *, value=None, display=None, reads=None,
         "display": display if display is not None else _display(value),
         "reads": reads,
         "kill_threshold": kill_threshold,
+        "kill_threshold_value": kill_threshold_value,
+        "comparison": comparison,
         "breached": breached,
         "cadence": cadence,
         "requires_live_sample": requires_live_sample,
@@ -271,12 +288,14 @@ def signal_metrics(panel):
         return [
             _pending(f"rank_ic_{label}", "signal", f"Rank IC ({label})", message,
                      reads="Spearman correlation of score against forward return.",
-                     kill_threshold=f"Mean IC < {MINIMUM_MEAN_IC}", cadence="Weekly")
+                     kill_threshold=f"Mean IC < {MINIMUM_MEAN_IC}",
+                     kill_threshold_value=MINIMUM_MEAN_IC, comparison="lt", cadence="Weekly")
             for label in HORIZON_TRADING_DAYS
         ] + [
             _pending("ic_ir", "signal", "IC-IR (annualized)", message,
                      reads="Consistency of prediction, not just its average.",
-                     kill_threshold=f"IC-IR < {MINIMUM_IC_IR}", cadence="Weekly"),
+                     kill_threshold=f"IC-IR < {MINIMUM_IC_IR}",
+                     kill_threshold_value=MINIMUM_IC_IR, comparison="lt", cadence="Weekly"),
             _pending("ic_decay", "signal", "IC decay curve", message,
                      reads="Which horizon the edge lives at.", cadence="Monthly"),
             _pending("per_leg_ic", "signal", "Per-leg IC", message,
@@ -311,13 +330,15 @@ def signal_metrics(panel):
         if not summary:
             rows.append(_pending(f"rank_ic_{label}", "signal", f"Rank IC ({label})",
                                  f"The panel carries no {label} forward returns.",
-                                 kill_threshold=f"Mean IC < {MINIMUM_MEAN_IC}", cadence="Weekly"))
+                                 kill_threshold=f"Mean IC < {MINIMUM_MEAN_IC}",
+                                 kill_threshold_value=MINIMUM_MEAN_IC, comparison="lt", cadence="Weekly"))
             continue
         rows.append(metric(
             f"rank_ic_{label}", "signal", f"Rank IC ({label})",
             value=summary["mean_ic"], detail=summary,
             reads="Spearman correlation of score against forward return.",
             kill_threshold=f"Mean IC < {MINIMUM_MEAN_IC}",
+            kill_threshold_value=MINIMUM_MEAN_IC, comparison="lt",
             breached=(summary["mean_ic"] is not None
                       and summary["mean_ic"] < MINIMUM_MEAN_IC),
             observations=summary["periods"], cadence="Weekly", source="backtest panel"))
@@ -327,6 +348,7 @@ def signal_metrics(panel):
     rows.append(metric("ic_ir", "signal", "IC-IR (annualized)", value=icir,
                        reads="Consistency of prediction, not just its average.",
                        kill_threshold=f"IC-IR < {MINIMUM_IC_IR}",
+                       kill_threshold_value=MINIMUM_IC_IR, comparison="lt",
                        breached=icir is not None and icir < MINIMUM_IC_IR,
                        detail={"horizon": graded, "t_stat": primary.get("t_stat"),
                                "hit_rate": primary.get("hit_rate")},
@@ -730,8 +752,9 @@ def cost_metrics(backtest, panel, execution=None):
                        value=adv.get("worst"), display=adv.get("display"),
                        reads="The capacity ceiling. Above a few percent of daily volume the "
                              "backtest fills stop being available in reality.",
-                       kill_threshold="Above 5% of average daily volume",
-                       breached=adv.get("worst") is not None and adv["worst"] > 5,
+                       kill_threshold=f"Above {MAXIMUM_PERCENT_OF_ADV}% of average daily volume",
+                       kill_threshold_value=MAXIMUM_PERCENT_OF_ADV, comparison="gt",
+                       breached=adv.get("worst") is not None and adv["worst"] > MAXIMUM_PERCENT_OF_ADV,
                        detail=adv, status=adv.get("status", "awaiting_input"),
                        status_message=adv.get("reason"), cadence="Monthly",
                        source="backtest panel"))
@@ -787,8 +810,9 @@ def honesty_metrics(backtest, optimizer):
     rows.append(metric("deflated_sharpe", "honesty", "Deflated Sharpe ratio",
                        value=deflated,
                        reads="Probability the Sharpe survives the number of configurations tried.",
-                       kill_threshold="Below 0.95 the result does not survive its own search",
-                       breached=deflated is not None and deflated < 0.95,
+                       kill_threshold=f"Below {SEARCH_SURVIVAL_MINIMUM} the result does not survive its own search",
+                       kill_threshold_value=SEARCH_SURVIVAL_MINIMUM, comparison="lt",
+                       breached=deflated is not None and deflated < SEARCH_SURVIVAL_MINIMUM,
                        detail={"trials": trials, "skew": round(skew, 3),
                                "kurtosis": round(kurtosis, 3),
                                "sharpe_per_observation": None if per_observation is None
@@ -801,8 +825,9 @@ def honesty_metrics(backtest, optimizer):
     rows.append(metric("probabilistic_sharpe", "honesty", "Probabilistic Sharpe ratio",
                        value=probabilistic,
                        reads="Probability the true Sharpe is above zero given this sample.",
-                       kill_threshold="Below 0.95 the sample cannot support the claim",
-                       breached=probabilistic is not None and probabilistic < 0.95,
+                       kill_threshold=f"Below {SEARCH_SURVIVAL_MINIMUM} the sample cannot support the claim",
+                       kill_threshold_value=SEARCH_SURVIVAL_MINIMUM, comparison="lt",
+                       breached=probabilistic is not None and probabilistic < SEARCH_SURVIVAL_MINIMUM,
                        observations=len(returns), cadence="Quarterly",
                        source="backtest daily returns"))
 
@@ -824,6 +849,7 @@ def honesty_metrics(backtest, optimizer):
                        reads="Chance the configuration that won the search beats the median out "
                              "of sample. Above a half, the selection process is producing noise.",
                        kill_threshold=f"PBO > {MAXIMUM_PBO}",
+                       kill_threshold_value=MAXIMUM_PBO, comparison="gt",
                        breached=pbo.get("value") is not None and pbo["value"] > MAXIMUM_PBO,
                        detail=pbo, status=pbo.get("status", "unavailable"),
                        status_message=pbo.get("reason"),
@@ -1040,7 +1066,7 @@ def feature_psi_from_pit(root=PIT_ROOT, minimum_days=FEATURE_PSI_MINIMUM_DAYS,
                 "reason": "No feature has enough observations in both PSI windows."}
     return {"status": "ready", "value": readings[0]["psi"], "days": len(days),
             "required_days": minimum_days, "worst_feature": readings[0]["feature"],
-            "breached": readings[0]["psi"] > 0.25,
+            "breached": readings[0]["psi"] > FEATURE_PSI_KILL_THRESHOLD,
             "baseline_window": [baseline_days[0]["date"], baseline_days[-1]["date"]],
             "current_window": [current_days[0]["date"], current_days[-1]["date"]],
             "features": readings}
@@ -1184,7 +1210,9 @@ def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=N
                display=None if psi.get("value") is None else
                f"{psi['value']:.3f} worst ({psi.get('worst_feature')})",
                reads="Detects when the live feature population leaves its earlier PIT window.",
-               kill_threshold="PSI above 0.25", requires_live_sample=True,
+               kill_threshold=f"PSI above {FEATURE_PSI_KILL_THRESHOLD}",
+               kill_threshold_value=FEATURE_PSI_KILL_THRESHOLD, comparison="gt",
+               requires_live_sample=True,
                breached=psi.get("breached"), status=psi.get("status"),
                status_message=psi.get("reason"), detail=psi,
                observations=psi.get("days"), required_observations=psi.get("required_days"),
