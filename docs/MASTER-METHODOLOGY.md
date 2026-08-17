@@ -865,11 +865,31 @@ normalized to sum to 1): `segment_revenue_share` (ASC 280 XBRL segment reporting
 `filing_keyword_density_trend` (change in how much of a 10-K Item 1 discusses the theme),
 `transcript_theme_salience` (same measurement on earnings-call transcripts filed via 8-K),
 `customer_concentration_to_spenders` (ASC 280 named customers matched against confirmed theme
-spenders), `hyperscaler_capex_growth`, `backlog_growth`. Each signal's raw reading is mapped to
+spenders), `spender_capex_growth` (spelled `hyperscaler_capex_growth` in the AI theme that
+introduced it — same measurement, named for that theme's cheque-writers), `backlog_growth`.
+Each signal's raw reading is mapped to
 0–100 on its own natural scale (e.g. `segment_revenue_share` at value·200, capped 100; capex/backlog
 growth at `50 + value·165`). A theme requires **at least 2 resolved signals**
 (`min_signals_required`) before it publishes a score at all — a single segment-revenue data
 point is never allowed to carry a theme alone.
+
+Two scoping rules keep filing language from standing in for exposure:
+
+- **Theme-level vs company-specific signals.** A signal declaring a `universe` (the capex
+  pull-through) is measured on the spenders, so every candidate receives the identical reading.
+  It contributes to the score and describes the demand driver, but it cannot satisfy
+  `require_leading_signal_confirmation` — a constant has no cross-sectional information, and
+  accepting it as confirmation confirmed every company at once.
+- **Sector scope.** Each theme declares `sectors`, the sectors its supply chain can sit in.
+  Out-of-scope names are not scored against the theme and never trigger a filing fetch. Without
+  it, banks and insurers ranked as top exposure to the AI hardware buildout on the strength of
+  describing their own data centers.
+
+Six themes ship: `ai_infrastructure`, `grid_electrification`, `defense_rearmament`,
+`reshoring_industrial_capacity`, `obesity_care_supply_chain`, `water_infrastructure`. Each
+publishes up to 20 rows per candidate group (leaders, sector-connected) with the
+pre-truncation group sizes alongside, and `by_ticker` indexes every scored name across every
+theme it clears — the screen's cross-theme view is built from that index.
 
 ---
 

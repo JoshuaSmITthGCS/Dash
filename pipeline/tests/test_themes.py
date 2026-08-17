@@ -58,6 +58,70 @@ class ThemeConfigTests(unittest.TestCase):
     def test_retired_themes_are_skipped_unless_requested(self):
         self.assertEqual(themes.load_themes("/nonexistent-directory"), [])
 
+    def test_every_shipped_theme_declares_a_usable_definition(self):
+        loaded = themes.load_themes()
+        self.assertGreater(len(loaded), 1, "expected the shipped theme set, not just one file")
+        for theme in loaded:
+            with self.subTest(theme=theme["id"]):
+                self.assertAlmostEqual(sum(s["weight"] for s in theme["signals"]), 1.0, places=4)
+                self.assertEqual(theme["guardrails"]["max_price_momentum_contribution"], 0.0)
+                # Unscoped themes rank on filing language alone, which is how a bank ends up
+                # published as top exposure to a hardware buildout.
+                self.assertTrue(theme["sectors"], "shipped themes must declare a sector scope")
+                self.assertTrue(theme["seed_tickers"])
+                self.assertTrue((theme.get("keywords") or {}).get("include"))
+
+    def test_a_capex_pull_through_signal_without_a_universe_is_rejected(self):
+        problems = themes.validate_theme({**BASE_THEME, "signals": [
+            {"name": "filing_keyword_density_trend", "weight": 0.5},
+            {"name": "spender_capex_growth", "weight": 0.5},   # nobody's capex to read
+        ]})
+        self.assertTrue(any("universe" in problem for problem in problems), problems)
+
+    def test_a_theme_measured_only_on_its_spenders_is_rejected(self):
+        problems = themes.validate_theme({**BASE_THEME, "signals": [
+            {"name": "spender_capex_growth", "weight": 1, "universe": ["MSFT"]},
+        ]})
+        self.assertTrue(any("company-specific" in problem for problem in problems), problems)
+
+    def test_a_signal_with_a_universe_is_marked_theme_level(self):
+        theme = build(signals=[
+            {"name": "filing_keyword_density_trend", "weight": 0.5},
+            {"name": "spender_capex_growth", "weight": 0.5, "universe": ["MSFT", "GOOGL"]},
+        ])
+        by_name = {signal["name"]: signal for signal in theme["signals"]}
+        self.assertFalse(by_name["filing_keyword_density_trend"]["theme_level"])
+        self.assertTrue(by_name["spender_capex_growth"]["theme_level"])
+
+
+class ThemeScopeTests(unittest.TestCase):
+    def test_a_theme_without_a_declared_scope_admits_everything(self):
+        theme = build()
+        self.assertTrue(themes.in_theme_scope(theme, {"sector": "Financial Services"}))
+
+    def test_scope_matching_ignores_case_and_surrounding_space(self):
+        theme = build(sectors=["Technology"])
+        self.assertTrue(themes.in_theme_scope(theme, {"sector": " technology "}))
+        self.assertFalse(themes.in_theme_scope(theme, {"sector": "Financial Services"}))
+        self.assertFalse(themes.in_theme_scope(theme, {}))
+
+    def test_an_out_of_scope_company_is_never_even_measured(self):
+        # The point is not only that the bank is absent from the published rows: an
+        # out-of-scope name must not cost a filing fetch to reject.
+        theme = build(sectors=["Technology"])
+        asked = []
+
+        def provider(ticker, _theme):
+            asked.append(ticker)
+            return {"segment_revenue_share": 0.5, "filing_keyword_density_trend": 0.4}
+
+        rows = [{"ticker": "CHIP", "sector": "Technology", "components": {"fundamentals": 70}},
+                {"ticker": "BANK", "sector": "Financial Services",
+                 "components": {"fundamentals": 90}}]
+        screen = themes.build_theme_screen([theme], rows, provider)
+        self.assertEqual(asked, ["CHIP"])
+        self.assertEqual([row["ticker"] for row in screen["themes"][0]["rows"]], ["CHIP"])
+
 
 class ExposureScoringTests(unittest.TestCase):
     def test_stronger_evidence_scores_higher(self):
@@ -96,6 +160,35 @@ class ExposureScoringTests(unittest.TestCase):
         })
         self.assertFalse(result["eligible"])
         self.assertTrue(any("leading signal" in reason for reason in result["excluded_by"]))
+
+    def test_a_theme_wide_reading_cannot_confirm_one_companys_exposure(self):
+        # The failure this closes: the spenders' capex reading is identical for every
+        # candidate, so accepting it as confirmation confirmed every company at once - which
+        # is how names whose only company-specific evidence was flat filing language were
+        # published as fully-cleared exposure.
+        theme = build(signals=[
+            {"name": "filing_keyword_density_trend", "weight": 0.5},
+            {"name": "spender_capex_growth", "weight": 0.5, "universe": ["MSFT", "GOOGL"]},
+        ])
+        theme_wide_only = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": -0.2,   # this company says less about it
+            "spender_capex_growth": 0.8,            # but the spenders are spending
+        })
+        self.assertFalse(theme_wide_only["eligible"])
+        self.assertEqual(theme_wide_only["leading_signals_fired"], [])
+        self.assertEqual(theme_wide_only["theme_level_signals_fired"], ["spender_capex_growth"])
+        self.assertEqual(theme_wide_only["company_signals_answered"], 1)
+
+        with_company_evidence = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": 0.6, "spender_capex_growth": 0.8})
+        self.assertTrue(with_company_evidence["eligible"])
+        self.assertEqual(with_company_evidence["leading_signals_fired"],
+                         ["filing_keyword_density_trend"])
+
+    def test_the_general_and_ai_specific_capex_signals_score_identically(self):
+        reading = 0.3
+        self.assertEqual(themes.normalize_signal("spender_capex_growth", reading),
+                         themes.normalize_signal("hyperscaler_capex_growth", reading))
 
     def test_price_signals_are_ignored_even_if_supplied(self):
         # Defence in depth: validation rejects them at config load, and scoring ignores
@@ -171,12 +264,61 @@ class ScreenAssemblyTests(unittest.TestCase):
             [theme], rows,
             lambda t, th: {"segment_revenue_share": 0.4, "filing_keyword_density_trend": 0.3})
         self.assertIn("AAA", screen["by_ticker"])
-        self.assertEqual(screen["by_ticker"]["AAA"][0]["theme_id"], "test_theme")
+        entry = screen["by_ticker"]["AAA"][0]
+        self.assertEqual(entry["theme_id"], "test_theme")
+        # Confidence travels with the index so a cross-theme reader can tell two
+        # well-evidenced exposures from two thin ones.
+        self.assertEqual(entry["confidence"], 0.7)
 
     def test_empty_screen_still_satisfies_the_published_contract(self):
         screen = themes.empty_screen("no SEC credentials")
         self.assertEqual(screen["themes"], [])
         self.assertIn("unavailable_reason", screen)
+
+    def test_each_candidate_group_is_published_on_its_own_quota(self):
+        # The regression this locks: one global cap let leaders take every published slot,
+        # so the sector-connected group - the only one that surfaces a name before the
+        # leaderboard does - shipped three rows out of dozens scored.
+        theme = build()
+        rows = [{"ticker": f"LEAD{index}", "candidate_source": "published_leader",
+                 "components": {"fundamentals": 90}} for index in range(5)]
+        rows += [{"ticker": f"PEER{index}", "candidate_source": "sector_peer",
+                  "components": {"fundamentals": 40}} for index in range(5)]
+        screen = themes.build_theme_screen(
+            [theme], rows,
+            lambda ticker, _theme: {"segment_revenue_share": 0.5,
+                                    "filing_keyword_density_trend": 0.4},
+            limit_per_group=2)
+        published = screen["themes"][0]["rows"]
+        sources = [row["candidate_source"] for row in published]
+        self.assertEqual(sources.count("published_leader"), 2)
+        self.assertEqual(sources.count("sector_peer"), 2)
+        # Pre-truncation sizes stay published so the UI can say how much it is hiding.
+        self.assertEqual(screen["themes"][0]["group_counts"], {"leaders": 5, "connected": 5})
+        self.assertEqual(screen["themes"][0]["count"], 10)
+
+    def test_a_holding_is_grouped_with_the_leaders_not_the_connected_names(self):
+        theme = build()
+        rows = [{"ticker": "HELD", "candidate_source": "portfolio",
+                 "components": {"fundamentals": 60}},
+                {"ticker": "PEER", "candidate_source": "sector_peer",
+                 "components": {"fundamentals": 60}}]
+        screen = themes.build_theme_screen(
+            [theme], rows,
+            lambda ticker, _theme: {"segment_revenue_share": 0.5,
+                                    "filing_keyword_density_trend": 0.4})
+        self.assertEqual(screen["themes"][0]["group_counts"], {"leaders": 1, "connected": 1})
+
+    def test_one_company_is_indexed_under_every_theme_it_is_exposed_to(self):
+        # What the cross-theme view on the screen is assembled from.
+        first, second = build(), build(id="second_theme", display_name="Second")
+        rows = [{"ticker": "AAA", "components": {"fundamentals": 70}}]
+        screen = themes.build_theme_screen(
+            [first, second], rows,
+            lambda ticker, _theme: {"segment_revenue_share": 0.4,
+                                    "filing_keyword_density_trend": 0.3})
+        self.assertEqual([entry["theme_id"] for entry in screen["by_ticker"]["AAA"]],
+                         ["test_theme", "second_theme"])
 
 
 class CandidateExpansionTests(unittest.TestCase):
@@ -238,6 +380,22 @@ class CandidateExpansionTests(unittest.TestCase):
         self.assertEqual(len(peers), 5)
         # Highest-scoring peers win the capped slots.
         self.assertEqual({row["ticker"] for row in peers}, {f"PEER{i}" for i in range(5)})
+
+    def test_peer_expansion_respects_the_themes_declared_scope(self):
+        # A peer group is coarse - business-profile groups span whole sectors - so scope is
+        # what stops a theme from adopting neighbours its supply chain cannot contain.
+        theme = build(seed_tickers=["NVDA"], sectors=["Technology"])
+        research = self._research() + [
+            {"ticker": "BANK", "sector": "Technology", "score": 70},
+        ]
+        candidates = themes.expand_theme_candidates(
+            [build(seed_tickers=["NVDA"], sectors=["Healthcare"])], research,
+            ranked=[research[0]], portfolio_symbols=[])
+        self.assertEqual({row["ticker"] for row in candidates
+                          if row["candidate_source"] == "sector_peer"}, set())
+        in_scope = themes.expand_theme_candidates(
+            [theme], research, ranked=[research[0]], portfolio_symbols=[])
+        self.assertIn("AMD", {row["ticker"] for row in in_scope})
 
     def test_a_theme_whose_seed_tickers_were_never_scored_this_run_expands_nothing(self):
         theme = build(seed_tickers=["NOTSCORED"])

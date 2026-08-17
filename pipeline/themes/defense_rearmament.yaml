@@ -1,0 +1,72 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: defense_rearmament
+  display_name: "Allied Rearmament & Munitions Capacity"
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    Allied inventories of guided weapons and air defense interceptors have been drawn down
+    faster than the industrial base can replace them, and the response is multi-year
+    procurement rather than single-year orders. That structure is unusually visible in filings
+    before it is visible in revenue: a multi-year award lands in remaining performance
+    obligation, and the capacity to deliver it lands in plant capex, several years ahead of
+    the sales line.
+
+  seed_tickers: [LMT, RTX, GD, NOC, LHX, HII, TDG, HWM, CW]
+  expand_via_tnic: true
+  sectors: [Industrials, Technology]
+  keywords:
+    include:
+      - "munitions"
+      - "solid rocket motor"
+      - "guided weapons"
+      - "missile defense"
+      - "ammunition"
+      - "multi-year procurement"
+      - "foreign military sales"
+      - "hypersonic"
+      - "production capacity expansion"
+      - "defense budget"
+    exclude:
+      # Litigation and IP language, which uses the same word for something unrelated.
+      - "defense costs"
+      - "legal defense"
+      - "defense of claims"
+      - "defense of our intellectual property"
+  sic_codes: [3761, 3764, 3812]   # guided missiles, propulsion units, search/navigation
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    # Weighted highest of the corroborating signals here because defense filers tag remaining
+    # performance obligation unusually consistently - a funded multi-year award is exactly the
+    # obligation ASC 606 is designed to disclose - so this is the one theme where backlog is a
+    # first-class read rather than an occasional one.
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.30
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    # The primes are both the buyers of subsystems and the builders of new capacity, so their
+    # capex is the demand read for everyone below them in the chain.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [LMT, RTX, GD, NOC, HII]
+      leading: true
+      weight: 0.15
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

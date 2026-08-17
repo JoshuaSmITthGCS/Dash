@@ -11,6 +11,8 @@ import DataTable from '../components/DataTable.jsx'
 import DotPlot from '../components/DotPlot.jsx'
 
 const signalTitle = (name = '') => name.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+// Theme sector scope is published lowercased, since it is matched case-insensitively.
+const titleCase = (value = '') => value.replace(/\b\w/g, (letter) => letter.toUpperCase())
 
 // Average resolved score per declared signal, across whichever rows the caller
 // considers eligible for the read (leaders, here) — never across every candidate,
@@ -38,6 +40,39 @@ const SOURCE_LABEL = {
   published_leader: 'Published leader',
   portfolio: 'Your holding',
   sector_peer: 'Sector-connected',
+}
+
+// Minimum themes a name must clear the guardrails on before it reads as a crossing point
+// rather than a coincidence of two keyword lists overlapping.
+const MULTI_THEME_MINIMUM = 2
+const MULTI_THEME_LIMIT = 15
+
+// Which structural trends each company clears the guardrails on, across every theme it was
+// scored against - not only the ones whose published rows it made. A grid contractor that is
+// also a reshoring beneficiary and an AI-buildout supplier is exposed to one buildout counted
+// three ways, which is concentration wearing the costume of diversification; the same crossing
+// is also the most direct thing this screen can say about where a trend actually converges.
+// Built from `by_ticker`, the pipeline's full index, so it is not limited to published rows.
+export function crossThemeNames(byTicker = {}, { minimum = MULTI_THEME_MINIMUM, limit = MULTI_THEME_LIMIT } = {}) {
+  return Object.entries(byTicker)
+    .map(([ticker, entries]) => {
+      const eligible = (entries || []).filter((entry) => entry.eligible)
+      const scores = eligible.map((entry) => entry.opportunity_score).filter((value) => Number.isFinite(value))
+      const confidences = eligible.map((entry) => entry.confidence).filter((value) => Number.isFinite(value))
+      return {
+        ticker,
+        themes: eligible,
+        themeCount: eligible.length,
+        bestOpportunity: scores.length ? Math.max(...scores) : null,
+        // The weakest theme in the crossing, not the average: a crossing is only as good as
+        // the thinnest evidence holding one of its legs up.
+        weakestConfidence: confidences.length ? Math.min(...confidences) : null,
+      }
+    })
+    .filter((row) => row.themeCount >= minimum)
+    .sort((left, right) => (right.themeCount - left.themeCount)
+      || ((right.bestOpportunity ?? -1) - (left.bestOpportunity ?? -1)))
+    .slice(0, limit)
 }
 
 // `.research-table` is hidden outright below 900px (see global.css) in favor of this card
@@ -93,6 +128,62 @@ function ThemeTable({ rows, onOpen }) {
   />
 }
 
+function CrossThemeCard({ row, index, onOpen }) {
+  return <article className="research-mobile-card" key={row.ticker}>
+    <div className="research-card-head">
+      <span className="rank-badge">#{index + 1}</span>
+      <CompanyLogo company={row} size={42} />
+      <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
+      <span className="mobile-score">{row.themeCount}<small>themes</small></span>
+    </div>
+    <div className="research-card-badges">
+      {row.themes.map((theme) => <span className="chip" key={theme.theme_id}>{theme.display_name || theme.theme_id}</span>)}
+    </div>
+    <dl className="research-card-metrics">
+      <div><dt>Best opportunity</dt><dd>{row.bestOpportunity ?? '–'}</dd></div>
+      <div><dt>Weakest evidence</dt><dd>{row.weakestConfidence == null ? '–' : `${Math.round(row.weakestConfidence * 100)}%`}</dd></div>
+      <div><dt>Sector</dt><dd>{row.sector || '–'}</dd></div>
+    </dl>
+    <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
+  </article>
+}
+
+function CrossThemeTable({ rows, onOpen }) {
+  return <DataTable
+    rows={rows}
+    getKey={(row) => row.ticker}
+    columns={[
+      { key: 'rank', label: 'Rank', sortable: false, cell: (row, index) => <span className="rank">#{index + 1}</span> },
+      { key: 'ticker', label: 'Company', cell: (row) => (
+        <div className="table-company company-with-logo">
+          <CompanyLogo company={row} size={34} />
+          <div><b>{row.ticker}</b><span>{row.name}</span></div>
+        </div>) },
+      { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
+      { key: 'themeCount', label: 'Themes', numeric: true, cell: (row) => <span className="mono">{row.themeCount}</span> },
+      { key: 'themes', label: 'Where it crosses', sortable: false,
+        cell: (row) => <span className="table-chip-list">{row.themes.map((theme) => (
+          <span className="chip" key={theme.theme_id}>{theme.display_name || theme.theme_id} {theme.theme_exposure_score ?? '–'}</span>
+        ))}</span> },
+      { key: 'bestOpportunity', label: 'Best opportunity', numeric: true,
+        cell: (row) => <span className="mono">{row.bestOpportunity ?? '–'}</span> },
+      { key: 'weakestConfidence', label: 'Weakest evidence', numeric: true,
+        cell: (row) => <span className="mono">{row.weakestConfidence == null ? '–' : `${Math.round(row.weakestConfidence * 100)}%`}</span> },
+      { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
+        cell: (row) => <button className="icon-button" onClick={() => onOpen(row)}
+          aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button> },
+    ]}
+    mobile={{ estimateSize: 250, renderItem: (row, index) => <CrossThemeCard row={row} index={index} onOpen={onOpen} /> }}
+  />
+}
+
+// "Showing 20 of 83" rather than a bare table: with per-group publishing caps, a reader who
+// cannot see how much was scored has no way to tell a thin theme from a truncated one.
+function GroupCount({ shown, total }) {
+  if (!total || total <= shown) return null
+  return <span className="chip">Showing {shown} of {total}</span>
+}
+
 export default function ThemeExposureScreen() {
   const { data, loading, error } = useData('advisor.json')
   const [selectedStock, setSelectedStock] = useState(null)
@@ -109,6 +200,11 @@ export default function ThemeExposureScreen() {
   }, [data])
 
   const themes = activeThemes(data?.theme_screen)
+  const crossTheme = useMemo(
+    () => crossThemeNames(data?.theme_screen?.by_ticker || {})
+      .map((row) => ({ ...byTicker.get(row.ticker), ...row })),
+    [data, byTicker],
+  )
 
   return <>
     <ScreenNavigation />
@@ -128,15 +224,58 @@ export default function ThemeExposureScreen() {
     </div>
 
     {loading ? <Loading /> : error ? <div className="card etf-state" role="alert"><strong>Theme screen unavailable</strong><span>{error.message}</span></div> : <>
-      {!themes.length ? <Empty note={data?.theme_screen?.unavailable_reason || 'No theme produced scored exposures in the latest report.'} /> : themes.map((theme) => {
+      {!themes.length ? <Empty note={data?.theme_screen?.unavailable_reason || 'No theme produced scored exposures in the latest report.'} /> : <>
+      <nav className="card theme-index" aria-label="Themes in this report">
+        <h2>Structural trends in this report</h2>
+        <ul>
+          {themes.map((theme) => (
+            <li key={theme.id}>
+              <a href={`#theme-${theme.id}`}>{theme.display_name}</a>
+              <small>{theme.eligible_count ?? theme.rows.length} names cleared the guardrails
+                {theme.count ? ` of ${theme.count} scored` : ''}</small>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {crossTheme.length > 0 && <section className="card theme-exposure-panel" aria-labelledby="cross-theme-heading">
+        <header>
+          <h2 id="cross-theme-heading">Where the themes cross
+            <InfoTag label="Where the themes cross">
+              <strong>Where the themes cross</strong>
+              <p>Companies that clear the guardrails on more than one structural trend at once.
+                Read it both ways: a name sitting in three themes is the most direct expression of
+                where those trends converge, and it is also a single position carrying three
+                correlated bets, which is concentration that looks like diversification on a
+                sector breakdown.</p>
+              <p>Counted across every theme a company was scored against, not only the themes
+                whose published rows it made.</p>
+              <strong>Weakest evidence</strong>
+              <p>The lowest share of declared signal weight that resolved among the themes this
+                name clears - a crossing is only as strong as its thinnest leg. Most rows sit well
+                below 100% today: with no curated segment or named-customer data and no transcript
+                source, the filing-keyword trend and the spenders' capex are the only signals that
+                resolve broadly, so a crossing is a lead to check rather than a confirmed
+                convergence.</p>
+            </InfoTag>
+          </h2>
+          <p>Ranked by how many themes a company clears, then by its best opportunity score in any
+            of them.</p>
+        </header>
+        <CrossThemeTable rows={crossTheme} onOpen={setSelectedStock} />
+      </section>}
+
+      {themes.map((theme) => {
         const rows = (theme.rows || []).map((row) => ({ ...byTicker.get(row.ticker), ...row }))
-        const leaders = rows
-          .filter((row) => row.candidate_source !== 'sector_peer')
-          .sort((a, b) => (b.theme_exposure_score ?? -1) - (a.theme_exposure_score ?? -1))
+        const leaderTheme = { ...theme, rows: rows.filter((row) => row.candidate_source !== 'sector_peer') }
+        // Ranked the same way the connected group is - eligible first, then opportunity, then
+        // exposure. Ordering leaders by raw exposure alone left the top of the table decided by
+        // ties, since a saturated signal puts many names at exactly 100.
+        const leaders = rankThemeExposure(leaderTheme, leaderTheme.rows.length)
         const connectedTheme = { ...theme, rows: rows.filter((row) => row.candidate_source === 'sector_peer') }
         const connected = rankThemeExposure(connectedTheme, connectedTheme.rows.length)
 
-        return <section className="card theme-exposure-panel" key={theme.id}>
+        return <section className="card theme-exposure-panel" id={`theme-${theme.id}`} key={theme.id}>
           <header>
             <h2>{theme.display_name}
               <InfoTag label="What the columns mean">
@@ -149,18 +288,29 @@ export default function ThemeExposureScreen() {
                   exposure with a business that holds up and a price that has not already run, not just
                   the purest-play, most expensive name in the theme.</p>
                 <strong>Leading signals</strong>
-                <p>How many "leading" signals fired - evidence of what a company is building, as opposed
-                  to lagging evidence like historical segment revenue. At least one is required to be
-                  eligible.</p>
+                <p>How many of this company's own leading signals fired - evidence of what it is
+                  building, as opposed to lagging evidence like historical segment revenue. Counted
+                  company by company: a theme-level reading such as the spenders' capex growth is
+                  identical for every candidate, so it describes the demand driver and never counts
+                  as confirmation that a particular company is exposed. At least one company-specific
+                  leading signal is required to be eligible.</p>
                 <strong>Eligible</strong>
                 <p>"No" means the name already trades in the top valuation decile of its sector, or no
-                  leading signal confirmed the exposure - real exposure, flagged rather than promoted.</p>
+                  company-specific leading signal confirmed the exposure - real exposure, flagged
+                  rather than promoted.</p>
               </InfoTag>
             </h2>
             <p>{theme.thesis}</p>
+            <div className="research-card-badges">
+              <span className="chip">{theme.count ?? theme.rows.length} scored</span>
+              <span className="chip">{theme.eligible_count ?? 0} cleared the guardrails</span>
+              {(theme.sectors || []).length > 0 && (
+                <span className="chip">Scope: {theme.sectors.map(titleCase).join(', ')}</span>
+              )}
+            </div>
           </header>
 
-          <h3>Leaders
+          <h3>Leaders <GroupCount shown={leaders.length} total={theme.group_counts?.leaders} />
             <InfoTag label="Leaders">
               <strong>Leaders</strong>
               <p>Names already a published top research score or one of your holdings, that also
@@ -183,7 +333,7 @@ export default function ThemeExposureScreen() {
               )}
             </>}
 
-          <h3>Connected, not yet re-rated
+          <h3>Connected, not yet re-rated <GroupCount shown={connected.length} total={theme.group_counts?.connected} />
             <InfoTag label="Connected, not yet re-rated">
               <strong>Connected, not yet re-rated</strong>
               <p>Sector/peer-group neighbours of this theme's anchor companies that are not already a
@@ -205,6 +355,7 @@ export default function ThemeExposureScreen() {
             : <ThemeTable rows={connected} onOpen={setSelectedStock} />}
         </section>
       })}
+      </>}
       <p className="disclaimer">
         A separate screen, never a modifier on the fundamentals research score. Names already in the
         top valuation decile of their sector are flagged rather than promoted – specialized thematic

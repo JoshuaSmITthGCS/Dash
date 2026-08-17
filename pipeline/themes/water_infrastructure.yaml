@@ -1,0 +1,68 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: water_infrastructure
+  display_name: "Water Infrastructure & Treatment"
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    Three mandates are landing on the same pipes at once - lead service line replacement,
+    enforceable PFAS limits, and reuse in water-stressed regions - on distribution networks
+    already decades past design life. Water utility capex is the funding mechanism and it is
+    rate-recovered rather than discretionary, which makes it one of the few multi-year demand
+    drivers that does not depend on a cycle turning.
+
+  seed_tickers: [XYL, PNR, WTS, IEX, AOS, VMI, TTEK, ACM, ECL]
+  expand_via_tnic: true
+  sectors: [Industrials, Utilities, Basic Materials]
+  keywords:
+    include:
+      - "PFAS"
+      - "lead service line"
+      - "wastewater"
+      - "water reuse"
+      - "desalination"
+      - "water treatment"
+      - "smart metering"
+      - "pipe replacement"
+      - "stormwater"
+      - "potable"
+    exclude:
+      # Consumption and packaging language rather than treatment or distribution.
+      - "bottled water"
+      - "water usage in our operations"
+  sic_codes: [3561, 3589, 4941]   # pumps, service-industry machinery, water supply
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.20
+    # Regulated water utilities: the rate base that pays for all of it.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [AWK, WTRG, CWT, SJW, AWR, MSEX]
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

@@ -88,4 +88,31 @@ describe('factor analytics', () => {
     })
     expect(result[0]).toMatchObject({ theme: 'AI', exposureScore: 70, portfolioCoveragePct: 100 })
   })
+
+  it('reads the theme keys the pipeline actually publishes', () => {
+    // theme_screen.by_ticker entries are {theme_id, display_name, theme_exposure_score, ...}.
+    // Matching only on `theme`/`score` resolved nothing, so a fully populated payload
+    // rendered the portfolio lens's "unavailable" branch.
+    const result = aggregateThemeExposure([
+      { ticker: 'AAA', currentValue: 60 },
+      { ticker: 'BBB', currentValue: 40 },
+    ], {
+      AAA: [{ theme_id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', theme_exposure_score: 90 }],
+      BBB: [{ theme_id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', theme_exposure_score: 40 }],
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({
+      theme: 'AI Infrastructure Buildout', exposureScore: 70, portfolioCoveragePct: 100,
+    })
+  })
+
+  it('covers only the weight of positions that actually carry the theme', () => {
+    const result = aggregateThemeExposure([
+      { ticker: 'AAA', currentValue: 25 },
+      { ticker: 'BBB', currentValue: 75 },
+    ], {
+      AAA: [{ theme_id: 'grid', display_name: 'Grid', theme_exposure_score: 80 }],
+    })
+    expect(result[0]).toMatchObject({ theme: 'Grid', exposureScore: 80, portfolioCoveragePct: 25 })
+  })
 })

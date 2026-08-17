@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import ThemeExposureScreen from './ThemeExposureScreen.jsx'
+import ThemeExposureScreen, { crossThemeNames } from './ThemeExposureScreen.jsx'
 import { useData } from '../lib/useData'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
@@ -24,6 +24,48 @@ const advisorData = {
         },
       ],
     }],
+  },
+}
+
+// Two themes with one company (ETN) exposed to both, mirroring what the pipeline publishes:
+// per-theme `group_counts` carry the pre-truncation sizes and `by_ticker` indexes every
+// scored name across every theme, not just the rows that made a published table.
+const multiThemeData = {
+  research: [
+    { ticker: 'NVDA', name: 'NVIDIA', sector: 'Technology', score: 90, stance: 'ATTRACTIVE' },
+    { ticker: 'ETN', name: 'Eaton', sector: 'Industrials', score: 80, stance: 'ATTRACTIVE' },
+  ],
+  screen_universe: [],
+  theme_screen: {
+    by_ticker: {
+      NVDA: [{ theme_id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', theme_exposure_score: 85, opportunity_score: 60, eligible: true }],
+      ETN: [
+        { theme_id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', theme_exposure_score: 74, opportunity_score: 71, eligible: true },
+        { theme_id: 'grid_electrification', display_name: 'Grid & Electrification Buildout', theme_exposure_score: 88, opportunity_score: 79, eligible: true },
+      ],
+    },
+    themes: [
+      {
+        id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', thesis: 'A capex cycle.',
+        count: 12, eligible_count: 9, sectors: ['technology', 'industrials'],
+        group_counts: { leaders: 9, connected: 3 },
+        rows: [{
+          ticker: 'NVDA', name: 'NVIDIA', theme_exposure_score: 85, opportunity_score: 60,
+          eligible: true, leading_signals_fired: ['filing_keyword_density_trend'],
+          candidate_source: 'published_leader',
+        }],
+      },
+      {
+        id: 'grid_electrification', display_name: 'Grid & Electrification Buildout', thesis: 'Load growth.',
+        count: 6, eligible_count: 4, sectors: ['industrials', 'utilities'],
+        group_counts: { leaders: 1, connected: 5 },
+        rows: [{
+          ticker: 'ETN', name: 'Eaton', theme_exposure_score: 88, opportunity_score: 79,
+          eligible: true, leading_signals_fired: ['filing_keyword_density_trend'],
+          candidate_source: 'published_leader',
+        }],
+      },
+    ],
   },
 }
 
@@ -101,6 +143,84 @@ describe('Theme Exposure screen', () => {
     expect(screen.getByText('Filing Keyword Density Trend · leading')).toBeInTheDocument()
     expect(screen.getByText('Hyperscaler Capex Growth · leading')).toBeInTheDocument()
     expect(screen.getByText('80', { selector: '.dot-plot-value' })).toBeInTheDocument() // mean of 100 and 60
+  })
+
+  it('indexes every theme in the report with a link to its panel', () => {
+    useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+    render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+    const index = screen.getByRole('navigation', { name: 'Themes in this report' })
+    expect(within(index).getByRole('link', { name: 'AI Infrastructure Buildout' }))
+      .toHaveAttribute('href', '#theme-ai_infrastructure')
+    expect(within(index).getByRole('link', { name: 'Grid & Electrification Buildout' }))
+      .toHaveAttribute('href', '#theme-grid_electrification')
+  })
+
+  it('groups companies that clear more than one theme into a crossing section', () => {
+    useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+    render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+    const crossing = screen.getByRole('heading', { name: /Where the themes cross/ }).closest('section')
+    // ETN clears both themes; NVDA clears one, so it is not a crossing point.
+    expect(within(crossing).getAllByText('ETN').length).toBeGreaterThan(0)
+    expect(within(crossing).queryByText('NVDA')).toBeNull()
+  })
+
+  it('says how much of a group it is showing when the pipeline truncated it', () => {
+    useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+    render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+    // group_counts records the pre-truncation size: 1 leader published out of 9 scored.
+    expect(screen.getAllByText('Showing 1 of 9').length).toBeGreaterThan(0)
+  })
+
+  describe('crossThemeNames', () => {
+    const byTicker = {
+      ONE: [{ theme_id: 'a', eligible: true, opportunity_score: 90 }],
+      TWO: [{ theme_id: 'a', eligible: true, opportunity_score: 50 },
+        { theme_id: 'b', eligible: true, opportunity_score: 60 }],
+      THREE: [{ theme_id: 'a', eligible: true, opportunity_score: 10 },
+        { theme_id: 'b', eligible: true, opportunity_score: 20 },
+        { theme_id: 'c', eligible: true, opportunity_score: 30 }],
+      FLAGGED: [{ theme_id: 'a', eligible: false, opportunity_score: 99 },
+        { theme_id: 'b', eligible: false, opportunity_score: 99 }],
+    }
+
+    it('ranks by how many themes a name clears, then by its best opportunity', () => {
+      expect(crossThemeNames(byTicker).map((row) => row.ticker)).toEqual(['THREE', 'TWO'])
+    })
+
+    it('reports the best opportunity across the themes a name clears', () => {
+      expect(crossThemeNames(byTicker).find((row) => row.ticker === 'TWO').bestOpportunity).toBe(60)
+    })
+
+    it('reports the thinnest evidence among the themes, not the average', () => {
+      const thin = crossThemeNames({
+        TWO: [{ theme_id: 'a', eligible: true, opportunity_score: 50, confidence: 0.8 },
+          { theme_id: 'b', eligible: true, opportunity_score: 60, confidence: 0.35 }],
+      })
+      expect(thin[0].weakestConfidence).toBe(0.35)
+    })
+
+    it('leaves the evidence unreported rather than guessing when no theme published it', () => {
+      const missing = crossThemeNames({
+        TWO: [{ theme_id: 'a', eligible: true }, { theme_id: 'b', eligible: true }],
+      })
+      expect(missing[0].weakestConfidence).toBeNull()
+    })
+
+    it('counts only themes whose guardrails the name actually cleared', () => {
+      // FLAGGED sits in two themes but cleared neither, so it is not a crossing point -
+      // it is the same already-priced-in exposure flagged twice.
+      expect(crossThemeNames(byTicker).map((row) => row.ticker)).not.toContain('FLAGGED')
+    })
+
+    it('needs more than one theme before a name counts as a crossing', () => {
+      expect(crossThemeNames(byTicker).map((row) => row.ticker)).not.toContain('ONE')
+    })
   })
 
   it('shows an empty state instead of crashing when no theme produced scored rows', () => {

@@ -1,0 +1,71 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: obesity_care_supply_chain
+  display_name: "Metabolic Care Supply Chain"
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    Incretin (GLP-1) demand has outrun the manufacturing that serves it, and the binding
+    constraint is physical - peptide API, sterile fill-finish lines, single-use bioprocessing
+    consumables and injector devices. The drug owners are the obvious expression of the trend
+    and the one already priced as such; the constraint is held by their suppliers, whose
+    capacity additions are contracted years ahead and disclosed as capex and obligations.
+
+  seed_tickers: [TMO, DHR, WST, BDX, STE, RVTY, A, MTD, ICUI]
+  expand_via_tnic: true
+  sectors: [Healthcare, Basic Materials, Industrials]
+  keywords:
+    include:
+      - "GLP-1"
+      - "incretin"
+      - "fill-finish"
+      - "aseptic"
+      - "sterile injectable"
+      - "autoinjector"
+      - "peptide"
+      - "single-use technologies"
+      - "bioprocessing"
+      - "contract development and manufacturing"
+    exclude:
+      # Benefits-plan and wellness language, which mentions the same conditions for reasons
+      # that say nothing about what a company manufactures.
+      - "wellness programs"
+      - "employee health benefits"
+      - "healthcare costs for our employees"
+  sic_codes: [3841, 2836, 8731]   # medical instruments, biological products, commercial research
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    # The franchise owners doing the building. Their capex is the clearest published measure
+    # of how much manufacturing this theme is actually pulling into existence.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [LLY, NVO, MRK, PFE]
+      leading: true
+      weight: 0.20
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

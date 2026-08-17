@@ -300,3 +300,14 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .allocation-bucket-amount { text-align: right; display: grid; }.allocation-bucket-amount strong { font: var(--fw-bold) var(--fs-lg) var(--font-mono); }.allocation-bucket-amount span { color: var(--text-faint); font-size: var(--fs-2xs); }
 @media (max-width: 680px) { .allocation-bucket-row { grid-template-columns: 1fr; text-align: left; }.allocation-bucket-amount { text-align: left; } }
 .metrics { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); }.metric { min-width: 66px; padding: var(--sp-2) var(--sp-2-5); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); }.metric b, .metric span { display: block; }.metric b { font: var(--fw-bold) var(--fs-sm) var(--font-mono); }.metric span { color: var(--text-faint); font-size: var(--fs-2xs); text-transform: uppercase; }.metric.good b { color: var(--up); }.metric.rich b { color: var(--warn); }
+
+/* Theme exposure: with six structural trends on one route, the index is the only thing that
+   makes the page navigable, and the crossing chips need to wrap rather than force a cell wide. */
+.theme-index h2 { font-size: var(--fs-base); }
+.theme-index ul { margin-top: var(--sp-3); padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-2); }
+.theme-index li { padding: var(--sp-2-5) var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); display: grid; gap: var(--sp-1); }
+.theme-index a { font: var(--fw-bold) var(--fs-xs) var(--font-body); color: var(--text); text-decoration: none; }
+.theme-index a:hover { color: var(--accent); }
+.theme-index small { color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.4; }
+.table-chip-list { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.table-chip-list .chip { white-space: normal; text-transform: none; letter-spacing: 0; }

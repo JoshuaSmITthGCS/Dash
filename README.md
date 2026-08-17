@@ -93,6 +93,16 @@ rather than promoted. The result is published as an independent screen and never
 research score — blending a forward-looking thematic bet into the fundamentals score would make that
 score impossible to interpret.
 
+Six themes ship today: AI infrastructure, grid & electrification, allied rearmament, reshoring
+capacity, the metabolic-care supply chain, and water infrastructure. Two rules keep a keyword list
+from standing in for exposure. A signal that declares a spender `universe` is measured on those
+spenders, so it is identical for every candidate — it describes the demand driver and can never be
+the evidence that one particular company is exposed. And each theme declares the sectors its supply
+chain can sit in, because filing language alone will happily rank a bank as top exposure to a
+hardware buildout on the strength of its own data centers. Since a company can clear several themes
+at once, the screen groups those crossings explicitly: convergence and correlated concentration are
+the same fact read two ways.
+
 ### ETFs
 
 The ~125-fund ETF watchlist is scored separately on performance, risk, total cost of ownership, liquidity, and structure.

@@ -1,5 +1,9 @@
 # Adding a new structural trend means dropping another file in this directory.
 # No scoring code changes. See pipeline/themes.py for how these fields are consumed.
+#
+# `hyperscaler_capex_growth` below is this theme's spelling of the general
+# `spender_capex_growth` signal every other theme declares - same measurement, named for the
+# cheque-writers it was first pointed at.
 theme:
   id: ai_infrastructure
   display_name: "AI Infrastructure Buildout"
@@ -17,6 +21,11 @@ theme:
   # these exist to seed peer expansion and to sanity-check the keyword list.
   seed_tickers: [NVDA, AVGO, MU, TSM, VRT, ETN, ASML, KLAC, LRCX, AMAT]
   expand_via_tnic: true     # text-based product-space neighbours (Hoberg-Phillips TNIC)
+  # Where this supply chain can sit. Without a scope, filing language alone ranked banks and
+  # insurers as top exposure to an accelerator buildout - they describe their own data centers
+  # in the same words, and the theme-wide capex reading then supplied the second signal, so a
+  # row cleared the minimum on evidence that said nothing about building any of it.
+  sectors: [Technology, Industrials, Utilities]
   keywords:
     include:
       - "accelerated computing"

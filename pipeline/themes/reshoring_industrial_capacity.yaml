@@ -1,0 +1,71 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: reshoring_industrial_capacity
+  display_name: "Reshoring & Industrial Capacity"
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    Policy and post-2020 supply-chain experience are pulling semiconductor, pharmaceutical and
+    heavy-industrial capacity back onshore. A plant announcement is not the investable event:
+    the spending runs through engineering and construction, process equipment and automation
+    for years before the facility produces anything, and those contractors and equipment
+    makers book it as backlog while the operator books only the capex.
+
+  seed_tickers: [AMAT, LRCX, KLAC, ENTG, TER, ROK, EME, FIX, PWR, DOV, ITW]
+  expand_via_tnic: true
+  sectors: [Industrials, Technology, Basic Materials]
+  keywords:
+    include:
+      - "reshoring"
+      - "onshoring"
+      - "nearshoring"
+      - "domestic manufacturing"
+      - "CHIPS Act"
+      - "greenfield"
+      - "capacity expansion"
+      - "factory automation"
+      - "industrial automation"
+      - "supply chain resilience"
+    exclude:
+      # Complaint language, not buildout language. Every filer wrote about supply chain
+      # disruption after 2020; almost none of them were building capacity because of it.
+      - "supply chain disruptions"
+      - "supply chain challenges"
+      - "supply chain constraints"
+  sic_codes: [3559, 3823, 1731]   # semiconductor equipment, process instruments, electrical work
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.20
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.15
+    # The operators building the plants. Their capex is the money this theme is about, and it
+    # is spent a long way upstream of their own revenue.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [TSM, INTC, TXN, MU, ON, GFS]
+      leading: true
+      weight: 0.20
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2
