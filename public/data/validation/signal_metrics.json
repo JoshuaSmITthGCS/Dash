@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-17T16:58:12.824292+00:00",
+  "generated_at": "2026-08-17T17:43:31.580367+00:00",
   "groups": [
     {
       "id": "signal",
@@ -253,8 +253,8 @@
       "display": "3 of 8 legs below 0.02",
       "reads": "Which legs predict on their own rather than riding the blend.",
       "kill_threshold": "Any leg IC below 0.02",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": 0,
+      "comparison": "gt",
       "breached": true,
       "cadence": "Monthly",
       "requires_live_sample": false,
@@ -283,8 +283,8 @@
       "display": "4 legs hurting the composite",
       "reads": "Marginal contribution of each leg. The test that says whether assigned weights are defensible.",
       "kill_threshold": "Negative delta means the leg is hurting the composite",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": 0,
+      "comparison": "gt",
       "breached": true,
       "cadence": "Annually or on any refit",
       "requires_live_sample": false,
@@ -365,8 +365,8 @@
       "display": "0 redundant pairs",
       "reads": "Redundancy between legs. Two correlated legs are one leg counted twice.",
       "kill_threshold": "Correlation above 0.7",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": 0,
+      "comparison": "gt",
       "breached": false,
       "cadence": "Monthly",
       "requires_live_sample": false,
@@ -593,8 +593,8 @@
       "display": "market +0.81 size +0.53 value +0.11 profitability +0.21 investment +0.15 momentum +0.38",
       "reads": "The factor bets the portfolio is making, intended or not.",
       "kill_threshold": "Persistent negative momentum loading explains a capture spread",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": -0.1,
+      "comparison": "lt",
       "breached": false,
       "cadence": "Weekly",
       "requires_live_sample": false,
@@ -759,6 +759,34 @@
           0.22,
           0.21,
           0.21
+        ]
+      },
+      "source": "backtest equity curve"
+    },
+    {
+      "id": "rolling_beta_swing",
+      "group": "construction",
+      "label": "Rolling beta swing (60d window)",
+      "value": 1.12,
+      "display": "1.12 (max \u2212 min over the window)",
+      "reads": "How unstable the 60-day beta estimate itself has been -- the number rolling_beta_60d's point estimate can't show on its own.",
+      "kill_threshold": "Swing wider than 0.3 makes excess-return figures unstable",
+      "kill_threshold_value": 0.3,
+      "comparison": "gt",
+      "breached": true,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "window": 60,
+        "observations": 1182,
+        "beta_range": [
+          0.19,
+          1.31
         ]
       },
       "source": "backtest equity curve"
@@ -972,6 +1000,31 @@
             "benchmark_classified_weight": 1.0
           }
         ]
+      },
+      "source": "prospective sector-weight history"
+    },
+    {
+      "id": "sector_classification_coverage",
+      "group": "construction",
+      "label": "Sector classification coverage",
+      "value": 100.0,
+      "display": "100.0%",
+      "reads": "Share of strategy weight the sector classifier could place. The active-weight figure above is unreliable below this coverage.",
+      "kill_threshold": "Below 80%",
+      "kill_threshold_value": 80.0,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Daily",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 7,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "as_of": "2026-08-17T16:53:48.144521+00:00",
+        "strategy_classified_weight": 1.0,
+        "benchmark_classified_weight": 1.0
       },
       "source": "prospective sector-weight history"
     },
@@ -1328,8 +1381,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1352,8 +1405,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1365,7 +1418,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1376,8 +1429,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1388,7 +1441,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -1448,8 +1501,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1472,8 +1525,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1485,7 +1538,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1496,8 +1549,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1508,7 +1561,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -1568,8 +1621,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1592,8 +1645,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1605,7 +1658,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1616,8 +1669,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1628,7 +1681,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -1688,8 +1741,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1712,8 +1765,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1725,7 +1778,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1736,8 +1789,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1748,7 +1801,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -1808,8 +1861,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1832,8 +1885,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1845,7 +1898,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1856,8 +1909,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1868,7 +1921,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -1928,8 +1981,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1952,8 +2005,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1965,7 +2018,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1976,8 +2029,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1988,7 +2041,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -2048,8 +2101,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2072,8 +2125,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2085,7 +2138,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2096,8 +2149,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2108,7 +2161,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -2168,8 +2221,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2192,8 +2245,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2205,7 +2258,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2216,8 +2269,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2228,7 +2281,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -2256,17 +2309,28 @@
       "display": null,
       "reads": "The decay alarm. Live IC below the backtest confidence interval means the edge is gone or was never there.",
       "kill_threshold": "Live IC below the backtest 95% interval",
-      "kill_threshold_value": null,
-      "comparison": null,
-      "breached": null,
+      "kill_threshold_value": -0.0091,
+      "comparison": "lt",
+      "breached": false,
       "cadence": "Weekly",
       "requires_live_sample": true,
       "status": "accumulating",
       "status_message": "accumulating, 0 of 24 periods",
       "observations": 0,
       "required_observations": 24,
-      "backtest_reference": null,
-      "detail": null,
+      "backtest_reference": 0.0356,
+      "detail": {
+        "backtest_reference": {
+          "horizon": "21d",
+          "periods": 59,
+          "mean_ic": 0.0356,
+          "standard_error": 0.0228,
+          "confidence_interval_95": [
+            -0.0091,
+            0.0803
+          ]
+        }
+      },
       "source": "prospective IC harness"
     },
     {
@@ -2304,8 +2368,8 @@
       "display": "+12.92 bps/day",
       "reads": "Mean prospective production return versus the historical backtest mean.",
       "kill_threshold": "Absolute mean divergence above the 95% backtest sampling interval",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": 76.591,
+      "comparison": "gt",
       "breached": false,
       "cadence": "Daily",
       "requires_live_sample": true,
@@ -2323,6 +2387,7 @@
         "backtest_mean_daily_return": 0.0006406302787775525,
         "divergence_bps_per_day": 12.916456875536543,
         "z_score": 0.33053959748309536,
+        "threshold_bps": 76.591,
         "breached": false,
         "reason": "Directional only until 20 matched live periods.",
         "periods": [
@@ -2346,8 +2411,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2370,8 +2435,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2383,7 +2448,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2394,8 +2459,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2406,7 +2471,7 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
+            "gross_return": -0.0016418990650899639,
             "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
@@ -2434,8 +2499,8 @@
       "display": "2 critical refresh issues",
       "reads": "Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
       "kill_threshold": "Any missing, unstamped, stale, or duplicate current price row",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": 0,
+      "comparison": "gt",
       "breached": true,
       "cadence": "Daily",
       "requires_live_sample": true,
@@ -2485,8 +2550,8 @@
       "display": null,
       "reads": "Intended against actual weights at the close.",
       "kill_threshold": "Any unexplained difference above 10 bps",
-      "kill_threshold_value": null,
-      "comparison": null,
+      "kill_threshold_value": 10,
+      "comparison": "gt",
       "breached": null,
       "cadence": "Daily",
       "requires_live_sample": true,
@@ -2504,11 +2569,11 @@
     }
   ],
   "summary": {
-    "total": 40,
-    "ready": 26,
-    "breached": 8,
-    "sample_free_total": 24,
-    "sample_free_ready": 24,
+    "total": 42,
+    "ready": 28,
+    "breached": 9,
+    "sample_free_total": 26,
+    "sample_free_ready": 26,
     "needs_sample_total": 16
   },
   "sources": {
@@ -2523,8 +2588,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ed535af384a6600675eb7dd09cbb86329acb1bcc",
+    "git_commit_sha": "551c12c251c3f082cc4525b208e60efc4681d706",
     "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
-    "generated_at": "2026-08-17T16:58:12.824292+00:00"
+    "generated_at": "2026-08-17T17:43:31.580367+00:00"
   }
 }

@@ -129,6 +129,53 @@ class HorizonAndCostTests(unittest.TestCase):
         self.assertEqual(ev.rank_autocorrelation(flipped)["mean_autocorrelation"], -1.0)
 
 
+def _price_curve_with_beta_regime_shift():
+    """A portfolio that tracks the benchmark at beta ~0.5 for 90 sessions, then ~1.8 for
+    90 more -- long enough for two non-overlapping 60-day rolling windows on either side
+    of the shift, so the swing between them is real and unambiguous rather than noise."""
+    benchmark_returns = [0.01 if index % 2 == 0 else -0.008 for index in range(180)]
+    regimes = [0.5] * 90 + [1.8] * 90
+    portfolio_returns = [regime * value for regime, value in zip(regimes, benchmark_returns)]
+
+    def curve(returns):
+        price, points = 100.0, [{"date": "2026-01-01", "value": 100.0}]
+        for index, value in enumerate(returns):
+            price *= 1 + value
+            points.append({"date": f"2026-{1 + index // 28:02d}-{1 + index % 28:02d}", "value": price})
+        return points
+
+    return curve(portfolio_returns), curve(benchmark_returns)
+
+
+class RollingBetaSwingTests(unittest.TestCase):
+    def test_swing_gets_its_own_metric_matching_the_point_estimate_breach(self):
+        # rolling_beta_60d's value (a point beta, ~1) and its own kill_threshold (a swing,
+        # ~0.3) are on different scales -- a bullet built from that pair would show the
+        # point estimate crossing a line that was never about it. rolling_beta_swing
+        # publishes the swing itself against its own real threshold instead.
+        portfolio_curve, benchmark_curve = _price_curve_with_beta_regime_shift()
+        backtest = {"portfolio": {"history": portfolio_curve, "rebalances": []},
+                    "benchmark_spy": {"history": benchmark_curve}}
+        rows = metrics_by_id(sm.construction_metrics(backtest, None, []))
+        point_estimate, swing = rows["rolling_beta_60d"], rows["rolling_beta_swing"]
+        self.assertGreater(swing["value"], sm.MAXIMUM_BETA_SWING)
+        self.assertEqual(swing["kill_threshold_value"], sm.MAXIMUM_BETA_SWING)
+        self.assertEqual(swing["comparison"], "gt")
+        self.assertTrue(swing["breached"])
+        self.assertEqual(point_estimate["breached"], swing["breached"])
+        self.assertIsNone(point_estimate["kill_threshold_value"])
+
+    def test_factor_betas_publishes_its_threshold_on_the_momentum_loadings_own_scale(self):
+        # Unlike rolling_beta_60d/sector_active_weights, factor_betas' value (the momentum
+        # loading itself) and its kill_threshold (a loading below -0.1) are already the same
+        # quantity -- no second metric needed, just the numeric pair. Fitting a real OLS
+        # regression to a specific loading needs 24+ months of matched factor data, so this
+        # checks the wiring is unconditional rather than fabricating that fixture.
+        row = metrics_by_id(sm.construction_metrics(None, None, []))["factor_betas"]
+        self.assertEqual(row["kill_threshold_value"], sm.MOMENTUM_LOADING_KILL_THRESHOLD)
+        self.assertEqual(row["comparison"], "lt")
+
+
 class NumericKillThresholdTests(unittest.TestCase):
     """kill_threshold_value/comparison must be a real, same-scale-as-value pair or absent
     entirely -- never a number derived from the prose kill_threshold string, and never
@@ -168,6 +215,19 @@ class NumericKillThresholdTests(unittest.TestCase):
         row = metrics_by_id(sm.signal_metrics(panel))["quantile_spread"]
         self.assertIsNone(row["kill_threshold_value"])
         self.assertIsNone(row["comparison"])
+
+    def test_leg_count_metrics_publish_zero_as_their_real_threshold(self):
+        # per_leg_ic, drop_one_leg and leg_correlation each publish a *count* (of dead
+        # legs, harmful legs, redundant pairs) as `value`, and each already treats any
+        # nonzero count as breach -- so although the prose kill_threshold names a
+        # different per-leg quantity, zero is a real, same-scale threshold for the count.
+        panel = synthetic_panel()
+        rows = metrics_by_id(sm.signal_metrics(panel))
+        for identifier in ("per_leg_ic", "drop_one_leg", "leg_correlation"):
+            row = rows[identifier]
+            self.assertEqual(row["kill_threshold_value"], 0, identifier)
+            self.assertEqual(row["comparison"], "gt", identifier)
+            self.assertEqual(row["value"] > 0, row["breached"], identifier)
 
 
 class SharpeHonestyTests(unittest.TestCase):
@@ -231,6 +291,75 @@ class LiveMonitoringTests(unittest.TestCase):
         self.assertEqual(result["status"], "ready")
         self.assertGreater(result["value"], 0)
         self.assertTrue(result["breached"])
+        # threshold_bps is the same-scale (bps/day) form of the z-test bound above --
+        # a breached divergence's magnitude must actually clear it.
+        self.assertIsNotNone(result["threshold_bps"])
+        self.assertGreater(abs(result["value"]), result["threshold_bps"])
+
+    def test_signed_bound_reproduces_the_absolute_value_test_from_either_side(self):
+        # Same underlying |value| > bound test either direction, expressed as the
+        # one-sided lt/gt pair the metric contract supports -- never a fabricated number,
+        # only a choice of which side of zero the already-real bound applies to.
+        self.assertEqual(sm._signed_bound(12.9, 5.0), (5.0, "gt"))
+        self.assertEqual(sm._signed_bound(-12.9, 5.0), (-5.0, "lt"))
+        self.assertEqual(sm._signed_bound(None, 5.0), (None, None))
+        self.assertEqual(sm._signed_bound(1.0, None), (None, None))
+
+    def test_divergence_bullet_threshold_agrees_with_the_real_breach_flag(self):
+        for live_returns in ([0.02] * 20, [-0.02] * 20, [0.0007] * 20):
+            history = [{"date": f"2026-01-{index + 1:02d}", "value": 100 * (1.001 ** index)}
+                       for index in range(40)]
+            result = sm.live_backtest_divergence(
+                {"portfolio": {"history": history}}, {"returns": live_returns, "periods": []})
+            threshold_value, comparison = sm._signed_bound(result["value"], result["threshold_bps"])
+            if comparison == "gt":
+                bullet_breach = result["value"] > threshold_value
+            else:
+                bullet_breach = result["value"] < threshold_value
+            self.assertEqual(bullet_breach, result["breached"], live_returns)
+
+    def test_live_ic_compares_against_a_real_backtest_confidence_interval(self):
+        # The backtest reference has to come from the panel's own IC series (mean +/-
+        # z * standard error), not the live estimate's self-referential interval --
+        # comparing a value against its own CI would (near-)never breach.
+        panel = synthetic_panel()
+        low_ic_validation = {"variants": {"champion": {"1M": {
+            "mean_rank_ic": -0.5, "periods_accumulated": 6, "minimum_periods": 24,
+            "status_message": "accumulating",
+        }}}}
+        rows = metrics_by_id(sm.monitoring_metrics(
+            {"days": 30, "refreshes": 30}, low_ic_validation, panel=panel,
+            pit_root="/definitely/missing/pit", universe_path="/definitely/missing/universe.jsonl"))
+        row = rows["live_vs_backtest_ic"]
+        self.assertIsNotNone(row["kill_threshold_value"])
+        self.assertEqual(row["comparison"], "lt")
+        self.assertLess(row["value"], row["kill_threshold_value"])
+        self.assertTrue(row["breached"])
+        self.assertIsNotNone(row["backtest_reference"])
+        # A live IC comfortably inside the backtest's own range must not breach.
+        healthy_ic_validation = {"variants": {"champion": {"1M": {
+            "mean_rank_ic": row["backtest_reference"], "periods_accumulated": 6,
+            "minimum_periods": 24, "status_message": "accumulating",
+        }}}}
+        healthy = metrics_by_id(sm.monitoring_metrics(
+            {"days": 30, "refreshes": 30}, healthy_ic_validation, panel=panel,
+            pit_root="/definitely/missing/pit",
+            universe_path="/definitely/missing/universe.jsonl"))["live_vs_backtest_ic"]
+        self.assertFalse(healthy["breached"])
+
+    def test_live_ic_stays_unset_without_a_panel(self):
+        # No backtest panel means no backtest-side confidence interval to compare against
+        # -- kill_threshold_value must stay unset rather than compare against nothing.
+        ic_validation = {"variants": {"champion": {"1M": {
+            "mean_rank_ic": 0.01, "periods_accumulated": 6, "minimum_periods": 24,
+        }}}}
+        row = metrics_by_id(sm.monitoring_metrics(
+            {"days": 30, "refreshes": 30}, ic_validation, panel=None,
+            pit_root="/definitely/missing/pit",
+            universe_path="/definitely/missing/universe.jsonl"))["live_vs_backtest_ic"]
+        self.assertIsNone(row["kill_threshold_value"])
+        self.assertIsNone(row["comparison"])
+        self.assertFalse(row["breached"])
 
     def test_execution_export_populates_cost_and_reconciliation_metrics(self):
         execution = {
@@ -264,8 +393,63 @@ class LiveMonitoringTests(unittest.TestCase):
         self.assertEqual(result["value"], 0)
         self.assertEqual(result["universe_churn"]["added"], ["A"])
 
+    def test_position_reconciliation_publishes_its_threshold_in_bps(self):
+        # value and kill_threshold are already both "worst unexplained difference, in bps"
+        # -- the same quantity, just extracted rather than derived from the prose string.
+        execution = {
+            "intended_positions": {"A": 0.6, "B": 0.4},
+            "actual_positions": {"A": 0.59, "B": 0.0},
+        }
+        row = metrics_by_id(sm.monitoring_metrics(
+            {"days": 30, "refreshes": 30}, None, execution=execution,
+            pit_root="/definitely/missing/pit",
+            universe_path="/definitely/missing/universe.jsonl"))["position_reconciliation"]
+        self.assertEqual(row["kill_threshold_value"], sm.UNEXPLAINED_POSITION_DIFFERENCE_BPS)
+        self.assertEqual(row["comparison"], "gt")
+        self.assertEqual(row["value"] > row["kill_threshold_value"], row["breached"])
+
+    def test_data_quality_counters_publishes_zero_as_its_real_threshold(self):
+        # value is a count of critical issues (missing/stale/duplicate rows) and breach is
+        # already "any issue at all" -- same count-vs-zero pattern as per_leg_ic etc.
+        with tempfile.TemporaryDirectory() as root:
+            rows = [{"ticker": "A", "refresh_id": "r1", "recorded_at": "2026-01-02T20:00:00+00:00",
+                     "data_as_of": "2026-01-02T19:00:00+00:00", "price": 10, "quality_flags": []},
+                    {"ticker": "B", "refresh_id": "r1", "recorded_at": "2026-01-02T20:00:00+00:00",
+                     "price": None, "quality_flags": []}]
+            with open(os.path.join(root, "2026-01-02.jsonl"), "w") as handle:
+                for row in rows:
+                    handle.write(json.dumps(row) + "\n")
+            row = metrics_by_id(sm.monitoring_metrics(
+                {"days": 30, "refreshes": 30}, None, pit_root=root,
+                universe_path="/definitely/missing/universe.jsonl"))["data_quality_counters"]
+        self.assertEqual(row["kill_threshold_value"], 0)
+        self.assertEqual(row["comparison"], "gt")
+        self.assertEqual(row["value"] > 0, row["breached"])
+
 
 class SectorWeightMetricTests(unittest.TestCase):
+    def test_coverage_gets_its_own_metric_on_its_own_scale(self):
+        # sector_active_weights' value (largest active bet, in pp) and its kill_threshold
+        # (classification coverage, a fraction) are different quantities -- coverage needs
+        # its own metric to carry a real same-scale threshold rather than being paired
+        # against a value that means something else.
+        rows = metrics_by_id(sm.construction_metrics(None, None, [{
+            "as_of": "2026-08-14T12:00:00+00:00", "strategy": "production",
+            "benchmark": "SPY", "strategy_classified_weight": 0.6,
+            "benchmark_classified_weight": 1.0,
+            "strategy_sector_weights": {"technology": 0.6, "energy": 0.4},
+            "benchmark_sector_weights": {"technology": 0.4, "energy": 0.6},
+            "active_sector_weights": {"technology": 0.2, "energy": -0.2},
+        }]))
+        coverage = rows["sector_classification_coverage"]
+        self.assertEqual(coverage["value"], 60.0)
+        self.assertEqual(coverage["kill_threshold_value"], 80.0)
+        self.assertEqual(coverage["comparison"], "lt")
+        self.assertTrue(coverage["breached"])
+        # Both metrics describe the same underlying coverage shortfall, so their breach
+        # flags must agree even though only one of them now has a numeric bullet pair.
+        self.assertEqual(rows["sector_active_weights"]["breached"], coverage["breached"])
+
     def test_latest_prospective_snapshot_publishes_active_weights(self):
         rows = sm.construction_metrics(None, None, [{
             "as_of": "2026-08-14T12:00:00+00:00", "strategy": "production",

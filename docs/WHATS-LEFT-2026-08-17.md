@@ -65,7 +65,9 @@ live screenshots in both themes wherever the page isn't Firebase-gated.
 
 ## What's next
 
-In priority order:
+In priority order. **1 and 2 are both done as of 2026-08-17** — kept here as
+the record of what was found and fixed, per this doc's own convention. **3 is
+the only item actually left.**
 
 ### 1. Empty states — done (2026-08-17), one real bug found and fixed
 Swept the app for empty states that render nothing useful (a blank table, a
@@ -91,35 +93,58 @@ one (`ComparisonTables.test.jsx`), plus a live screenshot confirming no
 regression to the populated case. Everything else swept clean — no other
 changes made this pass.
 
-### 2. Phase 4 remainder — real gaps, not chart-building tasks
-Two separate things, both documented in full in `docs/REDESIGN-STATUS.md`'s
-Phase 4 section:
+### 2. Phase 4 remainder — done as of 2026-08-17, one stale claim corrected, three metrics genuinely still blocked
+Full account in `docs/REDESIGN-STATUS.md`'s Phase 4 section. Both things this
+item used to list are resolved or reclassified:
 
-- **`StockDetailModal`'s score-history line is a genuine data gap.** No
-  per-row time series of the *score* is published anywhere short of the
-  31 MB `score-history.json` that was already deleted this session for being
-  unread. Needs an actual pipeline change: a small per-row score-history
-  series, sized for the browser, added to `report_snapshot()` or similar in
-  `pipeline/fetch_advisor.py`. This is Python/pipeline work, not frontend.
-- **14 of `SignalMetricsPanel`'s 40 metrics still show no bullet chart,
-  correctly** — `pipeline/signal_metrics.py`'s `metric()` already has the
-  `kill_threshold_value`/`comparison` mechanism (added this session for the
-  other 9), these 14 just don't have a valid same-scale pair yet. They split
-  into three real categories, not one to-do:
-  - `per_leg_ic`/`leg_correlation`/`drop_one_leg` compare a *count* against
-    an implicit zero — needs a semantic decision about what to republish,
-    not just extraction.
-  - `rolling_beta_60d`/`sector_active_weights` compare a quantity that isn't
-    `value` at all — needs a structural field change.
-  - `quantile_spread`/`alpha_cost_crossover`/`breakeven_gross_alpha` have no
-    numeric comparator today; `breakeven_gross_alpha`'s ("IC-implied expected
-    return") isn't computed anywhere in the codebase — a methodology gap.
-  - `live_vs_backtest_ic`/`live_vs_backtest_divergence` have a computable
-    bound one line away but are lower priority while the live sample is
-    young.
-
-  **Do not fake or approximate any of these** — that rule is stated in
-  `metric()`'s own docstring and was followed strictly the first time.
+- **`StockDetailModal`'s score-history line was NOT a data gap — the doc note
+  was stale.** `pipeline/explainability.py`'s `build_score_history()` +
+  `attach_explainability()` already publish a small, bounded per-row
+  `explainability.score_history` field (built from `pit_store`, the same
+  cheap point-in-time source the metrics work below uses — never the deleted
+  31 MB file), and `ScoreExplainability.jsx`'s `ScoreHistory` component is
+  already wired into `StockDetailModal` reading exactly that field. Confirmed
+  live in the browser (Search → CRUS → Explore the evidence → Research score
+  over time): it correctly renders "Score history is accumulating — 1 of 6
+  stored months" rather than a chart, because production hasn't accumulated
+  six distinct calendar months yet — the same self-resolving "young live
+  sample" state as `distribution_metrics` and `live_vs_backtest_ic` below,
+  not a broken or missing feature. No code changed; this was a doc
+  correction only.
+- **7 more of `SignalMetricsPanel`'s metrics now carry a real numeric
+  threshold**, closing all the mechanically-extractable gaps: `per_leg_ic`,
+  `drop_one_leg`, `leg_correlation` and `data_quality_counters` publish a
+  *count*, and each already treated "count > 0" as breach — `0` is a real,
+  same-scale threshold for a count, just never stated as a number before.
+  `factor_betas` and `position_reconciliation` already had a same-scale
+  value/threshold pair in the code (a momentum loading vs. `-0.1`, a bps
+  figure vs. `10`) that simply hadn't been passed through. `live_vs_backtest_ic`
+  now compares the live IC against a *real* backtest-derived 95% confidence
+  interval (mean ± `1.96 × standard_error` from the backtest panel's own IC
+  series at the matching horizon — same method `ic_harness.py` already uses
+  for its own interval, not a new formula) instead of the metric silently
+  never setting `breached` at all, which is what it did before this pass.
+  `live_vs_backtest_divergence` got a same-scale bps bound too, oriented to
+  whichever side of zero the current divergence sits on (`_signed_bound()`)
+  so a genuinely two-sided `|z| > threshold` test can still use the
+  contract's one-sided `lt`/`gt` pair honestly. `rolling_beta_60d` and
+  `sector_active_weights` each gained a **new sibling metric**
+  (`rolling_beta_swing`, `sector_classification_coverage`) instead of a pair
+  on the original card, because the original's `value` and its own
+  `kill_threshold` are different quantities on different scales (a point
+  beta vs. a swing; a largest-active-weight percentage vs. a coverage
+  fraction) — pairing them would have shown one number crossing a line that
+  was never about it. Verified: `pipeline/tests/test_signal_metrics.py` green
+  (43 tests, +10 new), `signal_metrics.json` regenerated and confirmed live
+  in both themes.
+- **3 metrics remain correctly without a bullet — genuine methodology gaps,
+  not left undone by oversight:** `quantile_spread`'s threshold is a shape
+  condition (monotonic or not), not a magnitude; `alpha_cost_crossover`'s
+  `value` is a string horizon label, not a number; `breakeven_gross_alpha`'s
+  comparator ("IC-implied expected return") is still not computed anywhere
+  in the codebase. **Do not fake or approximate any of these** — that rule
+  is stated in `metric()`'s own docstring and was followed strictly again
+  this pass.
 
 ### 3. Smaller
 - `og:image`/`og:url` in `index.html` are root-relative because the deploy
