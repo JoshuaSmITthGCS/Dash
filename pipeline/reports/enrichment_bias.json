@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T12:05:25.771431+00:00",
+  "generated_at": "2026-08-17T16:58:05.281724+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -7,15 +7,15 @@
       "total_rows": 40,
       "categories": {
         "accounting_quality": {
-          "scored": 35,
+          "scored": 40,
           "total": 40
         },
         "capital_allocation": {
-          "scored": 35,
+          "scored": 40,
           "total": 40
         },
         "financial_health": {
-          "scored": 32,
+          "scored": 30,
           "total": 40
         },
         "growth": {
@@ -37,15 +37,15 @@
       "total_rows": 839,
       "categories": {
         "accounting_quality": {
-          "scored": 112,
+          "scored": 129,
           "total": 839
         },
         "capital_allocation": {
-          "scored": 113,
+          "scored": 130,
           "total": 839
         },
         "financial_health": {
-          "scored": 797,
+          "scored": 799,
           "total": 839
         },
         "growth": {
@@ -57,58 +57,56 @@
           "total": 839
         },
         "valuation": {
-          "scored": 815,
+          "scored": 816,
           "total": 839
         }
       }
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 147,
-    "non_enriched_count": 732,
+    "enriched_count": 169,
+    "non_enriched_count": 710,
     "score": {
       "enriched": {
-        "n": 147,
-        "mean": 71.41,
-        "median": 75.2,
-        "stdev": 12.55
+        "n": 169,
+        "mean": 71.34,
+        "median": 73.2,
+        "stdev": 11.02
       },
       "non_enriched": {
-        "n": 732,
-        "mean": 62.6,
-        "median": 63.45,
-        "stdev": 9.52
+        "n": 710,
+        "mean": 62.03,
+        "median": 63.05,
+        "stdev": 9.03
       }
     },
     "sector_distribution": {
       "enriched": {
-        "Financial Services": 46,
-        "Technology": 35,
+        "Financial Services": 53,
+        "Technology": 38,
+        "Energy": 17,
         "Healthcare": 16,
-        "Energy": 12,
-        "Consumer Cyclical": 9,
-        "Industrials": 8,
-        "FINANCIAL SERVICES": 4,
+        "Consumer Cyclical": 14,
+        "Industrials": 12,
+        "Basic Materials": 5,
         "Consumer Defensive": 4,
+        "Communication Services": 4,
         "Utilities": 4,
-        "Communication Services": 3,
-        "Basic Materials": 3,
-        "BASIC MATERIALS": 1,
         "Real Estate": 1,
         "Unknown": 1
       },
       "non_enriched": {
-        "Industrials": 130,
-        "Technology": 117,
-        "Consumer Cyclical": 104,
+        "Industrials": 126,
+        "Technology": 114,
+        "Consumer Cyclical": 99,
         "Healthcare": 84,
-        "Financial Services": 75,
+        "Financial Services": 72,
         "Real Estate": 52,
         "Consumer Defensive": 52,
-        "Basic Materials": 34,
+        "Basic Materials": 33,
         "Utilities": 30,
-        "Energy": 27,
-        "Communication Services": 24,
+        "Communication Services": 23,
+        "Energy": 22,
         "ETF": 2,
         "Unknown": 1
       }
