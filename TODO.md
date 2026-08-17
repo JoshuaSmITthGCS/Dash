@@ -565,15 +565,20 @@ components (`ScatterChart`, `DotPlot`, used across 6 pages) plus
   published anywhere short of the 31 MB `score-history.json` this doc already
   says not to fetch in the browser. Needs a pipeline change, out of scope here.
 
-### Phase 5 — page-by-page pass — Dashboard and Portfolio done
+### Phase 5 — page-by-page pass — Dashboard, Portfolio, Picks done
 Every page now inherits the new tokens and card system; the per-page composition
 work (hierarchy, one headline number per widget, the shared screen-page skeleton,
 real empty states for `InstitutionalActivity`'s permanent `results: []`) is done
-for Dashboard and Portfolio, not started for the rest. Portfolio: comparison
+for Dashboard, Portfolio, and Picks, not started for the rest. Portfolio: comparison
 tables moved to `DataTable`, a real 11px-floor bug fixed (holding-card cost-basis
 select was `fontSize: 9`), 6 static inline styles converted to classes,
-sector-allocation card links through to Diversification. Next in traffic order:
-Picks.
+sector-allocation card links through to Diversification. Picks: found (via
+DataTable's desktop `<table>` mounting all 1,002 rows unvirtualized — fixed, see
+below) and fixed one real hierarchy bug — the Bucket planner, a secondary
+what-if tool, rendered above the research list the page's own copy says is its
+job, pushing every company card below the fold on every viewport; reordered,
+no logic changes. Next in traffic order: SwingScreen, which also needs its
+Phase 2d decomposition (below) done alongside its page pass.
 
 ### Phase 6 — dead code + payload — done
 Eight of nine unreachable lib files deleted (`evidenceStrength`,

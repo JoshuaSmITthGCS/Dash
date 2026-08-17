@@ -540,10 +540,13 @@ test exercised a virtualized list closely enough to hit the gap.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · rest not started
-Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → Picks → SwingScreen +
-screens family → Finances/Planning/Insights/Watchlist/Markets →
-Methodology/Glossary/Settings/Alerts → empty states.
+### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · PICKS LIGHT-TOUCH · rest not started
+Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
+SwingScreen + screens family → Finances/Planning/Insights/Watchlist/Markets →
+Methodology/Glossary/Settings/Alerts → empty states. Picks is struck because its
+pass is complete, not because it got the Dashboard-style treatment — see §1, it
+needed one hierarchy fix, not a rebuild. Next: SwingScreen, which also still
+needs its Phase 2d decomposition (below) — same combined treatment Portfolio got.
 
 **Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
 27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
@@ -600,9 +603,27 @@ table silently mounted **1,002 real `<tr>` elements** inside its own 72dvh
 internal-scroll region on every load. The same gap was independently confirmed
 on `FastGrowthScreen` (~880 rows), `CongressTrades` (up to ~1,160), and three
 `ResearchScreen`-backed screens (~300 rows each) — five pages total, not just
-Picks. Fixed at the shared `DataTable` level (below), not per-page. The actual
-Phase 5 visual/hierarchy pass on Picks — the thing this note started out to do
-— has not happened yet.
+Picks. Fixed at the shared `DataTable` level (below), not per-page.
+
+**Picks — one real hierarchy fix, not a ground-up pass.** Unlike Dashboard,
+Picks didn't need restructuring — it's a sophisticated, already-well-built page
+(ranking models, a peer-relative allocation planner, style/sector tilt, entry
+timing) with no dead weight or duplicated apparatus to remove. One genuine
+`DESIGN.md`-adjacent problem found by screenshot, not assumption: the page's own
+copy states its job as "Compare the ranked evidence behind every published
+company," but the **Bucket planner** (a secondary what-if allocation tool, empty
+until a dollar figure is typed in) rendered *above* the stock/ETF pools —
+pushing every research card below the fold on every viewport. Measured on a
+390px screenshot: scrolling a full screen height still left the reader inside
+the planner's explanatory text, no company card visible yet. Fixed with a pure
+JSX reorder (same components, same props, no logic changes) — the planner now
+renders after the research pools and the empty-state, immediately before the
+disclaimer. Verified: `npm run lint && npm test && npm run build` green (789
+tests), `typefloor.mjs`/`a11ycheck.mjs` clean, before/after screenshots at
+1440px and 390px in both themes confirming the first research card is now
+visible after one scroll instead of one and a half. Also struck a stale gap
+note in this doc (above) claiming Picks lacks layered metric disclosure — it
+doesn't lack it, current code already has it.
 
 ### Phase 2d — decompose the giants · PORTFOLIO DONE
 | File | Lines |
