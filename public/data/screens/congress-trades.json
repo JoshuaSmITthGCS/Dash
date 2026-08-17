@@ -1,36 +1,429 @@
 {
   "schema_version": "1.1.0",
   "model_version": "congress-trades-v1.2.0",
-  "generated_at": "2026-08-10T14:18:56.778902+00:00",
+  "generated_at": "2026-08-17T13:39:07.206423+00:00",
   "status": "partial",
   "reason_code": "SOME_SOURCES_UNAVAILABLE",
   "publish_window_days": 120,
-  "history_days": 120,
+  "history_days": 127,
   "late_filing_threshold_days": 45,
   "rare_trader_minimum_history_days": 90,
   "concentrated_size_floor": 50000,
   "collection": {
-    "disclosures_fetched": 1162,
-    "new_disclosures": 0,
-    "disclosures_stored": 1162,
+    "disclosures_fetched": 1169,
+    "new_disclosures": 17,
+    "disclosures_stored": 1179,
     "failures": [
-      "fmp-senate: FMP senate-latest request failed with HTTP 429",
-      "fmp-house: FMP house-latest request failed with HTTP 429",
+      "fmp-senate: FMP senate-latest request failed with HTTP 402",
+      "fmp-house: FMP house-latest request failed with HTTP 402",
       "mirror-senate: senate disclosure dataset is no longer public (HTTP 403 at https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json) - set CONGRESS_SENATE_DATASET_URL to a live mirror",
       "mirror-house: house disclosure dataset is no longer public (HTTP 403 at https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json) - set CONGRESS_HOUSE_DATASET_URL to a live mirror"
     ],
     "source_counts": {
-      "senate-efd": 1162
+      "senate-efd": 1169
     }
   },
   "summary": {
-    "trades": 1162,
-    "filings_estimated": 41,
-    "volume_upper": 101865000.0,
-    "politicians": 18,
-    "issuers": 860
+    "trades": 1169,
+    "filings_estimated": 43,
+    "volume_upper": 106820000.0,
+    "politicians": 20,
+    "issuers": 872
   },
   "results": [
+    {
+      "amount": "$50,001 - $100,000",
+      "asset_description": "Manassas VA GO Public Improvement Refunding Bonds Rate/Coupon: 4.0% Matures: 2032-01-01",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-14",
+      "district": "Warner, Mark (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/047c4167-e0a9-44d4-a2bf-5477eb6b20ab/",
+      "owner": "Self",
+      "representative": "Mark R Warner",
+      "symbol": null,
+      "transaction_date": "2026-07-07",
+      "transaction_type": "Purchase",
+      "amount_lower": 50001.0,
+      "amount_upper": 100000.0,
+      "filing_delay_days": 38,
+      "flags": [
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$50,001 - $100,000",
+      "asset_description": "Alexandria VA GO Capital Improvement Bonds Rate/Coupon: 5.0% Matures: 2031-12-15",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-14",
+      "district": "Warner, Mark (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/047c4167-e0a9-44d4-a2bf-5477eb6b20ab/",
+      "owner": "Self",
+      "representative": "Mark R Warner",
+      "symbol": null,
+      "transaction_date": "2026-07-02",
+      "transaction_type": "Purchase",
+      "amount_lower": 50001.0,
+      "amount_upper": 100000.0,
+      "filing_delay_days": 43,
+      "flags": [
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$100,001 - $250,000",
+      "asset_description": "Virginia Beach VA GO Public Improvement Bonds Rate/Coupon: 5.0% Matures: 2031-02-01",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-14",
+      "district": "Warner, Mark (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/047c4167-e0a9-44d4-a2bf-5477eb6b20ab/",
+      "owner": "Self",
+      "representative": "Mark R Warner",
+      "symbol": null,
+      "transaction_date": "2026-07-02",
+      "transaction_type": "Purchase",
+      "amount_lower": 100001.0,
+      "amount_upper": 250000.0,
+      "filing_delay_days": 43,
+      "flags": [
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$500,001 - $1,000,000",
+      "asset_description": "Ansett Aerospace Holdings LLC - Regaero Holdings Pty Ltd Company: Regaero Holdings Pty Ltd (Melbourne, Australia) Description: Aviation Training Facilities",
+      "asset_type": "Non-Public Stock",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": "Asset of, and sale made at the direction of, Ansett Aerospace Holdings LLC. It is unclear whether filer's indirect interest through multiple layers of ownership requires reporting the transaction. Filer is reporting in the interest of public disclosure.",
+      "disclosure_date": "2026-08-13",
+      "district": "Sheehy, Tim (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/e15641c6-d632-4b7a-82d1-45c242b1515a/",
+      "owner": "Self",
+      "representative": "Timothy P Sheehy",
+      "symbol": null,
+      "transaction_date": "2025-06-28",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 500001.0,
+      "amount_upper": 1000000.0,
+      "filing_delay_days": 411,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$50,001 - $100,000",
+      "asset_description": "Max Ventures New World Opportunities Fund LP - Sana Labs AB Company: Sana Labs AB (Stockholm, Sweden) Description: Education/Training",
+      "asset_type": "Non-Public Stock",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": "Asset of, and sale made at the direction of, Max Ventures New World Opportunities Fund LP. It is unclear whether filer's indirect interest through multiple layers of ownership requires reporting the transaction. Filer is reporting in the interest of public disclosure.",
+      "disclosure_date": "2026-08-13",
+      "district": "Sheehy, Tim (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/e15641c6-d632-4b7a-82d1-45c242b1515a/",
+      "owner": "Self",
+      "representative": "Timothy P Sheehy",
+      "symbol": null,
+      "transaction_date": "2025-11-04",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 50001.0,
+      "amount_upper": 100000.0,
+      "filing_delay_days": 282,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$1,001 - $15,000",
+      "asset_description": "WCAS XIV Co-Investors LLC - Grant Street Group Company: Grant Street Group (Pittsburgh, PA) Description: Software Company",
+      "asset_type": "Non-Public Stock",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": "Asset of, and investment made at the direction of, WCAS XIV Co-Investors LLC subsidiary. It is unclear whether filer's indirect interest through multiple layers of ownership requires reporting the transaction. Filer is reporting in the interest of public disclosure.",
+      "disclosure_date": "2026-08-13",
+      "district": "Sheehy, Tim (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/e15641c6-d632-4b7a-82d1-45c242b1515a/",
+      "owner": "Self",
+      "representative": "Timothy P Sheehy",
+      "symbol": null,
+      "transaction_date": "2025-11-03",
+      "transaction_type": "Purchase",
+      "amount_lower": 1001.0,
+      "amount_upper": 15000.0,
+      "filing_delay_days": 283,
+      "flags": [
+        "LATE_FILING"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$1,001 - $15,000",
+      "asset_description": "WCAS XIV Co-Investors LLC - AIA Contract Documents Company: AIA Contract Documents (Washington, DC) Description: Construction Contract Software",
+      "asset_type": "Non-Public Stock",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": "Asset of, and investment made at the direction of, WCAS XIV Co-Investors LLC subsidiary. It is unclear whether filer's indirect interest through multiple layers of ownership requires reporting the transaction. Filer is reporting in the interest of public disclosure.",
+      "disclosure_date": "2026-08-13",
+      "district": "Sheehy, Tim (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/e15641c6-d632-4b7a-82d1-45c242b1515a/",
+      "owner": "Self",
+      "representative": "Timothy P Sheehy",
+      "symbol": null,
+      "transaction_date": "2025-07-08",
+      "transaction_type": "Purchase",
+      "amount_lower": 1001.0,
+      "amount_upper": 15000.0,
+      "filing_delay_days": 401,
+      "flags": [
+        "LATE_FILING"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$1,001 - $15,000",
+      "asset_description": "WCAS XIV Co-Investors LLC - Constitution Surgery Alliance Company: Constitution Surgery Alliance (Avon, CT) Description: Healthcare Company",
+      "asset_type": "Non-Public Stock",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": "Asset of, and investment made at the direction of, WCAS XIV Co-Investors LLC subsidiary. It is unclear whether filer's indirect interest through multiple layers of ownership requires reporting the transaction. Filer is reporting in the interest of public disclosure.",
+      "disclosure_date": "2026-08-13",
+      "district": "Sheehy, Tim (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/e15641c6-d632-4b7a-82d1-45c242b1515a/",
+      "owner": "Self",
+      "representative": "Timothy P Sheehy",
+      "symbol": null,
+      "transaction_date": "2025-06-16",
+      "transaction_type": "Purchase",
+      "amount_lower": 1001.0,
+      "amount_upper": 15000.0,
+      "filing_delay_days": 423,
+      "flags": [
+        "LATE_FILING"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$500,001 - $1,000,000",
+      "asset_description": "Central Texas Regional Mobility Auth Revenue Bond Rate/Coupon: 5.0% Matures: 2040-01-01",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-13",
+      "district": "Scott, Rick (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/f0a05c3b-66e0-4287-a388-454e2b4c823d/",
+      "owner": "Self",
+      "representative": "Rick Scott",
+      "symbol": null,
+      "transaction_date": "2025-02-07",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 500001.0,
+      "amount_upper": 1000000.0,
+      "filing_delay_days": 552,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$100,001 - $250,000",
+      "asset_description": "Port of Seattle Washington Revenue Bond Rate/Coupon: 5.0% Matures: 05/01/2026",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-13",
+      "district": "Scott, Rick (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/f0a05c3b-66e0-4287-a388-454e2b4c823d/",
+      "owner": "Self",
+      "representative": "Rick Scott",
+      "symbol": null,
+      "transaction_date": "2025-02-07",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 100001.0,
+      "amount_upper": 250000.0,
+      "filing_delay_days": 552,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$250,001 - $500,000",
+      "asset_description": "Port of Seattle Washington Revenue Bond Rate/Coupon: 5.0% Matures: 05/01/2026",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-13",
+      "district": "Scott, Rick (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/f0a05c3b-66e0-4287-a388-454e2b4c823d/",
+      "owner": "Spouse",
+      "representative": "Rick Scott",
+      "symbol": null,
+      "transaction_date": "2025-02-07",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 250001.0,
+      "amount_upper": 500000.0,
+      "filing_delay_days": 552,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$100,001 - $250,000",
+      "asset_description": "Charlotte NC Water & Sewer Sys Revenue Bond Rate/Coupon: 5.0% Matures: 07/01/2054",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-13",
+      "district": "Scott, Rick (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/f0a05c3b-66e0-4287-a388-454e2b4c823d/",
+      "owner": "Self",
+      "representative": "Rick Scott",
+      "symbol": null,
+      "transaction_date": "2025-02-07",
+      "transaction_type": "Purchase",
+      "amount_lower": 100001.0,
+      "amount_upper": 250000.0,
+      "filing_delay_days": 552,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$500,001 - $1,000,000",
+      "asset_description": "Charlotte NC Water & Sewer Sys Revenue Bond Rate/Coupon: 5.0% Matures: 07/01/2054",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-13",
+      "district": "Scott, Rick (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/f0a05c3b-66e0-4287-a388-454e2b4c823d/",
+      "owner": "Self",
+      "representative": "Rick Scott",
+      "symbol": null,
+      "transaction_date": "2025-02-07",
+      "transaction_type": "Purchase",
+      "amount_lower": 500001.0,
+      "amount_upper": 1000000.0,
+      "filing_delay_days": 552,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$250,001 - $500,000",
+      "asset_description": "Charlotte NC Water & Sewer Sys Revenue Bond Rate/Coupon: 5.0% Matures: 07/01/2054",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-13",
+      "district": "Scott, Rick (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/f0a05c3b-66e0-4287-a388-454e2b4c823d/",
+      "owner": "Spouse",
+      "representative": "Rick Scott",
+      "symbol": null,
+      "transaction_date": "2025-02-07",
+      "transaction_type": "Purchase",
+      "amount_lower": 250001.0,
+      "amount_upper": 500000.0,
+      "filing_delay_days": 552,
+      "flags": [
+        "LATE_FILING",
+        "CONCENTRATED_SIZE"
+      ],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$1,001 - $15,000",
+      "asset_description": "Freeport McMoran Rate/Coupon: 9.5% Matures: 2031-06-01",
+      "asset_type": "Corporate Bond",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-10",
+      "district": "Fetterman, John (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/c993b04b-6773-47e2-9b61-ab5dfe9e68b1/",
+      "owner": "Child",
+      "representative": "John Fetterman",
+      "symbol": null,
+      "transaction_date": "2026-07-24",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 1001.0,
+      "amount_upper": 15000.0,
+      "filing_delay_days": 17,
+      "flags": [],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$1,001 - $15,000",
+      "asset_description": "Hasbro Inc Note Rate/Coupon: 3.55% Matures: 2026-11-19",
+      "asset_type": "Corporate Bond",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-10",
+      "district": "Fetterman, John (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/c993b04b-6773-47e2-9b61-ab5dfe9e68b1/",
+      "owner": "Child",
+      "representative": "John Fetterman",
+      "symbol": null,
+      "transaction_date": "2026-07-24",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 1001.0,
+      "amount_upper": 15000.0,
+      "filing_delay_days": 17,
+      "flags": [],
+      "rare_trader_evaluated": true
+    },
+    {
+      "amount": "$1,001 - $15,000",
+      "asset_description": "Venus Tex Independent Sch Dist Rate/Coupon: 5.25% Matures: 2055-08-15",
+      "asset_type": "Municipal Security",
+      "chamber": "senate",
+      "collected_at": "2026-08-17T13:39:07.198643+00:00",
+      "comment": null,
+      "disclosure_date": "2026-08-10",
+      "district": "Fetterman, John (Senator)",
+      "link": "https://efdsearch.senate.gov/search/view/ptr/c993b04b-6773-47e2-9b61-ab5dfe9e68b1/",
+      "owner": "Child",
+      "representative": "John Fetterman",
+      "symbol": null,
+      "transaction_date": "2026-07-07",
+      "transaction_type": "Sale (Full)",
+      "amount_lower": 1001.0,
+      "amount_upper": 15000.0,
+      "filing_delay_days": 34,
+      "flags": [],
+      "rare_trader_evaluated": true
+    },
     {
       "amount": "$100,001 - $250,000",
       "asset_description": "BERY - Berry Global Group, Inc. (Exchanged) Amcor plc Ordinary Shares (Received)",
@@ -2274,7 +2667,11 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 30.09,
+      "price_latest": 103.7,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 244.63
     },
     {
       "amount": "$1,001 - $15,000",
@@ -2399,7 +2796,11 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 30.0,
+      "price_latest": 103.7,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 245.67
     },
     {
       "amount": "$1,001 - $15,000",
@@ -2628,7 +3029,11 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 30.68,
+      "price_latest": 103.7,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 238.01
     },
     {
       "amount": "$15,001 - $50,000",
@@ -2842,6 +3247,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 824,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -2866,7 +3272,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 824,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -3924,7 +4329,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 20.8,
+      "price_latest": 11.98,
+      "price_as_of": "2025-08-28",
+      "return_since_purchase_pct": -42.4
     },
     {
       "amount": "$15,001 - $50,000",
@@ -6539,7 +6948,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 69.91,
+      "price_latest": 77.015,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 10.16
     },
     {
       "amount": "$15,001 - $50,000",
@@ -6679,7 +7092,11 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 355.28,
+      "price_latest": 340.73,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -4.1
     },
     {
       "amount": "$1,001 - $15,000",
@@ -7397,7 +7814,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 19.92,
+      "price_latest": 23.785,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 19.4
     },
     {
       "amount": "$1,001 - $15,000",
@@ -8968,7 +9389,11 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 165.17,
+      "price_latest": 226.975,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 37.42
     },
     {
       "amount": "$1,001 - $15,000",
@@ -9179,7 +9604,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 7.96,
+      "price_latest": 10.82,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 35.93
     },
     {
       "amount": "$1,001 - $15,000",
@@ -9735,7 +10164,11 @@
         "SAME_SECTOR_REPEAT",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 358.96,
+      "price_latest": 491.31,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 36.87
     },
     {
       "amount": "$1,001 - $15,000",
@@ -10635,7 +11068,11 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 242.49,
+      "price_latest": 258.805,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 6.73
     },
     {
       "amount": "$1,001 - $15,000",
@@ -11792,7 +12229,11 @@
       "flags": [
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 807.6,
+      "price_latest": 1042.535,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 29.09
     },
     {
       "amount": "$1,001 - $15,000",
@@ -11860,6 +12301,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -12051,7 +12493,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 77.19,
+      "price_latest": 88.72,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 14.94
     },
     {
       "amount": "$1,001 - $15,000",
@@ -12168,7 +12614,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 92.42,
+      "price_latest": 106.54,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 15.28
     },
     {
       "amount": "$1,001 - $15,000",
@@ -12356,7 +12806,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 295.52,
+      "price_latest": 362.39,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 22.63
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13301,6 +13755,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -13352,7 +13807,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 50.31,
+      "price_latest": 48.2,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -4.19
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13448,7 +13907,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 259.02,
+      "price_latest": 398.6,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 53.89
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13469,6 +13932,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -13565,7 +14029,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -13785,7 +14248,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 361.83,
+      "price_latest": 340.73,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -5.83
     },
     {
       "amount": "$1,001 - $15,000",
@@ -13806,6 +14273,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -13951,6 +14419,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -14026,7 +14495,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 86.81,
+      "price_latest": 106.92,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 23.17
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14191,6 +14664,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -14386,7 +14860,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 66.02,
+      "price_latest": 95.08,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 44.02
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14869,7 +15347,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 153.04,
+      "price_latest": 139.75,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -8.68
     },
     {
       "amount": "$1,001 - $15,000",
@@ -14890,10 +15372,15 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 43.59,
+      "price_latest": 60.835,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 39.56
     },
     {
       "amount": "$1,001 - $15,000",
@@ -15151,7 +15638,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 143.06,
+      "price_latest": 173.57,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 21.33
     },
     {
       "amount": "$1,001 - $15,000",
@@ -15505,7 +15996,11 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 167.52,
+      "price_latest": 226.975,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 35.49
     },
     {
       "amount": "$1,001 - $15,000",
@@ -15670,7 +16165,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 51.37,
+      "price_latest": 40.235,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -21.68
     },
     {
       "amount": "$1,001 - $15,000",
@@ -16367,7 +16866,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 93.43,
+      "price_latest": 78.16,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -16.34
     },
     {
       "amount": "$50,001 - $100,000",
@@ -16749,7 +17252,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 356.77,
+      "price_latest": 491.31,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 37.71
     },
     {
       "amount": "$1,001 - $15,000",
@@ -16892,7 +17399,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 36.32,
+      "price_latest": 43.9,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 20.87
     },
     {
       "amount": "$1,001 - $15,000",
@@ -16964,7 +17475,11 @@
         "SAME_SECTOR_REPEAT",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 246.63,
+      "price_latest": 306.34,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 24.21
     },
     {
       "amount": "$15,001 - $50,000",
@@ -16988,7 +17503,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 525.72,
+      "price_latest": 587.66,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 11.78
     },
     {
       "amount": "$15,001 - $50,000",
@@ -17460,7 +17979,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 615.84,
+      "price_latest": 606.82,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -1.46
     },
     {
       "amount": "$1,001 - $15,000",
@@ -17817,6 +18340,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -17916,7 +18440,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 240.45,
+      "price_latest": 258.805,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 7.63
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18061,7 +18589,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 43.13,
+      "price_latest": 103.7,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 140.44
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18371,7 +18903,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 471.85,
+      "price_latest": 404.27,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -14.32
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18443,7 +18979,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 802.89,
+      "price_latest": 1042.535,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 29.85
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18636,7 +19176,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 72.98,
+      "price_latest": 86.32,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 18.28
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18732,7 +19276,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 282.81,
+      "price_latest": 368.6,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 30.33
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18900,7 +19448,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 11.37,
+      "price_latest": 14.37,
+      "price_as_of": "2026-08-14",
+      "return_since_purchase_pct": 26.39
     },
     {
       "amount": "$1,001 - $15,000",
@@ -18945,6 +19497,7 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -18996,7 +19549,11 @@
         "BUY_SELL_FLIP",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 276.98,
+      "price_latest": 338.09,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 22.06
     },
     {
       "amount": "$1,001 - $15,000",
@@ -19741,7 +20298,11 @@
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 983.86,
+      "price_latest": 955.07,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": -2.93
     },
     {
       "amount": "$1,001 - $15,000",
@@ -20027,6 +20588,7 @@
       "amount_upper": 50000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -20875,7 +21437,11 @@
         "LATE_FILING",
         "CONCENTRATED_SIZE"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 248.8,
+      "price_latest": 306.34,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 23.13
     },
     {
       "amount": "$1,001 - $15,000",
@@ -21040,7 +21606,6 @@
       "amount_upper": 15000.0,
       "filing_delay_days": 116,
       "flags": [
-        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -21356,6 +21921,7 @@
       "amount_upper": 50000.0,
       "filing_delay_days": 116,
       "flags": [
+        "SAME_SECTOR_REPEAT",
         "NOVEL_TICKER",
         "LATE_FILING"
       ],
@@ -22211,7 +22777,11 @@
       "flags": [
         "NOVEL_TICKER"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 396.47,
+      "price_latest": 398.6,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 0.54
     },
     {
       "amount": "$1,001 - $15,000",
@@ -23012,7 +23582,11 @@
         "NOVEL_TICKER",
         "RARE_TRADER"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 77.17,
+      "price_latest": 88.72,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 14.97
     },
     {
       "amount": "$250,001 - $500,000",
@@ -24724,7 +25298,11 @@
       "flags": [
         "NOVEL_TICKER"
       ],
-      "rare_trader_evaluated": true
+      "rare_trader_evaluated": true,
+      "price_at_purchase": 133.99,
+      "price_latest": 173.57,
+      "price_as_of": "2026-08-17",
+      "return_since_purchase_pct": 29.54
     },
     {
       "amount": "$1,001 - $15,000",
@@ -27048,242 +27626,12 @@
         "NOVEL_TICKER"
       ],
       "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Tortoise North American Pipeline Fund",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/e9d6ab5f-3a50-49bc-9f00-3ef4655045aa/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "TPYP",
-      "transaction_date": "2026-03-20",
-      "transaction_type": "Sale (Partial)",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 25,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Johnson & Johnson Common Stock",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/e9d6ab5f-3a50-49bc-9f00-3ef4655045aa/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "JNJ",
-      "transaction_date": "2026-03-19",
-      "transaction_type": "Sale (Partial)",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 26,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$15,001 - $50,000",
-      "asset_description": "JPMorgan BetaBuilders Europe ETF",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/e9d6ab5f-3a50-49bc-9f00-3ef4655045aa/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "BBEU",
-      "transaction_date": "2026-03-19",
-      "transaction_type": "Sale (Full)",
-      "amount_lower": 15001.0,
-      "amount_upper": 50000.0,
-      "filing_delay_days": 26,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Vanguard Developed Markets Index Fund - ETF Shares",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/88c765c5-6550-47af-a81d-2e052c1c1b7e/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "VEA",
-      "transaction_date": "2026-03-19",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 26,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Tradr 2X Long SPY Monthly ETF",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/88c765c5-6550-47af-a81d-2e052c1c1b7e/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "SPYM",
-      "transaction_date": "2026-03-20",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 25,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "NVIDIA Corporation - Common Stock",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/88c765c5-6550-47af-a81d-2e052c1c1b7e/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "NVDA",
-      "transaction_date": "2026-03-19",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 26,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Microsoft Corporation - Common Stock",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/88c765c5-6550-47af-a81d-2e052c1c1b7e/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "MSFT",
-      "transaction_date": "2026-03-05",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 40,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "First Trust Global Tactical Commodity Strategy Fund",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/88c765c5-6550-47af-a81d-2e052c1c1b7e/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "FTGC",
-      "transaction_date": "2026-03-19",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 26,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Ares Management Corporation Class A Common Stock",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-14",
-      "district": "Boozman, John (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/88c765c5-6550-47af-a81d-2e052c1c1b7e/",
-      "owner": "Joint",
-      "representative": "John Boozman",
-      "symbol": "ARES",
-      "transaction_date": "2026-03-13",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 32,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
-    },
-    {
-      "amount": "$1,001 - $15,000",
-      "asset_description": "Mastercard Incorporated Common Stock",
-      "asset_type": "Stock",
-      "chamber": "senate",
-      "collected_at": "2026-08-09T20:07:49.338689+00:00",
-      "comment": null,
-      "disclosure_date": "2026-04-12",
-      "district": "Capito, Shelley Moore (Senator)",
-      "link": "https://efdsearch.senate.gov/search/view/ptr/aa38bdb0-5847-4bec-8e36-80d6ffc90837/",
-      "owner": "Spouse",
-      "representative": "Shelley M Capito",
-      "symbol": "MA",
-      "transaction_date": "2026-03-28",
-      "transaction_type": "Purchase",
-      "amount_lower": 1001.0,
-      "amount_upper": 15000.0,
-      "filing_delay_days": 15,
-      "flags": [
-        "NOVEL_TICKER"
-      ],
-      "rare_trader_evaluated": true
     }
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ff64610f34d39f5175da78ec2d6144f3a142eec1",
-    "config_hash": "c5535dbb601454ce6e713f16b104f6b33a76ba3682c6a3be94d2aaeba567a2d2",
-    "generated_at": "2026-08-10T14:18:56.778902+00:00"
+    "git_commit_sha": "a81efe6ebc4be6490b3b326a6691bc1dace850c5",
+    "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
+    "generated_at": "2026-08-17T13:39:07.206423+00:00"
   }
 }
