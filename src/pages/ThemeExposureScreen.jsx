@@ -202,9 +202,11 @@ function BiggestPlayers({ players, onOpen, byTicker }) {
             <b>{player.ticker}</b>
           </button>
           <span>{player.name}</span>
-          {player.role && <span className="chip">{ROLE_LABEL[player.role] || player.role}</span>}
-          <span className="mono">{player.theme_exposure_score ?? '–'}</span>
-          {!player.eligible && <span className="chip">Not eligible</span>}
+          <small>
+            {player.role ? `${ROLE_LABEL[player.role] || player.role} in this chain` : 'no chain role assigned'}
+            {' · '}exposure {player.theme_exposure_score ?? '–'}
+            {player.eligible === false ? ' · flagged, not promoted' : ''}
+          </small>
         </li>
       })}
     </ul>
@@ -221,6 +223,22 @@ function GrowthChain({ chain }) {
     <li><span>First order</span><p>{chain.first_order}</p></li>
     <li><span>Second order</span><p>{chain.second_order}</p></li>
   </ol>
+}
+
+// Every row states its own case. A screen that ranks companies against a thesis and cannot
+// say why each one is on the list is asking to be taken on trust, which is the opposite of
+// what this layer exists for. The clauses come from the pipeline, derived from the same
+// result the row publishes, so the reason cannot drift from the score it explains.
+function WhyHere({ why, compact = false }) {
+  if (!why?.length) return null
+  const [entry, ...rest] = why
+  if (compact) {
+    return <details className="row-why">
+      <summary>{entry}</summary>
+      <ul>{rest.map((clause) => <li key={clause}>{clause}</li>)}</ul>
+    </details>
+  }
+  return <ul className="row-why-list">{why.map((clause) => <li key={clause}>{clause}</li>)}</ul>
 }
 
 // `.research-table` is hidden outright below 900px (see global.css) in favor of this card
@@ -243,6 +261,7 @@ function ThemeCard({ row, index, onOpen }) {
       <div><dt>Industry</dt><dd>{row.industry || row.sector || '–'}</dd></div>
       <div><dt>Leading signals</dt><dd>{(row.leading_signals_fired || []).length || '–'}</dd></div>
     </dl>
+    <WhyHere why={row.why} />
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>
 }
@@ -258,6 +277,11 @@ function ThemeTable({ rows, onOpen }) {
           <CompanyLogo company={row} size={34} />
           <div><b>{row.ticker}</b><span>{row.name}{row.candidate_source && <span className="chip"> {SOURCE_LABEL[row.candidate_source] || row.candidate_source}</span>}</span></div>
         </div>) },
+      // Deliberately a column of its own rather than a tooltip: the reason a company is on a
+      // thematic list is the most important thing on the row, and hiding it behind a hover
+      // makes the ranked number the headline instead of the evidence under it.
+      { key: 'why', label: 'Why it is here', sortable: false,
+        cell: (row) => <WhyHere why={row.why} compact /> },
       // Industry, not just sector: the whole question a reader has about a theme row is
       // whether the company actually builds any of it, and "Industrials" cannot answer that
       // for a chip-equipment maker and a trucking company alike. It is also the field the
@@ -274,6 +298,8 @@ function ThemeTable({ rows, onOpen }) {
       { key: 'leading_signals_fired', label: 'Leading signals',
         sortValue: (row) => (row.leading_signals_fired || []).length,
         cell: (row) => (row.leading_signals_fired || []).length || '\u2013' },
+      { key: 'role', label: 'Role in chain',
+        cell: (row) => row.role ? <span className="chip">{ROLE_LABEL[row.role] || row.role}</span> : '–' },
       { key: 'eligible', label: 'Eligible', cell: (row) => row.eligible ? 'Yes' : 'No' },
       { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
         cell: (row) => <button className="icon-button" onClick={() => onOpen(row)}
@@ -291,9 +317,12 @@ function CrossThemeCard({ row, index, onOpen }) {
       <div><h2>{row.ticker}</h2><p>{row.name}</p></div>
       <span className="mobile-score">{row.themeCount}<small>themes</small></span>
     </div>
-    <div className="research-card-badges">
-      {row.themes.map((theme) => <span className="chip" key={theme.theme_id}>{theme.display_name || theme.theme_id}</span>)}
-    </div>
+    <ul className="row-why-list">
+      {row.themes.map((theme) => <li key={theme.theme_id}>
+        <b>{theme.display_name || theme.theme_id}</b>: exposure {theme.theme_exposure_score ?? '–'}
+        {theme.role ? ` as ${(ROLE_LABEL[theme.role] || theme.role).toLowerCase()}` : ''}
+      </li>)}
+    </ul>
     <dl className="research-card-metrics">
       <div><dt>Best opportunity</dt><dd>{row.bestOpportunity ?? '–'}</dd></div>
       <div><dt>Weakest evidence</dt><dd>{row.weakestConfidence == null ? '–' : `${Math.round(row.weakestConfidence * 100)}%`}</dd></div>
@@ -319,10 +348,17 @@ function CrossThemeTable({ rows, onOpen }) {
         cell: (row) => <span className="table-industry"><b>{row.industry || row.sector || '–'}</b>
           {row.industry && row.sector && <span>{row.sector}</span>}</span> },
       { key: 'themeCount', label: 'Themes', numeric: true, cell: (row) => <span className="mono">{row.themeCount}</span> },
-      { key: 'themes', label: 'Where it crosses', sortable: false,
-        cell: (row) => <span className="table-chip-list">{row.themes.map((theme) => (
-          <span className="chip" key={theme.theme_id}>{theme.display_name || theme.theme_id} {theme.theme_exposure_score ?? '–'}</span>
-        ))}</span> },
+      // Each crossing names the theme, the exposure that cleared it, and the role the company
+      // plays there - a name that is a supplier in three chains is a different proposition
+      // from one that is the root of one and incidental to two others.
+      { key: 'themes', label: 'Why it crosses', sortable: false,
+        cell: (row) => <ul className="row-why-list">{row.themes.map((theme) => (
+          <li key={theme.theme_id}>
+            <b>{theme.display_name || theme.theme_id}</b>: exposure {theme.theme_exposure_score ?? '–'}
+            {theme.role ? ` as ${(ROLE_LABEL[theme.role] || theme.role).toLowerCase()}` : ''}
+            {Number.isFinite(theme.confidence) ? `, on ${Math.round(theme.confidence * 100)}% of that theme's signal weight` : ''}
+          </li>
+        ))}</ul> },
       { key: 'bestOpportunity', label: 'Best opportunity', numeric: true,
         cell: (row) => <span className="mono">{row.bestOpportunity ?? '–'}</span> },
       { key: 'weakestConfidence', label: 'Weakest evidence', numeric: true,

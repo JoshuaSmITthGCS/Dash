@@ -307,6 +307,99 @@ describe('Theme Exposure screen', () => {
     })
   })
 
+  describe('why each stock is in its section', () => {
+    const withWhy = {
+      ...multiThemeData,
+      theme_screen: {
+        ...multiThemeData.theme_screen,
+        themes: [{
+          ...multiThemeData.theme_screen.themes[0],
+          rows: [
+            {
+              ticker: 'NVDA', name: 'NVIDIA', theme_exposure_score: 85, opportunity_score: 60,
+              eligible: true, role: 'root', candidate_source: 'published_leader',
+              why: ['In this theme because it is already a published top research score',
+                'Placed as the root of this chain, selling the product the theme is named for',
+                'Its latest 10-K devotes 96% more of its language to this theme than the prior year\'s'],
+            },
+            {
+              ticker: 'MU', name: 'Micron', theme_exposure_score: 70, opportunity_score: 75,
+              eligible: false, role: 'supplier', candidate_source: 'sector_peer',
+              why: ['In this theme because it is a peer-group neighbour of this theme\'s anchors, not yet a published research score',
+                'Flagged, not promoted: valuation already in the top 10% of its sector'],
+            },
+          ],
+        }],
+      },
+    }
+
+    it('gives every row in every section its own stated reason', () => {
+      useData.mockImplementation(() => ({ data: withWhy, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      // Both sections: a leader and a sector-connected name, each saying how it got there.
+      // Scoped to the row summaries, since the section's own prose uses the same words.
+      const summaries = [...document.querySelectorAll('.row-why summary')].map((node) => node.textContent)
+      expect(summaries.some((text) => /already a published top research score/.test(text))).toBe(true)
+      expect(summaries.some((text) => /peer-group neighbour/.test(text))).toBe(true)
+    })
+
+    it('keeps the reason visible on the row rather than behind a hover', () => {
+      useData.mockImplementation(() => ({ data: withWhy, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const summaries = [...document.querySelectorAll('.row-why summary')].map((node) => node.textContent)
+      expect(summaries.length).toBe(2)
+      expect(summaries.every((text) => text.length > 0)).toBe(true)
+    })
+
+    it('shows the evidence and the flag when the row is expanded', () => {
+      useData.mockImplementation(() => ({ data: withWhy, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByText(/96% more of its language/)).toBeInTheDocument()
+      expect(screen.getByText(/Flagged, not promoted/)).toBeInTheDocument()
+    })
+
+    it('shows each row s role in the chain', () => {
+      useData.mockImplementation(() => ({ data: withWhy, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getAllByText('Root').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Supplier').length).toBeGreaterThan(0)
+    })
+
+    it('says why a crossing name crosses, per theme, not just how many', () => {
+      useData.mockImplementation(() => ({
+        data: {
+          ...multiThemeData,
+          theme_screen: {
+            ...multiThemeData.theme_screen,
+            by_ticker: {
+              ETN: [
+                { theme_id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout', theme_exposure_score: 74, opportunity_score: 71, eligible: true, role: 'infrastructure', confidence: 0.35 },
+                { theme_id: 'grid_electrification', display_name: 'Grid & Electrification Buildout', theme_exposure_score: 88, opportunity_score: 79, eligible: true, role: 'supplier', confidence: 0.55 },
+              ],
+            },
+          },
+        },
+        loading: false,
+        error: null,
+      }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const crossing = screen.getByRole('heading', { name: /Where the themes cross/ }).closest('section')
+      expect(within(crossing).getByText(/exposure 74 as infrastructure/)).toBeInTheDocument()
+      expect(within(crossing).getByText(/exposure 88 as supplier/)).toBeInTheDocument()
+      expect(within(crossing).getByText(/35% of that theme's signal weight/)).toBeInTheDocument()
+    })
+  })
+
   it('names the industries a theme is built by, not just its sectors', () => {
     useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
 
