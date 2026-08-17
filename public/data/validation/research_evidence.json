@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-14T20:07:12.936573+00:00",
+  "generated_at": "2026-08-17T04:28:24.136988+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "18be060de6a79d2a1ed077e938f2f71a3a6c092d",
+  "code_commit_hash": "94563ed9e4650af67ce7743796d95093f19b97e7",
   "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -18,6 +18,7 @@
   "benchmarks": {
     "status": "measured",
     "window": {
+      "end": "2026-08-13",
       "initial_capital": 100000.0,
       "start": "2021-09-01"
     },
@@ -81,7 +82,7 @@
         "name": "IWD",
         "description": "Russell 1000 Value",
         "cagr": 0.1191,
-        "volatility": 0.148535,
+        "volatility": 0.148534,
         "sharpe": 0.8369,
         "max_drawdown": -0.190394,
         "beta": 0.9355,
@@ -117,12 +118,12 @@
         "name": "RSP",
         "description": "S&P 500 equal weight -- breadth-matched",
         "cagr": 0.092176,
-        "volatility": 0.162322,
-        "sharpe": 0.629,
+        "volatility": 0.162212,
+        "sharpe": 0.6285,
         "max_drawdown": -0.213844,
-        "beta": 0.8647,
-        "annualized_alpha_pct": 7.773,
-        "newey_west_t_statistic": 1.832,
+        "beta": 0.8642,
+        "annualized_alpha_pct": 7.779,
+        "newey_west_t_statistic": 1.833,
         "significant": false
       },
       {
@@ -131,7 +132,7 @@
         "cagr": 0.08917,
         "volatility": 0.197273,
         "sharpe": 0.5346,
-        "max_drawdown": -0.241046,
+        "max_drawdown": -0.241047,
         "beta": 0.7647,
         "annualized_alpha_pct": 8.775,
         "newey_west_t_statistic": 2.213,
@@ -142,7 +143,7 @@
         "description": "CRSP US small cap",
         "cagr": 0.079278,
         "volatility": 0.207505,
-        "sharpe": 0.474,
+        "sharpe": 0.4741,
         "max_drawdown": -0.281541,
         "beta": 0.7131,
         "annualized_alpha_pct": 10.101,
@@ -164,7 +165,7 @@
       {
         "name": "IWM",
         "description": "Russell 2000 -- small cap",
-        "cagr": 0.073243,
+        "cagr": 0.07325,
         "volatility": 0.22504,
         "sharpe": 0.4289,
         "max_drawdown": -0.319116,
@@ -688,11 +689,11 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 128,
+            "scored": 154,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 129,
+            "scored": 155,
             "total": 839
           },
           "financial_health": {
@@ -708,56 +709,56 @@
             "total": 839
           },
           "valuation": {
-            "scored": 813,
+            "scored": 815,
             "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 168,
-      "non_enriched_count": 711,
+      "enriched_count": 194,
+      "non_enriched_count": 685,
       "score": {
         "enriched": {
-          "n": 168,
-          "mean": 71.67,
-          "median": 73.65,
-          "stdev": 11.06
+          "n": 194,
+          "mean": 70.51,
+          "median": 72.65,
+          "stdev": 11.3
         },
         "non_enriched": {
-          "n": 711,
-          "mean": 61.97,
-          "median": 63.3,
-          "stdev": 9.29
+          "n": 685,
+          "mean": 61.76,
+          "median": 63.1,
+          "stdev": 9.03
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Financial Services": 53,
-          "Technology": 40,
-          "Energy": 18,
-          "Healthcare": 15,
-          "Consumer Cyclical": 12,
-          "Industrials": 11,
+          "Financial Services": 57,
+          "Technology": 46,
+          "Energy": 19,
+          "Healthcare": 17,
+          "Consumer Cyclical": 17,
+          "Industrials": 15,
           "Basic Materials": 5,
-          "Consumer Defensive": 4,
-          "Communication Services": 4,
+          "Consumer Defensive": 5,
+          "Communication Services": 5,
           "Utilities": 4,
-          "Real Estate": 1,
+          "Real Estate": 3,
           "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 127,
-          "Technology": 112,
-          "Consumer Cyclical": 101,
-          "Healthcare": 85,
-          "Financial Services": 72,
-          "Real Estate": 52,
-          "Consumer Defensive": 52,
+          "Industrials": 123,
+          "Technology": 106,
+          "Consumer Cyclical": 96,
+          "Healthcare": 83,
+          "Financial Services": 68,
+          "Consumer Defensive": 51,
+          "Real Estate": 50,
           "Basic Materials": 33,
           "Utilities": 30,
-          "Communication Services": 23,
-          "Energy": 21,
+          "Communication Services": 22,
+          "Energy": 20,
           "ETF": 2,
           "Unknown": 1
         }
@@ -774,8 +775,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "18be060de6a79d2a1ed077e938f2f71a3a6c092d",
+    "git_commit_sha": "94563ed9e4650af67ce7743796d95093f19b97e7",
     "config_hash": "f6d455be7f5bc2b845a830acd3d29db14e78557b7ee1003acaecc15316c029dc",
-    "generated_at": "2026-08-14T20:07:12.936573+00:00"
+    "generated_at": "2026-08-17T04:28:24.136988+00:00"
   }
 }
