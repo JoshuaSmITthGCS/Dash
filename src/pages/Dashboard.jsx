@@ -228,9 +228,9 @@ export default function Dashboard() {
   const hasPortfolioAccess = currentUser || previewPortfolio
   const finances = useFirebaseFinances()
   const tracking = usePortfolioTracking()
-  // Quietly refreshes at 9pm local time (see src/lib/nightlyRefresh.js) so after-hours has
-  // real Yahoo data by the time anyone looks at the report, not just when someone happens to
-  // hit refresh on the Portfolio page.
+  // One fetch on arrival keeps the visible holding cards current; the production scheduler's
+  // five-minute cloud snapshots (not a browser timer) are what carry the day the rest of the
+  // time. See usePortfolioQuotes.js.
   const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
   const { preferences, setWidgets, updatePreferences } = usePreferences()
   const { data: benchmarkReport, loading: benchmarkLoading, reload: reloadBenchmarks } = useData(positions.length ? 'benchmark-report.json' : null)

@@ -679,12 +679,8 @@ against, plus cross-file invariant checks layered on top in Python.
   (`entryTiming`).
 - `etfComparison.js` — Parses/validates the ETF comparison schema-4 payload
   (`parseEtfComparison`, `comparisonLines`).
-- `evidenceStrength.js` — Legacy "evidence strength" (0-1) calculator distinct from the
-  model's own confidence field (`calculateEvidenceStrength`, `getEvidenceBreakdown`).
 - `factorAnalytics.js` — Six-factor (Fama/French + momentum) OLS regression and theme-
   exposure aggregation (`factorRegression`, `aggregateThemeExposure`).
-- `fidelityConnectorStub.js` — **Unimplemented design doc as code**: Fidelity/Plaid brokerage
-  connector architecture, cost estimates; no real integration.
 - `financeMigrations.js` — Schema migration for saved finance settings/goals
   (`migrateFinanceSettings`, `migrateFinanceGoal`).
 - `financeSplit.js` — Budget income/expense totals and proportional pool splitting
@@ -693,15 +689,9 @@ against, plus cross-file invariant checks layered on top in Python.
 - `formatters.js` — Shared `money`/`signedPct`/`ratio`/`humanDate` formatters.
 - `fundsAllocation.js` — Convex (score^power) allocation of available funds across ranked rows
   (`allocateFunds`).
-- `labelDistribution.js` — Percentile-based stance-label distribution calibrated to the
-  scored universe (`calculateLabel`, `recalculateLabels`).
 - `modeConfidence.js` — Per-ranking-mode confidence computed only from the inputs that mode
   actually reads (`MODE_INPUTS`, `modeConfidence`, `allModeConfidence`).
 - `newsSort.js` — News-list sort options/comparator (`sortNews`, `nextNewsSort`).
-- `nightlyRefresh.js` — Pure "refresh once a day at/after 9pm local" boundary math
-  (`isRefreshDue`, `msUntilNextBoundary`).
-- `pipelineGuardrails.js` — Client-side data-quality validation/exclusion-reason reporting
-  (`validateStock`, `validateStockBatch`, `formatValidationReport`).
 - `portfolioAnalytics.js` — Large analytics module: benchmarks, enrichment, holdings series,
   performance metrics, risk decomposition, correlation diversification (`enrichPortfolio`,
   `performanceMetrics`, `portfolioRiskDecomposition`, `BENCHMARKS`).
@@ -745,13 +735,9 @@ against, plus cross-file invariant checks layered on top in Python.
   (`migrate`, `datasetFor`, `ADVISOR_SCHEMA_VERSION`).
 - `scoreBands.js` — A-E tier-band grouping/labeling utilities (`getScoreBand`,
   `groupByScoreBand`, `getScoreBandDisclaimer`).
-- `securityStub.js` — **Unimplemented design doc as code**: security roadmap/checklist/threat
-  model for future V2 planning.
 - `sellWatchLogic.js` — Two-of-three-factor-agreement sell/watch/trim rule
   (`assessFundamentals`, `assessTechnicals`, `assessSentiment`,
   `getSellWatchRecommendation`).
-- `sentimentEngine.js` — News-sentiment categorization (polarity, intensity, persistence,
-  source quality, materiality) (`categorizeNews`, `calculateSentimentImpact`).
 - `strategyScreenConfigs.js` — Config table (`STRATEGY_SCREENS`) driving the six generic
   options-strategy screen pages.
 - `traderInsights.js` — Portfolio-tracking insight helpers: streaks, milestones, trade stats,
@@ -765,10 +751,9 @@ against, plus cross-file invariant checks layered on top in Python.
   (`useData`, `clearCachedData`, `formatElapsed`).
 - `useFirebaseFinances.js` / `useFirebasePortfolio.js` — Firestore-backed finance settings/
   budget and portfolio-position hooks.
-- `usePortfolio.js` — Legacy localStorage-backed portfolio hook (references a since-removed
-  `AuthContext`; appears superseded by `useFirebasePortfolio`).
-- `usePortfolioQuotes.js` — Cached live-quote-fetching hook synced to the nightly-refresh
-  boundary (`usePortfolioQuotes`).
+- `usePortfolioQuotes.js` — Fetches live quotes once on arrival (ticker membership is the
+  effect boundary); the production scheduler's five-minute cloud snapshots, not a browser
+  timer, carry refresh the rest of the time (`usePortfolioQuotes`).
 - `usePortfolioTracking.js` — Firestore daily-snapshot portfolio-tracking hook
   (`usePortfolioTracking`, `marketDate`).
 - `useProjectionSimulation.js` — Runs `simulateProjection` off the main thread via
