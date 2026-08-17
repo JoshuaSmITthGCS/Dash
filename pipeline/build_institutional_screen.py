@@ -379,7 +379,14 @@ def resolve_filer_ciks(sec, manager):
             if cik in seen:
                 continue
             seen.add(cik)
-            if not any(entity_name_matches(conformed, candidate) for candidate in names):
+            # Only a *present* label that fails the guard is rejected here. EDGAR's search
+            # feed sometimes returns a hit with no <conformed-name> at all - not evidence of
+            # a mismatch, just a missing label - and rejecting on that starved this exact
+            # step of real filers (Janus Henderson's own CIK among them) before the
+            # authoritative check below ever got to read their real name from the
+            # submissions payload. A candidate with no label here still has to survive that
+            # second, submissions-backed check to be trusted.
+            if conformed and not any(entity_name_matches(conformed, candidate) for candidate in names):
                 notes.append(f"rejected CIK {cik} ({conformed!r}): name does not match")
                 continue
             candidates.append((cik, True, conformed))
