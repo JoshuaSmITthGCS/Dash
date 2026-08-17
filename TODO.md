@@ -516,8 +516,12 @@ started. What is left, and why:
   — split into a 233-line shell plus `src/pages/portfolio/` (Summary, Performance,
   DataOverview, Holdings, HoldingCard, ComparisonTables, two pure model modules, a
   forms hook). Rendered DOM verified byte-identical across all three views.
-  `SwingScreen.jsx` (839) and `Picks.jsx` (816) still hold view + data + sort logic
-  in one file.
+  `SwingScreen.jsx` (789) and `Picks.jsx` (841) **read in full and deliberately
+  left as one file each** — Portfolio's problem was three views' worth of
+  duplicated logic behind one component; these two are one view each, already
+  factored into clear pure helpers and small components, just genuinely long.
+  Splitting either to hit a line count with no duplication to fix would be
+  abstraction for its own sake.
 - **All tables now on `DataTable`.** Picks, SwingScreen, and ResearchEvidence's
   three evidence tables migrated; Portfolio's two comparison tables migrated
   in the Phase 5 pass. `DataTable` gained `rowClassName`, `rowHeader`, and
@@ -565,20 +569,29 @@ components (`ScatterChart`, `DotPlot`, used across 6 pages) plus
   published anywhere short of the 31 MB `score-history.json` this doc already
   says not to fetch in the browser. Needs a pipeline change, out of scope here.
 
-### Phase 5 — page-by-page pass — Dashboard, Portfolio, Picks done
+### Phase 5 — page-by-page pass — Dashboard, Portfolio, Picks, SwingScreen done
 Every page now inherits the new tokens and card system; the per-page composition
 work (hierarchy, one headline number per widget, the shared screen-page skeleton,
 real empty states for `InstitutionalActivity`'s permanent `results: []`) is done
-for Dashboard, Portfolio, and Picks, not started for the rest. Portfolio: comparison
-tables moved to `DataTable`, a real 11px-floor bug fixed (holding-card cost-basis
-select was `fontSize: 9`), 6 static inline styles converted to classes,
-sector-allocation card links through to Diversification. Picks: found (via
-DataTable's desktop `<table>` mounting all 1,002 rows unvirtualized — fixed, see
-below) and fixed one real hierarchy bug — the Bucket planner, a secondary
-what-if tool, rendered above the research list the page's own copy says is its
-job, pushing every company card below the fold on every viewport; reordered,
-no logic changes. Next in traffic order: SwingScreen, which also needs its
-Phase 2d decomposition (below) done alongside its page pass.
+for Dashboard, Portfolio, Picks, and SwingScreen, not started for the rest.
+Portfolio: comparison tables moved to `DataTable`, a real 11px-floor bug fixed
+(holding-card cost-basis select was `fontSize: 9`), 6 static inline styles
+converted to classes, sector-allocation card links through to Diversification.
+Picks: found (via DataTable's desktop `<table>` mounting all 1,002 rows
+unvirtualized — fixed, see below) and fixed one real hierarchy bug — the
+Bucket planner, a secondary what-if tool, rendered above the research list the
+page's own copy says is its job, pushing every company card below the fold on
+every viewport; reordered, no logic changes. SwingScreen: found and fixed one
+real `<details>`-inside-`<p>` HTML-nesting bug in the closing disclaimer
+(confirmed via a real `validateDOMNesting` console warning — it silently split
+the disclaimer paragraph and dropped its styling on the second half); switched
+to the `<div className="disclaimer">` variant already used elsewhere. Neither
+page needed Portfolio-style decomposition or a hierarchy rebuild — both are
+already well-built single-view pages; see Phase 2 above. Next in traffic
+order: the rest of the screens family (`FastGrowthScreen`, `OptionsScreen` + 7
+`StrategyScreen` variants, the `ResearchScreen`-backed screens,
+`CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
+`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`).
 
 ### Phase 6 — dead code + payload — done
 Eight of nine unreachable lib files deleted (`evidenceStrength`,

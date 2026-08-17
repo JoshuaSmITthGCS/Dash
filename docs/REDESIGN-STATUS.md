@@ -540,13 +540,17 @@ test exercised a virtualized list closely enough to hit the gap.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · PICKS LIGHT-TOUCH · rest not started
+### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · PICKS + SWINGSCREEN LIGHT-TOUCH · rest not started
 Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
-SwingScreen + screens family → Finances/Planning/Insights/Watchlist/Markets →
-Methodology/Glossary/Settings/Alerts → empty states. Picks is struck because its
-pass is complete, not because it got the Dashboard-style treatment — see §1, it
-needed one hierarchy fix, not a rebuild. Next: SwingScreen, which also still
-needs its Phase 2d decomposition (below) — same combined treatment Portfolio got.
+~~SwingScreen~~ → rest of the screens family →
+Finances/Planning/Insights/Watchlist/Markets →
+Methodology/Glossary/Settings/Alerts → empty states. Picks and SwingScreen are
+struck because their passes are complete, not because they got the
+Dashboard-style rebuild treatment — see §1, each needed one real bug fixed, not
+a restructure. Next: the rest of the screens family (`FastGrowthScreen`,
+`OptionsScreen` + its 7 `StrategyScreen` variants, `ResearchScreen`-backed
+screens, `CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
+`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`).
 
 **Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
 27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
@@ -625,12 +629,31 @@ visible after one scroll instead of one and a half. Also struck a stale gap
 note in this doc (above) claiming Picks lacks layered metric disclosure — it
 doesn't lack it, current code already has it.
 
-### Phase 2d — decompose the giants · PORTFOLIO DONE
+**SwingScreen — one real bug, not a rebuild either.** Already well-built:
+tiers → headline → collapsed methodology (its own in-code comments record two
+prior hierarchy fixes — the methodology cards used to sit before the first
+row, the coverage note used to sit between the filters and the table, both
+already moved) → filters → column toggle → table. Screenshotted in both
+themes at 1440px and 390px, no layout, contrast, or overflow problems found.
+One real, confirmed bug: the closing disclaimer wrapped an `InfoTag` (renders
+`<details>`) inside a `<p>` — `<details>` is not phrasing content, so the
+browser's HTML parser implicitly closes the `<p>` the moment it hits it,
+silently splitting the disclaimer into two untagged fragments and dropping
+`.disclaimer`'s styling from the second half ("Rankings are hypotheses...").
+Confirmed by a real `validateDOMNesting` React console warning (not a lint
+rule — ESLint has no JSX-semantics check for this), and confirmed fixed by
+querying the live DOM: one `<div class="disclaimer">` containing the full text
+and the nested `<details>`, not two fragments. Switched `<p>` → `<div>`
+(`.disclaimer` is a plain class selector, and this variant is already used in
+`Picks.jsx`/`Methodology.jsx`, so not a new pattern). Verified: lint/test/build
+green (789 tests, SwingScreen's own 37), `typefloor.mjs`/`a11ycheck.mjs` clean.
+
+### Phase 2d — decompose the giants · PORTFOLIO DONE · SwingScreen/Picks reassessed, not decomposed
 | File | Lines |
 |---|---|
 | ~~`src/pages/Portfolio.jsx`~~ | ~~1,288~~ → **233** (see below) |
-| `src/pages/SwingScreen.jsx` | 839 |
-| `src/pages/Picks.jsx` | 816 |
+| `src/pages/SwingScreen.jsx` | 789 |
+| `src/pages/Picks.jsx` | 841 |
 
 `Portfolio.jsx` is now a shell that loads data, derives the view models once, and
 renders one of three views. Everything else moved to `src/pages/portfolio/`:
@@ -665,8 +688,19 @@ Data-overview-only for the most part. `useData(null)` is a no-op, so gating them
 easy — but `candidateInputs` feeds the Performance view's benchmark *label*
 fallback, so it is not a pure change and was left alone.
 
-`SwingScreen.jsx` and `Picks.jsx` are unchanged. The plan suggests running
-`improve-react` first to decide where their seams go.
+**`SwingScreen.jsx` and `Picks.jsx` were read in full while doing their Phase 5
+passes, and deliberately not split.** Portfolio needed decomposition because it
+bundled three distinct views (Summary/Performance/Data overview) with
+duplicated logic behind one component — a structural problem line count was
+just a symptom of. SwingScreen and Picks are long for a different reason: each
+is one view with real domain complexity (SwingScreen: three horizon books,
+per-leg evidence, verdict/strength derivations; Picks: ranking models, a
+peer-relative allocation planner, style/sector tilt), already factored into
+clear pure helper functions and small presentational components within the
+file. Splitting either into multiple files to hit a line-count target, with no
+duplicated-view problem to actually solve, would be exactly the kind of
+abstraction-for-its-own-sake this project's own conventions warn against.
+Treating this bullet as done, not skipped.
 
 ### Phase 4 remainder — one data gap, three metric groups needing methodology work
 Not chart-building tasks; see §1's Phase 4 entry for the full breakdown.
