@@ -740,6 +740,25 @@ export default function Picks() {
       {tradeNotice && <div className={`research-trade-notice ${tradeNotice.error ? 'error' : ''}`} role="status" aria-live="polite">{tradeNotice.message}</div>}
       {modelActive && <ModelSummary sort={sort} coverage={coverage} shown={stockRows.length} />}
 
+      {showStocks && <ResearchPool label={showStocks && showEtfs ? 'Stocks' : null} rows={stockRows}
+        onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
+        buyStatuses={buyStatuses} onBuy={handleQuickBuy}
+        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
+      {showEtfs && <ResearchPool label={showStocks && showEtfs ? 'ETFs' : null} rows={etfRows}
+        onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
+        buyStatuses={buyStatuses} onBuy={handleQuickBuy}
+        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
+
+      {!rows.length && <Empty note={modelActive
+        ? (assetType === 'etf'
+          ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
+          : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
+        : 'No companies match those filters.'} />}
+
+      {/* Comparing the ranked list is this page's stated job ("Compare the ranked evidence
+          behind every published company"); the bucket planner is a secondary what-if tool that
+          most visits never touch. It used to sit above the list, pushing every research card
+          below the fold on both desktop and mobile - moved after the list it plans over. */}
       <section className="card allocation-planner" aria-labelledby="allocation-planner-title">
         <header className="allocation-planner-head">
           <div><span className="eyebrow">Bucket planner</span><h2 id="allocation-planner-title">Split available funds by rank</h2></div>
@@ -815,20 +834,6 @@ export default function Picks() {
         )}
       </section>
 
-      {showStocks && <ResearchPool label={showStocks && showEtfs ? 'Stocks' : null} rows={stockRows}
-        onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
-        buyStatuses={buyStatuses} onBuy={handleQuickBuy}
-        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
-      {showEtfs && <ResearchPool label={showStocks && showEtfs ? 'ETFs' : null} rows={etfRows}
-        onOpen={setSelectedStock} heldTickers={heldTickers} buyingTicker={buyingTicker}
-        buyStatuses={buyStatuses} onBuy={handleQuickBuy}
-        alertingTicker={alertingTicker} alertStatuses={alertStatuses} onSetAlert={handleSetLowAlert} sort={sort} />}
-
-      {!rows.length && <Empty note={modelActive
-        ? (assetType === 'etf'
-          ? `${RANKING_MODELS[sort].label} is a per-security model – it reads fundamentals, news, insider and theme data a fund does not report. Switch the asset filter back to stocks, or sort by published score to rank ETFs.`
-          : `No company clears the ${RANKING_MODELS[sort].label} gate under these filters. The coverage panel above counts why.`)
-        : 'No companies match those filters.'} />}
       <div className="disclaimer">Research covers {(data?.research || []).length} fully published companies plus {(data?.screen_universe || []).length} more scored on a lighter data set ({stockResearch.length} total), and {etfData?.etfs?.length || 0} ETFs. The {Object.keys(RANKING_MODELS).length} ranking models each answer a different question with their own declared composition, gate, and confidence measure – a name can rank first under one and not appear at all under another, which is the intent. Each model scores against industry or sector peers, drops components a company cannot legitimately report rather than scoring them zero, shrinks the result by how much of its own input set resolved, and publishes the top {MODEL_LIMIT}. The weights are frozen starting priors chosen from the literature, not measured optima; the point-in-time store is accumulating observations to test them. “Published research score”, “20-day return”, “Data coverage”, “% of my portfolio” and “Most undervalued” are plain column sorts over the whole list, not models. The -5..+5 rating is a percentile read of the published score against its own pool (stocks vs. stocks, ETFs vs. ETFs), shrunk toward 0 by data coverage – it restates the same score on a smaller scale, not a separate opinion. “Most undervalued” blends how cheap a row is against its peers with how much growth the numbers show, each ranked against its own pool. “Buy $100” records a fractional-share portfolio entry at the displayed current price and today’s date; it does not place a brokerage order. When your current holdings lean heavily long-term or short-term, or sit concentrated in a handful of sectors, the bucket planner leans new money toward whichever lane or sector is thin – weighting sectors toward the better peer-relative growth and risk-adjusted return among your thin ones, not just the emptiest – on top of, not instead of, ranking by score; each bucket states why underneath it. The “double down” toggle above the split controls whether tickers you already hold can win a bucket at all. Rankings do not imply suitability or portfolio allocation.</div>
       {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data.benchmark_history} onClose={() => setSelectedStock(null)} />}
     </>
