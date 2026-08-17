@@ -879,7 +879,14 @@ node design/appshot.mjs                        # ROUTES='[["/","home"]]' TAG='x-
 node design/a11ycheck.mjs                      # keyboard + modal + unnamed-control check
 node design/typefloor.mjs                      # 11px floor, DOM *and* scaled SVG; exits 1 on breach
 ```
-All three hardcode a Playwright path from the npx cache — fix it if that moves.
+All three import `chromium` from `playwright-core` (an existing `package.json`
+devDependency), not a hardcoded npx-cache path — that portability fix landed
+2026-08-17 so these scripts run in any environment with `npm ci` done and a
+Chromium binary installed (`npx playwright install chromium` if one isn't
+already cached at `~/Library/Caches/ms-playwright` or the platform
+equivalent). If a fresh environment errors on `chromium.launch()`, that's the
+missing browser binary, not a code problem — install it, don't re-hardcode a
+path.
 Add `?portfolioPreview=1` to any portfolio-bearing route or it renders its empty
 state locally (Firebase is offline; see below).
 

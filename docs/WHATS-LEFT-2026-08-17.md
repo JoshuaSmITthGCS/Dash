@@ -48,6 +48,15 @@ from 12/20). Full breakdown is `docs/REDESIGN-STATUS.md` §1; the short version:
     one line. Fixed by dropping the label text below a width threshold
     (bare "4%", full label in a `title` tooltip) plus a defensive
     nowrap/ellipsis CSS floor for any future narrow segment.
+  - `design/appshot.mjs`, `design/a11ycheck.mjs`, `design/typefloor.mjs` all
+    imported Chromium from a hardcoded, machine-specific npx-cache path
+    (`/Users/eyerise/.npm/_npx/<hash>/...`) that only existed on the machine
+    that first wrote them — the scripts would fail to even import on any
+    other machine or cloud session. Switched to `import { chromium } from
+    'playwright-core'`, an existing `package.json` devDependency, so `npm ci`
+    is all a new environment needs (plus a Chromium binary — see below).
+    Re-verified all three against a running dev server after the swap:
+    `appshot.mjs`, `a11ycheck.mjs`, and `typefloor.mjs` all ran clean.
 
 All of the above is committed to `main` with full verification each time:
 `npm run lint && npm test && npm run build`, `design/typefloor.mjs` (11px
@@ -118,6 +127,24 @@ node design/appshot.mjs                        # ROUTES='[["/path","name"]]' TAG
 node design/a11ycheck.mjs                      # keyboard + modal + unnamed-control check
 node design/typefloor.mjs                      # 11px floor, DOM *and* scaled SVG
 ```
+
+### Works unmodified in a cloud/browser Claude Code session (claude.ai/code)
+The three `design/*.mjs` scripts used to hardcode a Playwright path unique to
+one machine's npm cache — that's fixed (see "what's done" above): they now
+import `chromium` from `playwright-core`, an existing `package.json`
+devDependency, so `npm ci` alone gets the import working anywhere. The one
+extra step a fresh sandbox may need is a Chromium binary if `npm ci` doesn't
+already provide one:
+
+```bash
+npx playwright install chromium --with-deps    # only if chromium.launch() errors
+```
+
+Everything else in this doc — reading source, grepping, running the dev
+server on a free port, running lint/test/build, committing, pushing — needs
+nothing browser-specific. There's no reason this work can't run end-to-end in
+a claude.ai/code session; it was written and last verified from a local CLI
+session, but nothing here depends on that specifically.
 
 Firebase is offline in local dev, so Portfolio, Diversification, Finances,
 Planning, Insights, and Watchlist all render their "Cloud data is offline"
