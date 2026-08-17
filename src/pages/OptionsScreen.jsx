@@ -81,15 +81,10 @@ function OptionIdeaCard({ row, onOpen }) {
 
 export default function OptionsScreen() {
   const { data, loading, error } = useData('screens/options.json')
-  const { data: advisor } = useData('advisor.json')
+  const { data: report } = useData('report.json')
   const [optionType, setOptionType] = useState('all')
   const [sector, setSector] = useState('all')
   const [selectedStock, setSelectedStock] = useState(null)
-
-  const advisorByTicker = useMemo(() => {
-    const rows = [...(advisor?.research || []), ...(advisor?.portfolio_coverage || [])]
-    return new Map(rows.map((row) => [row.ticker, row]))
-  }, [advisor])
 
   // The published screen has occasionally carried the exact same contract at two adjacent
   // ranks (same ticker/side/strike/expiration, identical score) — a pipeline dedup gap, not
@@ -109,7 +104,10 @@ export default function OptionsScreen() {
     .filter((row) => optionType === 'all' || row.option_type === optionType)
     .filter((row) => sector === 'all' || row.sector === sector)
 
-  const openResearch = (row) => setSelectedStock(advisorByTicker.get(row.ticker) || { ticker: row.ticker })
+  // StockDetailModal opens immediately from whatever fields this row already carries and
+  // lazy-fetches advisor.json itself once open (see its own comment on `fullResearch`) — no
+  // need to pre-fetch the full 37 MB snapshot just to open a modal.
+  const openResearch = (row) => setSelectedStock(row)
 
   return <>
     <ScreenNavigation />
@@ -186,6 +184,6 @@ export default function OptionsScreen() {
         and open interest are snapshots from the last pipeline run and move throughout the trading day.
       </p>
     </>}
-    {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={advisor?.benchmark_history} onClose={() => setSelectedStock(null)} />}
+    {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={report?.benchmark_history} onClose={() => setSelectedStock(null)} />}
   </>
 }

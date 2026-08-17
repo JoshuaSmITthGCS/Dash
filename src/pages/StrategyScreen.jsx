@@ -135,15 +135,10 @@ function StrategyCard({ row, config, onOpen }) {
 export default function StrategyScreen({ id }) {
   const config = STRATEGY_SCREENS[id]
   const { data, loading, error } = useData(config.file)
-  const { data: advisor } = useData('advisor.json')
+  const { data: report } = useData('report.json')
   const [strategyFilter, setStrategyFilter] = useState('all')
   const [sector, setSector] = useState('all')
   const [selectedStock, setSelectedStock] = useState(null)
-
-  const advisorByTicker = useMemo(() => {
-    const rows = [...(advisor?.research || []), ...(advisor?.portfolio_coverage || [])]
-    return new Map(rows.map((row) => [row.ticker, row]))
-  }, [advisor])
 
   const sourceRows = (data?.results || []).filter((row) => row.eligibility)
   const strategies = useMemo(() => [...new Set(sourceRows.map((row) => row.strategy).filter(Boolean))], [sourceRows])
@@ -152,7 +147,10 @@ export default function StrategyScreen({ id }) {
     .filter((row) => strategyFilter === 'all' || row.strategy === strategyFilter)
     .filter((row) => sector === 'all' || row.sector === sector)
 
-  const openResearch = (row) => setSelectedStock(advisorByTicker.get(row.ticker) || { ticker: row.ticker })
+  // StockDetailModal opens immediately from whatever fields this row already carries and
+  // lazy-fetches advisor.json itself once open — no need to pre-fetch the full 37 MB
+  // snapshot just to open a modal.
+  const openResearch = (row) => setSelectedStock(row)
 
   return <>
     <ScreenNavigation />
@@ -221,6 +219,6 @@ export default function StrategyScreen({ id }) {
         and open interest are snapshots from the last pipeline run and move throughout the trading day.
       </p>
     </>}
-    {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={advisor?.benchmark_history} onClose={() => setSelectedStock(null)} />}
+    {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={report?.benchmark_history} onClose={() => setSelectedStock(null)} />}
   </>
 }

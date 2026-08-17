@@ -20,11 +20,10 @@ export default function Diversification() {
   const { data, loading } = useData('report.json')
   const { data: etfData, loading: etfLoading } = useData('etfs.json')
   const { data: factorData, loading: factorLoading } = useData('factors/french.json')
-  const { data: advisorData, loading: advisorLoading } = useData('advisor.json')
   const { data: benchmarkReport, loading: benchmarkLoading } = useData('benchmark-report.json')
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const { preferences } = usePreferences()
-  if (loading || portfolioLoading || etfLoading || factorLoading || advisorLoading || benchmarkLoading) return <Loading />
+  if (loading || portfolioLoading || etfLoading || factorLoading || benchmarkLoading) return <Loading />
   if (!positions.length) return <Empty note="Add portfolio holdings before calculating diversification." />
   const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
   const portfolio = enrichPortfolio(positions, prices)
@@ -40,7 +39,7 @@ export default function Diversification() {
   })
   const portfolioSeries = currentHoldingsSeries(positions, prices)
   const factors = factorRegression(portfolioSeries, factorData)
-  const themes = aggregateThemeExposure(portfolio.positions, advisorData?.theme_screen?.by_ticker || {})
+  const themes = aggregateThemeExposure(portfolio.positions, data?.theme_screen?.by_ticker || {})
   const sectors = (result.sectorExposures || []).map((row) => [row.label, row.pct])
   const industries = groupedWeights(result.weights || [], 'industry')
   const stops = sectors.reduce((output, [, pct], index) => { const start = sectors.slice(0, index).reduce((sum, [, value]) => sum + value, 0); output.push(`${COLORS[index % COLORS.length]} ${start}% ${start + pct}%`); return output }, []).join(', ')
