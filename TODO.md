@@ -618,9 +618,25 @@ recorded but not planned — negligible real-world impact per `plans/README.md`.
 Verified: lint/test/build green (786 tests), `typefloor.mjs`/`a11ycheck.mjs` clean,
 scripted Playwright + a throwaway (deleted, not committed) RTL check.
 
+### Phase 6 — rubric rescore — done · 18/20 (was 12/20)
+Re-ran the original 5-dimension audit with `rams` and `web-design-guidelines` as
+independent checkers, per the plan's own instruction. Accessibility 2→4, Performance
+2→3, Responsive 3→4, Theming 3→4, Implementation integrity 2→3 — full breakdown and
+evidence in `docs/REDESIGN-STATUS.md`. Two real gaps the rescore found were fixed
+before finalizing the score: `.market-search-input`/`.global-search-input` both set
+`outline: 0` unconditionally, silently killing the keyboard focus ring on both search
+boxes; and `Diversification.jsx`'s sector-allocation donut hand-rolled a raw,
+non-token, non-dark-mode-aware color array instead of using the already-tokenized
+`AllocationDonut` component Dashboard and Summary already use for the same data. Two
+gaps recorded but deliberately left open: `DataTable`'s desktop table path isn't
+virtualized; `*card*`-family CSS class names grew to 59 and want a consolidation pass.
+This was the last open item in the "finish everything out" pass across Phase 2c,
+2e, 4, and 6, plus the Portfolio page pass within Phase 5 — Phase 5's rest (Picks,
+SwingScreen, screens family, Finances/Planning/Insights/Watchlist/Markets,
+Methodology/Glossary/Settings/Alerts) was never in this pass's scope and is still
+not started (see `docs/REDESIGN-STATUS.md` §2).
+
 ### Smaller items
 - **`og:image` and `og:url` are root-relative** in `index.html` because the
   deploy domain is not committed to this repo. Facebook and Twitter want
   absolute URLs — set them once the domain is known.
-- **Rubric rescore** — not done. Dimensions 1, 2 and 5 have measurably improved;
-  score it properly at the end.

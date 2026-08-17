@@ -461,6 +461,39 @@ interpolates with it off. Not verified live in-browser: the pull-to-refresh fix 
 Firebase-backed data unavailable in local dev — the mechanical loop plus the
 scripted checks above stood in.
 
+### Phase 6 — rubric rescore ✅ · 18/20 (was 12/20) · redesign arc complete
+Re-ran the original impeccable 5-dimension audit (`docs/REDESIGN-PLAN.md` §"Audit
+summary"), per its own instruction to use `rams` and `web-design-guidelines` as
+independent checkers. Dispatched one agent per skill, each re-scoring against the
+current codebase with its own greps/reads/live checks — not asked to trust the
+redesign's own claims. Two real, previously-unknown gaps came out of that and were
+fixed before finalizing the score (both below). Target from the plan was **≥17/20,
+with Accessibility ≥3 and Implementation integrity ≥3** — met on both counts.
+
+| # | Dimension | Was | Now | What changed |
+|---|-----------|-----|-----|-------------|
+| 1 | Accessibility | 2 | **4** | Modal now has `role="dialog"`/`aria-modal`/a 40-tab focus trap/Escape-with-focus-return (verified live). Inputs spot-checked as properly labeled. Zero sub-11px text. One real gap the original audit never flagged — `.market-search-input`/`.global-search-input` both set `outline: 0` unconditionally, silently killing the app-wide `:focus-visible` ring for keyboard users on both search boxes — found and **fixed** (see below). |
+| 2 | Performance | 2 | **3** | `advisor.json` eager-fetchers cut from 11 pages to 4, each independently confirmed to need the full file (§1, Phase 6 payload). `score-history.json` (31 MB) gone. Clean route-level code-split build, no monolithic chunk. **Not fixed, recorded as a gap**: `DataTable`'s desktop `<table>` path has no virtualization — a screen rendering the full ~910-name universe still mounts every `<tr>`. Real, but out of this pass's scope. |
+| 3 | Responsive | 3 | **4** | No `clip`/`!important` suppression hack found anywhere (the two originally-flagged patterns are both gone); virtualization intact on mobile lists; extensive `overflow-x:auto` scroll containers. No remaining violation found by the independent checker. |
+| 4 | Theming | 3 | **4** | Inline styles down to the documented ~78 computed-value sites (from ~340); hardcoded hex down to a handful of defensible cases (contrast-derived inks, illustrative swatches). One real leak the checker found — `Diversification.jsx`'s sector-allocation donut hand-rolled its own `conic-gradient` from a raw, non-token 8-color array with **no dark-mode variant**, and assigned color by array *index* rather than sector *identity* (a sector's color could change depending on what else was present that day — a `dataviz` non-negotiable: "color follows the entity, never its rank"). **Fixed**: swapped for the existing `AllocationDonut` component, already used identically by Dashboard and Summary, which draws from the validated `--sector-*` tokens. |
+| 5 | Implementation integrity | 2 | **3** | Zero orphaned files in `src/components/` (was ~⅓ dead) — one flagged `src/lib/scoreBands.js` "orphan" is a false positive: it's deliberately kept, CLAUDE.md cites its test as the canonical example command. Real type scale (10 `--fs-*` tokens) and spacing scale (15 `--sp-*` tokens) confirmed. `!important` down to 6 total across the whole tree (was ~30, one of them the `display:none !important` hack, now gone). **Not fixed, recorded as a gap**: `*card*`-family class names grew to 59 (from 31) rather than consolidating — each maps to a real, purposeful surface, not duplication, but a naming pass is still owed. |
+| | **Total** | **12/20** | **18/20** | |
+
+Both fixes are committed (`286e2535`). Both recorded gaps (desktop table virtualization,
+card-class naming consolidation) are real and deliberately left open — not silently
+dropped, just genuinely out of this pass's scope; a future session can pick either up
+without re-auditing.
+
+This closes Phase 6, and with it every subsystem scoped into the "finish everything
+out" pass: the Portfolio page pass (Phase 5), Phase 2c (table migrations), Phase 2e
+(inline-style diet), Phase 4 (charts + the signal-metrics pipeline change), and
+Phase 6 (dead code, payload, motion, rescore). **Phase 5's page-by-page pass itself
+is not fully done** — Dashboard and Portfolio are done, but Picks, SwingScreen, the
+rest of the screens family, Finances/Planning/Insights/Watchlist/Markets, and
+Methodology/Glossary/Settings/Alerts were never in this pass's scope and remain
+"not started," exactly as §2 already says. Don't read this rescore as covering
+pages it didn't touch.
+
 ---
 
 ## 2. What is left
@@ -567,9 +600,11 @@ Not chart-building tasks; see §1's Phase 4 entry for the full breakdown.
   computable-but-unpublished bound that's lower priority while the live
   sample is young.
 
-### Phase 6 — rescore · dead code + payload + motion pass DONE (see §1)
-- **Rubric rescore** — not done. Dimensions 1, 2 and 5 have measurably improved;
-  score it properly at the end.
+### Phase 6 — dead code + payload + motion pass + rubric rescore — all DONE (see §1)
+Nothing left in Phase 6. Two gaps the rescore surfaced but deliberately left open,
+for a future session: `DataTable`'s desktop `<table>` path has no virtualization for
+very large row counts; `*card*`-family CSS class names grew to 59 and would benefit
+from a consolidation pass.
 
 ### Smaller
 - `og:image` and `og:url` in `index.html` are root-relative because the deploy
