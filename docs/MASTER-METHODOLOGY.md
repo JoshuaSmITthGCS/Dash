@@ -865,11 +865,84 @@ normalized to sum to 1): `segment_revenue_share` (ASC 280 XBRL segment reporting
 `filing_keyword_density_trend` (change in how much of a 10-K Item 1 discusses the theme),
 `transcript_theme_salience` (same measurement on earnings-call transcripts filed via 8-K),
 `customer_concentration_to_spenders` (ASC 280 named customers matched against confirmed theme
-spenders), `hyperscaler_capex_growth`, `backlog_growth`. Each signal's raw reading is mapped to
+spenders), `spender_capex_growth` (spelled `hyperscaler_capex_growth` in the AI theme that
+introduced it — same measurement, named for that theme's cheque-writers), `backlog_growth`.
+Each signal's raw reading is mapped to
 0–100 on its own natural scale (e.g. `segment_revenue_share` at value·200, capped 100; capex/backlog
 growth at `50 + value·165`). A theme requires **at least 2 resolved signals**
 (`min_signals_required`) before it publishes a score at all — a single segment-revenue data
 point is never allowed to carry a theme alone.
+
+Two scoping rules keep filing language from standing in for exposure:
+
+- **Theme-level vs company-specific signals.** A signal declaring a `universe` (the capex
+  pull-through) is measured on the spenders, so every candidate receives the identical reading.
+  It contributes to the score and describes the demand driver, but it cannot satisfy
+  `require_leading_signal_confirmation` — a constant has no cross-sectional information, and
+  accepting it as confirmation confirmed every company at once.
+- **Scope, at two grains.** Each theme declares `sectors` (the outer bound) and `industries`
+  (the supply chain itself, matched as case-insensitive substrings against the row's Yahoo
+  industry — `semiconductor` matches both `Semiconductors` and `Semiconductor Equipment &
+  Materials`). Both must pass. Sector alone was not enough: it cannot separate a chip-equipment
+  maker from a trucking company, since both are "Industrials". A row whose industry never
+  resolved falls back to the sector bound, and a theme's own `seed_tickers` are always in scope
+  — a vendor taxonomy built for the whole market understates some anchors (Eaton's data-center
+  power business is filed under "Specialty Industrial Machinery"), and naming the anchor is
+  narrower than admitting its whole industry. Out-of-scope names are not scored and never
+  trigger a filing fetch. Without any of this, banks and insurers ranked as top exposure to the
+  AI hardware buildout on the strength of describing their own data centers.
+  `themes.report_scope` logs what each level admits and warns when an industry list admits
+  nobody, so a renamed vendor classification cannot empty a theme silently.
+
+Eleven themes ship, each tagged to a top-level growth chain: `ai_infrastructure`
+(AI_COMPUTE_AND_DATA), `automation_and_robotics`, `grid_electrification`,
+`reshoring_industrial_capacity`, `defense_rearmament` (DEFENSE_AEROSPACE_AND_SPACE),
+`energy_security`, `cybersecurity`, `digital_payments`, `obesity_care_supply_chain` and
+`aging_demographics` (HEALTHTECH_AND_BIOTECH / DEMOGRAPHICS_AND_AGING), and
+`water_infrastructure` (CLIMATE_ADAPTATION_AND_WATER). Each publishes up to 20 rows per
+candidate group (leaders, sector-connected) with the pre-truncation group sizes alongside, and
+`by_ticker` indexes every scored name across every theme it clears — the screen's cross-theme
+view is built from that index. Sector-peer expansion draws on a **shared budget of 120
+candidates per run**, spent round-robin, so the cost of the layer does not grow with the number
+of themes declared (each candidate can cost two multi-megabyte filings).
+
+Every theme declares its **chain** — root driver, first-order winners, second-order winners,
+and the disconfirming evidence that would say the thesis is weakening — and a **role** per
+company (`root`, `enabler`, `supplier`, `infrastructure`, `service`), assigned by industry with
+per-ticker overrides. Roles are declared per theme because a role is a property of the
+relationship: a utility is the root of an electrification chain and infrastructure in an AI one.
+
+### Theme trend evaluation — `pipeline/theme_trend.py`
+
+A separate question from exposure, and the one place in the theme layer that reads price on
+purpose: *is this trend actually moving, is the move shared, and has the market already paid
+for it?* Exposure answers "does this company build any of this" and is forbidden from reading
+price; the trend block reads price about **the theme**, never about a company's exposure, and
+`validate_data` enforces the separation — the block must publish
+`contributes_to_exposure: false`, and an exposure row carrying any price field is a hard error.
+
+Measured across each theme's scored members, from fields the research score already computes:
+
+| Reading | What it answers |
+|---|---|
+| Direction | median member relative strength vs benchmark, plus acceleration |
+| Breadth | share of members above their own 20- and 50-day averages, and share outperforming |
+| Leadership | whether the group's strength survives removing its largest member |
+| Fundamental confirmation | share with rising 30-day EPS estimates; median volume ratio |
+| Crowding | median member expensiveness percentile (≥67 ⇒ "already priced") |
+| Role rotation | the same readings per chain role, which is what makes a rotation legible |
+| Chain confirmation | whether suppliers/infrastructure participate or only the root moved |
+
+These combine into one of six verdicts by stated rule, not fitted weights: `broadening`,
+`narrow leadership`, `strong but already priced`, `cooling`, `mixed`, `unmeasured` (fewer than
+5 members resolved). Crowding is checked **before** strength is celebrated, so a real trend
+that is already expensive — the documented failure mode of thematic products — can never be
+reported as a clean signal. No threshold here is optimized against returns; a parameter tuned
+on the same history it is judged against would be a backtest result presented as a measurement.
+
+Each theme also publishes `biggest_players`: its largest members by market capitalization with
+their exposure and role, ranked by size rather than by the exposure leaderboard, because the
+companies most identified with a trend are frequently not the ones the evidence ranks first.
 
 ---
 

@@ -494,10 +494,16 @@
     },
     "benchmark_analytics_history": {
       "allOf": [
-        { "$ref": "#/$defs/analyticsHistory" },
+        {
+          "$ref": "#/$defs/analyticsHistory"
+        },
         {
           "type": "object",
-          "properties": { "symbol": { "const": "SPY" } }
+          "properties": {
+            "symbol": {
+              "const": "SPY"
+            }
+          }
         }
       ]
     },
@@ -737,6 +743,115 @@
                         "sector_peer",
                         null
                       ]
+                    },
+                    "role": {
+                      "_comment": "Where this company sits in the theme's chain.",
+                      "enum": [
+                        "root",
+                        "enabler",
+                        "supplier",
+                        "infrastructure",
+                        "service",
+                        null
+                      ]
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "taxonomy_tag": {
+                "_comment": "Top-level growth-chain tag this theme belongs to (AI_COMPUTE_AND_DATA, ELECTRIFICATION_AND_GRID, ...).",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "chain": {
+                "_comment": "The growth chain as declared in the theme file: what changed, who sells into it first, who supplies them, and what would falsify the thesis.",
+                "type": "object",
+                "properties": {
+                  "root_driver": {
+                    "type": "string"
+                  },
+                  "first_order": {
+                    "type": "string"
+                  },
+                  "second_order": {
+                    "type": "string"
+                  },
+                  "disconfirming": {
+                    "type": "string"
+                  }
+                }
+              },
+              "trend": {
+                "_comment": "Whether the trend is moving and whether it is already paid for. Reads price DELIBERATELY and is published apart from exposure; contributes_to_exposure must be false, which validate_data enforces.",
+                "type": "object",
+                "required": [
+                  "contributes_to_exposure",
+                  "verdict"
+                ],
+                "properties": {
+                  "contributes_to_exposure": {
+                    "const": false
+                  },
+                  "members_measured": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "verdict": {
+                    "type": "object",
+                    "required": [
+                      "label"
+                    ],
+                    "properties": {
+                      "label": {
+                        "enum": [
+                          "broadening",
+                          "narrow leadership",
+                          "strong but already priced",
+                          "cooling",
+                          "mixed",
+                          "unmeasured"
+                        ]
+                      },
+                      "summary": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": true
+              },
+              "biggest_players": {
+                "_comment": "Largest members by market capitalization with their exposure and chain role - ranked by size, not by the exposure leaderboard.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "ticker"
+                  ],
+                  "properties": {
+                    "ticker": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "market_cap": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "theme_exposure_score": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
                     }
                   },
                   "additionalProperties": true
@@ -807,20 +922,33 @@
   "$defs": {
     "analyticsHistory": {
       "type": "object",
-      "required": ["dates", "closes", "frequency"],
+      "required": [
+        "dates",
+        "closes",
+        "frequency"
+      ],
       "properties": {
-        "symbol": { "type": "string" },
+        "symbol": {
+          "type": "string"
+        },
         "dates": {
           "type": "array",
           "minItems": 2,
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
         "closes": {
           "type": "array",
           "minItems": 2,
-          "items": { "type": "number", "exclusiveMinimum": 0 }
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
         },
-        "frequency": { "const": "daily" }
+        "frequency": {
+          "const": "daily"
+        }
       },
       "additionalProperties": false
     },

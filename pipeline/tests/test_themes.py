@@ -58,6 +58,237 @@ class ThemeConfigTests(unittest.TestCase):
     def test_retired_themes_are_skipped_unless_requested(self):
         self.assertEqual(themes.load_themes("/nonexistent-directory"), [])
 
+    def test_every_shipped_theme_declares_a_usable_definition(self):
+        loaded = themes.load_themes()
+        self.assertGreater(len(loaded), 1, "expected the shipped theme set, not just one file")
+        for theme in loaded:
+            with self.subTest(theme=theme["id"]):
+                self.assertAlmostEqual(sum(s["weight"] for s in theme["signals"]), 1.0, places=4)
+                self.assertEqual(theme["guardrails"]["max_price_momentum_contribution"], 0.0)
+                # Unscoped themes rank on filing language alone, which is how a bank ends up
+                # published as top exposure to a hardware buildout. Sector alone is not
+                # enough either - it cannot separate a chip-equipment maker from a trucking
+                # company - so a shipped theme declares both levels.
+                self.assertTrue(theme["sectors"], "shipped themes must declare a sector scope")
+                self.assertTrue(theme["industries"],
+                                "shipped themes must declare the industries they are built by")
+                self.assertTrue(theme["seed_tickers"])
+                self.assertTrue((theme.get("keywords") or {}).get("include"))
+
+    def test_a_capex_pull_through_signal_without_a_universe_is_rejected(self):
+        problems = themes.validate_theme({**BASE_THEME, "signals": [
+            {"name": "filing_keyword_density_trend", "weight": 0.5},
+            {"name": "spender_capex_growth", "weight": 0.5},   # nobody's capex to read
+        ]})
+        self.assertTrue(any("universe" in problem for problem in problems), problems)
+
+    def test_a_theme_measured_only_on_its_spenders_is_rejected(self):
+        problems = themes.validate_theme({**BASE_THEME, "signals": [
+            {"name": "spender_capex_growth", "weight": 1, "universe": ["MSFT"]},
+        ]})
+        self.assertTrue(any("company-specific" in problem for problem in problems), problems)
+
+    def test_a_signal_with_a_universe_is_marked_theme_level(self):
+        theme = build(signals=[
+            {"name": "filing_keyword_density_trend", "weight": 0.5},
+            {"name": "spender_capex_growth", "weight": 0.5, "universe": ["MSFT", "GOOGL"]},
+        ])
+        by_name = {signal["name"]: signal for signal in theme["signals"]}
+        self.assertFalse(by_name["filing_keyword_density_trend"]["theme_level"])
+        self.assertTrue(by_name["spender_capex_growth"]["theme_level"])
+
+
+class IndustryScopeTests(unittest.TestCase):
+    """Whether the names a theme admits are really that theme's supply chain.
+
+    Industry strings are the vendor's own, copied from published rows, so these also pin the
+    format the substring terms are matched against ("Banks - Regional", "Semiconductors",
+    "Electrical Equipment & Parts").
+    """
+
+    # What each shipped theme should and should not adopt. The AI rows are the case that
+    # motivated scoping at all: a chipmaker belongs in an accelerator buildout and a bank
+    # does not, however much its 10-K talks about its own data centers.
+    CASES = {
+        "ai_infrastructure": {
+            "in": ["Semiconductors", "Semiconductor Equipment & Materials",
+                   "Electronic Components", "Communication Equipment", "Computer Hardware",
+                   "Electrical Equipment & Parts", "Engineering & Construction",
+                   "Utilities - Regulated Electric"],
+            "out": ["Banks - Regional", "Banks - Diversified", "Credit Services",
+                    "Insurance - Property & Casualty", "Trucking", "Railroads",
+                    "Software - Application", "Asset Management", "Restaurants"],
+        },
+        "grid_electrification": {
+            "in": ["Electrical Equipment & Parts", "Engineering & Construction",
+                   "Utilities - Regulated Electric", "Industrial Distribution", "Copper"],
+            "out": ["Banks - Regional", "Trucking", "Semiconductors", "Biotechnology"],
+        },
+        "defense_rearmament": {
+            "in": ["Aerospace & Defense", "Scientific & Technical Instruments",
+                   "Information Technology Services"],
+            "out": ["Trucking", "Banks - Regional", "Utilities - Regulated Electric",
+                    "Semiconductors"],
+        },
+        "reshoring_industrial_capacity": {
+            "in": ["Semiconductor Equipment & Materials", "Specialty Industrial Machinery",
+                   "Engineering & Construction", "Steel"],
+            "out": ["Banks - Regional", "Trucking", "Railroads", "Biotechnology"],
+        },
+        "obesity_care_supply_chain": {
+            "in": ["Medical Instruments & Supplies", "Medical Devices",
+                   "Diagnostics & Research", "Specialty Chemicals"],
+            "out": ["Banks - Regional", "Drug Manufacturers - General",   # the spenders
+                    "Medical Care Facilities", "Healthcare Plans", "Trucking"],
+        },
+        "water_infrastructure": {
+            "in": ["Specialty Industrial Machinery", "Pollution & Treatment Controls",
+                   "Utilities - Regulated Water", "Metal Fabrication"],
+            "out": ["Banks - Regional", "Trucking", "Semiconductors",
+                    "Utilities - Regulated Electric"],
+        },
+    }
+
+    # Sector is only the outer bound, so scope has to be exercised through the theme's real
+    # sector list too; an industry that cannot occur in the theme's sectors is unreachable.
+    SECTOR_OF = {
+        "Semiconductors": "Technology", "Semiconductor Equipment & Materials": "Technology",
+        "Electronic Components": "Technology", "Communication Equipment": "Technology",
+        "Computer Hardware": "Technology", "Software - Application": "Technology",
+        "Scientific & Technical Instruments": "Technology",
+        "Information Technology Services": "Technology",
+        "Electrical Equipment & Parts": "Industrials",
+        "Engineering & Construction": "Industrials", "Trucking": "Industrials",
+        "Railroads": "Industrials", "Industrial Distribution": "Industrials",
+        "Specialty Industrial Machinery": "Industrials", "Aerospace & Defense": "Industrials",
+        "Pollution & Treatment Controls": "Industrials", "Metal Fabrication": "Industrials",
+        "Utilities - Regulated Electric": "Utilities",
+        "Utilities - Regulated Water": "Utilities",
+        "Banks - Regional": "Financial Services", "Banks - Diversified": "Financial Services",
+        "Credit Services": "Financial Services", "Asset Management": "Financial Services",
+        "Insurance - Property & Casualty": "Financial Services",
+        "Medical Instruments & Supplies": "Healthcare", "Medical Devices": "Healthcare",
+        "Diagnostics & Research": "Healthcare", "Biotechnology": "Healthcare",
+        "Drug Manufacturers - General": "Healthcare", "Healthcare Plans": "Healthcare",
+        "Medical Care Facilities": "Healthcare",
+        "Specialty Chemicals": "Basic Materials", "Steel": "Basic Materials",
+        "Copper": "Basic Materials", "Restaurants": "Consumer Cyclical",
+    }
+
+    def _row(self, industry):
+        return {"ticker": "X", "industry": industry, "sector": self.SECTOR_OF[industry]}
+
+    def test_each_theme_admits_its_supply_chain_and_refuses_the_rest(self):
+        by_id = {theme["id"]: theme for theme in themes.load_themes()}
+        for theme_id, expectations in self.CASES.items():
+            theme = by_id[theme_id]
+            for industry in expectations["in"]:
+                with self.subTest(theme=theme_id, admits=industry):
+                    self.assertTrue(themes.in_theme_scope(theme, self._row(industry)))
+            for industry in expectations["out"]:
+                with self.subTest(theme=theme_id, refuses=industry):
+                    self.assertFalse(themes.in_theme_scope(theme, self._row(industry)))
+
+    def test_a_declared_anchor_is_in_scope_whatever_the_vendor_calls_it(self):
+        # Eaton's real case: it anchors the AI theme for its data-center power business and is
+        # classified "Specialty Industrial Machinery", which that theme deliberately does not
+        # admit - adding the industry to keep one anchor would drag in every pump and
+        # compressor maker in the market.
+        theme = next(t for t in themes.load_themes() if t["id"] == "ai_infrastructure")
+        eaton = {"ticker": "ETN", "sector": "Industrials",
+                 "industry": "Specialty Industrial Machinery"}
+        self.assertTrue(themes.in_theme_scope(theme, eaton))
+        # A different company in the same industry stays out.
+        self.assertFalse(themes.in_theme_scope(
+            theme, {"ticker": "DOV", "sector": "Industrials",
+                    "industry": "Specialty Industrial Machinery"}))
+
+    def test_every_shipped_theme_admits_its_own_anchors(self):
+        # A theme whose declared anchors fail its own scope is self-inconsistent: peer
+        # expansion is seeded from those anchors, so the theme would be built around names it
+        # refuses to publish.
+        for theme in themes.load_themes():
+            for seed in theme["seed_tickers"]:
+                with self.subTest(theme=theme["id"], seed=seed):
+                    self.assertTrue(themes.in_theme_scope(
+                        theme, {"ticker": seed, "sector": "Financial Services",
+                                "industry": "Banks - Regional"}),
+                        "a declared anchor must survive its own theme's scope")
+
+    def test_an_unclassified_row_falls_back_to_the_sector_bound(self):
+        # An absent classification is not evidence of anything, so it must not silently drop
+        # a name the sector bound would have admitted.
+        theme = build(sectors=["Technology"], industries=["semiconductor"])
+        self.assertTrue(themes.in_theme_scope(theme, {"sector": "Technology"}))
+        self.assertFalse(themes.in_theme_scope(theme, {"sector": "Financial Services"}))
+
+    def test_industry_terms_match_case_insensitively_as_substrings(self):
+        theme = build(sectors=["Technology"], industries=["semiconductor"])
+        self.assertTrue(themes.in_theme_scope(
+            theme, {"sector": "Technology", "industry": "Semiconductor Equipment & Materials"}))
+        self.assertFalse(themes.in_theme_scope(
+            theme, {"sector": "Technology", "industry": "Software - Infrastructure"}))
+
+    def test_the_sector_bound_still_applies_when_an_industry_term_would_match(self):
+        theme = build(sectors=["Technology"], industries=["equipment"])
+        self.assertFalse(themes.in_theme_scope(
+            theme, {"sector": "Industrials", "industry": "Farm & Heavy Construction Machinery Equipment"}))
+
+    def test_a_term_list_that_admits_nobody_is_reported_rather_than_silently_empty(self):
+        # The failure this catches: a renamed or mistyped vendor classification would drop
+        # every candidate, and an empty theme is otherwise indistinguishable from one whose
+        # signals did not resolve.
+        import contextlib
+        import io
+
+        theme = build(sectors=["Technology"], industries=["semiconducter"])   # typo, on purpose
+        rows = [{"ticker": "CHIP", "sector": "Technology", "industry": "Semiconductors"}]
+        log = io.StringIO()
+        with contextlib.redirect_stdout(log):     # LOG writes through stdout
+            themes.report_scope([theme], rows)
+        self.assertIn("industry scope admitted none", log.getvalue())
+
+    def test_a_working_term_list_reports_its_count_without_complaining(self):
+        import contextlib
+        import io
+
+        theme = build(sectors=["Technology"], industries=["semiconductor"])
+        rows = [{"ticker": "CHIP", "sector": "Technology", "industry": "Semiconductors"}]
+        log = io.StringIO()
+        with contextlib.redirect_stdout(log):
+            themes.report_scope([theme], rows)
+        self.assertIn("1 candidates in scope", log.getvalue())
+        self.assertNotIn("admitted none", log.getvalue())
+
+
+class ThemeScopeTests(unittest.TestCase):
+    def test_a_theme_without_a_declared_scope_admits_everything(self):
+        theme = build()
+        self.assertTrue(themes.in_theme_scope(theme, {"sector": "Financial Services"}))
+
+    def test_scope_matching_ignores_case_and_surrounding_space(self):
+        theme = build(sectors=["Technology"])
+        self.assertTrue(themes.in_theme_scope(theme, {"sector": " technology "}))
+        self.assertFalse(themes.in_theme_scope(theme, {"sector": "Financial Services"}))
+        self.assertFalse(themes.in_theme_scope(theme, {}))
+
+    def test_an_out_of_scope_company_is_never_even_measured(self):
+        # The point is not only that the bank is absent from the published rows: an
+        # out-of-scope name must not cost a filing fetch to reject.
+        theme = build(sectors=["Technology"])
+        asked = []
+
+        def provider(ticker, _theme):
+            asked.append(ticker)
+            return {"segment_revenue_share": 0.5, "filing_keyword_density_trend": 0.4}
+
+        rows = [{"ticker": "CHIP", "sector": "Technology", "components": {"fundamentals": 70}},
+                {"ticker": "BANK", "sector": "Financial Services",
+                 "components": {"fundamentals": 90}}]
+        screen = themes.build_theme_screen([theme], rows, provider)
+        self.assertEqual(asked, ["CHIP"])
+        self.assertEqual([row["ticker"] for row in screen["themes"][0]["rows"]], ["CHIP"])
+
 
 class ExposureScoringTests(unittest.TestCase):
     def test_stronger_evidence_scores_higher(self):
@@ -96,6 +327,35 @@ class ExposureScoringTests(unittest.TestCase):
         })
         self.assertFalse(result["eligible"])
         self.assertTrue(any("leading signal" in reason for reason in result["excluded_by"]))
+
+    def test_a_theme_wide_reading_cannot_confirm_one_companys_exposure(self):
+        # The failure this closes: the spenders' capex reading is identical for every
+        # candidate, so accepting it as confirmation confirmed every company at once - which
+        # is how names whose only company-specific evidence was flat filing language were
+        # published as fully-cleared exposure.
+        theme = build(signals=[
+            {"name": "filing_keyword_density_trend", "weight": 0.5},
+            {"name": "spender_capex_growth", "weight": 0.5, "universe": ["MSFT", "GOOGL"]},
+        ])
+        theme_wide_only = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": -0.2,   # this company says less about it
+            "spender_capex_growth": 0.8,            # but the spenders are spending
+        })
+        self.assertFalse(theme_wide_only["eligible"])
+        self.assertEqual(theme_wide_only["leading_signals_fired"], [])
+        self.assertEqual(theme_wide_only["theme_level_signals_fired"], ["spender_capex_growth"])
+        self.assertEqual(theme_wide_only["company_signals_answered"], 1)
+
+        with_company_evidence = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": 0.6, "spender_capex_growth": 0.8})
+        self.assertTrue(with_company_evidence["eligible"])
+        self.assertEqual(with_company_evidence["leading_signals_fired"],
+                         ["filing_keyword_density_trend"])
+
+    def test_the_general_and_ai_specific_capex_signals_score_identically(self):
+        reading = 0.3
+        self.assertEqual(themes.normalize_signal("spender_capex_growth", reading),
+                         themes.normalize_signal("hyperscaler_capex_growth", reading))
 
     def test_price_signals_are_ignored_even_if_supplied(self):
         # Defence in depth: validation rejects them at config load, and scoring ignores
@@ -171,12 +431,61 @@ class ScreenAssemblyTests(unittest.TestCase):
             [theme], rows,
             lambda t, th: {"segment_revenue_share": 0.4, "filing_keyword_density_trend": 0.3})
         self.assertIn("AAA", screen["by_ticker"])
-        self.assertEqual(screen["by_ticker"]["AAA"][0]["theme_id"], "test_theme")
+        entry = screen["by_ticker"]["AAA"][0]
+        self.assertEqual(entry["theme_id"], "test_theme")
+        # Confidence travels with the index so a cross-theme reader can tell two
+        # well-evidenced exposures from two thin ones.
+        self.assertEqual(entry["confidence"], 0.7)
 
     def test_empty_screen_still_satisfies_the_published_contract(self):
         screen = themes.empty_screen("no SEC credentials")
         self.assertEqual(screen["themes"], [])
         self.assertIn("unavailable_reason", screen)
+
+    def test_each_candidate_group_is_published_on_its_own_quota(self):
+        # The regression this locks: one global cap let leaders take every published slot,
+        # so the sector-connected group - the only one that surfaces a name before the
+        # leaderboard does - shipped three rows out of dozens scored.
+        theme = build()
+        rows = [{"ticker": f"LEAD{index}", "candidate_source": "published_leader",
+                 "components": {"fundamentals": 90}} for index in range(5)]
+        rows += [{"ticker": f"PEER{index}", "candidate_source": "sector_peer",
+                  "components": {"fundamentals": 40}} for index in range(5)]
+        screen = themes.build_theme_screen(
+            [theme], rows,
+            lambda ticker, _theme: {"segment_revenue_share": 0.5,
+                                    "filing_keyword_density_trend": 0.4},
+            limit_per_group=2)
+        published = screen["themes"][0]["rows"]
+        sources = [row["candidate_source"] for row in published]
+        self.assertEqual(sources.count("published_leader"), 2)
+        self.assertEqual(sources.count("sector_peer"), 2)
+        # Pre-truncation sizes stay published so the UI can say how much it is hiding.
+        self.assertEqual(screen["themes"][0]["group_counts"], {"leaders": 5, "connected": 5})
+        self.assertEqual(screen["themes"][0]["count"], 10)
+
+    def test_a_holding_is_grouped_with_the_leaders_not_the_connected_names(self):
+        theme = build()
+        rows = [{"ticker": "HELD", "candidate_source": "portfolio",
+                 "components": {"fundamentals": 60}},
+                {"ticker": "PEER", "candidate_source": "sector_peer",
+                 "components": {"fundamentals": 60}}]
+        screen = themes.build_theme_screen(
+            [theme], rows,
+            lambda ticker, _theme: {"segment_revenue_share": 0.5,
+                                    "filing_keyword_density_trend": 0.4})
+        self.assertEqual(screen["themes"][0]["group_counts"], {"leaders": 1, "connected": 1})
+
+    def test_one_company_is_indexed_under_every_theme_it_is_exposed_to(self):
+        # What the cross-theme view on the screen is assembled from.
+        first, second = build(), build(id="second_theme", display_name="Second")
+        rows = [{"ticker": "AAA", "components": {"fundamentals": 70}}]
+        screen = themes.build_theme_screen(
+            [first, second], rows,
+            lambda ticker, _theme: {"segment_revenue_share": 0.4,
+                                    "filing_keyword_density_trend": 0.3})
+        self.assertEqual([entry["theme_id"] for entry in screen["by_ticker"]["AAA"]],
+                         ["test_theme", "second_theme"])
 
 
 class CandidateExpansionTests(unittest.TestCase):
@@ -238,6 +547,63 @@ class CandidateExpansionTests(unittest.TestCase):
         self.assertEqual(len(peers), 5)
         # Highest-scoring peers win the capped slots.
         self.assertEqual({row["ticker"] for row in peers}, {f"PEER{i}" for i in range(5)})
+
+    def test_peer_expansion_respects_the_themes_declared_scope(self):
+        # A peer group is coarse - business-profile groups span whole sectors - so scope is
+        # what stops a theme from adopting neighbours its supply chain cannot contain.
+        theme = build(seed_tickers=["NVDA"], sectors=["Technology"])
+        research = self._research() + [
+            {"ticker": "BANK", "sector": "Technology", "score": 70},
+        ]
+        candidates = themes.expand_theme_candidates(
+            [build(seed_tickers=["NVDA"], sectors=["Healthcare"])], research,
+            ranked=[research[0]], portfolio_symbols=[])
+        self.assertEqual({row["ticker"] for row in candidates
+                          if row["candidate_source"] == "sector_peer"}, set())
+        in_scope = themes.expand_theme_candidates(
+            [theme], research, ranked=[research[0]], portfolio_symbols=[])
+        self.assertIn("AMD", {row["ticker"] for row in in_scope})
+
+    def test_the_shared_budget_bounds_expansion_however_many_themes_exist(self):
+        # Each candidate costs up to two multi-megabyte filings, so the cost of the theme
+        # layer must not grow with the number of themes declared.
+        research = [{"ticker": "NVDA", "sector": "Technology", "score": 100}] + [
+            {"ticker": f"PEER{index}", "sector": "Technology", "score": 99 - index}
+            for index in range(40)]
+        many = [build(id=f"theme_{index}", seed_tickers=["NVDA"]) for index in range(8)]
+        candidates = themes.expand_theme_candidates(
+            many, research, ranked=[research[0]], portfolio_symbols=[],
+            limit_per_theme=20, total_peer_budget=12)
+        peers = [row for row in candidates if row["candidate_source"] == "sector_peer"]
+        self.assertEqual(len(peers), 12)
+
+    def test_the_budget_is_spent_on_every_themes_best_candidate_first(self):
+        # Round-robin, not first-come: a theme evaluated last must not be starved by one
+        # evaluated first draining the whole budget on its own list.
+        research = [
+            {"ticker": "CHIP", "sector": "Technology", "score": 100},
+            {"ticker": "MACH", "sector": "Industrials", "score": 99},
+            {"ticker": "CHIP2", "sector": "Technology", "score": 98},
+            {"ticker": "MACH2", "sector": "Industrials", "score": 97},
+        ]
+        tech = build(id="tech_theme", seed_tickers=["CHIP"], sectors=["Technology"])
+        industrial = build(id="industrial_theme", seed_tickers=["MACH"],
+                           sectors=["Industrials"])
+        candidates = themes.expand_theme_candidates(
+            [tech, industrial], research, ranked=research[:2], portfolio_symbols=[],
+            total_peer_budget=2)
+        peers = {row["ticker"] for row in candidates
+                 if row["candidate_source"] == "sector_peer"}
+        self.assertEqual(peers, {"CHIP2", "MACH2"})
+
+    def test_a_fund_is_never_a_theme_candidate(self):
+        # A theme is a claim about a place in a supply chain; a fund has neither a place in
+        # one nor a 10-K to read.
+        research = [{"ticker": "NVDA", "sector": "Technology", "score": 90},
+                    {"ticker": "SMH", "sector": "Technology", "score": 95, "is_etf": True}]
+        candidates = themes.expand_theme_candidates(
+            [build(seed_tickers=["NVDA"])], research, ranked=research, portfolio_symbols=[])
+        self.assertNotIn("SMH", {row["ticker"] for row in candidates})
 
     def test_a_theme_whose_seed_tickers_were_never_scored_this_run_expands_nothing(self):
         theme = build(seed_tickers=["NOTSCORED"])

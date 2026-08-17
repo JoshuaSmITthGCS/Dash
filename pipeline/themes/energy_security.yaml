@@ -1,0 +1,103 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: energy_security
+  display_name: "Energy Security & Firm Power"
+  taxonomy_tag: ENERGY_SECURITY
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    Reliability and sovereignty have displaced cost as the first question asked of an energy
+    system. That favors what can be dispatched on demand and sourced domestically - gas
+    infrastructure, LNG export, nuclear - and it is a different bet from the decarbonization
+    theme it is routinely confused with, which is why the two are not merged here.
+
+  chain:
+    root_driver: >
+      Governments and large buyers now price the risk of an interrupted or foreign-controlled
+      supply, and simultaneous load growth means firm, dispatchable capacity is scarce for the
+      first time in a generation.
+    first_order: >
+      The producers and generators themselves: gas and oil operators, independent power
+      producers, and nuclear operators selling into long-dated contracts.
+    second_order: >
+      Pipelines, liquefaction and storage; the drilling, completion and equipment supply
+      chain; turbines and reactor components; and the fuel cycle behind them.
+    disconfirming: >
+      Long-dated LNG offtake contracts failing to renew; permitting reform stalling; power
+      prices falling on new supply rather than weak demand; capital discipline breaking down
+      into a drilling boom, which historically ends this trade rather than extends it.
+
+  seed_tickers: [WMB, KMI, OKE, LNG, CEG, VST, NRG, SLB, BKR, HAL]
+  expand_via_tnic: true
+  sectors: [Energy, Utilities, Industrials, Basic Materials]
+  industries:
+    - "oil & gas midstream"
+    - "oil & gas equipment & services"
+    - "oil & gas e&p"
+    - "oil & gas refining & marketing"
+    - "uranium"
+    - "utilities - independent power producers"
+    - "utilities - regulated gas"
+    - "specialty industrial machinery"      # turbines, compression, reactor components
+    - "engineering & construction"          # terminals, pipelines, plants
+  keywords:
+    include:
+      - "liquefied natural gas"
+      - "LNG"
+      - "firm capacity"
+      - "dispatchable"
+      - "baseload"
+      - "small modular reactor"
+      - "nuclear fuel"
+      - "energy security"
+      - "takeaway capacity"
+      - "power purchase agreement"
+    exclude:
+      # Disclosure and target language rather than assets or contracts.
+      - "energy efficiency of our facilities"
+      - "renewable energy credits"
+      - "carbon offsets"
+  sic_codes: [4922, 1311, 3533]
+  icb_subsectors: []
+
+  roles:
+    root:
+      industries: ["oil & gas e&p", "utilities - independent power producers", "uranium"]
+    infrastructure:
+      industries: ["oil & gas midstream", "utilities - regulated gas",
+                   "engineering & construction"]
+    supplier:
+      industries: ["oil & gas equipment & services", "specialty industrial machinery"]
+    service:
+      industries: ["oil & gas refining & marketing"]
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    # Contracted revenue not yet delivered is unusually meaningful here: an LNG or power
+    # agreement is a decade-long obligation, disclosed long before the first cargo.
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.25
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [LNG, WMB, KMI, OKE, CEG]
+      leading: true
+      weight: 0.20
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

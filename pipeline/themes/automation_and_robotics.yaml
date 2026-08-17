@@ -1,0 +1,103 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: automation_and_robotics
+  display_name: "Automation & Robotics"
+  taxonomy_tag: AUTOMATION_AND_ROBOTICS
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    The cleanest structural chain that owes nothing to AI enthusiasm: labor is scarce and
+    expensive in exactly the places manufacturing and logistics are being rebuilt, and the
+    substitution is bought as equipment rather than hired. What makes it durable is that the
+    payback is arithmetic - a wage bill against a machine price - so the spending survives the
+    sentiment cycle that thematic screens usually mistake for a trend.
+
+  chain:
+    root_driver: >
+      Working-age population growth has stalled in every large manufacturing economy while
+      wages in warehousing and assembly keep rising, so output per worker has to come from
+      capital rather than headcount.
+    first_order: >
+      Robots, motion control and machine vision - the equipment that directly replaces a task,
+      bought against a payback period rather than a forecast.
+    second_order: >
+      The sensors, drives, controllers and precision components inside those machines, the
+      industrial software that schedules them, and the integrators who install them.
+    disconfirming: >
+      Machine tool and robot order books turning down; wage growth in logistics and assembly
+      decelerating, which removes the payback; capex guidance from automotive and warehousing
+      customers being cut; integrators reporting project deferrals rather than backlog.
+
+  seed_tickers: [ROK, EMR, HON, AME, DOV, ZBRA, CGNX, TER]
+  expand_via_tnic: true
+  sectors: [Industrials, Technology]
+  industries:
+    - "specialty industrial machinery"
+    - "scientific & technical instruments"     # vision, metrology, sensing
+    - "electronic components"                  # drives, encoders, motion parts
+    - "communication equipment"                # industrial networking, scanning
+    - "software - application"                 # factory and warehouse execution software
+    - "semiconductor equipment"                # automation sold into fabs
+    - "farm & heavy construction machinery"    # autonomous heavy equipment
+  keywords:
+    include:
+      - "industrial automation"
+      - "factory automation"
+      - "machine vision"
+      - "motion control"
+      - "collaborative robot"
+      - "robotics"
+      - "warehouse automation"
+      - "programmable logic controller"
+      - "autonomous mobile robot"
+      - "labor shortage"
+    exclude:
+      # Process-improvement and headcount language that every filer writes regardless of
+      # whether it sells or buys a single machine.
+      - "automate our internal processes"
+      - "workforce reductions"
+      - "robotic process automation"           # back-office software, a different market
+  sic_codes: [3559, 3823, 3827]
+  icb_subsectors: []
+
+  roles:
+    root:
+      industries: ["specialty industrial machinery"]
+    supplier:
+      industries: ["electronic components", "scientific & technical instruments",
+                   "semiconductor equipment"]
+    enabler:
+      industries: ["software - application", "communication equipment"]
+    service:
+      industries: ["industrial distribution"]
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.25
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    # The buyers of automation: the manufacturers and logistics operators whose capex is the
+    # demand for it.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [AMZN, TSLA, GM, F, DE, CAT]
+      leading: true
+      weight: 0.20
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2
