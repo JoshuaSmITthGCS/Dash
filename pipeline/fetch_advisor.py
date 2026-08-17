@@ -2165,12 +2165,10 @@ def run():
     reconciliation_failures = attribution_errors(research)
     if reconciliation_failures:
         raise ValueError(f"Score attribution failed to reconcile: {reconciliation_failures[:5]}")
-    save_json("score-history.json", {
-        "schema_version": 1,
-        "generated_at": generated_at,
-        "minimum_months": SETTINGS["explainability"]["score_history_minimum_months"],
-        "by_ticker": score_history,
-    })
+    # score_history itself is not published standalone: nothing in the browser ever fetched
+    # score-history.json (confirmed by grep — it was 31 MB of committed dead weight), and the
+    # per-row explainability.score_history field attach_explainability() writes above is what
+    # ScoreExplainability.jsx actually reads.
     if cross_normalizer:
         normalization_audit = write_normalization_audit(cross_normalizer, payload, generated_at)
         payload["normalization_audit"] = {

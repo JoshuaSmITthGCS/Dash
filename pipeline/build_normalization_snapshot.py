@@ -164,12 +164,9 @@ def main():
     reconciliation_failures = attribution_errors(payload.get("research") or [])
     if reconciliation_failures:
         raise ValueError(f"Score attribution failed to reconcile: {reconciliation_failures[:5]}")
-    save_json("score-history.json", {
-        "schema_version": 1,
-        "generated_at": payload.get("generated_at"),
-        "minimum_months": SETTINGS["explainability"]["score_history_minimum_months"],
-        "by_ticker": score_history,
-    })
+    # score_history is not published standalone — see the matching comment in
+    # fetch_advisor.py. The per-row explainability.score_history field attach_explainability()
+    # wrote above is what the frontend actually reads.
     save_json("advisor.json", payload)
     save_json("report.json", report_snapshot(payload))
     save_json("diagnostics.json", diagnostics_payload(payload))
