@@ -121,13 +121,93 @@ recent common trading days. Screenshots in `design/directions/shots/`.
   while the icon beside it is `aria-hidden`, leaving a phone reader with a bare
   glyph. The chips reflow onto two columns instead.
 
-### Phase 4 — charts (partial) ⚠️
+### Phase 4 — charts ✅ (see the two disclosed gaps below)
 - **All four chart palettes validated** with the dataviz validator and fixed in
   the tokens. Three failed. See §3 for the details — they were real bugs.
 - **`CorrelationHeatmap`** replaces the raw `<td>` matrix on Diversification:
   diverging scale, neutral gray at zero, value printed in every cell, per-cell
   accessible name stating the number *and its meaning in words*, live-region
   hover readout, and a table view carrying the same numbers.
+- **The plan's "10 charts unbuilt" was stale before this pass started** —
+  research found `ResearchRadarChart`/`ScoreExplainability` already wired into
+  `StockDetailModal`, and `ProjectionFanChart` already wired into Planning via
+  `ProjectionPanel`. Corrected list: 8 genuinely new build items, all shipped.
+- **Two new reusable chart primitives, plus two single-use ones**, all built
+  to GrowthChart's existing conventions (`useElementWidth`, tokens,
+  `useMediaQuery`) and CorrelationHeatmap's chart/table toggle pattern:
+  - `ScatterChart` — risk/return scatter (ShadowPortfolios: max drawdown vs.
+    aligned net return) and the structural/tactical quadrant scatter
+    (ResearchScreen's matrix screen, 300 points, colored by the model's own
+    classification with median-split reference lines).
+  - `DotPlot` — dot-plot small multiples per comparable group
+    (BacktestComparison), the cross-strategy annualized-return comparison
+    (new `CrossStrategyComparison`, wired into OptionsScreen — the other half
+    of "stat-tile row + comparison dot plot", `BacktestSummary` already had
+    the stat-tile row), the macro bullet trio (Dashboard's Market pulse,
+    reusing the FRED regime's rates/inflation/labor factor scores), and theme
+    signal bars (ThemeExposureScreen, mean resolved score per declared signal
+    across a theme's leaders).
+  - `PairedBarChart` — champion-vs-challenger mean rank IC by horizon
+    (LiveValidation), bars anchored to zero since IC can be negative.
+  - `BarTimeline` — congress disclosed-trade volume by month (CongressTrades).
+  - All four share one accessibility fix found while verifying the 300-point
+    quadrant scatter: past 40 points/bars, individual marks stop being
+    keyboard tab stops (40 tab presses to clear one chart is a real
+    regression) and the live-region readout points keyboard users to the
+    always-available Table view instead. Under the limit, every mark stays
+    individually focusable.
+  - One real bug found and fixed in passing: OptionsScreen's `DataTable` used
+    ticker alone as the row key, but the published screen has (and, in the
+    checked-in snapshot, did — 4 of 33 rows) carried the exact same contract
+    at two adjacent ranks with an identical score. Composite key plus a
+    defensive dedupe now in the frontend; the duplicate-row cause is a
+    pipeline issue, not fixed here.
+  - One spacing bug found and fixed: `.dot-plot` only had bottom margin, fine
+    where a paragraph's own margin supplied the gap (BacktestComparison),
+    broken where it follows a CSS grid directly (Dashboard's Market pulse).
+    Now margin on both sides, re-checked against the other three usages.
+- **The `SignalMetricsPanel` bullet-chart blocker is now partially closed**,
+  not just documented as blocked. `pipeline/signal_metrics.py`'s `metric()`
+  gained `kill_threshold_value` + `comparison` — a real, same-scale-as-`value`
+  numeric pair, populated only where one genuinely exists (never derived from
+  the prose `kill_threshold` text, never fabricated). 9 of the 40 published
+  metrics now carry it: `rank_ic_1d/5d/21d/63d`, `ic_ir`, `percent_of_adv`,
+  `deflated_sharpe`, `probabilistic_sharpe`, `pbo`. Two previously-inline magic
+  numbers (`feature_psi`'s `0.25`, `percent_of_adv`'s `5`) became named module
+  constants alongside the existing `MINIMUM_MEAN_IC`-style ones in the same
+  pass. `SignalMetricsPanel` draws a small inline bullet (track, threshold
+  tick, value dot colored by breach state) on exactly those 9 cards — nothing
+  else. Verified end-to-end: pipeline tests (33/33 in this file, 1982/1982
+  across the suite), `validate_data.py`, `check_ui_weights.py`, and
+  `validate_documentation_claims.py` all pass; the regenerated
+  `public/data/validation/signal_metrics.json` shows real breached/healthy
+  bullets on the live page in both themes.
+
+  **Not closed, and correctly still absent from the chart**: the other 14
+  metrics that carry a `kill_threshold` string. Per the research behind this
+  fix, they fall into three groups that a same pass legitimately cannot
+  resolve: (a) `per_leg_ic`, `leg_correlation`, `drop_one_leg` compare a
+  *count* against an implicit `0`, not the number already in their
+  `kill_threshold` text — republishing that needs a semantic call, not
+  extraction; (b) `rolling_beta_60d` and `sector_active_weights` compare a
+  quantity that isn't `value` at all (a rolling swing, a coverage fraction
+  sitting in `detail`) — needs a structural field change; (c)
+  `quantile_spread` and `alpha_cost_crossover` have no numeric form at all (a
+  monotonicity flag, a string horizon label), and `breakeven_gross_alpha`'s
+  comparator — "IC-implied expected return" — is never computed anywhere in
+  the codebase, a methodology gap, not a plumbing one. `live_vs_backtest_ic`
+  and `live_vs_backtest_divergence` have a computable bound sitting one line
+  away (`error * DIVERGENCE_Z_THRESHOLD`, already-existing confidence
+  intervals) but are lower value while the live sample is this young. None of
+  these are faked. See `pipeline/signal_metrics.py`'s `metric()` docstring for
+  the same explanation next to the code.
+- **The score-history line in `StockDetailModal` was never buildable and
+  still is not** — a genuine data gap, not a chart-building task. `history`/
+  `analytics_history` on a research row carry price series only; there is no
+  per-row time series of the *score* anywhere except the 31 MB
+  `score-history.json` the doc already forbids fetching in the browser.
+  Publishing one would need a pipeline change (a small per-row score-history
+  series, sized for the browser) that is out of this pass's scope.
 
 ### Phase 6 — metadata + type floor ✅ (perf/motion/rescore still open, see §2)
 - Open Graph / Twitter / robots / color-scheme tags; manifest colours aligned to
@@ -364,18 +444,18 @@ fallback, so it is not a pure change and was left alone.
 `SwingScreen.jsx` and `Picks.jsx` are unchanged. The plan suggests running
 `improve-react` first to decide where their seams go.
 
-### Phase 4 — 10 charts unbuilt
-All have their data shipped. In the plan's build order, minus the blocked one:
-risk/return scatter (ShadowPortfolios), dot-plot small multiples
-(BacktestComparison), champion-vs-challenger paired bars (LiveValidation),
-stat-tile row + comparison dot plot (Strategy/OptionsScreen), quadrant scatter
-(ResearchScreen — the JSON already classifies rows), radar + factor bars +
-score-history line (StockDetailModal), projection fan (Planning), congress volume
-timeline, macro bullet trio + theme signal bars.
-
-**Load the `dataviz` skill before writing any chart code**, and re-run its
-palette validator for any new colour. Do not fetch the 31 MB `score-history.json`
-in the browser — the modal's row already carries `history`/`analytics_history`.
+### Phase 4 remainder — one data gap, three metric groups needing methodology work
+Not chart-building tasks; see §1's Phase 4 entry for the full breakdown.
+- **Score-history line** (`StockDetailModal`) needs a pipeline change: a small
+  per-row score-history series sized for the browser. Nothing today publishes
+  one.
+- **14 of `SignalMetricsPanel`'s 40 metrics** still show no bullet, correctly —
+  3 need a semantic call (count-vs-threshold republishing), 2 need a
+  structural field change (the compared quantity isn't `value`), 3 need real
+  methodology work (`breakeven_gross_alpha`'s comparator doesn't exist yet;
+  `quantile_spread`/`alpha_cost_crossover` have no numeric form), and 2 have a
+  computable-but-unpublished bound that's lower priority while the live
+  sample is young.
 
 ### Phase 6 — perf, motion, rescore
 - **Payload.** `advisor.json` 37 MB across 11 pages (see correction #3). Check

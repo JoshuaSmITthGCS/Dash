@@ -542,21 +542,28 @@ of letterboxed chart height and un-clipped the y-axis labels. `node design/typef
 now reports 0 across 10 routes × 3 widths and exits non-zero on regression — worth
 wiring into the `site` CI job.
 
-### Phase 4 — data visualization
-Shipped: palette validation for all four palettes, and the correlation heatmap.
-Not shipped, with reasons:
-- **Bullet charts for `validation/signal_metrics.json`** — the plan assumed
-  `value` + numeric `kill_threshold` on a shared scale. In the published data
-  `kill_threshold` is prose for 17 of the 23 metrics that have one (e.g.
-  "Non-monotonic quantiles are fragile"), only 6 parse numerically, 14 values
-  are null, and the 40 metrics span incomparable scales. Drawing it needs a
-  pipeline change that publishes a numeric threshold and a comparison basis, or
-  a different form. Do not fake the numbers.
-- Risk/return scatter (ShadowPortfolios), dot-plot small multiples
-  (BacktestComparison), paired bars (LiveValidation), quadrant scatter
-  (ResearchScreen), congress volume timeline, macro bullet trio, factor-exposure
-  bars, projection fan revival, score-history line in the modal. All have the
-  data; none are built.
+### Phase 4 — data visualization — done, two disclosed gaps
+Shipped: palette validation for all four palettes, the correlation heatmap,
+and all 8 genuinely-unbuilt charts from the corrected plan (the original "10
+unbuilt" count was stale — `StockDetailModal`'s radar/factor bars and
+Planning's projection fan were already wired up). Two new reusable chart
+components (`ScatterChart`, `DotPlot`, used across 6 pages) plus
+`PairedBarChart` and `BarTimeline`. Full breakdown in `docs/REDESIGN-STATUS.md`
+§1's Phase 4 entry.
+- **`SignalMetricsPanel` bullet charts — 9 of 23 metrics, not faked for the
+  rest.** `pipeline/signal_metrics.py`'s `metric()` gained a real
+  `kill_threshold_value` + `comparison` pair, populated only where the
+  published `value` and an existing module constant are genuinely the same
+  quantity (`rank_ic_*`, `ic_ir`, `percent_of_adv`, `deflated_sharpe`,
+  `probabilistic_sharpe`, `pbo`). The panel draws a bullet only on those 9
+  cards. The other 14 need either a semantic republishing call, a structural
+  field change, or real methodology work that doesn't exist yet
+  (`breakeven_gross_alpha`'s comparator is never computed anywhere) — listed
+  precisely in `docs/REDESIGN-STATUS.md`, not silently dropped.
+- **Score-history line in the modal — still a genuine data gap.** `history`/
+  `analytics_history` carry price only; no per-row score time series is
+  published anywhere short of the 31 MB `score-history.json` this doc already
+  says not to fetch in the browser. Needs a pipeline change, out of scope here.
 
 ### Phase 5 — page-by-page pass — Dashboard and Portfolio done
 Every page now inherits the new tokens and card system; the per-page composition
