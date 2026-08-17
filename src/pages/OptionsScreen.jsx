@@ -167,7 +167,7 @@ export default function OptionsScreen() {
             { key: 'days_to_expiration', label: 'DTE', numeric: true, cell: (row) => <span className="mono">{row.days_to_expiration}</span> },
             { key: 'implied_volatility', label: 'IV', numeric: true, cell: (row) => <span className="mono">{pct(row.implied_volatility)}</span> },
             { key: 'implied_realized_vol_ratio', label: 'IV / RV', numeric: true,
-              cell: (row) => <span className="mono">{number(row.implied_realized_vol_ratio, 2)}\u00d7</span> },
+              cell: (row) => <span className="mono">{number(row.implied_realized_vol_ratio, 2)}×</span> },
             { key: 'spread_pct', label: 'Spread', numeric: true, cell: (row) => <span className="mono">{pct(row.spread_pct)}</span> },
             { key: 'open_interest', label: 'Open int.', numeric: true, cell: (row) => <span className="mono">{row.open_interest ?? '\u2013'}</span> },
             { key: 'score', label: 'Score', numeric: true, cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },

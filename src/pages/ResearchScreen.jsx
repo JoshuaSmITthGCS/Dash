@@ -78,7 +78,17 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
   const { preferences } = usePreferences()
   const [filters, setFilters] = useState({ sector: 'all', cap: 'all', confidence: 0, liquidity: 0,
     structural: 0, tactical: 0, membership: 'all' })
-  const sourceRows = data?.results || []
+  // Some published screens have carried the same ticker twice at adjacent ranks with
+  // different percentiles (e.g. momentum.json: DINO at both #11/92.31 and #12/93.16) — a
+  // pipeline dedup gap, not a display choice. `getKey` below is ticker-only, so an
+  // undeduped pair collides and React warns about duplicate keys. Keep whichever copy is
+  // ranked first; results already arrive rank-ordered.
+  const seenTickers = new Set()
+  const sourceRows = (data?.results || []).filter((row) => {
+    if (seenTickers.has(row.ticker)) return false
+    seenTickers.add(row.ticker)
+    return true
+  })
   const sectors = useMemo(() => [...new Set(sourceRows.map((row) => row.sector).filter(Boolean))].sort(), [sourceRows])
   const rows = sourceRows.filter((row) => filters.sector === 'all' || row.sector === filters.sector)
     .filter((row) => filters.cap === 'all' || capBucket(row.market_cap || 0) === filters.cap)
