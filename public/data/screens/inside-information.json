@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "inside-information-v1.0.0",
+  "generated_at": "2026-08-17T22:00:16.618152+00:00",
+  "status": "success",
+  "sources": {
+    "congress": {
+      "generated_at": "2026-08-17T13:39:07.206423+00:00",
+      "status": "partial"
+    },
+    "institutional_13f": {
+      "generated_at": "2026-08-09T20:06:45.364455+00:00",
+      "status": "success"
+    }
+  },
+  "ranked_count": 7,
+  "notable_count": 0,
+  "disclaimer": "Congressional STOCK Act disclosures and curated active-manager Schedule 13F filings, merged and shown only where the underlying screen already flagged the activity as a cluster (3+ managers moving together, 3+ representatives in a 14-day span, a same-name buy/sell round trip, or a representative's first-ever disclosed trade in a small, unfamiliar company). Not a claim that any of this activity was informed or improper - see the congress-trades and institutional-13f screens for the full, unfiltered disclosures.",
+  "results": [],
+  "by_ticker": {},
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "442b54b9f84f5973461f80d9f0bce1584119ad73",
+    "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
+    "generated_at": "2026-08-17T22:00:16.618152+00:00"
+  }
+}

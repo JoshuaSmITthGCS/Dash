@@ -1013,6 +1013,40 @@ def collect_congressional_signals(symbols, *, as_of=None, screen_payload=None):
     return signals, diagnostics
 
 
+def collect_filings_signals(symbols, *, screen_payload=None):
+    """Fold the 3-day-published SEC filings screen (10-K/10-Q, DEF 14A, 8-K) into three
+    already-scored, already-decayed score inputs.
+
+    No live SEC calls here: ``build_filings_screen.py`` runs on its own 3-day schedule and
+    is the source of record. Unlike the institutional 13F screen, decay is baked in at
+    publish time rather than recomputed at read time - ``edgar_filing_signals.py``'s
+    half-lives (30-45 days) are long enough relative to a 3-day publish cadence that the
+    difference is immaterial, and it keeps this reader a plain lookup, matching how
+    ``build_congress_screen.py``'s flags are read.
+    """
+    payload = (screen_payload if screen_payload is not None
+              else (load_json("screens/filings.json") or {}))
+    results = payload.get("results") or []
+    diagnostics = {"requested": len(symbols), "screen_available": bool(results),
+                   "screen_generated_at": payload.get("generated_at"), "tickers_matched": 0}
+    if not results:
+        return {}, {}, {}, diagnostics
+    universe = {str(symbol).upper() for symbol in symbols}
+    eightk, proxy, integrity = {}, {}, {}
+    for row in results:
+        ticker = str(row.get("ticker") or "").upper()
+        if ticker not in universe:
+            continue
+        diagnostics["tickers_matched"] += 1
+        if row.get("eightk_activity"):
+            eightk[ticker] = row["eightk_activity"]
+        if row.get("proxy_activity"):
+            proxy[ticker] = row["proxy_activity"]
+        if row.get("filing_integrity"):
+            integrity[ticker] = row["filing_integrity"]
+    return eightk, proxy, integrity, diagnostics
+
+
 def fetch_optional(client, function, **params):
     try:
         return client.query(function, **params)
@@ -1616,6 +1650,13 @@ def run():
     # congress_signal.py for what is and is not claimed.
     congressional_signals, congressional_diagnostics = collect_congressional_signals(insider_candidates)
 
+    # 8-K materiality, contested-proxy, and late-10-K/10-Q signals - reads
+    # build_filings_screen.py's last 3-day publish, no live SEC calls in this per-refresh
+    # path. See advisor_engine.filing_8k_modifier/proxy_modifier/filing_integrity_modifier.
+    eightk_signals, proxy_signals, filing_integrity_signals, filings_diagnostics = (
+        collect_filings_signals(insider_candidates)
+    )
+
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
     # reliability signal to attach -- only a run-wide one.
@@ -1635,6 +1676,8 @@ def run():
                                      else "healthy"),
         "congress_screen": ("unavailable" if not congressional_diagnostics["screen_available"]
                             else "healthy"),
+        "sec_filings_screen": ("unavailable" if not filings_diagnostics["screen_available"]
+                               else "healthy"),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
@@ -1652,12 +1695,18 @@ def run():
             institutional_ownership=institutional_signals.get(symbol),
             congressional_activity=congressional_signals.get(symbol),
             concentration_risk=concentration_signals.get(symbol),
+            eightk_activity=eightk_signals.get(symbol),
+            proxy_activity=proxy_signals.get(symbol),
+            filing_integrity=filing_integrity_signals.get(symbol),
         )
         # The Form 4 record when we have one; the Alpha Vantage count as a display-only
         # fallback when we do not.
         row["insider_activity"] = insider_signals.get(symbol) or context["insider_activity"]
         row["institutional_ownership"] = institutional_signals.get(symbol)
         row["congressional_activity"] = congressional_signals.get(symbol)
+        row["eightk_activity"] = eightk_signals.get(symbol)
+        row["proxy_activity"] = proxy_signals.get(symbol)
+        row["filing_integrity"] = filing_integrity_signals.get(symbol)
         # concentration_risk is now a champion-path input (Phase 3.3, see
         # advisor_engine.concentration_risk_modifier). geographic_exposure remains a display
         # field and a challenger-only input - see geographic_concentration_modifier.

@@ -13,6 +13,8 @@ reversal of the principle.
 from datetime import timedelta
 
 from insider_signal import score_insider_activity
+from edgar_filing_signals import (score_8k_activity, score_filing_integrity,
+                                  score_proxy_activity)
 from concentration_risk import score_concentration_risk
 from geographic_exposure import score_geographic_concentration
 from risk_metrics import (acceleration_score, annualized_volatility, beta_vs_benchmark,
@@ -422,6 +424,62 @@ def concentration_risk_modifier(concentration):
     return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
 
 
+def filing_8k_modifier(eightk_activity):
+    """Penalize a fresh, materially negative 8-K (bankruptcy, restatement, delisting,
+    impairment, ...). The scoring lives in ``edgar_filing_signals.score_8k_activity`` -
+    a fixed Item-code lookup, never a read of the filing's own text - and decays like every
+    other modifier here. Penalty-only: no 8-K Item code reliably means "good news" the way
+    a bankruptcy filing reliably means bad, so nothing on this side is ever positive.
+    """
+    if not eightk_activity or eightk_activity.get("score_points") is None:
+        return 0.0, None
+    points = eightk_activity["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("filing_8k", {})
+    floor = -cfg.get("max_penalty", 4.0)
+    notes = eightk_activity.get("notes") or []
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
+def proxy_modifier(proxy_activity):
+    """Penalize a contested proxy election (DEFC14A) - an unambiguous governance conflict.
+
+    The scoring lives in ``edgar_filing_signals.score_proxy_activity``. Additional
+    soliciting material (DEFA14A) is published as a flag but never scored here - the form
+    code alone can't separate a genuine activist situation from routine solicitation
+    updates, so it stays descriptive-only, the same restraint the Congress screen applies
+    to trades it can compute but chooses not to grade.
+    """
+    if not proxy_activity or proxy_activity.get("score_points") is None:
+        return 0.0, None
+    points = proxy_activity["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("proxy_signal", {})
+    floor = -cfg.get("max_penalty", 2.0)
+    notes = proxy_activity.get("notes") or []
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
+def filing_integrity_modifier(filing_integrity):
+    """Penalize a fresh NT 10-K/NT 10-Q (notification the company could not file on time)
+    - a well-documented distress or accounting-problem signal on its own. An on-time
+    10-K/10-Q carries no score signal by itself; only lateness does.
+
+    The scoring lives in ``edgar_filing_signals.score_filing_integrity``.
+    """
+    if not filing_integrity or filing_integrity.get("score_points") is None:
+        return 0.0, None
+    points = filing_integrity["score_points"]
+    if not points:
+        return 0.0, None
+    cfg = MODIFIERS.get("filing_integrity", {})
+    floor = -cfg.get("max_penalty", 3.0)
+    notes = filing_integrity.get("notes") or []
+    return round(max(floor, min(0.0, points)), 2), ("; ".join(notes) or None)
+
+
 def geographic_concentration_modifier(geographic_exposure):
     """Penalize revenue concentrated in a single non-domestic geography.
 
@@ -543,7 +601,8 @@ def macro_regime_modifier(snapshot, macro_regime):
 
 def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regime=None,
                     insider_activity=None, institutional_ownership=None,
-                    congressional_activity=None, concentration_risk=None):
+                    congressional_activity=None, concentration_risk=None,
+                    eightk_activity=None, proxy_activity=None, filing_integrity=None):
     """Blend the bounded refinements onto the evidence score and explain every one.
 
     ``customer_concentration_risk`` is in the champion path as of Phase 3.3 -- see
@@ -554,7 +613,10 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
     correctness problem rather than a coverage one. ``institutional_13f`` is in the champion
     path with lag decay baked into its input - see ``institutional_ownership_modifier``.
     ``congressional_buying`` is this file's one scoped exception to "no political
-    inputs" - see the module docstring.
+    inputs" - see the module docstring. ``filing_8k``/``proxy_signal``/``filing_integrity``
+    read ``pipeline/build_filings_screen.py``'s published SEC filing-code classifications -
+    see ``edgar_filing_signals.py`` for why each is scored (or deliberately not scored) the
+    way it is.
     """
     applied = {}
     notes = []
@@ -572,6 +634,9 @@ def apply_modifiers(base, snapshot, extended, sector_percentile=None, macro_regi
         # roughly 91% of net sales from one end customer in FY2026 and the published score
         # reflected none of it.
         "customer_concentration_risk": concentration_risk_modifier(concentration_risk),
+        "filing_8k": filing_8k_modifier(eightk_activity),
+        "proxy_signal": proxy_modifier(proxy_activity),
+        "filing_integrity": filing_integrity_modifier(filing_integrity),
     }.items():
         if points:
             applied[name] = points
@@ -1171,7 +1236,8 @@ def build_evidence(categories, technical_parts, extended):
 def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
                    volumes=None, extended=None, sector_percentile=None, macro_regime=None,
                    insider_activity=None, institutional_ownership=None,
-                   congressional_activity=None, concentration_risk=None):
+                   congressional_activity=None, concentration_risk=None,
+                   eightk_activity=None, proxy_activity=None, filing_integrity=None):
     extended = extended or {}
     fundamental, fundamental_parts = valuation_score(snapshot)
     technical, technical_parts = technical_factors(closes, benchmark_closes, volumes, extended)
@@ -1191,7 +1257,8 @@ def build_research(symbol, snapshot, closes, benchmark_closes, news_items,
     data_coverage, base, raw_score = blended["data_coverage"], blended["base_score"], blended["raw_score"]
     score, modifiers = apply_modifiers(base, snapshot, extended, sector_percentile, macro_regime,
                                        insider_activity, institutional_ownership,
-                                       congressional_activity, concentration_risk)
+                                       congressional_activity, concentration_risk,
+                                       eightk_activity, proxy_activity, filing_integrity)
     categories = fundamental_parts.get("categories", {})
     stance = stance_for(score, data_coverage)
     strengths, risks = build_evidence(categories, technical_parts, extended)
