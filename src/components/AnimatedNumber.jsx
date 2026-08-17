@@ -16,8 +16,10 @@ export default function AnimatedNumber({ value, format = String, duration = 700 
       return undefined
     }
     const from = Number.isFinite(fromRef.current) ? fromRef.current : value
-    if (from === value) {
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (from === value || reduceMotion) {
       setDisplay(value)
+      fromRef.current = value
       return undefined
     }
     const start = window.performance.now()

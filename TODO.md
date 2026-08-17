@@ -605,10 +605,22 @@ actually reads, they just stopped publishing it as a standalone file.
 `diagnostics.json` (4.9 MB) is kept — it has one real reader,
 `pipeline/audit_ticker.py`.
 
+### Phase 6 — motion pass — done
+Ran `improve-animations` (recon → audit → vetted findings → plans), non-interactive,
+top 3 by leverage promoted to plans and executed. Full audit trail in
+`plans/README.md` and `plans/001-003-*.md`. Fixed: pull-to-refresh's indicator was
+chasing the finger instead of tracking it 1:1 (a transitioned `height` retargeting
+every `touchmove` frame); the app's most-used dialog (`StockDetailModal`, the login
+modal) had zero entrance animation on any viewport; `AnimatedNumber` was the one
+animation in the app ignoring `prefers-reduced-motion`. Two lower-leverage findings
+(progress-bar `width` vs `transform: scaleX()`, scattered hand-typed durations)
+recorded but not planned — negligible real-world impact per `plans/README.md`.
+Verified: lint/test/build green (786 tests), `typefloor.mjs`/`a11ycheck.mjs` clean,
+scripted Playwright + a throwaway (deleted, not committed) RTL check.
+
 ### Smaller items
 - **`og:image` and `og:url` are root-relative** in `index.html` because the
   deploy domain is not committed to this repo. Facebook and Twitter want
   absolute URLs — set them once the domain is known.
-- **Motion pass** — not started.
 - **Rubric rescore** — not done. Dimensions 1, 2 and 5 have measurably improved;
   score it properly at the end.

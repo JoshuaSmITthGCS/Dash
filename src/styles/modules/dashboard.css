@@ -17,7 +17,8 @@
 .refresh-spin { animation: refresh-spin .8s linear infinite; }
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
 
-.pull-to-refresh { display: flex; justify-content: center; height: var(--ptr-distance, 0px); overflow: hidden; transition: height .15s ease; }
+.pull-to-refresh { display: flex; justify-content: center; height: var(--ptr-distance, 0px); overflow: hidden; }
+.pull-to-refresh--settling { transition: height var(--duration-fast) var(--ease-out); }
 .pull-to-refresh-badge {
   width: 34px; height: 34px; margin-top: var(--sp-1-5); display: grid; place-items: center; flex-shrink: 0;
   border-radius: 50%; border: 1px solid var(--border-lit); background: var(--bg-elev); color: var(--text-dim);
@@ -35,6 +36,7 @@
 .refresh-progress-stage { overflow: hidden; max-width: 100%; color: var(--text-dim); font: var(--fs-2xs) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .refresh-progress-fill { transition: none; }
+  .pull-to-refresh--settling { transition: none; }
 }
 .hero-research {
   position: relative; overflow: hidden; min-height: 400px; display: grid; grid-template-columns: minmax(0, .92fr) minmax(340px, 1.08fr);

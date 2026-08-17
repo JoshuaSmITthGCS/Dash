@@ -9,6 +9,7 @@ const MAX_PULL = 120
 export function usePullToRefresh({ onRefresh, enabled = true, refreshing = false }) {
   const [pullDistance, setPullDistance] = useState(0)
   const [armed, setArmed] = useState(false)
+  const [settling, setSettling] = useState(false)
   const startY = useRef(null)
   const tracking = useRef(false)
 
@@ -26,7 +27,8 @@ export function usePullToRefresh({ onRefresh, enabled = true, refreshing = false
     const onTouchMove = (event) => {
       if (!tracking.current || startY.current == null) return
       const delta = event.touches[0].clientY - startY.current
-      if (delta <= 0 || window.scrollY > 0) { setPullDistance(0); setArmed(false); return }
+      if (delta <= 0 || window.scrollY > 0) { setSettling(true); setPullDistance(0); setArmed(false); return }
+      setSettling(false)
       const resisted = Math.min(MAX_PULL, delta * 0.5)
       setPullDistance(resisted)
       setArmed(resisted >= TRIGGER_DISTANCE)
@@ -36,6 +38,7 @@ export function usePullToRefresh({ onRefresh, enabled = true, refreshing = false
       if (tracking.current && armed) onRefresh?.()
       tracking.current = false
       startY.current = null
+      setSettling(true)
       setPullDistance(0)
       setArmed(false)
     }
@@ -52,5 +55,5 @@ export function usePullToRefresh({ onRefresh, enabled = true, refreshing = false
     }
   }, [enabled, refreshing, armed, onRefresh])
 
-  return { pullDistance, armed, active: pullDistance > 0 || refreshing }
+  return { pullDistance, armed, active: pullDistance > 0 || refreshing, settling }
 }

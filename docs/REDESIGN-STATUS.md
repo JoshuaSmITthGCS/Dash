@@ -407,6 +407,60 @@ Verified: pipeline test suite (1,982 tests), `validate_data.py`,
 && npm run build`; `design/typefloor.mjs` / `design/a11ycheck.mjs` / scripted
 Playwright checks against a local dev server for every page not Firebase-gated.
 
+### Phase 6 — motion pass ✅
+Ran the `improve-animations` skill (recon → 8-category audit → vetted findings →
+plans) non-interactively per `docs/REDESIGN-PLAN.md`'s "plan-then-execute" Phase 6
+instruction, defaulting to the top-3-by-leverage findings rather than waiting for a
+selection. Full audit trail — the vetted findings table, the two lower-leverage items
+that were recorded but not planned, and what was checked and found already correct
+(chart entrance/draw keyframes, the gauge arc) — is in `plans/README.md`; the three
+executed plans are `plans/001-*.md` through `plans/003-*.md`.
+
+- **Pull-to-refresh indicator was chasing the finger, not tracking it (HIGH).**
+  `usePullToRefresh.js` calls `setPullDistance` on every native `touchmove` — real
+  1:1 gesture tracking — but `.pull-to-refresh`'s CSS transitioned `height` at a
+  fixed 150ms, so every frame retargeted a transition still mid-flight from the
+  previous one, and `height` is a layout property besides. Fixed by tracking with
+  no transition while dragging and adding it back only for the release/cancel
+  settle, via a new `settling` state threaded through `usePullToRefresh` →
+  `PullToRefreshIndicator` → a `.pull-to-refresh--settling` class.
+- **The app's most-used dialog had zero entrance motion, on any viewport
+  (MEDIUM).** `.modal-overlay`/`.modal` backs `StockDetailModal` (opened from
+  Search, Picks, Watchlist, Portfolio, every screen page) and the login modal,
+  and simply teleported into existence — while the *other*, lower-traffic sheet
+  component in the same file already had a proper `sheet-in` entrance. Added a
+  fade to the overlay and a fade+scale(0.96→1) to the panel on desktop, and reused
+  the existing `sheet-in` keyframe verbatim for the mobile bottom-sheet variant,
+  both gated through the file's one existing `prefers-reduced-motion` block.
+- **`AnimatedNumber` was the one animation in the app that ignored motion
+  preference (MEDIUM).** Every CSS animation in the codebase already respects
+  `prefers-reduced-motion`; this JS `requestAnimationFrame` count-up (Portfolio's
+  headline "Invested value") did not. Fixed by checking
+  `window.matchMedia('(prefers-reduced-motion: reduce)').matches` — the same
+  expression `GrowthChart.jsx` already uses for its haptic-feedback gate — and
+  folding it into the existing early-return branch, so reduced motion jumps
+  straight to the target value with the same code path already used for a no-op
+  update.
+
+Two findings were recorded but not promoted to a plan (both LOW, both explained in
+`plans/README.md`): `.refresh-progress-fill`/`.live-countdown-progress` animate
+`width` instead of `transform: scaleX()`, but both update at most once a minute or
+once per refresh, not per-frame, so the real cost is negligible; and hand-typed
+durations/easings scattered across ~10 chevron-rotate/hover sites could consolidate
+onto the existing duration/easing tokens, but the values involved are already close
+enough that there's no user-visible difference.
+
+Verified: `npm run lint && npm test && npm run build` (786 tests) green,
+`design/typefloor.mjs` 0 violations across the default sweep, `design/a11ycheck.mjs`
+0 unnamed controls (also exercised the modal's focus trap/escape live), a scripted
+Playwright check confirming both new keyframes (`modal-in`, `modal-overlay-in`)
+apply on open, and a throwaway (written, run, deleted — not committed) RTL test
+confirming `AnimatedNumber` jumps instantly with reduced motion mocked on and still
+interpolates with it off. Not verified live in-browser: the pull-to-refresh fix and
+`AnimatedNumber`'s real call site both need either a touch-capable viewport or
+Firebase-backed data unavailable in local dev — the mechanical loop plus the
+scripted checks above stood in.
+
 ---
 
 ## 2. What is left
@@ -513,8 +567,7 @@ Not chart-building tasks; see §1's Phase 4 entry for the full breakdown.
   computable-but-unpublished bound that's lower priority while the live
   sample is young.
 
-### Phase 6 — motion, rescore · dead code + payload DONE (see §1)
-- **Motion pass** — not started.
+### Phase 6 — rescore · dead code + payload + motion pass DONE (see §1)
 - **Rubric rescore** — not done. Dimensions 1, 2 and 5 have measurably improved;
   score it properly at the end.
 

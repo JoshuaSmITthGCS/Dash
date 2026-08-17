@@ -376,7 +376,7 @@ export default function Dashboard() {
   const saveCustomization = () => { setWidgets(draftWidgets); window.history.replaceState({}, '', '/'); window.location.reload() }
 
   return <div className="financial-report-page">
-    <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={pullRefreshing} />
+    <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={pullRefreshing} settling={pullToRefresh.settling} />
     {customize && <Customizer widgets={draftWidgets} onChange={setDraftWidgets} onDone={saveCustomization} />}
     <header className="page-head report-head">
       <div><span className="eyebrow">Latest close · {String(data.generated_at).slice(0, 10)} · {rows.length} names covered</span><h1 className="page-title">Portfolio Overview</h1><p className="page-sub">Traceable daily-close analytics</p></div>

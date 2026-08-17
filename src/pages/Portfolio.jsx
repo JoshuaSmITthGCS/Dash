@@ -115,7 +115,7 @@ export default function Portfolio({ view = 'summary' }) {
 
   return (
     <>
-      <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={portfolioQuotes.refreshing} />
+      <PullToRefreshIndicator pullDistance={pullToRefresh.pullDistance} armed={pullToRefresh.armed} refreshing={portfolioQuotes.refreshing} settling={pullToRefresh.settling} />
       <StockTickerTape positions={holdings.portfolioPositions} />
       <div className="page-head">
         <div>
