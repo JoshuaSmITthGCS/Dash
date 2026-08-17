@@ -1,0 +1,105 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: cybersecurity
+  display_name: "Cybersecurity"
+  taxonomy_tag: CYBERSECURITY
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    The supplier theme that every other digital theme feeds: each new workload, payment rail
+    and connected device widens the surface someone has to defend, and the budget is
+    non-discretionary in a way most software spending is not. It is also the theme where
+    filing language is least trustworthy - every company on earth writes about protecting its
+    own data - so the keyword list is written to catch vendors and the exclusions to reject
+    the far larger population describing its own risk.
+
+  chain:
+    root_driver: >
+      Attack surface grows mechanically with cloud adoption, remote access, digital payments
+      and connected devices, while regulation increasingly makes disclosure and control a legal
+      obligation rather than a technical preference.
+    first_order: >
+      The platform vendors: identity, endpoint, network and cloud security sold as recurring
+      subscriptions.
+    second_order: >
+      The consultancies and managed providers who operate it for firms without a security team,
+      and the network and appliance makers whose hardware enforces it.
+    disconfirming: >
+      Net revenue retention falling as customers consolidate onto fewer platforms; billings
+      growth decelerating faster than revenue; enterprise security budgets being folded into a
+      shrinking overall IT line; breach disclosures no longer producing budget responses.
+
+  seed_tickers: [PANW, CRWD, FTNT, ZS, OKTA, CYBR, CHKP, S]
+  expand_via_tnic: true
+  sectors: [Technology, Industrials]
+  industries:
+    - "software - infrastructure"
+    - "software - application"
+    - "information technology services"
+    - "communication equipment"          # network security appliances
+    - "specialty business services"      # managed detection and response
+  keywords:
+    include:
+      - "zero trust"
+      - "endpoint detection"
+      - "identity and access management"
+      - "security operations center"
+      - "threat intelligence"
+      - "extended detection and response"
+      - "cloud workload protection"
+      - "privileged access"
+      - "vulnerability management"
+      - "security information and event management"
+    exclude:
+      # The far larger population: companies describing the risk to themselves, not a product
+      # they sell. Without these the screen would rank every filer with an IT risk factor.
+      - "cybersecurity risks to our business"
+      - "we may be subject to cyber"
+      - "our information technology systems"
+      - "data breach could"
+      - "cybersecurity insurance"
+  sic_codes: [7372, 7379]
+  icb_subsectors: []
+
+  roles:
+    root:
+      industries: ["software - infrastructure"]
+    enabler:
+      industries: ["software - application"]
+    supplier:
+      industries: ["communication equipment"]
+    service:
+      industries: ["information technology services", "specialty business services"]
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.40
+    # Subscription security is sold on multi-year contracts, so remaining performance
+    # obligation is the closest thing this theme has to a hard order book.
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.25
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.15
+    # The buyers: the large digital platforms and banks whose own infrastructure spending sets
+    # the security budget beneath it.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [MSFT, GOOGL, AMZN, JPM, BAC]
+      leading: true
+      weight: 0.20
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

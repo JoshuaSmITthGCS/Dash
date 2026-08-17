@@ -39,7 +39,7 @@ is the framing this document uses.
 pipeline/                Python batch pipeline — the algorithm lives here
   config/                All tunable knobs (18 JSON files, settings.json is 36 KB)
   sleeves/               Independently testable alpha ideas (3 of 14 built)
-  themes/                Thematic exposure declarations (1 YAML present)
+  themes/                Growth-chain declarations (11 YAML present)
   validation/            IC harness
   schemas/               JSON Schema draft 2020-12 contracts for every published artifact
   tests/                 ~100 test modules
@@ -337,8 +337,31 @@ an estimate. ETFs are ineligible for every stock sleeve.
 trend in filings, disclosed customer ties, and the capex of confirmed spenders. Two guardrails
 enforced in code and re-checked by `validate_data.py`: price momentum contributes **exactly zero**,
 and names already in the top valuation decile of their sector are flagged rather than promoted.
-Published as an independent screen, never folded into the research score. **Only one theme YAML
-exists** (`ai_infrastructure.yaml`) despite the README describing a general system.
+Published as an independent screen, never folded into the research score. Eleven themes ship,
+each declared as a growth chain (root driver → first-order → second-order, plus the evidence
+that would disconfirm it) with a role per company: AI infrastructure, automation & robotics,
+grid & electrification, reshoring capacity, allied rearmament, energy security, cybersecurity,
+digital payments, metabolic-care supply chain, aging demographics, and water infrastructure.
+
+A separate `trend` block per theme (`pipeline/theme_trend.py`) answers whether the trend is
+actually moving — direction, breadth above 20/50-day averages, leadership concentration,
+revision confirmation, crowding, and role rotation — and resolves to one of six verdicts. It
+reads price deliberately and is walled off from exposure: the block publishes
+`contributes_to_exposure: false` and `validate_data` fails the run if an exposure row carries
+any price field.
+
+Two further scoping rules, both added when the single-theme screen was widened: a signal
+declaring a `universe` is measured on the spenders rather than the candidate, so it describes
+the demand driver but cannot confirm that any particular company is exposed; and each theme
+declares both the `sectors` and the `industries` its supply chain is built by, matched against
+the Yahoo classification carried on every scored row, so filing language alone cannot rank a
+bank as top exposure to a hardware buildout and a sector cannot pass a trucking company off as
+one. Seed tickers are always in scope, and `themes.report_scope` warns when an industry list
+admits nobody. **Coverage caveat:** with no curated segment or
+named-customer maps wired in and no transcript source, the only signals that resolve broadly in
+production are the filing-keyword trend and the spenders' capex, so most published rows rest on
+roughly a third of their theme's declared signal weight — the `confidence` field on each row
+reports exactly how much answered.
 
 **Congressional trading** (`build_congress_screen.py`, weekly). A separate screen with its own
 6-factor weighting (track record 25, committee relevance 20, cluster detection 20, trade size 15,
@@ -481,7 +504,7 @@ Refresh of 2026-08-06T22:50 (an intraday `data-only` run):
 | IPO-seasoning window | None |
 | Independent corporate-action event log | Relies on provider-adjusted prices |
 | Measured bid-ask spreads | Labeled liquidity-tiered proxy |
-| Theme system | 1 theme YAML |
+| Theme system | 11 theme YAMLs, 2 of 6 signal families resolving in production |
 | `historical_calibration` confidence component | Always null |
 
 Plus the defects found in the 2026-08-07 rating: the run-manifest model mismatch

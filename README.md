@@ -116,6 +116,36 @@ rather than promoted. The result is published as an independent screen and never
 research score — blending a forward-looking thematic bet into the fundamentals score would make that
 score impossible to interpret.
 
+Each theme is written as a growth chain — a root driver, the first-order winners who sell the
+core product, the second-order winners who supply them, and the disconfirming evidence that
+would say the thesis is weakening — and every company in it carries a role: root, enabler,
+supplier, infrastructure or service. Eleven ship today: AI infrastructure, automation &
+robotics, grid & electrification, reshoring capacity, allied rearmament, energy security,
+cybersecurity, digital payments, the metabolic-care supply chain, aging demographics, and water
+infrastructure.
+
+Exposure says who is in a chain. It does not say whether the chain is moving, so a second and
+strictly separate reading answers that: median relative strength and acceleration across the
+theme's members, how many of them are above their own 20- and 50-day averages, whether the
+strength survives removing the largest member, whether estimate revisions confirm it, and
+whether the group already trades in the most expensive third of its sectors. Those produce one
+of six verdicts — broadening, narrow leadership, strong but already priced, cooling, mixed,
+unmeasured — with crowding checked before strength is celebrated, so a real trend that has
+already been paid for is never shown as a clean signal. The same readings are broken out per
+role, which is what makes a rotation visible (money reaching the utilities, then the
+transformer makers) before it registers as a sector move. This layer reads price on purpose and
+is walled off from exposure in code, in the published contract, and in the validator. Two rules keep a keyword list
+from standing in for exposure. A signal that declares a spender `universe` is measured on those
+spenders, so it is identical for every candidate — it describes the demand driver and can never be
+the evidence that one particular company is exposed. And each theme declares the industries its
+supply chain is actually built by — semiconductors, electrical equipment, engineering and
+construction for an accelerator buildout — not just the sectors, because filing language alone will
+rank a bank as top exposure to a hardware buildout on the strength of its own data centers, and a
+sector cannot tell a chip-equipment maker from a trucking company. A theme's own anchors are always
+in scope, since a market-wide taxonomy understates some of them. Since a company can clear several themes
+at once, the screen groups those crossings explicitly: convergence and correlated concentration are
+the same fact read two ways.
+
 ### ETFs
 
 The ~125-fund ETF watchlist is scored separately on performance, risk, total cost of ownership, liquidity, and structure.

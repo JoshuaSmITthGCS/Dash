@@ -66,10 +66,18 @@ function CoverageScoreDial({ score, dataCoverage }) {
   </div>
 }
 
+// `theme_exposure` rows are published as {theme_id, display_name, theme_exposure_score, ...};
+// the older `exposure_score`/`score` spellings are kept as fallbacks for saved snapshots.
+export const themeExposureScore = (entry) =>
+  Number(entry?.theme_exposure_score ?? entry?.exposure_score ?? entry?.score)
+export const themeExposureName = (entry) =>
+  entry?.display_name || entry?.theme_id || entry?.theme || entry?.name
+
 function primaryTheme(stock) {
   const themes = Array.isArray(stock.theme_exposure) ? stock.theme_exposure : []
   if (!themes.length) return null
-  return themes.slice().sort((left, right) => Number(right.exposure_score ?? right.score ?? 0) - Number(left.exposure_score ?? left.score ?? 0))[0]
+  return themes.slice().sort((left, right) =>
+    (themeExposureScore(right) || 0) - (themeExposureScore(left) || 0))[0]
 }
 
 export function mergeResearchStock(suppliedStock, fullResearch) {
@@ -181,8 +189,13 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
   const score = stock.score ?? structural?.effective_score
   const dataCoverage = stock.data_coverage ?? structural?.coverage ?? 0
   const theme = primaryTheme(stock)
-  const themeName = theme?.theme || theme?.name || 'No material theme identified'
-  const themeScore = theme?.exposure_score ?? theme?.score
+  const themeName = themeExposureName(theme) || 'No material theme identified'
+  const themeScore = theme ? themeExposureScore(theme) : undefined
+  // A company can sit in several structural trends at once, and which ones it shares is part
+  // of the picture - a name carrying grid, reshoring and AI-buildout exposure is a different
+  // proposition from a pure play on any one of them.
+  const otherThemes = (Array.isArray(stock.theme_exposure) ? stock.theme_exposure : [])
+    .filter((entry) => entry !== theme && Number.isFinite(themeExposureScore(entry)))
   const dataAsOf = stock.generated_at || stock.recommendation_v2?.generated_at || fullResearch?.generated_at
 
   // A held position with a purchase date gets its own since-you-bought-it comparison – the
@@ -247,7 +260,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
           <div className="stock-concept-list">
             <article><span>2 · Data coverage</span><strong>{Math.round(dataCoverage * 100)}%</strong><p>How much of the evidence this model intends to use actually resolved. Not a reliability score and not a probability of a price move; the arc lightens as coverage falls.</p></article>
             <article><span>3 · Guidance</span><strong>{recommendation?.action || 'Watch'}</strong><p>{recommendation?.summary || 'Review the evidence before acting.'}</p></article>
-            <article><span>4 · Theme exposure</span><strong>{themeName}</strong><p>{themeScore == null ? 'No material long-term theme exposure is published for this company.' : `${Number(themeScore).toFixed(0)} out of 100. Theme exposure stays independent from the research score.`}</p></article>
+            <article><span>4 · Theme exposure</span><strong>{themeName}</strong><p>{!Number.isFinite(themeScore) ? 'No material long-term theme exposure is published for this company.' : `${themeScore.toFixed(0)} out of 100. Theme exposure stays independent from the research score.`}{otherThemes.length > 0 && ` Also exposed to ${otherThemes.map(themeExposureName).join(', ')}.`}</p></article>
           </div>
         </section>
 

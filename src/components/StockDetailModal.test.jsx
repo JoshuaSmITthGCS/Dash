@@ -1,6 +1,29 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { InsideInformationView, mergeResearchStock } from './StockDetailModal.jsx'
+import {
+  InsideInformationView, mergeResearchStock, themeExposureName, themeExposureScore,
+} from './StockDetailModal.jsx'
+
+describe('theme exposure entries', () => {
+  const published = {
+    theme_id: 'ai_infrastructure', display_name: 'AI Infrastructure Buildout',
+    theme_exposure_score: 74, opportunity_score: 71, eligible: true,
+  }
+
+  it('reads the name and score the pipeline publishes', () => {
+    expect(themeExposureName(published)).toBe('AI Infrastructure Buildout')
+    expect(themeExposureScore(published)).toBe(74)
+  })
+
+  it('still reads snapshots saved under the older spellings', () => {
+    expect(themeExposureName({ theme: 'AI', score: 60 })).toBe('AI')
+    expect(themeExposureScore({ theme: 'AI', score: 60 })).toBe(60)
+  })
+
+  it('reports an absent score as not-a-number rather than zero exposure', () => {
+    expect(Number.isFinite(themeExposureScore({ theme_id: 'x' }))).toBe(false)
+  })
+})
 
 describe('mergeResearchStock', () => {
   it('adds deep research fields without replacing a newer route price', () => {

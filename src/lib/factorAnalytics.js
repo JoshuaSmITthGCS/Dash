@@ -193,6 +193,15 @@ export function factorRegression(portfolioSeries, payload) {
   }
 }
 
+// The pipeline publishes each per-ticker theme entry as
+// `{theme_id, display_name, theme_exposure_score, opportunity_score, eligible}`
+// (themes.build_theme_screen). Reading `theme`/`score` alone silently matched nothing, so
+// every position resolved to no key and no score and the portfolio lens rendered its
+// "unavailable" branch against a fully populated payload. The older spellings stay as
+// fallbacks because snapshots predating the current shape are still loadable.
+const themeEntryName = (entry) => entry.display_name || entry.theme_id || entry.theme || entry.name
+const themeEntryScore = (entry) => Number(entry.theme_exposure_score ?? entry.exposure_score ?? entry.score)
+
 /** Theme exposure stays a separate weighted portfolio lens and never enters research score. */
 export function aggregateThemeExposure(positions = [], themesByTicker = {}) {
   const total = positions.filter((row) => finite(row.currentValue) && Number(row.currentValue) > 0)
@@ -203,8 +212,8 @@ export function aggregateThemeExposure(positions = [], themesByTicker = {}) {
     if (!finite(position.currentValue) || Number(position.currentValue) <= 0) return
     const weight = Number(position.currentValue) / total
     ;(themesByTicker[String(position.ticker || '').toUpperCase()] || []).forEach((theme) => {
-      const key = theme.theme || theme.name
-      const score = Number(theme.score ?? theme.exposure_score)
+      const key = themeEntryName(theme)
+      const score = themeEntryScore(theme)
       if (!key || !finite(score)) return
       const current = themes.get(key) || { weightedScore: 0, coveredWeight: 0 }
       current.weightedScore += weight * score

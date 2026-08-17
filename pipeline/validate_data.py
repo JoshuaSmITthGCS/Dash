@@ -25,7 +25,16 @@ def theme_screen_errors(screen):
     exactly the pattern behind specialized ETFs losing about 30% risk-adjusted over five
     years. Two things make that impossible to ship by accident: price momentum must carry
     zero weight, and every published row must declare whether it cleared the guardrails.
+
+    The theme *trend* block reads price deliberately - it answers whether a trend is moving
+    and whether it is already paid for - so the separation between the two questions is
+    enforced here rather than left to whoever edits ``themes.py`` next: a trend block must
+    declare that it does not feed exposure, and an exposure row must not carry price behavior
+    at all. A row that arrived with a technical block would be one careless spread away from
+    a score that reads it.
     """
+    price_fields = ("technical_detail", "history", "relative_strength", "momentum_12_1",
+                    "return_20d", "return_60d")
     if not screen or not screen.get("themes"):
         return []
     errors = []
@@ -48,6 +57,14 @@ def theme_screen_errors(screen):
             if score is not None and not 0 <= score <= 100:
                 errors.append(f"advisor.json:theme_screen.{theme_id}.rows.{index}: "
                               f"exposure score {score} is outside 0-100")
+            leaked = [field for field in price_fields if field in row]
+            if leaked:
+                errors.append(f"advisor.json:theme_screen.{theme_id}.rows.{index}: exposure "
+                              f"rows must not carry price behavior ({', '.join(leaked)})")
+        trend = theme.get("trend")
+        if trend is not None and trend.get("contributes_to_exposure") is not False:
+            errors.append(f"advisor.json:theme_screen.{theme_id}.trend: the trend block reads "
+                          "price and must declare contributes_to_exposure: false")
     return errors
 
 

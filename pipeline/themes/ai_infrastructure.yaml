@@ -1,9 +1,14 @@
 # Adding a new structural trend means dropping another file in this directory.
 # No scoring code changes. See pipeline/themes.py for how these fields are consumed.
+#
+# `hyperscaler_capex_growth` below is this theme's spelling of the general
+# `spender_capex_growth` signal every other theme declares - same measurement, named for the
+# cheque-writers it was first pointed at.
 theme:
   id: ai_infrastructure
   display_name: "AI Infrastructure Buildout"
-  version: 1
+  taxonomy_tag: AI_COMPUTE_AND_DATA
+  version: 2
   status: active            # active | watch | retired
   created: 2026-08-02
   thesis: >
@@ -12,11 +17,69 @@ theme:
     exposure worth identifying is upstream of the spending, not downstream of the
     share price that has already responded to it.
 
+  # The chain this theme is a claim about: what changed, who sells into it first, who has to
+  # supply them, and what would say the thesis is weakening. Published as written - a reader
+  # who cannot see the mechanism cannot judge whether a ranked list of tickers follows from it,
+  # and a thesis with no stated way to be wrong is a story rather than a position.
+  chain:
+    root_driver: >
+      Training and serving large models turns compute into a capital expenditure rather than a
+      software cost, so a handful of buyers commit multi-year budgets to buildings, silicon and
+      power ahead of the revenue those models earn.
+    first_order: >
+      Accelerators, high-bandwidth memory and the networking silicon that lashes them together -
+      the parts of the spend specified by the model rather than by the building.
+    second_order: >
+      Everything the building needs before a chip can run in it: power distribution and
+      conversion, thermal management, the contractors who build the halls, and the generation
+      and grid capacity that has to exist first.
+    disconfirming: >
+      Hyperscaler capex guidance cut or deferred; memory pricing rolling over on oversupply
+      rather than demand; equipment lead times shortening; the buildout concentrating in a
+      single customer whose own spending is slowing.
+
+  # Where each company sits in that chain. Roles make a rotation legible - money arriving in
+  # accelerators and money arriving in switchgear are the same theme at different stages - and
+  # they are declared per theme because a role is a property of the relationship, not of the
+  # company: a utility is the root of an electrification chain and infrastructure here.
+  roles:
+    root:
+      industries: ["semiconductors"]
+      tickers: [NVDA, AVGO, MU]
+    supplier:
+      industries: ["semiconductor equipment", "electronic components"]
+    enabler:
+      industries: ["communication equipment", "computer hardware"]
+      tickers: [VRT]
+    infrastructure:
+      industries: ["electrical equipment", "engineering & construction", "utilities"]
+      tickers: [ETN]
+
   # ---- Exposure definition (how a company scores onto the theme) ----
   # Anchors, not the universe. Every scored company is measured on its own signals;
   # these exist to seed peer expansion and to sanity-check the keyword list.
   seed_tickers: [NVDA, AVGO, MU, TSM, VRT, ETN, ASML, KLAC, LRCX, AMAT]
   expand_via_tnic: true     # text-based product-space neighbours (Hoberg-Phillips TNIC)
+  # Where this supply chain can sit. Without a scope, filing language alone ranked banks and
+  # insurers as top exposure to an accelerator buildout - they describe their own data centers
+  # in the same words, and the theme-wide capex reading then supplied the second signal, so a
+  # row cleared the minimum on evidence that said nothing about building any of it.
+  sectors: [Technology, Industrials, Utilities]
+  # The outer sector bound is coarse enough to keep admitting names that build none of it: a
+  # chip-equipment maker and a trucking company are both "Industrials". These match the finer
+  # industry classification as case-insensitive substrings, and they are the actual chain -
+  # the silicon, the boards and optics it ships on, the boxes it lands in, the power and
+  # cooling that runs it, and the contractors who build the halls. Software is deliberately
+  # absent: this theme is the buildout upstream of the spending, not what runs on it.
+  industries:
+    - "semiconductor"                # Semiconductors; Semiconductor Equipment & Materials
+    - "electronic components"
+    - "computer hardware"
+    - "communication equipment"      # networking silicon, optics
+    - "electrical equipment"         # power distribution, thermal management
+    - "engineering & construction"   # data-center construction
+    - "utilities - regulated electric"
+    - "utilities - independent power producers"
   keywords:
     include:
       - "accelerated computing"

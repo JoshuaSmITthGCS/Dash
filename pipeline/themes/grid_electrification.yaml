@@ -1,0 +1,125 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: grid_electrification
+  display_name: "Grid & Electrification Buildout"
+  taxonomy_tag: ELECTRIFICATION_AND_GRID
+  version: 1
+  status: active
+  created: 2026-08-17
+
+  chain:
+    root_driver: >
+      Electricity demand is growing again after two decades of flat load, from data centers,
+      reshored manufacturing, EV charging and electrified heating at once, against a network
+      planned for none of it.
+    first_order: >
+      The utilities and independent power producers whose rate base and generation have to
+      expand, and who set the spending everything downstream depends on.
+    second_order: >
+      Transformers, switchgear and medium-voltage gear; the transmission and substation
+      contractors; the conductor, poles and structures; and the distributors who hold the
+      inventory when lead times stretch.
+    disconfirming: >
+      Utility capex guidance flattening; interconnection queues clearing faster than new
+      requests arrive; transformer and switchgear lead times normalizing; rate cases denied,
+      which is where a regulated buildout actually stops.
+  roles:
+    root:
+      industries: ["utilities"]
+    supplier:
+      industries: ["electrical equipment", "specialty industrial machinery", "copper",
+                   "metal fabrication"]
+    infrastructure:
+      industries: ["engineering & construction", "building products & equipment"]
+    service:
+      industries: ["industrial distribution"]
+  thesis: >
+    Load growth from electrification, reshored manufacturing and data centers is arriving on a
+    transmission and distribution system planned around two decades of flat demand. The money
+    moves in a fixed order - transformers, switchgear, conductor and substation work are
+    ordered years before the generation they connect - so the exposure worth identifying sits
+    with the equipment makers and the contractors doing the interconnection work, not with the
+    utility whose rate base grows at the end of it.
+
+  # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
+  # Anchors are admitted to their own theme regardless of how a vendor classifies them, so
+  # these are only names whose grid exposure is unambiguous: power management and distribution
+  # gear, the contractors who build transmission, and the structures it hangs on. Pentair,
+  # Ametek and Rockwell were dropped from this list - water treatment, instruments and factory
+  # automation are their own themes, not this one.
+  seed_tickers: [ETN, PWR, HUBB, EMR, ACM, GNRC, VMI]
+  expand_via_tnic: true
+  # Where this supply chain can physically sit. A filing-language screen with no scope ranks
+  # any company that happens to describe its own data centers; a grid buildout is built by
+  # industrials and equipment makers and paid for by utilities.
+  sectors: [Industrials, Utilities, Technology, Basic Materials]
+  # Matched as case-insensitive substrings against the finer industry classification. The
+  # chain is the equipment, the people who install it, the wire it is made of, and the
+  # utilities whose rate base pays for all of it.
+  industries:
+    - "electrical equipment"         # transformers, switchgear, distribution gear
+    - "specialty industrial machinery"
+    - "engineering & construction"   # transmission and substation contractors
+    - "building products & equipment"
+    - "industrial distribution"      # electrical distributors
+    - "metal fabrication"
+    - "copper"                       # conductor
+    - "utilities - regulated electric"
+    - "utilities - diversified"
+    - "utilities - independent power producers"
+    - "utilities - renewable"
+  keywords:
+    include:
+      - "transformer"
+      - "switchgear"
+      - "substation"
+      - "transmission and distribution"
+      - "interconnection queue"
+      - "grid hardening"
+      - "electrical infrastructure"
+      - "medium voltage"
+      - "load growth"
+      - "HVDC"
+    exclude:
+      # "Transformer" is also the dominant neural-network architecture, so a software filer
+      # would otherwise score as a maker of electrical equipment. The rest is decarbonization
+      # marketing language, which every large filer now carries regardless of what it sells.
+      - "transformer architecture"
+      - "transformer model"
+      - "clean energy transition"
+      - "sustainability goals"
+      - "net-zero commitment"
+  sic_codes: [3612, 3613, 1731]   # power/distribution equipment, electrical work
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    - name: backlog_growth              # orders booked, the earliest honest read on a buildout
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.20
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    - name: spender_capex_growth        # regulated utility capex is what funds this theme
+      source: edgar_xbrl_capex
+      universe: [NEE, DUK, SO, AEP, XEL, SRE, EIX, WEC, ED]
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

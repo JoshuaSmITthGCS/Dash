@@ -19,8 +19,10 @@ All six signal families come from sources that cost nothing:
   * **customer_concentration_to_spenders** - ASC 280 requires naming customers above 10% of
     revenue. Matching those names against confirmed theme spenders is a genuine free
     supply-chain edge.
-  * **hyperscaler_capex_growth** - the demand side. Capex from the companies actually
-    writing the cheques, pulled from their own XBRL tags.
+  * **spender_capex_growth** (``hyperscaler_capex_growth`` for the AI theme that named it
+    first) - the demand side. Capex from the companies actually writing the cheques - the
+    theme's declared ``universe`` - pulled from their own XBRL tags. Theme-level by nature:
+    identical for every candidate, so it describes the driver and never confirms a company.
   * **backlog_growth** - year-over-year growth in remaining performance obligation, read
     from the filing's raw XBRL/Inline XBRL contexts rather than ``company_concept``, since
     this concept is routinely tagged only in ``SatisfactionPeriodAxis`` bands with no
@@ -33,6 +35,7 @@ import re
 
 from cache import CACHE
 from common import LOG
+from themes import CAPEX_PULL_THROUGH_SIGNALS
 from xbrl_dimensions import dimensional_facts, facts_on_axis, undimensioned_facts
 
 CAPEX_CONCEPTS = ("PaymentsToAcquirePropertyPlantAndEquipment",
@@ -55,6 +58,25 @@ def strip_markup(text):
     return re.sub(r"\s+", " ", without_tags)
 
 
+def normalized_body(text):
+    """A filing reduced once to ``(lowercased text, word count)`` for keyword measurement.
+
+    Split out from ``keyword_density`` because this half depends only on the document while
+    the counting half depends on the theme. Stripping markup and splitting a multi-megabyte
+    10-K is the expensive part, so doing it once per filing instead of once per filing per
+    theme is what keeps the cost of declaring another theme close to nothing.
+    """
+    lowered = strip_markup(text).lower()
+    return lowered, max(1, len(lowered.split()))
+
+
+def density_from_body(lowered, words, include, exclude=()):
+    """Keyword hits per thousand words over an already-normalized filing body."""
+    hits = sum(lowered.count(str(phrase).lower()) for phrase in include or ())
+    penalties = sum(lowered.count(str(phrase).lower()) for phrase in exclude or ())
+    return round(max(0, hits - penalties) / words * 1000, 4)
+
+
 def keyword_density(text, include, exclude=()):
     """Theme keyword hits per thousand words, net of excluded buzzword phrases.
 
@@ -65,11 +87,7 @@ def keyword_density(text, include, exclude=()):
     """
     if not text:
         return None
-    lowered = strip_markup(text).lower()
-    words = max(1, len(lowered.split()))
-    hits = sum(lowered.count(str(phrase).lower()) for phrase in include or ())
-    penalties = sum(lowered.count(str(phrase).lower()) for phrase in exclude or ())
-    return round(max(0, hits - penalties) / words * 1000, 4)
+    return density_from_body(*normalized_body(text), include, exclude)
 
 
 def density_trend(current, prior):
@@ -173,12 +191,18 @@ def recent_10k_filings(sec, ticker):
     return filings
 
 
-def hyperscaler_capex_growth(sec, universe, *, cache=None):
+def spender_capex_growth(sec, universe, *, cache=None):
     """Aggregate capex growth across the theme's named big spenders.
 
     This is a theme-level number, not a company-level one: it measures whether the demand
     driving the theme is accelerating. Every company scored against the theme receives the
-    same reading, which is correct - the pull-through is a property of the theme.
+    same reading, which is correct - the pull-through is a property of the theme. It is also
+    why ``themes.score_theme_exposure`` refuses to accept it as confirmation that any
+    particular company is exposed: a constant cannot separate two candidates.
+
+    Who the spenders are is the theme's decision, declared as the signal's ``universe`` -
+    hyperscalers for AI compute, regulated utilities for grid buildout, primes for munitions
+    capacity, water utilities for mains replacement.
     """
     totals = {}
     for symbol in universe or ():
@@ -188,6 +212,11 @@ def hyperscaler_capex_growth(sec, universe, *, cache=None):
     if len(totals) < 2:
         return None
     return growth_rate([totals.get(0), totals.get(1)])
+
+
+# The AI-specific spelling this signal shipped under, kept so the original theme file, the
+# published payloads and the schema keep reading the same.
+hyperscaler_capex_growth = spender_capex_growth
 
 
 class EdgarThemeSignals:
@@ -206,10 +235,22 @@ class EdgarThemeSignals:
         self.segment_map = segment_map or {}
         self.customer_map = customer_map or {}
         self._theme_level = {}
+        # Per-ticker scratch, holding whatever was derived from one company's filings while
+        # every theme is measured against it. Bounded to a single ticker on purpose: a 10-K
+        # normalizes to megabytes of text, so keeping the whole candidate set resident would
+        # cost gigabytes to save work the caller's loop ordering already avoids.
+        self._scratch_ticker = None
+        self._scratch = {}
 
     @property
     def available(self):
         return bool(self.sec and self.sec.available)
+
+    def _scratch_for(self, ticker):
+        if self._scratch_ticker != ticker:
+            self._scratch_ticker = ticker
+            self._scratch = {}
+        return self._scratch
 
     def theme_level(self, theme):
         """Signals shared by every company in a theme, computed once and memoized."""
@@ -217,14 +258,48 @@ class EdgarThemeSignals:
             return self._theme_level[theme["id"]]
         values = {}
         for signal in theme["signals"]:
-            if signal["name"] == "hyperscaler_capex_growth":
+            if signal["name"] in CAPEX_PULL_THROUGH_SIGNALS:
                 try:
-                    values["hyperscaler_capex_growth"] = hyperscaler_capex_growth(
+                    values[signal["name"]] = spender_capex_growth(
                         self.sec, signal.get("universe"), cache=self.cache)
                 except Exception as exc:  # noqa: BLE001
                     LOG.warn(f"{theme['id']}: capex signal unavailable ({type(exc).__name__})")
         self._theme_level[theme["id"]] = values
         return values
+
+    def filing_bodies(self, ticker):
+        """The two most recent 10-Ks as ``(lowercased text, word count)``, newest first.
+
+        Memoized per ticker because the normalization, not the keyword counting, is what
+        costs: every theme measures its own vocabulary against the same two documents.
+        """
+        scratch = self._scratch_for(ticker)
+        if "bodies" in scratch:
+            return scratch["bodies"]
+        bodies = [normalized_body(text) for text in self.filing_texts(ticker)]
+        scratch["bodies"] = bodies
+        return bodies
+
+    def filing_texts(self, ticker):
+        """Raw document text of the two most recent 10-Ks, newest first."""
+        try:
+            filings = self.cache.fetch(
+                "sec_submissions", f"10k:{ticker}",
+                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
+        except Exception as exc:  # noqa: BLE001
+            LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
+            return []
+        texts = []
+        for filing in (filings or [])[:2]:
+            try:
+                texts.append(self.cache.fetch(
+                    "sec_document", filing["url"],
+                    lambda filing=filing: self.sec.filing_document(
+                        filing["cik"], filing["accession"], filing["document"]),
+                    source="sec_edgar"))
+            except Exception:  # noqa: BLE001
+                continue
+        return [text for text in texts if text]
 
     def filing_keyword_signals(self, ticker, theme):
         """Keyword density in the two most recent 10-Ks, and the trend between them."""
@@ -232,24 +307,8 @@ class EdgarThemeSignals:
         include = keywords.get("include") or []
         if not include:
             return {}
-        try:
-            filings = self.cache.fetch(
-                "sec_submissions", f"10k:{ticker}",
-                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
-        except Exception as exc:  # noqa: BLE001
-            LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
-            return {}
-        densities = []
-        for filing in (filings or [])[:2]:
-            try:
-                text = self.cache.fetch(
-                    "sec_document", filing["url"],
-                    lambda filing=filing: self.sec.filing_document(
-                        filing["cik"], filing["accession"], filing["document"]),
-                    source="sec_edgar")
-            except Exception:  # noqa: BLE001
-                continue
-            densities.append(keyword_density(text, include, keywords.get("exclude")))
+        densities = [density_from_body(lowered, words, include, keywords.get("exclude"))
+                     for lowered, words in self.filing_bodies(ticker)]
         if not densities:
             return {}
         trend = density_trend(densities[0], densities[1]) if len(densities) > 1 else None
@@ -263,29 +322,21 @@ class EdgarThemeSignals:
         this is usually a cache hit) instead of ``company_concept``, because backlog is
         routinely tagged only in dimensional bands with no undimensioned total - exactly
         the shape ``company_concept`` has no way to report.
+
+        Memoized per ticker alongside the keyword bodies: backlog is a property of the
+        filing, so every theme declaring the signal reads the same answer.
         """
-        try:
-            filings = self.cache.fetch(
-                "sec_submissions", f"10k:{ticker}",
-                lambda: recent_10k_filings(self.sec, ticker), source="sec_edgar")
-        except Exception as exc:  # noqa: BLE001
-            LOG.warn(f"{ticker}: 10-K lookup failed ({type(exc).__name__})")
-            return []
+        scratch = self._scratch_for(ticker)
+        if "backlog" in scratch:
+            return scratch["backlog"]
         values = []
-        for filing in (filings or [])[:2]:
-            try:
-                text = self.cache.fetch(
-                    "sec_document", filing["url"],
-                    lambda filing=filing: self.sec.filing_document(
-                        filing["cik"], filing["accession"], filing["document"]),
-                    source="sec_edgar")
-            except Exception:  # noqa: BLE001
-                continue
+        for text in self.filing_texts(ticker):
             facts = [fact for concept in BACKLOG_CONCEPTS
                      for fact in dimensional_facts(text, concept)]
             total = backlog_total(facts)
             if total is not None:
                 values.append(total)
+        scratch["backlog"] = values
         return values
 
     def __call__(self, ticker, theme):
@@ -311,7 +362,7 @@ class EdgarThemeSignals:
         if "customer_concentration_to_spenders" in declared:
             customers = (self.customer_map.get(theme["id"]) or {}).get(ticker.upper())
             spenders = next((signal.get("universe") for signal in theme["signals"]
-                             if signal["name"] == "hyperscaler_capex_growth"), None)
+                             if signal["name"] in CAPEX_PULL_THROUGH_SIGNALS), None)
             values["customer_concentration_to_spenders"] = customer_overlap_share(
                 customers, spenders or theme.get("seed_tickers"))
 

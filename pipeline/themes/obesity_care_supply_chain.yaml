@@ -1,0 +1,115 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: obesity_care_supply_chain
+  display_name: "Metabolic Care Supply Chain"
+  taxonomy_tag: HEALTHTECH_AND_BIOTECH
+  version: 1
+  status: active
+  created: 2026-08-17
+
+  chain:
+    root_driver: >
+      Incretin medicines moved obesity and metabolic disease from a lifestyle question to a
+      treatable one, and demand has outrun the physical capacity to fill and finish an
+      injectable at that scale.
+    first_order: >
+      The franchise owners, whose economics are the most direct expression of the trend and
+      the part already priced as such - which is why they sit in this theme's spender universe
+      rather than its exposure list.
+    second_order: >
+      Peptide API and specialty chemistry, sterile fill-finish and aseptic capacity, the
+      single-use bioprocessing consumables that gate a line, injector devices, and the vials
+      and closures that contain the product.
+    disconfirming: >
+      Fill-finish capacity catching up with demand; an oral formulation displacing injectables
+      and with them the device and containment content; reimbursement narrowing the treated
+      population; the franchise owners insourcing manufacturing they currently contract out.
+  roles:
+    root:
+      industries: ["drug manufacturers - specialty & generic"]
+    supplier:
+      industries: ["medical instruments & supplies", "specialty chemicals",
+                   "packaging & containers"]
+    enabler:
+      industries: ["diagnostics & research", "medical devices"]
+  thesis: >
+    Incretin (GLP-1) demand has outrun the manufacturing that serves it, and the binding
+    constraint is physical - peptide API, sterile fill-finish lines, single-use bioprocessing
+    consumables and injector devices. The drug owners are the obvious expression of the trend
+    and the one already priced as such; the constraint is held by their suppliers, whose
+    capacity additions are contracted years ahead and disclosed as capex and obligations.
+
+  # Anchors are admitted to their own theme whatever a vendor calls them, so these are the
+  # names whose tie to injectable manufacturing is direct: containment and delivery systems,
+  # bioprocessing, sterilization, and the two large tools suppliers whose bioprocess consumables
+  # gate a fill-finish line. General lab-instrument makers were left out - they sell into every
+  # therapeutic area equally, which is exposure to life sciences, not to this constraint.
+  seed_tickers: [WST, BDX, TMO, DHR, STE, ICUI]
+  expand_via_tnic: true
+  sectors: [Healthcare, Basic Materials, Industrials]
+  # Matched as case-insensitive substrings against the finer industry classification. The
+  # constraint is manufacturing, so this is the constraint's supply chain: bioprocessing and
+  # analytical tools, delivery devices, containment, the contract manufacturers, and the
+  # peptide chemistry. "Drug manufacturers - general" is deliberately absent - the franchise
+  # owners are this theme's spenders, named in the capex universe below, not its exposure.
+  industries:
+    - "medical instruments & supplies"
+    - "medical devices"
+    - "diagnostics & research"
+    - "drug manufacturers - specialty & generic"   # CDMOs
+    - "specialty chemicals"                        # peptide API, excipients
+    - "packaging & containers"                     # vials, stoppers, closures
+  keywords:
+    include:
+      - "GLP-1"
+      - "incretin"
+      - "fill-finish"
+      - "aseptic"
+      - "sterile injectable"
+      - "autoinjector"
+      - "peptide"
+      - "single-use technologies"
+      - "bioprocessing"
+      - "contract development and manufacturing"
+    exclude:
+      # Benefits-plan and wellness language, which mentions the same conditions for reasons
+      # that say nothing about what a company manufactures.
+      - "wellness programs"
+      - "employee health benefits"
+      - "healthcare costs for our employees"
+  sic_codes: [3841, 2836, 8731]   # medical instruments, biological products, commercial research
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.35
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    # The franchise owners doing the building. Their capex is the clearest published measure
+    # of how much manufacturing this theme is actually pulling into existence.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [LLY, NVO, MRK, PFE]
+      leading: true
+      weight: 0.20
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

@@ -310,6 +310,10 @@ def _screen_row(row):
     }
     return {
         "ticker": row["ticker"], "name": row.get("name"), "sector": row.get("sector"),
+        # Carried at the theme screen's request: sector alone cannot tell a chip-equipment
+        # maker from a trucking company, so a reader judging whether a name really belongs in
+        # a structural trend needs the finer classification the theme scope is matched on.
+        "industry": row.get("industry"),
         "price": row.get("price"), "score": row["score"], "stance": row.get("stance"),
         # Without this flag every fund in the universe reads as an ordinary company to the
         # client-side strategy screens, which gate on per-security fundamentals a fund does
