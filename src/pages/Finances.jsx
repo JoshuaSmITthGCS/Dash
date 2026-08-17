@@ -38,7 +38,7 @@ function currentPortfolioValue(positions, data) {
 }
 
 export default function Finances() {
-  const { data } = useData('advisor.json')
+  const { data } = useData('report.json')
   const { data: benchmarkReport } = useData('benchmark-report.json')
   const { positions } = useFirebasePortfolio()
   const { preferences } = usePreferences()

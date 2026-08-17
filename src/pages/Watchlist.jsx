@@ -99,7 +99,7 @@ function PriceTargetEditor({ item, suggested, onSave, onCreateAlert, alertBusy }
 }
 
 export default function Watchlist() {
-  const { data, loading, reload } = useData('advisor.json')
+  const { data, loading, reload } = useData('report.json')
   const { preferences } = usePreferences()
   const { currentUser, authError, retryAuth } = useAuth()
   const watchlist = useWatchlist()

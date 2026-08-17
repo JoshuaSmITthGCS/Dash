@@ -35,7 +35,7 @@ function latestMove(history) {
 }
 
 export default function Insights() {
-  const { data, loading } = useData('advisor.json')
+  const { data, loading } = useData('report.json')
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const tracking = usePortfolioTracking()
   const { currentUser } = useAuth()
