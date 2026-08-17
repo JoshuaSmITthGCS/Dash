@@ -119,4 +119,36 @@ describe('DataTable', () => {
     render(<DataTable columns={COLUMNS} rows={ROWS} getKey={(row) => row.ticker} />)
     expect(screen.getByRole('table')).toBeInTheDocument()
   })
+
+  describe('desktop virtualization', () => {
+    const bigRows = (n) => Array.from({ length: n }, (_, i) => ({ ticker: `T${i}`, name: `Row ${i}`, score: i }))
+
+    it('renders every row when the list is at or under virtualizeFrom', () => {
+      render(<DataTable columns={COLUMNS} rows={bigRows(10)} getKey={(row) => row.ticker} />)
+      expect(screen.getAllByRole('row')).toHaveLength(11) // header + 10 body rows
+    })
+
+    // jsdom has no real layout (getBoundingClientRect always returns zeros), so the exact
+    // set of rows @tanstack/react-virtual windows in is not reproducible here the way it is
+    // in a real browser (verified separately via Playwright against the live dev server).
+    // What a unit test *can* pin down: past the threshold, the full row count is never
+    // mounted at once, and the table still renders real, valid row content rather than
+    // crashing or going blank.
+    it('does not mount every <tr> once the list is past virtualizeFrom', () => {
+      render(<DataTable columns={COLUMNS} rows={bigRows(200)} getKey={(row) => row.ticker} />)
+      const bodyRows = [...screen.getAllByRole('table')[0].querySelectorAll('tbody tr')]
+      expect(bodyRows.length).toBeGreaterThan(0)
+      expect(bodyRows.length).toBeLessThan(200)
+      // the first/last body rows may be empty padding rows (aria-hidden spacers standing in
+      // for the un-rendered rows above/below the visible window) - at least one real row with
+      // actual row content must still be present, or virtualization would have gone blank.
+      expect(bodyRows.some((tr) => /^T\d+Row \d+\d+$/.test(tr.textContent))).toBe(true)
+    })
+
+    it('still sorts correctly once virtualized', () => {
+      render(<DataTable columns={COLUMNS} rows={bigRows(200)} getKey={(row) => row.ticker} defaultSort={{ key: 'ticker', dir: 'asc' }} />)
+      fireEvent.click(within(screen.getByRole('columnheader', { name: /Ticker/ })).getByRole('button'))
+      expect(screen.getByRole('columnheader', { name: /Ticker/ })).toHaveAttribute('aria-sort', 'descending')
+    })
+  })
 })

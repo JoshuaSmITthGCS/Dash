@@ -1,5 +1,19 @@
 import '@testing-library/jest-dom/vitest'
 
+// jsdom implements neither ResizeObserver nor real layout (getBoundingClientRect always
+// returns zeros), so @tanstack/react-virtual's dynamic measureElement has nothing to observe
+// and falls back to repeatedly treating every rendered row as 0-height, which makes its
+// windowing math pick nonsensical indices instead of settling near scrollY. A no-op observer
+// is the standard fix: the virtualizer then relies on estimateSize alone, which is exactly
+// what it does in a real browser until the first ResizeObserver callback fires anyway.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
 // Node 22 may expose an unusable experimental localStorage getter unless a backing file is
 // configured. Tests need deterministic browser-style storage and enumerable keys.
 const localStorageMock = {}

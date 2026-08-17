@@ -1,8 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useVirtualizer, useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useMediaQuery } from '../lib/useMediaQuery.js'
 import { nextSort, sortRows } from '../lib/dataTableSort.js'
 import ResultCards from './ResultCards.jsx'
 import MobileVirtualList from './MobileVirtualList.jsx'
+
+// Matches `td { padding: var(--sp-3); ... }` in research.css: ~12px top/bottom padding
+// plus a --fs-xs line and a 1px border-bottom lands close to 48px for a typical row.
+// Only an initial guess - each virtualizer self-corrects via ResizeObserver measurement.
+const ROW_HEIGHT_ESTIMATE = 48
 
 /**
  * The one table entry point.
@@ -29,6 +35,13 @@ import MobileVirtualList from './MobileVirtualList.jsx'
  *
  * Mobile config maps the same rows onto ResultCards; when it is omitted the
  * table simply scrolls horizontally, which is the right answer for a matrix.
+ *
+ * The desktop `<table>` virtualizes too, past `virtualizeFrom` rows, using the same
+ * "two padding rows" technique either way: an element-scoped virtualizer when the
+ * wrapper's own CSS gives it `overflow-y: auto` (an internally-scrolling table, e.g.
+ * `.research-table`'s `max-height: 72dvh`), a window-scoped one otherwise (a table
+ * that grows with the page). Detected once per mount from computed style, not passed
+ * in, so a page's existing className is the only thing that decides it.
  *
  * rowClassName  optional (row, index) => className, applied to the desktop <tr>.
  *               Use it for a pinned or summary row (a TOTAL row, a suppressed
@@ -58,6 +71,9 @@ export default function DataTable({
   const sort = isControlled ? controlledSort : uncontrolledSort
   const isMobile = useMediaQuery(mobileBreakpoint)
 
+  const wrapperRef = useRef(null)
+  const [internalScroll, setInternalScroll] = useState(null)
+
   const handleSort = (key) => {
     const column = columns.find((item) => item.key === key)
     const next = nextSort(sort, key, column?.defaultSortDir || 'desc')
@@ -71,6 +87,45 @@ export default function DataTable({
     () => (isControlled ? rows : sortRows(rows, columns, sort)),
     [isControlled, rows, columns, sort],
   )
+
+  // Starts `null` ("not yet measured"), not `false` — the wrapper ref (and therefore its
+  // offsetTop, which the window virtualizer's scrollMargin needs) doesn't exist until after
+  // the first commit, so this must go through at least one state change post-mount even when
+  // the measured answer turns out to be `false`, or a window-scrolled table would virtualize
+  // forever against a scrollMargin of 0 — nothing else would trigger the re-render that reads
+  // the real offsetTop.
+  //
+  // Detected from rendered geometry (scrollHeight vs clientHeight), not computed style: CSS
+  // requires `overflow-y` to compute to `auto` whenever `overflow-x` is non-`visible` and
+  // overflow-y was left at its `visible` default (the box can't clip one axis and not the
+  // other), so `.data-table`'s base `overflow-x: auto` alone makes every wrapper's *computed*
+  // overflow-y read `auto` — including tables with no height constraint at all. Only a real
+  // `max-height` (like `.research-table`'s `72dvh`) actually clips, and clipping is the thing
+  // that matters here: the padding-row technique keeps scrollHeight equal to the full
+  // un-virtualized height throughout, so this comparison stays correct after virtualizing too.
+  useLayoutEffect(() => {
+    if (!wrapperRef.current) return
+    setInternalScroll(wrapperRef.current.scrollHeight > wrapperRef.current.clientHeight + 1)
+  }, [className, ordered.length])
+
+  // Both virtualizers are always instantiated (rules of hooks — which one is active
+  // can't gate whether either hook runs) and given count:0 when unused, which makes
+  // them no-ops. Only the active one's output is read.
+  const virtualizeDesktop = !isMobile && ordered.length > virtualizeFrom
+  const elementVirtualizer = useVirtualizer({
+    count: virtualizeDesktop && internalScroll === true ? ordered.length : 0,
+    getScrollElement: () => wrapperRef.current,
+    estimateSize: () => ROW_HEIGHT_ESTIMATE,
+    overscan: 8,
+  })
+  const windowVirtualizer = useWindowVirtualizer({
+    count: virtualizeDesktop && internalScroll !== true ? ordered.length : 0,
+    estimateSize: () => ROW_HEIGHT_ESTIMATE,
+    overscan: 8,
+    scrollMargin: wrapperRef.current?.offsetTop ?? 0,
+  })
+  const virtualizer = internalScroll === true ? elementVirtualizer : windowVirtualizer
+  const scrollMargin = internalScroll === true ? 0 : (windowVirtualizer.options.scrollMargin || 0)
 
   if (!ordered.length && empty) return empty
 
@@ -114,8 +169,25 @@ export default function DataTable({
     )
   }
 
+  const renderRow = (row, index, measureRef) => (
+    <tr key={getKey(row, index)} data-index={index} ref={measureRef} className={rowClassName?.(row, index) || undefined}>
+      {columns.map((column) => {
+        const content = column.cell ? column.cell(row, index) : row[column.key]
+        const cellClassName = column.numeric ? 'num' : undefined
+        return column.rowHeader ? (
+          <th key={column.key || column.label} scope="row" className={cellClassName}>{content}</th>
+        ) : (
+          <td key={column.key || column.label} className={cellClassName}>{content}</td>
+        )
+      })}
+    </tr>
+  )
+
+  const virtualItems = virtualizeDesktop ? virtualizer.getVirtualItems() : null
+  const totalSize = virtualizeDesktop ? virtualizer.getTotalSize() : 0
+
   return (
-    <div className={`data-table ${className}`.trim()}>
+    <div ref={wrapperRef} className={`data-table ${className}`.trim()}>
       <table>
         {caption && <caption>{caption}</caption>}
         <thead>
@@ -153,19 +225,21 @@ export default function DataTable({
           </tr>
         </thead>
         <tbody>
-          {ordered.map((row, index) => (
-            <tr key={getKey(row, index)} className={rowClassName?.(row, index) || undefined}>
-              {columns.map((column) => {
-                const content = column.cell ? column.cell(row, index) : row[column.key]
-                const cellClassName = column.numeric ? 'num' : undefined
-                return column.rowHeader ? (
-                  <th key={column.key || column.label} scope="row" className={cellClassName}>{content}</th>
-                ) : (
-                  <td key={column.key || column.label} className={cellClassName}>{content}</td>
-                )
-              })}
-            </tr>
-          ))}
+          {virtualizeDesktop ? (
+            <>
+              {virtualItems.length > 0 && (
+                <tr aria-hidden="true" style={{ height: virtualItems[0].start - scrollMargin }}>
+                  <td colSpan={columns.length} style={{ padding: 0, border: 0 }} />
+                </tr>
+              )}
+              {virtualItems.map((virtualRow) => renderRow(ordered[virtualRow.index], virtualRow.index, virtualizer.measureElement))}
+              {virtualItems.length > 0 && (
+                <tr aria-hidden="true" style={{ height: totalSize - (virtualItems.at(-1).end - scrollMargin) }}>
+                  <td colSpan={columns.length} style={{ padding: 0, border: 0 }} />
+                </tr>
+              )}
+            </>
+          ) : ordered.map((row, index) => renderRow(row, index))}
         </tbody>
       </table>
     </div>
