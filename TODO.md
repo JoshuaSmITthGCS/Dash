@@ -575,16 +575,40 @@ select was `fontSize: 9`), 6 static inline styles converted to classes,
 sector-allocation card links through to Diversification. Next in traffic order:
 Picks.
 
+### Phase 6 — dead code + payload — done
+Eight of nine unreachable lib files deleted (`evidenceStrength`,
+`fidelityConnectorStub`, `labelDistribution`, `nightlyRefresh`,
+`pipelineGuardrails`, `securityStub`, `sentimentEngine`, `usePortfolio` — the
+last was also independently broken, importing a since-removed `AuthContext`).
+`scoreBands` kept (CLAUDE.md cites its test as the example command).
+`nightlyRefresh` was leftover from a superseded design, not a forgotten
+wire-up — the current architecture deliberately uses server-side 5-minute
+cloud snapshots instead; two stale comments describing the old design were
+fixed along with it.
+
+7 of 11 `advisor.json`-fetching pages (37 MB) moved to `report.json` (6.6 MB):
+Diversification, OptionsScreen, StrategyScreen, Insights, Finances, Watchlist,
+Search — the last enabled by adding a flat `universe` field to
+`report_snapshot()`. Found and fixed a real pre-existing bug along the way:
+`OptionsScreen`'s `DataTable` key collided because the pipeline genuinely
+publishes some contracts twice at adjacent ranks (4 of 33 rows in one
+snapshot) — fixed at the frontend with a composite key + dedupe; the
+pipeline-side root cause is still open. ThemeExposureScreen, Methodology,
+Glossary, and PolicyRadar stay on `advisor.json` on purpose — they need
+`theme_screen.themes`/`methodology`/`capability_status`/`disclaimer`/`news`,
+none of which belong in the compact `report.json`.
+
+`score-history.json` (31 MB, nothing read it) is deleted; `fetch_advisor.py`
+and `build_normalization_snapshot.py` still compute `score_history` and still
+write it to the per-row `explainability.score_history` field `StockDetailModal`
+actually reads, they just stopped publishing it as a standalone file.
+`diagnostics.json` (4.9 MB) is kept — it has one real reader,
+`pipeline/audit_ticker.py`.
+
 ### Smaller items
 - **`og:image` and `og:url` are root-relative** in `index.html` because the
   deploy domain is not committed to this repo. Facebook and Twitter want
   absolute URLs — set them once the domain is known.
-- **Nine unreachable source files remain** (~2,020 lines): `evidenceStrength`,
-  `labelDistribution`, `nightlyRefresh`, `pipelineGuardrails`, `sentimentEngine`,
-  `usePortfolio`, `scoreBands` (kept: CLAUDE.md cites its test as the example
-  command), plus the two deliberate stubs `fidelityConnectorStub` and
-  `securityStub`. Decide keep-or-delete per file.
-- **`advisor.json` is 37 MB** and is fetched by Search, Watchlist and Finances.
-  Phase 6 item 1 — check whether `report.json` (6.5 MB) covers their fields.
-- **`score-history.json` (31 MB) and `diagnostics.json` (4.9 MB)** are committed
-  and read by nothing.
+- **Motion pass** — not started.
+- **Rubric rescore** — not done. Dimensions 1, 2 and 5 have measurably improved;
+  score it properly at the end.

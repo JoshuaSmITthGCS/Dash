@@ -54,6 +54,10 @@ directly in a browser; the button top-right toggles theme.
    Methodology, Insights, Glossary, Finances, Diversification, PolicyRadar,
    OptionsScreen, StrategyScreen, Watchlist, Search, plus `StockDetailModal` and
    `src/lib/recommendation.js`. The payload problem is ~4× bigger than recorded.
+   **Resolved in Phase 6** (§1): 7 of the 11 pages moved to `report.json`;
+   ThemeExposureScreen/Methodology/Glossary/PolicyRadar were re-assessed as
+   correctly needing the full file, not a remaining gap; `StockDetailModal`
+   and `recommendation.js` lazy-fetch it only when a row needs enrichment.
 
 4. **The Phase 4 bullet charts cannot be built from the data as published.** The
    plan assumes `value` + numeric `kill_threshold` on a shared scale. In
@@ -351,6 +355,58 @@ screenshot for `StockDetailModal`. Not verified in-browser:
 Firebase-backed data that's offline in local dev (same known limitation as
 Portfolio/Diversification) — lint/test/build stood in for those two.
 
+### Phase 6 — dead code + payload ✅ (motion pass, rescore still open, see §2)
+
+**Nine unreachable lib files, resolved.** Deleted 8 with zero imports and zero
+test references (confirmed by grep): `evidenceStrength.js`, `fidelityConnectorStub.js`,
+`labelDistribution.js`, `pipelineGuardrails.js`, `securityStub.js`, `sentimentEngine.js`,
+`usePortfolio.js` (also independently broken — imported a since-removed `AuthContext`),
+and `nightlyRefresh.js` (+ its test). `scoreBands.js` kept per the existing instruction
+(CLAUDE.md cites its test as the canonical example command). `nightlyRefresh.js` wasn't
+a forgotten wire-up — `usePortfolioQuotes.js`'s own comment shows the current
+architecture deliberately replaced a browser-side refresh timer with server-side
+5-minute cloud snapshots, so the file was leftover from a superseded design, not a gap.
+Fixed two stale comments (`Dashboard.jsx`, `docs/spec/FILE_INVENTORY.md`) that still
+described the old 9pm-boundary design, and removed the 8 corresponding
+`FILE_INVENTORY.md` entries.
+
+**Payload: 7 of 11 `advisor.json`-fetching pages moved to `report.json`** (37 MB →
+6.6 MB), after checking every field each page reads against `report_snapshot()`'s
+output. `Diversification.jsx` (drops the fetch entirely — `theme_screen.by_ticker` is
+already on `report.json`), `OptionsScreen.jsx` and `StrategyScreen.jsx` (drop the
+`advisorByTicker` map — `StockDetailModal` already lazy-fetches `advisor.json` itself
+whenever it's opened with an unenriched row), `Insights.jsx`, `Finances.jsx`,
+`Watchlist.jsx` (straight swaps), and `Search.jsx` (enabled by a small pipeline
+addition — `report_snapshot()` now includes `universe`, the flat ~927-ticker list, a
+few KB — so Search's "covered universe, not yet enriched" tier still works without the
+full file). `ThemeExposureScreen.jsx`, `Methodology.jsx`, `Glossary.jsx`, and
+`PolicyRadar.jsx` stay on `advisor.json` deliberately — they're dedicated deep-dive
+pages needing `theme_screen.themes` / `methodology` / `capability_status` /
+`disclaimer` / `news`, none of which belong in the intentionally-compact
+`report.json`. That reframes the earlier "37 MB across 11 pages" framing: 4 of those
+11 were always the right pages for the full file, not a remaining gap.
+
+Found and fixed one real, pre-existing bug while doing this: `OptionsScreen.jsx`'s
+`DataTable` used `getKey={(row) => row.ticker}`, which collided because production
+data genuinely publishes the same contract twice at adjacent ranks (confirmed via
+direct inspection of `public/data/screens/options.json`: 4 of 33 rows duplicated,
+e.g. the COP $115 call exp 2026-08-21 at both rank 4 and rank 5, identical score).
+Fixed at the frontend with a composite key plus a defensive dedupe — the pipeline-side
+root cause (why the row is emitted twice) is still open and out of this pass's scope.
+
+**`score-history.json` (31 MB), removed.** Nothing read it — the one grep hit was an
+unrelated `.score-history` CSS class name on a per-row field, not the file. The
+per-row `explainability.score_history` field (attached by `attach_explainability()`)
+is what `StockDetailModal` actually reads, and is unaffected: `fetch_advisor.py` and
+`build_normalization_snapshot.py` still compute `score_history`, they just stopped
+writing it out as a standalone file. `diagnostics.json` (4.9 MB) was **not** removed —
+it has one real reader, `pipeline/audit_ticker.py`, a CLI debugging tool.
+
+Verified: pipeline test suite (1,982 tests), `validate_data.py`,
+`check_ui_weights.py`, `validate_documentation_claims.py`; `npm run lint && npm test
+&& npm run build`; `design/typefloor.mjs` / `design/a11ycheck.mjs` / scripted
+Playwright checks against a local dev server for every page not Firebase-gated.
+
 ---
 
 ## 2. What is left
@@ -457,18 +513,7 @@ Not chart-building tasks; see §1's Phase 4 entry for the full breakdown.
   computable-but-unpublished bound that's lower priority while the live
   sample is young.
 
-### Phase 6 — perf, motion, rescore
-- **Payload.** `advisor.json` 37 MB across 11 pages (see correction #3). Check
-  whether `report.json` (6.5 MB) covers their fields; if it needs a pipeline
-  change, that is out of scope — write the finding down and stop.
-  `score-history.json` (31 MB) and `diagnostics.json` (4.9 MB) are committed and
-  read by nothing.
-- **Nine unreachable lib files** (~2,020 lines) awaiting a keep-or-delete call:
-  `evidenceStrength` (205), `fidelityConnectorStub` (342, deliberate stub),
-  `labelDistribution` (146), `nightlyRefresh` (32), `pipelineGuardrails` (330),
-  `scoreBands` (159 — **keep**: CLAUDE.md cites its test as the example command),
-  `securityStub` (266, deliberate stub), `sentimentEngine` (395),
-  `usePortfolio` (145).
+### Phase 6 — motion, rescore · dead code + payload DONE (see §1)
 - **Motion pass** — not started.
 - **Rubric rescore** — not done. Dimensions 1, 2 and 5 have measurably improved;
   score it properly at the end.
