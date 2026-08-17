@@ -9,8 +9,7 @@ import { Loading, Empty } from '../components/Bits.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
 import InfoTag from '../components/InfoTag.jsx'
 import CorrelationHeatmap from '../components/CorrelationHeatmap.jsx'
-
-const COLORS = ['#315f49', '#64866d', '#8ba692', '#b5c6b8', '#c89b64', '#92735d', '#7c8992', '#b0aaa1']
+import AllocationDonut from '../components/AllocationDonut.jsx'
 
 function groupedWeights(weights, field) {
   return Object.entries(weights.reduce((result, row) => { const key = row.priceInfo?.[field] || 'Unclassified'; result[key] = (result[key] || 0) + row.pct; return result }, {})).sort((a, b) => b[1] - a[1])
@@ -42,7 +41,7 @@ export default function Diversification() {
   const themes = aggregateThemeExposure(portfolio.positions, data?.theme_screen?.by_ticker || {})
   const sectors = (result.sectorExposures || []).map((row) => [row.label, row.pct])
   const industries = groupedWeights(result.weights || [], 'industry')
-  const stops = sectors.reduce((output, [, pct], index) => { const start = sectors.slice(0, index).reduce((sum, [, value]) => sum + value, 0); output.push(`${COLORS[index % COLORS.length]} ${start}% ${start + pct}%`); return output }, []).join(', ')
+  const sectorAllocation = sectors.map(([sector, pct]) => ({ sector, pct }))
   const money = (value) => preferences.privacyMode ? '••••••' : formatPreferenceMoney(value, preferences.numberFormat)
   return <div className="diversification-page"><header className="page-head"><div><span className="eyebrow">Portfolio analytics</span><h1 className="page-title">Diversification</h1><p className="page-sub">Concentration, ETF look-through, and common movement across your holdings.</p></div><Link className="secondary-button compact" to="/portfolio">Back to portfolio</Link></header>
     <section className="diversification-hero"><div className="diversification-score" style={{ '--score': result.score }}><strong>{result.score}</strong><span>/100</span><small>{result.provisional ? 'Provisional score' : 'Diversification score'}</small></div><div><h2>You hold {result.rawHoldingCount} positions. You hold {result.effectiveBets == null ? 'an unavailable number of' : result.effectiveBets.toFixed(1)} effective bets.
@@ -63,7 +62,7 @@ export default function Diversification() {
           two portfolios that look diversified by ticker count can be concentrated in the same sector
           once fund holdings are decomposed.</p>
       </InfoTag>
-    </h2><div className="allocation-donut" style={{ background: `conic-gradient(${stops || 'var(--border) 0 100%'})` }}><span>{sectors.length}<small>sectors</small></span></div><div className="allocation-legend">{sectors.map(([label, pct], index) => <div key={label}><i style={{ background: COLORS[index % COLORS.length] }} /><span>{label}</span><b>{pct.toFixed(1)}%</b></div>)}</div></article><article className="score-components"><h2>Score components
+    </h2><AllocationDonut sectors={sectorAllocation} totalLabel={<>{sectors.length}<small>sectors</small></>} /></article><article className="score-components"><h2>Score components
       <InfoTag label="Score components" align="right">
         <strong>Score components</strong>
         <p>The individual 0–100 inputs that blend into the diversification score above - each bar is
