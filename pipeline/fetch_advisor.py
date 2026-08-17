@@ -200,6 +200,10 @@ def report_snapshot(payload):
         "generated_at": payload.get("generated_at"),
         "data_mode": payload.get("data_mode"),
         "universe_count": payload.get("universe_count"),
+        # A flat list of ~900 ticker strings (a few KB) — Search.jsx needs it to find a
+        # tracked-but-unscored ticker beyond the scored screen_universe rows above; nothing
+        # else in this snapshot needed it, which is why it was not carried before.
+        "universe": payload.get("universe"),
         "hypothetical_basis": payload.get("hypothetical_basis"),
         "benchmark_history": payload.get("benchmark_history"),
         "benchmark_analytics_history": payload.get("benchmark_analytics_history"),

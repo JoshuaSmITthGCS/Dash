@@ -18,7 +18,7 @@ function latestMove(row) {
 }
 
 export default function Search() {
-  const { data, loading } = useData('advisor.json')
+  const { data, loading } = useData('report.json')
   const { positions } = useFirebasePortfolio()
   const { items: watchlistItems } = useWatchlist()
   const [query, setQuery] = useState('')
