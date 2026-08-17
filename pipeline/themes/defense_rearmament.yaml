@@ -2,9 +2,34 @@
 theme:
   id: defense_rearmament
   display_name: "Allied Rearmament & Munitions Capacity"
+  taxonomy_tag: DEFENSE_AEROSPACE_AND_SPACE
   version: 1
   status: active
   created: 2026-08-17
+
+  chain:
+    root_driver: >
+      Allied inventories of guided weapons and interceptors have been drawn down faster than
+      the industrial base can replace them, and the political response is multi-year
+      procurement rather than annual orders - a budget commitment that outlives an election.
+    first_order: >
+      The primes holding the programs: missiles and munitions, combat aircraft, shipbuilding,
+      and the mission systems that go in them.
+    second_order: >
+      Propulsion, guidance and sensors; the specialty electronics and machined structures the
+      primes buy; and the services firms holding the classified integration work.
+    disconfirming: >
+      Appropriations slipping or being rescinded rather than authorized; primes citing
+      capacity rather than demand as the constraint on guidance; backlog conversion stalling
+      while backlog itself keeps growing; a ceasefire that removes the replenishment case.
+  roles:
+    root:
+      industries: ["aerospace & defense"]
+    supplier:
+      industries: ["scientific & technical instruments", "metal fabrication",
+                   "electronic components"]
+    service:
+      industries: ["information technology services", "specialty business services"]
   thesis: >
     Allied inventories of guided weapons and air defense interceptors have been drawn down
     faster than the industrial base can replace them, and the response is multi-year

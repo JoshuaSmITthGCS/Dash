@@ -2,9 +2,37 @@
 theme:
   id: reshoring_industrial_capacity
   display_name: "Reshoring & Industrial Capacity"
+  taxonomy_tag: RESHORING_AND_ADVANCED_MANUFACTURING
   version: 1
   status: active
   created: 2026-08-17
+
+  chain:
+    root_driver: >
+      Tariffs, subsidy programs and the memory of 2020 have made supply-chain location a
+      board-level risk, so firms and governments are paying a cost premium to hold capacity
+      domestically rather than optimizing purely on unit cost.
+    first_order: >
+      The operators building the plants - fabs, pharmaceutical and battery capacity - whose
+      capex is the money this theme is about.
+    second_order: >
+      Process equipment and materials, the engineering and construction firms who build the
+      shells, the automation that runs them, and the structural inputs they consume.
+    disconfirming: >
+      Announced projects quietly slipping their in-service dates; subsidy disbursement
+      stalling; construction backlogs shrinking; capacity coming online into falling
+      utilization, which turns a buildout into an overhang.
+  roles:
+    root:
+      industries: ["semiconductors"]
+    supplier:
+      industries: ["semiconductor equipment", "specialty industrial machinery",
+                   "scientific & technical instruments", "steel", "building materials"]
+    infrastructure:
+      industries: ["engineering & construction", "building products & equipment",
+                   "farm & heavy construction machinery"]
+    service:
+      industries: ["industrial distribution", "metal fabrication"]
   thesis: >
     Policy and post-2020 supply-chain experience are pulling semiconductor, pharmaceutical and
     heavy-industrial capacity back onshore. A plant announcement is not the investable event:

@@ -33,10 +33,18 @@ from datetime import datetime, timezone
 
 from common import LOG
 from peer_groups import peer_group
+from theme_trend import biggest_players, evaluate_theme
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 THEMES_DIR = os.path.join(HERE, "themes")
 SECTOR_PEER_LIMIT_PER_THEME = 20
+# Total new sector-peer candidates a run may add, across every theme. A per-theme cap alone
+# made the cost of the theme layer linear in the number of themes: each candidate costs up to
+# two 10-K documents, which are megabytes each and live in a CI cache with a hard size limit,
+# so eleven themes at twenty peers apiece would have quietly multiplied the run's footprint by
+# five. The budget is spent round-robin, so a theme is never starved by whichever one happens
+# to be evaluated first, and adding the twelfth theme costs nothing new.
+TOTAL_SECTOR_PEER_BUDGET = 120
 # Published rows per candidate group, per theme. Applied per group rather than to the whole
 # theme: a single global cap let the already-recognized leaders crowd out the
 # sector-connected names entirely (the shipped screen published 15 rows of which 3 were
@@ -184,7 +192,45 @@ def normalize_theme(theme):
         "sic_codes": theme.get("sic_codes") or [],
         "sectors": [str(sector).strip().lower() for sector in theme.get("sectors") or []],
         "industries": [str(term).strip().lower() for term in theme.get("industries") or []],
+        "taxonomy_tag": theme.get("taxonomy_tag"),
+        "chain": theme.get("chain") or {},
+        "roles": {
+            role: {
+                "industries": [str(term).strip().lower()
+                               for term in (rule or {}).get("industries") or []],
+                "tickers": [str(ticker).upper() for ticker in (rule or {}).get("tickers") or []],
+            }
+            for role, rule in (theme.get("roles") or {}).items()
+        },
     }
+
+
+def assign_role(theme, row):
+    """Where a company sits in this theme's chain: root, enabler, supplier, infrastructure,
+    service.
+
+    A theme is a sequence, not a bag. The company selling the end product and the company
+    selling it the equipment are exposed to the same driver at different points, they lead at
+    different times, and a screen that reports only "exposed" cannot tell you which stage the
+    money is currently arriving at. Declared per theme rather than globally, because the role
+    is a property of the relationship: a utility is the root of an electrification chain and a
+    customer of a grid-equipment chain.
+
+    Named tickers win over industry rules, since the whole point of naming one is that its
+    classification does not capture what it does here.
+    """
+    ticker = str(row.get("ticker") or "").upper()
+    industry = str(row.get("industry") or "").strip().lower()
+    rules = theme.get("roles") or {}
+    for role, rule in rules.items():
+        if ticker and ticker in set(rule.get("tickers") or ()):
+            return role
+    if not industry:
+        return None
+    for role, rule in rules.items():
+        if any(term in industry for term in rule.get("industries") or ()):
+            return role
+    return None
 
 
 def in_theme_scope(theme, row):
@@ -335,7 +381,8 @@ def score_theme_exposure(theme, signal_values, *, valuation_percentile=None):
 # ---------------- candidate selection ----------------
 
 def expand_theme_candidates(themes, research, ranked, portfolio_symbols,
-                             *, limit_per_theme=SECTOR_PEER_LIMIT_PER_THEME):
+                             *, limit_per_theme=SECTOR_PEER_LIMIT_PER_THEME,
+                             total_peer_budget=TOTAL_SECTOR_PEER_BUDGET):
     """Widen the theme-scoring candidate set beyond published leaders + holdings.
 
     Scoring a theme only against the published leaderboard means a stock that isn't
@@ -361,14 +408,20 @@ def expand_theme_candidates(themes, research, ranked, portfolio_symbols,
     could not plausibly sit in.
     """
     portfolio_set = set(portfolio_symbols or ())
-    by_ticker = {row["ticker"]: row for row in research if row.get("ticker")}
+    # Funds are excluded outright. A theme is a claim about a company's place in a supply
+    # chain, and a fund has neither a place in one nor a 10-K to read: it would resolve no
+    # signal, and its role and industry would be a category error rather than a missing value.
+    by_ticker = {row["ticker"]: row for row in research
+                 if row.get("ticker") and not row.get("is_etf")}
 
-    tagged = {row["ticker"]: {**row, "candidate_source": "published_leader"} for row in ranked}
+    tagged = {row["ticker"]: {**row, "candidate_source": "published_leader"}
+              for row in ranked if not row.get("is_etf")}
     for ticker in portfolio_set - set(tagged):
         row = by_ticker.get(ticker)
         if row:
             tagged[ticker] = {**row, "candidate_source": "portfolio"}
 
+    shortlists = []
     for theme in themes:
         seed_groups = set()
         for ticker in theme.get("seed_tickers") or ():
@@ -384,8 +437,27 @@ def expand_theme_candidates(themes, research, ranked, portfolio_symbols,
             and in_theme_scope(theme, row)
         ]
         peers.sort(key=lambda row: row.get("score") or 0, reverse=True)
-        for row in peers[:limit_per_theme]:
-            tagged[row["ticker"]] = {**row, "candidate_source": "sector_peer"}
+        shortlists.append(peers[:limit_per_theme])
+
+    # Round-robin across themes rather than draining one list at a time: the budget is shared,
+    # so taking each theme's best unclaimed peer in turn spends it on the strongest candidate
+    # of every theme before the second-best of any.
+    spent, exhausted = 0, False
+    while shortlists and spent < total_peer_budget and not exhausted:
+        exhausted = True
+        for peers in shortlists:
+            while peers:
+                row = peers.pop(0)
+                if row["ticker"] in tagged:
+                    continue
+                tagged[row["ticker"]] = {**row, "candidate_source": "sector_peer"}
+                spent, exhausted = spent + 1, False
+                break
+            if spent >= total_peer_budget:
+                break
+    if spent >= total_peer_budget:
+        LOG.info(f"Theme peer expansion stopped at the shared budget of {total_peer_budget} "
+                 "candidates; lower-ranked peers were not evaluated this run")
 
     return list(tagged.values())
 
@@ -462,6 +534,7 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
     generated_at = datetime.now(timezone.utc).isoformat()
     by_ticker = {row.get("ticker"): row for row in rows if row.get("ticker")}
     per_theme = {theme["id"]: [] for theme in themes}
+    trend_inputs = {}
     per_ticker = {}
     report_scope(themes, by_ticker.values())
 
@@ -490,13 +563,19 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
                 "ticker": ticker,
                 "name": row.get("name", ticker),
                 "sector": row.get("sector"),
+                "industry": row.get("industry"),
+                "role": assign_role(theme, row),
                 "candidate_source": row.get("candidate_source"),
                 "fundamental_score": fundamental,
                 "valuation_percentile": valuation_percentile,
                 "opportunity_score": opportunity_score(result["theme_exposure_score"],
                                                        fundamental, valuation_percentile),
             }
+            # The scored row plus the research fields the trend layer reads. Kept beside the
+            # published entry rather than merged into it: price behavior must not travel with
+            # an exposure row, where it would be one careless spread away from the score.
             per_theme[theme["id"]].append(entry)
+            trend_inputs.setdefault(theme["id"], []).append({**row, **entry})
             per_ticker.setdefault(ticker, []).append({
                 "theme_id": theme["id"], "display_name": theme.get("display_name"),
                 "theme_exposure_score": result["theme_exposure_score"],
@@ -523,6 +602,8 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
             "version": theme.get("version"),
             "sectors": theme.get("sectors") or [],
             "industries": theme.get("industries") or [],
+            "taxonomy_tag": theme.get("taxonomy_tag"),
+            "chain": theme.get("chain") or {},
             "guardrails": theme["guardrails"],
             "signals": [{"name": signal["name"], "weight": signal["weight"],
                          "leading": signal["leading"],
@@ -536,6 +617,11 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
             "group_counts": {"leaders": len(leaders), "connected": len(connected)},
             "published_rows_per_group": limit_per_group,
             "rows": leaders[:limit_per_group] + connected[:limit_per_group],
+            # Two questions the exposure leaderboard cannot answer, kept in their own blocks:
+            # is this trend actually moving (and already paid for), and who are its biggest
+            # names. Both are computed across every scored member, not the published slice.
+            "trend": evaluate_theme(trend_inputs.get(theme["id"]) or []),
+            "biggest_players": biggest_players(trend_inputs.get(theme["id"]) or []),
         })
 
     return {

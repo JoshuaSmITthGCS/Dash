@@ -383,6 +383,10 @@ from GitHub Actions workflows, not via `npm`/`package.json`.
   EDGAR data (segment revenue, filing-keyword density, transcript salience, customer overlap,
   spender capex, backlog growth) (`EdgarThemeSignals`), memoizing each company's normalized
   filing text so declaring another theme costs no extra reads.
+- `pipeline/theme_trend.py` — Whether a structural trend is strengthening and whether it is
+  already priced: direction, breadth, leadership concentration, revision confirmation,
+  crowding and per-role rotation across a theme's members. Reads price deliberately and is
+  published apart from exposure (`evaluate_theme`, `biggest_players`).
 - `pipeline/themes.py` — Pure, unit-tested theme-exposure scoring with hardcoded zero-weight
   on price momentum to avoid performance-chasing (`score_theme_exposure`,
   `build_theme_screen`, `expand_theme_candidates`).

@@ -2,9 +2,36 @@
 theme:
   id: water_infrastructure
   display_name: "Water Infrastructure & Treatment"
+  taxonomy_tag: CLIMATE_ADAPTATION_AND_WATER
   version: 1
   status: active
   created: 2026-08-17
+
+  chain:
+    root_driver: >
+      Three mandates land on the same pipes at once - lead service line replacement,
+      enforceable PFAS limits, and reuse in water-stressed regions - on networks already past
+      design life. Unlike most capex cycles this one is enforced by regulation and recovered
+      through rates, so it does not wait for a cycle to turn.
+    first_order: >
+      Regulated water utilities and the municipal systems whose capital plans fund the work.
+    second_order: >
+      Pumps, valves, meters and filtration; the pipe and hydrants themselves; the engineering
+      firms designing replacement programs; and the treatment chemistry.
+    disconfirming: >
+      Federal and state funding programs lapsing without renewal; PFAS limits weakened or
+      deferred in litigation; utility rate cases denied; municipal budgets deferring
+      replacement schedules, which is how this spending has always been delayed before.
+  roles:
+    root:
+      industries: ["utilities - regulated water"]
+    supplier:
+      industries: ["specialty industrial machinery", "pollution & treatment controls",
+                   "metal fabrication", "specialty chemicals"]
+    infrastructure:
+      industries: ["engineering & construction", "building products & equipment"]
+    service:
+      industries: ["waste management"]
   thesis: >
     Three mandates are landing on the same pipes at once - lead service line replacement,
     enforceable PFAS limits, and reuse in water-stressed regions - on distribution networks

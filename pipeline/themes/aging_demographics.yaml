@@ -1,0 +1,100 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: aging_demographics
+  display_name: "Aging Demographics & Care Capacity"
+  taxonomy_tag: DEMOGRAPHICS_AND_AGING
+  version: 1
+  status: active
+  created: 2026-08-17
+  thesis: >
+    The most predictable demand curve available: the population that consumes the most
+    healthcare is already born and already counted. What is uncertain is not the demand but who
+    is paid for meeting it, since the same demographics that create the volume also strain the
+    payers - so this theme is scoped to the companies that supply care capacity rather than the
+    insurers who bear its cost.
+
+  chain:
+    root_driver: >
+      The over-65 share of the population rises for another two decades in every developed
+      market, and healthcare consumption per person rises steeply with age while the clinical
+      workforce does not grow with it.
+    first_order: >
+      Procedure volume: the device makers, orthopedic and cardiovascular implants, and the
+      facilities where those procedures happen.
+    second_order: >
+      Diagnostics and imaging that route patients into procedures, the consumables and
+      sterilization behind each one, and the software that lets a constrained workforce carry
+      more volume per clinician.
+    disconfirming: >
+      Procedure volume growth normalizing after the post-pandemic catch-up rather than
+      continuing; reimbursement rates cut faster than volume grows; hospital capital budgets
+      tightening; staffing shortages capping throughput regardless of demand.
+
+  seed_tickers: [SYK, BSX, ISRG, ZBH, EW, BDX, STE, RMD, DXCM]
+  expand_via_tnic: true
+  sectors: [Healthcare, Technology]
+  industries:
+    - "medical devices"
+    - "medical instruments & supplies"
+    - "diagnostics & research"
+    - "medical care facilities"
+    - "medical distribution"
+    - "health information services"
+  keywords:
+    include:
+      - "procedure volume"
+      - "aging population"
+      - "orthopedic"
+      - "cardiovascular"
+      - "minimally invasive"
+      - "implant"
+      - "chronic care"
+      - "home health"
+      - "continuous glucose"
+      - "sleep apnea"
+    exclude:
+      # Payer and benefits language: bearing the cost of aging is the other side of this trade.
+      - "medical loss ratio"
+      - "premium revenue"
+      - "employee health benefits"
+  sic_codes: [3841, 3845, 8062]
+  icb_subsectors: []
+
+  roles:
+    root:
+      industries: ["medical devices"]
+    supplier:
+      industries: ["medical instruments & supplies", "medical distribution"]
+    enabler:
+      industries: ["diagnostics & research", "health information services"]
+    service:
+      industries: ["medical care facilities"]
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.40
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.20
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.15
+    # Hospital systems and large device makers: the capital budgets that buy care capacity.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [HCA, UHS, THC, SYK, BSX]
+      leading: true
+      weight: 0.25
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

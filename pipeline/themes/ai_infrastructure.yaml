@@ -7,7 +7,8 @@
 theme:
   id: ai_infrastructure
   display_name: "AI Infrastructure Buildout"
-  version: 1
+  taxonomy_tag: AI_COMPUTE_AND_DATA
+  version: 2
   status: active            # active | watch | retired
   created: 2026-08-02
   thesis: >
@@ -15,6 +16,44 @@ theme:
     HBM/DRAM/NAND memory, networking silicon, and grid and data-center power. The
     exposure worth identifying is upstream of the spending, not downstream of the
     share price that has already responded to it.
+
+  # The chain this theme is a claim about: what changed, who sells into it first, who has to
+  # supply them, and what would say the thesis is weakening. Published as written - a reader
+  # who cannot see the mechanism cannot judge whether a ranked list of tickers follows from it,
+  # and a thesis with no stated way to be wrong is a story rather than a position.
+  chain:
+    root_driver: >
+      Training and serving large models turns compute into a capital expenditure rather than a
+      software cost, so a handful of buyers commit multi-year budgets to buildings, silicon and
+      power ahead of the revenue those models earn.
+    first_order: >
+      Accelerators, high-bandwidth memory and the networking silicon that lashes them together -
+      the parts of the spend specified by the model rather than by the building.
+    second_order: >
+      Everything the building needs before a chip can run in it: power distribution and
+      conversion, thermal management, the contractors who build the halls, and the generation
+      and grid capacity that has to exist first.
+    disconfirming: >
+      Hyperscaler capex guidance cut or deferred; memory pricing rolling over on oversupply
+      rather than demand; equipment lead times shortening; the buildout concentrating in a
+      single customer whose own spending is slowing.
+
+  # Where each company sits in that chain. Roles make a rotation legible - money arriving in
+  # accelerators and money arriving in switchgear are the same theme at different stages - and
+  # they are declared per theme because a role is a property of the relationship, not of the
+  # company: a utility is the root of an electrification chain and infrastructure here.
+  roles:
+    root:
+      industries: ["semiconductors"]
+      tickers: [NVDA, AVGO, MU]
+    supplier:
+      industries: ["semiconductor equipment", "electronic components"]
+    enabler:
+      industries: ["communication equipment", "computer hardware"]
+      tickers: [VRT]
+    infrastructure:
+      industries: ["electrical equipment", "engineering & construction", "utilities"]
+      tickers: [ETN]
 
   # ---- Exposure definition (how a company scores onto the theme) ----
   # Anchors, not the universe. Every scored company is measured on its own signals;

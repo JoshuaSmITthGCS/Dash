@@ -169,6 +169,144 @@ describe('Theme Exposure screen', () => {
     expect(within(crossing).queryByText('NVDA')).toBeNull()
   })
 
+  describe('trend evaluation', () => {
+    const withTrend = (trend, extra = {}) => ({
+      ...multiThemeData,
+      theme_screen: {
+        ...multiThemeData.theme_screen,
+        themes: [{ ...multiThemeData.theme_screen.themes[0], trend, ...extra }],
+      },
+    })
+
+    const broadening = {
+      contributes_to_exposure: false, members_measured: 20,
+      direction: { relative_strength_median: 6.4, acceleration_median: 1.2, label: 'strengthening' },
+      breadth: { outperforming_share: 0.72, above_50d_share: 0.68, above_20d_share: 0.61, label: 'broad' },
+      crowding: { expensiveness_percentile_median: 41, already_priced: false },
+      leadership: { largest: 'NVDA', largest_relative_strength: 9, median_excluding_largest: 5.5, led_by_one_name: false },
+      fundamental_confirmation: { positive_revision_share: 0.6, volume_ratio_median: 1.2 },
+      chain_confirmation: { root_relative_strength: 8, supply_chain_relative_strength: 5, confirms: true },
+      roles: [{ role: 'supplier', members: 8, relative_strength_median: 7.1, above_50d_share: 0.75 },
+        { role: 'root', members: 4, relative_strength_median: 3.2, above_50d_share: 0.5 }],
+      verdict: { label: 'broadening', summary: 'The group is outperforming.' },
+    }
+
+    it('answers whether the trend is rising, shared, and already paid for', () => {
+      useData.mockImplementation(() => ({ data: withTrend(broadening), loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const panel = screen.getByLabelText('Trend evaluation')
+      expect(within(panel).getByText('broadening')).toBeInTheDocument()
+      expect(within(panel).getByText('+6.4')).toBeInTheDocument()      // leading the market by
+      expect(within(panel).getByText('72%')).toBeInTheDocument()       // members participating
+      expect(within(panel).getByText('No')).toBeInTheDocument()        // already priced
+    })
+
+    it('shows where in the chain the money is arriving, strongest stage first', () => {
+      useData.mockImplementation(() => ({ data: withTrend(broadening), loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const rotation = screen.getByText('Where the money is arriving in the chain').closest('div')
+      const stages = within(rotation).getAllByRole('listitem').map((item) => item.textContent)
+      expect(stages[0]).toMatch(/Supplier/)
+      expect(stages[1]).toMatch(/Root/)
+    })
+
+    it('says plainly when a move is one company rather than a trend', () => {
+      const narrow = {
+        ...broadening,
+        breadth: { ...broadening.breadth, outperforming_share: 0.3, label: 'narrow' },
+        leadership: { largest: 'NVDA', largest_relative_strength: 40, median_excluding_largest: -2, led_by_one_name: true },
+        chain_confirmation: { root_relative_strength: 30, supply_chain_relative_strength: -3, confirms: false },
+        verdict: { label: 'narrow leadership', summary: 'Concentrated in NVDA.' },
+      }
+      useData.mockImplementation(() => ({ data: withTrend(narrow), loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const panel = screen.getByLabelText('Trend evaluation')
+      expect(within(panel).getByText(/company story rather than a trend/)).toBeInTheDocument()
+      expect(within(panel).getByText(/NVDA at \+40 against -2 for the rest/)).toBeInTheDocument()
+    })
+
+    it('renders a crowded theme as a warning, never as a clean signal', () => {
+      const crowded = {
+        ...broadening,
+        crowding: { expensiveness_percentile_median: 88, already_priced: true },
+        verdict: { label: 'strong but already priced', summary: 'Outperforming and expensive.' },
+      }
+      useData.mockImplementation(() => ({ data: withTrend(crowded), loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(document.querySelector('.theme-verdict.watch')).toBeTruthy()
+      expect(document.querySelector('.theme-verdict.pos')).toBeNull()
+    })
+
+    it('lists the biggest players by size, with their exposure and role', () => {
+      useData.mockImplementation(() => ({
+        data: withTrend(broadening, {
+          biggest_players: [
+            { ticker: 'NVDA', name: 'NVIDIA', role: 'root', market_cap: 3e12, theme_exposure_score: 72, eligible: true },
+            { ticker: 'ETN', name: 'Eaton', role: 'infrastructure', market_cap: 1e11, theme_exposure_score: 88, eligible: true },
+          ],
+        }),
+        loading: false,
+        error: null,
+      }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const players = screen.getByText('Biggest players').closest('div')
+      const listed = within(players).getAllByRole('listitem').map((item) => item.textContent)
+      // Size order, not exposure order: NVDA is bigger, ETN scores higher.
+      expect(listed[0]).toMatch(/NVDA/)
+      expect(listed[0]).toMatch(/Root/)
+      expect(listed[1]).toMatch(/ETN/)
+    })
+
+    it('says a theme is unmeasured rather than inventing a verdict', () => {
+      useData.mockImplementation(() => ({
+        data: withTrend({ contributes_to_exposure: false, members_measured: 2,
+          verdict: { label: 'unmeasured', summary: 'Only 2 members resolved price behavior.' } }),
+        loading: false,
+        error: null,
+      }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByText('Only 2 members resolved price behavior.')).toBeInTheDocument()
+      expect(screen.queryByLabelText('Trend evaluation')).toBeNull()
+    })
+
+    it('orders the index by how each trend reads, not alphabetically', () => {
+      const cooling = { ...broadening, verdict: { label: 'cooling', summary: 'Lagging.' },
+        direction: { relative_strength_median: -5, acceleration_median: -2, label: 'weakening' } }
+      useData.mockImplementation(() => ({
+        data: {
+          ...multiThemeData,
+          theme_screen: {
+            ...multiThemeData.theme_screen,
+            themes: [
+              { ...multiThemeData.theme_screen.themes[0], trend: cooling },
+              { ...multiThemeData.theme_screen.themes[1], trend: broadening },
+            ],
+          },
+        },
+        loading: false,
+        error: null,
+      }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const index = screen.getByRole('navigation', { name: 'Themes in this report' })
+      const links = within(index).getAllByRole('link').map((link) => link.textContent)
+      expect(links[0]).toBe('Grid & Electrification Buildout')   // broadening outranks cooling
+    })
+  })
+
   it('names the industries a theme is built by, not just its sectors', () => {
     useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
 

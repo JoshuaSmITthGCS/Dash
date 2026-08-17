@@ -75,6 +75,154 @@ export function crossThemeNames(byTicker = {}, { minimum = MULTI_THEME_MINIMUM, 
     .slice(0, limit)
 }
 
+const ROLE_LABEL = {
+  root: 'Root', enabler: 'Enabler', supplier: 'Supplier',
+  infrastructure: 'Infrastructure', service: 'Service',
+}
+
+// Verdict wording is the pipeline's; this only decides how loudly to render it. "Strong but
+// already priced" is deliberately a warning tone rather than a positive one - it is the exact
+// setup thematic products have historically bought at the wrong moment.
+const VERDICT_TONE = {
+  broadening: 'pos',
+  'narrow leadership': 'watch',
+  'strong but already priced': 'watch',
+  cooling: 'neg',
+  mixed: 'neutral',
+  unmeasured: 'neutral',
+}
+
+const pct = (value) => (value == null ? '–' : `${Math.round(value * 100)}%`)
+const signed = (value) => (value == null ? '–' : `${value > 0 ? '+' : ''}${value}`)
+
+// Index order: the trends actually moving, first. Verdict rank leads because it already
+// folds in breadth and crowding — a broadening theme outranks a stronger but crowded one —
+// with raw relative strength breaking ties inside a rank.
+const VERDICT_RANK = ['broadening', 'narrow leadership', 'strong but already priced', 'mixed',
+  'cooling', 'unmeasured']
+function themesByTrend(left, right) {
+  const rank = (theme) => {
+    const index = VERDICT_RANK.indexOf(theme.trend?.verdict?.label)
+    return index === -1 ? VERDICT_RANK.length : index
+  }
+  const strength = (theme) => theme.trend?.direction?.relative_strength_median ?? -Infinity
+  return (rank(left) - rank(right)) || (strength(right) - strength(left))
+}
+
+// Whether the trend is worth acting on is three questions, not one score: is the group
+// leading, is that lead shared, and has the market already paid for it. They are rendered
+// side by side rather than combined, because a single number would let a crowded theme and a
+// broadening one look identical.
+function ThemeTrend({ trend, chain }) {
+  if (!trend) return null
+  const verdict = trend.verdict || {}
+  if (verdict.label === 'unmeasured') {
+    return <p className="disclaimer">{verdict.summary}</p>
+  }
+  const { direction = {}, breadth = {}, crowding = {}, leadership = {},
+    fundamental_confirmation: fundamentals = {}, chain_confirmation: chainCheck = {} } = trend
+  return <section className="theme-trend" aria-label="Trend evaluation">
+    <div className={`theme-verdict ${VERDICT_TONE[verdict.label] || 'neutral'}`}>
+      <span>Trend</span>
+      <strong>{verdict.label}</strong>
+      <p>{verdict.summary}</p>
+    </div>
+    <dl className="theme-trend-metrics">
+      <div>
+        <dt>Leading the market by</dt>
+        <dd>{signed(direction.relative_strength_median)}</dd>
+        <small>median member vs benchmark; {signed(direction.acceleration_median)} acceleration</small>
+      </div>
+      <div>
+        <dt>Members participating</dt>
+        <dd>{pct(breadth.outperforming_share)}</dd>
+        <small>{pct(breadth.above_50d_share)} above their 50-day, {pct(breadth.above_20d_share)} above their 20-day</small>
+      </div>
+      <div>
+        <dt>Already priced</dt>
+        <dd>{crowding.already_priced == null ? '–' : crowding.already_priced ? 'Yes' : 'No'}</dd>
+        <small>median member sits at the {crowding.expensiveness_percentile_median ?? '–'}th
+          expensiveness percentile of its sector</small>
+      </div>
+      <div>
+        <dt>Estimates confirming</dt>
+        <dd>{pct(fundamentals.positive_revision_share)}</dd>
+        <small>members with rising 30-day EPS estimates; volume {fundamentals.volume_ratio_median ?? '–'}× normal</small>
+      </div>
+    </dl>
+    <ul className="theme-trend-checks">
+      <li>
+        <b>Supply chain confirms:</b>{' '}
+        {chainCheck.confirms == null ? 'not enough members carry a role to say'
+          : chainCheck.confirms
+            ? `yes – suppliers and infrastructure are participating (${signed(chainCheck.supply_chain_relative_strength)}), not just the root (${signed(chainCheck.root_relative_strength)})`
+            : `no – the root is at ${signed(chainCheck.root_relative_strength)} while the rest of the chain sits at ${signed(chainCheck.supply_chain_relative_strength)}, which reads as a company story rather than a trend`}
+      </li>
+      <li>
+        <b>Carried by one name:</b>{' '}
+        {leadership.led_by_one_name == null ? 'unmeasured'
+          : leadership.led_by_one_name
+            ? `yes – ${leadership.largest} at ${signed(leadership.largest_relative_strength)} against ${signed(leadership.median_excluding_largest)} for the rest`
+            : `no – the rest of the group sits at ${signed(leadership.median_excluding_largest)} without its largest member`}
+      </li>
+      {chain?.disconfirming && <li><b>What would break the thesis:</b> {chain.disconfirming}</li>}
+    </ul>
+    {(trend.roles || []).length > 1 && (
+      <div className="theme-role-rotation">
+        <h4>Where the money is arriving in the chain</h4>
+        <ul>
+          {trend.roles.map((role) => (
+            <li key={role.role}>
+              <b>{ROLE_LABEL[role.role] || role.role}</b>
+              <span className="mono">{signed(role.relative_strength_median)}</span>
+              <small>{role.members} {role.members === 1 ? 'name' : 'names'} · {pct(role.above_50d_share)} above their 50-day</small>
+            </li>
+          ))}
+        </ul>
+        <p className="disclaimer">Median relative strength per stage of the supply chain. A
+          rotation shows up here — money moving from the root outward, or the reverse — before
+          it registers as a sector move.</p>
+      </div>
+    )}
+    <p className="disclaimer">Price behavior, measured across the theme's members and reported
+      only about the theme. It contributes nothing to any company's exposure score, which stays
+      a filing-evidence measure by design.</p>
+  </section>
+}
+
+function BiggestPlayers({ players, onOpen, byTicker }) {
+  if (!players?.length) return null
+  return <div className="theme-players">
+    <h4>Biggest players</h4>
+    <ul>
+      {players.map((player) => {
+        const row = { ...byTicker.get(player.ticker), ...player }
+        return <li key={player.ticker}>
+          <button className="text-button--inline" onClick={() => onOpen(row)}>
+            <b>{player.ticker}</b>
+          </button>
+          <span>{player.name}</span>
+          {player.role && <span className="chip">{ROLE_LABEL[player.role] || player.role}</span>}
+          <span className="mono">{player.theme_exposure_score ?? '–'}</span>
+          {!player.eligible && <span className="chip">Not eligible</span>}
+        </li>
+      })}
+    </ul>
+    <p className="disclaimer">The theme's largest members by market capitalization, with their
+      exposure score — ranked by size, not by the exposure leaderboard, because the companies
+      most identified with a trend are frequently not the ones the evidence ranks first.</p>
+  </div>
+}
+
+function GrowthChain({ chain }) {
+  if (!chain?.root_driver) return null
+  return <ol className="theme-chain">
+    <li><span>Root driver</span><p>{chain.root_driver}</p></li>
+    <li><span>First order</span><p>{chain.first_order}</p></li>
+    <li><span>Second order</span><p>{chain.second_order}</p></li>
+  </ol>
+}
+
 // `.research-table` is hidden outright below 900px (see global.css) in favor of this card
 // list - without it, this screen would render nothing at all on a phone.
 function ThemeCard({ row, index, onOpen }) {
@@ -236,16 +384,40 @@ export default function ThemeExposureScreen() {
     {loading ? <Loading /> : error ? <div className="card etf-state" role="alert"><strong>Theme screen unavailable</strong><span>{error.message}</span></div> : <>
       {!themes.length ? <Empty note={data?.theme_screen?.unavailable_reason || 'No theme produced scored exposures in the latest report.'} /> : <>
       <nav className="card theme-index" aria-label="Themes in this report">
-        <h2>Structural trends in this report</h2>
+        <h2>Structural trends in this report
+          <InfoTag label="Reading the index">
+            <strong>Trend</strong>
+            <p><b>Broadening</b> – the group is beating the market, most members are
+              participating, and it is not yet priced as an expensive third of its sectors.</p>
+            <p><b>Narrow leadership</b> – the group is up, but the advance belongs to a minority
+              of it, or to one large member.</p>
+            <p><b>Strong but already priced</b> – real strength, at valuations that already
+              reflect it. This is the setup specialized thematic products have historically
+              bought at the wrong moment, so it is never shown as a clean signal.</p>
+            <p><b>Cooling</b> – the group is lagging and not recovering.</p>
+            <p>Measured from price, breadth and estimate revisions across each theme's members.
+              None of it touches any company's exposure score.</p>
+          </InfoTag>
+        </h2>
         <ul>
-          {themes.map((theme) => (
+          {[...themes].sort(themesByTrend).map((theme) => (
             <li key={theme.id}>
               <a href={`#theme-${theme.id}`}>{theme.display_name}</a>
+              {theme.trend?.verdict?.label && (
+                <span className={`chip trend-${VERDICT_TONE[theme.trend.verdict.label] || 'neutral'}`}>
+                  {theme.trend.verdict.label}
+                </span>
+              )}
               <small>{theme.eligible_count ?? theme.rows.length} names cleared the guardrails
-                {theme.count ? ` of ${theme.count} scored` : ''}</small>
+                {theme.count ? ` of ${theme.count} scored` : ''}
+                {theme.trend?.direction?.relative_strength_median != null
+                  && ` · ${signed(theme.trend.direction.relative_strength_median)} vs market`}</small>
             </li>
           ))}
         </ul>
+        <p className="disclaimer">Ordered by how the trend reads right now, strongest first —
+          a theme can be real and going nowhere, and a screen that only ranked evidence would
+          never say so.</p>
       </nav>
 
       {crossTheme.length > 0 && <section className="card theme-exposure-panel" aria-labelledby="cross-theme-heading">
@@ -311,6 +483,9 @@ export default function ThemeExposureScreen() {
               </InfoTag>
             </h2>
             <p>{theme.thesis}</p>
+            <GrowthChain chain={theme.chain} />
+            <ThemeTrend trend={theme.trend} chain={theme.chain} />
+            <BiggestPlayers players={theme.biggest_players} onOpen={setSelectedStock} byTicker={byTicker} />
             <div className="research-card-badges">
               <span className="chip">{theme.count ?? theme.rows.length} scored</span>
               <span className="chip">{theme.eligible_count ?? 0} cleared the guardrails</span>

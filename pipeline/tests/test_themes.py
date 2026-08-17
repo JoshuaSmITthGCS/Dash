@@ -564,6 +564,47 @@ class CandidateExpansionTests(unittest.TestCase):
             [theme], research, ranked=[research[0]], portfolio_symbols=[])
         self.assertIn("AMD", {row["ticker"] for row in in_scope})
 
+    def test_the_shared_budget_bounds_expansion_however_many_themes_exist(self):
+        # Each candidate costs up to two multi-megabyte filings, so the cost of the theme
+        # layer must not grow with the number of themes declared.
+        research = [{"ticker": "NVDA", "sector": "Technology", "score": 100}] + [
+            {"ticker": f"PEER{index}", "sector": "Technology", "score": 99 - index}
+            for index in range(40)]
+        many = [build(id=f"theme_{index}", seed_tickers=["NVDA"]) for index in range(8)]
+        candidates = themes.expand_theme_candidates(
+            many, research, ranked=[research[0]], portfolio_symbols=[],
+            limit_per_theme=20, total_peer_budget=12)
+        peers = [row for row in candidates if row["candidate_source"] == "sector_peer"]
+        self.assertEqual(len(peers), 12)
+
+    def test_the_budget_is_spent_on_every_themes_best_candidate_first(self):
+        # Round-robin, not first-come: a theme evaluated last must not be starved by one
+        # evaluated first draining the whole budget on its own list.
+        research = [
+            {"ticker": "CHIP", "sector": "Technology", "score": 100},
+            {"ticker": "MACH", "sector": "Industrials", "score": 99},
+            {"ticker": "CHIP2", "sector": "Technology", "score": 98},
+            {"ticker": "MACH2", "sector": "Industrials", "score": 97},
+        ]
+        tech = build(id="tech_theme", seed_tickers=["CHIP"], sectors=["Technology"])
+        industrial = build(id="industrial_theme", seed_tickers=["MACH"],
+                           sectors=["Industrials"])
+        candidates = themes.expand_theme_candidates(
+            [tech, industrial], research, ranked=research[:2], portfolio_symbols=[],
+            total_peer_budget=2)
+        peers = {row["ticker"] for row in candidates
+                 if row["candidate_source"] == "sector_peer"}
+        self.assertEqual(peers, {"CHIP2", "MACH2"})
+
+    def test_a_fund_is_never_a_theme_candidate(self):
+        # A theme is a claim about a place in a supply chain; a fund has neither a place in
+        # one nor a 10-K to read.
+        research = [{"ticker": "NVDA", "sector": "Technology", "score": 90},
+                    {"ticker": "SMH", "sector": "Technology", "score": 95, "is_etf": True}]
+        candidates = themes.expand_theme_candidates(
+            [build(seed_tickers=["NVDA"])], research, ranked=research, portfolio_symbols=[])
+        self.assertNotIn("SMH", {row["ticker"] for row in candidates})
+
     def test_a_theme_whose_seed_tickers_were_never_scored_this_run_expands_nothing(self):
         theme = build(seed_tickers=["NOTSCORED"])
         research = self._research()
