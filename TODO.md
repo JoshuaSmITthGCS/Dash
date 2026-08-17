@@ -569,11 +569,12 @@ components (`ScatterChart`, `DotPlot`, used across 6 pages) plus
   published anywhere short of the 31 MB `score-history.json` this doc already
   says not to fetch in the browser. Needs a pipeline change, out of scope here.
 
-### Phase 5 — page-by-page pass — Dashboard, Portfolio, and the whole screens family done
+### Phase 5 — page-by-page pass — everything through Markets done
 Every page now inherits the new tokens and card system; the per-page composition
 work (hierarchy, one headline number per widget, real empty states) is done for
-Dashboard, Portfolio, Picks, SwingScreen, and the rest of the screens family
-(17 more routes), not started for the rest of the app.
+Dashboard, Portfolio, Picks, SwingScreen, the rest of the screens family (17
+more routes), and Finances/Planning/Insights/Watchlist/Markets — not started
+for the rest of the app (Methodology/Glossary/Settings/Alerts, empty states).
 
 Portfolio: comparison tables moved to `DataTable`, a real 11px-floor bug fixed
 (holding-card cost-basis select was `fontSize: 9`), 6 static inline styles
@@ -601,8 +602,16 @@ permanent `results: []` — it already shows a proper contextual empty state.
 
 None of Picks/SwingScreen/the screens family needed Portfolio-style
 decomposition or a hierarchy rebuild — all already well-built single-view
-pages; see Phase 2 above. Next in traffic order: Finances, Planning, Insights,
-Watchlist, Markets.
+pages; see Phase 2 above.
+
+Finances/Planning/Insights/Watchlist/Markets: batch-scanned all 5 routes in
+both themes (same method as the screens family) — clean, no changes needed.
+`Insights.jsx`/`Watchlist.jsx` read in full for good measure; `Markets.jsx`
+(the one page in this group not Firebase-gated) screenshotted fully in both
+themes — good hierarchy, no issues. The other four correctly show a real,
+well-designed "Cloud data is offline" empty state locally (Firebase offline
+in dev, same known limitation as Portfolio/Diversification), not a blank
+page. Next in traffic order: Methodology, Glossary, Settings, Alerts.
 
 ### Phase 6 — dead code + payload — done
 Eight of nine unreachable lib files deleted (`evidenceStrength`,

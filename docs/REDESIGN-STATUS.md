@@ -540,16 +540,30 @@ test exercised a virtualized list closely enough to hit the gap.
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO + SCREENS FAMILY DONE · rest not started
+### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO + SCREENS FAMILY + FINANCES/PLANNING/INSIGHTS/WATCHLIST/MARKETS DONE · rest not started
 Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
 ~~SwingScreen~~ → ~~rest of the screens family~~ →
-Finances/Planning/Insights/Watchlist/Markets →
-Methodology/Glossary/Settings/Alerts → empty states. Picks, SwingScreen, and
-the rest of the screens family are struck because their passes are complete,
-not because they got the Dashboard-style rebuild treatment — see §1. Most of
-the screens family needed nothing (already well-built); three real bugs were
-found and fixed across the batch. Next in traffic order: Finances, Planning,
-Insights, Watchlist, Markets.
+~~Finances/Planning/Insights/Watchlist/Markets~~ →
+Methodology/Glossary/Settings/Alerts → empty states. Everything through
+Markets is struck because its pass is complete, not because it got the
+Dashboard-style rebuild treatment — see §1. Most of it needed nothing (already
+well-built); a handful of real bugs were found and fixed along the way. Next
+in traffic order: Methodology, Glossary, Settings, Alerts.
+
+**Finances/Planning/Insights/Watchlist/Markets — pass done, no changes needed.**
+Batch-scanned all 5 routes in both themes (console errors, `\u`-escape
+artifacts, horizontal overflow — same method as the screens-family pass) plus
+a visual check: all clean. `Insights.jsx` and `Watchlist.jsx` (the two most
+complex of the five) read in full — well-structured, mobile-aware, no
+duplicate-key risk (all `key`s are stable IDs). `Markets.jsx` is the one page
+in this group not gated behind Firebase locally; screenshotted in full in
+both themes (headline → summary tiles → chart → index row → ticker search) —
+clean hierarchy, no issues. Finances/Planning/Insights/Watchlist correctly
+render their "Cloud data is offline" empty state locally (Firebase is
+offline in this dev environment, same known limitation as Portfolio and
+Diversification) — confirmed each is a real, well-designed empty state with
+a working "Reconnect Firebase" affordance, not a blank page. Verified: lint/
+test/build green, no code changed this pass.
 
 **Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
 27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
