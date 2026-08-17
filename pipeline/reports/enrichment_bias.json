@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-14T20:12:40.726073+00:00",
+  "generated_at": "2026-08-17T04:33:52.453023+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -37,11 +37,11 @@
       "total_rows": 839,
       "categories": {
         "accounting_quality": {
-          "scored": 128,
+          "scored": 154,
           "total": 839
         },
         "capital_allocation": {
-          "scored": 129,
+          "scored": 155,
           "total": 839
         },
         "financial_health": {
@@ -57,56 +57,56 @@
           "total": 839
         },
         "valuation": {
-          "scored": 813,
+          "scored": 815,
           "total": 839
         }
       }
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 168,
-    "non_enriched_count": 711,
+    "enriched_count": 194,
+    "non_enriched_count": 685,
     "score": {
       "enriched": {
-        "n": 168,
-        "mean": 71.67,
-        "median": 73.65,
-        "stdev": 11.06
+        "n": 194,
+        "mean": 70.51,
+        "median": 72.65,
+        "stdev": 11.3
       },
       "non_enriched": {
-        "n": 711,
-        "mean": 61.97,
-        "median": 63.3,
-        "stdev": 9.29
+        "n": 685,
+        "mean": 61.76,
+        "median": 63.1,
+        "stdev": 9.03
       }
     },
     "sector_distribution": {
       "enriched": {
-        "Financial Services": 53,
-        "Technology": 40,
-        "Energy": 18,
-        "Healthcare": 15,
-        "Consumer Cyclical": 12,
-        "Industrials": 11,
+        "Financial Services": 57,
+        "Technology": 46,
+        "Energy": 19,
+        "Healthcare": 17,
+        "Consumer Cyclical": 17,
+        "Industrials": 15,
         "Basic Materials": 5,
-        "Consumer Defensive": 4,
-        "Communication Services": 4,
+        "Consumer Defensive": 5,
+        "Communication Services": 5,
         "Utilities": 4,
-        "Real Estate": 1,
+        "Real Estate": 3,
         "Unknown": 1
       },
       "non_enriched": {
-        "Industrials": 127,
-        "Technology": 112,
-        "Consumer Cyclical": 101,
-        "Healthcare": 85,
-        "Financial Services": 72,
-        "Real Estate": 52,
-        "Consumer Defensive": 52,
+        "Industrials": 123,
+        "Technology": 106,
+        "Consumer Cyclical": 96,
+        "Healthcare": 83,
+        "Financial Services": 68,
+        "Consumer Defensive": 51,
+        "Real Estate": 50,
         "Basic Materials": 33,
         "Utilities": 30,
-        "Communication Services": 23,
-        "Energy": 21,
+        "Communication Services": 22,
+        "Energy": 20,
         "ETF": 2,
         "Unknown": 1
       }

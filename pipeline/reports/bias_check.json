@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-14T20:07:12.936573+00:00",
+  "generated_at": "2026-08-17T04:28:24.136988+00:00",
   "comparison": "old_double_confidence_penalty_vs_new_single_shrinkage_challenger",
-  "comparable_universe_count": 224,
+  "comparable_universe_count": 226,
   "path_definitions": {
     "old_double_penalty": "Band-normalized fundamentals are coverage-multiplied, then the final evidence blend is confidence-multiplied again.",
     "new_single_shrinkage": "The challenger starts from raw category evidence and applies one confidence pull toward the configured neutral target before bounded modifiers."
@@ -9,44 +9,44 @@
   "correlations": {
     "log_market_cap": {
       "old_double_penalty": {
-        "count": 212,
-        "pearson": 0.031149,
-        "spearman": 0.005154
+        "count": 214,
+        "pearson": 0.099541,
+        "spearman": 0.083937
       },
       "new_single_shrinkage": {
-        "count": 212,
-        "pearson": -0.059306,
-        "spearman": -0.117029
+        "count": 214,
+        "pearson": 0.037634,
+        "spearman": 0.002845
       }
     },
     "data_coverage": {
       "old_double_penalty": {
-        "count": 224,
-        "pearson": 0.254572,
-        "spearman": 0.294369
+        "count": 226,
+        "pearson": 0.306238,
+        "spearman": 0.331602
       },
       "new_single_shrinkage": {
-        "count": 224,
-        "pearson": 0.089594,
-        "spearman": 0.160619
+        "count": 226,
+        "pearson": 0.110414,
+        "spearman": 0.205786
       }
     },
     "analyst_coverage_count": {
       "old_double_penalty": {
         "count": 148,
-        "pearson": 0.020329,
-        "spearman": -0.047173
+        "pearson": 0.073514,
+        "spearman": 0.004101
       },
       "new_single_shrinkage": {
         "count": 148,
-        "pearson": 0.016457,
-        "spearman": -0.0357
+        "pearson": 0.075671,
+        "spearman": 0.045508
       }
     }
   },
   "market_cap_correlation_absolute_drop": {
-    "pearson": false,
-    "spearman": false,
-    "passed": false
+    "pearson": true,
+    "spearman": true,
+    "passed": true
   }
 }
