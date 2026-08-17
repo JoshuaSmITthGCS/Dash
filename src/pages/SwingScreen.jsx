@@ -746,7 +746,12 @@ export default function SwingScreen() {
         />
       </>}
 
-      <p className="disclaimer">
+      {/* A <div>, not a <p> - InfoTag renders a <details> block below, and <details> inside a
+          <p> is invalid HTML: the browser implicitly closes the <p> right there, silently
+          splitting this into two untagged fragments and losing .disclaimer's styling on the
+          second half ("Rankings are hypotheses..."). Confirmed via a real
+          validateDOMNesting console warning, not a lint rule. */}
+      <div className="disclaimer">
         Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}.
         {' '}Scored {data?.scored_count ?? '–'} names, {data?.eligible_count ?? '–'} eligible,
         {' '}{data?.suppressed_count ?? '–'} suppressed on short interest
@@ -776,7 +781,7 @@ export default function SwingScreen() {
         </InfoTag>
         {' '}Rankings are hypotheses for prospective validation, not claims of outperformance, and this is a
         research screen rather than a trade instruction.
-      </p>
+      </div>
     </>}
   </>
 }
