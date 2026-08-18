@@ -4,6 +4,7 @@ import random
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -74,6 +75,26 @@ class LegDiagnosticTests(unittest.TestCase):
         # A missing leg must reweight the survivors rather than drag the score toward zero.
         self.assertEqual(ev.composite_score({"a": 80, "b": None}, {"a": 0.5, "b": 0.5}), 80)
         self.assertIsNone(ev.composite_score({"a": None}, {"a": 1.0}))
+
+
+class IcBootstrapCiTests(unittest.TestCase):
+    def test_reads_when_the_panel_has_enough_graded_periods(self):
+        panel = synthetic_panel(periods=60)
+        rows = metrics_by_id(sm.signal_metrics(panel))
+        row = rows["ic_bootstrap_ci"]
+        self.assertEqual(row["status"], "ready")
+        lower, upper = row["detail"]["ic_ci_95"]
+        self.assertLessEqual(lower, row["value"])
+        self.assertGreaterEqual(upper, row["value"])
+
+    def test_pending_with_too_few_graded_periods(self):
+        panel = synthetic_panel(periods=5, names=30)
+        rows = metrics_by_id(sm.signal_metrics(panel))
+        self.assertEqual(rows["ic_bootstrap_ci"]["status"], "awaiting_input")
+
+    def test_pending_without_a_panel_at_all(self):
+        rows = metrics_by_id(sm.signal_metrics(None))
+        self.assertEqual(rows["ic_bootstrap_ci"]["status"], "awaiting_input")
 
 
 class HorizonAndCostTests(unittest.TestCase):
@@ -463,6 +484,49 @@ class SectorWeightMetricTests(unittest.TestCase):
         self.assertEqual(row["status"], "ready")
         self.assertEqual(row["value"], 20.0)
         self.assertEqual(row["observations"], 1)
+
+
+def _sector_snapshots(count, *, strategy_weights, benchmark_weights, start="2026-08-01"):
+    import datetime
+    start_date = datetime.date.fromisoformat(start)
+    return [
+        {"as_of": (start_date + datetime.timedelta(days=index)).isoformat() + "T00:00:00",
+         "strategy_sector_weights": strategy_weights, "benchmark_sector_weights": benchmark_weights}
+        for index in range(count)
+    ]
+
+
+def _flat_etf_prices(start, days, daily_return):
+    import datetime
+    start_date = datetime.date.fromisoformat(start)
+    rows, value = [], 1.0
+    for index in range(days):
+        rows.append({"date": (start_date + datetime.timedelta(days=index)).isoformat(),
+                     "total_return_index": value})
+        value *= 1 + daily_return
+    return rows
+
+
+class SectorAllocationEffectTests(unittest.TestCase):
+    def test_reads_when_the_log_and_etf_data_both_cover_the_window(self):
+        history = _sector_snapshots(6, strategy_weights={"technology": 0.6},
+                                    benchmark_weights={"technology": 0.2})
+        etf_prices = {"SPY": _flat_etf_prices("2026-08-01", 10, 0.001),
+                      "XLK": _flat_etf_prices("2026-08-01", 10, 0.01)}
+        with unittest.mock.patch.object(
+                sm.stress_scenarios, "read_etf_prices",
+                side_effect=lambda ticker, etf_dir=None: etf_prices.get(ticker)):
+            rows = metrics_by_id(sm.construction_metrics(None, None, history))
+        self.assertEqual(rows["sector_allocation_effect"]["status"], "ready")
+        self.assertGreater(rows["sector_allocation_effect"]["value"], 0)
+        # Selection stays an honest stub even when allocation reads -- it needs data this
+        # pipeline does not log anywhere, not just a longer sector-weight history.
+        self.assertEqual(rows["sector_selection_effect"]["status"], "awaiting_input")
+
+    def test_pending_without_enough_sector_weight_history(self):
+        rows = metrics_by_id(sm.construction_metrics(None, None, []))
+        self.assertEqual(rows["sector_allocation_effect"]["status"], "awaiting_input")
+        self.assertIn("snapshots", rows["sector_allocation_effect"]["status_message"])
 
 
 class ReportTests(unittest.TestCase):

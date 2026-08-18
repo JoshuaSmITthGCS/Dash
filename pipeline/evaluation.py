@@ -96,11 +96,17 @@ def rank_ic(scores, forward_returns):
 
 
 def ic_summary(ic_series, periods_per_year=12):
-    """Mean IC, its volatility, ICIR, and a t-statistic against the multiple-testing bar."""
+    """Mean IC, its volatility, ICIR, and a t-statistic against the multiple-testing bar.
+
+    ``series`` carries the filtered per-period values themselves (not just the aggregates),
+    so a caller can run a bootstrap confidence interval on the same values this summary's own
+    t-statistic is computed from, without recomputing per-period IC a second time.
+    """
     values = [value for value in ic_series if value is not None]
     if len(values) < 2:
         return {"periods": len(values), "mean_ic": values[0] if values else None,
-                "ic_std": None, "icir": None, "t_stat": None, "meaningful": False}
+                "ic_std": None, "icir": None, "t_stat": None, "meaningful": False,
+                "series": values}
     mean = sum(values) / len(values)
     variance = sum((value - mean) ** 2 for value in values) / (len(values) - 1)
     deviation = sqrt(variance)
@@ -117,6 +123,41 @@ def ic_summary(ic_series, periods_per_year=12):
         # Harvey, Liu & Zhu: with hundreds of candidate signals tested across the
         # literature, a t-stat of 2 is not a 5% false-positive rate. 3 is the honest bar.
         "clears_multiple_testing_bar": t_stat is not None and abs(t_stat) >= 3.0,
+        "series": values,
+    }
+
+
+def bootstrap_ic_confidence_interval(ic_series, *, block_size=1, samples=2000, seed=0):
+    """Block-bootstrap confidence interval on mean rank IC, nonparametric.
+
+    ``ic_summary``'s t-statistic assumes the period IC series is approximately normal, which
+    a short or skewed series does not have to be. This resamples the period-level IC values
+    directly (with replacement, in contiguous blocks) rather than assuming a distribution, the
+    same discipline ``block_bootstrap_return_ci`` applies to daily returns. ``block_size > 1``
+    preserves period-to-period IC autocorrelation, when the caller has reason to think the
+    signal's edge persists from one period to the next; the default of 1 treats periods as
+    independent draws, the same assumption the analytic t-statistic already makes.
+    """
+    values = [value for value in ic_series if value is not None]
+    n = len(values)
+    if n < 10:
+        return None
+    rng = random.Random(seed)
+    means = []
+    for _ in range(samples):
+        draw = []
+        while len(draw) < n:
+            start = rng.randrange(n)
+            draw.extend(values[(start + offset) % n] for offset in range(block_size))
+        means.append(sum(draw[:n]) / n)
+    means.sort()
+    lower = means[int(0.025 * samples)]
+    upper = means[min(samples - 1, int(0.975 * samples))]
+    return {
+        "observations": n, "block_size": block_size, "samples": samples,
+        "mean_ic": round(sum(values) / n, 4),
+        "ic_ci_95": [round(lower, 4), round(upper, 4)],
+        "probability_ic_positive": round(sum(1 for value in means if value > 0) / samples, 4),
     }
 
 

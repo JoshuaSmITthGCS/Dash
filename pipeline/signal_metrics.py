@@ -35,6 +35,7 @@ from datetime import datetime, timezone
 
 import evaluation
 import risk_metrics
+import sector_attribution
 import stress_scenarios
 from common import LOG, load_json, save_json
 
@@ -324,6 +325,9 @@ def signal_metrics(panel):
                      reads="Consistency of prediction, not just its average.",
                      kill_threshold=f"IC-IR < {MINIMUM_IC_IR}",
                      kill_threshold_value=MINIMUM_IC_IR, comparison="lt", cadence="Weekly"),
+            _pending("ic_bootstrap_ci", "signal", "Bootstrap IC confidence interval", message,
+                     reads="Nonparametric confidence interval on mean rank IC.",
+                     cadence="Weekly"),
             _pending("ic_decay", "signal", "IC decay curve", message,
                      reads="Which horizon the edge lives at.", cadence="Monthly"),
             _pending("per_leg_ic", "signal", "Per-leg IC", message,
@@ -385,6 +389,25 @@ def signal_metrics(panel):
                                "hit_rate": primary.get("hit_rate")},
                        observations=primary.get("periods"), cadence="Weekly",
                        source="backtest panel"))
+
+    ic_bootstrap = evaluation.bootstrap_ic_confidence_interval(primary.get("series") or [])
+    if ic_bootstrap:
+        lower, upper = ic_bootstrap["ic_ci_95"]
+        rows.append(metric(
+            "ic_bootstrap_ci", "signal", "Bootstrap IC confidence interval",
+            value=ic_bootstrap["mean_ic"], display=f"{ic_bootstrap['mean_ic']:.3f} (95% CI {lower:.3f} to {upper:.3f})",
+            reads="Nonparametric confidence interval on mean rank IC -- doesn't assume the "
+                  "period IC series is normal, unlike IC-IR's t-statistic.",
+            kill_threshold="95% CI includes zero",
+            breached=lower <= 0 <= upper,
+            detail=ic_bootstrap, observations=ic_bootstrap["observations"], cadence="Weekly",
+            source="block bootstrap of the backtest panel's per-period rank IC"))
+    else:
+        rows.append(_pending(
+            "ic_bootstrap_ci", "signal", "Bootstrap IC confidence interval",
+            f"Needs at least 10 graded periods at the {graded} horizon; "
+            f"{len(primary.get('series') or [])} available.",
+            reads="Nonparametric confidence interval on mean rank IC.", cadence="Weekly"))
 
     rows.append(metric("ic_decay", "signal", "IC decay curve",
                        value=decay["peak_horizon"], display=decay["peak_horizon"],
@@ -728,7 +751,54 @@ def construction_metrics(backtest, factors, sector_history=None):
                        source="backtest rebalances"))
 
     rows.extend(_sector_active_weight_metric(sector_history or []))
+    rows.extend(_sector_attribution_metrics(sector_history or []))
     return rows
+
+
+def _sector_attribution_metrics(sector_history):
+    """Real sector-index Brinson allocation effect, and an honest stub for selection.
+
+    Allocation is computable now: real sector SPDR total returns times the book's own
+    measured active sector weight. Selection needs the book's own realized return *within*
+    each sector, which needs a per-holding return series joined to a historical sector
+    classification neither the backtest artifacts nor the point-in-time sector log carry --
+    so it stays a stub rather than a guess.
+    """
+    result = sector_attribution.allocation_effect(sector_history)
+    if result is None:
+        message = (f"Needs at least {sector_attribution.MINIMUM_SNAPSHOTS} recorded "
+                   "sector-weight snapshots spanning more than one day, with SPY and every "
+                   f"sector SPDR ETF priced through the latest snapshot; "
+                   f"{len(sector_history)} snapshots recorded so far.")
+        return [
+            _pending("sector_allocation_effect", "construction", "Sector allocation effect",
+                     message,
+                     reads="Real sector-index return times the book's active sector weight "
+                           "-- whether the sector tilt helped or hurt, independent of "
+                           "stock-picking.", cadence="Monthly"),
+            _pending("sector_selection_effect", "construction", "Sector selection effect",
+                     "Needs the book's own realized return within each sector, joined to a "
+                     "historical sector classification per holding -- neither is logged today.",
+                     reads="Whether stock-picking within each sector beat that sector's own "
+                           "index.", cadence="Monthly"),
+        ]
+    return [
+        metric("sector_allocation_effect", "construction", "Sector allocation effect",
+               value=result["total_allocation_effect_pct"],
+               display=f"{result['total_allocation_effect_pct']:+.2f}pp vs SPY "
+                       f"({result['start']} to {result['end']})",
+               reads="Sum across sectors of (active weight) times (that sector's real index "
+                     "return minus SPY's), using real sector SPDR ETFs. Positive means the "
+                     "sector tilt itself added return; says nothing about which stocks were "
+                     "picked within each sector.",
+               detail=result, observations=result["snapshots"], cadence="Monthly",
+               source="sector-weight snapshot log and real sector SPDR total returns"),
+        _pending("sector_selection_effect", "construction", "Sector selection effect",
+                 "Needs the book's own realized return within each sector, joined to a "
+                 "historical sector classification per holding -- neither is logged today.",
+                 reads="Whether stock-picking within each sector beat that sector's own "
+                       "index.", cadence="Monthly"),
+    ]
 
 
 # ---------------- C. cost and capacity ----------------

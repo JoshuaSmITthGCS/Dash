@@ -27,6 +27,7 @@ const paths = {
   down: <path d="m6 9 6 6 6-6"/>,
   accessibility: <><circle cx="12" cy="4" r="2"/><path d="M4 8h16M12 6v15M8 21l4-8 4 8"/></>,
   glossary: <><path d="M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M6 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2"/><path d="M9 8h7M9 11.5h7"/></>,
+  copy: <><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></>,
 }
 
 export default function Icon({ name, size = 20, className = '', ...props }) {
