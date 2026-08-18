@@ -294,5 +294,56 @@ class DistributionShapeTests(unittest.TestCase):
         self.assertIsNone(rm.tail_ratio([0.01] * 300))
 
 
+class HistoricalVarTests(unittest.TestCase):
+    def setUp(self):
+        generator = random.Random(11)
+        self.returns = [generator.gauss(0.0004, 0.012) for _ in range(200)]
+
+    def test_var_is_none_below_the_minimum_sample(self):
+        self.assertIsNone(rm.historical_var(self.returns[:50]))
+
+    def test_var_99_is_at_least_as_deep_as_var_95(self):
+        var_95 = rm.historical_var(self.returns, confidence=0.95, minimum_observations=100)
+        var_99 = rm.historical_var(self.returns, confidence=0.99, minimum_observations=100)
+        self.assertGreater(var_99, var_95)
+
+    def test_var_matches_the_empirical_quantile(self):
+        # Exactly five values worse than -5%, so the 5% VaR threshold lands on the least
+        # negative of them.
+        returns = [-0.20, -0.15, -0.10, -0.07, -0.05] + [0.02] * 95
+        value = rm.historical_var(returns, confidence=0.95, minimum_observations=100)
+        self.assertAlmostEqual(value, 5.0, places=1)
+
+
+class TreynorAndJensenTests(unittest.TestCase):
+    def setUp(self):
+        generator = random.Random(5)
+        self.benchmark = [generator.gauss(0.0004, 0.01) for _ in range(300)]
+        # A market-tracking series with real positive alpha layered on top.
+        self.alpha_series = [0.0004 + 0.8 * value for value in self.benchmark]
+        # A pure beta-1.6 series with zero alpha.
+        self.no_alpha_series = [1.6 * value for value in self.benchmark]
+
+    def test_treynor_rewards_return_per_unit_of_beta(self):
+        low_beta = [0.5 * value for value in self.benchmark]
+        high_beta = [1.5 * value for value in self.benchmark]
+        boosted_low_beta = [value + 0.0005 for value in low_beta]
+        self.assertGreater(
+            rm.treynor_ratio(boosted_low_beta, self.benchmark),
+            rm.treynor_ratio(high_beta, self.benchmark))
+
+    def test_treynor_is_none_without_a_measurable_beta(self):
+        self.assertIsNone(rm.treynor_ratio([0.01] * 40, [0.001] * 40))
+
+    def test_jensens_alpha_is_positive_when_alpha_is_added_on_top_of_beta(self):
+        self.assertGreater(rm.jensens_alpha(self.alpha_series, self.benchmark), 0)
+
+    def test_jensens_alpha_is_near_zero_for_a_pure_beta_series(self):
+        self.assertAlmostEqual(rm.jensens_alpha(self.no_alpha_series, self.benchmark), 0, delta=1.0)
+
+    def test_jensens_alpha_needs_enough_overlap(self):
+        self.assertIsNone(rm.jensens_alpha([0.01] * 10, [0.01] * 10))
+
+
 if __name__ == "__main__":
     unittest.main()

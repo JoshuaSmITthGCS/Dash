@@ -277,6 +277,57 @@ def gain_to_pain(returns, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS
     return round(sum(returns) / pain, 3)
 
 
+def historical_var(returns, confidence=0.95, minimum_observations=DISTRIBUTION_MINIMUM_OBSERVATIONS):
+    """Historical Value-at-Risk: the loss at the ``1 - confidence`` quantile, in percent.
+
+    Unlike ``conditional_value_at_risk`` (the mean of the tail), this is the threshold itself
+    - the number a VaR backtest (Kupiec, Christoffersen) actually tests a breach rate against.
+    Empirical, not fitted to a distribution, for the same reason CVaR is empirical: assuming
+    normality is how tail risk gets understated in exactly the periods it matters.
+    """
+    if len(returns) < minimum_observations or not 0 < confidence < 1:
+        return None
+    ordered = sorted(returns)
+    index = max(0, min(len(ordered) - 1, int(round(len(ordered) * (1 - confidence))) - 1))
+    return round(-ordered[index] * 100, 3)
+
+
+# ---------------- classic risk-adjusted return ----------------
+
+def treynor_ratio(returns, benchmark_returns, risk_free_annual=0.0, minimum_observations=20):
+    """Annualized excess return per unit of systematic risk (beta), Treynor (1965).
+
+    Where Sharpe divides by total volatility, Treynor divides by beta alone - the risk that
+    cannot be diversified away. Two portfolios with identical Sharpe can have very different
+    Treynor ratios if one carries idiosyncratic volatility the other does not.
+    """
+    beta = beta_vs_benchmark(returns, benchmark_returns, minimum_observations)
+    overlap = min(len(returns), len(benchmark_returns))
+    if beta is None or abs(beta) <= NEAR_ZERO_VARIANCE or overlap < minimum_observations:
+        return None
+    annualized_return = (sum(returns[-overlap:]) / overlap) * TRADING_DAYS
+    return round((annualized_return - risk_free_annual) / beta * 100, 3)
+
+
+def jensens_alpha(returns, benchmark_returns, risk_free_annual=0.0, minimum_observations=20):
+    """Single-factor CAPM alpha, annualized percent: the return beta does not explain.
+
+    Distinct from a multi-factor (FF5 + momentum) alpha: this isolates the market factor
+    alone, which is the classic Jensen (1968) construction and the more conservative claim -
+    a positive multi-factor alpha can still be a zero (or negative) single-factor one once
+    size, value, profitability, investment and momentum are allowed to explain it too.
+    """
+    beta = beta_vs_benchmark(returns, benchmark_returns, minimum_observations)
+    overlap = min(len(returns), len(benchmark_returns))
+    if beta is None or overlap < minimum_observations:
+        return None
+    series, benchmark = returns[-overlap:], benchmark_returns[-overlap:]
+    portfolio_return = (sum(series) / overlap) * TRADING_DAYS
+    benchmark_return = (sum(benchmark) / overlap) * TRADING_DAYS
+    alpha = portfolio_return - (risk_free_annual + beta * (benchmark_return - risk_free_annual))
+    return round(alpha * 100, 3)
+
+
 def excess_returns(returns, benchmark_returns, beta=None, minimum_observations=20):
     """Market-relative daily returns: ``r_stock - beta * r_market``.
 

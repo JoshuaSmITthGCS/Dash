@@ -32,7 +32,9 @@ out-of-sample IC.
 """
 
 import json
+import math
 import os
+import random
 from datetime import datetime, timezone
 from itertools import combinations
 from math import ceil, erf, exp, sqrt
@@ -45,6 +47,7 @@ PAPER_LOG = "paper_trading.jsonl"
 # Grinold-Kahn worked examples use IC around 0.04; below roughly 0.02 a bucket is not
 # earning the weight it is being given.
 MEANINGFUL_IC = 0.02
+TRADING_DAYS = 252
 
 
 # ---------------- rank correlation ----------------
@@ -305,6 +308,243 @@ def probability_of_backtest_overfitting(performance_matrix, *, splits=8):
         if relative_rank <= 0.5:
             below_median += 1
     return round(below_median / total, 4) if total else None
+
+
+# ---------------- robustness beyond PBO ----------------
+#
+# PBO asks whether the search that produced the winning configuration was itself noise.
+# These four answer a related but distinct set of questions: how wide is the honest
+# uncertainty band around a short return series (bootstrap CI), does the best-searched
+# configuration beat the field by more than an exhaustive search would produce by chance
+# alone (Reality Check / SPA), is any one stretch of the sample doing all the work (rolling
+# Sharpe), and does a VaR forecast actually get breached at the rate it claims (Kupiec /
+# Christoffersen). None of these need a live sample - they all run on the backtest.
+
+def block_bootstrap_return_ci(returns, *, block_size=21, samples=2000, seed=0,
+                              periods_per_year=TRADING_DAYS):
+    """Block-bootstrap confidence interval for annualized return and Sharpe.
+
+    Resampling contiguous blocks (rather than individual days) preserves the short-run
+    autocorrelation a day-by-day bootstrap would destroy - momentum and mean-reversion both
+    leave a signature in consecutive returns that an i.i.d. resample erases. This gives a
+    defensible interval on a return series far shorter than the 252 observations
+    ``min_track_record_length`` would otherwise require before trusting a single Sharpe point
+    estimate.
+    """
+    n = len(returns)
+    if n < max(20, block_size * 2):
+        return None
+    rng = random.Random(seed)
+    annualized_returns, sharpes = [], []
+    for _ in range(samples):
+        draw = []
+        while len(draw) < n:
+            start = rng.randrange(n)
+            draw.extend(returns[(start + offset) % n] for offset in range(block_size))
+        draw = draw[:n]
+        mean = sum(draw) / n
+        variance = sum((value - mean) ** 2 for value in draw) / n
+        annualized_returns.append(mean * periods_per_year)
+        sharpes.append((mean / sqrt(variance)) * sqrt(periods_per_year) if variance > 0 else 0.0)
+    annualized_returns.sort()
+    sharpes.sort()
+
+    def interval(values):
+        lo = values[int(0.025 * samples)]
+        hi = values[min(samples - 1, int(0.975 * samples))]
+        return lo, hi
+
+    return_lo, return_hi = interval(annualized_returns)
+    sharpe_lo, sharpe_hi = interval(sharpes)
+    return {
+        "observations": n, "block_size": block_size, "samples": samples,
+        "mean_annualized_return_pct": round(sum(annualized_returns) / samples * 100, 3),
+        "annualized_return_ci_95_pct": [round(return_lo * 100, 3), round(return_hi * 100, 3)],
+        "mean_sharpe": round(sum(sharpes) / samples, 3),
+        "sharpe_ci_95": [round(sharpe_lo, 3), round(sharpe_hi, 3)],
+        "probability_sharpe_positive": round(sum(1 for value in sharpes if value > 0) / samples, 4),
+        "probability_return_positive": round(
+            sum(1 for value in annualized_returns if value > 0) / samples, 4),
+    }
+
+
+def _chi2_cdf_1df(statistic):
+    """Chi-squared(1) CDF via its closed form: a chi-squared(1) variate is a squared normal."""
+    if statistic <= 0:
+        return 0.0
+    return erf(sqrt(statistic / 2))
+
+
+def _bernoulli_log_likelihood(probability, successes, trials):
+    if trials == 0:
+        return 0.0
+    if probability <= 0 or probability >= 1:
+        return 0.0 if successes in (0, trials) else float("-inf")
+    return successes * math.log(probability) + (trials - successes) * math.log(1 - probability)
+
+
+def kupiec_pof_test(breaches, observations, confidence=0.95):
+    """Kupiec (1995) proportion-of-failures test: does the breach rate match VaR's coverage.
+
+    A likelihood-ratio test of the observed breach rate against the rate a correctly
+    calibrated VaR at ``confidence`` implies (``1 - confidence``), against chi-squared(1). A
+    model that breaches far more, or far less, often than it claims fails this test in
+    either direction - too few breaches is not a sign of a safe model, it is a sign of a
+    VaR estimate wider than the data supports.
+    """
+    if observations < 20 or not 0 < confidence < 1:
+        return None
+    expected_p = 1 - confidence
+    observed_p = breaches / observations
+    ll_null = _bernoulli_log_likelihood(expected_p, breaches, observations)
+    ll_alt = _bernoulli_log_likelihood(observed_p, breaches, observations)
+    statistic = float("inf") if not math.isfinite(ll_null) or not math.isfinite(ll_alt) \
+        else max(0.0, -2 * (ll_null - ll_alt))
+    p_value = 0.0 if not math.isfinite(statistic) else round(1 - _chi2_cdf_1df(statistic), 4)
+    return {
+        "observations": observations, "breaches": breaches,
+        "expected_breach_rate": round(expected_p, 4),
+        "observed_breach_rate": round(observed_p, 4),
+        "likelihood_ratio_statistic": round(statistic, 4) if math.isfinite(statistic) else None,
+        "p_value": p_value,
+        "miscalibrated_at_95": p_value < 0.05,
+    }
+
+
+def christoffersen_independence_test(breach_sequence):
+    """Christoffersen (1998) independence test: do breaches cluster instead of scattering.
+
+    A VaR model can pass Kupiec's rate test and still be wrong if its breaches arrive in
+    runs - a regime the trailing window has not caught up to - rather than independently
+    through time. Models the breach indicator as a two-state Markov chain and tests the
+    transition probabilities against the null that today's breach says nothing about
+    tomorrow's, via a likelihood-ratio statistic against chi-squared(1).
+    """
+    if len(breach_sequence) < 21:
+        return None
+    n00 = n01 = n10 = n11 = 0
+    for prior, current in zip(breach_sequence, breach_sequence[1:]):
+        if prior == 0 and current == 0:
+            n00 += 1
+        elif prior == 0 and current == 1:
+            n01 += 1
+        elif prior == 1 and current == 0:
+            n10 += 1
+        else:
+            n11 += 1
+    total_from_0, total_from_1 = n00 + n01, n10 + n11
+    total = total_from_0 + total_from_1
+    if total == 0:
+        return None
+    pi01 = n01 / total_from_0 if total_from_0 else 0.0
+    pi11 = n11 / total_from_1 if total_from_1 else 0.0
+    pi = (n01 + n11) / total
+    ll_null = _bernoulli_log_likelihood(pi, n01 + n11, total)
+    ll_alt = (_bernoulli_log_likelihood(pi01, n01, total_from_0)
+              + _bernoulli_log_likelihood(pi11, n11, total_from_1))
+    statistic = float("inf") if not math.isfinite(ll_null) or not math.isfinite(ll_alt) \
+        else max(0.0, -2 * (ll_null - ll_alt))
+    p_value = 0.0 if not math.isfinite(statistic) else round(1 - _chi2_cdf_1df(statistic), 4)
+    return {
+        "observations": total + 1,
+        "transitions": {"no_breach_to_no_breach": n00, "no_breach_to_breach": n01,
+                        "breach_to_no_breach": n10, "breach_to_breach": n11},
+        "likelihood_ratio_statistic": round(statistic, 4) if math.isfinite(statistic) else None,
+        "p_value": p_value,
+        "clustered_at_95": p_value < 0.05,
+    }
+
+
+def var_backtest(returns, *, confidence=0.95, window=TRADING_DAYS):
+    """Rolling historical VaR forecast against realized breaches, graded two ways.
+
+    For every day past the first ``window`` observations, VaR is estimated from the trailing
+    window alone - no look-ahead - and checked against the return that actually followed.
+    Kupiec grades whether the resulting breach rate matches what ``confidence`` promises;
+    Christoffersen grades whether the breaches are independent through time rather than
+    clustered in one stretch the trailing window hadn't adapted to yet.
+    """
+    n = len(returns)
+    if n < window + 21:
+        return None
+    breaches = []
+    for end in range(window, n):
+        trailing = sorted(returns[end - window:end])
+        index = max(0, min(window - 1, int(round(window * (1 - confidence))) - 1))
+        var_estimate = -trailing[index]
+        breaches.append(1 if returns[end] < -var_estimate else 0)
+    return {
+        "confidence": confidence, "window": window, "forecasts": len(breaches),
+        "breaches": sum(breaches),
+        "breach_rate": round(sum(breaches) / len(breaches), 4),
+        "expected_breach_rate": round(1 - confidence, 4),
+        "kupiec_pof": kupiec_pof_test(sum(breaches), len(breaches), confidence),
+        "christoffersen_independence": christoffersen_independence_test(breaches),
+    }
+
+
+def reality_check_spa(performance_matrix, *, samples=1000, block_size=3, seed=0):
+    """White's Reality Check / Hansen's SPA test via a recentered stationary block bootstrap.
+
+    ``performance_matrix`` is ``[period][configuration]`` performance - the same shape PBO
+    reads, built from the same trial log every tuning round has added to. The benchmark each
+    configuration is judged against is the per-period mean across every configuration
+    searched: the outcome an exhaustive, undirected search would have produced by picking at
+    random. The test statistic is Hansen's studentized max - the best configuration's mean
+    outperformance over the field, scaled by its own sampling noise - and the bootstrap
+    recenters each configuration's resampled outperformance to enforce the null that no
+    configuration in the search genuinely beats the field. A low p-value means the winner
+    survives the fact that this many configurations were tried; a high one means the winning
+    margin is within what trying this many configurations would produce from noise alone.
+    """
+    periods = len(performance_matrix)
+    if periods < 10 or not performance_matrix[0]:
+        return None
+    configurations = len(performance_matrix[0])
+    if configurations < 2:
+        return None
+    period_means = []
+    for row in performance_matrix:
+        values = [value for value in row if value is not None]
+        period_means.append(sum(values) / len(values) if values else None)
+    complete = [t for t in range(periods) if period_means[t] is not None
+                and all(performance_matrix[t][k] is not None for k in range(configurations))]
+    if len(complete) < 10:
+        return None
+    outperformance = [[performance_matrix[t][k] - period_means[t] for k in range(configurations)]
+                      for t in complete]
+    total = len(outperformance)
+    means = [sum(row[k] for row in outperformance) / total for k in range(configurations)]
+    variances = [sum((row[k] - means[k]) ** 2 for row in outperformance) / total
+                for k in range(configurations)]
+    studentized = [means[k] / sqrt(variances[k] / total) if variances[k] > 1e-12 else 0.0
+                  for k in range(configurations)]
+    observed_statistic = max(studentized)
+    best = studentized.index(observed_statistic)
+
+    rng = random.Random(seed)
+    exceed = 0
+    for _ in range(samples):
+        indices = []
+        while len(indices) < total:
+            start = rng.randrange(total)
+            indices.extend((start + offset) % total for offset in range(block_size))
+        indices = indices[:total]
+        for k in range(configurations):
+            boot_mean = sum(outperformance[t][k] for t in indices) / total - means[k]
+            statistic = (boot_mean / sqrt(variances[k] / total)) if variances[k] > 1e-12 else 0.0
+            if k == 0 or statistic > boot_max:
+                boot_max = statistic
+        if boot_max >= observed_statistic:
+            exceed += 1
+    p_value = round(exceed / samples, 4)
+    return {
+        "periods": total, "configurations": configurations, "samples": samples,
+        "block_size": block_size, "best_configuration_index": best,
+        "observed_statistic": round(observed_statistic, 4),
+        "p_value": p_value, "survives_search_at_95": p_value < 0.05,
+        "configuration_statistics": [round(value, 4) for value in studentized],
+    }
 
 
 # ---------------- leg diagnostics ----------------

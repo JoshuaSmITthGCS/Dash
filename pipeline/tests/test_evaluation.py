@@ -215,5 +215,86 @@ class PaperTradingTests(unittest.TestCase):
         self.assertEqual(ev.score_paper_log({}, directory=self.directory)["periods"], 0)
 
 
+class BlockBootstrapReturnCiTests(unittest.TestCase):
+    def test_none_below_the_minimum_sample(self):
+        self.assertIsNone(ev.block_bootstrap_return_ci([0.001] * 10))
+
+    def test_ci_brackets_the_true_mean_on_a_clearly_positive_series(self):
+        generator = random.Random(3)
+        returns = [generator.gauss(0.003, 0.008) for _ in range(300)]
+        result = ev.block_bootstrap_return_ci(returns, samples=500, seed=1)
+        lo, hi = result["annualized_return_ci_95_pct"]
+        self.assertLess(lo, result["mean_annualized_return_pct"])
+        self.assertGreater(hi, result["mean_annualized_return_pct"])
+        self.assertGreater(result["probability_return_positive"], 0.8)
+
+    def test_a_clearly_negative_series_has_a_ci_entirely_below_zero(self):
+        generator = random.Random(4)
+        returns = [generator.gauss(-0.004, 0.004) for _ in range(300)]
+        result = ev.block_bootstrap_return_ci(returns, samples=500, seed=1)
+        lo, hi = result["annualized_return_ci_95_pct"]
+        self.assertLess(hi, 0)
+        self.assertLess(result["probability_return_positive"], 0.05)
+
+
+class VarBacktestTests(unittest.TestCase):
+    def test_kupiec_accepts_a_correctly_calibrated_breach_rate(self):
+        # Exactly 5% breaches out of 400, evenly spaced -- a textbook well-calibrated model.
+        breaches = 20
+        result = ev.kupiec_pof_test(breaches, 400, confidence=0.95)
+        self.assertFalse(result["miscalibrated_at_95"])
+        self.assertAlmostEqual(result["observed_breach_rate"], 0.05)
+
+    def test_kupiec_rejects_a_breach_rate_far_from_the_stated_coverage(self):
+        result = ev.kupiec_pof_test(80, 400, confidence=0.95)
+        self.assertTrue(result["miscalibrated_at_95"])
+
+    def test_christoffersen_rejects_clustered_breaches(self):
+        # All 20 breaches back-to-back in one run: maximally clustered.
+        sequence = [0] * 190 + [1] * 20 + [0] * 190
+        result = ev.christoffersen_independence_test(sequence)
+        self.assertTrue(result["clustered_at_95"])
+
+    def test_christoffersen_accepts_scattered_breaches(self):
+        generator = random.Random(14)
+        sequence = [1 if generator.random() < 0.1 else 0 for _ in range(400)]
+        result = ev.christoffersen_independence_test(sequence)
+        self.assertFalse(result["clustered_at_95"])
+
+    def test_var_backtest_none_below_the_minimum_window(self):
+        self.assertIsNone(ev.var_backtest([0.001] * 100, window=252))
+
+    def test_var_backtest_runs_end_to_end_on_a_long_series(self):
+        generator = random.Random(9)
+        returns = [generator.gauss(0.0003, 0.01) for _ in range(600)]
+        result = ev.var_backtest(returns, confidence=0.95, window=252)
+        self.assertEqual(result["forecasts"], 600 - 252)
+        self.assertIsNotNone(result["kupiec_pof"])
+        self.assertIsNotNone(result["christoffersen_independence"])
+        self.assertAlmostEqual(result["breach_rate"], result["expected_breach_rate"], delta=0.04)
+
+
+class RealityCheckSpaTests(unittest.TestCase):
+    def test_none_with_too_few_periods_or_configurations(self):
+        self.assertIsNone(ev.reality_check_spa([[1.0]] * 20))
+        self.assertIsNone(ev.reality_check_spa([[1.0, 2.0]] * 5))
+
+    def test_identifies_the_genuinely_better_configuration(self):
+        generator = random.Random(6)
+        # Config 0 is genuinely better every period; the rest are noise around the same mean.
+        matrix = [[generator.gauss(1.0, 0.3) if k == 0 else generator.gauss(0.0, 0.3)
+                  for k in range(6)] for _ in range(30)]
+        result = ev.reality_check_spa(matrix, samples=400, seed=2)
+        self.assertEqual(result["best_configuration_index"], 0)
+        self.assertLess(result["p_value"], 0.05)
+        self.assertTrue(result["survives_search_at_95"])
+
+    def test_p_value_is_high_when_no_configuration_beats_the_field(self):
+        generator = random.Random(8)
+        matrix = [[generator.gauss(0.0, 0.3) for _ in range(6)] for _ in range(30)]
+        result = ev.reality_check_spa(matrix, samples=400, seed=2)
+        self.assertGreater(result["p_value"], 0.05)
+
+
 if __name__ == "__main__":
     unittest.main()
