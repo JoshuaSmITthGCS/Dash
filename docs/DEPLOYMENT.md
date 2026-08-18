@@ -40,7 +40,11 @@ See `.env.example` for the full list with inline explanations. Two categories:
 Three functions, each independently authenticated:
 
 - `refresh-data.mjs` — Firebase ID token + `REFRESH_ALLOWED_EMAILS` allowlist. Dispatches and
-  polls the `refresh-advisor.yml` GitHub Actions workflow via `GITHUB_REFRESH_TOKEN`.
+  polls the `refresh-advisor.yml` GitHub Actions workflow via `GITHUB_REFRESH_TOKEN`. Accepts
+  `symbols` (dispatched as `portfolio_symbols` — the caller's holdings) and `focus_symbols`
+  (dispatched as `focus_symbols` — re-poll and re-rank exactly these names and nothing else,
+  used by the theme screen's re-rank button). The two are separate because the portfolio list
+  also drives portfolio coverage and tags theme rows as holdings.
 - `portfolio-prices.mjs` — Firebase ID token. Proxies Yahoo quotes (including post-market) so
   the browser never calls Yahoo directly.
 - `alert-push.mjs` — shared secret (`ALERT_DELIVERY_SECRET`), called by the pipeline after a

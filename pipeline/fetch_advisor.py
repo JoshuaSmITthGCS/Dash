@@ -1312,8 +1312,13 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
 
 def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
                                full_universe_research=False, previous_payload=None,
-                               rotation_size=ENRICHMENT_ROTATION_SIZE):
+                               rotation_size=ENRICHMENT_ROTATION_SIZE, focus_symbols=()):
     """Prior leaders, the best outsiders, a rotation of statement-starved names, then holdings.
+
+    ``focus_symbols`` (a re-ranking request for one named set) goes to the front of the queue.
+    A refresh asked to re-rank specific companies that then gave their statement budget to
+    yesterday's leaders would return the same ranking it was asked to revisit, since the
+    metrics carrying most of the model's weight only exist for names that were enriched.
 
     ``full_universe_research=True`` is the A3 research-mode override: ``previous_top`` is
     ignored completely (not truncated, not consulted - the parameter is simply never read
@@ -1323,8 +1328,9 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
     Outside that override, the rotation slice is what stops the ordinary path from being
     a closed loop -- see ``enrichment_rotation``.
     """
+    focused = tuple(symbol for symbol in focus_symbols if symbol in available)
     if full_universe_research:
-        priority = tuple(dict.fromkeys((*preliminary_symbols, *portfolio_symbols)))
+        priority = tuple(dict.fromkeys((*focused, *preliminary_symbols, *portfolio_symbols)))
         return (), tuple(preliminary_symbols), priority
     incumbents = tuple(
         symbol for symbol in previous_top
@@ -1337,10 +1343,11 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
         symbol for symbol in preliminary_symbols
         if symbol not in incumbent_set
     )[:CHALLENGER_ENRICH_LIMIT]
-    selected = incumbent_set | set(challengers) | set(portfolio_symbols)
+    selected = incumbent_set | set(challengers) | set(portfolio_symbols) | set(focused)
     rotation = enrichment_rotation(preliminary_symbols, selected, previous_payload or {},
                                    rotation_size)
-    priority = tuple(dict.fromkeys((*incumbents, *challengers, *rotation, *portfolio_symbols)))
+    priority = tuple(dict.fromkeys(
+        (*focused, *incumbents, *challengers, *rotation, *portfolio_symbols)))
     return incumbents, challengers, priority
 
 
@@ -1409,6 +1416,22 @@ def run():
     # refresh carries its last full-refresh row forward rather than disappearing from the
     # published dataset (see the carry-forward merge below `research.sort`).
     universe_mode = os.getenv("ADVISOR_UNIVERSE_MODE", "full").strip().lower()
+    # A focused refresh: re-poll and re-rank one named set of companies and nothing else.
+    # The theme screen's re-run button sends its own members here, so a reader who wants the
+    # thematic ranking refreshed does not have to pay for a 900-name sweep to get it.
+    #
+    # Deliberately NOT routed through ADVISOR_PORTFOLIO_SYMBOLS, which is the only existing
+    # way to force a symbol into a refresh: that list means "the user owns this", and it
+    # feeds portfolio coverage and tags theme rows as holdings. Re-ranking a screen would
+    # have relabelled every name on it as something the user owns.
+    focus_symbols = tuple(
+        symbol for symbol in dict.fromkeys(
+            part.strip().upper()
+            for part in os.getenv("ADVISOR_FOCUS_SYMBOLS", "").split(",")
+            if part.strip()
+        )
+        if re.fullmatch(r"[A-Z][A-Z0-9.-]{0,9}", symbol) and symbol in set(symbols)
+    )
     fast_universe_size = max(1, int(os.getenv("ADVISOR_FAST_UNIVERSE_SIZE", "100")))
     # Sized so a ~900-name universe is fully re-polled within roughly seven fast refreshes
     # rather than only when a full sweep happens to run.
@@ -1431,7 +1454,19 @@ def run():
     except ImportError:
         yf = None
 
-    if universe_mode == "fast":
+    if focus_symbols:
+        # Focus wins over the usual fast-refresh priorities rather than adding to them: the
+        # point of the button is a short run over a named set, and folding in the prior top
+        # 100 plus a rotation slice would quietly turn it back into an ordinary fast refresh.
+        # Holdings stay in because portfolio coverage is published every run.
+        refresh_symbols = tuple(
+            symbol for symbol in symbols
+            if symbol in set(focus_symbols) or symbol in set(portfolio_symbols)
+        ) or symbols
+        LOG.info(f"Focused refresh: polling {len(refresh_symbols)}/{len(symbols)} symbols "
+                 f"({len(focus_symbols)} requested, plus holdings); every other name carries "
+                 "its last published row forward")
+    elif universe_mode == "fast":
         fast_priority = set(previous_top_symbols(previous_payload, fast_universe_size)) | set(portfolio_symbols)
         rotation = set(rotation_slice(symbols, fast_priority, previous_payload, fast_rotation_size))
         refresh_symbols = tuple(
@@ -1534,6 +1569,7 @@ def run():
         previous_top, preliminary_symbols, available, portfolio_symbols,
         full_universe_research=FULL_UNIVERSE_RESEARCH,
         previous_payload=previous_payload,
+        focus_symbols=focus_symbols,
     )
     effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
     enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)

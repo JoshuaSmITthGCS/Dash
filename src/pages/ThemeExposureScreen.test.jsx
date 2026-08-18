@@ -1,9 +1,16 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ThemeExposureScreen, { crossThemeNames } from './ThemeExposureScreen.jsx'
 import { useData } from '../lib/useData'
+import { useAdvisorRefresh } from '../lib/useAdvisorRefresh.js'
+import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 
 vi.mock('../lib/useData', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
+// The screen re-ranks its own names and hides the reader's holdings, so it reaches for the
+// refresh dispatcher and the portfolio. Both are stubbed: what is under test here is what the
+// screen does with them, not Firebase.
+vi.mock('../lib/useAdvisorRefresh.js', () => ({ useAdvisorRefresh: vi.fn() }))
+vi.mock('../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 
 const advisorData = {
   research: [{ ticker: 'NVDA', name: 'NVIDIA', sector: 'Technology', score: 90, stance: 'ATTRACTIVE' }],
@@ -70,7 +77,18 @@ const multiThemeData = {
   },
 }
 
+const refreshStub = () => ({
+  status: 'idle', message: '', refreshing: false, available: true,
+  requestFocusedRefresh: vi.fn(), requestRefresh: vi.fn(), requestReanalyze: vi.fn(),
+  elapsedLabel: null, progress: 0, stage: '',
+})
+
 describe('Theme Exposure screen', () => {
+  beforeEach(() => {
+    useAdvisorRefresh.mockReturnValue(refreshStub())
+    useFirebasePortfolio.mockReturnValue({ positions: [], loading: false })
+  })
+
   // DataTable mounts exactly one representation of the rows. Both directions are
   // asserted because the failure that matters is a viewport rendering neither:
   // before DataTable this page mounted both trees and hid one with CSS.
@@ -397,6 +415,101 @@ describe('Theme Exposure screen', () => {
       expect(within(crossing).getByText(/exposure 74 as infrastructure/)).toBeInTheDocument()
       expect(within(crossing).getByText(/exposure 88 as supplier/)).toBeInTheDocument()
       expect(within(crossing).getByText(/35% of that theme's signal weight/)).toBeInTheDocument()
+    })
+  })
+
+  describe('screen controls', () => {
+    it('re-ranks exactly the names this screen scored, not the whole universe', () => {
+      const requestFocusedRefresh = vi.fn()
+      useAdvisorRefresh.mockReturnValue({ ...refreshStub(), requestFocusedRefresh })
+      useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      // by_ticker is every company scored against any theme - the set the button re-runs.
+      const [, , , focusSymbols] = useAdvisorRefresh.mock.calls.at(-1)
+      expect(focusSymbols.sort()).toEqual(['ETN', 'NVDA'])
+
+      fireEvent.click(screen.getByRole('button', { name: /Re-rank these 2 names/ }))
+      expect(requestFocusedRefresh).toHaveBeenCalled()
+    })
+
+    it('sends holdings as holdings and the screen s names as a re-ranking request', () => {
+      // Two different workflow inputs downstream: passing theme members as holdings would
+      // relabel every one of them as something the reader owns.
+      useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'AAPL' }], loading: false })
+      useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const [, , holdings, focusSymbols] = useAdvisorRefresh.mock.calls.at(-1)
+      expect(holdings).toEqual(['AAPL'])
+      expect(focusSymbols).not.toContain('AAPL')
+    })
+
+    it('hides holdings from every ranked list when asked', () => {
+      useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'nvda' }], loading: false })
+      useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+      expect(screen.getAllByText('NVDA').length).toBeGreaterThan(0)
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /Hide my holdings/ }))
+
+      expect(screen.queryByText('NVDA')).toBeNull()
+      expect(screen.getAllByText('ETN').length).toBeGreaterThan(0)
+    })
+
+    it('leaves the trend measurement alone when holdings are hidden', () => {
+      // Breadth, leadership and crowding describe the whole group. Recomputing them over
+      // what one reader chose to hide would report a different theme under the same name.
+      const trend = {
+        contributes_to_exposure: false, members_measured: 20,
+        direction: { relative_strength_median: 6.4, acceleration_median: 1.2, label: 'strengthening' },
+        breadth: { outperforming_share: 0.72, above_50d_share: 0.68, above_20d_share: 0.61, label: 'broad' },
+        crowding: { expensiveness_percentile_median: 41, already_priced: false },
+        leadership: { largest: 'NVDA', median_excluding_largest: 5.5, led_by_one_name: false },
+        fundamental_confirmation: { positive_revision_share: 0.6, volume_ratio_median: 1.2 },
+        chain_confirmation: { confirms: true, root_relative_strength: 8, supply_chain_relative_strength: 5 },
+        roles: [], verdict: { label: 'broadening', summary: 'The group is outperforming.' },
+      }
+      useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'NVDA' }], loading: false })
+      useData.mockImplementation(() => ({
+        data: {
+          ...multiThemeData,
+          theme_screen: {
+            ...multiThemeData.theme_screen,
+            themes: [{ ...multiThemeData.theme_screen.themes[0], trend }],
+          },
+        },
+        loading: false,
+        error: null,
+      }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+      fireEvent.click(screen.getByRole('checkbox', { name: /Hide my holdings/ }))
+
+      const panel = screen.getByLabelText('Trend evaluation')
+      expect(within(panel).getByText('72%')).toBeInTheDocument()      // breadth unchanged
+      expect(within(panel).getByText('broadening')).toBeInTheDocument()
+      expect(screen.getByText(/trend reading is unchanged/)).toBeInTheDocument()
+    })
+
+    it('offers no holdings toggle to a reader with no holdings', () => {
+      useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByRole('checkbox', { name: /Hide my holdings/ })).toBeDisabled()
+    })
+
+    it('offers no re-rank button to a signed-out reader', () => {
+      useAdvisorRefresh.mockReturnValue({ ...refreshStub(), available: false })
+      useData.mockImplementation(() => ({ data: multiThemeData, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.queryByRole('button', { name: /Re-rank/ })).toBeNull()
     })
   })
 

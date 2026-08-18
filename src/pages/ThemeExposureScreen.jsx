@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
-import { Empty, Loading, Tier } from '../components/Bits.jsx'
+import { useAdvisorRefresh } from '../lib/useAdvisorRefresh.js'
+import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
+import { Empty, Loading, RefreshProgress, Tier } from '../components/Bits.jsx'
 import { ScreenNavigation } from './ResearchScreen.jsx'
 import { activeThemes, rankThemeExposure } from '../lib/researchScreens.js'
 import CompanyLogo from '../components/CompanyLogo.jsx'
@@ -379,8 +381,24 @@ function GroupCount({ shown, total }) {
 }
 
 export default function ThemeExposureScreen() {
-  const { data, loading, error } = useData('advisor.json')
+  const { data, loading, error, reload } = useData('advisor.json')
   const [selectedStock, setSelectedStock] = useState(null)
+  const [hideHoldings, setHideHoldings] = useState(false)
+  const { positions } = useFirebasePortfolio()
+
+  const holdings = useMemo(
+    () => new Set((positions || []).map((position) => String(position.ticker || '').toUpperCase())),
+    [positions],
+  )
+
+  // Every company this report scored against any theme - which is what "the names on this
+  // screen" means, not just the rows that fit inside a published group quota. Re-running
+  // exactly this set is what makes the button cheap: a few hundred names instead of ~900.
+  const themeTickers = useMemo(
+    () => Object.keys(data?.theme_screen?.by_ticker || {}),
+    [data],
+  )
+  const refresh = useAdvisorRefresh(data?.generated_at, reload, [...holdings], themeTickers)
 
   // The theme screen's own rows carry only theme-scoring fields (ticker, exposure,
   // opportunity, eligibility) - merge back onto the full research/screen-universe row so
@@ -394,10 +412,20 @@ export default function ThemeExposureScreen() {
   }, [data])
 
   const themes = activeThemes(data?.theme_screen)
+  // Applied to the ranked lists only, never to a theme's trend evaluation. That block is a
+  // measurement of the whole group - breadth, leadership concentration, crowding - and
+  // recomputing it over a subset would report a different theme under the same name. What a
+  // reader hides from their own shortlist must not change what the market did.
+  const visible = useMemo(
+    () => (rows) => (hideHoldings
+      ? rows.filter((row) => !holdings.has(String(row.ticker || '').toUpperCase()))
+      : rows),
+    [hideHoldings, holdings],
+  )
   const crossTheme = useMemo(
-    () => crossThemeNames(data?.theme_screen?.by_ticker || {})
+    () => visible(crossThemeNames(data?.theme_screen?.by_ticker || {}))
       .map((row) => ({ ...byTicker.get(row.ticker), ...row })),
-    [data, byTicker],
+    [data, byTicker, visible],
   )
 
   return <>
@@ -415,7 +443,40 @@ export default function ThemeExposureScreen() {
           same wave as a proven leader before the market has fully connected the dots.
         </p>
       </div>
+      <div className="page-actions">
+        {refresh.available && (
+          <button className="secondary-button" onClick={refresh.requestFocusedRefresh}
+            disabled={refresh.refreshing || !themeTickers.length}
+            title={themeTickers.length
+              ? `Re-poll and re-rank the ${themeTickers.length} companies on this screen, and nothing else`
+              : 'No theme members are published to re-rank yet'}>
+            <Icon name="sync" size={17} className={refresh.refreshing ? 'refresh-spin' : ''} />
+            {refresh.refreshing ? 'Re-ranking…' : `Re-rank these ${themeTickers.length} names`}
+          </button>
+        )}
+        <label className="toggle-control">
+          <input type="checkbox" checked={hideHoldings}
+            onChange={(event) => setHideHoldings(event.target.checked)}
+            disabled={!holdings.size} />
+          <span>Hide my holdings{holdings.size ? ` (${holdings.size})` : ''}</span>
+        </label>
+      </div>
     </div>
+    <RefreshProgress active={refresh.refreshing} elapsedLabel={refresh.elapsedLabel}
+      percent={refresh.progress} stage={refresh.stage} />
+    {refresh.message && (
+      <div className={`sync-message refresh-message ${refresh.status}`} role="status" aria-live="polite">
+        {refresh.message}
+      </div>
+    )}
+    {hideHoldings && (
+      <p className="disclaimer" role="status">
+        Your holdings are hidden from the ranked lists. Each theme's trend reading is unchanged:
+        it measures the whole group — how many members participate, whether one name carries it,
+        how expensive the group is — and recomputing it over a subset would report a different
+        theme under the same name.
+      </p>
+    )}
 
     {loading ? <Loading /> : error ? <div className="card etf-state" role="alert"><strong>Theme screen unavailable</strong><span>{error.message}</span></div> : <>
       {!themes.length ? <Empty note={data?.theme_screen?.unavailable_reason || 'No theme produced scored exposures in the latest report.'} /> : <>
@@ -489,9 +550,9 @@ export default function ThemeExposureScreen() {
         // Ranked the same way the connected group is - eligible first, then opportunity, then
         // exposure. Ordering leaders by raw exposure alone left the top of the table decided by
         // ties, since a saturated signal puts many names at exactly 100.
-        const leaders = rankThemeExposure(leaderTheme, leaderTheme.rows.length)
+        const leaders = visible(rankThemeExposure(leaderTheme, leaderTheme.rows.length))
         const connectedTheme = { ...theme, rows: rows.filter((row) => row.candidate_source === 'sector_peer') }
-        const connected = rankThemeExposure(connectedTheme, connectedTheme.rows.length)
+        const connected = visible(rankThemeExposure(connectedTheme, connectedTheme.rows.length))
 
         return <section className="card theme-exposure-panel" id={`theme-${theme.id}`} key={theme.id}>
           <header>
@@ -521,7 +582,7 @@ export default function ThemeExposureScreen() {
             <p>{theme.thesis}</p>
             <GrowthChain chain={theme.chain} />
             <ThemeTrend trend={theme.trend} chain={theme.chain} />
-            <BiggestPlayers players={theme.biggest_players} onOpen={setSelectedStock} byTicker={byTicker} />
+            <BiggestPlayers players={visible(theme.biggest_players || [])} onOpen={setSelectedStock} byTicker={byTicker} />
             <div className="research-card-badges">
               <span className="chip">{theme.count ?? theme.rows.length} scored</span>
               <span className="chip">{theme.eligible_count ?? 0} cleared the guardrails</span>

@@ -15,7 +15,12 @@ const FULL_REFRESH_TIMEOUT_MS = 95 * 60_000
 const REANALYZE_TIMEOUT_MS = 5 * 60_000
 const ELAPSED_TICK_MS = 1_000
 
-export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
+// `symbols` are the caller's holdings/watchlist, dispatched as portfolio tickers.
+// `focusSymbols` is a different request: re-poll and re-rank exactly these companies and
+// nothing else. Kept as its own argument rather than a flag on `symbols` because the two
+// mean different things downstream - a focus name is not something the user owns, and
+// sending it as one would tag it as a holding everywhere the pipeline reads that list.
+export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbols = []) {
   const { currentUser } = useAuth()
   const [state, setState] = useState({ status: 'idle', message: '' })
   const [elapsedMs, setElapsedMs] = useState(0)
@@ -24,6 +29,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const runId = useRef(null)
   const mode = useRef('data')
   const scope = useRef('fast')
+  const focused = useRef(false)
 
   const refreshCompleteMessage = () => scope.current === 'full'
     ? 'Full universe updated. You are viewing the latest published refresh.'
@@ -121,8 +127,9 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
     }
   }, [currentUser, reload, state.status])
 
-  const startRefresh = async (requestedMode, requestedScope = 'fast') => {
+  const startRefresh = async (requestedMode, requestedScope = 'fast', { focus = false } = {}) => {
     if (!currentUser || state.status === 'pending') return
+    focused.current = focus
     mode.current = requestedMode
     scope.current = requestedMode === 'data' && requestedScope === 'full' ? 'full' : 'fast'
     baseline.current = generatedAt
@@ -157,6 +164,13 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
               .map((symbol) => String(symbol || '').trim().toUpperCase())
               .filter(Boolean),
           )],
+          focus_symbols: focus
+            ? [...new Set(
+              focusSymbols
+                .map((symbol) => String(symbol || '').trim().toUpperCase())
+                .filter(Boolean),
+            )]
+            : [],
         }),
       })
       const payload = await response.json().catch(() => ({}))
@@ -204,6 +218,9 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
   const requestRefresh = () => startRefresh('data')
   const requestFullRefresh = () => startRefresh('data', 'full')
   const requestReanalyze = () => startRefresh('rescore')
+  // Re-poll and re-rank only the names the caller named. Everything else keeps its last
+  // published row, which is what makes this cheap enough to be a button.
+  const requestFocusedRefresh = () => startRefresh('data', 'fast', { focus: true })
 
   const refreshing = state.status === 'starting' || state.status === 'pending'
   return {
@@ -211,11 +228,13 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = []) {
     requestRefresh,
     requestFullRefresh,
     requestReanalyze,
+    requestFocusedRefresh,
     refreshing,
     // Which of the two this run actually is, so a UI with separate refresh/reanalyze
     // buttons can label the one in flight instead of guessing from a shared "refreshing".
     activeMode: mode.current,
     activeScope: scope.current,
+    activeFocused: focused.current,
     available: Boolean(currentUser),
     elapsedMs,
     elapsedLabel: refreshing ? formatElapsed(elapsedMs) : null,
