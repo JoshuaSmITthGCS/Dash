@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T19:57:56.502212+00:00",
+  "generated_at": "2026-08-18T20:07:25.258578+00:00",
   "groups": [
     {
       "id": "signal",
@@ -83,7 +83,7 @@
   ],
   "live_sample": {
     "days": 12,
-    "refreshes": 58,
+    "refreshes": 59,
     "first_date": "2026-08-05",
     "last_date": "2026-08-18"
   },
@@ -1178,11 +1178,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 13,
+      "observations": 14,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-18T16:59:04.905216+00:00",
+        "as_of": "2026-08-18T19:49:32.584827+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -1454,6 +1454,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-08-18T19:49:32.584827+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -1474,11 +1492,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 13,
+      "observations": 14,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-18T16:59:04.905216+00:00",
+        "as_of": "2026-08-18T19:49:32.584827+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -1498,7 +1516,7 @@
       "cadence": "Monthly",
       "requires_live_sample": false,
       "status": "awaiting_input",
-      "status_message": "Needs at least 5 recorded sector-weight snapshots spanning more than one day, with SPY and every sector SPDR ETF priced through the latest snapshot; 13 snapshots recorded so far.",
+      "status_message": "Needs at least 5 recorded sector-weight snapshots spanning more than one day, with SPY and every sector SPDR ETF priced through the latest snapshot; 14 snapshots recorded so far.",
       "observations": null,
       "required_observations": null,
       "backtest_reference": null,
@@ -2540,7 +2558,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2660,7 +2678,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2780,7 +2798,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2900,7 +2918,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3020,7 +3038,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3140,7 +3158,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3260,7 +3278,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3380,7 +3398,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3570,7 +3588,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.0016418990650899639,
-            "net_return": -0.0019418990650899638,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3593,8 +3611,8 @@
       "id": "data_quality_counters",
       "group": "monitoring",
       "label": "Data quality counters",
-      "value": 2,
-      "display": "2 critical refresh issues",
+      "value": 1,
+      "display": "1 critical refresh issue",
       "reads": "Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
       "kill_threshold": "Any missing, unstamped, stale, or duplicate current price row",
       "kill_threshold_value": 0,
@@ -3604,18 +3622,17 @@
       "requires_live_sample": true,
       "status": "ready",
       "status_message": null,
-      "observations": 881,
+      "observations": 880,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "status": "ready",
-        "value": 2,
+        "value": 1,
         "date": "2026-08-18",
-        "refresh_id": "advisor-2026-08-18T16:59:04.905216+00:00",
-        "rows": 881,
-        "missing_prices": 2,
+        "refresh_id": "advisor-2026-08-18T19:49:32.584827+00:00",
+        "rows": 880,
+        "missing_prices": 1,
         "missing_price_tickers": [
-          "DECJ",
           "TTM"
         ],
         "missing_price_timestamps": 0,
@@ -3624,13 +3641,15 @@
         "stale_price_tickers": [],
         "duplicate_tickers": 0,
         "quality_flags": {
-          "challenger_metric_scores_not_available_in_source_snapshot": 2,
-          "challenger_score_not_available_in_source_snapshot": 2
+          "challenger_metric_scores_not_available_in_source_snapshot": 1,
+          "challenger_score_not_available_in_source_snapshot": 1
         },
         "universe_churn": {
           "added": [],
-          "removed": [],
-          "observed_at": "2026-08-18T16:59:04.335158+00:00"
+          "removed": [
+            "DECJ"
+          ],
+          "observed_at": "2026-08-18T19:49:31.815303+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -3686,8 +3705,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "17bfdc71216a421b07eeb92d3133f9fed34324cf",
+    "git_commit_sha": "8b560bca8969ac3078ced1421d5e21093a46f4a9",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T19:57:56.502212+00:00"
+    "generated_at": "2026-08-18T20:07:25.258578+00:00"
   }
 }
