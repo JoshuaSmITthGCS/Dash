@@ -74,7 +74,15 @@ def build_rebalance_calendar(benchmark_dates, years):
     return pairs[: years * 12]
 
 
-def appeal_weights(rows, top_n):
+CONSTRUCTION_METHODS = ("appeal", "inverse_volatility")
+
+
+def appeal_weights(rows, top_n, universe_data=None, as_of=None):
+    """The champion's construction: weight in proportion to each selected name's own score.
+
+    ``universe_data``/``as_of`` are accepted and ignored so this and ``inverse_volatility_weights``
+    share one call signature - the rebalance loop picks a weighter by name, not by argument shape.
+    """
     selected = [row for row in rows[:top_n] if row.get("price") and row.get("score") is not None]
     scores = [max(float(row["score"]), 0.0) for row in selected]
     total = sum(scores)
@@ -83,6 +91,46 @@ def appeal_weights(rows, top_n):
     if total <= 0:
         return {row["ticker"]: 1 / len(selected) for row in selected}
     return {row["ticker"]: score / total for row, score in zip(selected, scores)}
+
+
+def inverse_volatility_weights(rows, top_n, universe_data, as_of, *, window=60):
+    """A challenger construction: weight each selected name inversely to its own trailing
+    realized volatility, using only trailing prices as of ``as_of`` - no look-ahead.
+
+    An inverse-volatility approximation of risk parity, not the real thing: true risk parity
+    solves for equal marginal risk contribution across names using their full covariance
+    matrix, which means it accounts for correlation between names. This ignores correlation
+    entirely and weights purely off each name's own volatility in isolation - materially
+    cheaper to compute and reason about, and a real, defensible construction in its own
+    right, but a different and weaker claim than "risk parity" on its own would suggest.
+    Published under its own name for exactly that reason.
+
+    A name whose trailing volatility cannot be computed - too little price history as of this
+    rebalance - is dropped from the book rather than assigned a guessed volatility, the same
+    "computable or absent" discipline the rest of this pipeline follows. This is a challenger:
+    ``backtest_monthly.py`` defaults to ``appeal_weights`` and only calls this when
+    ``--construction-method inverse_volatility`` is passed explicitly.
+    """
+    selected = [row for row in rows[:top_n] if row.get("price") and row.get("score") is not None]
+    inverse_vols = {}
+    for row in selected:
+        ticker = row.get("ticker")
+        if not ticker:
+            continue
+        _, annualized_volatility = trailing_liquidity_and_volatility(
+            (universe_data or {}).get(ticker), as_of, window=window)
+        if annualized_volatility and annualized_volatility > 0:
+            inverse_vols[ticker] = 1.0 / annualized_volatility
+    total = sum(inverse_vols.values())
+    if not inverse_vols or total <= 0:
+        return {}
+    return {ticker: value / total for ticker, value in inverse_vols.items()}
+
+
+CONSTRUCTION_WEIGHTERS = {
+    "appeal": appeal_weights,
+    "inverse_volatility": inverse_volatility_weights,
+}
 
 
 # ---------------- scored panel ----------------
@@ -457,6 +505,11 @@ def main():
                         help="Configured candidates to use; 0 means the entire universe (default 0)")
     parser.add_argument("--tickers", default="")
     parser.add_argument("--top-n", type=int, default=20)
+    parser.add_argument("--construction-method", choices=CONSTRUCTION_METHODS, default="appeal",
+                        help="'appeal' preserves the original score-proportional weighting "
+                             "(default, reproduces prior results exactly). "
+                             "'inverse_volatility' is a challenger construction; see "
+                             "inverse_volatility_weights().")
     parser.add_argument("--initial-capital", type=float, default=100000.0)
     parser.add_argument("--report-lag-days", type=int, default=REPORT_LAG_DAYS_DEFAULT)
     parser.add_argument("--transaction-cost-bps", type=float, default=10.0,
@@ -566,7 +619,8 @@ def main():
         )
         chosen = {row["ticker"]: row for row in eligible if row["ticker"] in set(selected)}
         ordered = [chosen[ticker] for ticker in selected if ticker in chosen]
-        weights = appeal_weights(ordered, args.top_n)
+        weighter = CONSTRUCTION_WEIGHTERS[args.construction_method]
+        weights = weighter(ordered, args.top_n, universe_data, signal_date.isoformat())
         picks = [
             {"ticker": row["ticker"], "appeal_score": row["score"], "weight": round(weights[row["ticker"]], 8)}
             for row in ordered if row["ticker"] in weights
@@ -606,7 +660,7 @@ def main():
     )
     from validation.experiment_manifest import build_manifest
     manifest = build_manifest(
-        strategy=f"appeal-top{args.top_n}-monthly",
+        strategy=f"{args.construction_method}-top{args.top_n}-monthly",
         start_date=plans[0]["signal_date"], end_date=plans[-1]["signal_date"],
         normalization_mode=str(__import__("scorer").SETTINGS.get("normalization_mode")),
         scoring_mode="champion",
@@ -646,7 +700,11 @@ def main():
                     args.rank_buffer, args.min_holding_months,
                     args.score_smoothing, args.replacement_margin)),
             },
-            "weighting": "appeal score divided by sum of selected appeal scores",
+            "weighting": ("appeal score divided by sum of selected appeal scores"
+                         if args.construction_method == "appeal" else
+                         "inverse-volatility (a risk-parity approximation ignoring "
+                         "cross-name correlation, not a full risk-parity solve)"),
+            "construction_method": args.construction_method,
             "fundamental_availability": f"quarter end plus {args.report_lag_days} calendar days",
             "prices": "Yahoo adjusted close (split and dividend adjusted)",
             "transaction_cost_bps_one_way": args.transaction_cost_bps,

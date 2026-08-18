@@ -55,7 +55,7 @@ state" (§9) before treating any number here as predictive.
 | **SEC EDGAR** | Form 4 insider transactions (feeds the insider-activity modifier), XBRL theme signals, canonical fundamentals fallback | `SEC_USER_AGENT` header (SEC fair-access policy) | Free; used both as a `preferred_providers` source for statement metrics (`sec_xbrl`, see `metric_registry.json`) and as the insider-trading feed |
 | **Alpha Vantage** | Company overview, earnings, forward estimates, macro | `ALPHA_VANTAGE_API_KEY` | Max 5 symbols per refresh (quota-limited) |
 | **Marketaux** | Entity-level news sentiment | `MARKETAUX_API_TOKEN` | Optional — feeds the 4%-weight news sentiment component (§6) |
-| **FRED** (Federal Reserve Economic Data) | Macro regime: rates, inflation, labor, yield curve (6 series) | `FRED_API_KEY` | Optional — feeds the MarketPulse backdrop (§11) and the macro-regime modifier (§8) |
+| **FRED** (Federal Reserve Economic Data) | Macro regime: rates, inflation, labor, yield curve (6 series feed the modifier), plus VIX-derived volatility (7th series, published informationally, not yet in the modifier) | `FRED_API_KEY` | Optional — feeds the MarketPulse backdrop (§11) and the macro-regime modifier (§8) |
 | **Financial Modeling Prep** | Congressional STOCK Act disclosures | Plan covering Congressional endpoints (HTTP 402 without it) | Weekly |
 | **Senate eFD** | Senate STOCK Act disclosures, direct from the Senate's own system | none (keyless) | Weekly |
 | **House/Senate stock-watcher datasets** | Keyless mirror of congressional disclosures — currently withdrawn (HTTP 403), overridable via `CONGRESS_HOUSE_DATASET_URL` / `CONGRESS_SENATE_DATASET_URL` | none | Weekly |
