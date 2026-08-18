@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T09:12:10.754849+00:00",
+  "generated_at": "2026-08-18T12:05:28.239387+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "9b9fbc3a6e276e3e35417629b4a6abe4911ef458",
+  "code_commit_hash": "1f518ca55d793cca72f7af34f4c608cee73f6a4c",
   "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -659,15 +659,15 @@
         "total_rows": 40,
         "categories": {
           "accounting_quality": {
-            "scored": 18,
+            "scored": 35,
             "total": 40
           },
           "capital_allocation": {
-            "scored": 18,
+            "scored": 35,
             "total": 40
           },
           "financial_health": {
-            "scored": 37,
+            "scored": 32,
             "total": 40
           },
           "growth": {
@@ -679,7 +679,7 @@
             "total": 40
           },
           "valuation": {
-            "scored": 38,
+            "scored": 40,
             "total": 40
           }
         }
@@ -689,75 +689,80 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 186,
+            "scored": 112,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 186,
+            "scored": 113,
             "total": 839
           },
           "financial_health": {
-            "scored": 791,
+            "scored": 797,
             "total": 839
           },
           "growth": {
-            "scored": 825,
+            "scored": 827,
             "total": 839
           },
           "profitability": {
-            "scored": 835,
+            "scored": 836,
             "total": 839
           },
           "valuation": {
-            "scored": 815,
+            "scored": 812,
             "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 204,
-      "non_enriched_count": 675,
+      "enriched_count": 147,
+      "non_enriched_count": 732,
       "score": {
         "enriched": {
-          "n": 204,
-          "mean": 68.96,
-          "median": 70.2,
-          "stdev": 10.09
+          "n": 147,
+          "mean": 71.42,
+          "median": 75.1,
+          "stdev": 12.44
         },
         "non_enriched": {
-          "n": 675,
-          "mean": 62.12,
-          "median": 62.4,
-          "stdev": 9.92
+          "n": 732,
+          "mean": 62.63,
+          "median": 63.6,
+          "stdev": 9.62
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 67,
-          "Industrials": 39,
-          "Financial Services": 37,
-          "Healthcare": 32,
-          "Energy": 19,
+          "Financial Services": 46,
+          "Technology": 35,
+          "Healthcare": 16,
+          "Energy": 11,
+          "Industrials": 9,
+          "Consumer Cyclical": 8,
+          "Basic Materials": 4,
+          "Consumer Defensive": 4,
           "Utilities": 4,
-          "Consumer Defensive": 3,
-          "Basic Materials": 2,
-          "Consumer Cyclical": 1
+          "FINANCIAL SERVICES": 3,
+          "Communication Services": 3,
+          "ENERGY": 2,
+          "Real Estate": 1,
+          "Unknown": 1
         },
         "non_enriched": {
-          "Consumer Cyclical": 112,
-          "Industrials": 99,
-          "Financial Services": 88,
-          "Technology": 85,
-          "Healthcare": 68,
-          "Real Estate": 53,
-          "Consumer Defensive": 53,
-          "Basic Materials": 36,
+          "Industrials": 129,
+          "Technology": 117,
+          "Consumer Cyclical": 105,
+          "Healthcare": 84,
+          "Financial Services": 76,
+          "Real Estate": 52,
+          "Consumer Defensive": 52,
+          "Basic Materials": 34,
           "Utilities": 30,
-          "Communication Services": 27,
-          "Energy": 20,
-          "Unknown": 2,
-          "ETF": 2
+          "Energy": 26,
+          "Communication Services": 24,
+          "ETF": 2,
+          "Unknown": 1
         }
       },
       "market_cap_comparison": {
@@ -772,8 +777,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "9b9fbc3a6e276e3e35417629b4a6abe4911ef458",
+    "git_commit_sha": "1f518ca55d793cca72f7af34f4c608cee73f6a4c",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T09:12:10.754849+00:00"
+    "generated_at": "2026-08-18T12:05:28.239387+00:00"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T09:16:26.900714+00:00",
+  "generated_at": "2026-08-18T12:10:56.030705+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,37 +29,83 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-18T09:12:24.286625+00:00",
+      "checked_at": "2026-08-18T12:05:42.734260+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 927,
-        "scored": 196,
+        "scored": 879,
         "ranked": 40,
         "failed": [
+          "ANSS",
+          "BK",
+          "BLD",
+          "CFLT",
+          "CIVI",
+          "CMA",
+          "CTRA",
+          "DAY",
           "DECJ",
-          "TTM"
+          "EXAS",
+          "FI",
+          "FYBR",
+          "GTLS",
+          "HCP",
+          "HES",
+          "HOLX",
+          "IGT",
+          "INFA",
+          "IPG",
+          "ITCI",
+          "JBT",
+          "JHG",
+          "JNPR",
+          "JWN",
+          "K",
+          "LANC",
+          "MASI",
+          "MMC",
+          "MODG",
+          "MOG.A",
+          "PCH",
+          "PNM",
+          "PSTG",
+          "SEE",
+          "SKX",
+          "SMAR",
+          "SNV",
+          "SPR",
+          "SUM",
+          "TGNA",
+          "TMHC",
+          "TPH",
+          "TPX",
+          "TTM",
+          "VSCO",
+          "WBA",
+          "X",
+          "ZI"
         ]
       }
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-18T09:15:16.902488+00:00",
+      "checked_at": "2026-08-18T12:10:12.191208+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 126,
-          "misses": 252,
+          "hits": 252,
+          "misses": 126,
           "stale_hits": 0,
-          "hit_rate": 0.333
+          "hit_rate": 0.667
         }
       }
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-18T09:16:26.900687+00:00",
+      "checked_at": "2026-08-18T12:10:56.030680+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -206,8 +252,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "9b9fbc3a6e276e3e35417629b4a6abe4911ef458",
+    "git_commit_sha": "1f518ca55d793cca72f7af34f4c608cee73f6a4c",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T09:16:26.900714+00:00"
+    "generated_at": "2026-08-18T12:10:56.030705+00:00"
   }
 }
