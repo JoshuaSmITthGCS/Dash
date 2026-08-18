@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T12:12:06.801206+00:00",
+  "generated_at": "2026-08-18T15:28:28.561967+00:00",
   "groups": [
     {
       "id": "signal",
@@ -69,7 +69,7 @@
   ],
   "live_sample": {
     "days": 12,
-    "refreshes": 56,
+    "refreshes": 57,
     "first_date": "2026-08-05",
     "last_date": "2026-08-18"
   },
@@ -829,32 +829,33 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 11,
+      "observations": 12,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-18T12:05:28.239387+00:00",
+        "as_of": "2026-08-18T15:22:38.092716+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
           "basic_materials": 0.0338,
           "communication_services": -0.0991,
-          "consumer_cyclical": 0.0043,
+          "consumer_cyclical": -0.0457,
           "consumer_defensive": -0.0461,
           "energy": 0.1164,
           "financial_services": 0.4776,
           "healthcare": -0.041,
-          "industrials": -0.0816,
+          "industrials": -0.0316,
           "real_estate": -0.0188,
           "technology": -0.324,
           "utilities": -0.0215
         },
         "strategy_sector_weights": {
           "basic_materials": 0.05,
-          "consumer_cyclical": 0.1,
+          "consumer_cyclical": 0.05,
           "energy": 0.15,
           "financial_services": 0.6,
           "healthcare": 0.05,
+          "industrials": 0.05,
           "technology": 0.05
         },
         "benchmark_sector_weights": {
@@ -1070,6 +1071,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-08-18T15:22:38.092716+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.4776,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -1090,11 +1109,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 11,
+      "observations": 12,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-18T12:05:28.239387+00:00",
+        "as_of": "2026-08-18T15:22:38.092716+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -2585,7 +2604,7 @@
         "status": "ready",
         "value": 2,
         "date": "2026-08-18",
-        "refresh_id": "advisor-2026-08-18T12:05:28.239387+00:00",
+        "refresh_id": "advisor-2026-08-18T15:22:38.092716+00:00",
         "rows": 881,
         "missing_prices": 2,
         "missing_price_tickers": [
@@ -2604,7 +2623,7 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-08-18T12:05:23.935867+00:00"
+          "observed_at": "2026-08-18T15:22:37.605880+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -2660,8 +2679,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "1f518ca55d793cca72f7af34f4c608cee73f6a4c",
+    "git_commit_sha": "7786fe28b91246972146a2dfcb50494f896d92ef",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T12:12:06.801206+00:00"
+    "generated_at": "2026-08-18T15:28:28.561967+00:00"
   }
 }
