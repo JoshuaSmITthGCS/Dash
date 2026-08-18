@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import modelSettings from '../../pipeline/config/settings.json'
 import MetricCard from './MetricCard.jsx'
 import SignalMetricsPanel from './SignalMetricsPanel.jsx'
+import MonteCarloProjectionPanel from './MonteCarloProjectionPanel.jsx'
 import { buildPortfolioMetricModel } from '../lib/portfolioMetricModel.js'
 import { combinedEvidence, sectionAssessment } from '../lib/metricAssessment.js'
 
@@ -247,6 +248,7 @@ export default function PerformanceMetrics({
   shortTerm = null, risk = null,
   model: suppliedModel = null, statistics = null, factor = null, benchmark = null,
   exposure = null, execution = null, robustness = null, signalMetrics = null,
+  monteCarlo = null, monteCarloError = null,
   prospective = null, scopes = [], scope = null, onScopeChange = null,
   baselineComparison = null,
 }) {
@@ -287,6 +289,7 @@ export default function PerformanceMetrics({
         <BaselineComparison comparison={baselineComparison} />
         <section className="algorithm-period" aria-labelledby="algorithm-period-title"><header><div><span className="eyebrow">Algorithm period</span><h2 id="algorithm-period-title">Scoped evidence</h2></div></header><EvidenceCounts counts={combinedEvidence(sections).counts} /><p>{statistics?.available ? `${statistics.observations} trading returns · Evidence: ${statistics.observations >= 250 ? 'developing' : 'promising but immature'}.` : `? Insufficient — ${statistics?.reason || 'daily live algorithm observations are required'}`}</p></section>
         <SignalMetricsPanel report={signalMetrics} />
+        <MonteCarloProjectionPanel report={monteCarlo} error={monteCarloError} />
       </>}
       {view === 'historical' && <>
         <RollingSharpeChart statistics={statistics} />

@@ -133,7 +133,7 @@ export default function MonteCarloProjectionPanel({ report, error }) {
     <section className="mc-projection" aria-labelledby="mc-projection-title">
       <header className="section-heading">
         <div>
-          <span className="eyebrow">Forward projection</span>
+          <span className="eyebrow">Future simulations</span>
           <h2 id="mc-projection-title">Where could this go from here?</h2>
           <p>
             {input.paths?.toLocaleString()} simulated paths per horizon, block-bootstrapped from{' '}

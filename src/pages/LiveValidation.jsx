@@ -1,7 +1,6 @@
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import SignalMetricsPanel from '../components/SignalMetricsPanel.jsx'
-import MonteCarloProjectionPanel from '../components/MonteCarloProjectionPanel.jsx'
 import ResearchEvidence from '../components/ResearchEvidence'
 import { ScreenNavigation } from './ResearchScreen'
 import InfoTag from '../components/InfoTag.jsx'
@@ -171,7 +170,6 @@ export default function LiveValidation() {
   const { data: icData, loading: icLoading, error: icError } = useData('validation/ic_validation.json')
   const { data: evidence, error: evidenceError } = useData('validation/research_evidence.json')
   const { data: signalMetrics, loading: signalLoading, error: signalError } = useData('validation/signal_metrics.json')
-  const { data: monteCarlo, error: monteCarloError } = useData('validation/monte_carlo_projection.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   const overview = rankIcOverview(signalMetrics, signalError)
   return <><ScreenNavigation />
@@ -179,7 +177,6 @@ export default function LiveValidation() {
       <p className="page-sub">Provider lineage, applicability, confidence gates, and independent decision layers. This view never replaces production output.</p></div></div>
     <AutoOverviewLine tone={overview.tone}>{overview.text}</AutoOverviewLine>
     <SignalMetricsPanel report={signalMetrics} error={signalError} />
-    <MonteCarloProjectionPanel report={monteCarlo} error={monteCarloError} />
     <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>

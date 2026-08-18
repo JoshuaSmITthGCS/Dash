@@ -12,6 +12,8 @@ export default function DataOverview({
   analytics,
   benchmarks,
   signalMetrics,
+  monteCarlo,
+  monteCarloError,
   attributionPeriod,
   onAttributionPeriodChange,
   analyticsScope,
@@ -51,6 +53,8 @@ export default function DataOverview({
         execution={analytics.execution}
         robustness={analytics.robustness}
         signalMetrics={signalMetrics}
+        monteCarlo={monteCarlo}
+        monteCarloError={monteCarloError}
         prospective={analytics.prospective}
         baselineComparison={analytics.baselineComparison}
         scopes={ANALYTICS_SCOPES}
