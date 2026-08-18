@@ -1,4 +1,8 @@
-import { mergeResearchStock, themeExposureName, themeExposureScore } from './StockDetailModal.jsx'
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import {
+  InsideInformationView, mergeResearchStock, themeExposureName, themeExposureScore,
+} from './StockDetailModal.jsx'
 
 describe('theme exposure entries', () => {
   const published = {
@@ -48,5 +52,32 @@ describe('mergeResearchStock', () => {
   it('keeps a lightweight row unchanged when no deeper row exists', () => {
     const supplied = { ticker: 'NEW', price: 12 }
     expect(mergeResearchStock(supplied, { research: [] })).toBe(supplied)
+  })
+})
+
+describe('InsideInformationView', () => {
+  it('renders nothing for a ticker with no notable disclosed activity', () => {
+    const { container } = render(<MemoryRouter><InsideInformationView info={undefined} /></MemoryRouter>)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('shows the institutional flag and combined score', () => {
+    render(<MemoryRouter><InsideInformationView info={{
+      score: 3.5, institutional_flag: 'CLUSTER_ACCUMULATION', congress_flags: [],
+    }} /></MemoryRouter>)
+
+    expect(screen.getByText('Curated managers accumulating')).toBeVisible()
+    expect(screen.getByText(/3.5/)).toBeVisible()
+    expect(screen.getByRole('link', { name: /Inside Information screen/ })).toHaveAttribute(
+      'href', '/screens/inside-information')
+  })
+
+  it('shows Congressional flags with human-readable labels', () => {
+    render(<MemoryRouter><InsideInformationView info={{
+      score: 1.2, institutional_flag: null, congress_flags: ['EXTRAORDINARY_BUY', 'CLUSTER_TRADE'],
+    }} /></MemoryRouter>)
+
+    expect(screen.getByText('First trade in a small, unfamiliar company')).toBeVisible()
+    expect(screen.getByText('3+ representatives, 14-day span')).toBeVisible()
   })
 })

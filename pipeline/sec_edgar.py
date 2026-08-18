@@ -343,6 +343,11 @@ class SecEdgarClient:
         when an amendment matters: an amendment's ``filed`` date is recent, but its
         ``period`` is the same quarter the original filing already covered, and a caller
         that groups by ``filed`` alone will mistake the amendment for a new quarter.
+
+        Also carries ``items`` - EDGAR's comma-separated 8-K Item codes for this filing
+        (e.g. ``"4.02"`` for a financial restatement), present only on 8-K rows and blank
+        for every other form. ``edgar_filing_signals.py`` classifies materiality straight
+        from these codes rather than parsing filing text.
         """
         payload = self.submissions(cik)
         recent = payload.get("filings", {}).get("recent", {})
@@ -357,6 +362,7 @@ class SecEdgarClient:
                 "document": recent["primaryDocument"][index],
                 "filed": recent.get("filingDate", [""])[index],
                 "period": recent.get("reportDate", [""])[index],
+                "items": recent.get("items", [""])[index] if index < len(recent.get("items", [])) else "",
             })
             if len(filings) >= limit:
                 break

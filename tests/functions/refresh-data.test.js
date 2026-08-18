@@ -34,10 +34,18 @@ describe('parseRequestBody', () => {
   it('maps every selectable screen to a real workflow file', () => {
     expect(Object.values(SCREEN_WORKFLOWS).map((entry) => entry.workflow)).toEqual([
       'refresh-advisor.yml', 'congress-trades.yml', 'institutional-13f.yml',
+      'sec-filings.yml', 'inside-information.yml',
     ])
     // The collectors declare no dispatch inputs; sending any would make GitHub reject it.
     expect(SCREEN_WORKFLOWS.congress.acceptsInputs).toBe(false)
     expect(SCREEN_WORKFLOWS.institutional.acceptsInputs).toBe(false)
+    expect(SCREEN_WORKFLOWS.filings.acceptsInputs).toBe(false)
+    expect(SCREEN_WORKFLOWS['inside-information'].acceptsInputs).toBe(false)
+  })
+
+  it('selects the two new screen collectors by name', () => {
+    expect(parseRequestBody(JSON.stringify({ screen: 'filings' })).screen).toBe('filings')
+    expect(parseRequestBody(JSON.stringify({ screen: 'inside-information' })).screen).toBe('inside-information')
   })
 })
 

@@ -140,6 +140,29 @@ function DashboardWidget({ id, widgets, children }) {
   )
 }
 
+// Congress + institutional 13F, merged and pre-filtered to notable rows by
+// build_inside_information_screen.py - unlike the other cards on this grid, there is no
+// percentage metric to show (a CLUSTER_ACCUMULATION flag isn't a return), so this renders
+// which flag(s) fired instead of a Move pct.
+function InsideInformationCard({ rows, loading, style }) {
+  const flagSummary = (row) => [
+    row.institutional_flag === 'CLUSTER_ACCUMULATION' && 'Managers accumulating',
+    row.institutional_flag === 'CLUSTER_DISTRIBUTION' && 'Managers distributing',
+    row.congress_flags?.length ? 'Congressional cluster' : null,
+  ].filter(Boolean).join(' · ') || 'Notable disclosed activity'
+  return <article className="report-screen-card" style={style}>
+    <header><div><span>Inside information</span><h3>Congress + institutional 13F</h3></div><small>Rare or flagged activity only</small></header>
+    <div className="report-screen-list">
+      {loading ? <div className="report-inline-loading" role="status">Loading this screen on the Report…</div>
+        : rows.length ? rows.map((row, index) => (
+          <div key={row.ticker}><CompanyLogo company={row} size={28} /><span className="screen-rank">#{index + 1}</span><span className="screen-company"><b>{row.ticker}</b><small>{flagSummary(row)}</small></span></div>
+        ))
+          : <div className="report-inline-loading">No notable disclosed activity right now.</div>}
+    </div>
+    <Link className="report-screen-link" to="/screens/inside-information">Open full screen <Icon name="arrow" size={16} /></Link>
+  </article>
+}
+
 function FocusedScreenCard({ title, kicker, note, rows, metric, loading, to, style }) {
   return <article className="report-screen-card" style={style}>
     <header><div><span>{kicker}</span><h3>{title}</h3></div><small>{note}</small></header>
@@ -220,6 +243,7 @@ function ReportProjection({ input, source, money, annualReturnTargetPct, current
 export default function Dashboard() {
   const { data, loading, reload: reloadReport } = useData('report.json')
   const { data: etfData, loading: etfLoading, reload: reloadEtfs } = useData('etfs.json')
+  const { data: insideInformation, loading: insideInformationLoading } = useData('screens/inside-information.json')
   const { currentUser, authError, retryAuth } = useAuth()
   const { positions: storedPositions, loading: portfolioLoading } = useFirebasePortfolio()
   const previewPortfolio = import.meta.env.DEV
@@ -367,10 +391,11 @@ export default function Dashboard() {
     { title: 'Value near 52-week lows', kicker: 'Value turnarounds', note: 'Quality plus a positive latest week', rows: rankValueTurnarounds(screenRows, 3), metric: (row) => ({ label: 'Above low', value: row.screen.aboveLow }), to: '/screens/quality-value' },
     { title: 'Recent momentum', kicker: 'Momentum', note: 'Positive week and month', rows: rankMomentum(screenRows, 3), metric: (row) => ({ label: '20 days', value: row.screen.monthReturn }), to: '/screens/momentum' },
     { title: 'Short-term reversals', kicker: 'Reversal', note: '20-day pullback turning up', rows: rankReversal(screenRows, 3), metric: (row) => ({ label: 'This week', value: row.screen.weekReturn }), to: '/screens/matrix' },
-    // Last of an odd number of screens, so its card takes the full row and runs its list
-    // two-up (see `.report-screen-grid > :last-child:nth-child(odd)`). Four rows fill that
-    // 2x2 exactly — keep this count even for as long as the screen count stays odd.
-    { title: 'Top ETFs', kicker: 'Fund screens', note: 'Performance, risk, cost and liquidity', rows: rankGrowingEtfs(etfData?.etfs || [], 4), metric: (row) => ({ label: '1 year', value: row.returns?.['1y'] }), loading: etfLoading, to: '/research' },
+    { title: 'Top ETFs', kicker: 'Fund screens', note: 'Performance, risk, cost and liquidity', rows: rankGrowingEtfs(etfData?.etfs || [], 3), metric: (row) => ({ label: '1 year', value: row.returns?.['1y'] }), loading: etfLoading, to: '/research' },
+    // Plus InsideInformationCard below, appended outside this array (its rows carry flags,
+    // not a Move pct, so it doesn't fit the {title, rows, metric} shape the rest share).
+    // Six cards total keeps `.report-screen-grid` a uniform 2-up layout - no card spans
+    // full width the way the old odd-count "Top ETFs" card briefly did.
   ]
 
   const saveCustomization = () => { setWidgets(draftWidgets); window.history.replaceState({}, '', '/'); window.location.reload() }
@@ -468,7 +493,11 @@ export default function Dashboard() {
 
     <section className="report-focused-screens" aria-labelledby="focused-screens-title">
       <header className="section-heading"><div><span className="eyebrow">Focused breakdown</span><h2 id="focused-screens-title">Fast growth, value, momentum, reversals, and ETFs</h2></div><Link to="/research">All research →</Link></header>
-      <div className="report-screen-grid">{focusedScreens.map((screen, index) => <FocusedScreenCard key={screen.kicker} {...screen} style={{ '--i': index }} />)}</div>
+      <div className="report-screen-grid">
+        {focusedScreens.map((screen, index) => <FocusedScreenCard key={screen.kicker} {...screen} style={{ '--i': index }} />)}
+        <InsideInformationCard rows={insideInformation?.results?.slice(0, 3) || []} loading={insideInformationLoading}
+          style={{ '--i': focusedScreens.length }} />
+      </div>
       <p className="screen-disclaimer">Research screens, not trade instructions. Confirm current prices, liquidity, news, and your own risk limits before acting.</p>
     </section>
 
