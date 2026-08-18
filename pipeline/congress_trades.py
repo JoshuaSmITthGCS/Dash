@@ -17,12 +17,16 @@ Three clients, deliberately, because none alone is dependable:
     cannot be withdrawn by a third party. It covers *electronically filed* periodic
     transaction reports; a senator who files on paper discloses a scanned PDF with no
     machine-readable transactions, which this counts and skips rather than guesses at.
-  * ``StockWatcherClient`` reads the house/senate stock-watcher datasets. **Those buckets
-    now answer every request with HTTP 403 AccessDenied** - the mirror was withdrawn, which
-    is what left this screen publishing nothing at all. The client is kept because it is
-    the only reachable source of *House* disclosures this pipeline has, and its endpoints
-    are overridable (``CONGRESS_HOUSE_DATASET_URL`` / ``CONGRESS_SENATE_DATASET_URL``) so a
-    replacement mirror is a configuration change rather than a code change.
+  * ``StockWatcherClient`` reads a keyless third-party mirror per chamber. The original
+    stock-watcher buckets it was built against are dead (both now answer HTTP 403
+    AccessDenied - the project stopped publishing), which is what left this screen unable
+    to see House disclosures at all for a while. HOUSE_DATASET's default now points at
+    congress-trading-monitor instead, a still-actively-maintained aggregator of the House
+    Clerk, Senate eFD, and OGE filings into one JSON file - this is the only reachable
+    source of *House* disclosures this pipeline has, and being a third-party mirror rather
+    than an official API, it carries the same withdrawal risk the original one did. Both
+    endpoints are overridable (``CONGRESS_HOUSE_DATASET_URL`` / ``CONGRESS_SENATE_DATASET_URL``)
+    so a replacement mirror is a configuration change rather than a code change.
 
 ``build_congress_screen`` attempts every configured source independently and merges what
 comes back, deduped on the disclosure identity, so one source being unavailable costs
@@ -46,10 +50,20 @@ from alpha_vantage import load_local_env
 BASE_URL = "https://financialmodelingprep.com/stable"
 REQUEST_TIMEOUT = 30
 
-# Overridable because the defaults are dead: both buckets answer AccessDenied since the
-# stock-watcher project stopped publishing. Pointing these at a live mirror needs no code.
+# Both overridable, and both need to be: the original stock-watcher buckets answer
+# AccessDenied since that project stopped publishing. HOUSE_DATASET's default is now
+# congress-trading-monitor (kadoa-org, MIT-licensed code, data "for research and
+# educational purposes" - the same framing this screen's own disclaimer already uses),
+# a still-actively-maintained (daily automated commits, verified at the time this was
+# wired in) aggregator of the House Clerk, Senate eFD, and OGE filings into one combined
+# JSON array distinguished by a "chamber" field - see _fetch's per-row chamber filter
+# below, which is what lets this file serve both HOUSE_DATASET and SENATE_DATASET without
+# assuming the whole payload is one chamber the way the original stock-watcher files were.
+# SENATE_DATASET is left on the dead default: SenateEfdClient already covers the Senate
+# from the authoritative source directly, so there is nothing to gain from also fetching a
+# multi-MB third-party file for that chamber - only a working override if a caller wants one.
 HOUSE_DATASET = os.getenv("CONGRESS_HOUSE_DATASET_URL") or (
-    "https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json")
+    "https://raw.githubusercontent.com/kadoa-org/congress-trading-monitor/main/public/data/trades.json")
 SENATE_DATASET = os.getenv("CONGRESS_SENATE_DATASET_URL") or (
     "https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json")
 # These files are the full history, not a recent window - tens of MB - so the read is
@@ -68,6 +82,19 @@ EFD_PAGE_SIZE = 100
 EFD_REQUEST_DELAY = 0.5
 EFD_MAX_REPORTS = 400
 EFD_USER_AGENT = "ValueSignal research (STOCK Act disclosure reader)"
+
+# congress-trading-monitor's House rows carry the House Clerk's own short asset-type codes
+# for some rows and full descriptive strings for others ("Municipal Security", "Non-Public
+# Stock" arrive as-is; "ST", "CS", "CT", "GS" do not) - is_equity_purchase() in
+# build_congress_screen.py matches on the literal substring "stock", so an untranslated "ST"
+# silently fails that check and drops every House stock purchase out of price-performance
+# and the size/novelty flags, without raising anything. Only "ST" is translated here,
+# confirmed against a live record (ticker AAPL, asset_name "Apple Inc. - Common Stock",
+# asset_type "ST") - the other codes are conservatively left alone: they already correctly
+# fail the "stock" check as non-equity asset types, so leaving them untranslated costs
+# nothing, while guessing wrong on a translation could misclassify a bond or option as a
+# plain stock buy.
+_HOUSE_ASSET_TYPE_CODES = {"ST": "Stock"}
 
 
 class CongressTradesError(RuntimeError):
@@ -443,16 +470,18 @@ class SenateEfdClient:
 
 
 class StockWatcherClient:
-    """The public house/senate stock-watcher datasets - the same Clerk and eFD filings,
-    scraped and republished as keyless JSON.
+    """Third-party mirrors of the Clerk and eFD filings, scraped and republished as keyless
+    JSON - the default HOUSE_DATASET (congress-trading-monitor) and, for callers who
+    override SENATE_DATASET, the original stock-watcher shape.
 
     No credential, so this is the source that keeps the screen populated when the FMP plan
     does not cover the Congressional endpoints. The cost of that is provenance: it is a
-    community mirror, so it can lag the official systems, and its column names are not a
-    contract. Every field is therefore read through ``_first`` across the spellings both
-    datasets have used, and ``fetch`` reports how many rows it read against how many it could
-    normalize, so a silent schema change shows up as a coverage number rather than as an
-    empty screen that claims Congress did not trade.
+    third-party mirror, so it can lag the official systems, be withdrawn (as the original
+    stock-watcher buckets were), or change shape without warning - its column names are not
+    a contract. Every field is therefore read through ``_first`` across the spellings every
+    mirror seen so far has used, and ``fetch`` reports how many rows it read against how many
+    it could normalize, so a silent schema change shows up as a coverage number rather than
+    as an empty screen that claims Congress did not trade.
     """
 
     def __init__(self, house_url=HOUSE_DATASET, senate_url=SENATE_DATASET, opener=None):
@@ -487,12 +516,23 @@ class StockWatcherClient:
                 f"{chamber} disclosure dataset request failed ({type(exc).__name__}: {exc})") from exc
         if not isinstance(payload, list):
             raise CongressTradesError(f"{chamber} disclosure dataset returned an invalid response")
-        rows = [self._normalize(row, chamber) for row in payload if isinstance(row, dict)]
+        # The original stock-watcher shape was one chamber per file with no "chamber" key at
+        # all - every row there is this chamber by construction. congress-trading-monitor
+        # publishes House, Senate, and OGE executive-branch disclosures together in one file,
+        # each row carrying its own "chamber" (null for executive-branch rows), so
+        # HOUSE_DATASET and SENATE_DATASET can point at the same URL and each still only reads
+        # its own chamber. Only a row with the key entirely *absent* defaults to whichever
+        # chamber this call asked for - a row that carries the key, even as null, means this
+        # file distinguishes chambers and an executive-branch row must not leak into either.
+        same_chamber = [row for row in payload if isinstance(row, dict) and
+                        str(row["chamber"] if "chamber" in row else chamber).strip().lower()
+                        == chamber]
+        rows = [self._normalize(row, chamber) for row in same_chamber]
         # A row with neither a traded symbol nor a disclosure date cannot be flagged, dated or
         # deduped, so it is dropped here rather than downstream where it would look like data.
         usable = [row for row in rows if row["disclosure_date"] and
                   (row["symbol"] or row["asset_description"])]
-        return usable, len(payload)
+        return usable, len(same_chamber)
 
     def house_latest(self):
         return self._fetch(self.house_url, "house")
@@ -502,23 +542,35 @@ class StockWatcherClient:
 
     @staticmethod
     def _normalize(row, chamber):
-        """Both mirrors reduced to the same shape ``CongressTradesClient`` produces, so the
-        classification layer never learns which source a disclosure came from."""
+        """Every mirror seen so far reduced to the same shape ``CongressTradesClient``
+        produces, so the classification layer never learns which source a disclosure came
+        from. Covers both the original stock-watcher column names and
+        congress-trading-monitor's (``filer_name``, ``filing_date``, ``amount_range_label``,
+        ``doc_url``, ...) - see ``_fetch`` for the fields that differ, ``comment`` for those
+        that don't."""
         symbol = _first(row, "ticker", "symbol")
+        asset_type = _first(row, "asset_type", "type_of_asset", "assetType")
         return {
             "chamber": chamber,
-            "representative": _first(row, "representative", "senator", "office", "member_name"),
-            "district": _first(row, "district", "state"),
+            # "filer_name" has to be tried before "office": congress-trading-monitor rows
+            # carry both, and "office" there is a descriptive title ("U.S. Representative ·
+            # MA-09"), not a name - reading it first would file every disclosure under a
+            # near-duplicate "representative" per state/chamber instead of the actual member.
+            "representative": _first(row, "representative", "senator", "filer_name", "office",
+                                     "member_name"),
+            "district": _first(row, "district", "state", "office"),
             # The mirrors use "--" as their null ticker, which _first already filters; what
             # survives can still carry whitespace or lower case from the scrape.
             "symbol": str(symbol).strip().upper() if symbol else None,
-            "asset_type": _first(row, "asset_type", "type_of_asset", "assetType"),
-            "asset_description": _first(row, "asset_description", "assetDescription", "asset"),
+            "asset_type": _HOUSE_ASSET_TYPE_CODES.get(asset_type, asset_type),
+            "asset_description": _first(row, "asset_description", "assetDescription", "asset",
+                                        "asset_name"),
             "owner": _first(row, "owner"),
             "transaction_type": _first(row, "type", "transaction_type"),
-            "amount": _first(row, "amount"),
+            "amount": _first(row, "amount", "amount_range_label"),
             "transaction_date": normalize_date(_first(row, "transaction_date", "transactionDate")),
-            "disclosure_date": normalize_date(_first(row, "disclosure_date", "disclosureDate")),
+            "disclosure_date": normalize_date(_first(row, "disclosure_date", "disclosureDate",
+                                                      "filing_date")),
             "comment": _first(row, "comment"),
-            "link": _first(row, "ptr_link", "link"),
+            "link": _first(row, "ptr_link", "link", "doc_url"),
         }

@@ -465,10 +465,12 @@ def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient,
     sources = [("mirror-senate", mirror_client.senate_latest),
                ("mirror-house", mirror_client.house_latest)]
     if efd_factory is not None:
-        # The Senate's own system, added after both community mirrors were withdrawn and
-        # started answering 403 to everything. One chamber only - the House Clerk publishes
-        # its periodic transaction reports as scanned PDFs with no machine-readable
-        # transactions - so this narrows the gap rather than closing it.
+        # The Senate's own system, added after both original stock-watcher mirrors were
+        # withdrawn and started answering 403 to everything. Senate only - the House Clerk's
+        # own site has no equivalent structured search - but mirror-house now reaches House
+        # disclosures too via congress-trading-monitor's default HOUSE_DATASET (see
+        # congress_trades.py), so this and mirror-house together are meant to close the gap
+        # this comment used to describe as permanent, not just narrow it.
         sources.insert(0, ("senate-efd",
                            lambda: efd_factory().fetch(since_days=PUBLISH_WINDOW_DAYS)))
 
