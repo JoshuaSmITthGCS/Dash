@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T18:59:35.788516+00:00",
+  "generated_at": "2026-08-18T19:54:29.259679+00:00",
   "groups": [
     {
       "id": "signal",
@@ -83,7 +83,7 @@
   ],
   "live_sample": {
     "days": 12,
-    "refreshes": 58,
+    "refreshes": 59,
     "first_date": "2026-08-05",
     "last_date": "2026-08-18"
   },
@@ -843,11 +843,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 13,
+      "observations": 14,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-18T16:59:04.905216+00:00",
+        "as_of": "2026-08-18T19:49:32.584827+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -1119,6 +1119,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-08-18T19:49:32.584827+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -1139,11 +1157,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 13,
+      "observations": 14,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-18T16:59:04.905216+00:00",
+        "as_of": "2026-08-18T19:49:32.584827+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -2102,8 +2120,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2126,8 +2144,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2139,7 +2157,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2150,8 +2168,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2162,8 +2180,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2222,8 +2240,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2246,8 +2264,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2259,7 +2277,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2270,8 +2288,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2282,8 +2300,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2342,8 +2360,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2366,8 +2384,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2379,7 +2397,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2390,8 +2408,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2402,8 +2420,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2462,8 +2480,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2486,8 +2504,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2499,7 +2517,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2510,8 +2528,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2522,8 +2540,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2582,8 +2600,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2606,8 +2624,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2619,7 +2637,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2630,8 +2648,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2642,8 +2660,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2702,8 +2720,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2726,8 +2744,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2739,7 +2757,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2750,8 +2768,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2762,8 +2780,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2822,8 +2840,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2846,8 +2864,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2859,7 +2877,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2870,8 +2888,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2882,8 +2900,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2942,8 +2960,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2966,8 +2984,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2979,7 +2997,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2990,8 +3008,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -3002,8 +3020,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3132,8 +3150,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901694,
-            "net_return": -0.0013576763869901697,
+            "gross_return": -0.0012576763869901698,
+            "net_return": -0.0013576763869901699,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -3156,8 +3174,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349041,
-            "net_return": 0.004476900382349041,
+            "gross_return": 0.004776900382349042,
+            "net_return": 0.004476900382349042,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -3169,7 +3187,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.002399948552963404,
+            "net_return": -0.0023999485529634036,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -3180,8 +3198,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615945,
-            "net_return": -0.004707505038615945,
+            "gross_return": -0.003907505038615944,
+            "net_return": -0.0047075050386159445,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -3192,8 +3210,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899639,
-            "net_return": -0.001941899065089964,
+            "gross_return": -0.0016418990650899636,
+            "net_return": -0.0019418990650899638,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -3216,8 +3234,8 @@
       "id": "data_quality_counters",
       "group": "monitoring",
       "label": "Data quality counters",
-      "value": 2,
-      "display": "2 critical refresh issues",
+      "value": 1,
+      "display": "1 critical refresh issue",
       "reads": "Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
       "kill_threshold": "Any missing, unstamped, stale, or duplicate current price row",
       "kill_threshold_value": 0,
@@ -3227,18 +3245,17 @@
       "requires_live_sample": true,
       "status": "ready",
       "status_message": null,
-      "observations": 881,
+      "observations": 880,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "status": "ready",
-        "value": 2,
+        "value": 1,
         "date": "2026-08-18",
-        "refresh_id": "advisor-2026-08-18T16:59:04.905216+00:00",
-        "rows": 881,
-        "missing_prices": 2,
+        "refresh_id": "advisor-2026-08-18T19:49:32.584827+00:00",
+        "rows": 880,
+        "missing_prices": 1,
         "missing_price_tickers": [
-          "DECJ",
           "TTM"
         ],
         "missing_price_timestamps": 0,
@@ -3247,13 +3264,15 @@
         "stale_price_tickers": [],
         "duplicate_tickers": 0,
         "quality_flags": {
-          "challenger_metric_scores_not_available_in_source_snapshot": 2,
-          "challenger_score_not_available_in_source_snapshot": 2
+          "challenger_metric_scores_not_available_in_source_snapshot": 1,
+          "challenger_score_not_available_in_source_snapshot": 1
         },
         "universe_churn": {
           "added": [],
-          "removed": [],
-          "observed_at": "2026-08-18T16:59:04.335158+00:00"
+          "removed": [
+            "DECJ"
+          ],
+          "observed_at": "2026-08-18T19:49:31.815303+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -3309,8 +3328,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7dff03f011ff02c7799ae0887321e59e047c9f89",
+    "git_commit_sha": "cb67a5b073a6caa093edafb59ffd7c679556c2fd",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T18:59:35.788516+00:00"
+    "generated_at": "2026-08-18T19:54:29.259679+00:00"
   }
 }
