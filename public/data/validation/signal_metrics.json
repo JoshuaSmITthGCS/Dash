@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T17:03:55.119353+00:00",
+  "generated_at": "2026-08-18T18:01:13.462574+00:00",
   "groups": [
     {
       "id": "signal",
@@ -43,6 +43,20 @@
       "title": "Drift alarms",
       "summary": "Live behaviour against the backtest that predicted it.",
       "requires_live_sample": true
+    },
+    {
+      "id": "risk_adjusted",
+      "letter": "G",
+      "title": "Classic risk-adjusted return",
+      "summary": "Return per unit of systematic risk, and the single-factor alpha left once beta is priced in.",
+      "requires_live_sample": false
+    },
+    {
+      "id": "tax_stress",
+      "letter": "H",
+      "title": "Tax and stress",
+      "summary": "After-tax reality, and how this book's own exposures fared in a known stress window.",
+      "requires_live_sample": false
     }
   ],
   "cadence": [
@@ -1349,6 +1363,48 @@
       "source": null
     },
     {
+      "id": "order_rejection_rate",
+      "group": "cost",
+      "label": "Order rejection rate",
+      "value": null,
+      "display": null,
+      "reads": "Share of orders rejected by the broker or venue.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Daily",
+      "requires_live_sample": true,
+      "status": "awaiting_live_sample",
+      "status_message": "Needs pipeline/data/validation/live_execution.json from an order or broker export; the research pipeline does not place trades.",
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": null,
+      "source": null
+    },
+    {
+      "id": "realized_vs_expected_slippage",
+      "group": "cost",
+      "label": "Realized vs. expected slippage",
+      "value": null,
+      "display": null,
+      "reads": "Implementation shortfall against the cost model's pre-trade estimate, per trade.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Daily",
+      "requires_live_sample": true,
+      "status": "awaiting_live_sample",
+      "status_message": "Needs pipeline/data/validation/live_execution.json from an order or broker export; the research pipeline does not place trades.",
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": null,
+      "source": null
+    },
+    {
       "id": "deflated_sharpe",
       "group": "honesty",
       "label": "Deflated Sharpe ratio",
@@ -1449,6 +1505,371 @@
       "source": "weight optimizer sweeps"
     },
     {
+      "id": "bootstrap_ci",
+      "group": "honesty",
+      "label": "Bootstrap return/Sharpe confidence interval",
+      "value": 16.009,
+      "display": "16.0%/yr (95% CI 1.1% to 29.6%)",
+      "reads": "Block-bootstrap uncertainty band on annualized return and Sharpe -- a defensible interval without waiting for 253 daily returns.",
+      "kill_threshold": "95% Sharpe CI includes zero",
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": false,
+      "cadence": "Monthly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 1241,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "observations": 1241,
+        "block_size": 21,
+        "samples": 2000,
+        "mean_annualized_return_pct": 16.009,
+        "annualized_return_ci_95_pct": [
+          1.093,
+          29.641
+        ],
+        "mean_sharpe": 0.921,
+        "sharpe_ci_95": [
+          0.059,
+          1.755
+        ],
+        "probability_sharpe_positive": 0.983,
+        "probability_return_positive": 0.983
+      },
+      "source": "block bootstrap of backtest daily returns"
+    },
+    {
+      "id": "reality_check_spa",
+      "group": "honesty",
+      "label": "White's Reality Check / SPA test",
+      "value": null,
+      "display": null,
+      "reads": "Whether the best-searched configuration beats the field by more than an exhaustive search of this many configurations would produce from noise alone.",
+      "kill_threshold": "p-value above 0.05 -- the edge is not distinguishable from search noise",
+      "kill_threshold_value": 0.05,
+      "comparison": "gt",
+      "breached": false,
+      "cadence": "Annually or on any refit",
+      "requires_live_sample": false,
+      "status": "awaiting_input",
+      "status_message": "Not enough complete holdout periods across configurations for the SPA bootstrap.",
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "status": "awaiting_input",
+        "value": null,
+        "configurations_searched": 201,
+        "reason": "Not enough complete holdout periods across configurations for the SPA bootstrap."
+      },
+      "source": "weight optimizer sweeps"
+    },
+    {
+      "id": "rolling_sharpe_60d",
+      "group": "honesty",
+      "label": "Rolling 60-day Sharpe",
+      "value": 3.66,
+      "display": "3.66 (range -3.01 to 7.01)",
+      "reads": "Whether one lucky stretch is carrying the headline Sharpe, or the edge holds across the full window.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "window": 60,
+        "observations": 1182,
+        "swing": 10.02,
+        "series": [
+          0.98,
+          1.12,
+          0.91,
+          0.94,
+          1.2,
+          0.61,
+          0.93,
+          0.43,
+          0.55,
+          1.23,
+          1.48,
+          1.91,
+          1.97,
+          2.17,
+          2.42,
+          2.23,
+          2.38,
+          2.96,
+          2.73,
+          2.71,
+          2.01,
+          1.82,
+          1.92,
+          1.91,
+          2.65,
+          2.61,
+          2.52,
+          2.37,
+          2.17,
+          1.95,
+          2.35,
+          1.92,
+          1.47,
+          1.23,
+          1.48,
+          1.59,
+          1.64,
+          1.44,
+          0.57,
+          0.64,
+          0.74,
+          0.63,
+          0.66,
+          1.21,
+          0.58,
+          1.05,
+          1.92,
+          2.1,
+          2.3,
+          2.27,
+          1.78,
+          2.04,
+          3.03,
+          3.12,
+          3.32,
+          3.64,
+          3.99,
+          3.88,
+          4.0,
+          3.66
+        ]
+      },
+      "source": "backtest equity curve"
+    },
+    {
+      "id": "var_backtest_95",
+      "group": "honesty",
+      "label": "VaR backtest (95%)",
+      "value": 0,
+      "display": "42 breaches of 989 (4.2% vs 5.0% expected)",
+      "reads": "Kupiec tests whether the breach rate matches the stated coverage; Christoffersen tests whether breaches cluster instead of scattering.",
+      "kill_threshold": "Kupiec or Christoffersen rejects calibration at 95%",
+      "kill_threshold_value": 0,
+      "comparison": "gt",
+      "breached": false,
+      "cadence": "Quarterly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 989,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "confidence": 0.95,
+        "window": 252,
+        "forecasts": 989,
+        "breaches": 42,
+        "breach_rate": 0.0425,
+        "expected_breach_rate": 0.05,
+        "kupiec_pof": {
+          "observations": 989,
+          "breaches": 42,
+          "expected_breach_rate": 0.05,
+          "observed_breach_rate": 0.0425,
+          "likelihood_ratio_statistic": 1.2424,
+          "p_value": 0.265,
+          "miscalibrated_at_95": false
+        },
+        "christoffersen_independence": {
+          "observations": 989,
+          "transitions": {
+            "no_breach_to_no_breach": 908,
+            "no_breach_to_breach": 38,
+            "breach_to_no_breach": 38,
+            "breach_to_breach": 4
+          },
+          "likelihood_ratio_statistic": 2.2779,
+          "p_value": 0.1312,
+          "clustered_at_95": false
+        }
+      },
+      "source": "rolling historical VaR against backtest daily returns"
+    },
+    {
+      "id": "var_backtest_99",
+      "group": "honesty",
+      "label": "VaR backtest (99%)",
+      "value": 0,
+      "display": "6 breaches of 989 (0.6% vs 1.0% expected)",
+      "reads": "Kupiec tests whether the breach rate matches the stated coverage; Christoffersen tests whether breaches cluster instead of scattering.",
+      "kill_threshold": "Kupiec or Christoffersen rejects calibration at 95%",
+      "kill_threshold_value": 0,
+      "comparison": "gt",
+      "breached": false,
+      "cadence": "Quarterly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 989,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "confidence": 0.99,
+        "window": 252,
+        "forecasts": 989,
+        "breaches": 6,
+        "breach_rate": 0.0061,
+        "expected_breach_rate": 0.01,
+        "kupiec_pof": {
+          "observations": 989,
+          "breaches": 6,
+          "expected_breach_rate": 0.01,
+          "observed_breach_rate": 0.0061,
+          "likelihood_ratio_statistic": 1.7983,
+          "p_value": 0.1799,
+          "miscalibrated_at_95": false
+        },
+        "christoffersen_independence": {
+          "observations": 989,
+          "transitions": {
+            "no_breach_to_no_breach": 976,
+            "no_breach_to_breach": 6,
+            "breach_to_no_breach": 6,
+            "breach_to_breach": 0
+          },
+          "likelihood_ratio_statistic": 0.0733,
+          "p_value": 0.7866,
+          "clustered_at_95": false
+        }
+      },
+      "source": "rolling historical VaR against backtest daily returns"
+    },
+    {
+      "id": "treynor_ratio",
+      "group": "risk_adjusted",
+      "label": "Treynor ratio",
+      "value": 18.96,
+      "display": "18.96%/yr per unit beta",
+      "reads": "Annualized excess return per unit of systematic risk. Comparable across portfolios with different total volatility in a way Sharpe is not.",
+      "kill_threshold": "Negative Treynor means losing money on a beta-adjusted basis",
+      "kill_threshold_value": 0,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Quarterly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 1241,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "beta": 0.65,
+        "risk_free_annual_pct": 3.82
+      },
+      "source": "backtest equity curve versus SPY"
+    },
+    {
+      "id": "jensens_alpha",
+      "group": "risk_adjusted",
+      "label": "Jensen's alpha (single-factor CAPM)",
+      "value": 5.774,
+      "display": "+5.77%/yr",
+      "reads": "The classic Jensen (1968) single-factor alpha: return beta does not explain. More conservative than the FF5+momentum alpha in construction diagnostics, which lets more factors explain the return away first.",
+      "kill_threshold": "Alpha at or below zero -- beta alone explains the return",
+      "kill_threshold_value": 0,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Quarterly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 1241,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "beta": 0.65,
+        "risk_free_annual_pct": 3.82
+      },
+      "source": "backtest equity curve versus SPY"
+    },
+    {
+      "id": "after_tax_return",
+      "group": "tax_stress",
+      "label": "After-tax return",
+      "value": null,
+      "display": null,
+      "reads": "Realized return after short-term capital gains, alongside the pre-tax figure.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "awaiting_input",
+      "status_message": "Needs trade-level realized gain/loss and holding-period logging (the Priority 1 cost/capacity work); short-term capital-gains treatment cannot be applied without it.",
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": null,
+      "source": null
+    },
+    {
+      "id": "stress_test_2022",
+      "group": "tax_stress",
+      "label": "2022 rate-shock stress window",
+      "value": -18.28,
+      "display": "-7.9% return, -18.3% max drawdown",
+      "reads": "How this book's own realized exposures performed through the 2022 rate-shock period.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 251,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "start": "2022-01-03",
+        "end": "2022-12-30",
+        "trading_days": 251,
+        "return_pct": -7.93,
+        "max_drawdown_pct": -18.28
+      },
+      "source": "backtest equity curve"
+    },
+    {
+      "id": "stress_test_2020",
+      "group": "tax_stress",
+      "label": "2020 COVID-crash stress window",
+      "value": null,
+      "display": null,
+      "reads": "Hypothetical drawdown under a 2020-style crash, replaying factor and sector exposures.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "awaiting_input",
+      "status_message": "The backtest window starts in mid-2021; no priced day of this strategy's own exposures exists for the 2020 crash, and fabricating one via factor replay is not evidence.",
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": null,
+      "source": null
+    },
+    {
       "id": "omega",
       "group": "distribution",
       "label": "Omega ratio",
@@ -1488,8 +1909,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1512,8 +1933,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1525,7 +1946,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1536,8 +1957,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1548,8 +1969,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -1608,8 +2029,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1632,8 +2053,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1645,7 +2066,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1656,8 +2077,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1668,8 +2089,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -1728,8 +2149,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1752,8 +2173,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1765,7 +2186,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1776,8 +2197,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1788,8 +2209,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -1848,8 +2269,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1872,8 +2293,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -1885,7 +2306,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -1896,8 +2317,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -1908,8 +2329,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -1968,8 +2389,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -1992,8 +2413,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2005,7 +2426,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2016,8 +2437,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2028,8 +2449,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2088,8 +2509,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2112,8 +2533,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2125,7 +2546,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2136,8 +2557,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2148,8 +2569,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2208,8 +2629,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2232,8 +2653,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2245,7 +2666,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2256,8 +2677,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2268,8 +2689,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2328,8 +2749,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2352,8 +2773,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2365,7 +2786,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2376,8 +2797,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2388,8 +2809,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2518,8 +2939,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0012576763869901698,
-            "net_return": -0.0013576763869901699,
+            "gross_return": -0.0012576763869901694,
+            "net_return": -0.0013576763869901697,
             "daily_equivalent_return": -0.0013576763869901365
           },
           {
@@ -2542,8 +2963,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": 0.004776900382349042,
-            "net_return": 0.004476900382349042,
+            "gross_return": 0.004776900382349041,
+            "net_return": 0.004476900382349041,
             "daily_equivalent_return": 0.004476900382349047
           },
           {
@@ -2555,7 +2976,7 @@
             "composition_change": 0,
             "carried_weight": 0,
             "gross_return": -0.002299948552963404,
-            "net_return": -0.0023999485529634036,
+            "net_return": -0.002399948552963404,
             "daily_equivalent_return": -0.002399948552963438
           },
           {
@@ -2566,8 +2987,8 @@
             "sessions_elapsed": 1,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.003907505038615944,
-            "net_return": -0.0047075050386159445,
+            "gross_return": -0.003907505038615945,
+            "net_return": -0.004707505038615945,
             "daily_equivalent_return": -0.0047075050386159445
           },
           {
@@ -2578,8 +2999,8 @@
             "sessions_elapsed": 2,
             "composition_change": 0,
             "carried_weight": 0,
-            "gross_return": -0.0016418990650899636,
-            "net_return": -0.0019418990650899638,
+            "gross_return": -0.0016418990650899639,
+            "net_return": -0.001941899065089964,
             "daily_equivalent_return": -0.0009714213622765699
           },
           {
@@ -2676,12 +3097,12 @@
     }
   ],
   "summary": {
-    "total": 42,
-    "ready": 28,
+    "total": 54,
+    "ready": 35,
     "breached": 9,
-    "sample_free_total": 26,
-    "sample_free_ready": 26,
-    "needs_sample_total": 16
+    "sample_free_total": 36,
+    "sample_free_ready": 33,
+    "needs_sample_total": 18
   },
   "sources": {
     "backtest": "backtest_monthly_results.json",
@@ -2695,8 +3116,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "aa7d105cceb58590ae9aabb1cdcac59bb4868333",
+    "git_commit_sha": "8615974950d284c1683590130a238449e0ffcda0",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T17:03:55.119353+00:00"
+    "generated_at": "2026-08-18T18:01:13.462574+00:00"
   }
 }

@@ -523,6 +523,104 @@ class PendingInputTests(unittest.TestCase):
         self.assertFalse(rows["rank_ic_21d"]["requires_live_sample"],
                          "the panel is backtest data, not live data")
 
+    def test_new_groups_and_metrics_stay_honest_without_a_backtest_or_optimizer(self):
+        report = sm.build_report(backtest=None, optimizer=None, panel=None, factors=None,
+                                 ic_validation=None,
+                                 live={"days": 0, "refreshes": 0, "first_date": None,
+                                       "last_date": None})
+        rows = metrics_by_id(report["metrics"])
+        self.assertIn("risk_adjusted", {group["id"] for group in report["groups"]})
+        self.assertIn("tax_stress", {group["id"] for group in report["groups"]})
+        for identifier in ("bootstrap_ci", "reality_check_spa", "var_backtest_95",
+                          "var_backtest_99", "treynor_ratio", "jensens_alpha",
+                          "after_tax_return", "stress_test_2022", "stress_test_2020"):
+            self.assertIsNone(rows[identifier]["value"], identifier)
+            self.assertNotEqual(rows[identifier]["status"], "ready", identifier)
+        self.assertFalse(rows["treynor_ratio"]["requires_live_sample"])
+        self.assertFalse(rows["stress_test_2022"]["requires_live_sample"])
+
+
+def _daily_history(days=400, daily_return=0.0006, start="2024-01-01", noise=0.0, seed=1):
+    import datetime
+    generator = random.Random(seed)
+    start_date = datetime.date.fromisoformat(start)
+    history, value = [], 100.0
+    for index in range(days):
+        history.append({"date": (start_date + datetime.timedelta(days=index)).isoformat(),
+                        "value": value})
+        shock = generator.gauss(0, noise) if noise else 0.0
+        value *= 1 + daily_return + shock
+    return history
+
+
+class RiskAdjustedAndTaxStressTests(unittest.TestCase):
+    def setUp(self):
+        # A shared market shock (via a common seed feeding both series at a fixed ratio) so
+        # beta is measurable; the portfolio adds a real excess return on top of it.
+        benchmark_history = _daily_history(500, daily_return=0.0003, noise=0.01, seed=21)
+        benchmark_returns = [row["value"] for row in benchmark_history]
+        portfolio_history, value = [], 100.0
+        for index, row in enumerate(benchmark_history):
+            market_return = (0 if index == 0 else
+                             benchmark_returns[index] / benchmark_returns[index - 1] - 1)
+            value *= 1 + 0.0008 + market_return
+            portfolio_history.append({"date": row["date"], "value": value})
+        self.backtest = {"portfolio": {"history": portfolio_history},
+                         "benchmark_spy": {"history": benchmark_history}}
+
+    def test_treynor_and_jensen_read_when_both_histories_exist(self):
+        rows = metrics_by_id(sm.risk_adjusted_metrics(self.backtest))
+        self.assertEqual(rows["treynor_ratio"]["status"], "ready")
+        self.assertEqual(rows["jensens_alpha"]["status"], "ready")
+        # The portfolio compounds faster than the benchmark at a comparable beta, so a real
+        # single-factor alpha should show up as a positive number, not None.
+        self.assertGreater(rows["jensens_alpha"]["value"], 0)
+
+    def test_stress_2022_reads_from_the_backtests_own_history(self):
+        history = _daily_history(900, daily_return=-0.0015, start="2021-06-01")
+        rows = metrics_by_id(sm.tax_and_stress_metrics({"portfolio": {"history": history}}))
+        self.assertEqual(rows["stress_test_2022"]["status"], "ready")
+        self.assertLess(rows["stress_test_2022"]["detail"]["return_pct"], 0)
+        self.assertEqual(rows["stress_test_2020"]["status"], "awaiting_input")
+        self.assertEqual(rows["after_tax_return"]["status"], "awaiting_input")
+
+    def test_stress_2022_is_pending_when_the_backtest_does_not_cover_it(self):
+        history = _daily_history(60, daily_return=0.0004, start="2023-01-01")
+        rows = metrics_by_id(sm.tax_and_stress_metrics({"portfolio": {"history": history}}))
+        self.assertEqual(rows["stress_test_2022"]["status"], "awaiting_input")
+
+
+class RobustnessBeyondPboTests(unittest.TestCase):
+    def test_bootstrap_and_var_backtest_read_on_a_long_backtest(self):
+        generator = random.Random(31)
+        history, value = [], 100.0
+        rows_history = []
+        for index in range(600):
+            value *= 1 + generator.gauss(0.0005, 0.01)
+            rows_history.append({"date": f"2024-{1 + index // 28:02d}-{1 + index % 28:02d}",
+                                 "value": value})
+        rows = metrics_by_id(sm.honesty_metrics({"portfolio": {"history": rows_history}}, None))
+        self.assertEqual(rows["bootstrap_ci"]["status"], "ready")
+        self.assertEqual(rows["rolling_sharpe_60d"]["status"], "ready")
+        self.assertEqual(rows["var_backtest_95"]["status"], "ready")
+        self.assertEqual(rows["var_backtest_99"]["status"], "ready")
+        self.assertIn(rows["var_backtest_95"]["value"], (0, 1, 2))
+
+    def test_search_survival_reads_from_the_same_trial_log_as_pbo(self):
+        optimizer = {"sweeps": {"categories": [
+            {"holdout_folds": [{"score_vs_spy": 5.0}, {"score_vs_spy": 4.0},
+                              {"score_vs_spy": 6.0}, {"score_vs_spy": 5.5},
+                              {"score_vs_spy": 4.5}, {"score_vs_spy": 5.2},
+                              {"score_vs_spy": 4.8}, {"score_vs_spy": 5.1},
+                              {"score_vs_spy": 5.3}, {"score_vs_spy": 4.9}]}
+            for _ in range(4)
+        ]}}
+        rows = metrics_by_id(sm.honesty_metrics(None, optimizer))
+        # Ten folds, four near-identical configurations: PBO can run (>=2 configs, >=2
+        # folds); the SPA bootstrap needs >=10 periods, which this trial log also supplies.
+        self.assertIn(rows["pbo"]["status"], ("ready", "provisional"))
+        self.assertEqual(rows["reality_check_spa"]["status"], "ready")
+
 
 if __name__ == "__main__":
     unittest.main()

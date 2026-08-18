@@ -156,6 +156,42 @@ details.signal-group { margin-top: var(--sp-2); padding: 0; border: 1px solid va
   .signal-cadence-table dl > div { grid-template-columns: 1fr; gap: var(--sp-0-5); }
 }
 
+/* Monte Carlo forward projection. Separate on purpose from the signal-evidence styles above:
+   this panel is the one place on the metrics page that looks forward rather than grading
+   what already happened, and the disclosure banner is styled to never read as a footnote. */
+.mc-projection { margin-bottom: var(--section-gap); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--bg-card); }
+.mc-projection > .section-heading { margin: 0 0 var(--sp-3); }
+.mc-projection > .section-heading p { max-width: 68ch; text-align: left; }
+
+.mc-disclosure { margin-bottom: var(--sp-3); padding: var(--sp-2-5) var(--sp-3); border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border)); border-radius: var(--control-radius); background: color-mix(in srgb, var(--warn) 8%, var(--bg-card)); color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.5; }
+
+.mc-horizon-picker { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); margin-bottom: var(--sp-3); }
+.mc-horizon-picker button { padding: var(--sp-1-5) var(--sp-3); border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); color: var(--text-dim); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
+.mc-horizon-picker button.active { border-color: var(--accent, var(--pos)); background: color-mix(in srgb, var(--pos) 12%, var(--bg-elev)); color: var(--text); }
+
+.mc-headline { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.mc-headline > div { padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); }
+.mc-headline-value { display: block; margin: var(--sp-1) 0; font: var(--fw-bold) var(--fs-2xl) var(--font-mono); }
+.mc-headline small { display: block; color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.45; }
+.mc-headline .mc-band { color: var(--warn); }
+
+.mc-percentile-table { display: grid; gap: var(--sp-1); }
+.mc-percentile-row { display: grid; grid-template-columns: 96px 1fr 1fr; gap: var(--sp-2); padding: var(--sp-1-5) var(--sp-2); border-radius: var(--control-radius); }
+.mc-percentile-row.mc-percentile-head { color: var(--text-faint); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
+.mc-percentile-row.median { background: var(--bg-elev); font-weight: var(--fw-bold); }
+.mc-mono { font-family: var(--font-mono); }
+
+.mc-live-comparison { margin-top: var(--sp-3); padding: var(--sp-2-5) var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); font-size: var(--fs-2xs); line-height: 1.5; color: var(--text-dim); }
+.mc-live-comparison.material { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); background: color-mix(in srgb, var(--warn) 8%, var(--bg-elev)); }
+.mc-live-comparison strong { display: block; margin-bottom: var(--sp-1); color: var(--text); }
+.mc-live-comparison p { margin: 0; }
+
+.mc-projection-empty { margin-bottom: var(--section-gap); }
+
+@media (max-width: 600px) {
+  .mc-percentile-row { grid-template-columns: 72px 1fr 1fr; gap: var(--sp-1-5); font-size: var(--fs-2xs); }
+}
+
 /* Mobile presentation layer */
 @media (max-width: 900px) {
   .content { max-width: 680px; margin-inline: auto; }

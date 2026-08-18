@@ -79,6 +79,12 @@ MAXIMUM_BETA_SWING = 0.3
 MINIMUM_SECTOR_CLASSIFICATION_COVERAGE = 0.8
 MOMENTUM_LOADING_KILL_THRESHOLD = -0.1
 UNEXPLAINED_POSITION_DIFFERENCE_BPS = 10
+MINIMUM_BOOTSTRAP_OBSERVATIONS = 40
+VAR_BACKTEST_WINDOW = TRADING_DAYS
+VAR_BACKTEST_MINIMUM_OBSERVATIONS = VAR_BACKTEST_WINDOW + 21
+VAR_CONFIDENCES = (0.95, 0.99)
+STRESS_2022_START, STRESS_2022_END = "2022-01-01", "2022-12-31"
+STRESS_2022_MINIMUM_DAYS = 60
 
 GROUPS = [
     {"id": "signal", "letter": "A", "title": "Signal quality",
@@ -99,6 +105,12 @@ GROUPS = [
     {"id": "monitoring", "letter": "F", "title": "Drift alarms",
      "summary": "Live behaviour against the backtest that predicted it.",
      "requires_live_sample": True},
+    {"id": "risk_adjusted", "letter": "G", "title": "Classic risk-adjusted return",
+     "summary": "Return per unit of systematic risk, and the single-factor alpha left once beta is priced in.",
+     "requires_live_sample": False},
+    {"id": "tax_stress", "letter": "H", "title": "Tax and stress",
+     "summary": "After-tax reality, and how this book's own exposures fared in a known stress window.",
+     "requires_live_sample": False},
 ]
 
 CADENCE = [
@@ -543,6 +555,15 @@ def _rolling_beta(returns, benchmark, window=60):
     return betas
 
 
+def _rolling_sharpe(returns, window=60):
+    sharpes = []
+    for end in range(window, len(returns) + 1):
+        value = risk_metrics.sharpe_ratio(returns[end - window:end], minimum_observations=window)
+        if value is not None:
+            sharpes.append(value)
+    return sharpes
+
+
 def _sector_active_weight_metric(history):
     """Two metrics, not one -- ``sector_active_weights``'s value (the largest active bet,
     in percentage points) and its ``kill_threshold`` (classification coverage, a fraction)
@@ -733,7 +754,8 @@ def _execution_cost_metrics(execution):
                (decision - fill) / decision) * 10_000
         notional = abs(float(row["filled_quantity"]) * decision)
         shortfalls.append({"ticker": row.get("ticker"), "bps": round(bps, 3),
-                           "decision_notional": notional})
+                           "decision_notional": notional,
+                           "expected_bps": row.get("expected_cost_bps")})
     total_notional = sum(row["decision_notional"] for row in shortfalls)
     shortfall = (sum(row["bps"] * row["decision_notional"] for row in shortfalls)
                  / total_notional if total_notional else None)
@@ -742,6 +764,11 @@ def _execution_cost_metrics(execution):
     actual = execution.get("actual_positions") or {}
     unpositioned = sorted(ticker for ticker, weight in intended.items()
                           if float(weight or 0) > 0 and float(actual.get(ticker) or 0) <= 0)
+    rejected = [row for row in orders if str(row.get("status") or "").lower() == "rejected"]
+    rejection_rate = len(rejected) / len(orders) if orders else None
+    with_expected = [row for row in shortfalls if row.get("expected_bps") is not None]
+    slippage_diff = (sum(row["bps"] - row["expected_bps"] for row in with_expected)
+                     / len(with_expected) if with_expected else None)
     source_message = ("Needs pipeline/data/validation/live_execution.json from an order or "
                       "broker export; the research pipeline does not place trades.")
     if not execution:
@@ -754,6 +781,14 @@ def _execution_cost_metrics(execution):
                      requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
             _pending("unpositioned_signals", "cost", "Signals never positioned", source_message,
                      reads="Intended positive-weight names absent from actual positions.",
+                     requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
+            _pending("order_rejection_rate", "cost", "Order rejection rate", source_message,
+                     reads="Share of orders rejected by the broker or venue.",
+                     requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
+            _pending("realized_vs_expected_slippage", "cost", "Realized vs. expected slippage",
+                     source_message,
+                     reads="Implementation shortfall against the cost model's pre-trade "
+                           "estimate, per trade.",
                      requires_live_sample=True, cadence="Daily", status="awaiting_live_sample"),
         ]
     return [
@@ -778,6 +813,24 @@ def _execution_cost_metrics(execution):
                status="ready" if intended else "awaiting_input",
                status_message=None if intended else "No intended positions supplied.",
                detail={"tickers": unpositioned}, observations=len(intended), cadence="Daily",
+               source="external execution export"),
+        metric("order_rejection_rate", "cost", "Order rejection rate", value=rejection_rate,
+               display=None if rejection_rate is None else f"{rejection_rate * 100:.1f}%",
+               reads="Share of orders rejected by the broker or venue.", requires_live_sample=True,
+               status="ready" if orders else "awaiting_input",
+               status_message=None if orders else "No orders supplied.",
+               detail={"rejected_tickers": sorted(filter(None, (row.get("ticker") for row in rejected)))},
+               observations=len(orders), cadence="Daily", source="external execution export"),
+        metric("realized_vs_expected_slippage", "cost", "Realized vs. expected slippage",
+               value=None if slippage_diff is None else round(slippage_diff, 3),
+               display=None if slippage_diff is None else f"{slippage_diff:+.2f} bps vs. cost model",
+               reads="Implementation shortfall against the pre-trade cost-model estimate, "
+                     "per filled trade.",
+               requires_live_sample=True,
+               status="ready" if with_expected else "awaiting_input",
+               status_message=None if with_expected else
+               "No filled order carries an expected_cost_bps pre-trade estimate.",
+               observations=len(with_expected), cadence="Daily", detail={"orders": with_expected},
                source="external execution export"),
     ]
 
@@ -930,7 +983,216 @@ def honesty_metrics(backtest, optimizer):
                        detail=pbo, status=pbo.get("status", "unavailable"),
                        status_message=pbo.get("reason"),
                        cadence="Annually or on any refit", source="weight optimizer sweeps"))
+
+    if len(returns) >= MINIMUM_BOOTSTRAP_OBSERVATIONS:
+        bootstrap = evaluation.block_bootstrap_return_ci(returns)
+    else:
+        bootstrap = None
+    if bootstrap:
+        return_lo, return_hi = bootstrap["annualized_return_ci_95_pct"]
+        rows.append(metric(
+            "bootstrap_ci", "honesty", "Bootstrap return/Sharpe confidence interval",
+            value=bootstrap["mean_annualized_return_pct"],
+            display=f"{bootstrap['mean_annualized_return_pct']:.1f}%/yr "
+                    f"(95% CI {return_lo:.1f}% to {return_hi:.1f}%)",
+            reads="Block-bootstrap uncertainty band on annualized return and Sharpe -- a "
+                  "defensible interval without waiting for 253 daily returns.",
+            kill_threshold="95% Sharpe CI includes zero",
+            breached=bootstrap["sharpe_ci_95"][0] <= 0,
+            detail=bootstrap, observations=bootstrap["observations"], cadence="Monthly",
+            source="block bootstrap of backtest daily returns"))
+    else:
+        rows.append(_pending(
+            "bootstrap_ci", "honesty", "Bootstrap return/Sharpe confidence interval",
+            f"Needs at least {MINIMUM_BOOTSTRAP_OBSERVATIONS} backtest daily returns; "
+            f"{len(returns)} available.",
+            reads="Block-bootstrap uncertainty band on annualized return and Sharpe.",
+            cadence="Monthly"))
+
+    spa = _search_survival(optimizer)
+    rows.append(metric(
+        "reality_check_spa", "honesty", "White's Reality Check / SPA test",
+        value=spa.get("p_value"),
+        display=None if spa.get("p_value") is None else f"p = {spa['p_value']:.3f}",
+        reads="Whether the best-searched configuration beats the field by more than an "
+              "exhaustive search of this many configurations would produce from noise alone.",
+        kill_threshold="p-value above 0.05 -- the edge is not distinguishable from search noise",
+        kill_threshold_value=0.05, comparison="gt",
+        breached=spa.get("p_value") is not None and spa["p_value"] > 0.05,
+        detail=spa, status=spa.get("status", "awaiting_input"), status_message=spa.get("reason"),
+        cadence="Annually or on any refit", source="weight optimizer sweeps"))
+
+    sharpes = _rolling_sharpe(returns)
+    sharpe_swing = round(max(sharpes) - min(sharpes), 2) if sharpes else None
+    rows.append(metric(
+        "rolling_sharpe_60d", "honesty", "Rolling 60-day Sharpe",
+        value=round(sharpes[-1], 2) if sharpes else None,
+        display=None if not sharpes else
+        f"{sharpes[-1]:.2f} (range {min(sharpes):.2f} to {max(sharpes):.2f})",
+        reads="Whether one lucky stretch is carrying the headline Sharpe, or the edge holds "
+              "across the full window.",
+        detail={"window": 60, "observations": len(sharpes), "swing": sharpe_swing,
+                "series": [round(value, 3) for value in sharpes[-60:]]},
+        cadence="Weekly", source="backtest equity curve"))
+
+    for confidence in VAR_CONFIDENCES:
+        label = f"var_backtest_{int(confidence * 100)}"
+        title = f"VaR backtest ({int(confidence * 100)}%)"
+        backtest_var = (evaluation.var_backtest(returns, confidence=confidence)
+                        if len(returns) >= VAR_BACKTEST_MINIMUM_OBSERVATIONS else None)
+        if backtest_var is None:
+            rows.append(_pending(
+                label, "honesty", title,
+                f"Needs at least {VAR_BACKTEST_MINIMUM_OBSERVATIONS} backtest daily returns; "
+                f"{len(returns)} available.",
+                reads="Kupiec proportion-of-failures and Christoffersen independence tests "
+                      "against realized breaches of a rolling historical VaR forecast.",
+                kill_threshold_value=0, comparison="gt", cadence="Quarterly"))
+            continue
+        kupiec = backtest_var.get("kupiec_pof") or {}
+        christoffersen = backtest_var.get("christoffersen_independence") or {}
+        failing = int(bool(kupiec.get("miscalibrated_at_95"))) \
+            + int(bool(christoffersen.get("clustered_at_95")))
+        rows.append(metric(
+            label, "honesty", title, value=failing,
+            display=(f"{backtest_var['breaches']} breaches of {backtest_var['forecasts']} "
+                     f"({backtest_var['breach_rate'] * 100:.1f}% vs "
+                     f"{backtest_var['expected_breach_rate'] * 100:.1f}% expected)"),
+            reads="Kupiec tests whether the breach rate matches the stated coverage; "
+                  "Christoffersen tests whether breaches cluster instead of scattering.",
+            kill_threshold="Kupiec or Christoffersen rejects calibration at 95%",
+            kill_threshold_value=0, comparison="gt", breached=bool(failing),
+            detail=backtest_var, observations=backtest_var["forecasts"], cadence="Quarterly",
+            source="rolling historical VaR against backtest daily returns"))
     return rows
+
+
+# ---------------- G. classic risk-adjusted return ----------------
+
+def risk_adjusted_metrics(backtest):
+    """Treynor ratio and single-factor Jensen's alpha against the SPY benchmark leg.
+
+    Distinct from the FF5+momentum alpha in construction diagnostics: this isolates the
+    market factor alone, the classic Jensen (1968) construction and the more conservative of
+    the two claims.
+    """
+    portfolio = (backtest or {}).get("portfolio") or {}
+    returns = daily_returns_from_history(portfolio.get("history"))
+    benchmark = daily_returns_from_history(((backtest or {}).get("benchmark_spy") or {}).get("history"))
+    overlap = min(len(returns), len(benchmark))
+    if overlap < 20:
+        message = "Needs the backtest portfolio and SPY benchmark daily histories."
+        return [
+            _pending("treynor_ratio", "risk_adjusted", "Treynor ratio", message,
+                     reads="Annualized excess return per unit of beta.",
+                     kill_threshold_value=0, comparison="lt", cadence="Quarterly"),
+            _pending("jensens_alpha", "risk_adjusted", "Jensen's alpha (single-factor CAPM)",
+                     message, reads="Annualized return beta alone does not explain.",
+                     kill_threshold_value=0, comparison="lt", cadence="Quarterly"),
+        ]
+    risk_free_annual = _risk_free_daily() * TRADING_DAYS
+    treynor = risk_metrics.treynor_ratio(returns, benchmark, risk_free_annual)
+    jensen = risk_metrics.jensens_alpha(returns, benchmark, risk_free_annual)
+    beta = risk_metrics.beta_vs_benchmark(returns, benchmark)
+    detail = {"beta": beta, "risk_free_annual_pct": round(risk_free_annual * 100, 3)}
+    return [
+        metric("treynor_ratio", "risk_adjusted", "Treynor ratio", value=treynor,
+               display=None if treynor is None else f"{treynor:.2f}%/yr per unit beta",
+               reads="Annualized excess return per unit of systematic risk. Comparable across "
+                     "portfolios with different total volatility in a way Sharpe is not.",
+               kill_threshold="Negative Treynor means losing money on a beta-adjusted basis",
+               kill_threshold_value=0, comparison="lt",
+               breached=treynor is not None and treynor < 0,
+               detail=detail, observations=overlap, cadence="Quarterly",
+               source="backtest equity curve versus SPY"),
+        metric("jensens_alpha", "risk_adjusted", "Jensen's alpha (single-factor CAPM)",
+               value=jensen, display=None if jensen is None else f"{jensen:+.2f}%/yr",
+               reads="The classic Jensen (1968) single-factor alpha: return beta does not "
+                     "explain. More conservative than the FF5+momentum alpha in construction "
+                     "diagnostics, which lets more factors explain the return away first.",
+               kill_threshold="Alpha at or below zero -- beta alone explains the return",
+               kill_threshold_value=0, comparison="lt",
+               breached=jensen is not None and jensen < 0,
+               detail=detail, observations=overlap, cadence="Quarterly",
+               source="backtest equity curve versus SPY"),
+    ]
+
+
+# ---------------- H. tax and stress ----------------
+
+def tax_and_stress_metrics(backtest):
+    """After-tax return (pending trade-level data) and realized stress-window behaviour.
+
+    The 2022 window is graded from the strategy's own realized daily returns during that
+    calendar year, not a synthetic factor replay - the backtest window covers 2022 in full.
+    2020 is not: the backtest starts in mid-2021, so no priced day of this strategy's own
+    exposures exists for the COVID crash, and fabricating one via factor replay is not
+    evidence the rest of this dashboard would accept anywhere else.
+    """
+    portfolio = (backtest or {}).get("portfolio") or {}
+    history = portfolio.get("history") or []
+    rows = [_pending(
+        "after_tax_return", "tax_stress", "After-tax return",
+        "Needs trade-level realized gain/loss and holding-period logging (the Priority 1 "
+        "cost/capacity work); short-term capital-gains treatment cannot be applied without it.",
+        reads="Realized return after short-term capital gains, alongside the pre-tax figure.",
+        cadence="Annually")]
+
+    window = [row for row in history
+             if row.get("date") and STRESS_2022_START <= str(row["date"]) <= STRESS_2022_END]
+    if len(window) < STRESS_2022_MINIMUM_DAYS:
+        rows.append(_pending(
+            "stress_test_2022", "tax_stress", "2022 rate-shock stress window",
+            f"The backtest carries only {len(window)} priced days inside 2022.",
+            reads="Realized return and drawdown during the 2022 rate-shock window.",
+            cadence="Annually"))
+    else:
+        closes = [row["value"] for row in window if row.get("value")]
+        window_return = closes[-1] / closes[0] - 1 if closes and closes[0] else None
+        drawdown = risk_metrics.max_drawdown(closes)
+        rows.append(metric(
+            "stress_test_2022", "tax_stress", "2022 rate-shock stress window", value=drawdown,
+            display=None if window_return is None or drawdown is None
+            else f"{window_return * 100:+.1f}% return, {drawdown:.1f}% max drawdown",
+            reads="How this book's own realized exposures performed through the 2022 "
+                  "rate-shock period.",
+            detail={"start": window[0].get("date"), "end": window[-1].get("date"),
+                    "trading_days": len(window),
+                    "return_pct": None if window_return is None else round(window_return * 100, 2),
+                    "max_drawdown_pct": drawdown},
+            observations=len(window), cadence="Annually", source="backtest equity curve"))
+
+    rows.append(_pending(
+        "stress_test_2020", "tax_stress", "2020 COVID-crash stress window",
+        "The backtest window starts in mid-2021; no priced day of this strategy's own "
+        "exposures exists for the 2020 crash, and fabricating one via factor replay is not "
+        "evidence.",
+        reads="Hypothetical drawdown under a 2020-style crash, replaying factor and sector "
+              "exposures.", cadence="Annually"))
+    return rows
+
+
+def _optimizer_trials_matrix(optimizer):
+    """The trial log both PBO (CSCV) and the SPA/Reality Check test grade against.
+
+    The optimizer only re-runs holdout folds for the configurations that survived the
+    in-sample sweep, so those are the ones either statistic can be run across. The full
+    search count (``searched``) is returned alongside because it, not the finalist count, is
+    what deflation has to price. ``matrix`` is ``[fold][configuration]`` holdout performance,
+    or ``None`` when fewer than two configurations carry at least two comparable folds.
+    """
+    searched = (optimizer or {}).get("sweeps", {}).get("categories") or []
+    trials = [trial for trial in searched if len(trial.get("holdout_folds") or []) >= 2]
+    depth = min((len(trial["holdout_folds"]) for trial in trials), default=0)
+    if depth < 2 or len(trials) < 2:
+        return searched, trials, None
+    matrix = [[trial["holdout_folds"][fold].get("score_vs_spy") for trial in trials]
+              for fold in range(depth)]
+    return searched, trials, matrix
+
+
+_TRIAL_LOG_MESSAGE = ("Needs at least two holdout folds across two or more configurations. "
+                      "Run pipeline/optimize_weights.py with --holdout-folds.")
 
 
 def _probability_of_overfitting(optimizer):
@@ -941,19 +1203,11 @@ def _probability_of_overfitting(optimizer):
     enough to trust it - so the result is published as provisional rather than suppressed or
     presented as final.
     """
-    searched = (optimizer or {}).get("sweeps", {}).get("categories") or []
-    # The optimizer only re-runs holdout folds for the configurations that survived the
-    # in-sample sweep, so those are the ones CSCV can be run across. The full search count is
-    # carried alongside because it, not the finalist count, is what deflation has to price.
-    trials = [trial for trial in searched if len(trial.get("holdout_folds") or []) >= 2]
-    depth = min((len(trial["holdout_folds"]) for trial in trials), default=0)
-    if depth < 2 or len(trials) < 2:
+    searched, trials, matrix = _optimizer_trials_matrix(optimizer)
+    if matrix is None:
         return {"status": "awaiting_input", "value": None,
-                "configurations_searched": len(searched),
-                "reason": "Needs at least two holdout folds across two or more configurations. "
-                          "Run pipeline/optimize_weights.py with --holdout-folds."}
-    matrix = [[trial["holdout_folds"][fold].get("score_vs_spy") for trial in trials]
-              for fold in range(depth)]
+                "configurations_searched": len(searched), "reason": _TRIAL_LOG_MESSAGE}
+    depth = len(matrix)
     splits = depth if depth % 2 == 0 else depth - 1
     value = evaluation.probability_of_backtest_overfitting(matrix, splits=splits)
     provisional = depth < 8
@@ -968,6 +1222,26 @@ def _probability_of_overfitting(optimizer):
         "reason": (f"{depth} holdout folds. CSCV wants at least 8 blocks, so read this as "
                    "directional until the optimizer writes more folds." if provisional else None),
     }
+
+
+def _search_survival(optimizer):
+    """White's Reality Check / SPA verdict for the search, from the same trial log as PBO.
+
+    PBO asks whether the selection *process* is producing noise; this asks whether the
+    specific winner it selected beats the field by more than trying this many configurations
+    would produce by chance alone. Different question, same trial log.
+    """
+    searched, trials, matrix = _optimizer_trials_matrix(optimizer)
+    if matrix is None:
+        return {"status": "awaiting_input", "value": None,
+                "configurations_searched": len(searched), "reason": _TRIAL_LOG_MESSAGE}
+    result = evaluation.reality_check_spa(matrix)
+    if result is None:
+        return {"status": "awaiting_input", "value": None,
+                "configurations_searched": len(searched),
+                "reason": "Not enough complete holdout periods across configurations for the "
+                          "SPA bootstrap."}
+    return {"status": "ready", "configurations_searched": len(searched), **result}
 
 
 # ---------------- E. distribution shape ----------------
@@ -1414,6 +1688,8 @@ def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UN
                + construction_metrics(backtest, factors, sector_history)
                + cost_metrics(backtest, panel, execution)
                + honesty_metrics(backtest, optimizer)
+               + risk_adjusted_metrics(backtest)
+               + tax_and_stress_metrics(backtest)
                + distribution_metrics(backtest, live, live_return_data)
                + monitoring_metrics(live, ic_validation, backtest=backtest,
                                     live_return_data=live_return_data, pit_root=pit_root,
