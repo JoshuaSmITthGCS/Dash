@@ -23,6 +23,54 @@ describe('portfolio report analytics', () => {
     expect(selectPeriod({ dates: ['2025-12-31', '2026-01-02', '2026-06-30'], values: [18, 19, 30] }, 'YTD').dates).toEqual(['2026-01-02', '2026-06-30'])
   })
 
+  it('keeps a session one holding is missing by valuing it at that holding’s previous close', () => {
+    // The provider dropped BBB's 06-02 bar. Discarding the whole session (the old behaviour)
+    // spliced 06-01→06-03 into a single observation for every holding at once.
+    const series = currentHoldingsSeries(
+      [{ ticker: 'AAA', shares: 2 }, { ticker: 'BBB', shares: 1 }],
+      {
+        AAA: { history: { dates: ['2026-06-01', '2026-06-02', '2026-06-03'], closes: [10, 11, 12] } },
+        BBB: { history: { dates: ['2026-06-01', '2026-06-03'], closes: [100, 130] } },
+      },
+      ['2026-06-01', '2026-06-02', '2026-06-03'],
+    )
+
+    expect(series.dates).toEqual(['2026-06-01', '2026-06-02', '2026-06-03'])
+    expect(series.values).toEqual([120, 122, 154])
+    expect(series.carried).toEqual([0, 1, 0])
+    expect(series.carriedObservations).toBe(1)
+    expect(series.methodology).toContain('previous close')
+  })
+
+  it('does not carry a close backwards to before a holding existed', () => {
+    const series = currentHoldingsSeries(
+      [{ ticker: 'AAA', shares: 2 }, { ticker: 'NEW', shares: 1 }],
+      {
+        AAA: { history: { dates: ['2026-06-01', '2026-06-02', '2026-06-03'], closes: [10, 11, 12] } },
+        NEW: { history: { dates: ['2026-06-02', '2026-06-03'], closes: [50, 60] } },
+      },
+      ['2026-06-01', '2026-06-02', '2026-06-03'],
+    )
+
+    expect(series.dates).toEqual(['2026-06-02', '2026-06-03'])
+    expect(series.carriedObservations).toBe(0)
+  })
+
+  it('stops pricing a holding whose closes have gone stale beyond the carry window', () => {
+    const series = currentHoldingsSeries(
+      [{ ticker: 'AAA', shares: 2 }, { ticker: 'DEAD', shares: 1 }],
+      {
+        AAA: { history: { dates: ['2026-06-01', '2026-06-02', '2026-06-30'], closes: [10, 11, 12] } },
+        DEAD: { history: { dates: ['2026-06-01', '2026-06-02'], closes: [100, 100] } },
+      },
+      ['2026-06-01', '2026-06-02', '2026-06-30'],
+    )
+
+    // 06-30 is far past DEAD's last print, so the date is dropped rather than valued off a
+    // close that stopped updating four weeks earlier.
+    expect(series.dates).toEqual(['2026-06-01', '2026-06-02'])
+  })
+
   it('uses the last two closes for latest market-day return', () => {
     expect(latestMarketDayReturn({ dates: ['a', 'b', 'c'], values: [100, 105, 103] })).toMatchObject({ date: 'c', dollarReturn: -2 })
   })

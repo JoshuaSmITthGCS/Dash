@@ -52,9 +52,38 @@ export function enrichPortfolio(positions = [], priceData = {}) {
   }
 }
 
-function closeMap(history) {
-  return new Map((history?.dates || []).map((date, index) => [date, history.closes?.[index]]).filter(([, value]) => finite(value)))
+/** Ascending dates and closes, plus an exact-date lookup, with unusable closes dropped. */
+function closeSeries(history) {
+  const dates = []
+  const closes = []
+  ;(history?.dates || []).forEach((date, index) => {
+    const close = history.closes?.[index]
+    if (finite(close)) { dates.push(date); closes.push(Number(close)) }
+  })
+  return { dates, closes, exact: new Map(dates.map((date, index) => [date, closes[index]])) }
 }
+
+/** Index of the newest observation at or before `date`, or -1 when the holding has none yet. */
+function observationAtOrBefore({ dates }, date) {
+  let low = 0
+  let high = dates.length - 1
+  let found = -1
+  while (low <= high) {
+    const mid = (low + high) >> 1
+    if (dates[mid] <= date) { found = mid; low = mid + 1 } else { high = mid - 1 }
+  }
+  return found
+}
+
+const DAY_MS = 86400000
+// A holding with no print on a session is valued at its most recent earlier close, but only
+// for a few days. Providers drop individual bars out of a batch download often enough that
+// requiring a print from all ~90 holdings on every date deleted a third of the chart grid,
+// and a dropped date is the worse error: it silently splices two sessions' moves into one
+// observation, which is exactly what stalled the live-tracking countdown. Five calendar days
+// bridges a single missed session across a holiday weekend while still expiring a delisted or
+// renamed ticker within about a week, rather than pricing it forever off a frozen close.
+const MAX_CARRIED_CALENDAR_DAYS = 5
 
 export function currentHoldingsSeries(positions = [], priceData = {}, anchorDates = []) {
   // `history` is intentionally a compact chart grid (daily recent points, weekly older
@@ -67,29 +96,48 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
     const source = sourceFor(position)
     return {
       position,
-      prices: closeMap(source),
+      series: closeSeries(source),
       nativeDaily: source?.frequency === 'daily' && Boolean(priceData[position.ticker]?.analytics_history),
     }
-  }).filter((row) => row.prices.size && finite(row.position.shares))
+  }).filter((row) => row.series.dates.length && finite(row.position.shares))
   if (!tracked.length || dated.length < 2) return null
   const rows = dated.map((date) => {
     let value = 0
-    let covered = 0
-    tracked.forEach(({ position, prices }) => { const price = prices.get(date); if (finite(price)) { value += Number(position.shares) * Number(price); covered += 1 } })
-    return covered === tracked.length ? { date, value, coveragePct: positions.length ? covered / positions.length * 100 : 0 } : null
+    let carried = 0
+    for (const { position, series } of tracked) {
+      let price = series.exact.get(date)
+      if (!finite(price)) {
+        const at = observationAtOrBefore(series, date)
+        // Never extrapolate backwards: before a holding's first close there is no price to
+        // carry, and inventing one would date the portfolio earlier than it can be valued.
+        if (at < 0) return null
+        if (Date.parse(date) - Date.parse(series.dates[at]) > MAX_CARRIED_CALENDAR_DAYS * DAY_MS) return null
+        price = series.closes[at]
+        carried += 1
+      }
+      value += Number(position.shares) * Number(price)
+    }
+    return { date, value, carried, coveragePct: positions.length ? tracked.length / positions.length * 100 : 0 }
   }).filter(Boolean)
   if (rows.length < 2) return null
   const nativeDaily = tracked.length === positions.filter((position) => finite(position.shares)).length
     && tracked.every((row) => row.nativeDaily)
+  const carriedObservations = rows.filter((row) => row.carried).length
   return {
     dates: rows.map((row) => row.date),
     values: rows.map((row) => row.value),
     coverage: rows.map((row) => row.coveragePct),
+    // Per-date count of holdings priced at an earlier close than the date they are shown on,
+    // so a consumer can state how much of the series leans on a carried price.
+    carried: rows.map((row) => row.carried),
+    carriedObservations,
     frequency: nativeDaily ? 'daily' : 'irregular',
     source: nativeDaily ? 'analytics_history' : 'legacy_chart_history',
-    methodology: nativeDaily
+    methodology: `${nativeDaily
       ? 'Current quantities applied to native daily adjusted closes. This is a historical replay of today’s holdings, not actual historical account value.'
-      : 'Current quantities applied to a compact chart grid. This is suitable for display only; daily annualization and inference are unavailable.',
+      : 'Current quantities applied to a compact chart grid. This is suitable for display only; daily annualization and inference are unavailable.'}${carriedObservations
+      ? ` ${carriedObservations} of ${rows.length} observations value at least one holding at its previous close, where the provider published no print for that session.`
+      : ''}`,
   }
 }
 

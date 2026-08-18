@@ -427,14 +427,19 @@ def carry_forward_missing_sessions(previous_dates, previous_closes, fresh):
     fresh_dates = fresh.get("dates") or []
     if not previous_dates:
         return fresh
-    missing = [date for date in previous_dates if date not in fresh_dates]
+    # Runs once per symbol across the whole universe, so membership goes through a set rather
+    # than a scan of the fresh date list.
+    fresh_lookup = set(fresh_dates)
+    missing = [date for date in previous_dates if date not in fresh_lookup]
     if not missing:
         return fresh
     fresh_volumes = fresh.get("volumes") or [0.0] * len(fresh_dates)
     merged = dict(zip(fresh_dates, zip(fresh["closes"], fresh_volumes)))
     previous_close_by_date = dict(zip(previous_dates, previous_closes))
     for date in missing:
-        merged[date] = (previous_close_by_date[date], 0.0)
+        close = previous_close_by_date.get(date)
+        if close is not None:
+            merged[date] = (close, 0.0)
     ordered = sorted(merged)
     return {
         "dates": ordered,
@@ -1441,9 +1446,21 @@ def build_portfolio_coverage(research, portfolio_symbols, previous=()):
     return coverage
 
 
-def attach_history(row, context, grid, benchmark_growth):
-    """Weekly series plus the equal-dollar comparison against the S&P 500."""
+def attach_history(row, context, grid, benchmark_growth, previous_row=None):
+    """Weekly series plus the equal-dollar comparison against the S&P 500.
+
+    ``previous_row`` is this symbol's last published row. A batch download drops individual
+    bars often enough that a symbol's session tape can come back with holes, or shorter than
+    it was last run; unioning against what was already published keeps each symbol's history
+    monotonic the same way the benchmark's is.
+    """
     history = context["history"]
+    previous_analytics = (previous_row or {}).get("analytics_history") or {}
+    history = carry_forward_missing_sessions(
+        previous_analytics.get("dates"),
+        previous_analytics.get("closes"),
+        history,
+    )
     payload = series_payload(history["dates"], history["closes"], grid)
     if not payload:
         return
@@ -1935,14 +1952,15 @@ def run():
     benchmark_series = series_payload(benchmark["dates"], benchmark["closes"], grid)
     benchmark_growth = (benchmark_series or {}).get("growth")
     contexts_by_symbol = {context["symbol"]: context for context in contexts}
+    previous_rows = previous_rows_by_ticker(previous_payload)
     for row in ranked:
         context = contexts_by_symbol.get(row["ticker"])
         if context:
-            attach_history(row, context, grid, benchmark_growth)
+            attach_history(row, context, grid, benchmark_growth, previous_rows.get(row["ticker"]))
     for row in portfolio_coverage:
         context = contexts_by_symbol.get(row["ticker"])
         if row["ticker"] not in ranked_tickers and context:
-            attach_history(row, context, grid, benchmark_growth)
+            attach_history(row, context, grid, benchmark_growth, previous_rows.get(row["ticker"]))
 
     market_status = fetch_optional(client, "MARKET_STATUS") if client else {}
     macro = macro_context(client) if client else {}

@@ -322,6 +322,29 @@ class BenchmarkHistoryRegressionTests(unittest.TestCase):
         self.assertIs(carry_forward_missing_sessions(None, None, fresh), fresh)
         self.assertIs(carry_forward_missing_sessions([], [], fresh), fresh)
 
+    def test_a_symbol_history_reunions_gaps_the_batch_download_dropped(self):
+        # The per-symbol path: yf.download drops individual bars out of a batch, so a symbol's
+        # own tape can come back with interior holes even while the fetch "succeeds".
+        previous_dates = ["2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17"]
+        previous_closes = [10.0, 11.0, 12.0, 13.0]
+        fresh = {"dates": ["2026-08-12", "2026-08-14", "2026-08-18"],
+                 "closes": [10.0, 12.0, 14.0], "volumes": [1, 2, 3]}
+
+        merged = carry_forward_missing_sessions(previous_dates, previous_closes, fresh)
+
+        self.assertEqual(merged["dates"],
+                         ["2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18"])
+        self.assertEqual(merged["closes"], [10.0, 11.0, 12.0, 13.0, 14.0])
+
+    def test_a_previous_date_without_a_usable_close_is_skipped(self):
+        merged = carry_forward_missing_sessions(
+            ["2026-08-13", "2026-08-14"], [None, 12.0],
+            {"dates": ["2026-08-18"], "closes": [14.0], "volumes": [1]},
+        )
+
+        self.assertEqual(merged["dates"], ["2026-08-14", "2026-08-18"])
+        self.assertEqual(merged["closes"], [12.0, 14.0])
+
     def test_an_overlapping_date_prefers_the_fresh_close_over_the_previous_one(self):
         previous_dates = ["2026-08-13", "2026-08-14"]
         previous_closes = [642.0, 643.0]
