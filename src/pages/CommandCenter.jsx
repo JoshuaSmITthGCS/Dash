@@ -1,5 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useState } from 'react'
 import { useData } from '../lib/useData.js'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
@@ -13,28 +12,14 @@ import {
   enrichPortfolio, latestMarketDayReturn, performanceMetrics, portfolioScore,
   resilienceIndex, riskFreeAnnualRate, selectPeriod, sliceSeriesFrom,
 } from '../lib/portfolioAnalytics.js'
-import { Loading, Empty, Move } from '../components/Bits.jsx'
-import DotPlot from '../components/DotPlot.jsx'
+import { Loading, Empty } from '../components/Bits.jsx'
 import CompanyLogo from '../components/CompanyLogo.jsx'
-import Icon from '../components/Icons.jsx'
-import { getRecommendation } from '../lib/recommendation.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { liveTodayPortfolioReturn } from '../lib/afterHoursQuotes.js'
-import { rankBreakoutInProgress, rankBuyingTheDip, rankGrowingEtfs, rankMomentum, rankReversal, rankValueTurnarounds } from '../lib/researchScreens.js'
-import BuyingTheDipChart from '../components/BuyingTheDipChart.jsx'
 import { currentHoldingsPerformanceSeriesForPeriod } from '../lib/portfolioPerformance.js'
-import { PerformanceEvidenceSummary } from '../components/PerformanceMetrics.jsx'
-import LiveTrackingCountdown from '../components/LiveTrackingCountdown.jsx'
-import ProjectionPanel from '../components/ProjectionPanel.jsx'
-import { applyAllocationAssumption, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource } from '../lib/projectionEngine.js'
-import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
-import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import modelSettings from '../../pipeline/config/settings.json'
 import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
-import AllocationDonut from '../components/AllocationDonut.jsx'
-import ScoreGauge from '../components/ScoreGauge.jsx'
-import MarketHeatmap from '../components/MarketHeatmap.jsx'
 import Sparkline from '../components/Sparkline.jsx'
 import { dailyMoveForPosition, marketType, rankDailySectors, rankDailyStocks } from '../lib/marketPresentation.js'
 import {
@@ -47,136 +32,12 @@ import {
   SectorDonut,
 } from '../lib/hudUltra.jsx'
 
-const PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
-const PERIOD_LABELS = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year' }
 const interfaceConfig = modelSettings.interface
-
-function HudScoreCard({ label, result, note }) {
-  return <article className="report-score-card hud-card">
-    <ScoreGauge score={result?.score || 0} available={result?.available} label={label} provisional={result?.provisional} reason={result?.reason} />
-    <div>
-      <h3>{label}</h3>
-      <p>{result?.available ? note : result?.reason || 'Not enough portfolio data yet.'}</p>
-    </div>
-  </article>
-}
-
-function HudMarketSummary({ rows, macro, researchLeader }) {
-  const ranked = rankDailyStocks(rows)
-  const sectors = rankDailySectors(rows)
-  const session = marketType(rows)
-  const leader = ranked[0]
-  return <section className="home-market-summary hud-panel" aria-label="Market summary">
-    <div className={`home-market-type ${session.tone}`}><span aria-hidden="true" /><div><small>Today's market</small><strong>{session.label}</strong></div></div>
-    <div><small>Market breadth</small><strong>{session.breadthPct == null ? 'Pending' : `${session.breadthPct.toFixed(0)}% advancing`}</strong></div>
-    <div><small>Hottest sector</small><strong title={sectors[0]?.sector || undefined}>{sectors[0]?.sector || 'Pending'}{sectors[0] && ` · ${signedPct(sectors[0].averagePct)}`}</strong></div>
-    <div><small>Biggest mover</small><strong>{leader ? `${leader.ticker} · ${signedPct(leader.dailyMove.pct)}` : 'Pending'}</strong></div>
-    <div><small>Research leader</small><strong>{researchLeader ? `${researchLeader.ticker} · ${researchLeader.score}` : 'Pending'}</strong></div>
-    <div><small>Macro backdrop</small><strong>{macro?.regime?.label || 'Pending'}</strong></div>
-    <Link to="/markets">Open Markets <Icon name="arrow" size={15} /></Link>
-  </section>
-}
-
-function HudPortfolioPanel({
-  positions,
-  period,
-  onPeriodChange,
-  money,
-  totalValue,
-  totalProfit,
-  today,
-  topStocks,
-}) {
-  const [holdingsSort, setHoldingsSort] = useState('day')
-
-  const ranked = positions.map((position) => ({ ...position, move: dailyMoveForPosition(position) }))
-    .sort((left, right) => holdingsSort === 'allocation'
-      ? (right.allocationPct ?? -Infinity) - (left.allocationPct ?? -Infinity)
-      : (right.move.pct ?? -Infinity) - (left.move.pct ?? -Infinity))
-    .slice(0, 5)
-
-  return <section className="home-primary-grid hud-grid" aria-label="Portfolio performance and leading holdings">
-    <article className="home-performance-card hud-card">
-      <header className="home-performance-head">
-        <label><span>Portfolio radar</span><select value={period} onChange={(event) => onPeriodChange(event.target.value)}>{PERIODS.map((item) => <option key={item} value={item}>{PERIOD_LABELS[item]}</option>)}</select></label>
-        <div className="home-performance-kpis">
-          <span><small>Invested value</small><strong>{money(totalValue)}</strong></span>
-          <span><small>Today · regular session</small><strong className={today?.dollarReturn >= 0 ? 'positive' : 'negative'}>{today ? `${today.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(today.dollarReturn))} · ${signedPct(today.returnPct, 2)}` : 'Unavailable'}</strong></span>
-          <span><small>Total profit · {PERIOD_LABELS[period]}</small><strong className={totalProfit >= 0 ? 'positive' : 'negative'}>{totalProfit == null ? 'Unavailable' : `${totalProfit >= 0 ? '+' : '−'}${money(Math.abs(totalProfit))}`}</strong></span>
-        </div>
-      </header>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '360px' }}>
-        <CircularRadar stocks={topStocks} onStockClick={(stock) => window.location.href = `/research?ticker=${stock.ticker}`} />
-      </div>
-      <footer><span><i aria-hidden="true" />Top holdings radar</span><small>Circular position display · Click any stock to view details</small></footer>
-    </article>
-
-    <aside className="home-top-holdings hud-card">
-      <header><div><span className="eyebrow">Your portfolio</span><h2>Top 5 holdings</h2></div><label><span className="sr-only">Rank holdings by</span><select value={holdingsSort} onChange={(event) => setHoldingsSort(event.target.value)}><option value="day">Today's performance</option><option value="allocation">Biggest allocation</option></select></label></header>
-      <div>{ranked.map((position, index) => <article key={position.id || position.ticker} className={position.move.pct == null ? 'neutral' : position.move.pct >= 0 ? 'positive' : 'negative'}>
-        <span className="holding-rank">{index + 1}</span><CompanyLogo company={position.priceInfo || position} size={36} /><span className="top-holding-name"><strong>{position.ticker}</strong><small>{position.allocationPct == null ? 'Allocation pending' : `${position.allocationPct.toFixed(1)}% allocation`}</small></span><span className="top-holding-move"><strong>{signedPct(position.move.pct, 2)}</strong><small>{position.move.positionDelta == null ? 'Day delta pending' : `${position.move.positionDelta >= 0 ? '+' : '−'}${money(Math.abs(position.move.positionDelta))}`}</small></span>
-      </article>)}</div>
-      <Link to="/portfolio">View all holdings <Icon name="arrow" size={15} /></Link>
-    </aside>
-  </section>
-}
-
-function HudScreenCard({ title, kicker, note, rows, metric, loading, to }) {
-  return <article className="report-screen-card hud-card">
-    <header><div><span>{kicker}</span><h3>{title}</h3></div><small>{note}</small></header>
-    <div className="report-screen-list">
-      {loading ? <div className="report-inline-loading" role="status">Loading this screen…</div>
-        : rows.length ? rows.map((row, index) => {
-          const detail = metric(row)
-          return <div key={row.ticker}><CompanyLogo company={row} size={28} /><span className="screen-rank">#{index + 1}</span><span className="screen-company"><b>{row.ticker}</b><small>{row.name}</small></span><span className="report-screen-metric"><small>{detail.label}</small><Move pct={detail.value} /></span></div>
-        })
-          : <div className="report-inline-loading">No name clears this screen.</div>}
-    </div>
-    <Link className="report-screen-link" to={to}>Open full screen <Icon name="arrow" size={16} /></Link>
-  </article>
-}
-
-const MACRO_FACTOR_LABELS = [['rates', 'Rates'], ['inflation', 'Inflation'], ['labor', 'Labor']]
-
-function HudMarketPulse({ data, loading }) {
-  const macro = data?.market?.macro || {}
-  const regime = macro.regime
-  const items = [
-    ['10Y Treasury', macro.treasury_10y, '%'],
-    ['Fed funds', macro.federal_funds_rate, '%'],
-    ['Inflation', macro.inflation, '%'],
-  ]
-  const factorRows = MACRO_FACTOR_LABELS
-    .map(([key, label]) => {
-      const factor = regime?.factors?.[key]
-      return factor?.score == null ? null : { id: key, label: `${label} · ${factor.label}`, value: factor.score }
-    })
-    .filter(Boolean)
-
-  return <section className="report-section report-market-pulse hud-section" aria-labelledby="report-market-pulse-title">
-    <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/market">News and context →</Link></header>
-    {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse…</div> : <>
-      <div className="report-market-grid">
-        <article className={regime?.score == null ? 'is-unavailable' : undefined}><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>
-        {items.map(([label, point, suffix]) => <article key={label} className={point?.value == null ? 'is-unavailable' : undefined}><span>{label}</span><strong>{point?.value ?? '–'}{point?.value != null ? suffix : ''}</strong><p>{point?.date ? `Through ${point.date}` : 'Not published in this run'}</p></article>)}
-      </div>
-      {factorRows.length > 1 && (
-        <DotPlot
-          rows={factorRows}
-          xLabel="Factor score (0-100, higher is more supportive)"
-          xFormatter={(value) => value.toFixed(1)}
-          domain={{ min: 0, max: 100 }}
-          caption="What the FRED regime score is composed of: rates, inflation, and labor factor scores"
-        />
-      )}
-    </>}
-  </section>
-}
 
 export default function CommandCenter() {
   const { data, loading } = useData('report.json')
-  const { data: etfData, loading: etfLoading } = useData('etfs.json')
-  const { currentUser, authError, retryAuth } = useAuth()
+  const { data: etfData } = useData('etfs.json')
+  const { currentUser } = useAuth()
   const { positions: storedPositions, loading: portfolioLoading } = useFirebasePortfolio()
   const previewPortfolio = import.meta.env.DEV
     && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
@@ -185,10 +46,10 @@ export default function CommandCenter() {
   const finances = useFirebaseFinances()
   const tracking = usePortfolioTracking()
   const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
-  const { preferences, updatePreferences } = usePreferences()
+  const { preferences } = usePreferences()
   const { data: benchmarkReport, loading: benchmarkLoading } = useData(positions.length ? 'benchmark-report.json' : null)
-  const [period, setPeriod] = useState('1D')
-  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(true)
+  const [period] = useState('1D')
+  const [sinceLiveTrackingOnly] = useState(true)
   const { items: watchlistItems } = useWatchlist()
   const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 
@@ -237,24 +98,12 @@ export default function CommandCenter() {
   const leader = rows[0]
   const watchRows = watchlist.map((ticker) => rows.find((row) => row.ticker === ticker)).filter(Boolean).slice(0, 4)
   const money = (value) => preferences.privacyMode ? '••••••' : formatPreferenceMoney(value, preferences.numberFormat)
-  const tone = (value) => value == null ? '' : value >= 0 ? 'positive' : 'negative'
-  const actionable = portfolio.positions.map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null })).filter((row) => row.recommendation?.action === 'SELL')
   const sectorAllocation = Object.entries(portfolio.positions.reduce((totals, position) => {
     const sector = position.priceInfo?.sector || 'Unclassified'
     totals[sector] = (totals[sector] || 0) + Number(position.currentValue || 0)
     return totals
   }, {})).map(([sector, value]) => ({ sector, value, pct: portfolio.totalValue ? value / portfolio.totalValue * 100 : 0 }))
     .sort((left, right) => right.value - left.value)
-
-  const screenRows = [...new Map([...rows, ...(data.screen_universe || [])].map((row) => [row.ticker, row])).values()]
-  const dipRows = rankBuyingTheDip(screenRows, 8)
-  const focusedScreens = [
-    { title: 'Fast growth breakouts', kicker: 'Fast growth', note: 'Sharp acceleration this week', rows: rankBreakoutInProgress(screenRows, 3), metric: (row) => ({ label: '5 days', value: row.screen.weekReturn }), to: '/screens/fast-growth' },
-    { title: 'Value near 52-week lows', kicker: 'Value turnarounds', note: 'Quality plus a positive latest week', rows: rankValueTurnarounds(screenRows, 3), metric: (row) => ({ label: 'Above low', value: row.screen.aboveLow }), to: '/screens/quality-value' },
-    { title: 'Recent momentum', kicker: 'Momentum', note: 'Positive week and month', rows: rankMomentum(screenRows, 3), metric: (row) => ({ label: '20 days', value: row.screen.monthReturn }), to: '/screens/momentum' },
-    { title: 'Short-term reversals', kicker: 'Reversal', note: '20-day pullback turning up', rows: rankReversal(screenRows, 3), metric: (row) => ({ label: 'This week', value: row.screen.weekReturn }), to: '/screens/matrix' },
-    { title: 'Top ETFs', kicker: 'Fund screens', note: 'Performance, risk, cost and liquidity', rows: rankGrowingEtfs(etfData?.etfs || [], 3), metric: (row) => ({ label: '1 year', value: row.returns?.['1y'] }), loading: etfLoading, to: '/research' },
-  ]
 
   // Top stocks for radar
   const topStocks = rows.slice(0, 16).map(row => ({

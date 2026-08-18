@@ -3,7 +3,7 @@
  * Terminal + Matrix + Jarvis + Futurism + Doctor Who
  */
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   RadialGauge,
   ArcStat,
