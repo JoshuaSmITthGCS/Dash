@@ -34,6 +34,14 @@ on:
         required: false
         default: ''
         type: string
+      focus_symbols:
+        # A re-ranking request for one named set - the theme screen's re-run button sends
+        # its own members. Kept separate from portfolio_symbols, which means "the user owns
+        # this" and would relabel every re-ranked name as a holding.
+        description: Optional comma-separated tickers to re-poll and re-rank, and nothing else
+        required: false
+        default: ''
+        type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
     # 07:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and 15:00 ET are
@@ -72,6 +80,7 @@ jobs:
       ALPHA_ENRICH_LIMIT: '5'
       ALPHA_VANTAGE_CALL_DELAY: '0'
       ADVISOR_PORTFOLIO_SYMBOLS: ${{ inputs.portfolio_symbols || '' }}
+      ADVISOR_FOCUS_SYMBOLS: ${{ inputs.focus_symbols || '' }}
       # Price histories are downloaded in batches, while quote snapshots use bounded
       # concurrency behind cache.py's shared 4-request/second Yahoo limiter.
       YAHOO_BATCH_SIZE: '100'

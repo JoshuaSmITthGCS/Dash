@@ -754,6 +754,13 @@
                         "service",
                         null
                       ]
+                    },
+                    "why": {
+                      "_comment": "Why this company is in this section, in clauses derived from the same scoring result the row publishes: how it entered, its role in the chain, what its own filings said, which readings are theme-wide rather than about it, why it is flagged, and how much signal weight resolved.",
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     }
                   },
                   "additionalProperties": true

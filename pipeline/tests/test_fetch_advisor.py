@@ -136,6 +136,39 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertEqual(len(priority), 150)
 
 
+class FocusedRefreshTests(unittest.TestCase):
+    """A re-ranking request for one named set: the theme screen's re-run button."""
+
+    def test_a_re_ranked_name_is_enriched_before_yesterdays_leaders(self):
+        # Without this the button would return the ranking it was asked to revisit: the
+        # metrics carrying most of the model's weight only exist for enriched names, so a
+        # focused run that spent its statement budget on incumbents would change nothing.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        preliminary = (*previous, *(f"C{i:02d}" for i in range(8)))
+
+        _, _, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (), rotation_size=0,
+            focus_symbols=("C07", "C06"),
+        )
+
+        self.assertEqual(priority[:2], ("C07", "C06"))
+
+    def test_a_focus_symbol_absent_from_this_run_is_dropped_not_queued(self):
+        previous = ("P00",)
+        priority = select_enrichment_priority(
+            previous, previous, {"P00"}, (), rotation_size=0,
+            focus_symbols=("GONE",))[2]
+        self.assertNotIn("GONE", priority)
+
+    def test_focus_symbols_are_not_treated_as_holdings(self):
+        # The distinction the separate input exists for: `portfolio_symbols` means the user
+        # owns it, and feeds portfolio coverage and the theme layer's "Your holding" tag.
+        symbols, portfolio = resolve_refresh_symbols(("NVDA", "ETN"), ("AAPL",), "", ())
+        self.assertEqual(portfolio, ("AAPL",))
+        self.assertNotIn("NVDA", portfolio)
+        self.assertIn("NVDA", symbols)
+
+
 class PortfolioCoverageTests(unittest.TestCase):
     def test_every_configured_holding_gets_a_coverage_row(self):
         analytics = {"dates": ["2026-08-12", "2026-08-13"], "closes": [9.8, 10], "frequency": "daily"}

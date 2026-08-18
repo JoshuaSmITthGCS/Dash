@@ -305,6 +305,108 @@ def normalize_signal(name, value):
     return round(min(100.0, max(0.0, value)), 1)
 
 
+SOURCE_REASON = {
+    "published_leader": "already a published top research score",
+    "portfolio": "one of your holdings",
+    "sector_peer": "a peer-group neighbour of this theme's anchors, not yet a published "
+                   "research score",
+}
+
+ROLE_REASON = {
+    "root": "the root of this chain, selling the product the theme is named for",
+    "enabler": "an enabler, selling what makes the core product usable at scale",
+    "supplier": "a supplier into this chain",
+    "infrastructure": "infrastructure - what has to be built before the rest of the chain works",
+    "service": "a service provider to this chain",
+}
+
+
+def _percent(value, digits=0):
+    return f"{value * 100:+.{digits}f}%"
+
+
+def _signal_reason(name, raw, score):
+    """One resolved signal as a sentence about the company, not a metric name.
+
+    A row that reports "2 leading signals" has told the reader nothing they can check. The
+    point of publishing evidence is that the reader can disagree with it, which requires
+    saying what was actually measured and which way it pointed.
+    """
+    if raw is None:
+        return None
+    try:
+        raw = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if name == "filing_keyword_density_trend":
+        direction = "more" if raw >= 0 else "less"
+        return (f"its latest 10-K devotes {_percent(abs(raw))[1:]} {direction} of its language "
+                "to this theme than the prior year's")
+    if name == "transcript_theme_salience":
+        return (f"its earnings calls discuss this theme {_percent(raw)} more than a year ago"
+                if raw >= 0 else
+                f"its earnings calls discuss this theme {_percent(abs(raw))[1:]} less than a "
+                "year ago")
+    if name == "segment_revenue_share":
+        return f"{raw * 100:.0f}% of its reported revenue comes from the theme's segment"
+    if name == "customer_concentration_to_spenders":
+        return (f"{raw * 100:.0f}% of its disclosed above-10% customer revenue comes from "
+                "companies confirmed to be spending on this theme")
+    if name == "backlog_growth":
+        return f"its remaining performance obligation (order backlog) is {_percent(raw)} year over year"
+    if name in CAPEX_PULL_THROUGH_SIGNALS:
+        return (f"the theme's named spenders grew capital expenditure {_percent(raw)} - a "
+                "theme-wide reading, identical for every candidate, so it describes the "
+                "demand and not this company")
+    return f"{name.replace('_', ' ')} resolved at {score}/100"
+
+
+def explain_exposure(theme, result, row):
+    """Why this company appears in this section, in clauses a reader can check.
+
+    Assembled from what the scoring actually did rather than written alongside it, so the
+    explanation cannot drift from the score: every clause below is derived from the same
+    ``result`` the row publishes. The order is the order a sceptical reader needs - how it got
+    here, what it does in the chain, what its own filings said, what was measured about the
+    theme rather than about it, why it is flagged, and how much of the evidence was missing.
+    """
+    clauses = []
+    source = SOURCE_REASON.get(row.get("candidate_source"))
+    if source:
+        clauses.append(f"In this theme because it is {source}")
+    role = ROLE_REASON.get(row.get("role"))
+    if role:
+        clauses.append(f"Placed as {role}")
+
+    contributions = result.get("signals") or []
+    fired = set(result.get("leading_signals_fired") or [])
+    company = [item for item in contributions if not item.get("theme_level")]
+    confirmed = [item for item in company if item["name"] in fired]
+    for item in (confirmed or company):
+        reason = _signal_reason(item["name"], item.get("raw"), item.get("score"))
+        if reason:
+            clauses.append(reason[0].upper() + reason[1:])
+    if company and not confirmed:
+        clauses.append("None of its own signals cleared the confirmation bar, so the exposure "
+                       "is measured but not confirmed")
+    for item in contributions:
+        if item.get("theme_level"):
+            reason = _signal_reason(item["name"], item.get("raw"), item.get("score"))
+            if reason:
+                clauses.append(reason[0].upper() + reason[1:])
+
+    for exclusion in result.get("excluded_by") or []:
+        clauses.append(f"Flagged, not promoted: {exclusion}")
+
+    confidence = result.get("confidence")
+    answered = result.get("signals_answered")
+    declared = len(theme.get("signals") or [])
+    if confidence is not None and declared:
+        clauses.append(f"{answered} of {declared} declared signals resolved, carrying "
+                       f"{confidence * 100:.0f}% of this theme's signal weight")
+    return clauses
+
+
 def score_theme_exposure(theme, signal_values, *, valuation_percentile=None):
     """Score one company against one theme. Pure - takes readings, returns a verdict.
 
@@ -571,6 +673,12 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
                 "opportunity_score": opportunity_score(result["theme_exposure_score"],
                                                        fundamental, valuation_percentile),
             }
+            # Every published row carries its own reason. A screen that ranks companies
+            # against a thesis and cannot say why each one is on the list is asking to be
+            # taken on trust, which is the opposite of what this layer is for.
+            entry["why"] = explain_exposure(
+                theme, result, {**row, "role": entry["role"],
+                                "candidate_source": entry["candidate_source"]})
             # The scored row plus the research fields the trend layer reads. Kept beside the
             # published entry rather than merged into it: price behavior must not travel with
             # an exposure row, where it would be one careless spread away from the score.
@@ -583,8 +691,11 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
                 "eligible": result["eligible"],
                 # Carried into the index so a cross-theme reader can see how much of each
                 # theme's declared signal weight actually answered, rather than reading two
-                # exposures resting on one signal apiece as corroboration.
+                # exposures resting on one signal apiece as corroboration - and which part of
+                # each chain the company plays, since a supplier to three chains and the root
+                # of one are different propositions wearing the same crossing count.
                 "confidence": result.get("confidence"),
+                "role": entry["role"],
             })
 
     theme_payloads = []
