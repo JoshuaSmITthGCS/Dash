@@ -54,7 +54,7 @@ export default function Portfolio({ view = 'summary' }) {
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
   const [portfolioSort, setPortfolioSort] = useState(preferences.holdingSort)
-  const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'all_history'))
+  const [analyticsScope, setAnalyticsScope] = useState(() => sessionSetting('valuesignal.analytics.scope', 'since_algorithm'))
   const [summaryPeriod, setSummaryPeriod] = useState('1D')
   const [performancePeriod, setPerformancePeriod] = useState('1M')
   const [attributionPeriod, setAttributionPeriod] = useState('1D')

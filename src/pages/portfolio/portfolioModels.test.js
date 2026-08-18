@@ -126,6 +126,28 @@ describe('buildBenchmarkModel', () => {
     expect(buildBenchmarkModel({ data: report(), snapshots: empty }).selectedBenchmarkSymbol).toBe('SPY')
     expect(buildBenchmarkModel({ data: report(), snapshots: empty }).candidateInputs).toEqual([])
   })
+
+  it('fills the ETF snapshot forward from the report tape when it lags on the same symbol', () => {
+    // etf/SPY.json has been observed ending two sessions behind the advisor's own benchmark
+    // tape despite being written later in the same run, which capped every scoped window.
+    const model = buildBenchmarkModel({
+      data: report({ benchmark_analytics_history: { dates: ['2026-08-13', '2026-08-14', '2026-08-17', '2026-08-18'], values: [100, 101, 102, 103], symbol: 'SPY' } }),
+      snapshots: { spy: snapshotFor('SPY'), rsp: null, iwm: null, ijr: null, selected: snapshotFor('SPY') },
+    })
+
+    expect(model.analyticsBenchmarkSeries.dates).toEqual(['2026-08-13', '2026-08-14', '2026-08-17', '2026-08-18'])
+    expect(model.analyticsBenchmarkSeries.values).toEqual([100, 101, 102, 103])
+  })
+
+  it('never grafts the report tape onto a differently-selected benchmark', () => {
+    const model = buildBenchmarkModel({
+      data: report({ benchmark_analytics_history: { dates: ['2026-08-13', '2026-08-14', '2026-08-18'], values: [100, 101, 103], symbol: 'SPY' } }),
+      snapshots: { spy: snapshotFor('SPY'), rsp: null, iwm: snapshotFor('IWM'), ijr: null, selected: snapshotFor('IWM') },
+    })
+
+    expect(model.selectedBenchmarkSymbol).toBe('IWM')
+    expect(model.analyticsBenchmarkSeries.dates).toEqual(['2026-08-13', '2026-08-14'])
+  })
 })
 
 describe('series helpers', () => {

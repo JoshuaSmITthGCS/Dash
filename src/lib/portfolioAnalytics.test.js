@@ -42,6 +42,26 @@ describe('portfolio report analytics', () => {
     expect(series.methodology).toContain('previous close')
   })
 
+  it('stays native daily when a holding has no published price history at all', () => {
+    // Two unpriceable holdings out of 88 used to mark the whole series "irregular", which
+    // made every standard measure report the series as a compact chart grid and refuse.
+    const series = currentHoldingsSeries(
+      [{ ticker: 'AAA', shares: 2 }, { ticker: 'DECJ', shares: 1 }],
+      {
+        AAA: { analytics_history: { dates: ['2026-06-01', '2026-06-02'], closes: [10, 11], frequency: 'daily' } },
+        DECJ: {},
+      },
+      ['2026-06-01', '2026-06-02'],
+    )
+
+    expect(series.frequency).toBe('daily')
+    expect(series.untracked).toEqual(['DECJ'])
+    expect(series.trackedPositions).toBe(1)
+    expect(series.totalPositions).toBe(2)
+    expect(series.methodology).toContain('DECJ')
+    expect(series.coverage).toEqual([50, 50])
+  })
+
   it('does not carry a close backwards to before a holding existed', () => {
     const series = currentHoldingsSeries(
       [{ ticker: 'AAA', shares: 2 }, { ticker: 'NEW', shares: 1 }],

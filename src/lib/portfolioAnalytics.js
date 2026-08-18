@@ -120,8 +120,19 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
     return { date, value, carried, coveragePct: positions.length ? tracked.length / positions.length * 100 : 0 }
   }).filter(Boolean)
   if (rows.length < 2) return null
-  const nativeDaily = tracked.length === positions.filter((position) => finite(position.shares)).length
-    && tracked.every((row) => row.nativeDaily)
+  // `frequency` describes the tape this series was built from, not how much of the portfolio
+  // it covers. Folding coverage into it meant two holdings the provider serves no price for
+  // at all (out of 88) made every standard measure report "the available series is a compact
+  // chart grid" - false about the data, and wildly out of proportion to the gap. Cadence is
+  // decided by the tracked holdings' own source; coverage is reported separately, per date
+  // and by name, so a thin portfolio still discloses itself rather than being silently
+  // annualized as if complete.
+  const nativeDaily = tracked.every((row) => row.nativeDaily)
+  const trackedTickers = new Set(tracked.map(({ position }) => String(position.ticker || '').trim().toUpperCase()))
+  const untracked = positions
+    .filter((position) => finite(position.shares))
+    .map((position) => String(position.ticker || '').trim().toUpperCase())
+    .filter((ticker) => ticker && !trackedTickers.has(ticker))
   const carriedObservations = rows.filter((row) => row.carried).length
   return {
     dates: rows.map((row) => row.date),
@@ -131,11 +142,16 @@ export function currentHoldingsSeries(positions = [], priceData = {}, anchorDate
     // so a consumer can state how much of the series leans on a carried price.
     carried: rows.map((row) => row.carried),
     carriedObservations,
+    trackedPositions: tracked.length,
+    totalPositions: positions.length,
+    untracked,
     frequency: nativeDaily ? 'daily' : 'irregular',
     source: nativeDaily ? 'analytics_history' : 'legacy_chart_history',
     methodology: `${nativeDaily
       ? 'Current quantities applied to native daily adjusted closes. This is a historical replay of today’s holdings, not actual historical account value.'
-      : 'Current quantities applied to a compact chart grid. This is suitable for display only; daily annualization and inference are unavailable.'}${carriedObservations
+      : 'Current quantities applied to a compact chart grid. This is suitable for display only; daily annualization and inference are unavailable.'}${untracked.length
+      ? ` ${untracked.length} of ${positions.length} holdings carry no published price history (${untracked.join(', ')}) and are excluded from the series and every measure derived from it.`
+      : ''}${carriedObservations
       ? ` ${carriedObservations} of ${rows.length} observations value at least one holding at its previous close, where the provider published no print for that session.`
       : ''}`,
   }

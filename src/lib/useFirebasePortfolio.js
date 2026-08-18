@@ -19,9 +19,14 @@ import {
 import { normalizePortfolioPosition, PER_SHARE_COST } from './portfolioPosition'
 
 const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
+// DECJ was a typo for DECK, which is a real holding and already tracked separately. No
+// provider resolves DECJ, so a position in it can never be priced and it silently subtracted
+// from every portfolio measure that needs full coverage. The retirement used to apply only to
+// the reference-import document, which left a hand-entered copy in place and unpriceable;
+// matching on the ticker alone is what actually clears it.
+const RETIRED_TICKERS = new Set(['DECJ'])
 const isRetiredReferencePosition = (documentId, stored = {}) =>
-  String(stored.ticker || '').trim().toUpperCase() === 'DECJ'
-  && (documentId === 'DECJ-reference' || stored.snapshotSource === 'User-provided brokerage snapshot')
+  RETIRED_TICKERS.has(String(stored.ticker || '').trim().toUpperCase())
 
 export function useFirebasePortfolio() {
   const { currentUser } = useAuth()

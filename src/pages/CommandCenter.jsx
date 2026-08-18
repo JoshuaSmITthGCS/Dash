@@ -188,7 +188,7 @@ export default function CommandCenter() {
   const { preferences, updatePreferences } = usePreferences()
   const { data: benchmarkReport, loading: benchmarkLoading } = useData(positions.length ? 'benchmark-report.json' : null)
   const [period, setPeriod] = useState('1D')
-  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(false)
+  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(true)
   const { items: watchlistItems } = useWatchlist()
   const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])
 

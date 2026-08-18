@@ -126,7 +126,13 @@ REPORT_ROW_FIELDS = (
     "operating_margin", "operating_margin_trend", "short_percent_of_float",
     "days_to_cover", "is_etf",
 )
-RETIRED_REPORT_SYMBOLS = {"DECJ"}
+# Symbols withdrawn from the product entirely. DECJ was a typo for DECK, which is a real
+# holding and already tracked; DECJ resolves to nothing at any provider. Retiring a symbol has
+# to reach the refresh list, not just the published report: portfolio holdings are carried
+# forward from the previous run's own `portfolio_coverage`, so anything that ever entered that
+# list re-seeded itself on every subsequent run and could never be removed - not by deleting
+# it in the app, not by editing config.
+RETIRED_SYMBOLS = {"DECJ"}
 
 
 def _layer(*path):
@@ -191,7 +197,7 @@ def report_row(row):
 def report_snapshot(payload):
     """Create the compact, route-critical subset consumed by report/research views."""
     def active(rows):
-        return [row for row in rows if str(row.get("ticker") or "").upper() not in RETIRED_REPORT_SYMBOLS]
+        return [row for row in rows if str(row.get("ticker") or "").upper() not in RETIRED_SYMBOLS]
 
     theme_screen = payload.get("theme_screen") or {}
 
@@ -383,11 +389,15 @@ def resolve_refresh_symbols(
         return normalized
 
     portfolio_symbols = tuple(dict.fromkeys(
-        (
+        symbol
+        for symbol in (
             *valid_symbols(configured_portfolio),
             *valid_symbols(previous_portfolio),
             *valid_symbols(dynamic_portfolio),
         )
+        # Filtered here rather than at the point of publication so a retired symbol also stops
+        # being polled and stops re-entering the carry-forward it seeds itself from.
+        if symbol not in RETIRED_SYMBOLS
     ))
     symbols = tuple(dict.fromkeys(
         (*valid_symbols(requested_symbols), *portfolio_symbols)
