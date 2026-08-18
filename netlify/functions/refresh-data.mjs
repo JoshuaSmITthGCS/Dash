@@ -61,18 +61,25 @@ export function parseRequestBody(body) {
     payload = {}
   }
   const screen = Object.hasOwn(SCREEN_WORKFLOWS, payload.screen) ? payload.screen : 'research'
-  const symbols = Array.isArray(payload.symbols)
+  const tickerList = (values, limit) => (Array.isArray(values)
     ? [...new Set(
-        payload.symbols
+        values
           .map((symbol) => String(symbol || '').trim().toUpperCase())
           .filter((symbol) => /^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol))
-      )].slice(0, 50)
-    : []
+      )].slice(0, limit)
+    : [])
+  const symbols = tickerList(payload.symbols, 50)
+  // A re-ranking request for one named set, kept apart from `symbols` because that list is
+  // dispatched as the user's holdings and would relabel every re-ranked name as one. The cap
+  // is higher because the caller is a whole screen rather than a portfolio: the theme screen
+  // scores a few hundred companies, and truncating it would silently re-rank a slice of the
+  // list while presenting it as the list.
+  const focusSymbols = tickerList(payload.focus_symbols, 400)
   // "rescore" re-scores the last published data with no new provider requests at all - see
   // pipeline/rescore.py. Anything else falls back to a real data refresh.
   const mode = payload.mode === 'rescore' ? 'rescore' : 'data'
   const universeScope = payload.universe_scope === 'full' ? 'full' : 'fast'
-  return { symbols, mode, universeScope, screen }
+  return { symbols, focusSymbols, mode, universeScope, screen }
 }
 
 const PROGRESS_STEPS = [
@@ -185,7 +192,7 @@ export async function handler(event) {
     if (!user.email || !allowedEmails.has(user.email.toLowerCase())) {
       return json(403, { error: 'Your account is not allowed to start data refreshes.' })
     }
-    const { symbols, mode, universeScope, screen } = parseRequestBody(event.body)
+    const { symbols, focusSymbols, mode, universeScope, screen } = parseRequestBody(event.body)
     const refreshMode = mode === 'rescore' ? 'rescore-only' : 'data-only'
 
     // A GET carries no body, so the screen it is asking about rides in the query string.
@@ -228,6 +235,7 @@ export async function handler(event) {
             // provider requests, so the scope is harmless for that mode.
             universe_scope: universeScope,
             portfolio_symbols: symbols.join(','),
+            focus_symbols: focusSymbols.join(','),
           },
         } : {}),
       }),
@@ -244,7 +252,7 @@ export async function handler(event) {
     // removes that race entirely: every later status check targets that exact run by ID,
     // which works whether it's still running or already done.
     const runId = await locateDispatchedRun(workflowUrl, headers, priorRunIds)
-    return json(202, { ok: true, mode: refreshMode, universe_scope: universeScope, symbols, screen, run_id: runId })
+    return json(202, { ok: true, mode: refreshMode, universe_scope: universeScope, symbols, focus_symbols: focusSymbols, screen, run_id: runId })
   } catch (error) {
     console.error('Manual refresh failed:', error)
     return json(500, { error: 'The refresh could not be started. Check the server configuration.' })

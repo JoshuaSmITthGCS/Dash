@@ -76,7 +76,9 @@ describe('useAdvisorRefresh', () => {
     await act(async () => { await result.current.requestFullRefresh() })
 
     const [, init] = fetchMock.mock.calls[0]
-    expect(JSON.parse(init.body)).toEqual({ mode: 'data', universe_scope: 'full', symbols: ['AAPL'] })
+    // focus_symbols is empty unless the caller asked for a focused re-rank: an ordinary
+    // refresh must never narrow itself to a named set by accident.
+    expect(JSON.parse(init.body)).toEqual({ mode: 'data', universe_scope: 'full', symbols: ['AAPL'], focus_symbols: [] })
     expect(result.current).toMatchObject({
       status: 'pending',
       refreshing: true,
@@ -85,6 +87,32 @@ describe('useAdvisorRefresh', () => {
       stage: 'Waiting for a full-universe runner',
     })
     expect(result.current.message).toMatch(/Full-universe refresh started/)
+  })
+
+  it('sends a focused re-rank as its own field, keeping holdings separate', async () => {
+    // The two lists mean different things to the pipeline: `symbols` is dispatched as the
+    // user's holdings and feeds portfolio coverage, so a screen re-ranking its own members
+    // through that field would tag every one of them as something the user owns.
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+      json: () => Promise.resolve({ ok: true, run_id: 999 }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { result } = renderHook(
+      () => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, ['AAPL'], ['nvda', 'etn']))
+    await act(async () => { await result.current.requestFocusedRefresh() })
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(init.body)).toEqual({
+      mode: 'data',
+      universe_scope: 'fast',
+      symbols: ['AAPL'],
+      focus_symbols: ['NVDA', 'ETN'],
+    })
+    expect(result.current.activeFocused).toBe(true)
   })
 
   it('locks onto the run_id returned by the dispatch so the first poll targets it directly', async () => {

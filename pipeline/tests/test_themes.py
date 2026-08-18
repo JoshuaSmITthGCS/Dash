@@ -394,6 +394,101 @@ class OpportunityRankingTests(unittest.TestCase):
         self.assertIsNone(themes.opportunity_score(80, None, 50))
 
 
+class RowReasonTests(unittest.TestCase):
+    """Every published row must say why it is in its section, in checkable terms."""
+
+    def _theme(self, **overrides):
+        return themes.normalize_theme({
+            "id": "ai", "display_name": "AI", "sectors": ["Technology"],
+            "roles": {"root": {"industries": ["semiconductors"]}},
+            "signals": [
+                {"name": "segment_revenue_share", "weight": 0.25},
+                {"name": "filing_keyword_density_trend", "weight": 0.35},
+                {"name": "backlog_growth", "weight": 0.2},
+                {"name": "spender_capex_growth", "weight": 0.2, "universe": ["MSFT"]},
+            ],
+            **overrides})
+
+    def _row(self, ticker="MU", source="published_leader"):
+        return {"ticker": ticker, "name": "Micron", "sector": "Technology",
+                "industry": "Semiconductors", "candidate_source": source,
+                "components": {"fundamentals": 80}, "sector_valuation_percentile": 70}
+
+    def _screen(self, values, row=None):
+        screen = themes.build_theme_screen(
+            [self._theme()], [row or self._row()], lambda ticker, theme: values)
+        return screen["themes"][0]["rows"][0]
+
+    def test_a_reason_names_the_measurement_and_which_way_it_pointed(self):
+        why = " ".join(self._screen({
+            "filing_keyword_density_trend": 0.96, "segment_revenue_share": 0.42,
+            "backlog_growth": 0.18, "spender_capex_growth": 0.79})["why"])
+        # A reader has to be able to disagree with the evidence, which means seeing it.
+        self.assertIn("96% more of its language", why)
+        self.assertIn("42% of its reported revenue", why)
+        self.assertIn("+18% year over year", why)
+
+    def test_the_reason_says_how_the_company_entered_the_section(self):
+        leader = " ".join(self._screen({"filing_keyword_density_trend": 0.5,
+                                        "segment_revenue_share": 0.3})["why"])
+        peer = " ".join(self._screen({"filing_keyword_density_trend": 0.5,
+                                      "segment_revenue_share": 0.3},
+                                     row=self._row(source="sector_peer"))["why"])
+        self.assertIn("already a published top research score", leader)
+        self.assertIn("peer-group neighbour", peer)
+
+    def test_the_reason_places_the_company_in_the_chain(self):
+        why = " ".join(self._screen({"filing_keyword_density_trend": 0.5,
+                                     "segment_revenue_share": 0.3})["why"])
+        self.assertIn("the root of this chain", why)
+
+    def test_a_theme_wide_reading_is_labelled_as_not_being_about_this_company(self):
+        why = " ".join(self._screen({"filing_keyword_density_trend": 0.5,
+                                     "spender_capex_growth": 0.79})["why"])
+        self.assertIn("identical for every candidate", why)
+
+    def test_an_ineligible_row_says_what_flagged_it(self):
+        expensive = {"ticker": "HYPE", "name": "Hyped Co", "sector": "Technology",
+                     "industry": "Semiconductors", "candidate_source": "sector_peer",
+                     "components": {"fundamentals": 60}, "sector_valuation_percentile": 3}
+        why = " ".join(self._screen({"filing_keyword_density_trend": -0.3,
+                                     "spender_capex_growth": 0.79}, row=expensive)["why"])
+        self.assertIn("Flagged, not promoted", why)
+        self.assertIn("top 10% of its sector", why)
+        self.assertIn("no company-specific leading signal", why)
+
+    def test_a_row_whose_own_signals_all_missed_says_so_rather_than_implying_confirmation(self):
+        why = " ".join(self._screen({"filing_keyword_density_trend": -0.3,
+                                     "segment_revenue_share": 0.05})["why"])
+        self.assertIn("None of its own signals cleared the confirmation bar", why)
+
+    def test_the_reason_states_how_much_evidence_was_missing(self):
+        why = " ".join(self._screen({"filing_keyword_density_trend": 0.5,
+                                     "spender_capex_growth": 0.79})["why"])
+        self.assertIn("2 of 4 declared signals resolved", why)
+
+    def test_every_published_row_carries_a_reason(self):
+        rows = [{"ticker": f"T{index}", "sector": "Technology", "industry": "Semiconductors",
+                 "candidate_source": "sector_peer", "components": {"fundamentals": 50}}
+                for index in range(6)]
+        screen = themes.build_theme_screen(
+            [self._theme()], rows,
+            lambda ticker, theme: {"filing_keyword_density_trend": 0.4,
+                                   "segment_revenue_share": 0.3})
+        for row in screen["themes"][0]["rows"]:
+            with self.subTest(ticker=row["ticker"]):
+                self.assertTrue(row["why"], "a row with no stated reason is asking to be "
+                                            "taken on trust")
+
+    def test_the_reason_cannot_claim_a_signal_the_score_did_not_use(self):
+        # Derived from the same result the row publishes, so a signal that never resolved
+        # cannot appear in the explanation.
+        why = " ".join(self._screen({"filing_keyword_density_trend": 0.5,
+                                     "segment_revenue_share": 0.3})["why"])
+        self.assertNotIn("backlog", why)
+        self.assertNotIn("capital expenditure", why)
+
+
 class ScreenAssemblyTests(unittest.TestCase):
     def test_screen_ranks_eligible_names_above_excluded_ones(self):
         theme = build()

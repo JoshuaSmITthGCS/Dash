@@ -351,3 +351,18 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .theme-index .chip.trend-pos { color: var(--up); }
 .theme-index .chip.trend-watch { color: var(--warn); }
 .theme-index .chip.trend-neg { color: var(--down); }
+
+/* Per-row reason. Open by default would triple every table's height, so the first clause -
+   how the company got into the section - stays visible and the evidence expands under it. */
+.row-why { max-width: 430px; }
+.row-why summary { cursor: pointer; color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.45; }
+.row-why summary::marker { color: var(--text-faint); }
+.row-why ul, .row-why-list { margin: var(--sp-1) 0 0; padding-left: var(--sp-4); color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.5; }
+.row-why li, .row-why-list li { margin: var(--sp-0-5) 0; }
+.row-why-list { margin-top: var(--sp-3); }
+
+/* Screen-level controls: re-rank this screen's own names, and hide what you already own. */
+.toggle-control { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 38px; padding: 0 var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); color: var(--text-dim); font-size: var(--fs-2xs); cursor: pointer; }
+.toggle-control input { accent-color: var(--accent); cursor: pointer; }
+.toggle-control:has(input:disabled) { opacity: .55; cursor: default; }
+.toggle-control:has(input:disabled) input { cursor: default; }

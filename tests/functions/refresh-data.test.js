@@ -7,16 +7,35 @@ describe('parseRequestBody', () => {
       mode: 'data',
       universe_scope: 'full',
       symbols: ['aapl', 'BRK.B'],
-    }))).toEqual({ symbols: ['AAPL', 'BRK.B'], mode: 'data', universeScope: 'full', screen: 'research' })
+    }))).toEqual({ symbols: ['AAPL', 'BRK.B'], focusSymbols: [], mode: 'data', universeScope: 'full', screen: 'research' })
   })
 
   it('keeps fast refresh as the safe default for existing controls', () => {
     expect(parseRequestBody(JSON.stringify({ universe_scope: 'unexpected' }))).toEqual({
       symbols: [],
+      focusSymbols: [],
       mode: 'data',
       universeScope: 'fast',
       screen: 'research',
     })
+  })
+
+  it('keeps a re-ranking request separate from the caller s holdings', () => {
+    // They are dispatched as different workflow inputs: `symbols` means "the user owns
+    // this" and feeds portfolio coverage, so a screen asking to re-rank its own members
+    // through that field would relabel every one of them as a holding.
+    const parsed = parseRequestBody(JSON.stringify({
+      symbols: ['aapl'],
+      focus_symbols: ['nvda', 'etn', 'not a ticker', 'MU'],
+    }))
+    expect(parsed.symbols).toEqual(['AAPL'])
+    expect(parsed.focusSymbols).toEqual(['NVDA', 'ETN', 'MU'])
+  })
+
+  it('accepts a whole screen s worth of names to re-rank, not just a portfolio s worth', () => {
+    // Truncating here would re-rank a slice of the list while presenting it as the list.
+    const many = Array.from({ length: 300 }, (_, index) => `T${index}`)
+    expect(parseRequestBody(JSON.stringify({ focus_symbols: many })).focusSymbols).toHaveLength(300)
   })
 
   it('selects a screen collector by name', () => {

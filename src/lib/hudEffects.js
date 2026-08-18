@@ -161,7 +161,7 @@ export function initHudEffects() {
   }
 
   // Add sparklines to trend cards (example data - replace with real data)
-  document.querySelectorAll('.trend-card-head strong').forEach((el, i) => {
+  document.querySelectorAll('.trend-card-head strong').forEach((el) => {
     // Generate example trend data - replace with real historical data
     const trendData = Array.from({ length: 10 }, () =>
       70 + Math.random() * 30
@@ -170,7 +170,7 @@ export function initHudEffects() {
   });
 
   // Add sparklines to candidate metrics
-  document.querySelectorAll('.candidate-metrics b').forEach((el, i) => {
+  document.querySelectorAll('.candidate-metrics b').forEach((el) => {
     // Generate example trend data
     const trendData = Array.from({ length: 8 }, () =>
       50 + Math.random() * 50
