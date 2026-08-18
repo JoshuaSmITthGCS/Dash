@@ -3,10 +3,13 @@ name: Collect Congressional trade disclosures
 on:
   workflow_dispatch: {}
   schedule:
-    # Weekly, not daily: FMP's free tier allows 250 requests/day, but STOCK Act
-    # disclosures themselves lag the trade by up to 45 days, so there's nothing to gain
-    # from polling more often than that. Monday morning ET.
-    - cron: '0 13 * * 1'
+    # Every 5 days, not daily: FMP's free tier allows 250 requests/day, and STOCK Act
+    # disclosures themselves lag the trade by up to 45 days, so there's nothing to gain from
+    # polling much more often than that. Cron has no native "every N days" recurrence, so
+    # this is day-of-month */5 (1, 6, 11, 16, 21, 26, 31) at 13:00 UTC - the interval resets
+    # at each month boundary rather than rolling continuously (e.g. Jan 31 -> Feb 1 is one
+    # day apart, not five), which is an accepted, documented approximation of "every 5 days".
+    - cron: '0 13 */5 * *'
 
 permissions:
   contents: write
