@@ -257,6 +257,45 @@ def test_compute_price_performance_tolerates_a_failed_lookup():
     assert performance == {}
 
 
+def test_compute_price_performance_falls_back_to_yahoo_when_fmp_has_no_client(monkeypatch):
+    monkeypatch.setattr("fetch_advisor.yahoo_history", lambda symbol, yf: {
+        "dates": ["2026-06-01", "2026-06-10", "2026-07-01"],
+        "closes": [100.0, 105.0, 120.0],
+    })
+    performance = module.compute_price_performance([trade()], client=None, yf=Mock())
+    key = module._trade_key(trade())
+    assert performance[key]["price_at_purchase"] == 100.0
+    assert performance[key]["price_latest"] == 120.0
+    assert performance[key]["return_since_purchase_pct"] == 20.0
+    assert performance[key]["price_source"] == "yahoo"
+
+
+def test_compute_price_performance_falls_back_to_yahoo_when_fmp_misses_the_symbol(monkeypatch):
+    client = Mock()
+    client.price_history.side_effect = module.CongressTradesError("HTTP 402")
+    monkeypatch.setattr("fetch_advisor.yahoo_history", lambda symbol, yf: {
+        "dates": ["2026-06-01", "2026-07-01"],
+        "closes": [50.0, 60.0],
+    })
+    performance = module.compute_price_performance([trade()], client, yf=Mock())
+    key = module._trade_key(trade())
+    assert performance[key]["price_source"] == "yahoo"
+    assert performance[key]["return_since_purchase_pct"] == 20.0
+
+
+def test_compute_price_performance_prefers_fmp_over_yahoo_when_both_answer(monkeypatch):
+    client = Mock()
+    client.price_history.return_value = [
+        {"date": "2026-06-01", "close": 100.0}, {"date": "2026-07-01", "close": 110.0}]
+    yahoo_calls = []
+    monkeypatch.setattr("fetch_advisor.yahoo_history",
+                        lambda symbol, yf: yahoo_calls.append(symbol) or {"dates": [], "closes": []})
+    performance = module.compute_price_performance([trade()], client, yf=Mock())
+    key = module._trade_key(trade())
+    assert performance[key]["price_source"] == "fmp"
+    assert not yahoo_calls
+
+
 def test_summary_stats_estimates_filings_and_sums_upper_bound_volume():
     rows = [
         module.classify(trade(representative="A", disclosure_date="2026-06-20", amount="$1,001 - $15,000"),

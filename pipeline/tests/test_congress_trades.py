@@ -77,6 +77,84 @@ class StockWatcherClientTests(unittest.TestCase):
         with self.assertRaises(CongressTradesError):
             client.senate_latest()
 
+    # congress-trading-monitor rows, unlike the original stock-watcher shape: one file with
+    # a "chamber" field per row, and both House_DATASET and SENATE_DATASET can point at it.
+    KADOA_HOUSE_ROW = {
+        "chamber": "house", "filer_name": "Shri Thanedar", "office": "U.S. Representative · MI-13",
+        "state": "MI", "ticker": "AAPL", "asset_name": "Apple Inc. - Common Stock",
+        "asset_type": "ST", "transaction_type": "Sale (Partial)",
+        "amount_range_label": "$100,001 - $250,000", "transaction_date": "2026-01-09",
+        "filing_date": "2026-08-13", "owner": None,
+    }
+    KADOA_SENATE_ROW = {
+        "chamber": "senate", "filer_name": "Mark R Warner", "office": "U.S. Senator · VA",
+        "state": "VA", "ticker": None, "asset_name": "Manassas VA GO Bonds",
+        "asset_type": "Municipal Security", "transaction_type": "Purchase",
+        "amount_range_label": "$50,001 - $100,000", "transaction_date": "2026-07-07",
+        "filing_date": "2026-08-14", "doc_url": "https://efdsearch.senate.gov/search/view/ptr/x/",
+    }
+    KADOA_EXECUTIVE_ROW = {
+        "chamber": None, "branch": "executive", "filer_name": "Donald J Trump",
+        "asset_name": "Some Bond", "asset_type": "CS", "transaction_type": "Purchase",
+        "amount_range_label": "$1,001 - $15,000", "transaction_date": "2026-05-01",
+        "filing_date": "2026-06-01",
+    }
+
+    def test_a_combined_file_is_split_by_each_rows_own_chamber_field(self):
+        # congress-trading-monitor publishes House, Senate, and OGE executive-branch rows in
+        # one file - house_latest() and senate_latest() must each read only their own slice
+        # even when both point at the same URL, and an unrelated (executive) row is neither.
+        combined = [self.KADOA_HOUSE_ROW, self.KADOA_SENATE_ROW, self.KADOA_EXECUTIVE_ROW]
+        client = StockWatcherClient(opener=lambda url: combined)
+
+        house_rows, house_seen = client.house_latest()
+        senate_rows, senate_seen = client.senate_latest()
+
+        self.assertEqual(house_seen, 1)
+        self.assertEqual(len(house_rows), 1)
+        self.assertEqual(house_rows[0]["symbol"], "AAPL")
+        self.assertEqual(senate_seen, 1)
+        self.assertEqual(len(senate_rows), 1)
+        self.assertEqual(senate_rows[0]["representative"], "Mark R Warner")
+
+    def test_kadoa_shaped_fields_are_read_correctly(self):
+        client = StockWatcherClient(opener=lambda url: [self.KADOA_HOUSE_ROW])
+        rows, _ = client.house_latest()
+
+        row = rows[0]
+        # "office" is a descriptive title in this shape, not a name - filer_name must win.
+        self.assertEqual(row["representative"], "Shri Thanedar")
+        self.assertEqual(row["district"], "MI")
+        self.assertEqual(row["disclosure_date"], "2026-08-13")   # from filing_date
+        self.assertEqual(row["amount"], "$100,001 - $250,000")   # from amount_range_label
+        self.assertEqual(row["asset_description"], "Apple Inc. - Common Stock")
+
+    def test_the_house_clerks_short_stock_code_is_translated_so_it_still_matches(self):
+        # is_equity_purchase() in build_congress_screen.py matches the literal substring
+        # "stock" - an untranslated "ST" would silently drop every House stock purchase out
+        # of price-performance and the size/novelty flags.
+        client = StockWatcherClient(opener=lambda url: [self.KADOA_HOUSE_ROW])
+        rows, _ = client.house_latest()
+
+        self.assertIn("stock", rows[0]["asset_type"].lower())
+
+    def test_a_non_stock_short_code_is_left_alone_and_still_excluded_as_non_equity(self):
+        client = StockWatcherClient(opener=lambda url: [self.KADOA_SENATE_ROW])
+        rows, _ = client.senate_latest()
+
+        # "Municipal Security" already contains no "stock" substring - nothing to translate,
+        # and it must keep failing the equity-purchase check, not accidentally pass it.
+        self.assertNotIn("stock", rows[0]["asset_type"].lower())
+
+    def test_a_row_with_no_chamber_field_is_trusted_to_be_whichever_chamber_was_asked_for(self):
+        # The original stock-watcher shape has no "chamber" field at all - every row in the
+        # file is that chamber by construction, and that has to keep working unmodified.
+        client = StockWatcherClient(opener=lambda url: [self.HOUSE_ROW])
+        rows, seen = client.house_latest()
+
+        self.assertEqual(seen, 1)
+        self.assertEqual(rows[0]["chamber"], "house")
+
 
 class CongressTradesClientTests(unittest.TestCase):
     def test_requires_an_api_key(self):

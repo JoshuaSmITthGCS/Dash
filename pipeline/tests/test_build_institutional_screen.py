@@ -396,6 +396,38 @@ class SubmissionsWithoutANameTests(unittest.TestCase):
         self.assertEqual(ciks, ["0001274173"])
         self.assertNotIn("name does not match", " ".join(notes))
 
+    def test_a_search_hit_with_no_conformed_name_still_gets_its_submissions_checked(self):
+        # EDGAR's search feed sometimes answers a hit with no <conformed-name> at all - not
+        # a mismatch, just a missing label. Rejecting on that at the search stage used to
+        # drop a real filer before the authoritative, submissions-backed name check ever
+        # ran - this was live behaviour against Janus Henderson's own CIK.
+        sec = _ResolvingSec(
+            {"JHG": [{"cik": "0001274173", "form": "13F-HR", "accession": "a",
+                      "document": "d.xml", "filed": "2026-05-14", "period": "2026-03-31"}]},
+            {}, tickers={},
+            names={"0001274173": "JANUS HENDERSON GROUP PLC"},
+            search={"Janus Henderson": [("0001274173", None)]})
+
+        ciks, notes = screen.resolve_filer_ciks(sec, {"ticker": "JHG", "name": "Janus Henderson"})
+
+        self.assertEqual(ciks, ["0001274173"])
+        self.assertNotIn("name does not match", " ".join(notes))
+
+    def test_a_search_hit_with_no_conformed_name_is_still_rejected_if_its_real_name_mismatches(self):
+        # The search-stage guard being lenient about a missing label must not turn into no
+        # guard at all - the submissions-backed check still has to reject a genuine mismatch.
+        sec = _ResolvingSec(
+            {"APAM": [{"cik": "0009999999", "form": "13F-HR", "accession": "a",
+                       "document": "d.xml", "filed": "2026-05-14", "period": "2026-03-31"}]},
+            {}, tickers={},
+            names={"0009999999": "ARTISAN CONSUMER GOODS INC"},
+            search={"Artisan Partners": [("0009999999", None)]})
+
+        ciks, notes = screen.resolve_filer_ciks(sec, {"ticker": "APAM", "name": "Artisan Partners"})
+
+        self.assertEqual(ciks, [])
+        self.assertIn("name does not match", " ".join(notes))
+
 
 class TickerCacheTests(unittest.TestCase):
     """The CUSIP->ticker cache. Without it, an anonymous OpenFIGI run re-asks thousands of

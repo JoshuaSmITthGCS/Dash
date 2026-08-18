@@ -483,7 +483,8 @@ matrix, which cross-tabulates this structural score against a separate tactical 
 
 ### 10.2 Political / congressional trade score
 
-`pipeline/scorer.py::run()` (lines 678-790). Six independent weighted factors, summed and capped
+`pipeline/scorer.py::run()` (lines 831-943; the earlier "678-790" reference in this doc had
+drifted out of date as the file grew). Six independent weighted factors, summed and capped
 per-factor (`signal_weights`, `settings.json`):
 
 | Factor | Weight |
@@ -497,8 +498,16 @@ per-factor (`signal_weights`, `settings.json`):
 
 Carries **zero** fundamental or price input — purely who in Congress traded what, in what
 committee, in what size, how recently, and whether other members clustered on the same name
-within 30 days. Published alongside the fundamentals score in `signals.json` for context; the
-two are never combined.
+within 30 days. Writes `signals.json`, not `advisor.json` — nothing in the CI pipeline currently
+calls `scorer.run()` outside `seed_mock_data.py`/`demo-data.yml`, so treat this section as
+describing the model this score *would* compute in production, not one presently published
+alongside real Congressional data. The score that actually reaches production is a much smaller
+one: `pipeline/congress_signal.py::score_congressional_buying`, called from
+`fetch_advisor.collect_congressional_signals()` and folded into the research score as a capped
+"shadow" modifier (§8's "Congressional buying (shadow)" row, `challengers.signal_corrections`),
+reading the real, live
+`screens/congress-trades.json` this doc's §7 (data flow) and `docs/DATA-LINEAGE.md` describe. The
+two are not the same score and are never combined with each other.
 
 ### 10.3 Momentum screen score
 

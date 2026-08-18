@@ -26,7 +26,11 @@ claim that any flagged trade was improper:
 Purchases of a plain equity also get a real, factual measurement: the stock's price
 change from the purchase date to the latest available close (`return_since_purchase_pct`).
 That is a price fact, not a claim about why the price moved or that the trade was
-improper - see CongressTrades.jsx's own disclaimer copy.
+improper - see CongressTrades.jsx's own disclaimer copy. Priced from FMP first (whatever
+symbols the configured plan actually covers), falling back to the same keyless Yahoo
+history every options screen in this pipeline already reads - so a purchase still gets
+priced when FMP's key has no entitlement at all, not just when it happens to cover a
+given symbol.
 
 Run weekly, not daily: FMP's free tier allows 250 requests/day, and disclosures
 themselves lag the actual trade by up to 45 days, so daily polling would mostly
@@ -41,6 +45,10 @@ from datetime import date, datetime, timedelta, timezone
 from common import LOG, STORE_DIR, load_json, save_json
 from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
                              StockWatcherClient)
+
+# Imported lazily inside compute_price_performance(), not at module scope: fetch_advisor
+# imports congress_signal, which imports this module for is_buy(), so a top-level import
+# here would be circular.
 
 CONGRESS_DIR = os.path.join(STORE_DIR, "congress")
 TRADES = "trades.jsonl"
@@ -302,10 +310,20 @@ def is_equity_purchase(row):
         and "stock" in asset_type and "option" not in asset_type
 
 
-def compute_price_performance(rows, client):
+def compute_price_performance(rows, client=None, yf=None):
     """One price-history request per distinct symbol among this window's equity
     purchases (not per trade), then each trade's own entry/latest/return computed
-    locally against that shared series."""
+    locally against that shared series.
+
+    Tries FMP first when a client is available - it can price a symbol in one call from
+    an exact date - then falls back to Yahoo for anything FMP didn't cover (no key, an
+    unentitled plan, or a per-symbol miss), using the same ``yahoo_history`` every options
+    screen in this pipeline reads. Yahoo's ``period="2y"`` window is filtered locally to
+    the purchase date same as FMP's response, so which source answered is invisible to the
+    caller except through ``price_source`` on the result.
+    """
+    from fetch_advisor import yahoo_history  # local import: see the module-level note above
+
     buys = [row for row in rows if is_equity_purchase(row)]
     earliest_by_symbol = {}
     for row in buys:
@@ -313,12 +331,26 @@ def compute_price_performance(rows, client):
         if symbol not in earliest_by_symbol or when < earliest_by_symbol[symbol]:
             earliest_by_symbol[symbol] = when
 
-    histories = {}
+    histories, sources = {}, {}
     for symbol, earliest_date in earliest_by_symbol.items():
-        try:
-            histories[symbol] = client.price_history(symbol, from_date=earliest_date)
-        except CongressTradesError as exc:
-            LOG.warn(f"Congress trades: price history unavailable for {symbol} ({exc})")
+        history = None
+        if client is not None:
+            try:
+                history = client.price_history(symbol, from_date=earliest_date)
+            except CongressTradesError as exc:
+                LOG.warn(f"Congress trades: FMP price history unavailable for {symbol} ({exc})")
+            if history:
+                sources[symbol] = "fmp"
+        if not history and yf is not None:
+            fetched = yahoo_history(symbol, yf)
+            points = [{"date": day, "close": close} for day, close in
+                      zip(fetched.get("dates") or [], fetched.get("closes") or [])
+                      if day and close is not None and day >= earliest_date]
+            if points:
+                history = points
+                sources[symbol] = "yahoo"
+        if history:
+            histories[symbol] = history
 
     performance = {}
     for row in buys:
@@ -332,6 +364,7 @@ def compute_price_performance(rows, client):
                 "price_at_purchase": entry, "price_latest": latest,
                 "price_as_of": history[-1]["date"],
                 "return_since_purchase_pct": round((latest / entry - 1) * 100, 2),
+                "price_source": sources.get(row["symbol"]),
             }
     return performance
 
@@ -432,10 +465,12 @@ def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient,
     sources = [("mirror-senate", mirror_client.senate_latest),
                ("mirror-house", mirror_client.house_latest)]
     if efd_factory is not None:
-        # The Senate's own system, added after both community mirrors were withdrawn and
-        # started answering 403 to everything. One chamber only - the House Clerk publishes
-        # its periodic transaction reports as scanned PDFs with no machine-readable
-        # transactions - so this narrows the gap rather than closing it.
+        # The Senate's own system, added after both original stock-watcher mirrors were
+        # withdrawn and started answering 403 to everything. Senate only - the House Clerk's
+        # own site has no equivalent structured search - but mirror-house now reaches House
+        # disclosures too via congress-trading-monitor's default HOUSE_DATASET (see
+        # congress_trades.py), so this and mirror-house together are meant to close the gap
+        # this comment used to describe as permanent, not just narrow it.
         sources.insert(0, ("senate-efd",
                            lambda: efd_factory().fetch(since_days=PUBLISH_WINDOW_DAYS)))
 
@@ -499,11 +534,18 @@ def run():
     stored = _read_all()
     results, history_days = build_results(stored, as_of=generated_at)
 
-    # Price history costs one request per symbol, so it is only worth asking for when the
-    # client is alive and there is something to measure. It is FMP-only and has no keyless
-    # substitute, so a run without an entitled key still publishes every disclosure - just
-    # without the "since purchase" column.
-    performance = compute_price_performance(results, fmp_client) if fmp_client and results else {}
+    # Price history costs one request per symbol, so it is only worth asking for when there
+    # is something to measure. FMP is tried first when a key is configured; yfinance - the
+    # same keyless Yahoo client every options screen in this pipeline uses - covers whatever
+    # FMP didn't, so a run with no entitled FMP key still gets "since purchase" figures
+    # rather than losing the column entirely.
+    yf = None
+    try:
+        import yfinance as yf
+    except ImportError:
+        LOG.warn("Congress trades: yfinance not installed - Yahoo price fallback unavailable")
+    performance = (compute_price_performance(results, fmp_client, yf=yf)
+                   if results and (fmp_client or yf) else {})
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
