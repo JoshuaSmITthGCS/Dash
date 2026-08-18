@@ -1,0 +1,527 @@
+/* ============================================================================
+   Advanced HUD Effects - Phase 2
+   Terminal + Matrix + Jarvis + Futurism + Doctor Who
+   Hexagonal containers, circular patterns, data streams, tactical readouts
+   ============================================================================ */
+
+/* === DATA STREAM BACKGROUND (Matrix-style) === */
+.dashboard-container {
+  position: relative;
+  isolation: isolate;
+}
+
+.data-stream-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.15;
+  background:
+    linear-gradient(0deg, transparent 0%, rgba(0, 212, 255, 0.03) 50%, transparent 100%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 212, 255, 0.03) 2px,
+      rgba(0, 212, 255, 0.03) 4px
+    );
+  animation: data-stream-scroll 20s linear infinite;
+}
+
+@keyframes data-stream-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+
+/* Particle field */
+.particle-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(0, 212, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 212, 255, 0.8);
+}
+
+/* === HEXAGONAL CONTAINERS === */
+.hex-container {
+  position: relative;
+  padding: var(--sp-4);
+  background: var(--surface-card-bg);
+  clip-path: polygon(
+    30% 0%, 70% 0%,
+    100% 30%, 100% 70%,
+    70% 100%, 30% 100%,
+    0% 70%, 0% 30%
+  );
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.hex-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(0, 212, 255, 0.05) 0%,
+    transparent 50%,
+    rgba(0, 212, 255, 0.05) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.hex-container:hover {
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow:
+    0 0 20px rgba(0, 212, 255, 0.2),
+    inset 0 0 20px rgba(0, 212, 255, 0.1);
+}
+
+.hex-container:hover::before {
+  opacity: 1;
+}
+
+/* Hexagonal grid layout */
+.hex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-6);
+  margin: var(--sp-8) 0;
+}
+
+/* === CIRCULAR GALLIFREYAN PATTERNS (Doctor Who) === */
+.gallifreyan-overlay {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  opacity: 0.08;
+  pointer-events: none;
+  animation: gallifreyan-rotate 60s linear infinite;
+}
+
+@keyframes gallifreyan-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.gallifreyan-circle {
+  position: absolute;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 50%;
+}
+
+/* Multiple concentric circles */
+.gallifreyan-overlay .circle-1 {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.gallifreyan-overlay .circle-2 {
+  width: 70%;
+  height: 70%;
+  top: 15%;
+  left: 15%;
+}
+
+.gallifreyan-overlay .circle-3 {
+  width: 40%;
+  height: 40%;
+  top: 30%;
+  left: 30%;
+  border-style: dashed;
+}
+
+/* Orbital dots */
+.gallifreyan-overlay .orbit-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(0, 212, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+}
+
+/* === RADIAL PROGRESS GAUGES === */
+.radial-gauge {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+}
+
+.radial-gauge svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.radial-gauge circle {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.radial-gauge .gauge-bg {
+  stroke: rgba(100, 116, 139, 0.2);
+}
+
+.radial-gauge .gauge-fill {
+  stroke: var(--brand-primary);
+  stroke-dasharray: var(--gauge-circumference);
+  stroke-dashoffset: var(--gauge-offset);
+  filter: drop-shadow(0 0 4px rgba(0, 212, 255, 0.6));
+  transition: stroke-dashoffset 1s var(--ease-out);
+}
+
+.radial-gauge .gauge-value {
+  position: relative;
+  z-index: 1;
+  font: var(--fw-bold) var(--fs-xl) var(--font-mono);
+  color: var(--text-primary);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+}
+
+.radial-gauge .gauge-label {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font: var(--fs-2xs) var(--font-mono);
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* === TACTICAL CORNER BRACKETS === */
+.tactical-frame {
+  position: relative;
+  padding: var(--sp-4);
+}
+
+/* Top-left bracket */
+.tactical-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-top: 2px solid rgba(0, 212, 255, 0.6);
+  border-left: 2px solid rgba(0, 212, 255, 0.6);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+/* Top-right bracket */
+.tactical-frame::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-top: 2px solid rgba(0, 212, 255, 0.6);
+  border-right: 2px solid rgba(0, 212, 255, 0.6);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+/* Bottom brackets via pseudo on child */
+.tactical-frame > *:last-child::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-bottom: 2px solid rgba(0, 212, 255, 0.6);
+  border-left: 2px solid rgba(0, 212, 255, 0.6);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.tactical-frame > *:last-child::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-bottom: 2px solid rgba(0, 212, 255, 0.6);
+  border-right: 2px solid rgba(0, 212, 255, 0.6);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.tactical-frame:hover::before,
+.tactical-frame:hover::after,
+.tactical-frame:hover > *:last-child::before,
+.tactical-frame:hover > *:last-child::after {
+  width: 30px;
+  height: 30px;
+  border-color: rgba(0, 212, 255, 1);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+}
+
+/* === TARGET RETICLE === */
+.target-reticle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+}
+
+.target-reticle::before,
+.target-reticle::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(0, 212, 255, 0.4);
+  border-radius: 50%;
+}
+
+.target-reticle::before {
+  animation: reticle-pulse 2s ease-in-out infinite;
+}
+
+.target-reticle::after {
+  width: 120%;
+  height: 120%;
+  border-style: dashed;
+  animation: reticle-rotate 10s linear infinite;
+}
+
+@keyframes reticle-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+@keyframes reticle-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Crosshair */
+.target-reticle .crosshair {
+  position: absolute;
+  background: rgba(0, 212, 255, 0.6);
+}
+
+.target-reticle .crosshair-h {
+  width: 100%;
+  height: 1px;
+}
+
+.target-reticle .crosshair-v {
+  width: 1px;
+  height: 100%;
+}
+
+/* === TERMINAL TYPOGRAPHY ENHANCEMENTS === */
+.terminal-label {
+  font: var(--fs-2xs) var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  opacity: 0.7;
+}
+
+.terminal-value {
+  font: var(--fw-bold) var(--fs-lg) var(--font-mono);
+  color: var(--brand-primary);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+}
+
+.terminal-readout {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-left: 3px solid var(--brand-primary);
+}
+
+/* === HOLOGRAPHIC LAYERS === */
+.holo-layer {
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.holo-layer::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg,
+    rgba(0, 212, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(0, 212, 255, 0.1) 100%
+  );
+  opacity: 0;
+  transform: translateZ(-10px);
+  transition: opacity var(--duration-normal) var(--ease-out);
+  pointer-events: none;
+}
+
+.holo-layer:hover::before {
+  opacity: 1;
+}
+
+/* Parallax effect on scroll */
+.parallax-layer {
+  transition: transform 0.1s ease-out;
+}
+
+/* === GRID OVERLAY === */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.06;
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: grid-flicker 3s ease-in-out infinite;
+}
+
+@keyframes grid-flicker {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.12; }
+}
+
+/* === ARC SEGMENTS (for stats) === */
+.arc-stat {
+  position: relative;
+  width: 100px;
+  height: 50px;
+  overflow: hidden;
+}
+
+.arc-stat svg {
+  width: 100px;
+  height: 100px;
+  transform: translateY(-50px);
+}
+
+.arc-stat path {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.arc-stat .arc-bg {
+  stroke: rgba(100, 116, 139, 0.2);
+}
+
+.arc-stat .arc-fill {
+  stroke: var(--brand-primary);
+  filter: drop-shadow(0 0 4px rgba(0, 212, 255, 0.6));
+  transition: stroke-dashoffset 1s var(--ease-out);
+}
+
+.arc-stat-value {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font: var(--fw-bold) var(--fs-lg) var(--font-mono);
+  color: var(--brand-primary);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+}
+
+/* === STATUS BLIPS (pulsing indicators) === */
+.status-blip {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  background: var(--brand-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+  animation: blip-pulse 2s ease-in-out infinite;
+}
+
+@keyframes blip-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.3);
+  }
+}
+
+.status-blip::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--brand-primary);
+  border-radius: 50%;
+  animation: blip-ring 2s ease-in-out infinite;
+}
+
+@keyframes blip-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+/* === COORDINATE POSITIONING === */
+.coord-label {
+  position: absolute;
+  font: var(--fs-2xs) var(--font-mono);
+  color: rgba(0, 212, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+.coord-label::before {
+  content: '[';
+  margin-right: 2px;
+}
+
+.coord-label::after {
+  content: ']';
+  margin-left: 2px;
+}
+
+/* === REDUCED MOTION === */
+@media (prefers-reduced-motion: reduce) {
+  .data-stream-overlay,
+  .gallifreyan-overlay,
+  .target-reticle::before,
+  .target-reticle::after,
+  .status-blip,
+  .grid-overlay {
+    animation: none;
+  }
+
+  .radial-gauge .gauge-fill,
+  .arc-stat .arc-fill {
+    transition: none;
+  }
+}
