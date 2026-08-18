@@ -36,6 +36,17 @@ class RefreshSymbolTests(unittest.TestCase):
         self.assertEqual(portfolio, ("MU", "VOO"))
         self.assertEqual(symbols, ("AAPL", "MU", "VOO"))
 
+    def test_a_retired_symbol_cannot_reseed_itself_from_the_previous_run(self):
+        # portfolio_coverage seeds the next run's holdings, so before this a retired symbol
+        # re-entered on every refresh and could not be removed from anywhere.
+        symbols, portfolio = resolve_refresh_symbols(
+            ("AAPL",), ("MU",), "DECJ, DECK", ("DECJ", "NTNX"),
+        )
+
+        self.assertNotIn("DECJ", portfolio)
+        self.assertNotIn("DECJ", symbols)
+        self.assertEqual(portfolio, ("MU", "NTNX", "DECK"))
+
     def test_discovered_holdings_persist_into_scheduled_refreshes(self):
         symbols, portfolio = resolve_refresh_symbols(
             ("AAPL",),
