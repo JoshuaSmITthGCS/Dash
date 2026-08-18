@@ -66,7 +66,7 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .gate-status > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .gate-status.available { color: var(--up); }.gate-status.unavailable { color: var(--warn); }
 .capability-verdict strong { text-transform: capitalize; }
-.research-guardrail { margin: var(--sp-6) 0 var(--sp-3); padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); border-left: 3px solid var(--accent); background: var(--bg-elev); }
+.research-guardrail { margin: var(--sp-6) 0 var(--sp-3); padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-6); border: 1px solid var(--border); border-radius: var(--control-radius); background: color-mix(in srgb, var(--accent) 3%, var(--bg-elev)); }
 .research-guardrail span { display: block; color: var(--text-faint); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .09em; }
 .research-guardrail strong { display: block; margin-top: var(--sp-1); font-size: var(--fs-xs); }.research-guardrail p { max-width: 460px; color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.5; }
 @media (max-width: 900px) { .capability-row { grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(130px, 1fr)); }.capability-verdict { grid-column: 2 / -1; }.research-guardrail { align-items: flex-start; flex-direction: column; } }
@@ -137,7 +137,7 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .swing-evidence { padding: var(--sp-4) var(--sp-4); margin-bottom: var(--section-gap); }
 .swing-evidence h2 { margin: 0 0 var(--sp-3); font-size: var(--fs-sm); }
 .swing-evidence-list { display: grid; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
-.swing-evidence-list li { padding-left: var(--sp-3); border-left: 2px solid var(--border-lit); }
+.swing-evidence-list li { padding-left: var(--sp-3); border-left: 1px solid var(--border); }
 .swing-evidence-list p { margin: var(--sp-0-5) 0 0; color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.5; }
 .swing-evidence-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1-5) var(--sp-3); }
 .swing-evidence-head b { color: var(--text); font-size: var(--fs-xs); }
@@ -320,7 +320,7 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 /* Theme trend evaluation: three questions side by side (leading, shared, already paid for)
    rather than one score, so a crowded theme cannot look like a broadening one. */
 .theme-chain { margin: var(--sp-4) 0; padding: 0; list-style: none; display: grid; gap: var(--sp-2); }
-.theme-chain li { padding-left: var(--sp-4); border-left: 2px solid var(--border); }
+.theme-chain li { padding-left: var(--sp-4); border-left: 1px solid var(--border); }
 .theme-chain span { display: block; color: var(--text-faint); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
 .theme-chain p { color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.5; }
 .theme-trend { margin: var(--sp-4) 0; padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); }

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './styles/index.css'
 import { PreferencesProvider } from './lib/PreferencesContext.jsx'
+import './lib/hudEffects.js'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
