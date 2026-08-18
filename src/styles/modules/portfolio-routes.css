@@ -184,9 +184,9 @@
 /* ============================================================
    Visual upgrade: insights mood card gradient
    ============================================================ */
-.dashboard-pulse.mood-positive { border-left: 3px solid var(--positive); }
-.dashboard-pulse.mood-negative { border-left: 3px solid var(--negative); }
-.dashboard-pulse.mood-neutral { border-left: 3px solid var(--brand-primary); }
+.dashboard-pulse.mood-positive { background: color-mix(in srgb, var(--positive) 4%, var(--surface-card-bg)); }
+.dashboard-pulse.mood-negative { background: color-mix(in srgb, var(--negative) 4%, var(--surface-card-bg)); }
+.dashboard-pulse.mood-neutral { background: color-mix(in srgb, var(--brand-primary) 4%, var(--surface-card-bg)); }
 
 /* ============================================================
    Visual upgrade: evidence bar & metric card enhancement
@@ -199,7 +199,7 @@
 .trend-improving .trend-bars { fill: var(--positive); }
 .trend-deteriorating .trend-bars { fill: var(--negative); }
 .trend-stable .trend-bars { fill: var(--text-tertiary); }
-[data-metric-card] { border-left-width: 4px; }
+[data-metric-card] { border: 1px solid var(--border-default); }
 
 /* ============================================================
    Visual upgrade: portfolio return summary bars

@@ -111,7 +111,7 @@ describe('SignalMetricsPanel', () => {
       (metric) => metric.kill_threshold_value == null && metric.kill_threshold,
     )
     expect(withThreshold.length).toBeGreaterThan(0)
-    expect(withoutThreshold.length).toBeGreaterThan(0) // e.g. quantile_spread, per_leg_ic
+    expect(withoutThreshold.length).toBeGreaterThan(0) // e.g. quantile_spread, alpha_cost_crossover
     withThreshold.forEach((metric) => {
       const card = screen.getByText(metric.label).closest('article')
       expect(card.querySelector('.signal-metric-bullet')).not.toBeNull()

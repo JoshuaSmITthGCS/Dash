@@ -11,7 +11,7 @@
 //
 // Exits non-zero when anything renders below the floor, so CI can gate on it.
 
-import { chromium } from '/Users/eyerise/.npm/_npx/1ac161d228dd2210/node_modules/playwright/index.mjs'
+import { chromium } from 'playwright-core'
 
 const BASE = process.env.BASE || 'http://localhost:5175'
 const FLOOR = Number(process.env.FLOOR || 11)

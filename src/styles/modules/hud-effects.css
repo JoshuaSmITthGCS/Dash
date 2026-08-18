@@ -1,0 +1,284 @@
+/* ============================================================================
+   HUD Visual Effects
+   Jarvis-style enhancements: edge glow, glass blur, data animations, scan lines
+   ============================================================================ */
+
+/* Edge Glow on Interactive Elements */
+.card,
+.candidate-card,
+.trend-card,
+.stock-screen-panel,
+.hero-research {
+  transition: box-shadow var(--duration-normal) var(--ease-out),
+              border-color var(--duration-normal) var(--ease-out);
+}
+
+.card:hover,
+.candidate-card:hover,
+.trend-card:hover,
+.stock-screen-panel:hover {
+  box-shadow: var(--edge-glow);
+  border-color: var(--border-glow);
+}
+
+/* Glass Panel Effect for Hero */
+.hero-research {
+  backdrop-filter: var(--glass-blur);
+  background: linear-gradient(135deg,
+    rgba(15, 20, 25, 0.85) 0%,
+    rgba(15, 20, 25, 0.75) 100%
+  );
+}
+
+/* Scan Line Overlay */
+.hero-research::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--scan-line);
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+/* Animated Scan Line Effect */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.hero-research::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 212, 255, 0.6) 50%,
+    transparent
+  );
+  animation: scan 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-research::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Data Glow Effect on Changing Numbers */
+@keyframes data-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px currentColor);
+    opacity: 1;
+  }
+  50% {
+    filter: drop-shadow(0 0 6px currentColor);
+    opacity: 0.9;
+  }
+}
+
+.hero-score-row strong,
+.confidence-ring strong,
+.candidate-metrics b,
+.trend-card-head strong {
+  filter: var(--data-glow);
+}
+
+/* Pulse animation for score changes */
+[data-score-changed="true"] {
+  animation: data-pulse 0.6s ease-out;
+}
+
+/* Confidence Ring Enhancement */
+.confidence-ring {
+  position: relative;
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.3));
+  transition: filter var(--duration-normal) var(--ease-out);
+}
+
+.confidence-ring:hover {
+  filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.5));
+}
+
+/* Animated Ring Fill */
+@keyframes ring-fill {
+  from {
+    --confidence: 0;
+  }
+}
+
+.confidence-ring.animate-in {
+  animation: ring-fill 1.2s var(--ease-out) forwards;
+}
+
+/* Rank Badge Glow */
+.rank-badge {
+  box-shadow: 0 0 8px var(--brand-soft),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.rank-badge:hover {
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Refresh Progress Glow */
+.refresh-progress-fill {
+  box-shadow: 0 0 10px var(--brand-primary),
+              0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+/* Pulse Effect for New Data */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 212, 255, 0);
+  }
+}
+
+.pulse-new-data {
+  animation: pulse-glow 2s ease-out;
+}
+
+/* Glass Panel for Analysis Cards */
+.analysis-layer-card {
+  backdrop-filter: blur(8px) saturate(140%);
+  background: rgba(15, 20, 25, 0.6);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.analysis-layer-card:hover {
+  background: rgba(15, 20, 25, 0.75);
+  border-color: rgba(0, 212, 255, 0.3);
+  box-shadow: var(--edge-glow);
+}
+
+/* Trend Direction Enhanced */
+.trend-direction {
+  text-shadow: 0 0 4px currentColor;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.trend-direction:hover {
+  text-shadow: 0 0 8px currentColor;
+  transform: scale(1.05);
+}
+
+/* Sparkline Glow Effect */
+.sparkline path {
+  filter: drop-shadow(0 0 2px currentColor);
+  transition: filter var(--duration-normal) var(--ease-out);
+}
+
+.sparkline:hover path {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+/* Metric Exception List Enhancement */
+.metric-exception-list > div {
+  background: linear-gradient(135deg,
+    rgba(15, 20, 25, 0.4) 0%,
+    rgba(15, 20, 25, 0.2) 100%
+  );
+  backdrop-filter: blur(4px);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.metric-exception-list > div:hover {
+  background: linear-gradient(135deg,
+    rgba(15, 20, 25, 0.6) 0%,
+    rgba(15, 20, 25, 0.4) 100%
+  );
+  border-color: var(--border-glow);
+  box-shadow: var(--edge-glow);
+}
+
+/* Candidate Cards Glass Effect */
+.candidate-card {
+  backdrop-filter: blur(6px);
+  background: linear-gradient(135deg,
+    rgba(22, 28, 35, 0.5) 0%,
+    rgba(15, 20, 25, 0.5) 100%
+  );
+  border: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.candidate-card:hover {
+  background: linear-gradient(135deg,
+    rgba(22, 28, 35, 0.7) 0%,
+    rgba(15, 20, 25, 0.7) 100%
+  );
+}
+
+/* Hero Ticker Glow */
+.hero-ticker {
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  transition: text-shadow var(--duration-normal) var(--ease-out);
+}
+
+.hero-ticker:hover {
+  text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+}
+
+/* Stock Screen Panel Enhancement */
+.stock-screen-panel {
+  backdrop-filter: blur(6px);
+  background: linear-gradient(180deg,
+    rgba(15, 20, 25, 0.6) 0%,
+    rgba(15, 20, 25, 0.8) 100%
+  );
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.stock-screen-panel:hover {
+  background: linear-gradient(180deg,
+    rgba(15, 20, 25, 0.75) 0%,
+    rgba(15, 20, 25, 0.9) 100%
+  );
+  transform: translateY(-2px);
+}
+
+/* Loading State Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(0, 212, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Alert/New Data Pulse */
+@keyframes alert-pulse {
+  0%, 100% {
+    background-color: var(--surface-primary);
+  }
+  50% {
+    background-color: rgba(0, 212, 255, 0.1);
+  }
+}
+
+.alert-new[data-new="true"] {
+  animation: alert-pulse 2s ease-in-out 3;
+}

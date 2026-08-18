@@ -1,4 +1,4 @@
-import { chromium } from '/Users/eyerise/.npm/_npx/1ac161d228dd2210/node_modules/playwright/index.mjs'
+import { chromium } from 'playwright-core'
 const BASE = process.env.BASE || 'http://localhost:5175'
 const routes = JSON.parse(process.env.ROUTES || '[["/","dashboard"]]')
 const themes = (process.env.THEMES || 'light,dark').split(',')

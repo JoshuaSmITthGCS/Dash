@@ -18,6 +18,13 @@ more depth.
   catalyst/revision-based ranking is starved of data for the vast majority of the universe.
 - **No quoted or effective bid-ask spread data from any provider.** `pipeline/costs.py` uses
   a labeled liquidity-tiered proxy, not measured spreads.
+- **8-K, DEF 14A, and 10-K/10-Q filing signals are form/Item-code classifications, not
+  text-parsed.** `pipeline/edgar_filing_signals.py` scores from SEC's own 8-K Item taxonomy
+  and DEF 14A form variant (`DEFC14A`/`DEFA14A`) alone — never the filing's actual prose, exact
+  say-on-pay vote percentages, or dollar figures. This is weaker, more mechanical evidence than
+  Form 4 (which is parsed structured XBRL): a materially negative 8-K Item code is a reliable
+  signal, but the absence of one is not evidence the underlying event was immaterial, only that
+  it wasn't filed under a code this lookup recognizes.
 
 ## Validation
 

@@ -68,10 +68,17 @@ FEATURE_PSI_MINIMUM_DAYS = 60
 FEATURE_PSI_WINDOW_DAYS = 20
 FEATURE_PSI_KILL_THRESHOLD = 0.25
 DIVERGENCE_MINIMUM_OBSERVATIONS = 20
-DIVERGENCE_Z_THRESHOLD = 1.96
+# Shared two-tailed 95% z-value -- used both for the live-vs-backtest divergence
+# z-test and for the backtest IC confidence interval `live_vs_backtest_ic` compares
+# against. Same constant ic_harness.py's own IC interval uses.
+CONFIDENCE_INTERVAL_Z = 1.96
 PRICE_STALE_AFTER_HOURS = 36
 MAXIMUM_PERCENT_OF_ADV = 5
 SEARCH_SURVIVAL_MINIMUM = 0.95
+MAXIMUM_BETA_SWING = 0.3
+MINIMUM_SECTOR_CLASSIFICATION_COVERAGE = 0.8
+MOMENTUM_LOADING_KILL_THRESHOLD = -0.1
+UNEXPLAINED_POSITION_DIFFERENCE_BPS = 10
 
 GROUPS = [
     {"id": "signal", "letter": "A", "title": "Signal quality",
@@ -281,6 +288,14 @@ def signal_metrics(panel):
     per ticker, carrying the composite score, the individual leg scores, and the forward
     return at each graded horizon. Without it these stay pending, because the alternative -
     grading today's scores against today's returns - is look-ahead, not evidence.
+
+    ``per_leg_ic``, ``drop_one_leg`` and ``leg_correlation`` publish a count (dead legs,
+    harmful legs, redundant pairs) as ``value``, and each already treats "any breach at all"
+    as the failure condition -- ``breached`` below is exactly ``bool(count)``. So although the
+    prose ``kill_threshold`` names a different, per-leg quantity (an IC, a delta, a
+    correlation), the count itself has a real, same-scale threshold: zero. ``kill_threshold_value
+    =0, comparison="gt"`` states that explicitly rather than leaving a metric whose breach
+    condition is this simple without a bullet.
     """
     if not panel:
         message = ("No scored panel found. Run pipeline/backtest_monthly.py --panel-out to "
@@ -300,14 +315,17 @@ def signal_metrics(panel):
                      reads="Which horizon the edge lives at.", cadence="Monthly"),
             _pending("per_leg_ic", "signal", "Per-leg IC", message,
                      reads="Which legs predict on their own.",
-                     kill_threshold="Any leg IC around zero", cadence="Monthly"),
+                     kill_threshold="Any leg IC around zero",
+                     kill_threshold_value=0, comparison="gt", cadence="Monthly"),
             _pending("drop_one_leg", "signal", "Drop-one-leg delta IC", message,
                      reads="Marginal contribution of each leg to the composite.",
                      kill_threshold="Negative delta means the leg hurts",
+                     kill_threshold_value=0, comparison="gt",
                      cadence="Annually or on any refit"),
             _pending("leg_correlation", "signal", "Leg correlation matrix", message,
                      reads="Redundancy between legs.",
-                     kill_threshold=f"Correlation > {REDUNDANT_LEG_CORRELATION}", cadence="Monthly"),
+                     kill_threshold=f"Correlation > {REDUNDANT_LEG_CORRELATION}",
+                     kill_threshold_value=0, comparison="gt", cadence="Monthly"),
             _pending("quantile_spread", "signal", "Quantile spread and monotonicity", message,
                      reads="Whether the whole ranking works or only one tail.",
                      kill_threshold="Non-monotonic quantiles", cadence="Monthly"),
@@ -368,7 +386,8 @@ def signal_metrics(panel):
                        value=len(dead) if legs else None,
                        display=f"{len(dead)} of {len(legs)} legs below {MINIMUM_MEAN_IC}" if legs else None,
                        reads="Which legs predict on their own rather than riding the blend.",
-                       kill_threshold=f"Any leg IC below {MINIMUM_MEAN_IC}", breached=bool(dead),
+                       kill_threshold=f"Any leg IC below {MINIMUM_MEAN_IC}",
+                       kill_threshold_value=0, comparison="gt", breached=bool(dead),
                        detail={leg: summary["mean_ic"] for leg, summary in legs.items()},
                        cadence="Monthly", source="backtest panel"))
 
@@ -381,11 +400,13 @@ def signal_metrics(panel):
                            reads="Marginal contribution of each leg. The test that says whether "
                                  "assigned weights are defensible.",
                            kill_threshold="Negative delta means the leg is hurting the composite",
+                           kill_threshold_value=0, comparison="gt",
                            breached=bool(harmful), detail=dropped,
                            cadence="Annually or on any refit", source="backtest panel"))
     else:
         rows.append(_pending("drop_one_leg", "signal", "Drop-one-leg delta IC",
                              "The panel carries no leg weights to drop.",
+                             kill_threshold_value=0, comparison="gt",
                              cadence="Annually or on any refit"))
 
     correlation = evaluation.leg_correlation_matrix(periods, list(weights) or None)
@@ -395,6 +416,7 @@ def signal_metrics(panel):
                                 f"{'' if len(correlation['redundant_pairs']) == 1 else 's'}"),
                        reads="Redundancy between legs. Two correlated legs are one leg counted twice.",
                        kill_threshold=f"Correlation above {REDUNDANT_LEG_CORRELATION}",
+                       kill_threshold_value=0, comparison="gt",
                        breached=bool(correlation["redundant_pairs"]), detail=correlation,
                        cadence="Monthly", source="backtest panel"))
 
@@ -522,49 +544,86 @@ def _rolling_beta(returns, benchmark, window=60):
 
 
 def _sector_active_weight_metric(history):
+    """Two metrics, not one -- ``sector_active_weights``'s value (the largest active bet,
+    in percentage points) and its ``kill_threshold`` (classification coverage, a fraction)
+    are different quantities, so a bullet built from that pair would show a percentage-point
+    figure crossing a coverage line it has nothing to do with. ``sector_classification_coverage``
+    below carries the actual coverage number against its own real threshold instead.
+    """
     if not history:
-        return _pending(
+        return [_pending(
             "sector_active_weights", "construction", "Sector active weights",
             "No prospective sector snapshot exists. Run pipeline/sector_weight_history.py; "
             "historical sectors are not backfilled from today's classifications.",
             reads="Sector bets against SPY at each recorded production refresh.",
             cadence="Daily",
-        )
+        ), _pending(
+            "sector_classification_coverage", "construction", "Sector classification coverage",
+            "No prospective sector snapshot exists. Run pipeline/sector_weight_history.py; "
+            "historical sectors are not backfilled from today's classifications.",
+            reads="Share of strategy weight the sector classifier could place.",
+            kill_threshold_value=MINIMUM_SECTOR_CLASSIFICATION_COVERAGE * 100, comparison="lt",
+            cadence="Daily",
+        )]
     latest = history[-1]
     active = latest.get("active_sector_weights") or {}
     classified = latest.get("strategy_classified_weight")
     if not active:
-        return _pending(
+        return [_pending(
             "sector_active_weights", "construction", "Sector active weights",
             "The sector history has no comparable strategy and benchmark weights.",
             reads="Sector bets against SPY at each recorded production refresh.",
             cadence="Daily",
-        )
+        ), _pending(
+            "sector_classification_coverage", "construction", "Sector classification coverage",
+            "The sector history has no comparable strategy and benchmark weights.",
+            reads="Share of strategy weight the sector classifier could place.",
+            kill_threshold_value=MINIMUM_SECTOR_CLASSIFICATION_COVERAGE * 100, comparison="lt",
+            cadence="Daily",
+        )]
     ranked = sorted(active.items(), key=lambda item: abs(item[1]), reverse=True)
     sector, largest = ranked[0]
+    coverage_breached = classified is not None and classified < MINIMUM_SECTOR_CLASSIFICATION_COVERAGE
     history_detail = [
         {"as_of": row.get("as_of"), "active_sector_weights": row.get("active_sector_weights"),
          "strategy_classified_weight": row.get("strategy_classified_weight"),
          "benchmark_classified_weight": row.get("benchmark_classified_weight")}
         for row in history[-60:]
     ]
-    return metric(
-        "sector_active_weights", "construction", "Sector active weights",
-        value=round(abs(largest) * 100, 2),
-        display=f"{sector.replace('_', ' ').title()} {largest * 100:+.1f}pp largest",
-        reads="Current production-sector weights minus SPY, retained prospectively by date.",
-        kill_threshold="Strategy sector classification coverage below 80%",
-        breached=classified is not None and classified < 0.8,
-        detail={"as_of": latest.get("as_of"), "strategy": latest.get("strategy"),
-                "benchmark": latest.get("benchmark"), "active_sector_weights": active,
-                "strategy_sector_weights": latest.get("strategy_sector_weights"),
-                "benchmark_sector_weights": latest.get("benchmark_sector_weights"),
-                "strategy_classified_weight": classified,
-                "benchmark_classified_weight": latest.get("benchmark_classified_weight"),
-                "history": history_detail},
-        observations=len(history), cadence="Daily",
-        source="prospective sector-weight history",
-    )
+    detail = {"as_of": latest.get("as_of"), "strategy": latest.get("strategy"),
+              "benchmark": latest.get("benchmark"), "active_sector_weights": active,
+              "strategy_sector_weights": latest.get("strategy_sector_weights"),
+              "benchmark_sector_weights": latest.get("benchmark_sector_weights"),
+              "strategy_classified_weight": classified,
+              "benchmark_classified_weight": latest.get("benchmark_classified_weight"),
+              "history": history_detail}
+    return [
+        metric(
+            "sector_active_weights", "construction", "Sector active weights",
+            value=round(abs(largest) * 100, 2),
+            display=f"{sector.replace('_', ' ').title()} {largest * 100:+.1f}pp largest",
+            reads="Current production-sector weights minus SPY, retained prospectively by date.",
+            kill_threshold=(f"Strategy sector classification coverage below "
+                             f"{MINIMUM_SECTOR_CLASSIFICATION_COVERAGE * 100:.0f}%"),
+            breached=coverage_breached,
+            detail=detail, observations=len(history), cadence="Daily",
+            source="prospective sector-weight history",
+        ),
+        metric(
+            "sector_classification_coverage", "construction", "Sector classification coverage",
+            value=None if classified is None else round(classified * 100, 2),
+            display=None if classified is None else f"{classified * 100:.1f}%",
+            reads="Share of strategy weight the sector classifier could place. The active-weight "
+                  "figure above is unreliable below this coverage.",
+            kill_threshold=f"Below {MINIMUM_SECTOR_CLASSIFICATION_COVERAGE * 100:.0f}%",
+            kill_threshold_value=MINIMUM_SECTOR_CLASSIFICATION_COVERAGE * 100, comparison="lt",
+            breached=coverage_breached,
+            detail={"as_of": latest.get("as_of"), "strategy_classified_weight": classified,
+                    "benchmark_classified_weight": latest.get("benchmark_classified_weight")},
+            observations=len(history), cadence="Daily",
+            source="prospective sector-weight history",
+        ),
+    ]
 
 
 def construction_metrics(backtest, factors, sector_history=None):
@@ -584,7 +643,8 @@ def construction_metrics(backtest, factors, sector_history=None):
                       for key, value in loadings["loadings"].items()),
         reads="The factor bets the portfolio is making, intended or not.",
         kill_threshold="Persistent negative momentum loading explains a capture spread",
-        breached=negative_momentum is not None and negative_momentum < -0.1,
+        kill_threshold_value=MOMENTUM_LOADING_KILL_THRESHOLD, comparison="lt",
+        breached=negative_momentum is not None and negative_momentum < MOMENTUM_LOADING_KILL_THRESHOLD,
         detail=loadings, observations=loadings.get("months"), required_observations=24,
         status="ready" if loadings.get("loadings") else "accumulating",
         status_message=loadings.get("reason"), cadence="Weekly",
@@ -610,15 +670,31 @@ def construction_metrics(backtest, factors, sector_history=None):
 
     betas = _rolling_beta(returns, benchmark)
     swing = round(max(betas) - min(betas), 2) if betas else None
+    swing_breached = swing is not None and swing > MAXIMUM_BETA_SWING
     rows.append(metric("rolling_beta_60d", "construction", "Rolling 60-day beta",
                        value=round(betas[-1], 2) if betas else None,
                        display=None if not betas else f"{betas[-1]:.2f} (range {min(betas):.2f}–{max(betas):.2f})",
                        reads="A point-estimate beta hides how unstable every beta-adjusted "
                              "number on the dashboard is.",
-                       kill_threshold="A swing wider than 0.3 makes excess-return figures unstable",
-                       breached=swing is not None and swing > 0.3,
+                       kill_threshold=f"A swing wider than {MAXIMUM_BETA_SWING} makes excess-return figures unstable",
+                       breached=swing_breached,
                        detail={"window": 60, "observations": len(betas), "swing": swing,
                                "series": [round(value, 3) for value in betas[-60:]]},
+                       cadence="Weekly", source="backtest equity curve"))
+    # The point beta above and the swing its own kill_threshold describes are different
+    # quantities on different scales (~1.0 vs ~0.3) -- plotting them on one bullet would
+    # show the point estimate crossing a threshold that was never about it. Published as
+    # its own metric instead, value and kill_threshold_value both genuinely the swing.
+    rows.append(metric("rolling_beta_swing", "construction", "Rolling beta swing (60d window)",
+                       value=swing,
+                       display=None if swing is None else f"{swing:.2f} (max − min over the window)",
+                       reads="How unstable the 60-day beta estimate itself has been -- the "
+                             "number rolling_beta_60d's point estimate can't show on its own.",
+                       kill_threshold=f"Swing wider than {MAXIMUM_BETA_SWING} makes excess-return figures unstable",
+                       kill_threshold_value=MAXIMUM_BETA_SWING, comparison="gt",
+                       breached=swing_breached,
+                       detail={"window": 60, "observations": len(betas),
+                               "beta_range": None if not betas else [round(min(betas), 3), round(max(betas), 3)]},
                        cadence="Weekly", source="backtest equity curve"))
 
     drift = [round(sum(weight for weight in row if weight), 4) for row in weights if row]
@@ -629,7 +705,7 @@ def construction_metrics(backtest, factors, sector_history=None):
                        detail={"rebalances": len(drift)}, cadence="Daily",
                        source="backtest rebalances"))
 
-    rows.append(_sector_active_weight_metric(sector_history or []))
+    rows.extend(_sector_active_weight_metric(sector_history or []))
     return rows
 
 
@@ -1127,6 +1203,8 @@ def data_quality_from_pit(root=PIT_ROOT, universe_path=UNIVERSE_HISTORY_PATH):
         "corporate_action_monitoring": {
             "status": "not_available",
             "reason": "No prospective corporate-action event log exists; no miss count is inferred."},
+        # A count of critical issues against an implicit zero -- see signal_metrics() for
+        # why that's a real, same-scale threshold and not a fabricated one.
         "breached": critical > 0,
     }
 
@@ -1146,6 +1224,11 @@ def live_backtest_divergence(backtest, live_return_data):
     error = deviation / math.sqrt(len(live_returns)) if deviation else None
     z_score = (live_mean - backtest_mean) / error if error else None
     ready = len(live_returns) >= DIVERGENCE_MINIMUM_OBSERVATIONS
+    # Same-scale (bps/day) form of the z-test bound above, so a bullet chart can plot the
+    # divergence against it -- see _signed_bound, which orients this unsigned magnitude to
+    # whichever side of zero the divergence currently sits on rather than fabricating a
+    # one-sided threshold for a genuinely two-sided (|z| > threshold) test.
+    threshold_bps = round(error * CONFIDENCE_INTERVAL_Z * 10_000, 3) if error else None
     return {
         "status": "ready" if ready else "provisional",
         "value": round((live_mean - backtest_mean) * 10_000, 3),
@@ -1155,11 +1238,49 @@ def live_backtest_divergence(backtest, live_return_data):
         "backtest_mean_daily_return": backtest_mean,
         "divergence_bps_per_day": (live_mean - backtest_mean) * 10_000,
         "z_score": z_score,
+        "threshold_bps": threshold_bps,
         "breached": bool(ready and z_score is not None
-                         and abs(z_score) > DIVERGENCE_Z_THRESHOLD),
+                         and abs(z_score) > CONFIDENCE_INTERVAL_Z),
         "reason": None if ready else
         f"Directional only until {DIVERGENCE_MINIMUM_OBSERVATIONS} matched live periods.",
         "periods": (live_return_data or {}).get("periods") or [],
+    }
+
+
+def _signed_bound(value, bound):
+    """A one-sided ``(kill_threshold_value, comparison)`` pair that reproduces an
+    ``abs(value) > bound`` breach test, oriented to whichever side of zero ``value``
+    currently sits on. ``bound`` must already be a real, computed, same-scale figure --
+    this never invents one, it only picks which direction to compare in so the existing
+    lt/gt-only contract can plot a genuinely two-sided test without misrepresenting it.
+    """
+    if value is None or bound is None:
+        return None, None
+    return (bound, "gt") if value >= 0 else (-bound, "lt")
+
+
+def _backtest_ic_reference(panel, horizon="21d"):
+    """Mean rank IC and its 95% confidence interval from the backtest panel, at the
+    horizon closest to the live monitoring cadence (1 calendar month ~= 21 trading days) --
+    the actual backtest-side reference ``live_vs_backtest_ic`` needs to mean what its own
+    kill_threshold says ("Live IC below the backtest 95% interval"). Same interval math as
+    ic_harness.py's own live-IC confidence interval: mean +/- CONFIDENCE_INTERVAL_Z * (std
+    / sqrt(n)), applied here to the backtest series instead of the live one.
+    """
+    periods = (panel or {}).get("periods") or []
+    if not periods:
+        return None
+    summary = evaluation.ic_decay_curve(periods, [horizon])["horizons"].get(horizon)
+    if not summary or summary.get("mean_ic") is None or not summary.get("ic_std") or summary.get("periods", 0) < 2:
+        return None
+    error = summary["ic_std"] / math.sqrt(summary["periods"])
+    return {
+        "horizon": horizon,
+        "periods": summary["periods"],
+        "mean_ic": summary["mean_ic"],
+        "standard_error": round(error, 4),
+        "confidence_interval_95": [round(summary["mean_ic"] - CONFIDENCE_INTERVAL_Z * error, 4),
+                                    round(summary["mean_ic"] + CONFIDENCE_INTERVAL_Z * error, 4)],
     }
 
 
@@ -1179,12 +1300,13 @@ def position_reconciliation(execution):
     worst = max(rows, key=lambda row: abs(row["difference"]))
     value = abs(worst["difference"]) * 10_000
     return {"status": "ready", "value": round(value, 2), "rows": rows,
-            "worst_ticker": worst["ticker"], "breached": value > 10}
+            "worst_ticker": worst["ticker"],
+            "breached": value > UNEXPLAINED_POSITION_DIFFERENCE_BPS}
 
 
 def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=None,
                        pit_root=PIT_ROOT, universe_path=UNIVERSE_HISTORY_PATH,
-                       execution=None):
+                       execution=None, panel=None):
     live_days = live["days"]
     accumulating = (f"{live_days} live day{'' if live_days == 1 else 's'} recorded, "
                     f"{live['refreshes']} refresh{'' if live['refreshes'] == 1 else 'es'}.")
@@ -1194,14 +1316,27 @@ def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=N
     divergence = live_backtest_divergence(backtest, live_return_data)
     quality = data_quality_from_pit(pit_root, universe_path)
     reconciliation = position_reconciliation(execution)
+
+    live_ic = monthly.get("mean_rank_ic")
+    backtest_ic = _backtest_ic_reference(panel)
+    ic_kill_threshold_value = backtest_ic["confidence_interval_95"][0] if backtest_ic else None
+    ic_comparison = "lt" if ic_kill_threshold_value is not None else None
+    ic_breached = (live_ic is not None and ic_kill_threshold_value is not None
+                   and live_ic < ic_kill_threshold_value)
+    div_kill_threshold_value, div_comparison = _signed_bound(
+        divergence.get("value"), divergence.get("threshold_bps"))
+
     rows = [
         metric("live_vs_backtest_ic", "monitoring", "Rolling 60-day live IC versus backtest",
-               value=monthly.get("mean_rank_ic"),
+               value=live_ic,
                reads="The decay alarm. Live IC below the backtest confidence interval means "
                      "the edge is gone or was never there.",
                kill_threshold="Live IC below the backtest 95% interval",
+               kill_threshold_value=ic_kill_threshold_value, comparison=ic_comparison,
+               breached=ic_breached, backtest_reference=backtest_ic["mean_ic"] if backtest_ic else None,
                requires_live_sample=True, status="accumulating",
                status_message=monthly.get("status_message") or accumulating,
+               detail={"backtest_reference": backtest_ic},
                observations=monthly.get("periods_accumulated", 0),
                required_observations=monthly.get("minimum_periods"),
                cadence="Weekly", source="prospective IC harness"),
@@ -1223,6 +1358,7 @@ def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=N
                f"{divergence['value']:+.2f} bps/day",
                reads="Mean prospective production return versus the historical backtest mean.",
                kill_threshold="Absolute mean divergence above the 95% backtest sampling interval",
+               kill_threshold_value=div_kill_threshold_value, comparison=div_comparison,
                breached=divergence.get("breached"), requires_live_sample=True,
                status=divergence.get("status"), status_message=divergence.get("reason"),
                detail=divergence, observations=divergence.get("observations"),
@@ -1234,6 +1370,7 @@ def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=N
                f"{quality['value']} critical refresh issue{'s' if quality['value'] != 1 else ''}",
                reads="Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
                kill_threshold="Any missing, unstamped, stale, or duplicate current price row",
+               kill_threshold_value=0, comparison="gt",
                breached=quality.get("breached"), requires_live_sample=True,
                status=quality.get("status"), status_message=quality.get("reason"),
                detail=quality, observations=quality.get("rows"), cadence="Daily",
@@ -1244,6 +1381,7 @@ def monitoring_metrics(live, ic_validation, *, backtest=None, live_return_data=N
                f"{reconciliation['value']:.1f} bps worst",
                reads="Intended against actual weights at the close.",
                kill_threshold="Any unexplained difference above 10 bps",
+               kill_threshold_value=UNEXPLAINED_POSITION_DIFFERENCE_BPS, comparison="gt",
                breached=reconciliation.get("breached"), requires_live_sample=True,
                status=reconciliation.get("status"), status_message=reconciliation.get("reason"),
                detail=reconciliation, observations=len((execution or {}).get("actual_positions") or {}),
@@ -1279,7 +1417,7 @@ def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UN
                + distribution_metrics(backtest, live, live_return_data)
                + monitoring_metrics(live, ic_validation, backtest=backtest,
                                     live_return_data=live_return_data, pit_root=pit_root,
-                                    universe_path=universe_path, execution=execution))
+                                    universe_path=universe_path, execution=execution, panel=panel))
     ready = [row for row in metrics if row["status"] in ("ready", "provisional")]
     return {
         "schema_version": 1,

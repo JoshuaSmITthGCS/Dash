@@ -50,9 +50,15 @@ function pathFor(points, stepped = false) {
 const money = (value) => `$${Math.round(value).toLocaleString('en-US')}`
 const DAY_MS = 24 * 60 * 60 * 1000
 
-function chartDateLabel(value) {
+// Whether a value should render as a clock time (intraday chart) or a calendar date depends
+// on the spread of the *visible* series, not on whether a single value happens to carry a
+// time component: the recorded-snapshot series for Week/Month/3-Month ranges still stamps
+// every point with a full ISO timestamp after it's been grouped down to one point per
+// day/week, so checking each value in isolation showed "9:35 AM" repeated across a week
+// instead of the actual dates.
+function chartDateLabel(value, isSingleDaySeries) {
   const raw = String(value || '')
-  if (raw.includes('T')) {
+  if (isSingleDaySeries && raw.includes('T')) {
     const date = new Date(raw)
     if (!Number.isNaN(date.getTime())) {
       return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
@@ -163,6 +169,7 @@ export default function GrowthChart({
   const chartStyle = lineStyle || document.documentElement.dataset.chartStyle || 'line'
 
   const labelIndexes = [...new Set([0, Math.floor((usableDates.length - 1) / 2), usableDates.length - 1])]
+  const isSingleDaySeries = new Set(usableDates.map((date) => String(date).slice(0, 10))).size <= 1
   const chartSummary = `${title || 'Growth comparison chart'}. ${lines.map((line) => {
     const values = line.values.filter((value) => value != null)
     return `${line.label}: ${valueFormatter(values[values.length - 1])}`
@@ -214,7 +221,7 @@ export default function GrowthChart({
         )}
       </div>}
       <div className="chart-scrub-summary" role="status" aria-live="polite">
-        <span>{chartDateLabel(usableDates[displayedIndex])}</span>
+        <span>{chartDateLabel(usableDates[displayedIndex], isSingleDaySeries)}</span>
         <div>{lines.map((line) => <strong key={line.label} style={{ color: line.color }}><small>Scrub: {line.label}</small>{line.values[displayedIndex] == null ? '–' : valueFormatter(line.values[displayedIndex])}</strong>)}</div>
       </div>
       <div className="chart-scroll-region" ref={plotRef}>
@@ -312,7 +319,7 @@ export default function GrowthChart({
               <text key={index} x={x} y={chartHeight - 8}
                 textAnchor={index === 0 ? 'start' : index === usableDates.length - 1 ? 'end' : 'middle'}
                 fill="var(--text-faint)" fontSize="11" fontFamily="var(--font-mono)">
-                {chartDateLabel(usableDates[index])}
+                {chartDateLabel(usableDates[index], isSingleDaySeries)}
               </text>
             )
           })}

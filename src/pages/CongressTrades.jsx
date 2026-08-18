@@ -220,7 +220,7 @@ export default function CongressTrades() {
             { key: 'return_since_purchase_pct', label: 'Since purchase', numeric: true,
               cell: (row) => row.return_since_purchase_pct != null
                 ? <Move pct={row.return_since_purchase_pct} />
-                : <span className="mono faint-cell">\u2013</span> },
+                : <span className="mono faint-cell">–</span> },
             { key: 'flags', label: 'Flags', sortable: false, cell: (row) => <FlagChips flags={row.flags} /> },
           ]}
           mobile={{

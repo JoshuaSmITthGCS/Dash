@@ -17,8 +17,8 @@ export const SCORE_BANDS = {
     label: 'Tier A',
     shortLabel: 'A',
     description: 'Top tier - strongest fundamentals',
-    color: '#22c55e', // green
-    bgColor: '#22c55e20',
+    color: '#0a6f53',
+    bgColor: '#e2f5ec',
     minPercentile: 80,
     maxPercentile: 100,
     icon: '🟢'
@@ -27,8 +27,8 @@ export const SCORE_BANDS = {
     label: 'Tier B',
     shortLabel: 'B',
     description: 'Strong - above average quality',
-    color: '#3b82f6', // blue
-    bgColor: '#3b82f620',
+    color: '#2b6cc4',
+    bgColor: '#e3edf7',
     minPercentile: 60,
     maxPercentile: 80,
     icon: '🔵'
@@ -37,8 +37,8 @@ export const SCORE_BANDS = {
     label: 'Tier C',
     shortLabel: 'C',
     description: 'Average - mixed signals',
-    color: '#f59e0b', // amber
-    bgColor: '#f59e0b20',
+    color: '#8a5f0e',
+    bgColor: '#fdf2d8',
     minPercentile: 40,
     maxPercentile: 60,
     icon: '🟡'
@@ -47,8 +47,8 @@ export const SCORE_BANDS = {
     label: 'Tier D',
     shortLabel: 'D',
     description: 'Below average - caution warranted',
-    color: '#f97316', // orange
-    bgColor: '#f9731620',
+    color: '#c25a12',
+    bgColor: '#fef0e6',
     minPercentile: 20,
     maxPercentile: 40,
     icon: '🟠'
@@ -57,8 +57,8 @@ export const SCORE_BANDS = {
     label: 'Tier E',
     shortLabel: 'E',
     description: 'Weakest - significant concerns',
-    color: '#ef4444', // red
-    bgColor: '#ef444420',
+    color: '#b83c37',
+    bgColor: '#fbeae9',
     minPercentile: 0,
     maxPercentile: 20,
     icon: '🔴'

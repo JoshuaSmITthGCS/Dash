@@ -7,10 +7,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challenger_modifiers,
                             blend_research_components, build_research, concentration_risk_modifier,
-                            congressional_buying_modifier, geographic_concentration_modifier,
+                            congressional_buying_modifier, filing_8k_modifier,
+                            filing_integrity_modifier, geographic_concentration_modifier,
                             insider_modifier, institutional_ownership_modifier,
-                            macro_regime_modifier, sentiment_score, shrink_research_components,
-                            TECHNICAL_WEIGHTS, technical_factors, technical_score_from_parts)
+                            macro_regime_modifier, proxy_modifier, sentiment_score,
+                            shrink_research_components, TECHNICAL_WEIGHTS, technical_factors,
+                            technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -755,3 +757,105 @@ class ShortHorizonRelativeStrengthTest(unittest.TestCase):
         self.assertAlmostEqual(sum(detail["weights"].values()), 0.90, places=6)
         legacy, _ = technical_score_from_parts(self.PARTS, "legacy_momentum")
         self.assertNotEqual(score, legacy)
+
+
+class Filing8kModifierTests(unittest.TestCase):
+    def test_a_precomputed_negative_summary_penalizes_the_score(self):
+        points, note = filing_8k_modifier(
+            {"score_points": -2.5, "notes": ["8-K Item 4.02 filed 2026-08-10 is a "
+                                             "materially negative event"]})
+        self.assertEqual(points, -2.5)
+        self.assertIn("4.02", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(filing_8k_modifier(None), (0.0, None))
+        self.assertEqual(filing_8k_modifier({}), (0.0, None))
+
+    def test_penalty_only_a_positive_input_is_clamped_to_zero(self):
+        # edgar_filing_signals never produces a positive 8-K score, but the adapter itself
+        # enforces penalty-only regardless of what it's handed.
+        points, _ = filing_8k_modifier({"score_points": 3.0, "notes": []})
+        self.assertEqual(points, 0.0)
+
+    def test_points_respect_the_configured_cap(self):
+        points, _ = filing_8k_modifier({"score_points": -999.0, "notes": []})
+        self.assertGreaterEqual(points, -MODIFIERS.get("filing_8k", {}).get("max_penalty", 4.0))
+
+
+class ProxyModifierTests(unittest.TestCase):
+    def test_a_precomputed_negative_summary_penalizes_the_score(self):
+        points, note = proxy_modifier(
+            {"score_points": -1.2, "notes": ["contested proxy (DEFC14A) filed 2026-08-01"]})
+        self.assertEqual(points, -1.2)
+        self.assertIn("DEFC14A", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(proxy_modifier(None), (0.0, None))
+        self.assertEqual(proxy_modifier({}), (0.0, None))
+
+    def test_penalty_only_a_positive_input_is_clamped_to_zero(self):
+        points, _ = proxy_modifier({"score_points": 3.0, "notes": []})
+        self.assertEqual(points, 0.0)
+
+    def test_points_respect_the_configured_cap(self):
+        points, _ = proxy_modifier({"score_points": -999.0, "notes": []})
+        self.assertGreaterEqual(points, -MODIFIERS.get("proxy_signal", {}).get("max_penalty", 2.0))
+
+
+class FilingIntegrityModifierTests(unittest.TestCase):
+    def test_a_precomputed_negative_summary_penalizes_the_score(self):
+        points, note = filing_integrity_modifier(
+            {"score_points": -2.0, "notes": ["NT 10-Q filed 2026-08-12"]})
+        self.assertEqual(points, -2.0)
+        self.assertIn("NT 10-Q", note)
+
+    def test_absent_data_is_neutral(self):
+        self.assertEqual(filing_integrity_modifier(None), (0.0, None))
+        self.assertEqual(filing_integrity_modifier({}), (0.0, None))
+
+    def test_penalty_only_a_positive_input_is_clamped_to_zero(self):
+        points, _ = filing_integrity_modifier({"score_points": 3.0, "notes": []})
+        self.assertEqual(points, 0.0)
+
+    def test_points_respect_the_configured_cap(self):
+        points, _ = filing_integrity_modifier({"score_points": -999.0, "notes": []})
+        self.assertGreaterEqual(points, -MODIFIERS.get("filing_integrity", {}).get("max_penalty", 3.0))
+
+
+class BuildResearchWiresFilingSignalsIntoTheChampionScoreTests(unittest.TestCase):
+    """End-to-end proof the three new filing modifiers actually move row["score"], the
+    same shape as BuildResearchWiresInstitutionalOwnershipIntoTheChampionScoreTests above."""
+
+    def setUp(self):
+        self.snapshot = {
+            "ticker": "TEST", "name": "Test Co", "sector": "Technology", "is_etf": False,
+            "price_to_book": 3, "return_on_equity": 0.18, "free_cash_flow_yield": 0.06,
+            "profit_margin": 0.15, "debt_to_equity": 0.6, "current_ratio": 1.5,
+            "revenue_growth": 0.10, "earnings_growth": 0.10, "peg": 1.2, "forward_pe": 22,
+            "price_to_sales": 5,
+        }
+        self.closes = [100 + index * 0.1 for index in range(100)]
+
+    def test_a_materially_negative_8k_lowers_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        penalized = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            eightk_activity={"score_points": -3.0, "notes": []},
+        )["score"]
+        self.assertLess(penalized, baseline)
+
+    def test_a_contested_proxy_lowers_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        penalized = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            proxy_activity={"score_points": -1.5, "notes": []},
+        )["score"]
+        self.assertLess(penalized, baseline)
+
+    def test_a_late_filing_notification_lowers_the_champion_score(self):
+        baseline = build_research("TEST", self.snapshot, self.closes, self.closes, [])["score"]
+        penalized = build_research(
+            "TEST", self.snapshot, self.closes, self.closes, [],
+            filing_integrity={"score_points": -2.0, "notes": []},
+        )["score"]
+        self.assertLess(penalized, baseline)

@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { Link } from 'react-router-dom'
 import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
 import ETFComparisonPanel from './ETFComparisonPanel'
@@ -122,11 +123,44 @@ function InsiderActivityView({ insider }) {
   )
 }
 
+const CONGRESS_FLAG_LABELS = {
+  EXTRAORDINARY_BUY: "First trade in a small, unfamiliar company",
+  CLUSTER_TRADE: '3+ representatives, 14-day span',
+  BUY_SELL_FLIP: 'Round trip within 60 days',
+}
+
+// Congress + institutional 13F, merged and pre-filtered to notable rows only
+// (pipeline/build_inside_information_screen.py) - a compact 2-3 line block, not the full
+// table the /screens/inside-information page shows. Renders nothing for the vast majority
+// of tickers, which never cleared the notability bar upstream.
+export function InsideInformationView({ info }) {
+  if (!info) return null
+  return (
+    <div>
+      <div className="sec-label">Inside information: notable disclosed activity</div>
+      <div className="congress-flag-row" aria-label="Notable institutional and Congressional activity">
+        {info.institutional_flag && (
+          <span className={`chip ${info.institutional_flag === 'CLUSTER_ACCUMULATION' ? 'pos' : 'neg'}`}>
+            {info.institutional_flag === 'CLUSTER_ACCUMULATION' ? 'Curated managers accumulating' : 'Curated managers distributing'}
+          </span>
+        )}
+        {(info.congress_flags || []).map((flag) => (
+          <span key={flag} className="chip">{CONGRESS_FLAG_LABELS[flag] || flag}</span>
+        ))}
+      </div>
+      <p className="evidence-footnote">
+        Combined score {info.score?.toFixed(2) ?? '–'}. <Link to="/screens/inside-information">See the full Inside Information screen →</Link>
+      </p>
+    </div>
+  )
+}
+
 export default function StockDetailModal({ stock: suppliedStock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
   const [tab, setTab] = useState('evidence')
   const [showMore, setShowMore] = useState(false)
   const { preferences } = usePreferences()
   const { data: fullResearch } = useData(suppliedStock && !suppliedStock.explainability ? 'advisor.json' : null)
+  const { data: insideInformation } = useData(suppliedStock ? 'screens/inside-information.json' : null)
 
   useBodyScrollLock(!!suppliedStock)
   // Escape, focus trap, initial focus and focus restore — see src/lib/useDialog.js.
@@ -368,6 +402,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
               </div>
 
               <InsiderActivityView insider={stock.insider_activity} />
+              <InsideInformationView info={insideInformation?.by_ticker?.[stock.ticker]} />
 
               {stock.modifiers?.notes?.length > 0 && (
                 <div>

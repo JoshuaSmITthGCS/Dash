@@ -76,12 +76,16 @@ export function BenchmarkTable({ sortedPositions, versusIndex, onPurchaseDateCha
         <strong>The only fair comparison:</strong> what each position is worth now against
         what the identical dollars, invested on the identical day, would be worth in the S&P 500.
       </div>
-      <DataTable
-        rows={rows}
-        getKey={(row) => row.id}
-        columns={comparisonColumns({ investedLabel: 'Invested', onPurchaseDateChange })}
-        rowClassName={(row) => (row.isTotal ? 'comparison-total-row' : undefined)}
-      />
+      {sortedPositions.length === 0 ? (
+        <p className="comparison-empty-cell">No positions yet. Click "+ Add Position" to start tracking.</p>
+      ) : (
+        <DataTable
+          rows={rows}
+          getKey={(row) => row.id}
+          columns={comparisonColumns({ investedLabel: 'Invested', onPurchaseDateChange })}
+          rowClassName={(row) => (row.isTotal ? 'comparison-total-row' : undefined)}
+        />
+      )}
       <ComparisonFootnote />
     </div>
   )

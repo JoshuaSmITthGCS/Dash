@@ -1,8 +1,10 @@
 # Redesign status — continuation notes
 
 **Companion to `docs/REDESIGN-PLAN.md`. Read both.**
-Last updated 2026-08-16 · Phases 0–4 and 6 as merged in `8a1d073f`, plus the
-Portfolio decomposition (Phase 2d) and the SVG type-floor fix (`dc1dc3f6`) on top.
+Last updated 2026-08-17 · Phases 0–4 and 6 as merged in `8a1d073f`, plus the
+Portfolio decomposition (Phase 2d), the SVG type-floor fix (`dc1dc3f6`), the
+Phase 5 empty-states pass, and the Phase 4 remainder (score-history doc
+correction + 7 more `SignalMetricsPanel` metrics wired) on top.
 
 This file exists so a new session can pick the redesign up without re-deriving what
 was already decided or repeating measurements. It records what is done, what is
@@ -534,23 +536,243 @@ added a `ResizeObserver` stub to `src/test/setup.js` — jsdom doesn't implement
 it, which `@tanstack/react-virtual`'s dynamic measurement needs, and no prior
 test exercised a virtualized list closely enough to hit the gap.
 
+### Phase 5 — empty-states pass ✅ · one real bug found and fixed
+The last item in the plan's Phase 5 traffic order: a sweep across the whole
+app for empty states that render nothing useful (a blank table, a bare dash)
+instead of explaining why. `grep -rn "results.length ? \|!.*\.length &&"
+src/pages/` surfaced the candidates already covered by name in earlier passes
+(Glossary, PolicyRadar, Search, BacktestComparison, Picks, Watchlist — all
+already have contextual `<Empty>`/inline messages, confirmed live). The
+grep's blind spot is exactly the pattern that mattered here: components that
+render a `DataTable` with no `!rows.length` guard at all, so an empty array
+falls through to the shared component instead of a page's own empty-state
+JSX. Traced every `DataTable` caller in `src/pages/` by hand (not just
+grepped) to answer, for each one, "can this actually receive zero rows, and
+if so, is it guarded": `SwingScreen`, `FastGrowthScreen`, `ThemeExposureScreen`,
+`CongressTrades`, `OptionsScreen`/`StrategyScreen`, `InstitutionalActivity`,
+`ResearchScreen`, `Picks` all already wrap their table in `!rows.length ?
+<Empty ... /> : <DataTable ... />`. `ShadowPortfolios` and `BacktestComparison`
+render fixed, config-driven rosters (10 strategies, 15 backtest methods
+respectively, confirmed by reading the published JSON directly) that can't
+reach zero in practice short of the whole file going missing, which is
+already handled by a separate `error` state.
+
+One real gap, in `src/pages/portfolio/ComparisonTables.jsx`: `BenchmarkTable`
+(the "Vs S&P 500" tab) had no empty-state check, while its sibling
+`FixedBasisTable` in the same file (the "$N Calculator" tab) already guarded
+`positionCount === 0` with a "No positions yet. Click '+ Add Position' to
+start tracking." message — visible proof the two were built at different
+times and the guard never got carried over to the first tab. With zero
+portfolio positions, `BenchmarkTable` would render a live `DataTable` with
+column headers and a callout/footnote around an empty body — the exact "blank
+table" pattern this pass exists to catch. Fixed by adding the identical
+`sortedPositions.length === 0` guard `FixedBasisTable` already had, same
+message. Not visually reachable in this sandbox: Portfolio is Firebase-gated
+and the dev-only `?portfolioPreview=1` bypass always seeds 4 mock positions
+(`pipeline/config/settings.json`'s `interface.mobile_preview_positions`),
+never zero. Verified instead with a new unit test in
+`ComparisonTables.test.jsx` mirroring `FixedBasisTable`'s existing empty-state
+test, plus a live screenshot of the populated case in both themes confirming
+no regression (`?portfolioPreview=1`, "Vs S&P 500" tab clicked). `npm run
+lint && npm test && npm run build` green (791 tests, +1 new),
+`design/a11ycheck.mjs` clean, `design/typefloor.mjs` clean (0 violations
+across home/portfolio/portfolio-performance/research/markets × 3 widths).
+
+Two environment-only gotchas hit running this pass in a fresh claude.ai/code
+sandbox — neither a code bug, both documented in `docs/WHATS-LEFT-2026-08-17.md`
+in full: no `.env.local` crashes the whole app (not just Firebase-gated
+pages) rather than degrading gracefully, because `getAuth()`'s synchronous
+format check throws on a genuinely-missing key, not just an invalid one; and
+the sandbox's pre-installed Chromium revision didn't match what the pinned
+`playwright-core` expected, with the network fetch of the matching revision
+blocked by the proxy — worked around by launching the pre-installed binary
+via `executablePath` in throwaway copies of the three `design/*.mjs` scripts,
+never committed.
+
+### Phase 4 remainder ✅ · one stale claim corrected, 7 metrics wired, 3 genuinely still blocked
+Both items this section used to list as open are now resolved or correctly
+reclassified.
+
+**The `StockDetailModal` score-history "data gap" was stale — nothing to
+build, it already exists.** Re-reading `pipeline/explainability.py` found
+`build_score_history()` reading `read_snapshots()` (the same cheap
+`pit_store` source `ic_harness.py` uses, not the deleted 31 MB file) and
+`attach_explainability()` already attaching the result as each row's
+`explainability.score_history` — champion score, stance, and category scores
+at every recorded refresh. `ScoreExplainability.jsx`'s `ScoreHistory`
+sub-component already reads exactly that field and is already wired into
+`StockDetailModal` (line 305, confirmed by grep before touching anything).
+Live data check: `public/data/advisor.json`'s `research[]` rows already
+carry up to 51 stored points (CRUS); every row's `status` is `"accumulating"`
+today because none has yet spanned the required 6 distinct calendar months
+— production is too young, not broken. Confirmed by opening the real modal
+in a running dev server (Search → CRUS → Explore the evidence, both themes):
+renders "Score history is accumulating — 1 of 6 stored months. A chart
+appears after enough distinct monthly snapshots exist," gracefully, exactly
+as `ScoreHistory`'s early-return branch intends. This is the same
+"accumulating" pattern already established for `distribution_metrics` and
+(now) `live_vs_backtest_ic` below — a real, self-resolving readiness gate,
+not a missing feature. **No code changed for this item** — it was a doc
+correction, following the same pattern as the two stale claims corrected
+earlier in this arc (Picks' metric disclosure, Institutional Activity's
+empty state).
+
+**7 more `SignalMetricsPanel` metrics now carry a real `kill_threshold_value`
++ `comparison` pair**, on top of the 9 wired in the original pass (§1
+above). Two mechanical patterns account for all of them, neither derived
+from the prose `kill_threshold` text and neither approximating anything —
+per `metric()`'s own docstring rule, followed strictly again:
+
+- **Count versus an implicit zero.** `per_leg_ic`, `drop_one_leg`,
+  `leg_correlation`, and `data_quality_counters` each publish a count (dead
+  legs, harmful legs, redundant pairs, critical data-quality issues) as
+  `value`, and each already treated *any* nonzero count as breach —
+  `breached=bool(count)` was already in the code before this pass. Zero is
+  therefore a real, same-scale threshold for the count; `kill_threshold_value
+  =0, comparison="gt"` just states explicitly what the breach logic already
+  meant. Documented inline at `signal_metrics()`'s docstring and each call
+  site.
+- **A same-scale pair that already existed in the code, just not passed
+  through.** `factor_betas`' `value` (the momentum factor loading) and its
+  breach test (`< -0.1`) were always the same quantity — now a named
+  constant `MOMENTUM_LOADING_KILL_THRESHOLD` instead of an inline literal.
+  `position_reconciliation`'s `value` (worst unexplained position difference,
+  in bps) and its breach test (`> 10`) likewise — now
+  `UNEXPLAINED_POSITION_DIFFERENCE_BPS`.
+
+Two metrics needed *new* wiring, not just extraction, because the real
+comparison basis didn't exist in the published data yet:
+
+- **`live_vs_backtest_ic`** previously never set `breached` at all — a
+  silent gap, not a working alarm. Its `kill_threshold` text ("Live IC below
+  the backtest 95% interval") named a *backtest*-derived interval, but the
+  only interval in the data (`ic_validation.json`'s `champion.1M.
+  confidence_interval_95`) is the *live* estimate's own self-referential CI
+  — comparing a value against its own confidence interval would almost
+  never breach, and isn't what the metric claims to test. Fixed by adding
+  `_backtest_ic_reference()`, which computes a real backtest-side interval
+  from the panel's own IC series at the matching horizon (21 trading days ≈
+  1 calendar month) using the identical `mean ± z × standard_error` method
+  `ic_harness.py` already uses for its own interval — same formula, same
+  `CONFIDENCE_INTERVAL_Z = 1.96` constant (renamed from the divergence
+  metric's `DIVERGENCE_Z_THRESHOLD`, since it's the same two-tailed-95% value
+  used for both), applied to the backtest series instead of the live one.
+  `monitoring_metrics()` now takes a `panel` parameter to make this
+  possible; `build_report()` threads it through. The metric also now
+  publishes `backtest_reference` (the backtest's own mean IC), reusing the
+  existing "not a live reading" label pattern from `distribution_metrics`.
+- **`live_vs_backtest_divergence`**'s real breach test is symmetric
+  (`abs(z_score) > threshold`), but the `kill_threshold_value`/`comparison`
+  contract only supports one-sided `lt`/`gt`. Rather than force a
+  misleading one-sided threshold onto a two-sided test, added
+  `_signed_bound(value, bound)`: it converts the already-computed unsigned
+  bps bound (`error × CONFIDENCE_INTERVAL_Z × 10,000`, exposed from
+  `live_backtest_divergence()` as `threshold_bps`) into a one-sided pair
+  oriented to whichever side of zero the current divergence sits on. This
+  reproduces the true `abs(value) > bound` test exactly for the observed
+  sign — never fabricates a number, only chooses which direction the
+  bullet's existing lt/gt contract should point.
+
+**`rolling_beta_60d` and `sector_active_weights` each gained a new sibling
+metric** (`rolling_beta_swing`, `sector_classification_coverage`) instead of
+a threshold on the original card. Both originals' `value` and their own
+`kill_threshold` describe different quantities on different scales — a
+point-estimate beta (~1) versus a stability swing (~0.3); a largest active
+sector bet in percentage points versus a coverage fraction. Pairing them
+would have shown one number crossing a line that was never about it — the
+exact failure mode `metric()`'s docstring warns against. The new metrics
+carry the real threshold on their own real scale instead, and their
+`breached` flags are set to agree with the original card's (same underlying
+condition, now visible on the number it actually describes).
+`_sector_active_weight_metric()` now returns a list of two metrics instead
+of one; its one caller updated from `rows.append(...)` to `rows.extend(...)`.
+
+**3 metrics remain correctly without a numeric pair — verified as genuine
+methodology gaps, not oversights:** `quantile_spread`'s threshold is a shape
+condition (monotonic or not), not a magnitude comparable to its `value`.
+`alpha_cost_crossover`'s `value` is a string horizon label (e.g. `"21d"`),
+not a number. `breakeven_gross_alpha` is computed (`evaluation.
+breakeven_gross_alpha()` already exists and runs), but its comparator — "IC-
+implied expected return," a conversion from a rank correlation to an
+expected-return magnitude — is not computed anywhere in this codebase.
+Inventing that formula (e.g. via Grinold's Fundamental Law) would be a real
+quantitative-methodology decision with real published-claim consequences,
+not a plumbing fix, so it was left alone.
+
+Verified: `PYTHONPATH=pipeline python -m pytest pipeline/tests/
+test_signal_metrics.py` green (43 tests, +10 new — count-vs-zero wiring,
+the swing/coverage sibling metrics, `_signed_bound`'s both directions, the
+backtest-IC-interval breach/no-breach cases, the panel-less unset case, and
+the two extracted-pair metrics), full pipeline suite green (1992 tests, +10),
+`validate_data.py`/`check_ui_weights.py`/`validate_documentation_claims.py`
+all pass, `signal_metrics.py --print` and the regenerated
+`public/data/validation/signal_metrics.json` show the new bullets with
+correct breach state, `npm run lint && npm test && npm run build` green (790
+tests, `SignalMetricsPanel.test.jsx`'s stale example comment fixed to name a
+metric still genuinely without a threshold), and all seven touched/new cards
+confirmed live on `/screens/validation` in both themes via screenshot.
+
 ---
 
 ## 2. What is left
 
 Ordered by value. Everything below is also summarised in `TODO.md`.
 
-### Phase 5 — page-by-page pass · DASHBOARD + PORTFOLIO DONE · PICKS + SWINGSCREEN LIGHT-TOUCH · rest not started
+### Phase 5 — page-by-page pass · ALL DONE, including the empty-states sweep
 Per the plan, in traffic order: ~~Dashboard~~ → ~~Portfolio~~ → ~~Picks~~ →
-~~SwingScreen~~ → rest of the screens family →
-Finances/Planning/Insights/Watchlist/Markets →
-Methodology/Glossary/Settings/Alerts → empty states. Picks and SwingScreen are
-struck because their passes are complete, not because they got the
-Dashboard-style rebuild treatment — see §1, each needed one real bug fixed, not
-a restructure. Next: the rest of the screens family (`FastGrowthScreen`,
-`OptionsScreen` + its 7 `StrategyScreen` variants, `ResearchScreen`-backed
-screens, `CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
-`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`).
+~~SwingScreen~~ → ~~rest of the screens family~~ →
+~~Finances/Planning/Insights/Watchlist/Markets~~ →
+~~Methodology/Glossary/Settings/Alerts~~ → ~~empty states~~. Everything is
+struck because its pass is complete, not because it got the Dashboard-style
+rebuild treatment — see §1. Most of it needed nothing (already well-built); a
+handful of real bugs were found and fixed along the way, most recently the
+empty-states sweep's `BenchmarkTable` fix (§1, above). Phase 5 is done; next
+up is the Phase 4 remainder, below.
+
+**Finances/Planning/Insights/Watchlist/Markets — pass done, no changes needed.**
+Batch-scanned all 5 routes in both themes (console errors, `\u`-escape
+artifacts, horizontal overflow — same method as the screens-family pass) plus
+a visual check: all clean. `Insights.jsx` and `Watchlist.jsx` (the two most
+complex of the five) read in full — well-structured, mobile-aware, no
+duplicate-key risk (all `key`s are stable IDs). `Markets.jsx` is the one page
+in this group not gated behind Firebase locally; screenshotted in full in
+both themes (headline → summary tiles → chart → index row → ticker search) —
+clean hierarchy, no issues. Finances/Planning/Insights/Watchlist correctly
+render their "Cloud data is offline" empty state locally (Firebase is
+offline in this dev environment, same known limitation as Portfolio and
+Diversification) — confirmed each is a real, well-designed empty state with
+a working "Reconnect Firebase" affordance, not a blank page. Verified: lint/
+test/build green, no code changed this pass.
+
+**Methodology/Glossary/Settings/Alerts — pass done, one real bug found and
+fixed.** Same method as the two passes above: all four routes read in full,
+screenshotted in both themes, batch-scanned for console errors, `\u`-escape
+artifacts, and horizontal overflow (0px at 1440/1100/820/390px on every
+route). `Glossary.jsx` and `Settings.jsx` were clean on inspection — no
+changes. `Alerts.jsx` correctly renders its "Cloud data is offline" empty
+state locally (same known Firebase-offline limitation as the rest of the
+cloud-gated pages; its generic `authError` copy mentioning "portfolio" on a
+non-portfolio page was already reviewed and accepted during the
+Finances/Planning/Insights/Watchlist pass above — not new).
+
+One real bug in **`Methodology.jsx`**: the "Overall research score" weight
+bar renders each blend component's label *inside* its own colored segment
+(`.weight-stack`), sized to that component's percentage. `news_sentiment` is
+fixed at 4% in `pipeline/config/settings.json` (`fundamentals: 0.78,
+market_behavior: 0.18, news_sentiment: 0.04`) — a segment far too narrow to
+fit "4% news" on one line. The text wrapped and was clipped mid-word by the
+bar's `overflow: hidden`, rendering as broken "4% new" with the trailing "s"
+cut off, on *every* page load — not a data artifact, a permanent config
+value. Confirmed visually via cropped screenshot before and after. Fixed two
+ways: `Methodology.jsx` now shows just the bare percentage (`4%`) when a
+segment is under 10% wide, with the full "4% news sentiment" label available
+via a `title` tooltip; `.weight-stack > div` in `portfolio.css` also gained
+`white-space: nowrap; overflow: hidden; text-overflow: ellipsis` as a
+defensive floor, so any future weight-config change that produces another
+narrow segment degrades to a clean ellipsis instead of wrapped, clipped text.
+Verified: lint/test/build green (789 tests), `typefloor.mjs` clean at three
+widths on all four routes, `a11ycheck.mjs` clean, before/after crops
+confirming the fix in both themes.
 
 **Dashboard (done).** It was 8,583px — 8.5 viewport-heights of "overview" — and
 27% of that was a second copy of Portfolio → Data overview. Now 6,651px (**−22.5%**),
@@ -583,8 +805,14 @@ redesign ran at the default 1280×720, not the 1440×1000 they claim.** Now `vie
 
 Specific known gaps:
 - No shared screen-page skeleton, so 15+ screen routes each invent a layout.
-- `InstitutionalActivity` ships `results: []` permanently and renders a blank
-  table rather than explaining the 13F cadence.
+- ~~`InstitutionalActivity` ships `results: []` permanently and renders a blank
+  table rather than explaining the 13F cadence.~~ **stale — already fixed
+  elsewhere.** `results: []` is still true (checked `institutional-13f.json`
+  directly), but the "blank table" part isn't: `InstitutionalActivity.jsx:139-142`
+  already renders `<Empty note="No flagged activity yet – this screen updates
+  monthly." />`, plus four summary tiles (managers reviewed/configured, CUSIPs
+  mapped, amendments seen) giving real context. Confirmed live via screenshot
+  during the screens-family pass (§1, below) — not a table at all.
 - ~~Picks still shows 112 keys per row as 8 flat metric pills~~ **stale — already
   built.** Rereading `Picks.jsx`'s `ResearchCard`/`picksColumns` found the layered
   disclosure already exists: mobile cards show 4 headline metrics, an "expand"
@@ -648,6 +876,49 @@ and the nested `<details>`, not two fragments. Switched `<p>` → `<div>`
 `Picks.jsx`/`Methodology.jsx`, so not a new pattern). Verified: lint/test/build
 green (789 tests, SwingScreen's own 37), `typefloor.mjs`/`a11ycheck.mjs` clean.
 
+**Rest of the screens family — pass done, three real bugs found and fixed.**
+Screened all 17 remaining screen routes: `FastGrowthScreen`, `OptionsScreen` +
+its 7 `StrategyScreen` variants, the four `ResearchScreen`-backed screens
+(momentum/quality-value/earnings/matrix), `EarlySessionResearch`,
+`CongressTrades`, `InstitutionalActivity`, `ThemeExposureScreen`,
+`BacktestComparison`, `ShadowPortfolios`, `LiveValidation`. Method: a batch
+Playwright pass checking every route for console errors, `\u` escape
+artifacts in rendered text (see below — cheap to check for once one instance
+turned up), and horizontal overflow, then a visual spot-check of a sample.
+14 of 17 routes came back clean — screenshotted and confirmed genuinely
+well-built already (good hierarchy, working chart/table toggles, contextual
+empty states), no changes made. Three real bugs found in the other 3:
+
+- **`OptionsScreen.jsx`'s IV/RV column literally rendered `1.11×`** —
+  the six characters, not the `×` symbol. `×` only resolves as an escape
+  sequence inside a JS string or template literal; written as bare JSX text
+  (no surrounding quotes) it's just text. The mobile card's own IV/RV cell,
+  a few lines away, already used the real `×` character and rendered fine —
+  same bug pattern, one path fixed, one not. Fixed by switching to the
+  literal character, matching the working path.
+- **`CongressTrades.jsx` had the identical mistake** — one cell rendered
+  literal `–` instead of an en dash, while four sibling cells in the same
+  column array correctly wrote `'–'` (quoted, so the escape resolves).
+  Same fix.
+- **`ResearchScreen.jsx` (shared by momentum/quality-value/earnings/matrix)
+  had a real duplicate-key React warning on `/screens/momentum` only.**
+  Traced to `screens/momentum.json` directly (not assumed): 23 tickers appear
+  twice each at *different* ranks and percentiles — e.g. DINO at both #11
+  (92.31) and #12 (93.16) — a genuine pipeline scoring anomaly, not a simple
+  republish-the-same-row gap like the earlier `OptionsScreen` case. The
+  visible symptom was a `"125 results"` count that was actually 102 unique
+  names. Deduped defensively in the shared component (keep the first,
+  better-ranked occurrence), same pattern as the earlier `OptionsScreen` fix.
+  **The pipeline-side root cause — why momentum scores a name twice — is not
+  fixed and is out of scope for this pass.**
+
+Also corrected a stale gap note in this doc (above): `InstitutionalActivity`'s
+`results: []` is still genuinely empty (checked the data file directly), but
+the doc's claim that it renders "a blank table" was wrong — it already shows
+a proper contextual empty state plus four summary tiles. Verified: lint/test
+green (789 tests), full build, `typefloor.mjs`/`a11ycheck.mjs` clean on the
+touched routes.
+
 ### Phase 2d — decompose the giants · PORTFOLIO DONE · SwingScreen/Picks reassessed, not decomposed
 | File | Lines |
 |---|---|
@@ -702,18 +973,14 @@ duplicated-view problem to actually solve, would be exactly the kind of
 abstraction-for-its-own-sake this project's own conventions warn against.
 Treating this bullet as done, not skipped.
 
-### Phase 4 remainder — one data gap, three metric groups needing methodology work
-Not chart-building tasks; see §1's Phase 4 entry for the full breakdown.
-- **Score-history line** (`StockDetailModal`) needs a pipeline change: a small
-  per-row score-history series sized for the browser. Nothing today publishes
-  one.
-- **14 of `SignalMetricsPanel`'s 40 metrics** still show no bullet, correctly —
-  3 need a semantic call (count-vs-threshold republishing), 2 need a
-  structural field change (the compared quantity isn't `value`), 3 need real
-  methodology work (`breakeven_gross_alpha`'s comparator doesn't exist yet;
-  `quantile_spread`/`alpha_cost_crossover` have no numeric form), and 2 have a
-  computable-but-unpublished bound that's lower priority while the live
-  sample is young.
+### Phase 4 remainder ✅ · done (see §1)
+Both items resolved 2026-08-17: the score-history "gap" was a stale doc
+claim (already built, already wired, correctly showing an "accumulating"
+state); 7 more `SignalMetricsPanel` metrics now carry a real numeric
+threshold. 3 metrics remain without one — `quantile_spread`,
+`alpha_cost_crossover`, `breakeven_gross_alpha` — verified as genuine
+methodology gaps (a shape condition, a string value, and an uncomputed
+comparator respectively), not oversights. Full breakdown in §1.
 
 ### Phase 6 — dead code + payload + motion pass + rubric rescore — all DONE (see §1)
 Nothing left in Phase 6. Two gaps the rescore surfaced but deliberately left open,
@@ -786,7 +1053,14 @@ node design/appshot.mjs                        # ROUTES='[["/","home"]]' TAG='x-
 node design/a11ycheck.mjs                      # keyboard + modal + unnamed-control check
 node design/typefloor.mjs                      # 11px floor, DOM *and* scaled SVG; exits 1 on breach
 ```
-All three hardcode a Playwright path from the npx cache — fix it if that moves.
+All three import `chromium` from `playwright-core` (an existing `package.json`
+devDependency), not a hardcoded npx-cache path — that portability fix landed
+2026-08-17 so these scripts run in any environment with `npm ci` done and a
+Chromium binary installed (`npx playwright install chromium` if one isn't
+already cached at `~/Library/Caches/ms-playwright` or the platform
+equivalent). If a fresh environment errors on `chromium.launch()`, that's the
+missing browser binary, not a code problem — install it, don't re-hardcode a
+path.
 Add `?portfolioPreview=1` to any portfolio-bearing route or it renders its empty
 state locally (Firebase is offline; see below).
 

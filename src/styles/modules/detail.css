@@ -125,7 +125,7 @@
 /* Research evidence panels (/screens/validation) --------------------------------------- */
 .evidence-stack { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .evidence-panel, .evidence-headline { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
-.evidence-headline { border-left: 3px solid var(--accent, currentColor); }
+.evidence-headline { padding: var(--sp-3); border: 1px solid var(--border-default); border-radius: var(--control-radius); background: color-mix(in srgb, var(--accent, currentColor) 4%, transparent); }
 .evidence-note { margin: 0; color: var(--text-tertiary); font-size: var(--fs-xs); line-height: 1.5; }
 .evidence-empty { display: grid; gap: var(--sp-1); padding: var(--sp-3); border-radius: 8px;
   background: var(--surface-sunken, transparent); color: var(--text-tertiary); font-size: var(--fs-xs); }

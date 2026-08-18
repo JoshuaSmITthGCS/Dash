@@ -75,6 +75,41 @@ describe('GrowthChart zoom', () => {
     expect(screen.getByText('After-hours')).toBeInTheDocument()
   })
 
+  it('labels a multi-day range with dates, even when every point carries a full ISO timestamp', () => {
+    // Mirrors the recorded-snapshot Week/Month/3-Month series, which keeps a full
+    // `recordedAt` timestamp on every point even after grouping down to one point per day.
+    const dates = [
+      '2026-08-07T13:35:00.000Z',
+      '2026-08-10T13:35:00.000Z',
+      '2026-08-14T13:35:00.000Z',
+    ]
+    render(
+      <GrowthChart
+        dates={dates}
+        series={[{ label: 'Holdings', values: [100, 105, 110], color: 'green', emphasis: true }]}
+        title="Portfolio"
+      />,
+    )
+
+    expect(screen.getAllByText('2026-08-07').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('2026-08-14').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/^\d{1,2}:\d{2}/)).not.toBeInTheDocument()
+  })
+
+  it('still labels a same-day intraday range with clock times', () => {
+    const dates = ['2026-08-14T13:35:00.000Z', '2026-08-14T14:35:00.000Z', '2026-08-14T19:55:00.000Z']
+    render(
+      <GrowthChart
+        dates={dates}
+        series={[{ label: 'Holdings', values: [100, 105, 110], color: 'green', emphasis: true }]}
+        title="Portfolio"
+      />,
+    )
+
+    expect(screen.queryByText('2026-08-14')).not.toBeInTheDocument()
+    expect(screen.getAllByText(/^\d{1,2}:\d{2}/).length).toBeGreaterThan(0)
+  })
+
   it('reserves mobile chart space for an overlaid account summary', () => {
     const originalMatchMedia = window.matchMedia
     window.matchMedia = () => ({

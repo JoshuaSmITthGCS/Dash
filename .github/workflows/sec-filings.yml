@@ -1,0 +1,76 @@
+name: Collect SEC filings (10-K/10-Q, DEF 14A, 8-K)
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Every 3 days: DEF 14A and 8-K materiality benefit from checking this often (an NT
+    # 10-K/NT 10-Q late-filing notice is caught within days rather than a full quarter
+    # later). 10-K/10-Q themselves never appear more than quarterly regardless of poll
+    # frequency, and one EDGAR submissions fetch per symbol already covers every form type
+    # this collects, so there is no extra cost to polling them on the same cadence.
+    - cron: '0 13 */3 * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sec-filings-main
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    # Scheduled runs stay on main. A manual dispatch is allowed from any branch so a change
+    # to the collector can be exercised against live EDGAR before it is merged - the commit
+    # step below stays gated on main, so a branch run publishes nothing.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+      - name: Collect and classify 10-K/10-Q, DEF 14A, and 8-K filings
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+        run: python pipeline/build_filings_screen.py
+      - name: Summarise what was collected
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          payload = json.load(open("public/data/screens/filings.json"))
+          print(f"**Status:** `{payload.get('status')}`\n")
+          if payload.get("degraded_reason"):
+              print(f"> {payload['degraded_reason']}\n")
+          print(f"- symbols reviewed: {payload.get('symbols_reviewed')} "
+                f"of {payload.get('symbols_configured')}")
+          print(f"- new filings logged: {payload.get('new_filings_logged')}")
+          for failure in (payload.get("failures") or [])[:20]:
+              print(f"- failure: `{failure}`")
+          negative = [row["ticker"] for row in payload.get("results") or []
+                      if any((row.get(key) or {}).get("score_points")
+                             for key in ("eightk_activity", "proxy_activity", "filing_integrity"))]
+          print(f"- {len(negative)} ticker(s) with a scored filing signal this run: "
+                f"{', '.join(negative[:30]) or '(none)'}")
+          PY
+          cat "$GITHUB_STEP_SUMMARY"
+      - name: Commit collected data with retry
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          git config user.name "valuesignal-data-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add --all pipeline/data/filings 2>/dev/null || true
+          git add public/data/screens/filings.json
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(data): collect SEC 10-K/10-Q, DEF 14A, and 8-K filings"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            git rebase --abort 2>/dev/null || true
+            sleep $((attempt * 10))
+          done
+          exit 1

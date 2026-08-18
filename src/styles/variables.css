@@ -12,14 +12,14 @@
    ============================================================================ */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  /* --- surfaces: one hue family, lightness is the only axis ---------------- */
-  --surface-canvas-bg: #eceff0;   /* the page */
-  --surface-shelf-bg: #e3e8e7;    /* inset: control fills, row hover, tracks */
-  --surface-card-bg: #fbfcfc;     /* a container on the page */
-  --surface-raised-bg: #ffffff;   /* a container above its neighbours */
-  --surface-sheet-bg: var(--surface-raised-bg);
+  /* --- surfaces: HUD aesthetic, near-black with subtle blue undertones ----- */
+  --surface-canvas-bg: #0a0e14;   /* the void — darkest background */
+  --surface-shelf-bg: #0f1419;    /* inset: control fills, row hover, tracks */
+  --surface-card-bg: #0f1419;     /* glass panel on the void */
+  --surface-raised-bg: #161c23;   /* elevated above panels */
+  --surface-sheet-bg: #1c242e;    /* modals, drawers, overlays */
 
   --surface-canvas-border: var(--border-subtle);
   --surface-shelf-border: var(--border-default);
@@ -27,64 +27,62 @@
   --surface-sheet-border: var(--border-strong);
 
   --app-background: var(--surface-canvas-bg);
-  --app-background-tint: #e7ebeb;
+  --app-background-tint: #0c1116;
   --surface-primary: var(--surface-card-bg);
   --surface-secondary: var(--surface-shelf-bg);
   --surface-tertiary: var(--surface-raised-bg);
 
-  /* --- ink: four levels, every one AA on all four surfaces ----------------- */
-  --text-primary: #101614;    /* 17.8:1 on card */
-  --text-secondary: #4b5552;  /*  7.5:1 on card */
-  --text-tertiary: #5c6864;   /*  5.7:1 on card, 4.7:1 on shelf */
-  --text-faint: #7f8b87;      /* decorative only — never body, never alone */
+  /* --- ink: four levels, optimized for dark HUD ---------------------------- */
+  --text-primary: #e3e8ef;    /* high contrast on dark */
+  --text-secondary: #94a3b8;  /* readable secondary */
+  --text-tertiary: #64748b;   /* subdued tertiary */
+  --text-faint: #475569;      /* decorative only — never body, never alone */
 
-  --border-subtle: #e8ecec;
-  --border-default: #dbe1e0;
-  --border-strong: #c2cbc8;
+  --border-subtle: rgba(100, 116, 139, 0.1);
+  --border-default: rgba(100, 116, 139, 0.2);
+  --border-strong: rgba(100, 116, 139, 0.35);
 
-  /* --- brand: one accent. --brand-primary is overwritten inline. ----------- */
-  --brand-primary: #17513c;
-  --brand-soft: #e3f0e9;
-  --accent-ink: #ffffff;
-  /* Data marks need more luminance against a surface than a fill needs behind
-     text, so the chart/meter accent is derived one step lighter from whichever
-     accent the user picked. color-mix reads the inline value at compute time. */
-  --brand-secondary: color-mix(in srgb, var(--brand-primary) 78%, #ffffff);
+  /* --- brand: cyan HUD glow. --brand-primary is overwritten inline. -------- */
+  --brand-primary: #00d4ff;
+  --brand-soft: rgba(0, 212, 255, 0.08);
+  --accent-ink: #0a0e14;
+  /* Data marks on dark: slightly darker to distinguish from accent used as ink */
+  --brand-secondary: #00b8e6;
 
   /* --- semantic: state, never series --------------------------------------- */
-  --positive: #0a6f53;  --positive-soft: #e2f5ec;
-  --negative: #b83c37;  --negative-soft: #fbeae9;
-  --warning: #8a5f0e;   --warning-soft: #fdf2d8;
+  --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
+  --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
+  --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
 
   /* --- chart series: fixed order, one hue per series ------------------------ */
   --series-stock: var(--brand-secondary);
-  --series-benchmark: #2b6cc4;
-  --series-benchmark-2: #c25a12;
-  --series-benchmark-3: #8b3fa8;
-  --series-cash: #7a7016;
+  --series-benchmark: #60a5fa;
+  --series-benchmark-2: #fb923c;
+  --series-benchmark-3: #a78bfa;
+  --series-cash: #fbbf24;
   --chart-grid: var(--border-subtle);
 
   /* --- diverging: signed quantities, neutral midpoint at zero --------------- */
-  --diverging-neg-3: #2c6b7f;
-  --diverging-neg-2: #5f97a6;
-  --diverging-neg-1: #a6c5cb;
-  --diverging-zero: #dfe4e3;
-  --diverging-pos-1: #c9b791;
-  --diverging-pos-2: #a68a55;
-  --diverging-pos-3: #795c2c;
+  --diverging-neg-3: #06b6d4;
+  --diverging-neg-2: #0891b2;
+  --diverging-neg-1: #155e75;
+  --diverging-zero: #334155;
+  --diverging-pos-1: #78350f;
+  --diverging-pos-2: #b45309;
+  --diverging-pos-3: #f59e0b;
 
-  /* --- sector palette ------------------------------------------------------- */
-  --sector-tech: #923558;
-  --sector-health: #88b55a;
-  --sector-finance: #3057a3;
-  --sector-consumer-disc: #ea846f;
-  --sector-consumer-staples: #007046;
-  --sector-energy: #aa93ed;
-  --sector-industrials: #8a4700;
-  --sector-materials: #00bdc0;
-  --sector-real-estate: #803c80;
-  --sector-utilities: #baa535;
-  --sector-comm: #006694;
+  /* --- sector palette: HUD-optimized vibrant tones ------------------------- */
+  --sector-tech: #ec4899;
+  --sector-health: #22c55e;
+  --sector-finance: #3b82f6;
+  --sector-consumer-disc: #f97316;
+  --sector-consumer-staples: #14b8a6;
+  --sector-energy: #a855f7;
+  --sector-industrials: #fb923c;
+  --sector-materials: #06b6d4;
+  --sector-real-estate: #d946ef;
+  --sector-utilities: #eab308;
+  --sector-comm: #0ea5e9;
 
   /* --- TYPE SCALE -----------------------------------------------------------
      11px is the hard floor for every string the product renders, including
@@ -114,9 +112,9 @@
   --tracking-tight: -.02em;
   --tracking-figure: -.03em;
 
-  --font-display: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
-  --font-body: 'Instrument Sans', 'Avenir Next', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+  --font-display: 'Geist Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Geist Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'SFMono-Regular', ui-monospace, monospace;
 
   /* --- SPACING SCALE --------------------------------------------------------
      4px grid, with half-steps below 12px where interface micro-spacing
@@ -152,19 +150,29 @@
   --control-radius: var(--r-sm);
   --card-radius: var(--r-xl);
 
-  /* --- elevation: two levels, tinted toward the surface hue ---------------- */
-  --shadow-1: 0 1px 2px rgba(16, 40, 32, .05), 0 2px 6px rgba(16, 40, 32, .045);
-  --shadow-2: 0 1px 2px rgba(16, 40, 32, .05), 0 6px 16px rgba(16, 40, 32, .07),
-              0 18px 38px rgba(16, 40, 32, .05);
-  --ring: 0 0 0 1px rgba(16, 40, 32, .055);
+  /* --- elevation: HUD glow and depth --------------------------------------- */
+  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03),
+              0 2px 8px rgba(0, 0, 0, .3);
+  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05),
+              0 8px 24px rgba(0, 0, 0, .4),
+              0 0 1px rgba(0, 212, 255, .2);
+  --ring: 0 0 0 1px rgba(255, 255, 255, .05);
   --surface-shadow: var(--shadow-1);
+
+  /* --- HUD effects ---------------------------------------------------------- */
+  --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3),
+               inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --border-glow: rgba(0, 212, 255, 0.4);
+  --glass-blur: blur(12px) saturate(150%);
+  --glass-tint: rgba(15, 20, 25, 0.7);
+  --confidence-ring-center: #0f1a16;
 
   --outline-width: 1px;
   --outline-color: var(--border-default);
   --outline-color-hover: var(--border-strong);
   --outline-color-focus: var(--brand-primary);
-  --navigation-background: color-mix(in srgb, var(--surface-canvas-bg) 94%, transparent);
-  --scrim: rgba(16, 22, 20, .52);
+  --navigation-background: color-mix(in srgb, var(--surface-canvas-bg) 90%, transparent);
+  --scrim: rgba(6, 10, 16, .88);
 
   /* --- motion -------------------------------------------------------------- */
   --duration-fast: 150ms;
@@ -207,130 +215,136 @@
   --warn: var(--warning);
   --shadow: var(--surface-shadow);
   --pill-positive-bg: var(--positive);
-  --pill-positive-ink: #ffffff;
-  --pill-positive-arrow-bg: #ffffff;
-  --pill-positive-arrow-ink: #0a6f53;
+  --pill-positive-ink: #0a0e14;
+  --pill-positive-arrow-bg: #0a0e14;
+  --pill-positive-arrow-ink: #10b981;
   --pill-negative-bg: var(--negative);
-  --pill-negative-ink: #ffffff;
-  --pill-negative-arrow-bg: #ffffff;
-  --pill-negative-arrow-ink: #a2332e;
+  --pill-negative-ink: #0a0e14;
+  --pill-negative-arrow-bg: #0a0e14;
+  --pill-negative-arrow-ink: #ef4444;
 }
 
 /* ============================================================================
-   Dark theme — same roles, same hierarchy, inverted lightness. One hue.
+   Dark theme — HUD aesthetic matches the default
    ============================================================================ */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --surface-canvas-bg: #0b100e;
-  --surface-shelf-bg: #101614;
-  --surface-card-bg: #141b18;
-  --surface-raised-bg: #1a231f;
-  --app-background-tint: #0d1210;
+  --surface-canvas-bg: #0a0e14;
+  --surface-shelf-bg: #0f1419;
+  --surface-card-bg: #0f1419;
+  --surface-raised-bg: #161c23;
+  --surface-sheet-bg: #1c242e;
+  --app-background-tint: #0c1116;
 
-  --text-primary: #e9eeeb;
-  --text-secondary: #a5b0ab;
-  --text-tertiary: #8b9791;
-  --text-faint: #75817c;
+  --text-primary: #e3e8ef;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-faint: #475569;
 
-  --border-subtle: #1f2823;
-  --border-default: #28322d;
-  --border-strong: #3a443c;
+  --border-subtle: rgba(100, 116, 139, 0.1);
+  --border-default: rgba(100, 116, 139, 0.2);
+  --border-strong: rgba(100, 116, 139, 0.35);
 
-  --brand-primary: #7fe3b0;
-  --brand-soft: #16281f;
-  --accent-ink: #07130d;
-  /* On dark the accent is already light, so the data mark steps DOWN to keep
-     it distinguishable from the accent used as ink. */
-  --brand-secondary: color-mix(in srgb, var(--brand-primary) 80%, #0b100e);
+  --brand-primary: #00d4ff;
+  --brand-soft: rgba(0, 212, 255, 0.08);
+  --accent-ink: #0a0e14;
+  --brand-secondary: #00b8e6;
 
-  --positive: #58d795;  --positive-soft: #0f2a1c;
-  --negative: #ff746d;  --negative-soft: #2c1614;
-  --warning: #eab83f;   --warning-soft: #2a2310;
+  --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
+  --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
+  --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
 
-  --series-benchmark: #4a8ada;
-  --series-benchmark-2: #c76329;
-  --series-benchmark-3: #9566d4;
-  --series-cash: #93862f;
+  --series-benchmark: #60a5fa;
+  --series-benchmark-2: #fb923c;
+  --series-benchmark-3: #a78bfa;
+  --series-cash: #fbbf24;
 
-  --sector-tech: #954f00;
-  --sector-health: #1dab7b;
-  --sector-finance: #477203;
-  --sector-consumer-disc: #00a0d4;
-  --sector-consumer-staples: #8a438a;
-  --sector-energy: #00aaae;
-  --sector-industrials: #6a50a7;
-  --sector-materials: #d8705b;
-  --sector-real-estate: #9d3b60;
-  --sector-utilities: #a89207;
-  --sector-comm: #3660af;
+  --sector-tech: #ec4899;
+  --sector-health: #22c55e;
+  --sector-finance: #3b82f6;
+  --sector-consumer-disc: #f97316;
+  --sector-consumer-staples: #14b8a6;
+  --sector-energy: #a855f7;
+  --sector-industrials: #fb923c;
+  --sector-materials: #06b6d4;
+  --sector-real-estate: #d946ef;
+  --sector-utilities: #eab308;
+  --sector-comm: #0ea5e9;
 
-  --diverging-neg-3: #6fb4ce;
-  --diverging-neg-2: #457d90;
-  --diverging-neg-1: #2a4c56;
-  --diverging-zero: #222b27;
-  --diverging-pos-1: #4a3f27;
-  --diverging-pos-2: #856d36;
-  --diverging-pos-3: #cba95d;
+  --diverging-neg-3: #06b6d4;
+  --diverging-neg-2: #0891b2;
+  --diverging-neg-1: #155e75;
+  --diverging-zero: #334155;
+  --diverging-pos-1: #78350f;
+  --diverging-pos-2: #b45309;
+  --diverging-pos-3: #f59e0b;
 
-  /* Depth shadows do not read on dark — the ring carries the same ordering. */
-  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .05);
-  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .07), 0 12px 32px rgba(0, 0, 0, .45);
+  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03), 0 2px 8px rgba(0, 0, 0, .3);
+  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05), 0 8px 24px rgba(0, 0, 0, .4), 0 0 1px rgba(0, 212, 255, .2);
   --ring: 0 0 0 1px rgba(255, 255, 255, .05);
 
-  --scrim: rgba(0, 4, 2, .82);
-  --pill-positive-ink: #07160f;
-  --pill-negative-ink: #2a0705;
-  --pill-positive-arrow-bg: #07160f;
-  --pill-positive-arrow-ink: #69e2a2;
-  --pill-negative-arrow-bg: #2a0705;
-  --pill-negative-arrow-ink: #ff8d87;
+  --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --border-glow: rgba(0, 212, 255, 0.4);
+  --confidence-ring-center: #0f1a16;
+
+  --scrim: rgba(6, 10, 16, .88);
+  --pill-positive-ink: #0a0e14;
+  --pill-negative-ink: #0a0e14;
+  --pill-positive-arrow-bg: #0a0e14;
+  --pill-positive-arrow-ink: #10b981;
+  --pill-negative-arrow-bg: #0a0e14;
+  --pill-negative-arrow-ink: #ef4444;
 }
 
-/* Same values for the system-preference path, which carries no data-theme. */
+/* Same HUD values for system-preference path, which carries no data-theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --surface-canvas-bg: #0b100e;
-    --surface-shelf-bg: #101614;
-    --surface-card-bg: #141b18;
-    --surface-raised-bg: #1a231f;
-    --app-background-tint: #0d1210;
-    --text-primary: #e9eeeb;
-    --text-secondary: #a5b0ab;
-    --text-tertiary: #8b9791;
-    --text-faint: #75817c;
-    --border-subtle: #1f2823;
-    --border-default: #28322d;
-    --border-strong: #3a443c;
-    --brand-primary: #7fe3b0;
-    --brand-soft: #16281f;
-    --accent-ink: #07130d;
-    --brand-secondary: color-mix(in srgb, var(--brand-primary) 80%, #0b100e);
-    --positive: #58d795;  --positive-soft: #0f2a1c;
-    --negative: #ff746d;  --negative-soft: #2c1614;
-    --warning: #eab83f;   --warning-soft: #2a2310;
-    --series-benchmark: #86aef7;
-    --series-benchmark-2: #c5a1ee;
-    --series-benchmark-3: #f0bd70;
-    --series-cash: #c6aca4;
-    --diverging-neg-3: #6fb4ce;
-    --diverging-neg-2: #457d90;
-    --diverging-neg-1: #2a4c56;
-    --diverging-zero: #222b27;
-    --diverging-pos-1: #4a3f27;
-    --diverging-pos-2: #856d36;
-    --diverging-pos-3: #cba95d;
-    --shadow-1: 0 0 0 1px rgba(255, 255, 255, .05);
-    --shadow-2: 0 0 0 1px rgba(255, 255, 255, .07), 0 12px 32px rgba(0, 0, 0, .45);
+    --surface-canvas-bg: #0a0e14;
+    --surface-shelf-bg: #0f1419;
+    --surface-card-bg: #0f1419;
+    --surface-raised-bg: #161c23;
+    --surface-sheet-bg: #1c242e;
+    --app-background-tint: #0c1116;
+    --text-primary: #e3e8ef;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --text-faint: #475569;
+    --border-subtle: rgba(100, 116, 139, 0.1);
+    --border-default: rgba(100, 116, 139, 0.2);
+    --border-strong: rgba(100, 116, 139, 0.35);
+    --brand-primary: #00d4ff;
+    --brand-soft: rgba(0, 212, 255, 0.08);
+    --accent-ink: #0a0e14;
+    --brand-secondary: #00b8e6;
+    --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
+    --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
+    --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
+    --series-benchmark: #60a5fa;
+    --series-benchmark-2: #fb923c;
+    --series-benchmark-3: #a78bfa;
+    --series-cash: #fbbf24;
+    --diverging-neg-3: #06b6d4;
+    --diverging-neg-2: #0891b2;
+    --diverging-neg-1: #155e75;
+    --diverging-zero: #334155;
+    --diverging-pos-1: #78350f;
+    --diverging-pos-2: #b45309;
+    --diverging-pos-3: #f59e0b;
+    --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03), 0 2px 8px rgba(0, 0, 0, .3);
+    --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05), 0 8px 24px rgba(0, 0, 0, .4), 0 0 1px rgba(0, 212, 255, .2);
     --ring: 0 0 0 1px rgba(255, 255, 255, .05);
-    --scrim: rgba(0, 4, 2, .82);
-    --pill-positive-ink: #07160f;
-    --pill-negative-ink: #2a0705;
-    --pill-positive-arrow-bg: #07160f;
-    --pill-positive-arrow-ink: #69e2a2;
-    --pill-negative-arrow-bg: #2a0705;
-    --pill-negative-arrow-ink: #ff8d87;
+    --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --border-glow: rgba(0, 212, 255, 0.4);
+    --confidence-ring-center: #0f1a16;
+    --scrim: rgba(6, 10, 16, .88);
+    --pill-positive-ink: #0a0e14;
+    --pill-negative-ink: #0a0e14;
+    --pill-positive-arrow-bg: #0a0e14;
+    --pill-positive-arrow-ink: #10b981;
+    --pill-negative-arrow-bg: #0a0e14;
+    --pill-negative-arrow-ink: #ef4444;
   }
 }
 

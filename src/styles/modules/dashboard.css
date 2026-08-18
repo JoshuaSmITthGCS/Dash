@@ -55,7 +55,7 @@
 .hero-score-row > div:first-child > span { display: block; color: var(--text-dim); font-size: var(--fs-xs); }
 .hero-score-row > div:first-child > strong { font: var(--fw-bold) var(--fs-mega)/.8 var(--font-display); letter-spacing: -.075em; font-variant-numeric: tabular-nums; }
 .hero-score-row > div:first-child > small { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }
-.confidence-ring { width: 100px; aspect-ratio: 1; display: grid; place-content: center; border-radius: 50%; text-align: center; background: radial-gradient(circle closest-side, #153024 82%, transparent 84% 100%), conic-gradient(var(--accent) var(--confidence), var(--border) 0); }
+.confidence-ring { width: 100px; aspect-ratio: 1; display: grid; place-content: center; border-radius: 50%; text-align: center; background: radial-gradient(circle closest-side, var(--confidence-ring-center) 82%, transparent 84% 100%), conic-gradient(var(--accent) var(--confidence), var(--border) 0); }
 .analysis-layers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); margin: 0 0 var(--sp-5); }
 .analysis-layer-card { padding: var(--sp-4); }
 .analysis-layer-heading { display: flex; align-items: start; justify-content: space-between; gap: var(--sp-3); }
@@ -90,7 +90,7 @@
 .trend-card-head strong, .trend-card-head span { display: block; }
 .trend-card-head strong { font: var(--fw-bold) var(--fs-xl) var(--font-display); letter-spacing: -.02em; }
 .trend-card-head > div > span { max-width: 140px; color: var(--text-faint); font-size: var(--fs-2xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.trend-direction { padding: var(--sp-0-5) var(--sp-1-5); border: 1px solid currentColor; border-radius: 3px; font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
+.trend-direction { padding: var(--sp-0-5) var(--sp-1-5); border: 1px solid currentColor; border-radius: 8px; font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
 .trend-direction.positive { color: var(--up); }.trend-direction.negative { color: var(--down); }
 .trend-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
 .trend-card-stats > div { display: grid; gap: var(--sp-0-5); }

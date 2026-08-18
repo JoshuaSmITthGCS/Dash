@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Icon from './components/Icons.jsx'
+import { MobileSheet } from './components/MobileSheet.jsx'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAuthContext.jsx'
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
@@ -34,6 +35,7 @@ const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
 const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
 const InstitutionalActivity = lazy(() => import('./pages/InstitutionalActivity.jsx'))
+const InsideInformation = lazy(() => import('./pages/InsideInformation.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Search = lazy(() => import('./pages/Search.jsx'))
 const Diversification = lazy(() => import('./pages/Diversification.jsx'))
@@ -128,8 +130,42 @@ export const MOBILE_NAV = [
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/research', label: 'Research', icon: 'research' },
   { to: '/markets', label: 'Markets', icon: 'market' },
-  { to: '/settings', label: 'More', icon: 'more' },
+  { action: 'menu', label: 'More', icon: 'more' },
 ]
+
+// Routes already one tap away on the mobile tab bar - left out of the "More" menu so it
+// isn't just a second way to reach the same four screens.
+const MOBILE_TAB_PATHS = new Set(MOBILE_NAV.filter((item) => item.to).map((item) => item.to))
+
+function isMobileTabActive(pathname) {
+  if (pathname === '/') return true
+  return [...MOBILE_TAB_PATHS].some((to) => to !== '/' && (pathname === to || pathname.startsWith(`${to}/`)))
+}
+
+function MobileMoreMenu({ open, onClose }) {
+  const moreGroups = [
+    ...NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => !MOBILE_TAB_PATHS.has(item.to)) })),
+    { label: 'More', icon: 'more', items: NAV_AFTER_GROUPS.filter((item) => !MOBILE_TAB_PATHS.has(item.to)) },
+  ]
+  return (
+    <MobileSheet open={open} title="More" onClose={onClose} className="mobile-more-sheet">
+      <nav className="mobile-more-nav" aria-label="More screens">
+        {moreGroups.map((group) => (
+          <div className="mobile-more-group" key={group.label}>
+            <span className="mobile-more-group-title"><Icon name={group.icon} size={14} />{group.label}</span>
+            {group.items.map((item) => (
+              <NavLink key={item.to} to={item.to} onClick={onClose}
+                onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
+                className={({ isActive }) => `mobile-more-link${isActive ? ' active' : ''}`}>
+                <Icon name={item.icon} size={16} /><span>{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </MobileSheet>
+  )
+}
 
 function ProfilePanel() {
   const { currentUser, userProfile } = useAuth()
@@ -168,7 +204,10 @@ function AppContent() {
   const { preferences, updatePreferences } = usePreferences()
   const { pathname, search } = useLocation()
   const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const portfolioPreview = import.meta.env.DEV && new URLSearchParams(search).get('portfolioPreview') === '1'
+
+  useEffect(() => { setMoreMenuOpen(false) }, [pathname])
 
   useEffect(() => {
     const preload = () => {
@@ -277,6 +316,7 @@ function AppContent() {
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
           <Route path="/screens/politics" element={<CongressTrades />} />
           <Route path="/screens/institutional" element={<InstitutionalActivity />} />
+          <Route path="/screens/inside-information" element={<InsideInformation />} />
           <Route path="/screens/themes" element={<ThemeExposureScreen />} />
           <Route path="/screens/backtests" element={<BacktestComparison />} />
           <Route path="/screens/shadow" element={<ShadowPortfolios />} />
@@ -294,7 +334,14 @@ function AppContent() {
       </main>
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
-        {MOBILE_NAV.map((item) => (
+        {MOBILE_NAV.map((item) => item.action === 'menu' ? (
+            <button key="more" type="button"
+              className={`mobile-nav-item${(moreMenuOpen || !isMobileTabActive(pathname)) ? ' active' : ''}`}
+              aria-haspopup="dialog" aria-expanded={moreMenuOpen} onClick={() => setMoreMenuOpen(true)}>
+              <span className="mobile-nav-icon"><Icon name={item.icon} size={18} /></span>
+              <span>{item.label}</span>
+            </button>
+          ) : (
             <NavLink key={item.to} to={item.to} end={item.end}
               onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
               className={({ isActive }) => `mobile-nav-item${isActive ? ' active' : ''}`}>
@@ -303,6 +350,7 @@ function AppContent() {
             </NavLink>
         ))}
       </nav>
+      <MobileMoreMenu open={moreMenuOpen} onClose={() => setMoreMenuOpen(false)} />
     </div>
   )
 }

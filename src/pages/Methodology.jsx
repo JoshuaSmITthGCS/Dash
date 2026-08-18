@@ -68,7 +68,11 @@ export default function Methodology() {
       <section className="card card-pad">
         <div className="sec-label">Overall research score</div>
         {blendEntries.length ? <div className="weight-stack">
-          {blendEntries.map(([key, value]) => <div key={key} style={{ width: `${percent(value)}%` }}>{percent(value)}% {componentLabel(key)}</div>)}
+          {blendEntries.map(([key, value]) => {
+            const pct = percent(value)
+            const label = componentLabel(key)
+            return <div key={key} style={{ width: `${pct}%` }} title={`${pct}% ${label}`}>{pct >= 10 ? `${pct}% ${label}` : `${pct}%`}</div>
+          })}
         </div> : <p className="body-copy">The scoring blend will appear after the first published research refresh.</p>}
         <p className="body-copy">
           Fundamentals dominate. Market behaviour is measured with the same arithmetic the ETF
