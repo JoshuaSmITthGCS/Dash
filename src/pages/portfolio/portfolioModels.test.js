@@ -148,6 +148,24 @@ describe('buildBenchmarkModel', () => {
     expect(model.selectedBenchmarkSymbol).toBe('IWM')
     expect(model.analyticsBenchmarkSeries.dates).toEqual(['2026-08-13', '2026-08-14'])
   })
+
+  it('fills the fit candidate the report tape describes, and only that one', () => {
+    // benchmarkFit needs 21 overlapping dates; a lagging ETF file left every candidate one
+    // short, which took out the whole Benchmark Fit block including best-fit selection.
+    const model = buildBenchmarkModel({
+      data: report({ benchmark_analytics_history: { dates: ['2026-08-13', '2026-08-14', '2026-08-17', '2026-08-18'], values: [100, 101, 102, 103], symbol: 'SPY' } }),
+      snapshots: { spy: snapshotFor('SPY'), rsp: snapshotFor('RSP'), iwm: snapshotFor('IWM'), ijr: snapshotFor('IJR'), selected: snapshotFor('SPY') },
+    })
+
+    const candidate = (symbol) => model.candidateInputs.find((row) => row.symbol === symbol)
+    expect(candidate('SPY').dates).toEqual(['2026-08-13', '2026-08-14', '2026-08-17', '2026-08-18'])
+    expect(candidate('RSP').dates).toEqual(['2026-08-13', '2026-08-14'])
+    expect(candidate('IWM').dates).toEqual(['2026-08-13', '2026-08-14'])
+    expect(candidate('IJR').dates).toEqual(['2026-08-13', '2026-08-14'])
+    expect(model.candidateInputs.map((row) => row.label)).toEqual([
+      'S&P 500', 'Equal-weight S&P 500', 'Russell 2000', 'S&P SmallCap 600',
+    ])
+  })
 })
 
 describe('series helpers', () => {
