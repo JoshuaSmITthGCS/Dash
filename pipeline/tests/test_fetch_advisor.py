@@ -7,7 +7,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
-                           carry_forward_rows, collect_insider_signals, compact_news,
+                           carry_forward_missing_sessions, carry_forward_rows,
+                           collect_insider_signals, compact_news,
                            curate_candidate_news, enrich, enrichment_rotation,
                            latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols,
@@ -288,6 +289,48 @@ class FastRefreshCarryForwardTests(unittest.TestCase):
         carried = carry_forward_rows([], ("AAPL", "NEWCO"), previous_payload)
 
         self.assertEqual([row["ticker"] for row in carried], ["AAPL"])
+
+
+class BenchmarkHistoryRegressionTests(unittest.TestCase):
+    """A short fetch must never erase a session the previous run already published -
+    that is exactly what stalled the live-tracking countdown: a provider hiccup dropped a
+    session from the benchmark history that a prior refresh had already recorded."""
+
+    def test_a_session_dropped_by_the_fresh_fetch_is_carried_forward(self):
+        previous_dates = ["2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17"]
+        previous_closes = [640.0, 641.0, 642.0, 643.0, 644.0]
+        fresh = {"dates": previous_dates[:-1], "closes": previous_closes[:-1], "volumes": [1, 2, 3, 4]}
+
+        merged = carry_forward_missing_sessions(previous_dates, previous_closes, fresh)
+
+        self.assertEqual(merged["dates"], previous_dates)
+        self.assertEqual(merged["closes"], previous_closes)
+        self.assertEqual(merged["volumes"][-1], 0.0)
+
+    def test_a_fresh_fetch_that_already_covers_everything_is_returned_unchanged(self):
+        previous_dates = ["2026-08-13", "2026-08-14"]
+        previous_closes = [642.0, 643.0]
+        fresh = {"dates": ["2026-08-13", "2026-08-14", "2026-08-17"], "closes": [642.0, 643.0, 644.0], "volumes": [3, 4, 5]}
+
+        merged = carry_forward_missing_sessions(previous_dates, previous_closes, fresh)
+
+        self.assertIs(merged, fresh)
+
+    def test_no_prior_history_returns_the_fresh_fetch_unchanged(self):
+        fresh = {"dates": ["2026-08-14"], "closes": [643.0], "volumes": [4]}
+
+        self.assertIs(carry_forward_missing_sessions(None, None, fresh), fresh)
+        self.assertIs(carry_forward_missing_sessions([], [], fresh), fresh)
+
+    def test_an_overlapping_date_prefers_the_fresh_close_over_the_previous_one(self):
+        previous_dates = ["2026-08-13", "2026-08-14"]
+        previous_closes = [642.0, 643.0]
+        fresh = {"dates": ["2026-08-14"], "closes": [999.0], "volumes": [7]}
+
+        merged = carry_forward_missing_sessions(previous_dates, previous_closes, fresh)
+
+        self.assertEqual(merged["dates"], previous_dates)
+        self.assertEqual(merged["closes"], [642.0, 999.0])
 
     def test_a_symbol_that_was_actually_refreshed_is_not_duplicated(self):
         previous_payload = {"research": [{"ticker": "AAPL", "score": 90}]}
