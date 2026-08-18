@@ -30,16 +30,17 @@ export default function MetricCard({ metric, mode = 'full' }) {
       {metric.assessment === 'insufficient'
         ? <small>{metric.insufficientReason || metric.reason}</small>
         : <small>{[metric.supportingValue, sample].filter(Boolean).join(' · ')}</small>}
+      {mode === 'full' && metric.tooltip?.measures && (
+        <p className="metric-explanation">
+          {metric.tooltip.measures}
+          {metric.tooltip.better ? ` ${metric.tooltip.better}` : ''}
+          {metric.tooltip.typical ? ` Typically: ${metric.tooltip.typical}` : ''}
+        </p>
+      )}
       {mode === 'full' && (
         <footer>
           {metric.confidence !== 'none' && <span className="metric-confidence">{metric.confidence} confidence</span>}
           {metric.trend && metric.trend !== 'unknown' && <span className={`metric-trend trend-${metric.trend}`}><svg className="trend-bars" width="14" height="12" viewBox="0 0 14 12" aria-hidden="true"><rect x="0" y="6" width="3" height="6" rx="1" /><rect x="5" y="3" width="3" height="9" rx="1" /><rect x="10" y="0" width="3" height="12" rx="1" /></svg> {metric.trendDetail || metric.trend}</span>}
-          {metric.tooltip?.measures && (
-            <details className="metric-tooltip">
-              <summary aria-label={`About ${metric.name}`}>What it measures</summary>
-              <p>{metric.tooltip.measures}{metric.tooltip.better ? ` ${metric.tooltip.better}` : ''}</p>
-            </details>
-          )}
         </footer>
       )}
     </article>
