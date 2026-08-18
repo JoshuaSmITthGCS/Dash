@@ -35,6 +35,7 @@ from datetime import datetime, timezone
 
 import evaluation
 import risk_metrics
+import stress_scenarios
 from common import LOG, load_json, save_json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1172,6 +1173,122 @@ def tax_and_stress_metrics(backtest):
     return rows
 
 
+_SCENARIO_INPUT_MESSAGE = ("Needs public/data/etf/SPY.json and TLT.json for scenario pricing "
+                           "and a factor file for the multi-factor projection.")
+
+
+def scenario_metrics(backtest, factors):
+    """Forward-looking scenarios: named historical events and hypothetical shocks, projected
+    through the book's own measured exposures rather than replayed from its own history.
+
+    ``stress_test_2020`` above is honestly unavailable because the backtest never lived
+    through 2020. This is the answer to that gap: not a replay, but a projection -- the
+    book's *current* market beta and FF5+momentum loadings, run through what SPY, TLT, and
+    the six factors actually did during the 2008 GFC, the March 2020 crash, and the 2022
+    rate-hike drawdown, plus two hypothetical shocks (a flat SPY move, a rate move sized via
+    an assumed TLT duration). Every value published here is a linear extrapolation through a
+    beta or a duration constant, stated as such in ``reads`` rather than left implicit in a
+    precise-looking percentage.
+    """
+    portfolio = (backtest or {}).get("portfolio") or {}
+    history = portfolio.get("history") or []
+    benchmark_history = ((backtest or {}).get("benchmark_spy") or {}).get("history") or []
+    factor_observations = (factors or {}).get("observations") or []
+
+    spy_prices = stress_scenarios.read_etf_prices("SPY")
+    tlt_prices = stress_scenarios.read_etf_prices("TLT")
+    if not spy_prices or not tlt_prices or not history:
+        rows = [_pending(f"scenario_{scenario_id}", "tax_stress", meta["label"],
+                         _SCENARIO_INPUT_MESSAGE, reads=meta["description"], cadence="Annually")
+                for scenario_id, meta in stress_scenarios.NAMED_SCENARIOS.items()]
+        rows.append(_pending("rate_beta", "construction",
+                             "Beta to long Treasuries (rate sensitivity)", _SCENARIO_INPUT_MESSAGE,
+                             reads="Beta of the book's daily returns to TLT (long Treasuries).",
+                             cadence="Monthly"))
+        rows.append(_pending("scenario_hypothetical_spy", "tax_stress",
+                             f"Hypothetical: SPY {stress_scenarios.HYPOTHETICAL_SPY_SHOCK_PCT:+.0f}%",
+                             _SCENARIO_INPUT_MESSAGE, cadence="Annually"))
+        rows.append(_pending("scenario_hypothetical_rates", "tax_stress",
+                             f"Hypothetical: rates +{stress_scenarios.HYPOTHETICAL_RATE_SHOCK_BPS}bp",
+                             _SCENARIO_INPUT_MESSAGE, cadence="Annually"))
+        return rows
+
+    returns = daily_returns_from_history(history)
+    spy_backtest_returns = daily_returns_from_history(benchmark_history)
+    beta_spy = risk_metrics.beta_vs_benchmark(returns, spy_backtest_returns)
+    loadings = (factor_loadings(monthly_returns_from_history(history), factors) or {}).get("loadings")
+    portfolio_tlt_returns, tlt_returns = stress_scenarios.aligned_daily_returns(history, tlt_prices)
+    rate_beta = risk_metrics.beta_vs_benchmark(portfolio_tlt_returns, tlt_returns)
+
+    rows = [metric(
+        "rate_beta", "construction", "Beta to long Treasuries (rate sensitivity)", value=rate_beta,
+        display=None if rate_beta is None else f"{rate_beta:+.2f}",
+        reads="Beta of the book's daily returns to TLT (long Treasuries). Positive means the "
+              "book tends to fall when long rates rise, the way a bond would; negative means "
+              "it tends to benefit from rising rates.",
+        detail={"proxy": "TLT", "observations": len(tlt_returns)},
+        observations=len(tlt_returns), cadence="Monthly",
+        source="backtest equity curve versus TLT total return")]
+
+    named = stress_scenarios.named_scenarios(
+        spy_prices=spy_prices, tlt_prices=tlt_prices, factor_observations=factor_observations,
+        loadings=loadings, beta_spy=beta_spy)
+    for scenario_id, result in named.items():
+        factor_value = result["factor_model_projection_pct"]
+        market_value = result["market_beta_projection_pct"]
+        has_reading = factor_value is not None or market_value is not None
+        display = None
+        if factor_value is not None and market_value is not None:
+            display = f"{factor_value:+.1f}% factor model, {market_value:+.1f}% market beta only"
+        elif factor_value is not None:
+            display = f"{factor_value:+.1f}% (factor model)"
+        elif market_value is not None:
+            display = f"{market_value:+.1f}% (market beta only)"
+        rows.append(metric(
+            f"scenario_{scenario_id}", "tax_stress", result["label"], value=factor_value,
+            display=display,
+            reads=f"{result['description']} Projected through this book's own measured factor "
+                  "loadings and market beta, not replayed from its own returns -- the "
+                  "strategy did not exist yet.",
+            detail=result, cadence="Annually",
+            status="ready" if has_reading else "awaiting_input",
+            status_message=None if has_reading else
+            "Neither the factor loadings nor the market beta could be estimated.",
+            source="Fama-French factor windows and SPY/TLT total-return history, projected "
+                   "through measured exposures"))
+
+    shocks = stress_scenarios.hypothetical_shocks(beta_spy=beta_spy, rate_beta=rate_beta)
+    spy_shock = shocks["spy_shock"]
+    rows.append(metric(
+        "scenario_hypothetical_spy", "tax_stress",
+        f"Hypothetical: SPY {spy_shock['shock_pct']:+.0f}%", value=spy_shock["projected_return_pct"],
+        display=None if spy_shock["projected_return_pct"] is None
+        else f"{spy_shock['projected_return_pct']:+.1f}%",
+        reads="A flat, hypothetical SPY move projected through the book's measured market "
+              "beta. A linear extrapolation, not a measurement.",
+        detail=spy_shock, cadence="Annually",
+        status="ready" if spy_shock["projected_return_pct"] is not None else "awaiting_input",
+        status_message=None if spy_shock["projected_return_pct"] is not None
+        else "Beta to SPY could not be estimated.",
+        source="linear projection through the book's measured market beta"))
+    rate_shock = shocks["rate_shock"]
+    rows.append(metric(
+        "scenario_hypothetical_rates", "tax_stress",
+        f"Hypothetical: rates +{rate_shock['shock_bps']}bp", value=rate_shock["projected_return_pct"],
+        display=None if rate_shock["projected_return_pct"] is None
+        else f"{rate_shock['projected_return_pct']:+.1f}%",
+        reads=f"A hypothetical {rate_shock['shock_bps']}bp rate move, converted to a TLT price "
+              f"move via an assumed {rate_shock['assumed_tlt_duration_years']:.0f}-year "
+              "effective duration, projected through the book's measured beta to TLT. A "
+              "modeling assumption stacked on a linear extrapolation, not a measurement.",
+        detail=rate_shock, cadence="Annually",
+        status="ready" if rate_shock["projected_return_pct"] is not None else "awaiting_input",
+        status_message=None if rate_shock["projected_return_pct"] is not None
+        else "Beta to TLT could not be estimated.",
+        source="linear projection through the book's measured TLT beta and an assumed duration"))
+    return rows
+
+
 def _optimizer_trials_matrix(optimizer):
     """The trial log both PBO (CSCV) and the SPA/Reality Check test grade against.
 
@@ -1690,6 +1807,7 @@ def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UN
                + honesty_metrics(backtest, optimizer)
                + risk_adjusted_metrics(backtest)
                + tax_and_stress_metrics(backtest)
+               + scenario_metrics(backtest, factors)
                + distribution_metrics(backtest, live, live_return_data)
                + monitoring_metrics(live, ic_validation, backtest=backtest,
                                     live_return_data=live_return_data, pit_root=pit_root,

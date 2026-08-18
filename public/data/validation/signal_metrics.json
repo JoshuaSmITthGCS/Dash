@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T18:01:13.462574+00:00",
+  "generated_at": "2026-08-18T18:59:35.788516+00:00",
   "groups": [
     {
       "id": "signal",
@@ -1870,6 +1870,199 @@
       "source": null
     },
     {
+      "id": "rate_beta",
+      "group": "construction",
+      "label": "Beta to long Treasuries (rate sensitivity)",
+      "value": 0.04,
+      "display": "+0.04",
+      "reads": "Beta of the book's daily returns to TLT (long Treasuries). Positive means the book tends to fall when long rates rise, the way a bond would; negative means it tends to benefit from rising rates.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Monthly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 1241,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "proxy": "TLT",
+        "observations": 1241
+      },
+      "source": "backtest equity curve versus TLT total return"
+    },
+    {
+      "id": "scenario_gfc_2008",
+      "group": "tax_stress",
+      "label": "2008 Global Financial Crisis",
+      "value": -25.88,
+      "display": "-25.9% factor model, -35.9% market beta only",
+      "reads": "S&P 500 all-time high (2007-10-09) to the post-crisis trough (2009-03-09). Projected through this book's own measured factor loadings and market beta, not replayed from its own returns -- the strategy did not exist yet.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "id": "gfc_2008",
+        "label": "2008 Global Financial Crisis",
+        "description": "S&P 500 all-time high (2007-10-09) to the post-crisis trough (2009-03-09).",
+        "start": "2007-10-09",
+        "end": "2009-03-09",
+        "spy_return_pct": -55.19,
+        "tlt_return_pct": 25.07,
+        "factor_returns_pct": {
+          "market_excess": -46.1,
+          "size": 0.13,
+          "value": -15.88,
+          "profitability": 25.12,
+          "investment": -1.26,
+          "momentum": 20.94
+        },
+        "market_beta_projection_pct": -35.87,
+        "factor_model_projection_pct": -25.88
+      },
+      "source": "Fama-French factor windows and SPY/TLT total-return history, projected through measured exposures"
+    },
+    {
+      "id": "scenario_covid_2020",
+      "group": "tax_stress",
+      "label": "March 2020 COVID crash",
+      "value": -20.43,
+      "display": "-20.4% factor model, -21.9% market beta only",
+      "reads": "S&P 500 pre-pandemic high (2020-02-19) to the fastest bear-market trough on record (2020-03-23). Projected through this book's own measured factor loadings and market beta, not replayed from its own returns -- the strategy did not exist yet.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "id": "covid_2020",
+        "label": "March 2020 COVID crash",
+        "description": "S&P 500 pre-pandemic high (2020-02-19) to the fastest bear-market trough on record (2020-03-23).",
+        "start": "2020-02-19",
+        "end": "2020-03-23",
+        "spy_return_pct": -33.72,
+        "tlt_return_pct": 14.23,
+        "factor_returns_pct": {
+          "market_excess": -20.41,
+          "size": -8.11,
+          "value": -17.12,
+          "profitability": -3.02,
+          "investment": -1.37,
+          "momentum": 7.94
+        },
+        "market_beta_projection_pct": -21.92,
+        "factor_model_projection_pct": -20.43
+      },
+      "source": "Fama-French factor windows and SPY/TLT total-return history, projected through measured exposures"
+    },
+    {
+      "id": "scenario_rate_shock_2022",
+      "group": "tax_stress",
+      "label": "2022 rate-hike drawdown",
+      "value": -2.28,
+      "display": "-2.3% factor model, -15.9% market beta only",
+      "reads": "S&P 500 high (2022-01-03) to the 2022 bear-market low (2022-10-12), the Fed's steepest hiking cycle in four decades. Projected through this book's own measured factor loadings and market beta, not replayed from its own returns -- the strategy did not exist yet.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "id": "rate_shock_2022",
+        "label": "2022 rate-hike drawdown",
+        "description": "S&P 500 high (2022-01-03) to the 2022 bear-market low (2022-10-12), the Fed's steepest hiking cycle in four decades.",
+        "start": "2022-01-03",
+        "end": "2022-10-12",
+        "spy_return_pct": -24.5,
+        "tlt_return_pct": -29.33,
+        "factor_returns_pct": {
+          "market_excess": -19.39,
+          "size": 1.59,
+          "value": 28.08,
+          "profitability": 1.64,
+          "investment": 19.96,
+          "momentum": 16.62
+        },
+        "market_beta_projection_pct": -15.93,
+        "factor_model_projection_pct": -2.28
+      },
+      "source": "Fama-French factor windows and SPY/TLT total-return history, projected through measured exposures"
+    },
+    {
+      "id": "scenario_hypothetical_spy",
+      "group": "tax_stress",
+      "label": "Hypothetical: SPY -30%",
+      "value": -19.5,
+      "display": "-19.5%",
+      "reads": "A flat, hypothetical SPY move projected through the book's measured market beta. A linear extrapolation, not a measurement.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "shock_pct": -30.0,
+        "beta_spy": 0.65,
+        "projected_return_pct": -19.5
+      },
+      "source": "linear projection through the book's measured market beta"
+    },
+    {
+      "id": "scenario_hypothetical_rates",
+      "group": "tax_stress",
+      "label": "Hypothetical: rates +200bp",
+      "value": -1.36,
+      "display": "-1.4%",
+      "reads": "A hypothetical 200bp rate move, converted to a TLT price move via an assumed 17-year effective duration, projected through the book's measured beta to TLT. A modeling assumption stacked on a linear extrapolation, not a measurement.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Annually",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "shock_bps": 200,
+        "assumed_tlt_duration_years": 17.0,
+        "implied_tlt_price_impact_pct": -34.0,
+        "rate_beta": 0.04,
+        "projected_return_pct": -1.36
+      },
+      "source": "linear projection through the book's measured TLT beta and an assumed duration"
+    },
+    {
       "id": "omega",
       "group": "distribution",
       "label": "Omega ratio",
@@ -3097,11 +3290,11 @@
     }
   ],
   "summary": {
-    "total": 54,
-    "ready": 35,
+    "total": 60,
+    "ready": 41,
     "breached": 9,
-    "sample_free_total": 36,
-    "sample_free_ready": 33,
+    "sample_free_total": 42,
+    "sample_free_ready": 39,
     "needs_sample_total": 18
   },
   "sources": {
@@ -3116,8 +3309,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "8615974950d284c1683590130a238449e0ffcda0",
+    "git_commit_sha": "7dff03f011ff02c7799ae0887321e59e047c9f89",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T18:01:13.462574+00:00"
+    "generated_at": "2026-08-18T18:59:35.788516+00:00"
   }
 }

@@ -590,6 +590,51 @@ class RiskAdjustedAndTaxStressTests(unittest.TestCase):
         self.assertEqual(rows["stress_test_2022"]["status"], "awaiting_input")
 
 
+class ScenarioMetricsTests(unittest.TestCase):
+    """Exercises against the real committed SPY.json/TLT.json/french.json -- this is the one
+    place the module reads disk directly rather than taking every input as a parameter, so a
+    fixture can't stand in for "did the actual committed ETF files parse".
+    """
+
+    def setUp(self):
+        self.factors = {"observations": [
+            {"month": f"{year}-{month:02d}", "market_excess": 0.01, "size": 0.001,
+             "value": 0.002, "profitability": -0.001, "investment": 0.0, "momentum": 0.003}
+            for year in range(2021, 2027) for month in range(1, 13)
+        ]}
+        # Shared market shock (as in RiskAdjustedAndTaxStressTests) so beta to SPY is
+        # measurable and positive, not an artifact of two independent noise streams.
+        benchmark_history = _daily_history(1200, daily_return=0.0003, noise=0.01, seed=21,
+                                           start="2021-09-01")
+        benchmark_values = [row["value"] for row in benchmark_history]
+        portfolio_history, value = [], 100.0
+        for index, row in enumerate(benchmark_history):
+            market_return = (0 if index == 0 else
+                             benchmark_values[index] / benchmark_values[index - 1] - 1)
+            value *= 1 + 0.0006 + market_return
+            portfolio_history.append({"date": row["date"], "value": value})
+        self.backtest = {"portfolio": {"history": portfolio_history},
+                         "benchmark_spy": {"history": benchmark_history}}
+
+    def test_reads_against_the_committed_etf_and_factor_files(self):
+        rows = metrics_by_id(sm.scenario_metrics(self.backtest, self.factors))
+        self.assertEqual(rows["rate_beta"]["status"], "ready")
+        for scenario_id in sm.stress_scenarios.NAMED_SCENARIOS:
+            row = rows[f"scenario_{scenario_id}"]
+            self.assertEqual(row["status"], "ready", scenario_id)
+            self.assertIsNotNone(row["detail"]["spy_return_pct"], scenario_id)
+        self.assertEqual(rows["scenario_hypothetical_spy"]["status"], "ready")
+        self.assertEqual(rows["scenario_hypothetical_rates"]["status"], "ready")
+        # SPY -30% at a measured beta must be a negative projection, not a fabricated one.
+        self.assertLess(rows["scenario_hypothetical_spy"]["value"], 0)
+
+    def test_pending_without_the_backtest_or_etf_data(self):
+        rows = metrics_by_id(sm.scenario_metrics(None, self.factors))
+        for scenario_id in sm.stress_scenarios.NAMED_SCENARIOS:
+            self.assertEqual(rows[f"scenario_{scenario_id}"]["status"], "awaiting_input")
+        self.assertEqual(rows["rate_beta"]["status"], "awaiting_input")
+
+
 class RobustnessBeyondPboTests(unittest.TestCase):
     def test_bootstrap_and_var_backtest_read_on_a_long_backtest(self):
         generator = random.Random(31)
