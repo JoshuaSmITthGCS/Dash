@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-18T15:22:38.092716+00:00",
+  "generated_at": "2026-08-18T16:59:04.905216+00:00",
   "comparison": "old_double_confidence_penalty_vs_new_single_shrinkage_challenger",
-  "comparable_universe_count": 879,
+  "comparable_universe_count": 224,
   "path_definitions": {
     "old_double_penalty": "Band-normalized fundamentals are coverage-multiplied, then the final evidence blend is confidence-multiplied again.",
     "new_single_shrinkage": "The challenger starts from raw category evidence and applies one confidence pull toward the configured neutral target before bounded modifiers."
@@ -9,38 +9,38 @@
   "correlations": {
     "log_market_cap": {
       "old_double_penalty": {
-        "count": 845,
-        "pearson": -0.018444,
-        "spearman": -0.045867
+        "count": 213,
+        "pearson": 0.016982,
+        "spearman": -0.017224
       },
       "new_single_shrinkage": {
-        "count": 845,
-        "pearson": -0.18741,
-        "spearman": -0.237924
+        "count": 213,
+        "pearson": -0.062484,
+        "spearman": -0.115958
       }
     },
     "data_coverage": {
       "old_double_penalty": {
-        "count": 879,
-        "pearson": 0.35754,
-        "spearman": 0.379416
+        "count": 224,
+        "pearson": 0.273494,
+        "spearman": 0.3226
       },
       "new_single_shrinkage": {
-        "count": 879,
-        "pearson": 0.156196,
-        "spearman": 0.112768
+        "count": 224,
+        "pearson": 0.106094,
+        "spearman": 0.184001
       }
     },
     "analyst_coverage_count": {
       "old_double_penalty": {
         "count": 148,
-        "pearson": -0.038797,
-        "spearman": -0.099747
+        "pearson": 0.034198,
+        "spearman": -0.032637
       },
       "new_single_shrinkage": {
         "count": 148,
-        "pearson": 0.007849,
-        "spearman": -0.024111
+        "pearson": 0.037904,
+        "spearman": 0.01758
       }
     }
   },
