@@ -414,6 +414,35 @@ def daily_history(payload):
 EMPTY_HISTORY = {"dates": [], "closes": [], "volumes": []}
 
 
+def carry_forward_missing_sessions(previous_dates, previous_closes, fresh):
+    """Union a freshly fetched price history with the previously published one, by date.
+
+    A live fetch (Alpha Vantage or Yahoo) can legitimately return fewer sessions than a prior
+    run already published - a provider outage, a truncated response window, a transient NaN
+    row - and every downstream consumer (the live-tracking countdown among them) counts on
+    ``dates`` only ever growing. Publishing a shorter series makes real progress look like it
+    reversed. Dates the fresh fetch has always win (a provider can restate a close); any date
+    only the previous run had is carried forward with its previous close and zero volume.
+    """
+    fresh_dates = fresh.get("dates") or []
+    if not previous_dates:
+        return fresh
+    missing = [date for date in previous_dates if date not in fresh_dates]
+    if not missing:
+        return fresh
+    fresh_volumes = fresh.get("volumes") or [0.0] * len(fresh_dates)
+    merged = dict(zip(fresh_dates, zip(fresh["closes"], fresh_volumes)))
+    previous_close_by_date = dict(zip(previous_dates, previous_closes))
+    for date in missing:
+        merged[date] = (previous_close_by_date[date], 0.0)
+    ordered = sorted(merged)
+    return {
+        "dates": ordered,
+        "closes": [merged[date][0] for date in ordered],
+        "volumes": [merged[date][1] for date in ordered],
+    }
+
+
 def yahoo_history(symbol, yf, period="2y", ticker_obj=None, cache=None):
     """Dates, closes, and volumes. Two years so max drawdown and 52-week context are real.
 
@@ -1524,6 +1553,12 @@ def run():
     yahoo_benchmark = yahoo_history("SPY", yf)
     if len(yahoo_benchmark["closes"]) > len(benchmark["closes"]):
         benchmark = yahoo_benchmark
+    previous_benchmark_analytics = previous_payload.get("benchmark_analytics_history") or {}
+    benchmark = carry_forward_missing_sessions(
+        previous_benchmark_analytics.get("dates"),
+        previous_benchmark_analytics.get("closes"),
+        benchmark,
+    )
 
     contexts, all_news = [], []
     alpha_failures, marketaux_failures, research_failures = [], [], []
