@@ -66,6 +66,37 @@ class ICSummaryTests(unittest.TestCase):
         erratic = ev.ic_summary([0.30, -0.28, 0.31, -0.27, 0.29, -0.25, 0.30])
         self.assertFalse(erratic["clears_multiple_testing_bar"])
 
+    def test_series_carries_the_filtered_values_a_bootstrap_can_reuse(self):
+        summary = ev.ic_summary([0.05, None, 0.04, 0.06])
+        self.assertEqual(summary["series"], [0.05, 0.04, 0.06])
+
+
+class BootstrapIcConfidenceIntervalTests(unittest.TestCase):
+    def test_none_below_the_minimum_sample(self):
+        self.assertIsNone(ev.bootstrap_ic_confidence_interval([0.03] * 5))
+
+    def test_ci_brackets_a_consistently_positive_ic_series(self):
+        generator = random.Random(12)
+        series = [generator.gauss(0.04, 0.02) for _ in range(40)]
+        result = ev.bootstrap_ic_confidence_interval(series, samples=1000, seed=1)
+        lower, upper = result["ic_ci_95"]
+        self.assertLess(lower, result["mean_ic"])
+        self.assertGreater(upper, result["mean_ic"])
+        self.assertGreater(result["probability_ic_positive"], 0.9)
+
+    def test_a_series_straddling_zero_has_a_ci_that_includes_zero(self):
+        generator = random.Random(13)
+        series = [generator.gauss(0.0, 0.03) for _ in range(40)]
+        result = ev.bootstrap_ic_confidence_interval(series, samples=1000, seed=1)
+        lower, upper = result["ic_ci_95"]
+        self.assertLessEqual(lower, 0)
+        self.assertGreaterEqual(upper, 0)
+
+    def test_none_values_are_dropped_not_treated_as_zero(self):
+        result = ev.bootstrap_ic_confidence_interval(
+            [0.05] * 15 + [None] * 15, samples=200, seed=1)
+        self.assertEqual(result["observations"], 15)
+
 
 class QuantileTests(unittest.TestCase):
     def test_monotone_buckets_are_detected(self):

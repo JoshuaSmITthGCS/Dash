@@ -1,0 +1,68 @@
+import { describe, expect, it } from 'vitest'
+import { buildExportSnapshot, snapshotFilename, snapshotToJson } from './exportSnapshot'
+
+describe('buildExportSnapshot', () => {
+  const baseArgs = {
+    holdings: { portfolioPositions: [{ ticker: 'AAPL', shares: 10 }], actionable: [{ ticker: 'AAPL' }] },
+    analytics: { performance: { sharpe: 1.2 } },
+    benchmarks: { selectedBenchmarkLabel: 'S&P 500' },
+    signalMetrics: { metrics: [{ id: 'pbo', value: 0.2 }] },
+    monteCarlo: { status: 'ready' },
+    scope: 'since_algorithm',
+  }
+
+  it('carries every section through unchanged', () => {
+    const snapshot = buildExportSnapshot(baseArgs)
+    expect(snapshot.holdings.positions).toEqual(baseArgs.holdings.portfolioPositions)
+    expect(snapshot.holdings.actionable_tickers).toEqual(['AAPL'])
+    expect(snapshot.portfolio_analytics).toBe(baseArgs.analytics)
+    expect(snapshot.benchmark_comparisons).toBe(baseArgs.benchmarks)
+    expect(snapshot.signal_metrics_report).toBe(baseArgs.signalMetrics)
+    expect(snapshot.monte_carlo_projection).toBe(baseArgs.monteCarlo)
+  })
+
+  it('labels the currently selected scope in plain language', () => {
+    const snapshot = buildExportSnapshot(baseArgs)
+    expect(snapshot.analytics_scope).toEqual({ id: 'since_algorithm', label: 'Since algorithm activation' })
+  })
+
+  it('defaults to all-history when no scope is given', () => {
+    const snapshot = buildExportSnapshot({ ...baseArgs, scope: undefined })
+    expect(snapshot.analytics_scope.id).toBe('all_history')
+  })
+
+  it('tolerates missing holdings or analytics rather than throwing', () => {
+    const snapshot = buildExportSnapshot({})
+    expect(snapshot.holdings.positions).toEqual([])
+    expect(snapshot.portfolio_analytics).toBeNull()
+  })
+
+  it('stamps an ISO export timestamp and a stated purpose', () => {
+    const snapshot = buildExportSnapshot(baseArgs)
+    expect(() => new Date(snapshot.exported_at).toISOString()).not.toThrow()
+    expect(snapshot.export_purpose).toMatch(/AI assistant/)
+  })
+})
+
+describe('snapshotFilename', () => {
+  it('is a safe filename carrying the scope and today\'s date', () => {
+    const name = snapshotFilename('since_algorithm')
+    expect(name).toMatch(/^valuesignal-metrics-since_algorithm-\d{4}-\d{2}-\d{2}\.json$/)
+  })
+
+  it('falls back to all_history when no scope is given', () => {
+    expect(snapshotFilename(undefined)).toMatch(/^valuesignal-metrics-all_history-/)
+  })
+})
+
+describe('snapshotToJson', () => {
+  it('produces parseable JSON', () => {
+    const json = snapshotToJson({ a: 1, b: [1, 2, 3] })
+    expect(JSON.parse(json)).toEqual({ a: 1, b: [1, 2, 3] })
+  })
+
+  it('replaces non-finite numbers with null rather than emitting invalid JSON', () => {
+    const json = snapshotToJson({ value: Infinity, other: NaN, fine: 1.5 })
+    expect(JSON.parse(json)).toEqual({ value: null, other: null, fine: 1.5 })
+  })
+})

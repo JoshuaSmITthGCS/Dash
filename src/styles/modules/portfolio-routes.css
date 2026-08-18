@@ -36,6 +36,8 @@
 .portfolio-data-status { grid-column: 1 / -1; padding: var(--sp-1) var(--sp-1) var(--sp-2); border-bottom: 1px solid var(--border-subtle); }
 .portfolio-data-status .eyebrow { margin-bottom: var(--sp-0-5); }
 .portfolio-data-status time { color: var(--text-secondary); font: var(--fs-2xs) var(--font-mono); }
+.export-metrics-note { grid-column: 1 / -1; margin: var(--sp-1) var(--sp-1) 0; color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.45; }
+.export-metrics-status { position: absolute; right: 0; bottom: -28px; margin: 0; padding: var(--sp-1) var(--sp-2-5); border-radius: var(--control-radius); background: var(--surface-inverse, var(--text-primary)); color: var(--surface-primary); font-size: var(--fs-2xs); white-space: nowrap; }
 .portfolio-dashboard-section { margin-bottom: var(--sp-6); }
 .portfolio-section-heading { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); margin-bottom: var(--sp-3); }
 .portfolio-section-heading > div { display: flex; align-items: center; gap: var(--sp-3); }

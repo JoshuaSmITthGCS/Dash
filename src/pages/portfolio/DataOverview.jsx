@@ -3,6 +3,7 @@
 
 import PortfolioMoveExplanation from '../../components/PortfolioMoveExplanation.jsx'
 import PerformanceMetrics from '../../components/PerformanceMetrics.jsx'
+import ExportMetricsMenu from '../../components/ExportMetricsMenu.jsx'
 import { explainPortfolioMove } from '../../lib/portfolioAttribution.js'
 import { ANALYTICS_SCOPES } from './format.js'
 
@@ -28,6 +29,14 @@ export default function DataOverview({
     <section className="portfolio-dashboard-section portfolio-data-overview-section" aria-labelledby="portfolio-data-overview-title">
       <header className="portfolio-section-heading">
         <div><span className="portfolio-section-number">03</span><div><span className="eyebrow">Evidence</span><h2 id="portfolio-data-overview-title">Data overview</h2></div></div>
+        <ExportMetricsMenu
+          holdings={holdings}
+          analytics={analytics}
+          benchmarks={benchmarks}
+          signalMetrics={signalMetrics}
+          monteCarlo={monteCarlo}
+          scope={analyticsScope}
+        />
       </header>
       <PortfolioMoveExplanation
         attribution={moveExplanation}
