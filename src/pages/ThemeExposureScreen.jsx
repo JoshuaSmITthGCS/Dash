@@ -231,16 +231,28 @@ function GrowthChain({ chain }) {
 // say why each one is on the list is asking to be taken on trust, which is the opposite of
 // what this layer exists for. The clauses come from the pipeline, derived from the same
 // result the row publishes, so the reason cannot drift from the score it explains.
-function WhyHere({ why, compact = false }) {
-  if (!why?.length) return null
-  const [entry, ...rest] = why
+function WhyHere({ why, rankReason, compact = false }) {
+  if (!why?.length && !rankReason?.length) return null
+  const [entry, ...rest] = why || []
+  // The top of a list is the part anyone actually acts on, so its ranking explanation is
+  // shown outright rather than folded away: how the opportunity score decomposed, which leg
+  // separated it from the row below, and what its business-quality reading rests on.
+  const rank = rankReason?.length
+    ? <ul className="row-rank-reason">{rankReason.map((clause) => <li key={clause}>{clause}</li>)}</ul>
+    : null
   if (compact) {
-    return <details className="row-why">
-      <summary>{entry}</summary>
-      <ul>{rest.map((clause) => <li key={clause}>{clause}</li>)}</ul>
-    </details>
+    return <div className="row-why-cell">
+      {rank}
+      {why?.length ? <details className="row-why">
+        <summary>{entry}</summary>
+        <ul>{rest.map((clause) => <li key={clause}>{clause}</li>)}</ul>
+      </details> : null}
+    </div>
   }
-  return <ul className="row-why-list">{why.map((clause) => <li key={clause}>{clause}</li>)}</ul>
+  return <>
+    {rank}
+    <ul className="row-why-list">{(why || []).map((clause) => <li key={clause}>{clause}</li>)}</ul>
+  </>
 }
 
 // `.research-table` is hidden outright below 900px (see global.css) in favor of this card
@@ -263,7 +275,7 @@ function ThemeCard({ row, index, onOpen }) {
       <div><dt>Industry</dt><dd>{row.industry || row.sector || '–'}</dd></div>
       <div><dt>Leading signals</dt><dd>{(row.leading_signals_fired || []).length || '–'}</dd></div>
     </dl>
-    <WhyHere why={row.why} />
+    <WhyHere why={row.why} rankReason={row.rank_reason} />
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>
 }
@@ -283,7 +295,7 @@ function ThemeTable({ rows, onOpen }) {
       // thematic list is the most important thing on the row, and hiding it behind a hover
       // makes the ranked number the headline instead of the evidence under it.
       { key: 'why', label: 'Why it is here', sortable: false,
-        cell: (row) => <WhyHere why={row.why} compact /> },
+        cell: (row) => <WhyHere why={row.why} rankReason={row.rank_reason} compact /> },
       // Industry, not just sector: the whole question a reader has about a theme row is
       // whether the company actually builds any of it, and "Industrials" cannot answer that
       // for a chip-equipment maker and a trucking company alike. It is also the field the
@@ -292,7 +304,21 @@ function ThemeTable({ rows, onOpen }) {
         sortValue: (row) => row.industry || row.sector || '',
         cell: (row) => <span className="table-industry"><b>{row.industry || row.sector || '\u2013'}</b>
           {row.industry && row.sector && <span>{row.sector}</span>}</span> },
-      { key: 'stance', label: 'Research rating', cell: (row) => row.stance ? <Tier label={row.stance} /> : '\u2013' },
+      { key: 'stance',
+        label: <span className="table-heading-with-info">Research rating
+          <InfoTag label="Research rating">
+            <strong>Why so many rows read "Insufficient data"</strong>
+            <p>That is the <em>research</em> score's rating, not this theme's evidence. Financial
+              statements are only pulled for a shortlist of the universe each run, and this screen
+              exists to surface names that are <em>not</em> already published leaders — so most of
+              the sector-connected group has no statements behind it and cannot be rated.</p>
+            <p>It does not weaken the exposure score, which is measured from filings either way.
+              It does affect the ordering: the business-quality leg of the opportunity score is
+              then computed from price-based multiples alone. The top rows say so on themselves.</p>
+          </InfoTag>
+        </span>,
+        sortValue: (row) => row.stance || '',
+        cell: (row) => row.stance ? <Tier label={row.stance} /> : '\u2013' },
       { key: 'theme_exposure_score', label: 'Exposure', numeric: true,
         cell: (row) => <span className="mono">{row.theme_exposure_score ?? '\u2013'}</span> },
       { key: 'opportunity_score', label: 'Opportunity', numeric: true,

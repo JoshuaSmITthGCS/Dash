@@ -581,6 +581,141 @@ def opportunity_score(exposure, fundamental_score, valuation_percentile):
     return round(exposure * 0.45 + fundamental_score * 0.35 + cheapness * 0.20, 1)
 
 
+# How many rows per group get the fuller "why is it here rather than one place lower"
+# treatment. Only the top of a list is read that closely, and the explanation is the most
+# expensive thing on a row to compute and to publish.
+RANK_EXPLAINED_ROWS = 5
+
+
+def _cheapness(valuation_percentile):
+    return 50.0 if valuation_percentile is None else 100.0 - valuation_percentile
+
+
+# The valuation leg is not a percentile despite its name. ``peer_groups.canonical_percentiles``
+# publishes a *tier* - cheapest / middle / most expensive third - and hands downstream models
+# its midpoint, precisely because a rank over a few dozen noisy composite scores cannot support
+# a two-significant-figure percentage (see that module's own docstring, and the published
+# valuation gap it was written to stop). So this leg is described as the tier it actually is:
+# writing "cheaper than 83% of its sector" would reintroduce the false precision that fix
+# removed, and every name in the cheapest third would claim the same invented figure.
+VALUATION_TIERS = ((70.0, "in the cheapest third of its sector"),
+                   (35.0, "in the middle third of its sector"),
+                   (0.0, "in the most expensive third of its sector"))
+
+
+def describe_cheapness(valuation_percentile):
+    if valuation_percentile is None:
+        return "no peer valuation tier resolved, scored neutral"
+    cheapness = _cheapness(valuation_percentile)
+    for floor, label in VALUATION_TIERS:
+        if cheapness >= floor:
+            return label
+    return VALUATION_TIERS[-1][1]
+
+
+SHORT_TIERS = {"in the cheapest third of its sector": "the cheapest third",
+               "in the middle third of its sector": "the middle third",
+               "in the most expensive third of its sector": "the most expensive third",
+               "no peer valuation tier resolved, scored neutral": "no resolved tier"}
+
+
+def _rank_components(item):
+    """The three legs of the opportunity score: value, weight, and how to say it.
+
+    ``display`` reads on its own in a breakdown; ``short`` reads inside a sentence that has
+    already named the leg, so a comparison does not say "business quality 93 against business
+    quality 81".
+    """
+    exposure = item.get("theme_exposure_score")
+    quality = item.get("fundamental_score")
+    cheapness_text = describe_cheapness(item.get("valuation_percentile"))
+    return [
+        ("exposure", exposure, 45,
+         f"exposure {exposure:.0f}" if exposure is not None else None,
+         f"{exposure:.0f}" if exposure is not None else None),
+        ("business quality", quality, 35,
+         f"business quality {quality:.0f}" if quality is not None else None,
+         f"{quality:.0f}" if quality is not None else None),
+        ("valuation", _cheapness(item.get("valuation_percentile")), 20,
+         cheapness_text, SHORT_TIERS.get(cheapness_text, cheapness_text)),
+    ]
+
+
+def explain_rank(item, index, group, source_row=None):
+    """Why this row sits at this position, and how solid the inputs to that are.
+
+    The exposure score says how exposed a company is; it does not say why the company above
+    it is above it. That question is answered by three numbers pulling in different
+    directions - real exposure, a business that stands up, and a price that has not already
+    run - so the answer is the decomposition, plus whichever leg actually separated this row
+    from the next one.
+
+    The third clause is the one that matters most on this screen. Statement metrics are only
+    fetched for a shortlist of the universe, and the sector-connected group exists precisely
+    to surface companies that are *not* already published leaders - so most of it is ranked
+    on a business-quality reading with no financial statements behind it. A ranking that
+    leans on that number without saying so is overstating what it knows.
+    """
+    source_row = source_row or {}
+    clauses = []
+    total = len(group)
+    score = item.get("opportunity_score")
+    legs = [leg for leg in _rank_components(item) if leg[1] is not None and leg[3]]
+    if score is not None and legs:
+        breakdown = ", ".join(f"{leg[3]} ({leg[2]}% of that score)" for leg in legs)
+        clauses.append(f"Ranks #{index + 1} of {total} on an opportunity score of {score}: "
+                       f"{breakdown}")
+
+    following = group[index + 1] if index + 1 < total else None
+    if following is not None and score is not None:
+        if item.get("eligible") and not following.get("eligible"):
+            clauses.append(
+                f"The next name ({following.get('ticker')}) is flagged rather than promoted, so "
+                "it ranks below this one whatever it scores")
+        elif following.get("opportunity_score") is not None:
+            gaps = []
+            for mine, theirs in zip(_rank_components(item), _rank_components(following)):
+                if mine[1] is not None and theirs[1] is not None:
+                    gaps.append((abs(mine[1] - theirs[1]), mine, theirs))
+            gaps.sort(key=lambda gap: gap[0], reverse=True)
+            if gaps and gaps[0][0] >= 1:
+                _, mine, theirs = gaps[0]
+                ticker, beaten = following.get("ticker"), following["opportunity_score"]
+                if mine[1] > theirs[1]:
+                    clauses.append(
+                        f"It ranks above {ticker} ({beaten}) mainly on {mine[0]}: "
+                        f"{mine[4]} against {theirs[4]}")
+                else:
+                    # The largest single gap runs against this row, which is the more
+                    # interesting case: it is ahead on the total while losing the leg that
+                    # separates them most, so the other two legs are carrying it.
+                    others = " and ".join(leg[0] for leg in _rank_components(item)
+                                          if leg[0] != mine[0])
+                    clauses.append(
+                        f"It ranks above {ticker} ({beaten}) despite losing to it on "
+                        f"{mine[0]} ({mine[4]} against {theirs[4]}); {others} make up the "
+                        "difference")
+            else:
+                clauses.append(
+                    f"It is separated from {following.get('ticker')} "
+                    f"({following['opportunity_score']}) by rounding rather than by any one leg")
+
+    coverage = source_row.get("data_coverage")
+    extended = source_row.get("extended_coverage")
+    if not extended:
+        percent = f" - {coverage * 100:.0f}% of that model's evidence resolved" if coverage else ""
+        clauses.append(
+            "Its research rating reads \"Insufficient data\" because no financial statements "
+            f"were pulled for it this run{percent}. Statements go to a shortlist of the "
+            "universe, and this screen exists to surface names that are not already published "
+            "leaders, so the business-quality leg above rests on price-based multiples rather "
+            "than on returns on capital, leverage or accounting quality")
+    elif coverage:
+        clauses.append(f"The business-quality leg is backed by statements: {coverage * 100:.0f}% "
+                       "of the research model's evidence resolved for this company")
+    return clauses
+
+
 def _ranking_key(item):
     """Eligible names first (guardrails passed), then by opportunity, then by raw exposure."""
     return (
@@ -676,6 +811,11 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
             # Every published row carries its own reason. A screen that ranks companies
             # against a thesis and cannot say why each one is on the list is asking to be
             # taken on trust, which is the opposite of what this layer is for.
+            # Kept for the rank explanation: whether this company's business-quality leg has
+            # financial statements behind it, which on this screen is usually the difference
+            # between a rating and "Insufficient data".
+            entry["research_coverage"] = row.get("data_coverage")
+            entry["statements_available"] = bool(row.get("extended_coverage"))
             entry["why"] = explain_exposure(
                 theme, result, {**row, "role": entry["role"],
                                 "candidate_source": entry["candidate_source"]})
@@ -705,6 +845,14 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
                    if item.get("candidate_source") in LEADER_SOURCES]
         connected = [item for item in candidates
                      if item.get("candidate_source") not in LEADER_SOURCES]
+        # Rank explanations are attached per group, after sorting, because the question is
+        # positional: it can only be answered against the row this one beat.
+        for group in (leaders, connected):
+            for index, item in enumerate(group[:RANK_EXPLAINED_ROWS]):
+                item["rank_reason"] = explain_rank(
+                    item, index, group,
+                    source_row={"data_coverage": item.get("research_coverage"),
+                                "extended_coverage": item.get("statements_available")})
         theme_payloads.append({
             "id": theme["id"],
             "display_name": theme.get("display_name", theme["id"]),

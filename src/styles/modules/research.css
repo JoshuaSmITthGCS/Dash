@@ -354,7 +354,7 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 
 /* Per-row reason. Open by default would triple every table's height, so the first clause -
    how the company got into the section - stays visible and the evidence expands under it. */
-.row-why { max-width: 430px; }
+.row-why { min-width: 320px; max-width: 430px; }
 .row-why summary { cursor: pointer; color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.45; }
 .row-why summary::marker { color: var(--text-faint); }
 .row-why ul, .row-why-list { margin: var(--sp-1) 0 0; padding-left: var(--sp-4); color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.5; }
@@ -366,3 +366,13 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .toggle-control input { accent-color: var(--accent); cursor: pointer; }
 .toggle-control:has(input:disabled) { opacity: .55; cursor: default; }
 .toggle-control:has(input:disabled) input { cursor: default; }
+
+/* The ranking explanation on the top rows: shown outright, since the head of a list is what
+   gets acted on and "why is this one first" is the question the score alone cannot answer. */
+/* The explanation needs a readable measure. Without a floor the column collapses to about
+   twenty characters a line once the other columns take their share, which turns the most
+   important cell on the row into a ribbon. The table scrolls horizontally instead. */
+.row-why-cell { display: grid; gap: var(--sp-2); min-width: 320px; max-width: 430px; }
+.row-rank-reason { margin: 0; padding-left: var(--sp-4); min-width: 320px; color: var(--text-dim); font-size: var(--fs-2xs); line-height: 1.55; }
+.row-rank-reason li { margin: var(--sp-1) 0; }
+.table-heading-with-info { display: inline-flex; align-items: center; gap: var(--sp-1); }

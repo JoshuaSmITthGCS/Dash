@@ -418,6 +418,51 @@ describe('Theme Exposure screen', () => {
     })
   })
 
+  describe('why the top rows rank where they do', () => {
+    const ranked = {
+      ...multiThemeData,
+      theme_screen: {
+        ...multiThemeData.theme_screen,
+        themes: [{
+          ...multiThemeData.theme_screen.themes[0],
+          rows: [{
+            ticker: 'EME', name: 'EMCOR', theme_exposure_score: 100, opportunity_score: 88.6,
+            eligible: true, candidate_source: 'sector_peer', role: 'infrastructure',
+            why: ['In this theme because it is a peer-group neighbour of this theme\'s anchors'],
+            rank_reason: [
+              'Ranks #1 of 20 on an opportunity score of 88.6: exposure 100 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)',
+              'It ranks above MCHP (87.5) mainly on business quality: 77 against 74',
+              'Its research rating reads "Insufficient data" because no financial statements were pulled for it this run - 44% of that model\'s evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality',
+            ],
+          }],
+        }],
+      },
+    }
+
+    it('shows the top row s ranking explanation without needing a click', () => {
+      useData.mockImplementation(() => ({ data: ranked, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      // Visible outright, not inside the collapsed <details> the other clauses use.
+      const reason = document.querySelector('.row-rank-reason')
+      expect(reason).toBeTruthy()
+      expect(reason.textContent).toMatch(/Ranks #1 of 20/)
+      expect(reason.textContent).toMatch(/exposure 100 \(45% of that score\)/)
+      expect(reason.textContent).toMatch(/mainly on business quality: 77 against 74/)
+    })
+
+    it('says on the row what an "Insufficient data" rating means for the ranking', () => {
+      useData.mockImplementation(() => ({ data: ranked, loading: false, error: null }))
+
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByText(/no financial statements were pulled for it this run/))
+        .toBeInTheDocument()
+      expect(screen.getByText(/rests on price-based multiples/)).toBeInTheDocument()
+    })
+  })
+
   describe('screen controls', () => {
     it('re-ranks exactly the names this screen scored, not the whole universe', () => {
       const requestFocusedRefresh = vi.fn()

@@ -489,6 +489,90 @@ class RowReasonTests(unittest.TestCase):
         self.assertNotIn("capital expenditure", why)
 
 
+class RankReasonTests(unittest.TestCase):
+    """The top of each list explains its position, not just its evidence."""
+
+    def _item(self, ticker, exposure, quality, valuation, opportunity, eligible=True):
+        return {"ticker": ticker, "theme_exposure_score": exposure, "fundamental_score": quality,
+                "valuation_percentile": valuation, "opportunity_score": opportunity,
+                "eligible": eligible}
+
+    def test_the_rank_is_decomposed_into_the_legs_that_produced_it(self):
+        group = [self._item("AAA", 100, 93, 16.7, 94.3), self._item("BBB", 100, 81, 16.7, 90.1)]
+        reason = " ".join(themes.explain_rank(group[0], 0, group))
+        self.assertIn("Ranks #1 of 2", reason)
+        self.assertIn("exposure 100 (45% of that score)", reason)
+        self.assertIn("business quality 93 (35% of that score)", reason)
+
+    def test_the_valuation_leg_is_described_as_a_tier_not_an_invented_percentile(self):
+        # peer_groups publishes a tier midpoint (16.7 / 50 / 83.3), never a real percentile,
+        # because a rank over a few dozen noisy composite scores cannot support one. Saying
+        # "cheaper than 83% of its sector" would put that false precision back and hand every
+        # name in the cheapest third the same invented figure.
+        cheapest = " ".join(themes.explain_rank(self._item("AAA", 90, 70, 16.7, 80), 0,
+                                                [self._item("AAA", 90, 70, 16.7, 80)]))
+        expensive = " ".join(themes.explain_rank(self._item("BBB", 90, 70, 83.3, 60), 0,
+                                                 [self._item("BBB", 90, 70, 83.3, 60)]))
+        self.assertIn("in the cheapest third of its sector", cheapest)
+        self.assertIn("in the most expensive third of its sector", expensive)
+        self.assertNotIn("83%", cheapest)
+        self.assertNotIn("%  of its sector", cheapest)
+
+    def test_it_names_the_leg_that_separated_this_row_from_the_next(self):
+        group = [self._item("AAA", 100, 93, 16.7, 94.3), self._item("BBB", 100, 81, 16.7, 90.1)]
+        reason = " ".join(themes.explain_rank(group[0], 0, group))
+        self.assertIn("mainly on business quality: 93 against 81", reason)
+
+    def test_winning_overall_while_losing_the_widest_leg_is_stated_as_such(self):
+        # Reporting this as "ranks above X mainly on valuation, where it is behind" reads as a
+        # contradiction; the honest reading is that the other legs carried it.
+        group = [self._item("AAA", 95, 80, 50.0, 79.9), self._item("BBB", 70, 60, 16.7, 70.0)]
+        reason = " ".join(themes.explain_rank(group[0], 0, group))
+        self.assertIn("despite losing to it on valuation", reason)
+        self.assertIn("make up the difference", reason)
+
+    def test_an_ineligible_next_row_is_explained_by_the_guardrail_not_the_score(self):
+        group = [self._item("AAA", 60, 60, 50.0, 60.0),
+                 self._item("BBB", 100, 99, 16.7, 95.0, eligible=False)]
+        reason = " ".join(themes.explain_rank(group[0], 0, group))
+        self.assertIn("flagged rather than promoted", reason)
+
+    def test_a_row_with_no_statements_says_what_its_quality_leg_rests_on(self):
+        # The complaint this answers: two thirds of the rows show "Insufficient data" as their
+        # research rating, and nothing on the row explained why or what it meant for the rank.
+        item = self._item("AAA", 100, 77, 16.7, 88.6)
+        reason = " ".join(themes.explain_rank(item, 0, [item],
+                                              source_row={"data_coverage": 0.44,
+                                                          "extended_coverage": None}))
+        self.assertIn('Insufficient data', reason)
+        self.assertIn("44% of that model's evidence resolved", reason)
+        self.assertIn("price-based multiples", reason)
+
+    def test_a_statement_backed_row_says_that_instead(self):
+        item = self._item("AAA", 100, 93, 16.7, 94.3)
+        reason = " ".join(themes.explain_rank(item, 0, [item],
+                                              source_row={"data_coverage": 0.89,
+                                                          "extended_coverage": 0.95}))
+        self.assertIn("backed by statements", reason)
+        self.assertNotIn("Insufficient data", reason)
+
+    def test_only_the_top_of_each_group_carries_the_fuller_explanation(self):
+        theme = themes.normalize_theme({
+            "id": "t", "signals": [{"name": "segment_revenue_share", "weight": 0.5},
+                                   {"name": "filing_keyword_density_trend", "weight": 0.5}]})
+        rows = [{"ticker": f"T{index:02d}", "candidate_source": "sector_peer",
+                 "components": {"fundamentals": 90 - index}} for index in range(8)]
+        screen = themes.build_theme_screen(
+            [theme], rows,
+            lambda ticker, _t: {"segment_revenue_share": 0.4,
+                                "filing_keyword_density_trend": 0.3})
+        published = screen["themes"][0]["rows"]
+        explained = [row for row in published if row.get("rank_reason")]
+        self.assertEqual(len(explained), themes.RANK_EXPLAINED_ROWS)
+        self.assertEqual([row["ticker"] for row in explained],
+                         [row["ticker"] for row in published[:themes.RANK_EXPLAINED_ROWS]])
+
+
 class ScreenAssemblyTests(unittest.TestCase):
     def test_screen_ranks_eligible_names_above_excluded_ones(self):
         theme = build()
