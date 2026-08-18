@@ -207,7 +207,15 @@ export function buildBenchmarkModel({ data, snapshots }) {
     { symbol: 'IJR', label: 'S&P SmallCap 600', snapshot: snapshots.ijr },
   ].map(({ symbol, label, snapshot }) => {
     const series = asValueSeries(benchmarkHistoryFromSnapshot(snapshot), 504)
-    return series ? { ...series, symbol, label } : null
+    if (!series) return null
+    // Same gap fill as the selected benchmark below, for the same reason: the fit search
+    // needs 21 overlapping dates, and an ETF file two sessions behind the portfolio left
+    // every candidate one short. Only the candidate the report tape actually describes can
+    // be extended - the others have no second source and stay as published.
+    const extended = reportBenchmarkSeries?.symbol === symbol
+      ? unionValueSeries(series, reportBenchmarkSeries)
+      : series
+    return { ...extended, symbol, label }
   }).filter(Boolean)
   const selectedPublished = asValueSeries(benchmarkHistoryFromSnapshot(snapshots.selected), 504)
   const selectedBenchmarkSymbol = selectedPublished?.symbol || reportBenchmarkSeries?.symbol || 'SPY'
