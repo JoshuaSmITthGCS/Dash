@@ -11,6 +11,7 @@ from backtest_monthly import (  # noqa: E402
     appeal_weights,
     build_panel,
     build_rebalance_calendar,
+    inverse_volatility_weights,
     panel_dollar_volume,
     panel_forward_returns,
     panel_leg_weights,
@@ -39,6 +40,42 @@ class MonthlyBacktestTests(unittest.TestCase):
         self.assertAlmostEqual(weights["A"], 2 / 3)
         self.assertAlmostEqual(weights["B"], 1 / 3)
         self.assertNotIn("C", weights)
+
+    def test_inverse_volatility_weights_favor_the_calmer_name(self):
+        # 90 trading days, well past the 60-day trailing window: A moves 0.1%/day, B moves
+        # 3%/day. Both trend up so "price" and "score" gate cleanly, and neither series is
+        # correlated with anything else this function needs to know about -- it only looks
+        # at each name's own trailing closes.
+        def series(daily_move, days=90, start="2024-01-01"):
+            import datetime
+            start_date = datetime.date.fromisoformat(start)
+            dates, closes, value = [], [], 100.0
+            sign = 1
+            for index in range(days):
+                dates.append((start_date + datetime.timedelta(days=index)).isoformat())
+                closes.append(value)
+                value *= 1 + sign * daily_move
+                sign *= -1
+            return {"dates": dates, "closes": closes, "volumes": [1_000_000] * days}
+
+        universe_data = {"CALM": series(0.001), "WILD": series(0.03)}
+        rows = [{"ticker": "CALM", "score": 50, "price": 100},
+               {"ticker": "WILD", "score": 50, "price": 100}]
+        weights = inverse_volatility_weights(rows, 2, universe_data, "2024-03-30")
+        self.assertGreater(weights["CALM"], weights["WILD"])
+        self.assertAlmostEqual(sum(weights.values()), 1.0, places=6)
+
+    def test_inverse_volatility_weights_drops_names_with_no_measurable_trailing_volatility(self):
+        universe_data = {"NEWCO": {"dates": ["2024-03-01"], "closes": [10.0], "volumes": [1000]}}
+        rows = [{"ticker": "NEWCO", "score": 50, "price": 10}]
+        weights = inverse_volatility_weights(rows, 1, universe_data, "2024-03-01")
+        self.assertEqual(weights, {})
+
+    def test_appeal_and_inverse_volatility_share_a_call_signature(self):
+        # The rebalance loop picks a weighter by name and calls it with the same four
+        # positional arguments regardless of which one is selected.
+        rows = [{"ticker": "A", "score": 80, "price": 10}]
+        self.assertEqual(appeal_weights(rows, 1, {}, "2024-01-01"), {"A": 1.0})
 
     def test_metrics_compute_drawdown(self):
         history = [

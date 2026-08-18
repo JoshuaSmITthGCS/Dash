@@ -212,8 +212,10 @@ every rank-IC estimate. Alpha Vantage enrichment is capped at five symbols regar
 universe size, so growing the list spends only free Yahoo requests. `ADVISOR_SYMBOLS` can override it without imposing an application
 hard cap. To respect the free plan, `ALPHA_ENRICH_LIMIT` caps Alpha Vantage company and insider
 enrichment at five. Marketaux supplies entity-level news sentiment for that shortlist and the
-market-pulse feed. FRED supplies a six-series macro regime that is reduced to a sector-sensitive
-±3-point modifier; raw FRED observations are not published or cached. Yahoo Finance supplies the
+market-pulse feed. FRED supplies a seven-series macro regime; six series (rates, inflation, labor,
+yield curve) are reduced to a sector-sensitive ±3-point modifier, and a seventh (VIX-derived
+volatility) is published alongside them as its own factor without yet feeding that modifier; raw
+FRED observations are not published or cached. Yahoo Finance supplies the
 full-universe fundamentals and history. The committed `advisor.json`
 contains derived public data only; it never contains the API key.
 

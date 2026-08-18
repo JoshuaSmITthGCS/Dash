@@ -22,6 +22,13 @@ SERIES = {
     "unemployment": {"id": "UNRATE", "limit": 6},
     "yield_curve": {"id": "T10Y2Y", "limit": 90},
     "sahm": {"id": "SAHMREALTIME", "limit": 6},
+    # CBOE Volatility Index daily close, published by FRED itself (sourced from CBOE) -
+    # no separate options-market data provider needed. Read alongside the other five,
+    # published as its own factor, and deliberately *not* added to the sector-weighted
+    # scoring modifier below (settings.json's modifiers.macro_regime.sector_weights)
+    # without a considered, separately-reviewed recalibration of every sector's weights -
+    # that is a change to what moves published rankings, not an additive diagnostic.
+    "vix": {"id": "VIXCLS", "limit": 90},
 }
 
 
@@ -134,9 +141,32 @@ def derive_regime(series_rows):
             "score": round(score, 1), "label": label(score), "as_of": curve[0]["date"],
         }
 
+    vix = series_rows.get("vix", [])
+    if vix:
+        level = vix[0]["value"]
+        trend = _change(vix, min(19, len(vix) - 1))
+        # VIX below ~15 reads calm (supportive); above ~30 reads risk-off (restrictive). A
+        # rising VIX is penalized beyond its level alone, on the same level-plus-trend
+        # construction every factor above already uses - direction of change matters as much
+        # as where it currently stands.
+        score = clamp(85 - max(0, level - 15) * 3.2 - max(0, trend) * 2.5 + max(0, -trend) * 1.0)
+        factors["volatility"] = {
+            "score": round(score, 1), "label": label(score), "as_of": vix[0]["date"],
+        }
+
+    # "volatility" is published above as its own factor - visible in the market-pulse read -
+    # but deliberately left out of this weighted composite and out of every sector's scoring
+    # modifier in settings.json. Folding a sixth input into either is a real recalibration
+    # decision (every sector_weights entry would need reconsidering, not just renormalizing),
+    # not something this fetch integration should decide unilaterally.
     weights = {"rates": 0.30, "inflation": 0.25, "labor": 0.25, "yield_curve": 0.20}
     available = [(factors[name]["score"], weight) for name, weight in weights.items() if name in factors]
-    score = sum(value * weight for value, weight in available) / sum(weight for _, weight in available)
+    # Unreachable through fetch_regime() today (its own >=2-series gate already guarantees at
+    # least one weighted factor), but derive_regime() is a public function a caller could
+    # still invoke directly with only non-weighted input (e.g. vix alone) - neutral rather
+    # than a crash, consistent with 50 being label()'s own neutral midpoint.
+    score = (sum(value * weight for value, weight in available) / sum(weight for _, weight in available)
+            if available else 50.0)
     freshness = max(
         (rows[0]["date"] for rows in series_rows.values() if rows),
         default=datetime.now(timezone.utc).date().isoformat(),
