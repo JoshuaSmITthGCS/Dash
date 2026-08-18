@@ -16,7 +16,7 @@ describe('useData local caching', () => {
     clearCachedData()
   })
 
-  it('caches a successful fetch and serves it instantly on the next mount', async () => {
+  it('caches a successful fetch, but a later mount still shows loading until the fetch resolves', async () => {
     const payload = { generated_at: '2026-08-01T00:00:00Z', research: [] }
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
@@ -28,11 +28,14 @@ describe('useData local caching', () => {
     expect(first.result.current.data).toEqual(payload)
     expect(first.result.current.fromCache).toBe(false)
 
-    // A second mount (e.g. a page reload) should paint from the cached copy immediately,
-    // with no loading spinner, even though the network call hasn't resolved yet.
+    // A second mount (e.g. a page reload) must not paint last session's cached copy as if
+    // it were current - it shows the loading state until the live fetch actually resolves,
+    // even though a cached copy already exists.
     const second = renderHook(() => useData(file))
-    expect(second.result.current.loading).toBe(false)
-    expect(second.result.current.fromCache).toBe(true)
+    expect(second.result.current.loading).toBe(true)
+    expect(second.result.current.data).toBe(null)
+    await waitFor(() => expect(second.result.current.loading).toBe(false))
+    expect(second.result.current.fromCache).toBe(false)
     expect(second.result.current.data).toEqual(payload)
   })
 
@@ -69,20 +72,37 @@ describe('useData local caching', () => {
     expect(localStorage.getItem('dash:last-refresh:' + other)).toBeTruthy()
   })
 
-  it('paints from the Cache API layer when a payload was too big for localStorage', async () => {
+  it('stays on the loading state while a fetch is in flight, even with a Cache API copy available', async () => {
     const payload = { data: { generated_at: '2026-08-01T00:00:00Z', research: [] }, cachedAt: 1754000000000 }
     const fakeCache = {
       match: vi.fn().mockResolvedValue({ json: () => Promise.resolve(payload) }),
       put: vi.fn(), delete: vi.fn(),
     }
     vi.stubGlobal('caches', { open: vi.fn().mockResolvedValue(fakeCache), delete: vi.fn().mockResolvedValue(true) })
-    // Network revalidation never resolves - the cached copy alone must reach the screen.
+    // Network revalidation never resolves - the cached copy must not sneak onto the screen
+    // while it's still pending, even though it's readable.
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
 
     const hook = renderHook(() => useData('big-fixture.json'))
-    await waitFor(() => expect(hook.result.current.data).toEqual(payload.data))
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve() })
+    expect(hook.result.current.data).toBe(null)
+    expect(hook.result.current.loading).toBe(true)
+  })
+
+  it('falls back to the Cache API layer when a fetch fails and no localStorage copy exists', async () => {
+    const payload = { data: { generated_at: '2026-08-01T00:00:00Z', research: [] }, cachedAt: 1754000000000 }
+    const fakeCache = {
+      match: vi.fn().mockResolvedValue({ json: () => Promise.resolve(payload) }),
+      put: vi.fn(), delete: vi.fn(),
+    }
+    vi.stubGlobal('caches', { open: vi.fn().mockResolvedValue(fakeCache), delete: vi.fn().mockResolvedValue(true) })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+
+    const hook = renderHook(() => useData('big-fixture.json'))
+    await waitFor(() => expect(hook.result.current.loading).toBe(false))
+    expect(hook.result.current.data).toEqual(payload.data)
     expect(hook.result.current.fromCache).toBe(true)
-    expect(hook.result.current.loading).toBe(false)
+    expect(hook.result.current.error).toBeTruthy()
   })
 
   it('ignores a stale response after the requested file changes', async () => {
