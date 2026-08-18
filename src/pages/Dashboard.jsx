@@ -261,7 +261,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState('1D')
   const [draftWidgets, setDraftWidgets] = useState(preferences.widgets)
   const [pullRefreshing, setPullRefreshing] = useState(false)
-  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(false)
+  const [sinceLiveTrackingOnly, setSinceLiveTrackingOnly] = useState(true)
   const customize = new window.URLSearchParams(window.location.search).get('customize') === '1'
   const { items: watchlistItems } = useWatchlist()
   const watchlist = useMemo(() => watchlistItems.map((item) => item.ticker), [watchlistItems])

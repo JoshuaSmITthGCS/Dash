@@ -38,6 +38,27 @@ export function asValueSeries(history, limit = null) {
   }
 }
 
+/**
+ * Unions two value series for the same instrument, newest source winning on shared dates.
+ *
+ * `etf/<SYMBOL>.json` and the advisor snapshot's own benchmark tape are written by different
+ * pipeline steps and do not land on the same session: the ETF file has been observed ending
+ * two sessions behind the advisor's tape despite being generated later in the same run.
+ * Whichever is used alone silently caps every window measured against it - which is what held
+ * the tear sheet at 19 daily returns while the dashboard had 20. Both carry the same adjusted
+ * closes on every overlapping date, so a union is a gap fill, not a splice of two price bases.
+ * Callers must only pass series for the same symbol.
+ */
+export function unionValueSeries(primary, secondary) {
+  if (!primary?.dates?.length) return secondary || null
+  if (!secondary?.dates?.length) return primary
+  const merged = new Map()
+  secondary.dates.forEach((date, index) => { merged.set(date, secondary.values[index]) })
+  primary.dates.forEach((date, index) => { merged.set(date, primary.values[index]) })
+  const dates = [...merged.keys()].sort()
+  return { ...primary, dates, values: dates.map((date) => merged.get(date)) }
+}
+
 export function sliceSeriesBefore(series, cutoffDate) {
   if (!series?.dates?.length) return null
   const end = series.dates.findIndex((date) => date >= cutoffDate)
@@ -190,12 +211,17 @@ export function buildBenchmarkModel({ data, snapshots }) {
   }).filter(Boolean)
   const selectedPublished = asValueSeries(benchmarkHistoryFromSnapshot(snapshots.selected), 504)
   const selectedBenchmarkSymbol = selectedPublished?.symbol || reportBenchmarkSeries?.symbol || 'SPY'
+  // Only when both tapes describe the same instrument - picking a different benchmark must
+  // never quietly graft the report's SPY history onto it.
+  const analyticsBenchmarkSeries = selectedPublished && reportBenchmarkSeries?.symbol === selectedPublished.symbol
+    ? unionValueSeries(selectedPublished, reportBenchmarkSeries)
+    : selectedPublished || reportBenchmarkSeries
   return {
     candidateInputs,
     selectedBenchmarkSymbol,
     selectedBenchmarkLabel: BENCHMARKS.find((row) => row.symbol === selectedBenchmarkSymbol)?.label
       || candidateInputs.find((row) => row.symbol === selectedBenchmarkSymbol)?.label
       || selectedBenchmarkSymbol,
-    analyticsBenchmarkSeries: selectedPublished || reportBenchmarkSeries,
+    analyticsBenchmarkSeries,
   }
 }
