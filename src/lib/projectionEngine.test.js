@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { annualReturnTargetRange, applyAllocationAssumption, benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource, simulateProjection, trailingAnnualizedReturn } from './projectionEngine.js'
+import { annualReturnTargetRange, applyAllocationAssumption, benchmarkCenteredSparseHistory, extendSparsePortfolioHistory, monthlyReturnsFromSeries, normalizeAnnualReturnTarget, parametricMonthlyReturns, projectionConfig, selectProjectionReturnSource, simulateProjection, trailingAnnualizedReturn } from './projectionEngine.js'
+
+function riskProfileFixture(overrides = {}) {
+  return {
+    available: true,
+    observations: 40,
+    startDate: '2026-01-01',
+    endDate: '2026-02-15',
+    annualReturn: 0.2,
+    riskFreeRate: 0,
+    sharpe: 1.5,
+    sortino: 2.0,
+    loAdjustedSortino: null,
+    loAdjusted: false,
+    calmar: 3.0,
+    downsideVolAnnual: 0.1,
+    upsideVolAnnual: 0.14,
+    impliedMaxDrawdown: 0.0667,
+    confidence: 'limited',
+    ...overrides,
+  }
+}
 
 function monthlySeries(months, monthlyReturn = 0.01) {
   const dates = []
@@ -167,5 +188,45 @@ describe('historical block bootstrap projections', () => {
     const result = simulateProjection({ monthlyReturns, currentBalance: 100000, monthlyContribution: 500, accumulationMonths: 360, seed: 7 })
     expect(result.available).toBe(true)
     expect(globalThis.performance.now() - startedAt).toBeLessThan(projectionConfig.interaction_budget_ms)
+  })
+})
+
+describe('Sharpe/Sortino/Calmar-calibrated Monte Carlo', () => {
+  it('draws a deterministic monthly series whose annualized geometric mean matches the risk profile return', () => {
+    const profile = riskProfileFixture()
+    const returns = parametricMonthlyReturns(profile, 2400, 42)
+    expect(returns).toHaveLength(2400)
+    const annualizedMean = Math.expm1(returns.reduce((sum, value) => sum + Math.log1p(value), 0) / returns.length * projectionConfig.months_per_year)
+    expect(annualizedMean).toBeCloseTo(profile.annualReturn, 1)
+  })
+
+  it('is deterministic for a fixed seed and varies with a different one', () => {
+    const profile = riskProfileFixture()
+    const first = parametricMonthlyReturns(profile, 24, 1)
+    const repeat = parametricMonthlyReturns(profile, 24, 1)
+    const other = parametricMonthlyReturns(profile, 24, 2)
+    expect(first).toEqual(repeat)
+    expect(first).not.toEqual(other)
+  })
+
+  it('prefers the risk-profile calibration over historical bootstrap when a risk profile is supplied', () => {
+    const profile = riskProfileFixture()
+    const result = selectProjectionReturnSource(monthlySeries(37), monthlySeries(40), 'VTI', null, profile)
+    expect(result).toMatchObject({ available: true, type: 'parametric-risk-profile', riskProfile: profile })
+    expect(result.returns.length).toBe(projectionConfig.parametric_calibration.synthetic_months)
+    expect(result.fallbackReason).toContain('Sharpe')
+  })
+
+  it('falls back to the historical tiers when no risk profile is available yet', () => {
+    const result = selectProjectionReturnSource(monthlySeries(37), monthlySeries(40), 'VTI', null, { available: false })
+    expect(result).toMatchObject({ available: true, type: 'portfolio' })
+  })
+
+  it('feeds the calibrated returns through the same block-bootstrap simulator', () => {
+    const profile = riskProfileFixture()
+    const source = selectProjectionReturnSource(monthlySeries(37), monthlySeries(40), 'VTI', null, profile)
+    const result = simulateProjection({ monthlyReturns: source.returns, currentBalance: 10000, monthlyContribution: 200, accumulationMonths: 120, seed: 3 })
+    expect(result.available).toBe(true)
+    expect(result.terminalPercentiles.p50).toBeGreaterThan(0)
   })
 })

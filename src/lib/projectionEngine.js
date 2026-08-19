@@ -208,11 +208,83 @@ export function applyAllocationAssumption(returns, allocationKey, annualReturnTa
   return logs.map((value) => Math.expm1((value - average) * scale + targetMonthlyLog))
 }
 
+function hashSeed(riskProfile) {
+  const basis = `${riskProfile.startDate}|${riskProfile.endDate}|${riskProfile.observations}|${riskProfile.annualReturn}`
+  let hash = 0
+  for (let index = 0; index < basis.length; index += 1) hash = (Math.imul(hash, 31) + basis.charCodeAt(index)) >>> 0
+  return hash
+}
+
 /**
- * Uses observed portfolio returns after the 36-month gate. A shorter record uses the
- * selected benchmark's long return history centered on the portfolio return observed so far.
+ * Draws a long synthetic monthly-return series from a two-piece (split) normal distribution
+ * in log-return space, calibrated to the risk profile's annualized return and its Sortino-
+ * derived downside / Sharpe-derived upside volatility. Feeding this into the existing
+ * 12-month block bootstrap in `simulateProjection` keeps every downstream mechanic (fan
+ * chart, success probability, goal probability) unchanged - only the distribution the
+ * returns are drawn from is model-based instead of resampled from real history.
  */
-export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, benchmarkSymbol = 'SPY', baselineOverride = null) {
+export function parametricMonthlyReturns(riskProfile, months, seed = hashSeed(riskProfile)) {
+  const config = projectionConfig.parametric_calibration
+  const random = seededRandom(seed)
+  const monthsPerYear = projectionConfig.months_per_year
+  const monthlyMeanLog = Math.log1p(riskProfile.annualReturn) / monthsPerYear
+  const floorVolAnnual = config.minimum_annual_volatility_pct / 100
+  const downsideVolAnnual = Math.max(riskProfile.downsideVolAnnual || 0, floorVolAnnual)
+  const upsideVolAnnual = Math.max(riskProfile.upsideVolAnnual || 0, downsideVolAnnual * config.upside_volatility_floor_ratio)
+  const downsideSdLog = downsideVolAnnual / Math.sqrt(monthsPerYear)
+  const upsideSdLog = upsideVolAnnual / Math.sqrt(monthsPerYear)
+  // A split normal with unequal downside/upside standard deviations has a nonzero mean by
+  // itself (E[sd(Z)*Z] = (upsideSd - downsideSd) / sqrt(2*pi) for standard normal Z split at
+  // zero). Subtracting that bias keeps the simulated series centered on the risk profile's
+  // own annualized return instead of silently drifting toward the wider side.
+  const meanBiasLog = (upsideSdLog - downsideSdLog) / Math.sqrt(2 * Math.PI)
+  const centeredMeanLog = monthlyMeanLog - meanBiasLog
+  const returns = []
+  for (let index = 0; index < months; index += 1) {
+    const u1 = Math.max(random(), Number.EPSILON)
+    const u2 = random()
+    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2)
+    const sd = z < 0 ? downsideSdLog : upsideSdLog
+    returns.push(Math.expm1(centeredMeanLog + z * sd))
+  }
+  return returns
+}
+
+function parametricReturnSource(riskProfile, baselineOverride = null) {
+  const months = projectionConfig.parametric_calibration.synthetic_months
+  const returns = parametricMonthlyReturns(riskProfile, months)
+  const ratio = (value) => finite(value) && value !== null ? Number(value).toFixed(2) : 'insufficient sample'
+  return {
+    available: true,
+    type: 'parametric-risk-profile',
+    label: 'a Sharpe/Sortino/Calmar-calibrated distribution, not your literal historical path',
+    riskProfile,
+    baseline: baselineOverride?.available ? baselineOverride : {
+      available: true,
+      annualizedReturn: riskProfile.annualReturn,
+      annualizedReturnPct: riskProfile.annualReturn * 100,
+      label: `Calibrated from ${riskProfile.observations} of your daily returns through ${riskProfile.endDate}`,
+      source: 'portfolio-risk-profile',
+    },
+    fallbackReason: `Calibrated from ${riskProfile.observations} of your daily returns (Sharpe ${ratio(riskProfile.sharpe)}, Sortino ${ratio(riskProfile.sortino)}${riskProfile.loAdjusted ? `, Lo-adjusted Sortino ${ratio(riskProfile.loAdjustedSortino)}` : ''}, Calmar ${ratio(riskProfile.calmar)}) as of ${riskProfile.endDate}. Monthly outcomes are drawn from a distribution matched to these ratios, not resampled from your literal historical path.`,
+    returns,
+    months,
+    observedMonths: riskProfile.observations,
+    startDate: riskProfile.startDate,
+    endDate: riskProfile.endDate,
+  }
+}
+
+/**
+ * Prefers a distribution calibrated from the portfolio's own Sharpe/Sortino/Calmar ratios
+ * whenever there is enough daily history to compute them (the same gate the Overview panel
+ * uses). With less history than that, falls back to observed portfolio monthly returns after
+ * the 36-month gate, then to the selected benchmark's long return history centered on the
+ * portfolio return observed so far.
+ */
+export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, benchmarkSymbol = 'SPY', baselineOverride = null, riskProfile = null) {
+  if (riskProfile?.available) return parametricReturnSource(riskProfile, baselineOverride)
+
   const portfolio = monthlyReturnsFromSeries(portfolioSeries)
   const benchmark = monthlyReturnsFromSeries(benchmarkHistory)
   const calculatedBaseline = trailingAnnualizedReturn(portfolioSeries)
@@ -261,7 +333,7 @@ export function selectProjectionReturnSource(portfolioSeries, benchmarkHistory, 
   }
 }
 
-function seededRandom(seed) {
+export function seededRandom(seed) {
   let state = Number(seed) >>> 0
   return () => {
     state += 0x6D2B79F5
