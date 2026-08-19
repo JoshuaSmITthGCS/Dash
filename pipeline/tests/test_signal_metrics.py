@@ -715,6 +715,20 @@ class RobustnessBeyondPboTests(unittest.TestCase):
         self.assertEqual(rows["var_backtest_99"]["status"], "ready")
         self.assertIn(rows["var_backtest_95"]["value"], (0, 1, 2))
 
+    def test_deflated_sharpe_discloses_which_trial_count_it_uses(self):
+        # This panel's trials count is the raw category-weight optimizer search space
+        # (optimize_weights_results.json), a different population from
+        # harness_freeze.json's registered promotion-gate trial count -- the two are
+        # computed independently and must never be shown under "trials" without saying
+        # which one this is (docs/QUESTIONS-FOR-OWNER.md question 3).
+        optimizer = {"sweeps": {"categories": [{"trial": i} for i in range(201)]}}
+        rows = metrics_by_id(sm.honesty_metrics(None, optimizer))
+        deflated = rows["deflated_sharpe"]
+        self.assertEqual(deflated["detail"]["trials"], 201)
+        self.assertEqual(deflated["detail"]["trial_source"], "category_weight_optimizer_search")
+        self.assertIn("not", deflated["reads"].lower())
+        self.assertIn("promotion", deflated["reads"].lower())
+
     def test_search_survival_reads_from_the_same_trial_log_as_pbo(self):
         optimizer = {"sweeps": {"categories": [
             {"holdout_folds": [{"score_vs_spy": 5.0}, {"score_vs_spy": 4.0},

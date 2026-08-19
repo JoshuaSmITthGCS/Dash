@@ -1009,11 +1009,22 @@ def honesty_metrics(backtest, optimizer):
         per_observation, observations=len(returns), trials=trials, skew=skew, kurtosis=kurtosis)
     rows.append(metric("deflated_sharpe", "honesty", "Deflated Sharpe ratio",
                        value=deflated,
-                       reads="Probability the Sharpe survives the number of configurations tried.",
+                       # trials here counts every raw category-weight optimizer search
+                       # iteration (optimize_weights_results.json) -- a different, larger
+                       # population than harness_freeze.json's registered promotion-gate
+                       # trial count (Prospective Clock panel, "Trials registry"). The two
+                       # are computed independently and are NOT interchangeable; this
+                       # panel is a search-survival diagnostic on the optimizer's own
+                       # sweep, not the number promotion is decided against. See
+                       # docs/QUESTIONS-FOR-OWNER.md question 3.
+                       reads=(f"Probability the Sharpe survives the {trials} configurations "
+                              "the category-weight optimizer tried. Not the registered "
+                              "promotion-gate trial count shown in the Prospective Clock panel."),
                        kill_threshold=f"Below {SEARCH_SURVIVAL_MINIMUM} the result does not survive its own search",
                        kill_threshold_value=SEARCH_SURVIVAL_MINIMUM, comparison="lt",
                        breached=deflated is not None and deflated < SEARCH_SURVIVAL_MINIMUM,
-                       detail={"trials": trials, "skew": round(skew, 3),
+                       detail={"trials": trials, "trial_source": "category_weight_optimizer_search",
+                               "skew": round(skew, 3),
                                "kurtosis": round(kurtosis, 3),
                                "sharpe_per_observation": None if per_observation is None
                                else round(per_observation, 4)},
