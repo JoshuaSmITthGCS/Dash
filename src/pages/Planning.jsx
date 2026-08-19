@@ -5,7 +5,8 @@ import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
-import { annualizeReturnPct, currentHoldingsSeries, selectPeriod } from '../lib/portfolioAnalytics.js'
+import { annualizeReturnPct, currentHoldingsSeries, selectPeriod, sliceSeriesFrom } from '../lib/portfolioAnalytics.js'
+import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
 import { derivePortfolioRiskProfile } from '../lib/monteCarloRiskProfile.js'
 import { usePortfolioMonteCarloCalibration } from '../lib/usePortfolioMonteCarloCalibration.js'
 import { formatPreferenceMoney, usePreferences } from '../lib/PreferencesContext.jsx'
@@ -83,7 +84,14 @@ export default function Planning() {
     const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
     return currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
   }, [data, positions])
-  const riskProfile = useMemo(() => derivePortfolioRiskProfile(portfolioSeries, data), [portfolioSeries, data])
+  // The Overview panel's Sharpe/Sortino/Calmar/Annualized-return tiles default to the
+  // since-live-tracking window (analyticsScope 'since_algorithm'), not the full holdings
+  // history. Calibrating off the unsliced portfolioSeries silently diluted the annualized
+  // return toward a much longer, lower-return window and disagreed with what the Overview
+  // panel shows for the same ratios - slicing to the same LIVE_TRACKING_START window is what
+  // makes "calibrated to your Sharpe/Sortino/Calmar" literally true.
+  const sinceAlgorithmSeries = useMemo(() => sliceSeriesFrom(portfolioSeries, LIVE_TRACKING_START), [portfolioSeries])
+  const riskProfile = useMemo(() => derivePortfolioRiskProfile(sinceAlgorithmSeries, data), [sinceAlgorithmSeries, data])
   const lastActivityAt = useMemo(() => activities
     .map((row) => row.recordedAt)
     .filter(Boolean)
