@@ -554,13 +554,15 @@
     "milliseconds_per_day": 86400000,
     "parametric_calibration": {
       "synthetic_months": 600,
-      "refresh_days": 30,
+      "refresh_weekday": 5,
+      "refresh_hour": 16,
+      "refresh_timezone": "America/New_York",
       "minimum_annual_volatility_pct": 3.0,
       "upside_volatility_floor_ratio": 0.3,
       "collection_path": "planning",
       "document_id": "monteCarloRiskProfile"
     },
-    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. The dotted median is centered on the user's adjustable annual return target, which defaults to 15 percent. Supplied brokerage returns define an evidence range when available but do not silently replace the target. Once there is enough daily history to compute Sharpe/Sortino/Calmar (the same gate the Overview panel uses), the model draws from a distribution calibrated to those ratios instead. With less history than that, the model uses observed portfolio returns after the 36-month gate, or the selected benchmark's full monthly history recentered on the target. Observed months are never repeated or synthesized. Allocation scenarios change dispersion around the target."
+    "_comment": "Projection paths resample consecutive 12-month blocks to preserve short-run return dependence. The dotted median is centered on the user's adjustable annual return target, which defaults to 15 percent. Supplied brokerage returns define an evidence range when available but do not silently replace the target. Once there is enough daily history to compute Sharpe/Sortino/Calmar (the same gate the Overview panel uses), the model draws from a distribution calibrated to those ratios instead, refreshed weekly at Friday market close (America/New_York) or on a new deposit-like activity, whichever comes first. With less history than that, the model uses observed portfolio returns after the 36-month gate, or the selected benchmark's full monthly history recentered on the target. Observed months are never repeated or synthesized. Allocation scenarios change dispersion around the target."
   },
   "interface": {
     "home_signal_limit": 4,

@@ -39,6 +39,7 @@ describe('Planning hub', () => {
       calibratedAt: null,
       stale: true,
       staleReason: null,
+      refreshLabel: 'Friday 4pm market close',
       loading: false,
       recalibrate: vi.fn(),
     })
