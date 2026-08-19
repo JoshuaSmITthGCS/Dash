@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T12:24:24.272298+00:00",
+  "generated_at": "2026-08-19T17:00:42.338426+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-19T12:19:31.735906+00:00",
+      "checked_at": "2026-08-19T16:57:06.750747+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 926,
-        "scored": 879,
+        "scored": 226,
         "ranked": 40,
         "failed": [
           "ANSS",
@@ -62,7 +62,6 @@
           "K",
           "LANC",
           "MASI",
-          "MCY",
           "MMC",
           "MODG",
           "MOG.A",
@@ -89,23 +88,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-19T12:23:08.358048+00:00",
+      "checked_at": "2026-08-19T16:59:58.775449+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 126,
-          "misses": 252,
+          "hits": 252,
+          "misses": 126,
           "stale_hits": 0,
-          "hit_rate": 0.333
+          "hit_rate": 0.667
         }
       }
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-19T12:24:24.272275+00:00",
+      "checked_at": "2026-08-19T17:00:42.338400+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -252,8 +251,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "4ede8cd07df3944a8318e39768249a1e3f897c70",
+    "git_commit_sha": "fd3b9a9b48e759a6921b7a4c7f50c541628125d2",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-19T12:24:24.272298+00:00"
+    "generated_at": "2026-08-19T17:00:42.338426+00:00"
   }
 }

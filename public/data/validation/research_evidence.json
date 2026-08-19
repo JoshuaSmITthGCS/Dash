@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-19T12:19:16.293738+00:00",
+  "generated_at": "2026-08-19T16:56:49.968454+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "4ede8cd07df3944a8318e39768249a1e3f897c70",
+  "code_commit_hash": "fd3b9a9b48e759a6921b7a4c7f50c541628125d2",
   "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -659,15 +659,15 @@
         "total_rows": 40,
         "categories": {
           "accounting_quality": {
-            "scored": 36,
+            "scored": 40,
             "total": 40
           },
           "capital_allocation": {
-            "scored": 36,
+            "scored": 40,
             "total": 40
           },
           "financial_health": {
-            "scored": 31,
+            "scored": 30,
             "total": 40
           },
           "growth": {
@@ -689,15 +689,15 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 112,
+            "scored": 129,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 112,
+            "scored": 129,
             "total": 839
           },
           "financial_health": {
-            "scored": 798,
+            "scored": 799,
             "total": 839
           },
           "growth": {
@@ -709,58 +709,56 @@
             "total": 839
           },
           "valuation": {
-            "scored": 811,
+            "scored": 812,
             "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 148,
-      "non_enriched_count": 731,
+      "enriched_count": 169,
+      "non_enriched_count": 710,
       "score": {
         "enriched": {
-          "n": 148,
-          "mean": 71.11,
-          "median": 74.55,
-          "stdev": 12.48
+          "n": 169,
+          "mean": 71.18,
+          "median": 73.2,
+          "stdev": 11.1
         },
         "non_enriched": {
-          "n": 731,
-          "mean": 62.3,
-          "median": 63.1,
-          "stdev": 9.77
+          "n": 710,
+          "mean": 61.69,
+          "median": 62.7,
+          "stdev": 9.26
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Financial Services": 45,
-          "Technology": 36,
+          "Financial Services": 51,
+          "Technology": 42,
+          "Energy": 17,
           "Healthcare": 16,
-          "Energy": 12,
-          "Consumer Cyclical": 9,
-          "Industrials": 9,
+          "Consumer Cyclical": 13,
+          "Industrials": 10,
+          "Basic Materials": 5,
           "Consumer Defensive": 5,
+          "Communication Services": 4,
           "Utilities": 4,
-          "FINANCIAL SERVICES": 3,
-          "Communication Services": 3,
-          "Basic Materials": 3,
-          "BASIC MATERIALS": 1,
           "Real Estate": 1,
           "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 129,
-          "Technology": 116,
-          "Consumer Cyclical": 104,
+          "Industrials": 128,
+          "Technology": 110,
+          "Consumer Cyclical": 100,
           "Healthcare": 84,
-          "Financial Services": 77,
+          "Financial Services": 74,
           "Real Estate": 52,
           "Consumer Defensive": 51,
-          "Basic Materials": 34,
+          "Basic Materials": 33,
           "Utilities": 30,
-          "Energy": 27,
-          "Communication Services": 24,
+          "Communication Services": 23,
+          "Energy": 22,
           "ETF": 2,
           "Unknown": 1
         }
@@ -777,8 +775,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "4ede8cd07df3944a8318e39768249a1e3f897c70",
+    "git_commit_sha": "fd3b9a9b48e759a6921b7a4c7f50c541628125d2",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-19T12:19:16.293738+00:00"
+    "generated_at": "2026-08-19T16:56:49.968454+00:00"
   }
 }
