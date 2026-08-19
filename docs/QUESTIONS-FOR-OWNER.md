@@ -182,6 +182,16 @@ not touch the clock at all — status quo.
 
 ## Question 3 — The DSR trial-count discrepancy (201 vs. 50): which figure should the live validation surface show before the freeze?
 
+**RESOLVED 2026-08-19 — owner directed: label it (Option A).** Implemented in commit
+`7c584e11`: `deflated_sharpe`'s `reads` text (rendered directly under the metric label in
+`SignalMetricsPanel.jsx`, no click required) now states the trial count inline and says
+explicitly it is not the promotion-gate figure; `detail.trial_source` makes the
+distinction machine-readable. Neither computation changed — this labels the discrepancy,
+it does not resolve which figure is "correct" or reconcile them into one number, per the
+work order's Phase 6 instruction. Also note: `dsr_trial_count_used` itself moved 50 -> 51
+as part of resolving question 2 (the champion split registered as a new trial), so the
+promotion-gate figure this label points to is now 51, not 50.
+
 **Finding.** `public/data/validation/signal_metrics.json`'s `deflated_sharpe` metric
 independently computes and displays `trials: 201` (`pipeline/signal_metrics.py:997`,
 counting every row — 201 — of the raw, unfiltered category-weight optimizer's search
