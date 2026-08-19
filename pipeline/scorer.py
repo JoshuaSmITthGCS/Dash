@@ -539,17 +539,39 @@ def category_coverage(metrics, cfg, exempt=()):
     return detail
 
 
-def _categories_with_required_gate(metrics, cfg, profile):
+def _categories_with_required_gate(metrics, cfg, profile, suppressed=()):
     """Category scores, withholding any category missing a metric it is defined by.
 
     Renormalizing onto whatever resolved is the right treatment for a minor missing input
     and the wrong one for a defining input. An insurer's valuation without price-to-book is
     not a thin valuation reading; it is not a valuation reading. The published dataset had
     125 of 125 financial-sector rows carrying a Value score with price-to-book forced to
-    null, THG's reading 95.7. Returns ``(categories, withheld)`` where ``withheld`` maps a
-    null category to the required metrics that were absent, so the payload says why.
+    null, THG's reading 95.7. Returns ``(categories, withheld, imputed)`` where ``withheld``
+    maps a null category to the required metrics that were absent, so the payload says why.
+
+    A metric that is applicable but simply did not resolve is imputed at ``NEUTRAL_SCORE``
+    for this aggregation step only, instead of being dropped from both the numerator and
+    the denominator. Dropping it renormalizes the category's weight onto whichever metrics
+    did resolve, which inflates their effective weight -- two companies with identical
+    resolved metrics can score materially differently solely because one has fewer
+    unresolved ones, a distortion measured and escalated in
+    docs/QUESTIONS-FOR-OWNER.md question 2. This mirrors the neutral-imputation
+    ``_fixed_feature_valuation_score`` already applies at the metric-scoring stage; here it
+    applies uniformly to every caller of this shared aggregation, so ``bands`` and
+    ``cross_sectional`` mode both get it for free rather than needing their own
+    reimplementation. A suppressed (economically inapplicable) metric is never imputed --
+    it stays excluded from both sides, matching prior behavior. ``metrics`` itself, and
+    therefore each metric's own published value, is never mutated: only the aggregation's
+    working copy sees the neutral stand-in, so a reader still sees ``None``, not a
+    fabricated 50, for anything that was never actually measured.
+
+    Imputation only fills in the REST of a category that has at least one genuine
+    observation. A category with zero resolved metrics stays ``None``, exactly as before
+    -- imputing an entire category from nothing would manufacture a score for a company
+    with no evidence at all, which is the fabricated-data failure pattern this repository
+    has already been burned by once (A1-NEWS-NEUTRAL), not a fix for it.
     """
-    categories, withheld = {}, {}
+    categories, withheld, imputed = {}, {}, set()
     for category, weights in cfg["metric_weights"].items():
         missing_required = [metric for metric in required_for_score(profile, category)
                             if metric in weights and metrics.get(metric) is None]
@@ -557,9 +579,30 @@ def _categories_with_required_gate(metrics, cfg, profile):
             categories[category] = None
             withheld[category] = missing_required
             continue
-        value = weighted_available(metrics, weights)
+        any_observed = any(metric not in suppressed and metrics.get(metric) is not None
+                           for metric in weights)
+        scoring_view = dict(metrics)
+        if any_observed:
+            for metric in weights:
+                if metric not in suppressed and scoring_view.get(metric) is None:
+                    scoring_view[metric] = NEUTRAL_SCORE
+                    imputed.add(metric)
+        value = weighted_available(scoring_view, weights)
         categories[category] = round(value, 1) if value is not None else None
-    return categories, withheld
+    return categories, withheld, imputed
+
+
+def _imputed_weight_fraction(imputed, cfg):
+    """Total category*metric weight share of every metric imputed at NEUTRAL_SCORE."""
+    if not imputed:
+        return 0.0
+    total = 0.0
+    for category, weights in cfg["metric_weights"].items():
+        category_weight = cfg["category_weights"].get(category, 0)
+        for metric, weight in weights.items():
+            if metric in imputed:
+                total += category_weight * weight
+    return round(total, 4)
 
 
 def _band_valuation_score(snap):
@@ -632,7 +675,7 @@ def _band_valuation_score(snap):
     # A metric the registry suppresses for this profile is not scored and does not sit in
     # the coverage denominator. A metric that is merely absent stays in the denominator.
     metrics = {name: (None if name in suppressed else value) for name, value in metrics.items()}
-    categories, blocked = _categories_with_required_gate(metrics, cfg, profile)
+    categories, blocked, imputed = _categories_with_required_gate(metrics, cfg, profile, suppressed)
     raw = weighted_available(categories, cfg["category_weights"])
     coverage = weighted_coverage(metrics, cfg, tuple(suppressed))
     if raw is None:
@@ -647,6 +690,8 @@ def _band_valuation_score(snap):
                    "applicability_profile": profile,
                    "suppressed_metrics": sorted(suppressed),
                    "categories_withheld": blocked,
+                   "imputed_metrics": sorted(imputed),
+                   "imputed_weight_fraction": _imputed_weight_fraction(imputed, cfg),
                    "sales_multiple_basis": sales_basis if sales_score is not None else None,
                    "altman_z_variant": altman_variant}
 
@@ -666,12 +711,12 @@ def _cross_sectional_valuation_score(snap, normalizer):
         metrics[metric] = score
         normalization[metric] = detail
     profile = raw_metadata["applicability_profile"]
-    categories, blocked = _categories_with_required_gate(metrics, cfg, profile)
-    raw = weighted_available(categories, cfg["category_weights"])
     exempt = set(raw_metadata["suppressed_metrics"])
     exempt.update(metric for metric in VALUATION_MULTIPLES
                   if isinstance(raw_metrics.get(metric), (int, float))
                   and raw_metrics[metric] <= 0)
+    categories, blocked, imputed = _categories_with_required_gate(metrics, cfg, profile, exempt)
+    raw = weighted_available(categories, cfg["category_weights"])
     coverage = weighted_coverage(metrics, cfg, tuple(exempt))
     if raw is None:
         return None, {**metrics, "categories": categories, "coverage": round(coverage, 2),
@@ -693,6 +738,8 @@ def _cross_sectional_valuation_score(snap, normalizer):
         "applicability_profile": profile,
         "suppressed_metrics": raw_metadata["suppressed_metrics"],
         "categories_withheld": blocked,
+        "imputed_metrics": sorted(imputed),
+        "imputed_weight_fraction": _imputed_weight_fraction(imputed, cfg),
         "normalization_mode": "cross_sectional",
         "normalization_scope": "sector" if scopes == {"sector"} else "universe",
         "normalization": normalization,
@@ -759,8 +806,8 @@ def _fixed_feature_valuation_score(snap, normalizer):
             else:
                 observed_w += share
     applicable = observed_w + imputed_w
-    categories, blocked = _categories_with_required_gate(
-        metrics, cfg, raw_metadata["applicability_profile"])
+    categories, blocked, _ = _categories_with_required_gate(
+        metrics, cfg, raw_metadata["applicability_profile"], suppressed)
     raw = weighted_available(categories, cfg["category_weights"])
     coverage = observed_w / applicable if applicable else 0.0
     if raw is None:

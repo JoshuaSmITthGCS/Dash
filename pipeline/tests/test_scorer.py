@@ -32,13 +32,17 @@ class ScorerTests(unittest.TestCase):
         self.assertEqual(scorer.band_score(0.8, bands), 100.0)
         self.assertEqual(scorer.band_score(5, bands), 10.0)
 
-    def test_valuation_score_reweights_missing_metrics(self):
+    def test_a_single_answered_metric_no_longer_earns_the_category_full_marks(self):
+        # Renormalizing onto whatever resolved used to let one answered metric earn full
+        # category marks regardless of how much of the category was actually missing --
+        # see RenormalizationImputationTests. The rest of the category's weight is now
+        # imputed at NEUTRAL_SCORE instead, so one strong metric moves the category score
+        # up from neutral, but nowhere near maxes it out.
         score, parts = scorer.valuation_score({"is_etf": False, "peg": 1.0,
                                                "forward_pe": None, "price_to_sales": None})
         self.assertEqual(parts["peg"], 100.0)
-        # A single answered metric earns the category full marks but almost no coverage,
-        # so the confidence multiplier keeps the published score well short of that.
-        self.assertEqual(parts["categories"]["valuation"], 100.0)
+        self.assertGreater(parts["categories"]["valuation"], 50.0)
+        self.assertLess(parts["categories"]["valuation"], 100.0)
         self.assertLess(parts["coverage"], 0.1)
         self.assertLess(score, 70)
 
@@ -87,7 +91,12 @@ class ScorerTests(unittest.TestCase):
                    "days_sales_outstanding_trend": 0.35}
         clean_score, _ = scorer.valuation_score(clean)
         suspect_score, _ = scorer.valuation_score(suspect)
-        self.assertGreater(clean_score, suspect_score + 10)
+        # clean/suspect resolve the same small metric set, so the accounting-quality
+        # category's weight is now mostly neutral-imputed rather than renormalized onto
+        # just these few metrics -- correctly, per RenormalizationImputationTests, the
+        # resolved metrics carry their true configured weight instead of an inflated one,
+        # so the gap this red-flag contrast produces is smaller than it was pre-fix.
+        self.assertGreater(clean_score, suspect_score + 5)
 
     def test_leverage_shows_up_through_roic_and_interest_coverage(self):
         base = {"is_etf": False, "sector": "Industrials", "peg": 1.2, "forward_pe": 14,
@@ -434,3 +443,84 @@ class CategoryCoverageTests(unittest.TestCase):
         for category, entry in detail["category_coverage"].items():
             self.assertLessEqual(entry["metrics_applicable"],
                                  len(scorer.SETTINGS["fundamentals"]["metric_weights"][category]))
+
+
+class RenormalizationImputationTests(unittest.TestCase):
+    """A category used to renormalize its weight over whichever metrics resolved, which
+    inflates the effective weight of what did: two companies with identical resolved
+    metrics could score materially differently solely because one has fewer unresolved
+    ones -- in the starkest case here, a company missing two of six profitability
+    metrics scored IDENTICALLY (100.0) to one with all six confirmed strong, because
+    renormalizing over the four remaining maxed-out metrics reproduces the same average.
+    Missing-but-applicable metrics are now imputed at NEUTRAL_SCORE for the aggregation
+    step instead, so absent evidence can never read as strong evidence. See
+    docs/QUESTIONS-FOR-OWNER.md question 2."""
+
+    def test_missing_metrics_no_longer_inflate_the_category_score(self):
+        missing = {**STRONG_TECH, "profit_margin": None, "cash_conversion": None}
+        missing_detail = scorer.valuation_score(missing)[1]
+        full_detail = scorer.valuation_score(STRONG_TECH)[1]
+
+        self.assertLess(missing_detail["categories"]["profitability"],
+                        full_detail["categories"]["profitability"])
+
+    def test_the_missing_metrics_are_disclosed(self):
+        missing = {**STRONG_TECH, "profit_margin": None, "cash_conversion": None}
+        detail = scorer.valuation_score(missing)[1]
+
+        self.assertEqual(detail["imputed_metrics"], ["cash_conversion", "profit_margin"])
+        self.assertGreater(detail["imputed_weight_fraction"], 0)
+
+    def test_missing_data_scores_between_confirmed_weak_and_confirmed_strong(self):
+        # Imputing at neutral must land strictly between "confirmed weak" and "confirmed
+        # strong" -- never above either, which is what renormalization used to allow.
+        weak_but_measured = {**STRONG_TECH, "profit_margin": -0.05, "cash_conversion": 0.1}
+        missing = {**STRONG_TECH, "profit_margin": None, "cash_conversion": None}
+        weak_category = scorer.valuation_score(weak_but_measured)[1]["categories"]["profitability"]
+        missing_category = scorer.valuation_score(missing)[1]["categories"]["profitability"]
+        full_category = scorer.valuation_score(STRONG_TECH)[1]["categories"]["profitability"]
+
+        self.assertLess(weak_category, missing_category)
+        self.assertLess(missing_category, full_category)
+
+    def test_the_metrics_own_published_value_stays_none_not_the_imputed_stand_in(self):
+        # The aggregation may treat a missing metric as neutral; what gets published for
+        # that metric must still say it was never measured, not fabricate a 50.
+        missing = {**STRONG_TECH, "profit_margin": None, "cash_conversion": None}
+        detail = scorer.valuation_score(missing)[1]
+
+        self.assertIsNone(detail["profit_margin"])
+        self.assertIsNone(detail["cash_conversion"])
+
+    def test_suppressed_metrics_are_never_imputed(self):
+        insurer = {**STRONG_TECH, "sector": "Financial Services",
+                   "industry": "Insurance - Property & Casualty"}
+        detail = scorer.valuation_score(insurer)[1]
+
+        self.assertEqual(set(detail["suppressed_metrics"]) & set(detail["imputed_metrics"]), set())
+
+    def test_fully_resolved_snapshot_imputes_nothing(self):
+        detail = scorer.valuation_score(STRONG_TECH)[1]
+
+        self.assertEqual(detail["imputed_metrics"], [])
+        self.assertEqual(detail["imputed_weight_fraction"], 0.0)
+
+    def test_a_category_with_zero_real_observations_still_reports_none_not_a_fabricated_neutral(self):
+        # Imputation fills in the REST of a category that has at least one genuine
+        # reading. A category resolving nothing at all must stay unscored, exactly as
+        # before -- imputing a whole category from zero evidence would manufacture a
+        # score rather than fix the inflation defect.
+        no_capital_allocation_data = {"is_etf": False, "sector": "Technology", "peg": 1.0}
+        detail = scorer.valuation_score(no_capital_allocation_data)[1]
+
+        self.assertIsNone(detail["categories"]["capital_allocation"])
+        self.assertNotIn("net_buyback_yield", detail["imputed_metrics"])
+
+    def test_fixed_feature_mode_is_unaffected_it_already_imputed_before_this_fix(self):
+        # fixed_feature already imputes at the metric-scoring stage, before this shared
+        # aggregation ever runs -- this fix must be a no-op for it.
+        normalizer = scorer.CrossSectionalNormalizer(
+            [{**STRONG_TECH, "ticker": f"PEER{i}"} for i in range(5)], {}, {},
+        )
+        _, detail = scorer.valuation_score(STRONG_TECH, mode="fixed_feature", normalizer=normalizer)
+        self.assertIn("imputed_metrics", detail)
