@@ -562,21 +562,22 @@ def evaluate_variant_sessions(refreshes, variant, horizon_sessions, calendar=Non
     return _evaluate_periods(periods, variant, return_field="sector_residual_return")
 
 
-def build_report(rows=None):
-    rows = read_snapshots() if rows is None else rows
-    refreshes = _refreshes(rows)
-    monthly_refreshes = _monthly_refreshes(refreshes)
+# Phase 5 (docs/QUESTIONS-FOR-OWNER.md question 1): the Compare view this powers is the
+# readout that closes A3, once both regimes have enough evidence to compare honestly.
+DEFAULT_VIEW_MINIMUM_POST_REFRESHES = 10
+COMPARE_VIEW_MINIMUM_REFRESHES_EACH = 30
+
+
+def _regime_report(regime_refreshes, calendar):
+    """One coverage_regime's full IC report -- same shape build_report has always
+    returned, just scoped to refreshes sharing one regime."""
+    monthly_refreshes = _monthly_refreshes(regime_refreshes)
     variants = {variant: {} for variant in ("champion", "challenger")}
     for variant in variants:
         for label, days in CONFIG["horizons_days"].items():
             variants[variant][label] = evaluate_variant(monthly_refreshes, variant, days)
 
     primary_variants = {variant: {} for variant in ("champion", "challenger")}
-    try:
-        calendar = default_calendar()
-    except (FileNotFoundError, ValueError) as exc:
-        calendar = None
-        LOG.warn(f"Trading calendar unavailable, primary (session-based) IC skipped: {exc}")
     if calendar is not None:
         for variant in primary_variants:
             for label, sessions in CONFIG["horizons_sessions"].items():
@@ -585,14 +586,7 @@ def build_report(rows=None):
                 )
 
     return {
-        "schema_version": 1,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "data_integrity": "prospective_point_in_time",
-        "reconstructed_history": {
-            "included": False,
-            "label": "reconstructed, look-ahead contaminated",
-        },
-        "snapshot_refreshes": len(refreshes),
+        "snapshot_refreshes": len(regime_refreshes),
         "monthly_score_snapshots": len(monthly_refreshes),
         "primary_horizon": CONFIG["primary_horizon"],
         "primary_target": "sector_residual_return_over_trading_sessions",
@@ -608,6 +602,72 @@ def build_report(rows=None):
             }
             for label in CONFIG["horizons_days"]
         },
+    }
+
+
+def build_report(rows=None):
+    """Never merges a pre- and post-enrichment-ladder refresh into one IC number
+    (enforced by evaluate_variant/evaluate_variant_sessions's coverage_regime guard) --
+    each regime gets its own full report under ``coverage_regimes``, plus a
+    ``default_regime_view``/``compare_available`` pair so the frontend's Pre | Post |
+    Compare control (docs/QUESTIONS-FOR-OWNER.md question 1) doesn't have to
+    reimplement the same "10 refreshes" / "30 refreshes each" thresholds this computes.
+    Top-level fields (``variants``, ``primary_variants``, etc.) mirror whichever regime
+    is currently the default view, for older readers that predate the segmented report.
+    """
+    rows = read_snapshots() if rows is None else rows
+    refreshes = _refreshes(rows)
+    by_regime = {}
+    ambiguous = 0
+    for refresh in refreshes:
+        regimes = {row.get("coverage_regime") or COVERAGE_REGIME_DEFAULT
+                  for row in refresh.get("rows", [])}
+        if len(regimes) != 1:
+            # A single refresh's own rows should always share one regime -- this
+            # indicates a write-time bug, not evidence to guess-assign. Excluded from
+            # every regime's report rather than either one.
+            ambiguous += 1
+            continue
+        by_regime.setdefault(next(iter(regimes)), []).append(refresh)
+
+    try:
+        calendar = default_calendar()
+    except (FileNotFoundError, ValueError) as exc:
+        calendar = None
+        LOG.warn(f"Trading calendar unavailable, primary (session-based) IC skipped: {exc}")
+
+    coverage_regimes = {
+        regime: _regime_report(regime_refreshes, calendar)
+        for regime, regime_refreshes in by_regime.items()
+    }
+    refresh_counts = {regime: len(regime_refreshes) for regime, regime_refreshes in by_regime.items()}
+    post_count = refresh_counts.get("enrichment_ladder_v1", 0)
+    pre_count = refresh_counts.get(COVERAGE_REGIME_DEFAULT, 0)
+    default_regime_view = ("enrichment_ladder_v1"
+                           if post_count >= DEFAULT_VIEW_MINIMUM_POST_REFRESHES
+                           else COVERAGE_REGIME_DEFAULT)
+    compare_available = (pre_count >= COMPARE_VIEW_MINIMUM_REFRESHES_EACH
+                         and post_count >= COMPARE_VIEW_MINIMUM_REFRESHES_EACH)
+    default_report = coverage_regimes.get(default_regime_view) or _regime_report([], calendar)
+
+    return {
+        "schema_version": 2,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_integrity": "prospective_point_in_time",
+        "reconstructed_history": {
+            "included": False,
+            "label": "reconstructed, look-ahead contaminated",
+        },
+        "coverage_regimes": coverage_regimes,
+        "refresh_counts": refresh_counts,
+        "ambiguous_refreshes_excluded": ambiguous,
+        "default_regime_view": default_regime_view,
+        "default_view_minimum_post_refreshes": DEFAULT_VIEW_MINIMUM_POST_REFRESHES,
+        "compare_available": compare_available,
+        "compare_view_minimum_refreshes_each": COMPARE_VIEW_MINIMUM_REFRESHES_EACH,
+        # Backward-compatible top-level mirror of the default view, for any reader that
+        # predates the segmented report and still expects these at the root.
+        **default_report,
     }
 
 

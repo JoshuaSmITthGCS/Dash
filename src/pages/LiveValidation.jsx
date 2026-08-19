@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useData } from '../lib/useData'
 import { Loading } from '../components/Bits'
 import SignalMetricsPanel from '../components/SignalMetricsPanel.jsx'
@@ -131,10 +132,8 @@ function VariantValidation({ name, horizons = {} }) {
   </article>
 }
 
-function ICValidation({ data, error }) {
-  if (error) return <section className="card etf-state" role="alert"><strong>IC validation unavailable</strong><span>Run the prospective validation harness. {error.message}</span></section>
-  const variants = data?.variants || {}
-  const allHorizons = [...new Set([
+function sortedHorizons(variants) {
+  return [...new Set([
     ...Object.keys(variants.champion || {}),
     ...Object.keys(variants.challenger || {}),
   ])].sort((left, right) => {
@@ -145,10 +144,15 @@ function ICValidation({ data, error }) {
     if (rightIndex === -1) return -1
     return leftIndex - rightIndex
   })
-  return <section className="ic-validation-section">
-    <header className="section-heading"><div><span className="eyebrow">Prospective evidence</span><h2>Champion versus challenger</h2>
-      <p>Point-in-time scores accumulate before returns are known. ICIR stays hidden until 24 monthly periods exist.</p></div>
-      <span className="chip">{data?.snapshot_refreshes || 0} snapshots</span></header>
+}
+
+// One coverage_regime's worth of the Model Evidence panel: the bar chart plus every
+// per-variant card. Reused standalone for Pre/Post and side by side for Compare.
+function RegimeReport({ report, label, refreshCount }) {
+  const variants = report?.variants || {}
+  const allHorizons = sortedHorizons(variants)
+  return <div className="ic-regime-report">
+    {label && <div className="ic-regime-report-head"><b>{label}</b><span className="chip">{refreshCount || 0} snapshots</span></div>}
     <PairedBarChart
       groups={allHorizons.map((horizon) => ({
         label: horizon,
@@ -156,11 +160,53 @@ function ICValidation({ data, error }) {
       }))}
       seriesLabels={['Champion', 'Challenger']}
       yFormatter={icValue}
-      caption="Mean rank IC, champion versus challenger, by horizon"
+      caption={`Mean rank IC, champion versus challenger, by horizon${label ? ` (${label})` : ''}`}
     />
     <div className="ic-variant-grid">
       {Object.entries(variants).map(([name, horizons]) => <VariantValidation key={name} name={name} horizons={horizons} />)}
     </div>
+  </div>
+}
+
+// Phase 5's Pre | Post | Compare control (docs/QUESTIONS-FOR-OWNER.md question 1):
+// pre- and post-enrichment-ladder periods are never blended into one IC number on the
+// backend (pipeline/validation/ic_harness.py's coverage_regime guard), so every Model
+// Evidence metric on this page is scoped to one regime at a time -- Compare is the two
+// side by side, not a merge. Post/Compare stay hidden until the backend actually has
+// ladder data and enough of it (default_regime_view / compare_available), so this
+// control is inert today and activates itself the moment real post-ladder evidence exists.
+function ICValidation({ data, error }) {
+  const regimes = data?.coverage_regimes || {}
+  const refreshCounts = data?.refresh_counts || {}
+  const preReport = regimes.pre_enrichment_ladder || data
+  const postReport = regimes.enrichment_ladder_v1
+  const hasPost = Boolean(postReport)
+  const compareAvailable = Boolean(data?.compare_available)
+  const defaultView = data?.default_regime_view === 'enrichment_ladder_v1' ? 'post' : 'pre'
+  const [requestedView, setRequestedView] = useState(null)
+  const view = requestedView === 'post' && !hasPost ? 'pre'
+    : requestedView === 'compare' && !compareAvailable ? defaultView
+    : requestedView || defaultView
+
+  if (error) return <section className="card etf-state" role="alert"><strong>IC validation unavailable</strong><span>Run the prospective validation harness. {error.message}</span></section>
+  return <section className="ic-validation-section">
+    <header className="section-heading">
+      <div><span className="eyebrow">Prospective evidence</span><h2>Champion versus challenger</h2>
+        <p>Point-in-time scores accumulate before returns are known. ICIR stays hidden until 24 monthly periods exist.</p></div>
+      {(hasPost || compareAvailable)
+        ? <div className="ic-regime-toggle" role="group" aria-label="Coverage regime"><div>
+            <button type="button" className={view === 'pre' ? 'is-active' : ''} onClick={() => setRequestedView('pre')}>Pre</button>
+            {hasPost && <button type="button" className={view === 'post' ? 'is-active' : ''} onClick={() => setRequestedView('post')}>Post</button>}
+            {compareAvailable && <button type="button" className={view === 'compare' ? 'is-active' : ''} onClick={() => setRequestedView('compare')}>Compare</button>}
+          </div></div>
+        : <span className="chip">{refreshCounts.pre_enrichment_ladder ?? data?.snapshot_refreshes ?? 0} snapshots</span>}
+    </header>
+    {view === 'compare'
+      ? <div className="ic-regime-compare">
+          <RegimeReport report={preReport} label="Pre-ladder" refreshCount={refreshCounts.pre_enrichment_ladder} />
+          <RegimeReport report={postReport} label="Post-ladder" refreshCount={refreshCounts.enrichment_ladder_v1} />
+        </div>
+      : <RegimeReport report={view === 'post' ? postReport : preReport} />}
     <p className="ic-integrity-note">Historical reconstruction is excluded because current-as-reported fundamentals would introduce look-ahead contamination.</p>
   </section>
 }

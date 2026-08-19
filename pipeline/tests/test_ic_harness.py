@@ -358,6 +358,61 @@ def test_build_report_publishes_a_primary_session_based_target(monkeypatch):
     assert set(report["primary_variants"]["champion"]) == {"1M", "3M", "6M", "12M"}
 
 
+def _regime_snapshots(regime, count):
+    """count minimal, valid append_refresh-style snapshot rows sharing one regime,
+    one refresh apart in time."""
+    rows = []
+    for index in range(count):
+        recorded_at = f"2026-{1 + index // 28:02d}-{1 + index % 28:02d}T00:00:00+00:00"
+        rows.append(snapshot_row(
+            {**scored_row(), "coverage_regime": regime}, refresh_id=f"{regime}-{index}",
+            recorded_at=recorded_at, data_as_of=recorded_at, universe=(), published=(),
+            model_version="v1", config_hash="hash"))
+    return rows
+
+
+def test_build_report_segments_by_coverage_regime_and_never_merges_them(monkeypatch):
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    monkeypatch.setattr(ic_harness_module, "default_calendar", lambda: calendar)
+    rows = [*_regime_snapshots("pre_enrichment_ladder", 3), *_regime_snapshots("enrichment_ladder_v1", 2)]
+
+    report = build_report(rows)
+
+    assert set(report["coverage_regimes"]) == {"pre_enrichment_ladder", "enrichment_ladder_v1"}
+    assert report["refresh_counts"] == {"pre_enrichment_ladder": 3, "enrichment_ladder_v1": 2}
+    assert report["ambiguous_refreshes_excluded"] == 0
+
+
+def test_default_regime_view_stays_pre_until_ten_post_refreshes_exist(monkeypatch):
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    monkeypatch.setattr(ic_harness_module, "default_calendar", lambda: calendar)
+    rows = [*_regime_snapshots("pre_enrichment_ladder", 5), *_regime_snapshots("enrichment_ladder_v1", 9)]
+    report = build_report(rows)
+    assert report["default_regime_view"] == "pre_enrichment_ladder"
+    # Backward-compatible top-level mirror follows the default view.
+    assert report["snapshot_refreshes"] == 5
+
+
+def test_default_regime_view_switches_to_post_at_ten_refreshes(monkeypatch):
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    monkeypatch.setattr(ic_harness_module, "default_calendar", lambda: calendar)
+    rows = [*_regime_snapshots("pre_enrichment_ladder", 5), *_regime_snapshots("enrichment_ladder_v1", 10)]
+    report = build_report(rows)
+    assert report["default_regime_view"] == "enrichment_ladder_v1"
+    assert report["snapshot_refreshes"] == 10
+
+
+def test_compare_view_requires_thirty_refreshes_in_each_regime(monkeypatch):
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    monkeypatch.setattr(ic_harness_module, "default_calendar", lambda: calendar)
+    short_of_thirty = build_report([*_regime_snapshots("pre_enrichment_ladder", 30),
+                                    *_regime_snapshots("enrichment_ladder_v1", 29)])
+    assert short_of_thirty["compare_available"] is False
+    at_thirty = build_report([*_regime_snapshots("pre_enrichment_ladder", 30),
+                              *_regime_snapshots("enrichment_ladder_v1", 30)])
+    assert at_thirty["compare_available"] is True
+
+
 # --- unavailable provider coverage is not neutral evidence ---------------------------------
 
 def _first_snapshot(path):

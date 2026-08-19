@@ -289,6 +289,20 @@
 .ic-validation-section { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-6); }
 .ic-validation-section .section-heading { margin-bottom: 0; }
 .ic-validation-section .section-heading p { max-width: 720px; margin: var(--sp-1) 0 0; color: var(--text-secondary); font-size: var(--fs-2xs); }
+
+/* Phase 5's Pre / Post / Compare control -- same pill pattern as .swing-view-toggle. */
+.ic-regime-toggle div { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.ic-regime-toggle button {
+  padding: var(--sp-1) var(--sp-3); cursor: pointer; border: 0; background: none;
+  color: var(--text-faint); font: var(--fs-2xs) var(--font-body);
+}
+.ic-regime-toggle button.is-active { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.ic-regime-report { display: grid; gap: var(--sp-3); }
+.ic-regime-report-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.ic-regime-report-head > b { font-size: var(--fs-sm); }
+.ic-regime-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+.ic-regime-compare .ic-regime-report { padding: var(--sp-3); border: 1px solid var(--border-subtle); border-radius: var(--control-radius); background: var(--surface-secondary); }
+@media (max-width: 900px) { .ic-regime-compare { grid-template-columns: 1fr; } }
 .ic-variant-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .ic-variant-card { display: grid; gap: var(--sp-4); padding: var(--sp-4); }
 .ic-variant-card > header, .ic-chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
