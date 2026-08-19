@@ -222,6 +222,34 @@ body { overscroll-behavior-y: contain; }
 }
 
 .card-pad { padding: var(--card-padding); }
+
+/* Skeleton loader: the sole "loading" state for useData-backed screens (see Bits.jsx#Loading).
+   Deliberately content-shaped rather than a spinner, and deliberately never a real number -
+   it shows on every fresh mount, even when a cached copy of the data exists, so a reload never
+   reads as "here's your data" until the live fetch actually lands. */
+.skeleton-loader { padding: var(--card-padding); border: 1px solid var(--border-default); border-radius: var(--card-radius); background: var(--surface-primary); }
+.skeleton-bar, .skeleton-stat {
+  border-radius: var(--control-radius);
+  /* Mixed toward --text-primary rather than between two surface tokens, which are too close
+     in value on this app's dark palette to read as a visible block on their own. */
+  background: linear-gradient(100deg,
+    color-mix(in srgb, var(--text-primary) 9%, var(--surface-tertiary)) 35%,
+    color-mix(in srgb, var(--text-primary) 22%, var(--surface-tertiary)) 50%,
+    color-mix(in srgb, var(--text-primary) 9%, var(--surface-tertiary)) 65%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+.skeleton-bar { height: 14px; margin-bottom: var(--sp-3); }
+.skeleton-bar-title { width: 40%; height: 20px; margin-bottom: var(--sp-4); }
+.skeleton-bar-short { width: 60%; margin-bottom: 0; }
+.skeleton-stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.skeleton-stat { height: 56px; }
+.skeleton-stat:nth-child(2) { animation-delay: .08s; }
+.skeleton-stat:nth-child(3) { animation-delay: .16s; }
+.skeleton-stat:nth-child(4) { animation-delay: .24s; }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@media (max-width: 600px) { .skeleton-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .skeleton-bar, .skeleton-stat { animation: none; background: var(--surface-secondary); } }
 .grid { display: grid; gap: var(--section-gap); }.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }.grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-3); margin: var(--sp-6) 0 var(--sp-3); }
 .section-heading h2 { font: var(--fw-bold) var(--fs-xl)/1.15 var(--font-display); letter-spacing: -.02em; }

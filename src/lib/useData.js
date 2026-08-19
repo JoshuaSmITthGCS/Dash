@@ -108,15 +108,14 @@ export function clearCachedData(file) {
 // Payloads are migrated to the version this build expects on the way in, so a freshly
 // deployed site keeps working against the last committed snapshot until the next pipeline
 // run replaces it.
+//
+// The local cache is never used to paint the screen on a fresh mount - only as a fallback
+// if the live fetch fails outright. Otherwise a returning visitor would see last session's
+// numbers for a moment, then have them silently swapped for today's, with no visual cue
+// that anything changed. Every fresh mount shows the loading state until the live fetch
+// actually resolves; an in-app reload() (e.g. a refresh button) stays quiet as before.
 export function useData(file) {
-  const hadCache = useRef(false)
-  const [state, setState] = useState(() => {
-    const cached = readCachedPayload(file)
-    hadCache.current = Boolean(cached)
-    return cached
-      ? { data: cached.data, loading: false, error: null, fromCache: true, cachedAt: cached.cachedAt }
-      : { data: null, loading: Boolean(file), error: null, fromCache: false, cachedAt: null }
-  })
+  const [state, setState] = useState(() => ({ data: null, loading: Boolean(file), error: null, fromCache: false, cachedAt: null }))
   const mounted = useRef(false)
   const requestId = useRef(0)
 
@@ -126,10 +125,8 @@ export function useData(file) {
       if (mounted.current) setState({ data: null, loading: false, error: null, fromCache: false, cachedAt: null })
       return null
     }
-    // A cached copy is already on screen, so an initial mount revalidates quietly in the
-    // background rather than showing a spinner over data the user can already see.
-    if (initial && mounted.current && !hadCache.current) {
-      setState((current) => ({ ...current, loading: true, error: null }))
+    if (initial && mounted.current) {
+      setState((current) => ({ ...current, data: null, loading: true, error: null, fromCache: false }))
     }
     try {
       let request = inFlightRequests.get(file)
@@ -153,8 +150,13 @@ export function useData(file) {
       if (mounted.current && activeRequest === requestId.current) setState({ data, loading: false, error: null, fromCache: false, cachedAt })
       return data
     } catch (error) {
+      // The live fetch failed outright (offline, CORS, a 5xx): fall back to the last
+      // successfully fetched copy, if one exists, rather than leaving the screen empty.
+      const fallback = readCachedPayload(file) || await readPersistentPayload(file)
       if (mounted.current && activeRequest === requestId.current) {
-        setState((current) => ({ ...current, loading: false, error }))
+        setState(fallback
+          ? { data: fallback.data, loading: false, error, fromCache: true, cachedAt: fallback.cachedAt }
+          : (current) => ({ ...current, loading: false, error }))
       }
       throw error
     }
@@ -162,25 +164,9 @@ export function useData(file) {
 
   useEffect(() => {
     mounted.current = true
-    const cached = readCachedPayload(file)
-    hadCache.current = Boolean(cached)
-    setState(cached
-      ? { data: cached.data, loading: false, error: null, fromCache: true, cachedAt: cached.cachedAt }
-      : { data: null, loading: Boolean(file), error: null, fromCache: false, cachedAt: null })
-    let active = true
-    if (!cached && file) {
-      // The big payloads live in the async Cache API layer. Paint from that copy the moment
-      // it reads back - unless the network revalidation has already delivered fresh data.
-      readPersistentPayload(file).then((payload) => {
-        if (!active || !payload || !mounted.current) return
-        hadCache.current = true
-        setState((current) => (current.data
-          ? current
-          : { ...current, data: payload.data, loading: false, fromCache: true, cachedAt: payload.cachedAt }))
-      }).catch(() => {})
-    }
+    setState({ data: null, loading: Boolean(file), error: null, fromCache: false, cachedAt: null })
     load({ initial: true }).catch(() => {})
-    return () => { active = false; requestId.current += 1; mounted.current = false }
+    return () => { requestId.current += 1; mounted.current = false }
   }, [load])
 
   return { ...state, reload: load }

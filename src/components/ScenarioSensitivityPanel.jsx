@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from './Icons'
 import { availableScenarios, portfolioProjectedImpact, rankHoldingsByScenario } from '../lib/scenarioSensitivity.js'
 
 const money = (value) => value == null ? '–' : `${value < 0 ? '-' : ''}$${Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
@@ -69,14 +70,15 @@ export default function ScenarioSensitivityPanel({ holdings, signalMetrics }) {
   const leastExposed = ranked.length > 5 ? ranked.slice(-5).reverse() : []
 
   return (
-    <section className="scenario-sensitivity" aria-labelledby="scenario-sensitivity-title">
-      <header className="section-heading">
+    <details className="scenario-sensitivity" aria-labelledby="scenario-sensitivity-title">
+      <summary className="section-heading">
         <div>
           <span className="eyebrow">If it happened again</span>
           <h2 id="scenario-sensitivity-title">Which holdings would take the hit?</h2>
           <p>{scenario.description} Projected through each holding's own measured market beta -- a linear estimate, not a guarantee.</p>
         </div>
-      </header>
+        <span className="comparison-toggle" aria-hidden="true"><Icon name="chevron" size={18} /></span>
+      </summary>
 
       <div className="scenario-picker" role="tablist" aria-label="Scenario">
         {scenarios.map((row) => (
@@ -107,6 +109,6 @@ export default function ScenarioSensitivityPanel({ holdings, signalMetrics }) {
         <ScenarioHoldingList title="Most exposed" rows={mostExposed} />
         <ScenarioHoldingList title="Least exposed" rows={leastExposed} />
       </div>
-    </section>
+    </details>
   )
 }

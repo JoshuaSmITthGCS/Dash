@@ -4,7 +4,7 @@
  * Hexagonal containers, circular patterns, data streams, tactical readouts
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Data Stream Background (Matrix-style scrolling)

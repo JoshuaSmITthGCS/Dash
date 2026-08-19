@@ -88,8 +88,21 @@ export function Lag({ days }) {
   return <span className="lag">trade filed ~{days}d ago</span>
 }
 
+// Generic page/section placeholder shown while useData's live fetch is in flight. It never
+// reflects real numbers - by design, a fresh page load shows this instead of last session's
+// cached figures, so nothing on screen can be mistaken for data that just arrived.
 export function Loading({ label = 'loading data' }) {
-  return <div className="card card-pad muted-mono-note">◍ {label}…</div>
+  return (
+    <div className="skeleton-loader" role="status" aria-label={`${label}…`}>
+      <div className="skeleton-bar skeleton-bar-title" />
+      <div className="skeleton-stat-row">
+        <div className="skeleton-stat" /><div className="skeleton-stat" /><div className="skeleton-stat" /><div className="skeleton-stat" />
+      </div>
+      <div className="skeleton-bar" />
+      <div className="skeleton-bar" />
+      <div className="skeleton-bar skeleton-bar-short" />
+    </div>
+  )
 }
 
 export function Empty({ note }) {

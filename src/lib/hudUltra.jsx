@@ -3,7 +3,7 @@
  * Ultra-dense, multi-layered sci-fi interface components
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 /**
  * Central Circular Radar Display
@@ -133,7 +133,7 @@ export function DataStrip({ items = [] }) {
  * Mini Gauge
  * Horizontal progress bar with value
  */
-export function MiniGauge({ value = 0, max = 100, label }) {
+export function MiniGauge({ value = 0, max = 100 }) {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
 
   return (
