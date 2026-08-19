@@ -1079,6 +1079,46 @@ def fixed_feature_challenger(row, snapshot, normalizer, config):
     }
 
 
+def legacy_bands_champion_variant(row, snapshot):
+    """The retired ``bands_champion`` registration, kept alive as a tracked comparison.
+
+    pipeline/validation/harness_freeze.json registered ``bands_champion`` (band
+    normalization, within-block renormalization onto whichever metrics resolved, no
+    completeness multiplier) and started its prospective clock 2026-09-01. Fixing the
+    renormalization defect (docs/QUESTIONS-FOR-OWNER.md question 2) changes that
+    registration's own score semantics, which resets its clock under the freeze file's
+    own rule -- but per direction, the old registration is not simply discarded: it
+    keeps being computed and prospectively tracked here, under its original name, split
+    from the new champion rather than overwritten by it. ``valuation_score(mode=
+    "bands_legacy")`` reproduces the pre-fix renormalizing arithmetic exactly (pinned by
+    pipeline/tests/test_scorer.py::RenormalizationImputationTests
+    ::test_bands_legacy_mode_reproduces_the_pre_fix_renormalization_exactly).
+    """
+    fundamental, detail = valuation_score(snapshot, mode="bands_legacy")
+    raw_fundamental = detail.get("raw_score", fundamental)
+    components = {**row.get("components", {}), "fundamentals": raw_fundamental}
+    blended = blend_research_components(
+        components,
+        {
+            "fundamentals": detail.get("coverage", 0.0),
+            "market_behavior": (row.get("technical_detail") or {}).get("coverage", 0.0),
+            "news_sentiment": (row.get("sentiment_detail") or {}).get("coverage", 0.0),
+        },
+        (row.get("modifiers") or {}).get("total", 0.0),
+        apply_coverage_multiplier=False,
+    )
+    return {
+        "variant": "bands_champion",
+        "normalization_mode": "bands_legacy",
+        "registered_clock_status": "retired_champion_split_2026-08-19_prospective_clock_continues",
+        **blended,
+        "components": components,
+        "fundamental_categories": detail.get("categories", {}),
+        "fundamental_detail": detail,
+        "normalized_metric_scores": normalized_metric_scores(detail),
+    }
+
+
 def signal_correction_variants(row, snapshot, normalizer, config, short_interest_rank=None,
                                macro_regime=None, insider_activity=None, concentration_risk=None,
                                geographic_exposure=None, institutional_ownership=None,

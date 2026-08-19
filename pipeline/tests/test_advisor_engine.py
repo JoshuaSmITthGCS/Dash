@@ -10,9 +10,9 @@ from advisor_engine import (MODIFIERS, RANKING_WEIGHTS, action_for, apply_challe
                             congressional_buying_modifier, filing_8k_modifier,
                             filing_integrity_modifier, geographic_concentration_modifier,
                             insider_modifier, institutional_ownership_modifier,
-                            macro_regime_modifier, proxy_modifier, sentiment_score,
-                            shrink_research_components, TECHNICAL_WEIGHTS, technical_factors,
-                            technical_score_from_parts)
+                            legacy_bands_champion_variant, macro_regime_modifier, proxy_modifier,
+                            sentiment_score, shrink_research_components, TECHNICAL_WEIGHTS,
+                            technical_factors, technical_score_from_parts)
 from scorer import SETTINGS
 
 
@@ -42,6 +42,29 @@ class AdvisorEngineTests(unittest.TestCase):
         bad = build_research("TEST", expensive, closes, closes, [])
         self.assertGreater(good["components"]["fundamentals"], bad["components"]["fundamentals"])
         self.assertGreater(good["score"], bad["score"])
+
+    def test_legacy_bands_champion_variant_keeps_the_retired_registration_computable(self):
+        # The pre-fix bands_champion registration is not simply discarded when the
+        # renormalization defect is fixed -- it keeps being computed and prospectively
+        # tracked under its original name, split from the new champion.
+        snap = {
+            "ticker": "TEST", "sector": "Technology", "is_etf": False,
+            "peg": 0.9, "forward_pe": 20, "price_to_sales": 4,
+            "return_on_invested_capital": 0.24, "gross_profits_to_assets": 0.38,
+            "return_on_equity": 0.22, "free_cash_flow_yield": 0.08,
+            "profit_margin": None, "cash_conversion": None,
+        }
+        closes = [100 + index * 0.1 for index in range(100)]
+        row = build_research("TEST", snap, closes, closes, [])
+
+        variant = legacy_bands_champion_variant(row, snap)
+
+        self.assertEqual(variant["variant"], "bands_champion")
+        self.assertEqual(variant["normalization_mode"], "bands_legacy")
+        # The pre-fix renormalization still inflates this variant's profitability
+        # category above the fixed champion's own reading for the same snapshot.
+        self.assertGreater(variant["fundamental_categories"]["profitability"],
+                           row["fundamental_categories"]["profitability"])
 
     def test_technical_score_has_risk_and_relative_strength(self):
         closes = [100 + index * 0.4 for index in range(300)]

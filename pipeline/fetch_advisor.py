@@ -8,7 +8,8 @@ import time
 from datetime import date, datetime, timezone
 
 from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_challenger,
-                            normalized_metric_scores, signal_correction_variants)
+                            legacy_bands_champion_variant, normalized_metric_scores,
+                            signal_correction_variants)
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
@@ -1877,8 +1878,13 @@ def run():
         row["data_quality_violations"] = context.get("plausibility_violations") or []
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
         champion_variant = {
-            "variant": "bands_champion",
-            "normalization_mode": SETTINGS.get("normalization_mode", "bands"),
+            # Renamed from "bands_champion" 2026-08-19: that identity now belongs to the
+            # retired pre-fix registration published as score_variants.bands_pre_imputation_fix
+            # below, which keeps its original name and its own prospective clock. This is
+            # the new registration -- see legacy_bands_champion_variant's docstring and
+            # pipeline/validation/harness_freeze.json.
+            "variant": "bands_champion_imputation_fix",
+            "normalization_mode": row["fundamental_detail"].get("normalization_mode", "bands"),
             "score": row["score"],
             "base_score": row["base_score"],
             "raw_score": row["raw_score"],
@@ -1887,7 +1893,10 @@ def run():
             "fundamental_categories": row["fundamental_categories"],
             "normalized_metric_scores": normalized_metric_scores(row["fundamental_detail"]),
         }
-        row["score_variants"] = {"champion": champion_variant}
+        row["score_variants"] = {
+            "champion": champion_variant,
+            "bands_pre_imputation_fix": legacy_bands_champion_variant(row, context["snapshot"]),
+        }
         if cross_normalizer and signal_cfg.get("enabled"):
             row["score_variants"].update(signal_correction_variants(
                 row,

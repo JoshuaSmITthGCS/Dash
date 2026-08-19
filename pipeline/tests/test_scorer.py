@@ -516,6 +516,18 @@ class RenormalizationImputationTests(unittest.TestCase):
         self.assertIsNone(detail["categories"]["capital_allocation"])
         self.assertNotIn("net_buyback_yield", detail["imputed_metrics"])
 
+    def test_bands_legacy_mode_reproduces_the_pre_fix_renormalization_exactly(self):
+        # bands_legacy exists only so the retired bands_champion registration can keep
+        # being computed and prospectively tracked as a comparison strategy -- it must
+        # reproduce the exact pre-fix inflation this whole fix removes from bands mode.
+        missing = {**STRONG_TECH, "profit_margin": None, "cash_conversion": None}
+        legacy_detail = scorer.valuation_score(missing, mode="bands_legacy")[1]
+        fixed_detail = scorer.valuation_score(missing)[1]
+
+        self.assertEqual(legacy_detail["categories"]["profitability"], 100.0)
+        self.assertLess(fixed_detail["categories"]["profitability"], 100.0)
+        self.assertEqual(legacy_detail["normalization_mode"], "bands_legacy")
+
     def test_fixed_feature_mode_is_unaffected_it_already_imputed_before_this_fix(self):
         # fixed_feature already imputes at the metric-scoring stage, before this shared
         # aggregation ever runs -- this fix must be a no-op for it.

@@ -539,7 +539,7 @@ def category_coverage(metrics, cfg, exempt=()):
     return detail
 
 
-def _categories_with_required_gate(metrics, cfg, profile, suppressed=()):
+def _categories_with_required_gate(metrics, cfg, profile, suppressed=(), impute_missing=True):
     """Category scores, withholding any category missing a metric it is defined by.
 
     Renormalizing onto whatever resolved is the right treatment for a minor missing input
@@ -570,6 +570,13 @@ def _categories_with_required_gate(metrics, cfg, profile, suppressed=()):
     -- imputing an entire category from nothing would manufacture a score for a company
     with no evidence at all, which is the fabricated-data failure pattern this repository
     has already been burned by once (A1-NEWS-NEUTRAL), not a fix for it.
+
+    ``impute_missing=False`` reproduces the pre-fix renormalizing behavior exactly. This
+    exists only so the retired ``bands_champion`` registration can keep being computed
+    and prospectively tracked as a comparison strategy after the fix promotes a new
+    champion -- see ``legacy_bands_champion_variant`` in advisor_engine.py and
+    pipeline/validation/harness_freeze.json. It is not used by any current production
+    scoring path.
     """
     categories, withheld, imputed = {}, {}, set()
     for category, weights in cfg["metric_weights"].items():
@@ -582,7 +589,7 @@ def _categories_with_required_gate(metrics, cfg, profile, suppressed=()):
         any_observed = any(metric not in suppressed and metrics.get(metric) is not None
                            for metric in weights)
         scoring_view = dict(metrics)
-        if any_observed:
+        if impute_missing and any_observed:
             for metric in weights:
                 if metric not in suppressed and scoring_view.get(metric) is None:
                     scoring_view[metric] = NEUTRAL_SCORE
@@ -605,11 +612,15 @@ def _imputed_weight_fraction(imputed, cfg):
     return round(total, 4)
 
 
-def _band_valuation_score(snap):
+def _band_valuation_score(snap, impute_missing=True):
     """Score valuation, profitability, solvency, growth, capital allocation, and accounting quality.
 
     ETFs remain unscored because corporate accounting ratios are not comparable to fund holdings.
-    Missing values are reweighted, then the final score is confidence-adjusted for data coverage.
+    A metric that is applicable but unresolved is imputed at NEUTRAL_SCORE rather than
+    dropped from the category's weight (see ``_categories_with_required_gate``); the
+    final score is then confidence-adjusted for data coverage. ``impute_missing=False``
+    reproduces the pre-fix renormalizing behavior, used only by the retired
+    ``bands_champion`` comparison variant -- see ``valuation_score``'s ``bands_legacy`` mode.
     """
     if not snap or snap.get("is_etf"):
         return None, {}
@@ -675,7 +686,8 @@ def _band_valuation_score(snap):
     # A metric the registry suppresses for this profile is not scored and does not sit in
     # the coverage denominator. A metric that is merely absent stays in the denominator.
     metrics = {name: (None if name in suppressed else value) for name, value in metrics.items()}
-    categories, blocked, imputed = _categories_with_required_gate(metrics, cfg, profile, suppressed)
+    categories, blocked, imputed = _categories_with_required_gate(
+        metrics, cfg, profile, suppressed, impute_missing=impute_missing)
     raw = weighted_available(categories, cfg["category_weights"])
     coverage = weighted_coverage(metrics, cfg, tuple(suppressed))
     if raw is None:
@@ -834,7 +846,12 @@ def _fixed_feature_valuation_score(snap, normalizer):
 def valuation_score(snap, *, mode=None, normalizer=None):
     """Score fundamentals using the configured champion or an explicit challenger mode.
 
-    ``bands`` preserves the production champion. ``cross_sectional`` requires a normalizer
+    ``bands`` preserves the production champion: applicable-but-unresolved metrics are
+    imputed at the neutral score rather than renormalized away (see
+    ``_categories_with_required_gate``). ``bands_legacy`` reproduces the pre-fix
+    renormalizing behavior exactly, for the retired ``bands_champion`` comparison variant
+    only -- see ``advisor_engine.legacy_bands_champion_variant`` and
+    pipeline/validation/harness_freeze.json. ``cross_sectional`` requires a normalizer
     fitted once on the complete refresh universe so every row uses the same distributions.
     ``fixed_feature`` additionally imputes applicable-but-missing metrics at the neutral
     percentile so every name is scored on the same intended weight vector, with no
@@ -845,6 +862,11 @@ def valuation_score(snap, *, mode=None, normalizer=None):
         score, detail = _band_valuation_score(snap)
         if detail:
             detail.setdefault("normalization_mode", "bands")
+        return score, detail
+    if selected == "bands_legacy":
+        score, detail = _band_valuation_score(snap, impute_missing=False)
+        if detail:
+            detail.setdefault("normalization_mode", "bands_legacy")
         return score, detail
     if selected == "cross_sectional":
         return _cross_sectional_valuation_score(snap, normalizer)
