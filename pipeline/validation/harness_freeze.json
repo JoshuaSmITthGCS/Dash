@@ -4,14 +4,35 @@
   "harness_start_date": "2026-09-01",
   "expected_completion_at_monthly_frequency": "2028-09-01",
   "champion": {
-    "variant": "bands_champion",
-    "definition": "production score as of this commit: band normalization, within-block renormalization, no completeness multiplier (removed 2026-08-12, see pending_decision below), blend advisor_engine.py::blend_research_components, modifier stack",
+    "variant": "bands_champion_imputation_fix",
+    "definition": "production score as of this commit: band normalization, missing-but-applicable metrics imputed at NEUTRAL_SCORE within a category rather than renormalized away (fixed 2026-08-19, see champion_split_2026-08-19 below), no completeness multiplier, blend advisor_engine.py::blend_research_components, modifier stack. Published every refresh as score_variants.champion.",
     "config_hash": "d18a100f0b7ef91f157c07608533fde5219b022784b508b9db1d9a5f8c924dd9",
-    "scorer_hash": "43dd37eba0718dd9f75df7146378c49638f276d7e554056a216bb44e4774cb3b",
-    "advisor_engine_hash": "8f9d0a846438309f87e114b5e368beac18e481e6b5bede4035fe521c03a14e3a",
+    "scorer_hash": "unverified_carried_over",
+    "advisor_engine_hash": "unverified_carried_over",
     "universe_hash": "093504377aad5a1972eed9ea7218ef9df13627bb31217efc539f306f3bc234a8",
+    "git_commit": "f61595aab68e2254f9899709773bcf8c41ca5a23",
+    "note": "Same carried-over-unverified caveat as the prior promotion: config_hash is not re-derived against current settings.json (this fix did not touch settings.json at all -- the change is entirely in scorer.py's aggregation logic, which pipeline/validation/ic_harness.py's own config_hash tracking does not cover, which is exactly why this manual freeze file records it). scorer_hash/advisor_engine_hash are explicitly marked unverified rather than left stale-but-labelled-current, since both files materially changed this round."
+  },
+  "champion_split_2026-08-19": {
+    "finding": "_categories_with_required_gate (pipeline/scorer.py) divided a category's weight over only the metrics that resolved, silently renormalizing a missing-but-applicable metric's weight onto whichever metrics did resolve. Two companies with identical resolved values could score materially differently solely because one had fewer unresolved metrics -- reproduced in the starkest case as two companies scoring IDENTICALLY (100.0) in a category despite one missing a third of its metrics entirely. Escalated as docs/QUESTIONS-FOR-OWNER.md question 2.",
+    "decision": "Fix now (missing-but-applicable metrics imputed at NEUTRAL_SCORE for the aggregation step only, never for the metric's own published value; a category with zero real observations still reports null rather than a fabricated neutral score) rather than deferring to post-freeze, per direction. This is a change to champion score semantics (coverage handling) and resets the clock for the affected registration under changes_that_reset_the_clock above.",
+    "how_the_clock_is_split_rather_than_discarded": "The pre-fix bands_champion registration is not overwritten or retired from measurement: it keeps being computed every refresh (scorer.valuation_score(mode='bands_legacy'), advisor_engine.legacy_bands_champion_variant) and published as score_variants.bands_pre_imputation_fix under its original registered identity (variant: 'bands_champion'), so its own prospective IC keeps accumulating under promotion_criteria_champion_or_challenger exactly as before. The new, fixed champion is registered as a new identity (bands_champion_imputation_fix, see the champion block above) with its own clock, rather than silently inheriting bands_champion's name and any implied continuity of evidence it did not earn.",
+    "clock_cost": "zero for both registrations: harness_start_date is 2026-09-01 and zero periods had accrued to either as of this decision (2026-08-19).",
+    "clock_start_both": "2026-09-01",
+    "resolves_since": "bands_champion (retired, comparison only) stops accumulating new evidentiary weight toward any future promotion decision the moment the champion role passes to bands_champion_imputation_fix, but its prospective clock is not stopped -- it continues reporting IC/ICIR/DSR/PBO under promotion_criteria_champion_or_challenger for as long as it keeps publishing, which is the entire point of not discarding it.",
+    "counts_as_a_trial": "yes -- registered in pipeline/validation/hypothesis_log.jsonl as champion-split-imputation-fix-2026-08-19, raising trial_count_for_deflated_statistics.total_enumerated from 50 to 51 (see below). The retired bands_champion registration is not a new trial: it is the same registration that was already counted when the champion role was first frozen 2026-08-11."
+  },
+  "retired_champion_bands_champion": {
+    "variant": "bands_champion",
+    "status": "retired_from_champion_role_2026-08-19_still_prospectively_tracked",
+    "definition": "The original frozen registration: band normalization, within-block renormalization onto whichever metrics resolved (the defect champion_split_2026-08-19 fixes for the active champion), no completeness multiplier. Unchanged since 2026-08-11 -- reproduced exactly via scorer.valuation_score(mode='bands_legacy'), never the production scoring path.",
+    "config_hash": "d18a100f0b7ef91f157c07608533fde5219b022784b508b9db1d9a5f8c924dd9",
     "git_commit": "6ba916b6750edd3955707afe8c8cfc285b1eeab1",
-    "note": "scorer_hash is unchanged from the pre-promotion freeze: scorer.py's confidence_multiplier calculation was left in place (other non-champion callers of valuation_score still use its 'total' return value). The fix is entirely in how build_research/rescore_row consume that output - they now read raw_score instead of total, and blend_research_components no longer re-multiplies by data_coverage. config_hash is carried over unverified against current settings.json; it was already stale before this promotion from unrelated config changes across Rounds 5-6 and is not re-derived here."
+    "clock_start": "2026-09-01",
+    "expected_completion_at_monthly_frequency": "2028-09-01",
+    "published_as": "score_variants.bands_pre_imputation_fix on every refresh row",
+    "measured_against": "promotion_criteria_champion_or_challenger below, same as any registered challenger",
+    "purpose": "A live comparison arm: does removing the renormalization inflation actually change which names would have been promoted, once both have real prospective evidence? Answering that requires both clocks to keep running side by side rather than the question being foreclosed by silently discarding the pre-fix registration."
   },
   "pending_decision": {
     "recommended_promotion": "multiplier_removal (defect fix, Round 5 Task 2)",
@@ -54,9 +75,10 @@
     "entry_timing_overlay_variants_2026_08_12": 5,
     "survivorship_reconstruction_runs": 2,
     "pre_freeze_construction_runs": 5,
-    "total_enumerated": 50,
-    "dsr_trial_count_used": 50,
-    "note": "Registered before any of the 2026-08-12 variants ran. The count is read from pipeline/validation/hypothesis_log.jsonl, which is append-only and timestamped, rather than recalled. Every variant counts, including the ones that will be abandoned: dropping the losers from the trial count is what turns a deflated statistic back into an undeflated one. This total is the union of two independently-registered 2026-08-12 additions merged after the fact: the swing-reversal/entry-timing-overlay families (base 35 + 3 + 5 = 43) and the pre-freeze construction round (35 + 5 pre-freeze signals + 2 survivorship-reconstruction runs = 42). Combined without double-counting the shared base of 35, the true total is 50."
+    "champion_split_imputation_fix_2026_08_19": 1,
+    "total_enumerated": 51,
+    "dsr_trial_count_used": 51,
+    "note": "Registered before any of the 2026-08-12 variants ran. The count is read from pipeline/validation/hypothesis_log.jsonl, which is append-only and timestamped, rather than recalled. Every variant counts, including the ones that will be abandoned: dropping the losers from the trial count is what turns a deflated statistic back into an undeflated one. This total is the union of two independently-registered 2026-08-12 additions merged after the fact: the swing-reversal/entry-timing-overlay families (base 35 + 3 + 5 = 43) and the pre-freeze construction round (35 + 5 pre-freeze signals + 2 survivorship-reconstruction runs = 42). Combined without double-counting the shared base of 35, the total was 50 as of 2026-08-12. The 2026-08-19 champion-score-semantics fix (see champion_split_2026-08-19 above) is a new, materially different specification and counts as trial 51 -- the retired bands_champion registration it splits from is NOT a new trial, since it was already counted in the original 2026-08-11 freeze."
   },
   "promotion_criteria_champion_or_challenger": {
     "minimum_periods": 24,
@@ -64,7 +86,7 @@
     "icir": ">= 0.5",
     "ic_t_stat": ">= 2.4 (0.5 * sqrt(24))",
     "net_of_cost_top_minus_bottom_quintile_spread": "> 0 at canonical square-root impact",
-    "deflated_sharpe": ">= 0.95 probability at N=50 trials, per trial_count_for_deflated_statistics.dsr_trial_count_used (Bailey and Lopez de Prado, JPM 40(5), 2014)",
+    "deflated_sharpe": ">= 0.95 probability at N=51 trials, per trial_count_for_deflated_statistics.dsr_trial_count_used (Bailey and Lopez de Prado, JPM 40(5), 2014)",
     "pbo": "<= 0.50 via CSCV when enough periods exist"
   },
   "real_money_criteria": {
@@ -287,5 +309,6 @@
   },
   "hash_scope": "freeze_hash covers the champion registration and its criteria only; additional_models entries, spec_amendments, swing_reversal_variants, entry_timing_overlay and the pre-freeze challenger set carry their own clocks and are appended without rehashing the champion.",
   "freeze_hash": "f0b649bf9e642d9a389ab9c333b0e5d090aa80e01806a4856351f2ac491bfe43",
+  "freeze_hash_note": "Stale as of the 2026-08-19 champion_split_2026-08-19 entry, which changed the champion registration and the deflated_sharpe promotion criterion's stated N. No tooling in this repository generates or verifies freeze_hash (it was computed once by hand and is not recomputed by any script, same as config_hash/scorer_hash/advisor_engine_hash above) -- recorded here rather than silently left implying an unchanged champion block.",
   "pre_freeze_entry_date": "2026-08-11"
 }
