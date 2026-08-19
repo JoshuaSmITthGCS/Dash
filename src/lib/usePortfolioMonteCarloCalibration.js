@@ -3,23 +3,22 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { useAuth } from './FirebaseAuthContext.jsx'
 import { projectionConfig } from './projectionEngine.js'
+import { mostRecentWeeklyRefreshMs, refreshBoundaryLabel } from './marketCalendar.js'
 
 function calibrationDocRef(uid) {
   const config = projectionConfig.parametric_calibration
   return doc(db, 'portfolios', uid, config.collection_path, config.document_id)
 }
 
-function refreshWindowMs() {
-  return projectionConfig.parametric_calibration.refresh_days * 24 * 60 * 60 * 1000
-}
-
 /**
  * Freezes the Monte Carlo risk profile between calibrations so the plan doesn't reshuffle
  * with every intraday price tick - a retirement plan whose basis visibly changes every time
- * the page reloads is worse than one held steady. Recalibrates automatically once the
- * configured refresh window elapses, or as soon as a new position/deposit-like activity
- * lands (`lastActivityAt` moves forward), whichever comes first, and exposes a manual
- * override for the same recalibration.
+ * the page reloads is worse than one held steady. Recalibrates automatically once the most
+ * recent weekly refresh boundary (Friday market close by default) has passed since the last
+ * calibration, or as soon as a new position/deposit-like activity lands (`lastActivityAt`
+ * moves forward), whichever comes first - both checked lazily on the next page load, since
+ * there is no per-user backend job to push it earlier - and exposes a manual override for
+ * the same recalibration.
  */
 export function usePortfolioMonteCarloCalibration(riskProfile, lastActivityAt) {
   const { currentUser } = useAuth()
@@ -37,9 +36,10 @@ export function usePortfolioMonteCarloCalibration(riskProfile, lastActivityAt) {
     return unsubscribe
   }, [currentUser])
 
-  const staleByAge = !cached?.computedAt || Date.now() - Date.parse(cached.computedAt) > refreshWindowMs()
+  const weeklyBoundaryMs = mostRecentWeeklyRefreshMs()
+  const staleByWeeklyClose = !cached?.computedAt || Date.parse(cached.computedAt) < weeklyBoundaryMs
   const staleByActivity = Boolean(lastActivityAt) && Boolean(cached?.basisLastActivityAt) && lastActivityAt > cached.basisLastActivityAt
-  const isStale = !cached || staleByAge || staleByActivity
+  const isStale = !cached || staleByWeeklyClose || staleByActivity
 
   const persist = async (profile) => {
     if (!currentUser || !profile?.available || writingRef.current) return
@@ -61,14 +61,16 @@ export function usePortfolioMonteCarloCalibration(riskProfile, lastActivityAt) {
   }, [loading, currentUser, riskProfile?.available, riskProfile?.annualReturn, riskProfile?.observations, riskProfile?.endDate, isStale])
 
   const active = cached && !isStale ? cached : (riskProfile?.available ? riskProfile : null)
+  const refreshLabel = refreshBoundaryLabel()
   const staleReason = !cached ? null
     : staleByActivity ? 'a new position or deposit-like activity'
-      : staleByAge ? `more than ${projectionConfig.parametric_calibration.refresh_days} days since the last calibration`
+      : staleByWeeklyClose ? `this week's ${refreshLabel}`
         : null
   return {
     riskProfile: active,
     calibratedAt: cached?.computedAt || null,
     staleReason,
+    refreshLabel,
     stale: isStale,
     loading,
     recalibrate: () => persist(riskProfile),

@@ -100,11 +100,20 @@ export default function Planning() {
   const returnTargetRange = useMemo(() => annualReturnTargetRange(source), [source])
 
   // Reprice the current basket across its published history. Holding quantities stay fixed,
-  // so transfers never enter the annualized planning assumption.
+  // so transfers never enter the annualized planning assumption. Once the risk-profile
+  // calibration is available, its annualized return is the exact figure driving Sharpe,
+  // Sortino, and Calmar on the Overview panel - using it here instead of a separate
+  // whole-history calculation keeps the dotted median target and that panel from disagreeing.
   const currentHoldingsPeriod = selectPeriod(portfolioSeries, 'All')
-  const liveStrategyAnnualReturnPct = currentHoldingsPeriod
+  const wholeHistoryAnnualReturnPct = currentHoldingsPeriod
     ? annualizeReturnPct(currentHoldingsPeriod.returnPct, currentHoldingsPeriod.startDate, currentHoldingsPeriod.endDate)
     : null
+  const liveStrategyAnnualReturnPct = calibration.riskProfile?.available
+    ? calibration.riskProfile.annualReturn * 100
+    : wholeHistoryAnnualReturnPct
+  const liveStrategyReturnWindow = calibration.riskProfile?.available
+    ? { startDate: calibration.riskProfile.startDate, endDate: calibration.riskProfile.endDate }
+    : currentHoldingsPeriod
   const liveTargetActive = useLiveStrategyReturn && liveStrategyAnnualReturnPct != null
   const effectiveAnnualReturnTargetPct = liveTargetActive
     ? normalizeAnnualReturnTarget(liveStrategyAnnualReturnPct, source)
@@ -203,7 +212,7 @@ export default function Planning() {
     <section className="planning-baseline" aria-labelledby="planning-baseline-title">
       <div><span className="eyebrow">Dotted median target</span><h2 id="planning-baseline-title">{formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} annual</h2></div>
       <p>{liveTargetActive
-        ? `Your current-holdings return, annualized from ${currentHoldingsPeriod.startDate} to ${currentHoldingsPeriod.endDate}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
+        ? `Your current-holdings return, annualized from ${liveStrategyReturnWindow.startDate} to ${liveStrategyReturnWindow.endDate}${calibration.riskProfile?.available ? ' -- the same window and calculation behind your Sharpe, Sortino, and Calmar ratios' : ''}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
         : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
       <label className="planning-inline-note">
         <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
@@ -220,7 +229,7 @@ export default function Planning() {
           <span>Lo-adjusted Sortino <strong>{calibration.riskProfile.loAdjusted ? calibration.riskProfile.loAdjustedSortino?.toFixed(2) : 'Insufficient'}</strong></span>
           <span>Calmar <strong>{calibration.riskProfile.calmar?.toFixed(2)}</strong></span>
         </div>
-        <p>The simulated distribution's mean and volatility are solved algebraically from these ratios, not resampled from your literal daily path. {calibration.calibratedAt ? `Last calibrated ${calibration.calibratedAt.slice(0, 10)} from ${calibration.riskProfile.observations} daily returns through ${calibration.riskProfile.endDate}.` : 'Calibrating now.'} {calibration.stale ? 'A new calibration is due' + (calibration.staleReason ? ` (${calibration.staleReason})` : '') + ' and will run automatically.' : `Holds steady until ${calibration.staleReason || 'the next scheduled refresh or deposit'}, so day-to-day price moves don't reshuffle the plan.`}</p>
+        <p>The simulated distribution's mean and volatility are solved algebraically from these ratios, not resampled from your literal daily path. {calibration.calibratedAt ? `Last calibrated ${calibration.calibratedAt.slice(0, 10)} from ${calibration.riskProfile.observations} daily returns through ${calibration.riskProfile.endDate}.` : 'Calibrating now.'} {calibration.stale ? 'A new calibration is due' + (calibration.staleReason ? ` (${calibration.staleReason})` : '') + ' and will run automatically the next time you open this page.' : `Holds steady until your next ${calibration.refreshLabel} or a new deposit, so day-to-day price moves don't reshuffle the plan.`}</p>
         <button type="button" className="secondary-button compact" onClick={calibration.recalibrate} disabled={calibration.loading}>Recalibrate now</button>
       </> : <p>{riskProfile.reason || 'At least 20 daily portfolio observations are required before the simulation can calibrate to your own Sharpe, Sortino, and Calmar ratios. Until then, the model falls back to benchmark-derived history.'}</p>}
     </section>
