@@ -392,6 +392,7 @@ def test_senate_efd_carries_the_screen_when_both_mirrors_are_withdrawn(monkeypat
                             lambda: _efd_returning([trade(disclosure_date=today)]))
         monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
         monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        monkeypatch.setattr("fetch_advisor.yahoo_history", lambda symbol, yf: {"dates": [], "closes": []})
         payload = module.run()
 
     assert payload["results"]
@@ -401,7 +402,10 @@ def test_senate_efd_carries_the_screen_when_both_mirrors_are_withdrawn(monkeypat
 
 def test_an_unconfigured_fmp_key_no_longer_aborts_the_run(monkeypatch):
     # The keyless mirrors are a complete source on their own, so a missing or unentitled FMP
-    # key must cost the price-performance column, not the entire screen.
+    # key must cost the price-performance column, not the entire screen. Yahoo is the real,
+    # unmocked fallback here (run() imports the real yfinance), so it must be pinned to "no
+    # data" - otherwise this depends on live network and on real AAPL price history existing
+    # for the fixture's hardcoded purchase date, which is exactly what made this test flaky.
     saved = {}
     with TempStore():
         monkeypatch.setattr(module, "CongressTradesClient",
@@ -411,6 +415,7 @@ def test_an_unconfigured_fmp_key_no_longer_aborts_the_run(monkeypatch):
                                 disclosure_date=datetime.now(timezone.utc).date().isoformat())]))
         monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
         monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        monkeypatch.setattr("fetch_advisor.yahoo_history", lambda symbol, yf: {"dates": [], "closes": []})
         payload = module.run()
 
     # The keyless mirror carried the run; only the FMP-only performance column is missing.
@@ -429,6 +434,10 @@ def test_one_source_failing_still_publishes_what_the_other_returned(monkeypatch)
                                 disclosure_date=datetime.now(timezone.utc).date().isoformat())]))
         monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
         monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        # Not asserted on here, but left unmocked this run() call still hits the real,
+        # unmocked yfinance fallback over live network - pin it so the test stays fast and
+        # deterministic regardless of network access or real market data.
+        monkeypatch.setattr("fetch_advisor.yahoo_history", lambda symbol, yf: {"dates": [], "closes": []})
         payload = module.run()
 
     # Running more than one source is only worth it if one failing costs its own coverage
@@ -497,6 +506,7 @@ def test_run_with_previously_stored_disclosures_reports_partial_not_degraded(mon
         monkeypatch.setattr(module, "StockWatcherClient", _mirror_rejecting_every_fetch)
         monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update(payload))
         monkeypatch.setattr(module, "market_cap_by_ticker", lambda: {})
+        monkeypatch.setattr("fetch_advisor.yahoo_history", lambda symbol, yf: {"dates": [], "closes": []})
         payload = module.run()
 
     assert payload["status"] == "partial"
