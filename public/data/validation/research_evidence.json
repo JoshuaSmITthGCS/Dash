@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-19T03:10:42.512500+00:00",
+  "generated_at": "2026-08-19T12:19:16.293738+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "3a96fcf38018a43d0de848c64efebf00535cde3b",
+  "code_commit_hash": "4ede8cd07df3944a8318e39768249a1e3f897c70",
   "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -659,15 +659,15 @@
         "total_rows": 40,
         "categories": {
           "accounting_quality": {
-            "scored": 40,
+            "scored": 36,
             "total": 40
           },
           "capital_allocation": {
-            "scored": 40,
+            "scored": 36,
             "total": 40
           },
           "financial_health": {
-            "scored": 37,
+            "scored": 31,
             "total": 40
           },
           "growth": {
@@ -679,7 +679,7 @@
             "total": 40
           },
           "valuation": {
-            "scored": 40,
+            "scored": 38,
             "total": 40
           }
         }
@@ -689,15 +689,15 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 166,
+            "scored": 112,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 167,
+            "scored": 112,
             "total": 839
           },
           "financial_health": {
-            "scored": 792,
+            "scored": 798,
             "total": 839
           },
           "growth": {
@@ -709,56 +709,58 @@
             "total": 839
           },
           "valuation": {
-            "scored": 815,
+            "scored": 811,
             "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 206,
-      "non_enriched_count": 673,
+      "enriched_count": 148,
+      "non_enriched_count": 731,
       "score": {
         "enriched": {
-          "n": 206,
-          "mean": 70.31,
-          "median": 71.9,
-          "stdev": 10.75
+          "n": 148,
+          "mean": 71.11,
+          "median": 74.55,
+          "stdev": 12.48
         },
         "non_enriched": {
-          "n": 673,
-          "mean": 61.2,
-          "median": 62.5,
-          "stdev": 9.06
+          "n": 731,
+          "mean": 62.3,
+          "median": 63.1,
+          "stdev": 9.77
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Financial Services": 58,
-          "Technology": 51,
-          "Energy": 20,
-          "Industrials": 20,
-          "Healthcare": 17,
-          "Consumer Cyclical": 17,
-          "Basic Materials": 5,
+          "Financial Services": 45,
+          "Technology": 36,
+          "Healthcare": 16,
+          "Energy": 12,
+          "Consumer Cyclical": 9,
+          "Industrials": 9,
           "Consumer Defensive": 5,
-          "Communication Services": 5,
           "Utilities": 4,
-          "Real Estate": 3,
+          "FINANCIAL SERVICES": 3,
+          "Communication Services": 3,
+          "Basic Materials": 3,
+          "BASIC MATERIALS": 1,
+          "Real Estate": 1,
           "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 118,
-          "Technology": 101,
-          "Consumer Cyclical": 96,
-          "Healthcare": 83,
-          "Financial Services": 67,
+          "Industrials": 129,
+          "Technology": 116,
+          "Consumer Cyclical": 104,
+          "Healthcare": 84,
+          "Financial Services": 77,
+          "Real Estate": 52,
           "Consumer Defensive": 51,
-          "Real Estate": 50,
-          "Basic Materials": 33,
+          "Basic Materials": 34,
           "Utilities": 30,
-          "Communication Services": 22,
-          "Energy": 19,
+          "Energy": 27,
+          "Communication Services": 24,
           "ETF": 2,
           "Unknown": 1
         }
@@ -775,8 +777,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "3a96fcf38018a43d0de848c64efebf00535cde3b",
+    "git_commit_sha": "4ede8cd07df3944a8318e39768249a1e3f897c70",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-19T03:10:42.512500+00:00"
+    "generated_at": "2026-08-19T12:19:16.293738+00:00"
   }
 }
