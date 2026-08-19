@@ -8,6 +8,18 @@ decision requires and the tradeoffs, not the full investigation.
 
 ## Question 1 — Does the enrichment ladder reset the prospective-validation clock?
 
+**RESOLVED 2026-08-19 — owner directed: no reset, split.** Same mechanism as question 2:
+the ladder does not reset the single champion clock. Instead, when it ships, the champion
+that ran under pre-ladder coverage stays registered and prospectively tracked under its
+own identity (not silently retired), and the post-ladder champion is registered as a new,
+separately clocked entry — both starting from the same point with nothing forfeited,
+exactly as `champion_split_2026-08-19` in `pipeline/validation/harness_freeze.json`
+already does for the renormalization fix. Recorded here as the decision; the ladder
+itself (Phase 5's specific 20-ranked/3-random design) is not yet built — this resolves
+the clock-status question that was blocking it, not the ladder's implementation. See
+`pipeline/validation/harness_freeze.json`'s `enrichment_coverage_changes_policy` block for
+the registered mechanism this decision commits to using once Phase 5 ships.
+
 **Status: mandatory per the work order's §1. Phase 5 does not ship until this is
 answered.**
 

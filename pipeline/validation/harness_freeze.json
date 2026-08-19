@@ -64,6 +64,12 @@
     "new challengers or shadow outputs",
     "UI, docs, publication gates that withhold rather than alter scores"
   ],
+  "enrichment_coverage_changes_policy": {
+    "decided": "2026-08-19, docs/QUESTIONS-FOR-OWNER.md question 1",
+    "decision": "no reset, split -- same mechanism as champion_split_2026-08-19. An enrichment-coverage expansion (the Phase 5 rotating ladder, or any future change of the same shape) is still a change to champion score semantics under changes_that_reset_the_clock's 'coverage handling' clause, and is not exempted from that rule. What changes is how a reset is handled: the pre-change champion is never silently retired or overwritten. It keeps its own registered identity and its own prospective clock, published as a tracked comparison variant. The post-change champion is registered as a new identity with its own fresh clock. Both run from the same start date with nothing forfeited, since a split costs zero periods regardless of when it happens -- unlike a bare reset, which only costs zero if done before harness_start_date.",
+    "applies_to": "The Phase 5 rotating ladder specifically, and any future enrichment-coverage change of the same shape. Does not apply retroactively to enrichment_rotation (fetch_advisor.py, ENRICHMENT_ROTATION_SIZE=15/run) already live in production before this decision -- see docs/ENRICHMENT-PIPELINE-AUDIT.md SS0: that mechanism predates this registry's freeze and was never treated as a champion registration change in the first place.",
+    "not_yet_built": "This resolves the clock-status question Phase 5 was gated on; it does not itself register a split, because the ladder (Phase 5's specific 20-ranked/3-random-draw design) has not been implemented. When it ships, register it the same way champion_split_2026-08-19 registers the imputation fix: a new champion_split_<date> narrative block, a retired_champion_<name> block preserving the pre-ladder registration, an updated champion block for the post-ladder registration, and a new hypothesis_log.jsonl entry raising trial_count_for_deflated_statistics."
+  },
   "trial_count_for_deflated_statistics": {
     "backtest_variants_r3": 5,
     "backtest_variants_r4": 3,
