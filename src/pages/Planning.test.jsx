@@ -4,12 +4,16 @@ import Planning from './Planning.jsx'
 import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { usePortfolioMonteCarloCalibration } from '../lib/usePortfolioMonteCarloCalibration.js'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 
 vi.mock('../lib/useData.js', () => ({ useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../lib/useFirebaseFinances.js', () => ({ useFirebaseFinances: vi.fn() }))
+vi.mock('../lib/usePortfolioTracking.js', () => ({ usePortfolioTracking: vi.fn() }))
+vi.mock('../lib/usePortfolioMonteCarloCalibration.js', () => ({ usePortfolioMonteCarloCalibration: vi.fn() }))
 vi.mock('../lib/PreferencesContext.jsx', () => ({ usePreferences: vi.fn(), formatPreferenceMoney: (value) => `$${Number(value).toLocaleString()}` }))
 vi.mock('../lib/useProjectionSimulation.js', () => ({ useProjectionSimulation: vi.fn() }))
 
@@ -29,6 +33,15 @@ describe('Planning hub', () => {
       ? { data: { histories: { SPY: { dates, closes: dates.map((_, index) => 100 + index + Math.sin(index) * 4) } } }, loading: false }
       : { data: { screen_universe: [], portfolio_coverage: [], research: [], benchmark_history: { dates } }, loading: false })
     useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'MSFT', shares: 1, snapshotSource: 'User-provided brokerage snapshot' }], loading: false })
+    usePortfolioTracking.mockReturnValue({ activities: [] })
+    usePortfolioMonteCarloCalibration.mockReturnValue({
+      riskProfile: { available: false },
+      calibratedAt: null,
+      stale: true,
+      staleReason: null,
+      loading: false,
+      recalibrate: vi.fn(),
+    })
     usePreferences.mockReturnValue({ preferences: { defaultBenchmark: 'SPY', privacyMode: false, numberFormat: 'en-US' } })
     useFirebaseFinances.mockReturnValue({
       settings: {

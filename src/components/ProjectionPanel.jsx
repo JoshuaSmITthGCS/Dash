@@ -40,7 +40,7 @@ export default function ProjectionPanel({ state, source, money, annualReturnTarg
         <InfoTag label={title}>
           <strong>{title}</strong>
           <p>A Monte Carlo simulation: {result.pathCount.toLocaleString()} randomly resampled paths
-            built from historical monthly returns ({source.label}), not a forecast of any single
+            built from monthly returns ({source.label}), not a forecast of any single
             outcome. The fan chart shows the spread between the 10th and 90th percentile paths, with
             the median (50th percentile) as the dotted line. Wider spread means more uncertainty at
             that point in time. Simulated outcomes are not predictions - see "Model and data

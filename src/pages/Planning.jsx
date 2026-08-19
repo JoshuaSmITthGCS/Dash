@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom'
 import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { annualizeReturnPct, currentHoldingsSeries, selectPeriod } from '../lib/portfolioAnalytics.js'
+import { derivePortfolioRiskProfile } from '../lib/monteCarloRiskProfile.js'
+import { usePortfolioMonteCarloCalibration } from '../lib/usePortfolioMonteCarloCalibration.js'
 import { formatPreferenceMoney, usePreferences } from '../lib/PreferencesContext.jsx'
 import { annualReturnTargetRange, applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource, sequenceRiskPaths } from '../lib/projectionEngine.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
@@ -47,6 +50,7 @@ export default function Planning() {
   const { data, loading } = useData('report.json')
   const { data: benchmarkReport, loading: benchmarkLoading } = useData('benchmark-report.json')
   const { positions: storedPositions, loading: portfolioLoading } = useFirebasePortfolio()
+  const { activities } = usePortfolioTracking()
   const previewPortfolio = import.meta.env.DEV
     && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
   const positions = previewPortfolio ? modelSettings.interface.mobile_preview_positions : storedPositions
@@ -74,19 +78,25 @@ export default function Planning() {
     minimumRetirementAge,
   )
 
+  const benchmarkSymbol = preferences.defaultBenchmark
   const portfolioSeries = useMemo(() => {
     const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
     return currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
   }, [data, positions])
-  const source = useMemo(() => {
-    const symbol = preferences.defaultBenchmark
-    return selectProjectionReturnSource(
-      portfolioSeries,
-      benchmarkReport?.histories?.[symbol],
-      symbol,
-      fidelityProjectionBaseline(positions),
-    )
-  }, [benchmarkReport, portfolioSeries, positions, preferences.defaultBenchmark])
+  const riskProfile = useMemo(() => derivePortfolioRiskProfile(portfolioSeries, data), [portfolioSeries, data])
+  const lastActivityAt = useMemo(() => activities
+    .map((row) => row.recordedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null, [activities])
+  const calibration = usePortfolioMonteCarloCalibration(riskProfile, lastActivityAt)
+  const source = useMemo(() => selectProjectionReturnSource(
+    portfolioSeries,
+    benchmarkReport?.histories?.[benchmarkSymbol],
+    benchmarkSymbol,
+    fidelityProjectionBaseline(positions),
+    calibration.riskProfile,
+  ), [benchmarkReport, portfolioSeries, positions, benchmarkSymbol, calibration.riskProfile])
   const returnTargetRange = useMemo(() => annualReturnTargetRange(source), [source])
 
   // Reprice the current basket across its published history. Holding quantities stay fixed,
@@ -199,6 +209,20 @@ export default function Planning() {
         <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
         Track my current-holdings return{liveStrategyAnnualReturnPct == null ? ' -- unavailable until there are at least two dated market values' : ''}
       </label>
+    </section>
+
+    <section className="planning-calibration" aria-labelledby="planning-calibration-title">
+      <div><span className="eyebrow">Monte Carlo calibration</span><h2 id="planning-calibration-title">{calibration.riskProfile?.available ? 'Calibrated to your risk-adjusted return ratios' : 'Waiting on enough daily history'}</h2></div>
+      {calibration.riskProfile?.available ? <>
+        <div className="planning-calibration-ratios">
+          <span>Sharpe <strong>{calibration.riskProfile.sharpe?.toFixed(2)}</strong></span>
+          <span>Sortino <strong>{calibration.riskProfile.sortino?.toFixed(2)}</strong></span>
+          <span>Lo-adjusted Sortino <strong>{calibration.riskProfile.loAdjusted ? calibration.riskProfile.loAdjustedSortino?.toFixed(2) : 'Insufficient'}</strong></span>
+          <span>Calmar <strong>{calibration.riskProfile.calmar?.toFixed(2)}</strong></span>
+        </div>
+        <p>The simulated distribution's mean and volatility are solved algebraically from these ratios, not resampled from your literal daily path. {calibration.calibratedAt ? `Last calibrated ${calibration.calibratedAt.slice(0, 10)} from ${calibration.riskProfile.observations} daily returns through ${calibration.riskProfile.endDate}.` : 'Calibrating now.'} {calibration.stale ? 'A new calibration is due' + (calibration.staleReason ? ` (${calibration.staleReason})` : '') + ' and will run automatically.' : `Holds steady until ${calibration.staleReason || 'the next scheduled refresh or deposit'}, so day-to-day price moves don't reshuffle the plan.`}</p>
+        <button type="button" className="secondary-button compact" onClick={calibration.recalibrate} disabled={calibration.loading}>Recalibrate now</button>
+      </> : <p>{riskProfile.reason || 'At least 20 daily portfolio observations are required before the simulation can calibrate to your own Sharpe, Sortino, and Calmar ratios. Until then, the model falls back to benchmark-derived history.'}</p>}
     </section>
 
     <section className="planning-levers"><header><span className="eyebrow">Live levers</span><h2>Change the plan, then release to resimulate</h2></header>
