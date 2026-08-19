@@ -3,7 +3,7 @@
 // src/pages/portfolio/ — see portfolioModels.js for the read path and usePortfolioForms.js
 // for the write path.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useAuth } from '../lib/FirebaseAuthContext'
@@ -35,14 +35,14 @@ export { PORTFOLIO_NAV, PortfolioNavigation } from './portfolio/PortfolioBits.js
 export default function Portfolio({ view = 'summary' }) {
   const { currentUser } = useAuth()
   const { data, loading: dataLoading, reload } = useData('report.json')
-  const { data: etfData } = useData('etfs.json')
-  const { data: factorData } = useData('factors/french.json')
-  const { data: signalMetrics } = useData('validation/signal_metrics.json')
-  const { data: monteCarlo, error: monteCarloError } = useData('validation/monte_carlo_projection.json')
-  const { data: spySnapshot } = useData('etf/SPY.json')
-  const { data: rspSnapshot } = useData('etf/RSP.json')
-  const { data: iwmSnapshot } = useData('etf/IWM.json')
-  const { data: ijrSnapshot } = useData('etf/IJR.json')
+  const { data: etfData, loading: etfLoading, reload: reloadEtf } = useData('etfs.json')
+  const { data: factorData, loading: factorLoading, reload: reloadFactor } = useData('factors/french.json')
+  const { data: signalMetrics, loading: signalLoading, reload: reloadSignal } = useData('validation/signal_metrics.json')
+  const { data: monteCarlo, error: monteCarloError, loading: monteCarloLoading, reload: reloadMonteCarlo } = useData('validation/monte_carlo_projection.json')
+  const { data: spySnapshot, loading: spyLoading, reload: reloadSpy } = useData('etf/SPY.json')
+  const { data: rspSnapshot, loading: rspLoading, reload: reloadRsp } = useData('etf/RSP.json')
+  const { data: iwmSnapshot, loading: iwmLoading, reload: reloadIwm } = useData('etf/IWM.json')
+  const { data: ijrSnapshot, loading: ijrLoading, reload: reloadIjr } = useData('etf/IJR.json')
   const portfolio = useFirebasePortfolio()
   const { loading: portfolioLoading, exportPortfolio, syncState } = portfolio
   const previewPortfolio = import.meta.env.DEV
@@ -50,7 +50,23 @@ export default function Portfolio({ view = 'summary' }) {
   const positions = previewPortfolio ? modelSettings.interface.mobile_preview_positions : portfolio.positions
   const tracking = usePortfolioTracking()
   const { preferences, updatePreferences } = usePreferences()
-  const { data: selectedBenchmarkSnapshot } = useData(`etf/${preferences.defaultBenchmark || 'SPY'}.json`)
+  const { data: selectedBenchmarkSnapshot, loading: selectedBenchmarkLoading, reload: reloadSelectedBenchmark } = useData(`etf/${preferences.defaultBenchmark || 'SPY'}.json`)
+
+  // Portfolio is one long-lived instance shared across /portfolio, /portfolio/performance,
+  // and /portfolio/data-overview - React Router swaps the `view` prop rather than
+  // remounting it, so the useData() calls above only ever fetch once per session. Without
+  // this, switching into a view hours into a session keeps showing whatever was current
+  // when the session started, with no re-fetch and no loading state - exactly the "shows
+  // an old one until I refresh" bug. Revalidate every source on every view change so each
+  // tab always reflects what the live fetch actually returns right now.
+  const isFirstView = useRef(true)
+  useEffect(() => {
+    if (isFirstView.current) { isFirstView.current = false; return }
+    const initial = { initial: true }
+    reload(initial); reloadEtf(initial); reloadFactor(initial); reloadSignal(initial)
+    reloadMonteCarlo(initial); reloadSpy(initial); reloadRsp(initial); reloadIwm(initial)
+    reloadIjr(initial); reloadSelectedBenchmark(initial)
+  }, [view])
 
   const [viewMode, setViewMode] = useState('holdings')
   const [selectedStock, setSelectedStock] = useState(null)
@@ -110,7 +126,8 @@ export default function Portfolio({ view = 'summary' }) {
   }
   const sortedPositions = sortPortfolioPositions(holdings.portfolioPositions, portfolioSort.key, portfolioSort.direction)
 
-  if (dataLoading || portfolioLoading) return <Loading />
+  if (dataLoading || portfolioLoading || etfLoading || factorLoading || signalLoading || monteCarloLoading
+    || spyLoading || rspLoading || iwmLoading || ijrLoading || selectedBenchmarkLoading) return <Loading />
 
   const pageCopy = PORTFOLIO_PAGE_COPY[view] || PORTFOLIO_PAGE_COPY.summary
 
