@@ -83,6 +83,26 @@ the invariance test passing.
 
 ## Question 2 — Renormalization inflates scores for companies with fewer resolved metrics. Fix, or leave as-is?
 
+**RESOLVED 2026-08-19 — owner directed: fix now, split the clock rather than discard the
+old one.** Neither Option A (switch modes, one clock) nor Option C (leave as-is) below as
+originally framed — a fourth path: fix the actual renormalization defect directly inside
+`bands` mode (impute missing-but-applicable metrics at neutral instead of switching the
+whole champion to `fixed_feature`'s percentile basis, which would have required plumbing
+a fitted cross-sectional normalizer through `rescore_row` and other parity-sensitive call
+sites — the exact class of lockstep-regression risk the prior multiplier-removal
+promotion was bitten by), and **register both the pre-fix and post-fix champion as
+separately clocked strategies** rather than letting the fix silently retire the old
+registration's evidence. Implemented in commits `52ba45c1` (the fix),
+`f61595aa` (publishing the retired variant alongside the new one), and `d54154a0`
+(registering the split in `harness_freeze.json`/`hypothesis_log.jsonl`, trial count 50 ->
+51). The retired `bands_champion` registration keeps accruing its own prospective clock,
+published every refresh as `score_variants.bands_pre_imputation_fix`; the new
+`bands_champion_imputation_fix` registration is what the site now actually publishes as
+`score_variants.champion` and what drives `research`/`screen_universe` ranking. Both
+clocks start 2026-09-01, same as originally scheduled — zero periods had accrued to
+either as of the decision, so nothing was forfeited. The original finding, evidence, and
+options below are kept for the record.
+
 **Finding.** The champion's live `normalization_mode: "bands"` scoring path renormalizes
 each category's weight across only the metrics that resolved
 (`scorer.py:159-163` `weighted_available`, used within-category at `:560` and
