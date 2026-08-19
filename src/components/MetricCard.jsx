@@ -13,7 +13,7 @@ function sampleLabel(metric) {
 }
 
 /** One config-driven metric renderer used in full and compact modes. */
-export default function MetricCard({ metric, mode = 'full' }) {
+export default function MetricCard({ metric, mode = 'full', explain = mode === 'full' }) {
   const status = STATUS[metric.assessment] || STATUS.insufficient
   const sample = sampleLabel(metric)
   return (
@@ -30,7 +30,7 @@ export default function MetricCard({ metric, mode = 'full' }) {
       {metric.assessment === 'insufficient'
         ? <small>{metric.insufficientReason || metric.reason}</small>
         : <small>{[metric.supportingValue, sample].filter(Boolean).join(' · ')}</small>}
-      {mode === 'full' && metric.tooltip?.measures && (
+      {explain && metric.tooltip?.measures && (
         <p className="metric-explanation">
           {metric.tooltip.measures}
           {metric.tooltip.better ? ` ${metric.tooltip.better}` : ''}

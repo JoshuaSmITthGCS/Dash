@@ -210,7 +210,7 @@ function AllMetrics({ model }) {
       {visible.length ? visible.map((group) => (
         <PersistentDetails key={group.name} className="metric-group" storageId={`all-${group.name}`} defaultOpen>
           <summary><strong>{group.name}</strong><span>{group.metrics.length}</span></summary>
-          <div className="metric-card-grid compact-grid">{group.metrics.map((row) => <MetricCard key={row.id} metric={row} mode="compact" />)}</div>
+          <div className="metric-card-grid compact-grid">{group.metrics.map((row) => <MetricCard key={row.id} metric={row} mode="compact" explain />)}</div>
         </PersistentDetails>
       )) : <div className="analytics-empty"><strong>No matching metrics</strong><p>Try a broader filter or search term.</p></div>}
     </section>
