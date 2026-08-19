@@ -10,8 +10,9 @@ from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, b
                            carry_forward_missing_sessions, carry_forward_rows,
                            carry_forward_statement_fields,
                            collect_insider_signals, compact_news,
-                           curate_candidate_news, enrich, enrichment_rotation,
-                           latest_unique_news,
+                           curate_candidate_news, enrich, enrichment_ladder_cycle_state,
+                           enrichment_rotation, finalize_enrichment_ladder_cycle,
+                           latest_unique_news, plan_enrichment_ladder_day,
                            previous_rows_by_ticker, previous_top_symbols,
                            resolve_refresh_symbols, rotation_slice,
                            select_enrichment_priority, yahoo_extended)
@@ -58,6 +59,106 @@ class RefreshSymbolTests(unittest.TestCase):
 
         self.assertEqual(portfolio, ("MU", "NTNX", "VOO"))
         self.assertEqual(symbols, ("AAPL", "MU", "NTNX", "VOO"))
+
+
+class EnrichmentLadderOrchestrationTests(unittest.TestCase):
+    """fetch_advisor.py's day-to-day wiring around pipeline/enrichment_ladder.py's pure
+    functions: persisting cycle state across refreshes, and folding real enrichment
+    outcomes back into it once enrich() has actually run."""
+
+    def test_a_fresh_cycle_starts_at_day_zero_with_the_default_rank_cursor(self):
+        state = enrichment_ladder_cycle_state({}, cadence_days=5, as_of="2026-08-19")
+        self.assertEqual(state["day_index"], 0)
+        self.assertEqual(state["rank_cursor"], 20)
+        self.assertEqual(state["enriched_this_cycle"], [])
+
+    def test_a_cadence_change_restarts_the_cycle_but_keeps_attempt_counts(self):
+        previous_payload = {"enrichment_ladder_cycle": {
+            "cadence_days": 5, "day_index": 2, "rank_cursor": 40,
+            "enriched_this_cycle": ["AAPL"], "attempt_counts": {"MSFT": 2},
+        }}
+        state = enrichment_ladder_cycle_state(previous_payload, cadence_days=7, as_of="2026-08-19")
+        self.assertEqual(state["day_index"], 0)
+        self.assertEqual(state["attempt_counts"], {"MSFT": 2})
+
+    def test_day_zero_plan_is_the_current_top_twenty(self):
+        preliminary = tuple(f"S{i:03d}" for i in range(100))
+        ranked, random_arm, persistent, plan_state = plan_enrichment_ladder_day(
+            {}, preliminary, as_of="2026-08-19", cadence_days=5)
+        self.assertEqual(ranked, list(preliminary[:20]))
+        self.assertEqual(len(random_arm), 3)
+        self.assertEqual(persistent, [])
+        self.assertEqual(plan_state["day_index"], 0)
+
+    def test_random_arm_never_overlaps_the_ranked_slots(self):
+        preliminary = tuple(f"S{i:03d}" for i in range(100))
+        ranked, random_arm, _, _ = plan_enrichment_ladder_day(
+            {}, preliminary, as_of="2026-08-19", cadence_days=5)
+        self.assertEqual(set(ranked) & set(random_arm), set())
+
+    def test_a_failed_pull_is_retried_at_the_front_of_the_next_days_ranked_slate(self):
+        preliminary = tuple(f"S{i:03d}" for i in range(100))
+        previous_payload = {
+            "enrichment_ladder_cycle": {
+                "cadence_days": 5, "day_index": 1, "rank_cursor": 20,
+                "enriched_this_cycle": [], "attempt_counts": {},
+            },
+            "enrichment_ladder_failed_pulls": ["S099"],
+        }
+        ranked, random_arm, persistent, _ = plan_enrichment_ladder_day(
+            previous_payload, preliminary, as_of="2026-08-19", cadence_days=5)
+        self.assertEqual(ranked[0], "S099")
+        self.assertNotIn("S099", random_arm)
+        self.assertEqual(persistent, [])
+
+    def test_a_name_failing_three_times_running_is_marked_persistent_and_stops_retrying(self):
+        preliminary = tuple(f"S{i:03d}" for i in range(100))
+        previous_payload = {
+            "enrichment_ladder_cycle": {
+                "cadence_days": 5, "day_index": 1, "rank_cursor": 20,
+                "enriched_this_cycle": [], "attempt_counts": {"S099": 2},
+            },
+            "enrichment_ladder_failed_pulls": ["S099"],
+        }
+        ranked, _, persistent, _ = plan_enrichment_ladder_day(
+            previous_payload, preliminary, as_of="2026-08-19", cadence_days=5)
+        self.assertEqual(persistent, ["S099"])
+        self.assertNotIn("S099", ranked)
+
+    def test_day_one_uses_last_cycles_published_theme_exposure(self):
+        preliminary = tuple(f"S{i:03d}" for i in range(30))
+        previous_payload = {
+            "enrichment_ladder_cycle": {
+                "cadence_days": 5, "day_index": 1, "rank_cursor": 20,
+                "enriched_this_cycle": [], "attempt_counts": {},
+            },
+            "theme_screen": {"by_ticker": {
+                "S025": [{"theme_exposure_score": 90.0}],
+                "S026": [{"theme_exposure_score": 40.0}],
+            }},
+        }
+        ranked, _, _, _ = plan_enrichment_ladder_day(
+            previous_payload, preliminary, as_of="2026-08-19", cadence_days=5)
+        self.assertEqual(ranked[:2], ["S025", "S026"])
+
+    def test_finalize_adds_successes_to_enriched_this_cycle_and_clears_their_attempts(self):
+        plan_state = {"cadence_days": 5, "cycle_started_at": "2026-08-19", "day_index": 0,
+                      "rank_cursor": 20, "enriched_this_cycle": [], "attempt_counts": {"AAPL": 1}}
+        next_state, failed_pulls = finalize_enrichment_ladder_cycle(
+            plan_state, attempted_this_run=["AAPL", "MSFT"], succeeded_this_run=["AAPL"])
+        self.assertEqual(next_state["enriched_this_cycle"], ["AAPL"])
+        self.assertNotIn("AAPL", next_state["attempt_counts"])
+        self.assertEqual(failed_pulls, ["MSFT"])
+        self.assertEqual(next_state["day_index"], 1)
+
+    def test_completing_the_cadence_starts_a_fresh_cycle(self):
+        plan_state = {"cadence_days": 5, "cycle_started_at": "2026-08-19", "day_index": 4,
+                      "rank_cursor": 100, "enriched_this_cycle": ["AAPL"], "attempt_counts": {}}
+        next_state, _ = finalize_enrichment_ladder_cycle(
+            plan_state, attempted_this_run=["MSFT"], succeeded_this_run=["MSFT"])
+        self.assertEqual(next_state["day_index"], 0)
+        self.assertEqual(next_state["rank_cursor"], 20)
+        self.assertEqual(next_state["enriched_this_cycle"], [])
 
 
 class EnrichmentPriorityTests(unittest.TestCase):

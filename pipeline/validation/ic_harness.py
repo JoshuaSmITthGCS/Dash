@@ -32,6 +32,29 @@ CONFIG = SETTINGS["validation"]
 PIT_ROOT = os.path.join(PIPELINE_DIR, "pit_store")
 PUBLIC_NAME = "validation/ic_validation.json"
 
+# Phase 5's rotating enrichment ladder is a change to champion score semantics
+# (pipeline/validation/harness_freeze.json enrichment_coverage_changes_policy), so mixing
+# pre- and post-ladder snapshots into one IC computation would silently blend two different
+# populations into a period comparison that isn't measuring one thing. A row with no
+# coverage_regime at all predates the ladder entirely.
+COVERAGE_REGIME_DEFAULT = "pre_enrichment_ladder"
+
+
+class MixedCoverageRegimeError(Exception):
+    """Raised when an IC computation is asked to span more than one coverage_regime."""
+
+
+def _assert_single_coverage_regime(refreshes):
+    regimes = {
+        row.get("coverage_regime") or COVERAGE_REGIME_DEFAULT
+        for refresh in refreshes for row in refresh.get("rows", [])
+    }
+    if len(regimes) > 1:
+        raise MixedCoverageRegimeError(
+            f"IC computation spans {len(regimes)} coverage regimes ({sorted(regimes)}); "
+            "pre- and post-enrichment-ladder periods must be evaluated separately, never "
+            "merged into one number.")
+
 
 def _config_hash():
     encoded = json.dumps(SETTINGS, sort_keys=True, separators=(",", ":")).encode()
@@ -160,6 +183,10 @@ def snapshot_row(row, *, refresh_id, recorded_at, data_as_of, universe, publishe
         "published_research": ticker in published,
         "data_integrity": "prospective_point_in_time",
         "quality_flags": missing,
+        # Phase 5 (pipeline/validation/harness_freeze.json enrichment_coverage_changes_policy):
+        # a row written before the ladder shipped never carried this field at all, so its
+        # absence means pre_enrichment_ladder, not "unknown" -- see COVERAGE_REGIME_DEFAULT.
+        "coverage_regime": row.get("coverage_regime") or COVERAGE_REGIME_DEFAULT,
     }
 
 
@@ -523,12 +550,14 @@ def evaluate_variant(refreshes, variant, horizon_days):
     """Secondary diagnostic: calendar-day horizon, raw forward return. Kept for continuity
     with existing published reports; ``evaluate_variant_sessions`` is the primary target.
     """
+    _assert_single_coverage_regime(refreshes)
     periods = _forward_periods(refreshes, variant, horizon_days)
     return _evaluate_periods(periods, variant, return_field="forward_return")
 
 
 def evaluate_variant_sessions(refreshes, variant, horizon_sessions, calendar=None):
     """Primary target (B1): real trading-session horizon, sector-residual label."""
+    _assert_single_coverage_regime(refreshes)
     periods = _forward_periods_sessions(refreshes, variant, horizon_sessions, calendar)
     return _evaluate_periods(periods, variant, return_field="sector_residual_return")
 

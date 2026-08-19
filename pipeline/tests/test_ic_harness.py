@@ -7,9 +7,9 @@ PIPELINE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PIPELINE_DIR)
 
 import validation.ic_harness as ic_harness_module
-from validation.ic_harness import (append_refresh, build_report, evaluate_variant,
-                                   evaluate_variant_sessions, read_snapshots,
-                                   sector_residual_returns)
+from validation.ic_harness import (MixedCoverageRegimeError, append_refresh, build_report,
+                                   evaluate_variant, evaluate_variant_sessions, read_snapshots,
+                                   sector_residual_returns, snapshot_row)
 from validation.trading_calendar import TradingCalendar
 
 
@@ -272,6 +272,81 @@ def test_evaluate_variant_sessions_uses_a_trading_session_horizon_not_calendar_d
     assert summary["periods_accumulated"] == 1
     ic = summary["monthly_rank_ic"][0]
     assert ic is not None
+
+
+def _regime_refresh(refresh_id, recorded_at, regime, prices):
+    return {
+        "refresh_id": refresh_id, "recorded_at": recorded_at,
+        "rows": [{"ticker": ticker, "price": price, "scores": {"champion": float(index + 1)},
+                 "coverage_regime": regime}
+                for index, (ticker, price) in enumerate(prices.items())],
+    }
+
+
+def test_evaluate_variant_raises_on_mixed_coverage_regimes():
+    refreshes = [
+        _regime_refresh("r1", "2026-01-01T00:00:00+00:00", "pre_enrichment_ladder",
+                        {"A": 100.0, "B": 100.0}),
+        _regime_refresh("r2", "2026-02-01T00:00:00+00:00", "enrichment_ladder_v1",
+                        {"A": 110.0, "B": 120.0}),
+    ]
+    try:
+        evaluate_variant(refreshes, "champion", 30)
+        assert False, "expected MixedCoverageRegimeError"
+    except MixedCoverageRegimeError as exc:
+        assert "pre_enrichment_ladder" in str(exc)
+        assert "enrichment_ladder_v1" in str(exc)
+
+
+def test_evaluate_variant_sessions_raises_on_mixed_coverage_regimes():
+    calendar = _weekday_calendar(date(2024, 1, 1), 400)
+    refreshes = [
+        _regime_refresh("r1", datetime.combine(calendar.sessions[0], datetime.min.time(),
+                                               tzinfo=timezone.utc).isoformat(),
+                        "pre_enrichment_ladder", {"A": 100.0, "B": 100.0}),
+        _regime_refresh("r2", datetime.combine(calendar.sessions[20], datetime.min.time(),
+                                               tzinfo=timezone.utc).isoformat(),
+                        "enrichment_ladder_v1", {"A": 110.0, "B": 120.0}),
+    ]
+    try:
+        evaluate_variant_sessions(refreshes, "champion", 10, calendar)
+        assert False, "expected MixedCoverageRegimeError"
+    except MixedCoverageRegimeError:
+        pass
+
+
+def test_evaluate_variant_does_not_raise_when_every_refresh_shares_one_regime():
+    refreshes = [
+        _regime_refresh("r1", "2026-01-01T00:00:00+00:00", "enrichment_ladder_v1",
+                        {"A": 100.0, "B": 100.0}),
+        _regime_refresh("r2", "2026-02-01T00:00:00+00:00", "enrichment_ladder_v1",
+                        {"A": 110.0, "B": 120.0}),
+    ]
+    evaluate_variant(refreshes, "champion", 30)  # must not raise
+
+
+def test_a_row_with_no_coverage_regime_at_all_defaults_to_pre_ladder_not_unknown():
+    refreshes = [
+        {"refresh_id": "r1", "recorded_at": "2026-01-01T00:00:00+00:00",
+         "rows": [{"ticker": "A", "price": 100.0, "scores": {"champion": 1.0}}]},
+        _regime_refresh("r2", "2026-02-01T00:00:00+00:00", "pre_enrichment_ladder", {"A": 110.0}),
+    ]
+    evaluate_variant(refreshes, "champion", 30)  # must not raise: both are pre_enrichment_ladder
+
+
+def test_snapshot_row_defaults_coverage_regime_when_absent():
+    projected = snapshot_row(scored_row(), refresh_id="r1", recorded_at="2026-01-01T00:00:00+00:00",
+                             data_as_of="2026-01-01T00:00:00+00:00", universe=(), published=(),
+                             model_version="v1", config_hash="hash")
+    assert projected["coverage_regime"] == "pre_enrichment_ladder"
+
+
+def test_snapshot_row_carries_an_explicit_coverage_regime():
+    row = {**scored_row(), "coverage_regime": "enrichment_ladder_v1"}
+    projected = snapshot_row(row, refresh_id="r1", recorded_at="2026-01-01T00:00:00+00:00",
+                             data_as_of="2026-01-01T00:00:00+00:00", universe=(), published=(),
+                             model_version="v1", config_hash="hash")
+    assert projected["coverage_regime"] == "enrichment_ladder_v1"
 
 
 def test_build_report_publishes_a_primary_session_based_target(monkeypatch):

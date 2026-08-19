@@ -2,6 +2,7 @@
 
 import math
 import os
+import random
 import re
 import statistics
 import time
@@ -15,7 +16,11 @@ from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
 from canonical_metrics import Observation
 from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
+from enrichment_ladder import (LADDER_RANKED_SIZE, advance_retry_queue, av_quota_order,
+                               ladder_day_slots, random_arm_slots, reset_attempt_count,
+                               theme_exposure_from_screen)
 from price_archive import archive_health
+from scored_universe import assert_scored_universe_immutable
 from edgar_enrichment import merge_edgar_fallback
 from edgar_sue import sue_for
 from providers import YahooAdapter
@@ -85,6 +90,22 @@ NEWS_DISCOVERY_LIMIT = 75
 # candidate gets statement enrichment on equal footing. Never the default production path -
 # a full-universe statement sweep is far more Yahoo requests than the normal fast refresh.
 FULL_UNIVERSE_RESEARCH = os.getenv("FULL_UNIVERSE_RESEARCH", "").strip().lower() in {"1", "true", "yes"}
+
+# Phase 5's rotating enrichment ladder (docs/QUESTIONS-FOR-OWNER.md question 1,
+# pipeline/validation/harness_freeze.json enrichment_coverage_changes_policy). Default off:
+# turning this on for real is the "ship" event that policy requires be registered as a
+# champion split (a new champion identity with its own clock, the pre-ladder champion kept
+# as a tracked comparison, not silently retired) plus the before/after score-delta artifact
+# the work order requires be committed alongside it -- both need a live network refresh this
+# module cannot produce on its own.
+ADVISOR_ENRICHMENT_LADDER_ENABLED = os.getenv(
+    "ADVISOR_ENRICHMENT_LADDER_ENABLED", "").strip().lower() in {"1", "true", "yes"}
+# 5-day/100 or 7-day/140, per the work order's own worked example. Phase 4's cadence
+# decision (chosen from measured provider/retry failure rates, never from returns) has not
+# run -- this default is provisional, not derived from measurement, and is overridable
+# without code changes once it does.
+ADVISOR_ENRICHMENT_LADDER_CADENCE_DAYS = max(2, int(
+    os.getenv("ADVISOR_ENRICHMENT_LADDER_CADENCE_DAYS", "5")))
 
 # The unpublished remainder of the universe rides along so the value and momentum screens
 # can scan more than the leaderboard. It carries only the fields those screens actually
@@ -1466,6 +1487,89 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
     return incumbents, challengers, priority
 
 
+def enrichment_ladder_cycle_state(previous_payload, cadence_days, as_of):
+    """Load the ladder's persisted cycle state, or start a fresh cycle.
+
+    A cycle restarts whenever the stored cadence doesn't match the configured one (an
+    operator changed ``ADVISOR_ENRICHMENT_LADDER_CADENCE_DAYS``) or no cycle has run yet.
+    Restarting preserves ``attempt_counts`` -- a name mid-retry doesn't lose its history
+    just because the cadence changed.
+    """
+    stored = (previous_payload or {}).get("enrichment_ladder_cycle") or {}
+    if stored.get("cadence_days") != cadence_days or stored.get("day_index") is None:
+        return {
+            "cadence_days": cadence_days, "cycle_started_at": as_of, "day_index": 0,
+            "rank_cursor": LADDER_RANKED_SIZE, "enriched_this_cycle": [],
+            "attempt_counts": stored.get("attempt_counts") or {},
+        }
+    return stored
+
+
+def plan_enrichment_ladder_day(previous_payload, preliminary_symbols, as_of,
+                               cadence_days=ADVISOR_ENRICHMENT_LADDER_CADENCE_DAYS):
+    """Today's ranked-ladder slots, random-arm slots, and retry queue.
+
+    Returns ``(ranked_slots, random_arm, persistent_failures, plan_state)``.
+    ``plan_state`` must be passed to ``finalize_enrichment_ladder_cycle`` once this
+    run's actual enrichment outcomes are known -- this function only plans the day; it
+    does not know yet which of its picks will actually resolve.
+    """
+    state = enrichment_ladder_cycle_state(previous_payload, cadence_days, as_of)
+    day_index = state["day_index"] % cadence_days
+    rng = random.Random(f"{as_of[:10]}-enrichment-ladder")
+    exposure = theme_exposure_from_screen(
+        ((previous_payload or {}).get("theme_screen") or {}).get("by_ticker"))
+    already = list(state.get("enriched_this_cycle") or [])
+
+    ranked_slots, new_cursor = ladder_day_slots(
+        day_index, preliminary_symbols, exposure, already,
+        state.get("rank_cursor", LADDER_RANKED_SIZE))
+
+    previous_failed_pulls = (previous_payload or {}).get("enrichment_ladder_failed_pulls") or []
+    retry, persistent, attempt_counts = advance_retry_queue(
+        previous_failed_pulls, state.get("attempt_counts") or {})
+    # Retries take the front of today's ranked slate -- never the random arm, which
+    # must stay a clean uniform draw -- and still respect the daily ranked budget.
+    ranked_slots = list(dict.fromkeys([*retry, *ranked_slots]))[:LADDER_RANKED_SIZE]
+
+    already_set = set(already)
+    unenriched = [symbol for symbol in preliminary_symbols
+                 if symbol not in already_set and symbol not in ranked_slots]
+    random_arm = random_arm_slots(unenriched, ranked_slots, rng)
+
+    plan_state = {**state, "cadence_days": cadence_days, "day_index": day_index,
+                 "rank_cursor": new_cursor, "attempt_counts": attempt_counts}
+    return ranked_slots, random_arm, persistent, plan_state
+
+
+def finalize_enrichment_ladder_cycle(plan_state, attempted_this_run, succeeded_this_run):
+    """Fold this run's actual enrichment outcomes into the cycle state to persist.
+
+    A name that succeeded joins ``enriched_this_cycle`` (so later days in the same
+    cycle skip it) and has any consecutive-failure count cleared. A name that was
+    attempted but did not succeed becomes tomorrow's retry-queue input. Completing the
+    configured cadence starts a fresh cycle rather than looping day_index past it.
+    """
+    cadence_days = plan_state.get("cadence_days", ADVISOR_ENRICHMENT_LADDER_CADENCE_DAYS)
+    succeeded_set = set(succeeded_this_run)
+    enriched = sorted(set(plan_state.get("enriched_this_cycle") or []) | succeeded_set)
+    failed_pulls = [symbol for symbol in attempted_this_run if symbol not in succeeded_set]
+    attempt_counts = dict(plan_state.get("attempt_counts") or {})
+    for symbol in succeeded_this_run:
+        attempt_counts = reset_attempt_count(symbol, attempt_counts)
+    next_day = plan_state["day_index"] + 1
+    cycle_complete = next_day >= cadence_days
+    next_state = {
+        "cadence_days": cadence_days,
+        "cycle_started_at": plan_state.get("cycle_started_at"),
+        "day_index": 0 if cycle_complete else next_day,
+        "rank_cursor": LADDER_RANKED_SIZE if cycle_complete else plan_state.get("rank_cursor", LADDER_RANKED_SIZE),
+        "enriched_this_cycle": [] if cycle_complete else enriched,
+        "attempt_counts": attempt_counts,
+    }
+    return next_state, failed_pulls
+
+
 def build_portfolio_coverage(research, portfolio_symbols, previous=()):
     """Keep configured holdings visible even when a quote provider drops a symbol."""
     research_by_ticker = {row["ticker"]: row for row in research}
@@ -1698,14 +1802,31 @@ def run():
             context["news"] = latest_unique_news([*context["news"], *additions], limit=12)
     all_news.extend(discovery_news)
 
-    incumbents, challengers, statement_priority = select_enrichment_priority(
-        previous_top, preliminary_symbols, available, portfolio_symbols,
-        full_universe_research=FULL_UNIVERSE_RESEARCH,
-        previous_payload=previous_payload,
-        focus_symbols=focus_symbols,
-    )
-    effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
+    ladder_plan_state = None
+    ladder_ranked, ladder_random_arm, ladder_persistent_failures = (), (), ()
+    if ADVISOR_ENRICHMENT_LADDER_ENABLED and not FULL_UNIVERSE_RESEARCH:
+        ladder_as_of = datetime.now(timezone.utc).isoformat()
+        ladder_ranked, ladder_random_arm, ladder_persistent_failures, ladder_plan_state = (
+            plan_enrichment_ladder_day(previous_payload, preliminary_symbols, ladder_as_of,
+                                       cadence_days=ADVISOR_ENRICHMENT_LADDER_CADENCE_DAYS))
+        incumbents, challengers = (), ()
+        statement_priority = tuple(dict.fromkeys(
+            (*focus_symbols, *ladder_ranked, *ladder_random_arm, *portfolio_symbols)))
+        effective_extended_limit = len(statement_priority)
+    else:
+        incumbents, challengers, statement_priority = select_enrichment_priority(
+            previous_top, preliminary_symbols, available, portfolio_symbols,
+            full_universe_research=FULL_UNIVERSE_RESEARCH,
+            previous_payload=previous_payload,
+            focus_symbols=focus_symbols,
+        )
+        effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
     enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)
+    ladder_selected = set(ladder_ranked) | set(ladder_random_arm)
+    ladder_succeeded_this_run = [
+        context["symbol"] for context in contexts
+        if context["symbol"] in ladder_selected and context["snapshot"].get("extended_coverage")
+    ]
     previous_rows_for_carryforward = previous_rows_by_ticker(previous_payload)
     statement_carried_forward = 0
     for context in contexts:
@@ -1714,6 +1835,10 @@ def run():
         if not had_coverage and context["snapshot"].get("stale_statement_carryforward"):
             statement_carried_forward += 1
     enrichment_diagnostics["statement_carried_forward"] = statement_carried_forward
+    ladder_next_state, ladder_failed_pulls = (None, [])
+    if ladder_plan_state is not None:
+        ladder_next_state, ladder_failed_pulls = finalize_enrichment_ladder_cycle(
+            ladder_plan_state, sorted(ladder_selected), ladder_succeeded_this_run)
 
     challenger_cfg = (SETTINGS.get("challengers") or {}).get(
         "cross_sectional_normalization", {}
@@ -1877,6 +2002,19 @@ def run():
         # Every provider value this run refused to score, with the rule that refused it.
         row["data_quality_violations"] = context.get("plausibility_violations") or []
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
+        # Phase 5 (docs/QUESTIONS-FOR-OWNER.md question 1): every scored row currently
+        # stays in the refresh queue and the scored universe -- no drop mechanism is
+        # wired up yet (dropping is explicitly optional in the work order and needs its
+        # own threshold decision). Publishing both fields now, unconditionally true, is
+        # what pipeline/scored_universe.py's freeze guard checks against once dropping
+        # exists and the 2026-09-01 freeze arrives.
+        row["enrichment_eligible"] = True
+        row["in_scored_universe"] = True
+        row["coverage_regime"] = "enrichment_ladder_v1" if ADVISOR_ENRICHMENT_LADDER_ENABLED else "pre_enrichment_ladder"
+        if symbol in ladder_ranked:
+            row["enrichment_source"] = "ladder_ranked"
+        elif symbol in ladder_random_arm:
+            row["enrichment_source"] = "random"
         champion_variant = {
             # Renamed from "bands_champion" 2026-08-19: that identity now belongs to the
             # retired pre-fix registration published as score_variants.bands_pre_imputation_fix
@@ -2065,6 +2203,22 @@ def run():
                     "the metrics that would let it out-rank an incumbent. A rotation of "
                     "statement-starved names now joins every refresh.",
         },
+        "coverage_regime": "enrichment_ladder_v1" if ADVISOR_ENRICHMENT_LADDER_ENABLED else "pre_enrichment_ladder",
+        **({
+            "enrichment_ladder": {
+                "cadence_days": ladder_next_state["cadence_days"],
+                "day_index_completed": ladder_plan_state["day_index"],
+                "ranked_slots": list(ladder_ranked),
+                "random_arm": list(ladder_random_arm),
+                "random_arm_size": len(ladder_random_arm),
+                "succeeded_this_run": ladder_succeeded_this_run,
+            },
+            "enrichment_ladder_cycle": ladder_next_state,
+            "enrichment_ladder_failed_pulls": ladder_failed_pulls,
+            "enrichment_ladder_persistent_failures": sorted(set(
+                (previous_payload.get("enrichment_ladder_persistent_failures") or [])
+                + list(ladder_persistent_failures))),
+        } if ladder_plan_state is not None else {}),
         "enrichment_diagnostics": enrichment_diagnostics,
         "normalization_distributions": {
             **(cross_normalizer.published_distributions() if cross_normalizer else {}),
@@ -2393,6 +2547,11 @@ def run():
         "statement_enrichment": max(0, len(contexts) - enriched_count),
         "publication_limit": max(0, len(research) - len(ranked)),
     })
+    assert_scored_universe_immutable(
+        [*previous_payload.get("research", []), *previous_payload.get("screen_universe", [])],
+        [*payload.get("research", []), *payload.get("screen_universe", [])],
+        as_of=generated_at,
+    )
     save_json("advisor.json", payload)
     save_json("report.json", report_snapshot(payload))
     save_json("diagnostics.json", diagnostics_payload(payload))
