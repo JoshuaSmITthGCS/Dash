@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
                            carry_forward_missing_sessions, carry_forward_rows,
+                           carry_forward_statement_fields,
                            collect_insider_signals, compact_news,
                            curate_candidate_news, enrich, enrichment_rotation,
                            latest_unique_news,
@@ -300,6 +301,61 @@ class FastRefreshCarryForwardTests(unittest.TestCase):
         carried = carry_forward_rows([], ("AAPL", "NEWCO"), previous_payload)
 
         self.assertEqual([row["ticker"] for row in carried], ["AAPL"])
+
+
+class StatementFieldCarryForwardTests(unittest.TestCase):
+    """A refreshed-but-not-re-enriched ticker used to publish a brand-new row built only
+    from this cycle's fresh quote, silently dropping ROIC/EV-EBITDA/Piotroski-F/Altman-Z
+    and the rest of the statement-derived metrics a prior run had already resolved -- the
+    same class of regression ``carry_forward_missing_sessions`` already guards against for
+    price history, just never applied to statement data."""
+
+    def _previous_rows(self):
+        return {"AAPL": {
+            "ticker": "AAPL", "extended_coverage": 0.8,
+            "return_on_invested_capital": 0.21, "altman_z": 4.1, "piotroski_f": 7.0,
+            "ev_to_ebitda": 12.3, "accruals_ratio": -0.02,
+        }}
+
+    def test_a_ticker_not_re_enriched_this_cycle_keeps_its_last_resolved_statement_fields(self):
+        context = {"symbol": "AAPL", "snapshot": {"price": 210.0, "market_cap": 3.2e12}}
+
+        carry_forward_statement_fields(context, self._previous_rows())
+
+        self.assertEqual(context["snapshot"]["return_on_invested_capital"], 0.21)
+        self.assertEqual(context["snapshot"]["altman_z"], 4.1)
+        self.assertEqual(context["snapshot"]["piotroski_f"], 7.0)
+        self.assertEqual(context["snapshot"]["ev_to_ebitda"], 12.3)
+        self.assertTrue(context["snapshot"]["stale_statement_carryforward"])
+        # This cycle's fresh quote fields must not be clobbered by the carry-forward.
+        self.assertEqual(context["snapshot"]["price"], 210.0)
+
+    def test_a_ticker_enriched_this_cycle_is_left_untouched(self):
+        context = {"symbol": "AAPL", "snapshot": {
+            "price": 210.0, "extended_coverage": 0.95, "return_on_invested_capital": 0.30,
+        }}
+
+        carry_forward_statement_fields(context, self._previous_rows())
+
+        # This cycle's own measurement (0.30) must win, not the stale 0.21.
+        self.assertEqual(context["snapshot"]["return_on_invested_capital"], 0.30)
+        self.assertNotIn("stale_statement_carryforward", context["snapshot"])
+
+    def test_a_ticker_with_no_previously_resolved_statement_data_is_left_alone(self):
+        context = {"symbol": "NEWCO", "snapshot": {"price": 10.0}}
+
+        carry_forward_statement_fields(context, self._previous_rows())
+
+        self.assertNotIn("return_on_invested_capital", context["snapshot"])
+        self.assertNotIn("stale_statement_carryforward", context["snapshot"])
+
+    def test_a_previous_row_that_was_itself_a_stale_carryforward_is_not_re_carried(self):
+        previous_rows = {"AAPL": {**self._previous_rows()["AAPL"], "extended_coverage": 0}}
+        context = {"symbol": "AAPL", "snapshot": {"price": 210.0}}
+
+        carry_forward_statement_fields(context, previous_rows)
+
+        self.assertNotIn("return_on_invested_capital", context["snapshot"])
 
 
 class BenchmarkHistoryRegressionTests(unittest.TestCase):

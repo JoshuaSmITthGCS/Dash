@@ -20,7 +20,8 @@ from edgar_sue import sue_for
 from providers import YahooAdapter
 from common import LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
-from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
+from fundamentals_extended import (COVERAGE_KEYS, EXTENDED_METRIC_UNITS, derive_extended,
+                                   earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
 from concentration_risk import summarize as summarize_concentration
@@ -1331,6 +1332,41 @@ def carry_forward_rows(research, symbols, previous_payload):
     ]
 
 
+# Every field ``derive_extended`` can populate -- the statement-derived metrics that
+# distinguish an enriched company from a price-multiples-only one. Used to decide what a
+# refresh that didn't reach a ticker's statement-enrichment turn is allowed to carry
+# forward from the last run that did resolve them.
+STATEMENT_CARRYFORWARD_FIELDS = tuple(dict.fromkeys((
+    *COVERAGE_KEYS, *EXTENDED_METRIC_UNITS,
+    "extended_coverage", "altman_z_variant", "piotroski_tests", "statement_periods",
+)))
+
+
+def carry_forward_statement_fields(context, previous_rows):
+    """Keep a ticker's last-resolved statement metrics when this cycle didn't re-enrich it.
+
+    ``enrich()`` only re-derives ROIC/EV-EBITDA/Piotroski-F/Altman-Z/etc. for the tickers
+    inside its shortlist; every other refreshed ticker's ``context["snapshot"]`` starts
+    fresh from this cycle's quote alone. Building a published row straight from that
+    snapshot silently drops statement data a prior run had already resolved for the same
+    company -- the row looks like the company's fundamentals regressed to unknown, not
+    like a refresh that simply didn't get to it this cycle. Mirrors
+    ``carry_forward_missing_sessions``'s guarantee for price history, applied to
+    statement-derived fields instead of whole rows.
+    """
+    snapshot = context["snapshot"]
+    if snapshot.get("extended_coverage"):
+        return  # this cycle already resolved statement data for this ticker
+    previous_row = previous_rows.get(context["symbol"])
+    if not previous_row or not previous_row.get("extended_coverage"):
+        return  # nothing this cycle can safely carry forward
+    carried = {field: previous_row[field] for field in STATEMENT_CARRYFORWARD_FIELDS
+               if field in previous_row}
+    if not carried:
+        return
+    context["snapshot"] = {**snapshot, **carried, "stale_statement_carryforward": True}
+
+
 def rotation_slice(symbols, already_polling, previous_payload, size):
     """The stalest symbols outside this refresh's priority set, oldest poll first.
 
@@ -1669,6 +1705,14 @@ def run():
     )
     effective_extended_limit = len(preliminary_symbols) if FULL_UNIVERSE_RESEARCH else extended_limit
     enriched_count, enrichment_diagnostics = enrich(contexts, effective_extended_limit, delay, statement_priority)
+    previous_rows_for_carryforward = previous_rows_by_ticker(previous_payload)
+    statement_carried_forward = 0
+    for context in contexts:
+        had_coverage = bool(context["snapshot"].get("extended_coverage"))
+        carry_forward_statement_fields(context, previous_rows_for_carryforward)
+        if not had_coverage and context["snapshot"].get("stale_statement_carryforward"):
+            statement_carried_forward += 1
+    enrichment_diagnostics["statement_carried_forward"] = statement_carried_forward
 
     challenger_cfg = (SETTINGS.get("challengers") or {}).get(
         "cross_sectional_normalization", {}
