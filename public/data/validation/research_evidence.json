@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-18T19:49:32.584827+00:00",
+  "generated_at": "2026-08-19T03:10:42.512500+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "cb67a5b073a6caa093edafb59ffd7c679556c2fd",
+  "code_commit_hash": "3a96fcf38018a43d0de848c64efebf00535cde3b",
   "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -667,7 +667,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 30,
+            "scored": 37,
             "total": 40
           },
           "growth": {
@@ -689,15 +689,15 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 155,
+            "scored": 166,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 156,
+            "scored": 167,
             "total": 839
           },
           "financial_health": {
-            "scored": 799,
+            "scored": 792,
             "total": 839
           },
           "growth": {
@@ -716,18 +716,18 @@
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 195,
-      "non_enriched_count": 684,
+      "enriched_count": 206,
+      "non_enriched_count": 673,
       "score": {
         "enriched": {
-          "n": 195,
-          "mean": 70.47,
-          "median": 72.5,
-          "stdev": 11.0
+          "n": 206,
+          "mean": 70.31,
+          "median": 71.9,
+          "stdev": 10.75
         },
         "non_enriched": {
-          "n": 684,
-          "mean": 61.3,
+          "n": 673,
+          "mean": 61.2,
           "median": 62.5,
           "stdev": 9.06
         }
@@ -735,11 +735,11 @@
       "sector_distribution": {
         "enriched": {
           "Financial Services": 58,
-          "Technology": 48,
-          "Energy": 18,
+          "Technology": 51,
+          "Energy": 20,
+          "Industrials": 20,
           "Healthcare": 17,
           "Consumer Cyclical": 17,
-          "Industrials": 14,
           "Basic Materials": 5,
           "Consumer Defensive": 5,
           "Communication Services": 5,
@@ -748,8 +748,8 @@
           "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 124,
-          "Technology": 104,
+          "Industrials": 118,
+          "Technology": 101,
           "Consumer Cyclical": 96,
           "Healthcare": 83,
           "Financial Services": 67,
@@ -758,14 +758,14 @@
           "Basic Materials": 33,
           "Utilities": 30,
           "Communication Services": 22,
-          "Energy": 21,
+          "Energy": 19,
           "ETF": 2,
           "Unknown": 1
         }
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 40,
+        "rows_with_market_cap": 39,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -775,8 +775,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "cb67a5b073a6caa093edafb59ffd7c679556c2fd",
+    "git_commit_sha": "3a96fcf38018a43d0de848c64efebf00535cde3b",
     "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-18T19:49:32.584827+00:00"
+    "generated_at": "2026-08-19T03:10:42.512500+00:00"
   }
 }
