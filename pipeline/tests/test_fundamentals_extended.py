@@ -2,6 +2,8 @@ import os
 import sys
 import unittest
 
+import pandas as pd
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import fundamentals_extended as fx
@@ -286,6 +288,55 @@ class ExtendedObservationsTests(unittest.TestCase):
                                      info={}, market_cap=None, price=None)
         observations = fx.extended_observations(metrics)
         self.assertEqual(observations, {})
+
+
+class _RaisingTickerObj:
+    """A ticker whose income-statement property raises -- the exact shape yfinance
+    produces for a symbol Yahoo has stopped serving that statement for. The other two
+    frames resolve fine (empty, but no exception), isolating the one failure."""
+
+    ticker = "BROKEN"
+    balance_sheet = pd.DataFrame()
+    cashflow = pd.DataFrame()
+
+    @property
+    def income_stmt(self):
+        raise RuntimeError("no data found for this date range")
+
+
+class _FakeLog:
+    def __init__(self):
+        self.warnings = []
+
+    def warn(self, message):
+        self.warnings.append(message)
+
+    def info(self, message):
+        pass
+
+    def error(self, message):
+        pass
+
+
+class SilentStatementFrameFailureTests(unittest.TestCase):
+    """A broken statement-frame property used to disappear with zero trace: the caller got
+    back an empty-but-valid-looking {"periods": [], "rows": {}}, identical to a company
+    that genuinely has no such statement. A universe-wide cause (a yfinance schema change,
+    an auth failure) could suppress statement data with nothing in the logs to show it."""
+
+    def test_a_broken_statement_frame_is_logged_not_swallowed_silently(self):
+        fake_log = _FakeLog()
+        original_log = fx.LOG
+        fx.LOG = fake_log
+        try:
+            result = fx.extended_inputs(_RaisingTickerObj())
+        finally:
+            fx.LOG = original_log
+
+        self.assertEqual(result["annual"]["income"], {"periods": [], "rows": {}})
+        self.assertEqual(len(fake_log.warnings), 1)
+        self.assertIn("BROKEN", fake_log.warnings[0])
+        self.assertIn("RuntimeError", fake_log.warnings[0])
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ import json
 import os
 from functools import lru_cache
 
+from common import LOG
 from fundamentals_extended import derive_extended
 from pit_fundamentals_store import ShardedStore, shard_for
 
@@ -318,7 +319,8 @@ def merge_edgar_fallback(symbol, result, snapshot, *, as_of, diagnostics=None):
         fallback = edgar_extended(
             symbol, as_of=as_of, market_cap=snapshot.get("market_cap"),
             price=snapshot.get("price"), sector=snapshot.get("sector"))
-    except Exception:  # noqa: BLE001 - enrichment fallback must never sink the symbol
+    except Exception as exc:  # noqa: BLE001 - enrichment fallback must never sink the symbol
+        LOG.warn(f"{symbol}: EDGAR PIT fallback failed ({type(exc).__name__}: {exc})")
         return result
     if not fallback:
         return result

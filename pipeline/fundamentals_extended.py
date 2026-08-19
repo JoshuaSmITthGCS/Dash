@@ -13,6 +13,7 @@ never rewarded for hiding a number.
 from datetime import datetime, timezone
 
 from canonical_metrics import Observation
+from common import LOG
 
 # Line-item aliases. yfinance normalizes statement rows, but names still drift between
 # filers and between annual/quarterly frames, so each concept lists its known spellings.
@@ -96,7 +97,9 @@ def extended_inputs(ticker_obj, quarterly=False):
     def frame(attr):
         try:
             return statement_series(getattr(ticker_obj, attr))
-        except Exception:  # noqa: BLE001 - a missing statement must not sink the symbol
+        except Exception as exc:  # noqa: BLE001 - a missing statement must not sink the symbol
+            LOG.warn(f"{getattr(ticker_obj, 'ticker', '?')}: statement frame '{attr}' "
+                     f"unavailable ({type(exc).__name__}: {exc})")
             return {"periods": [], "rows": {}}
 
     empty = {"periods": [], "rows": {}}
