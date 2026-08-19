@@ -10,7 +10,9 @@ import os
 from datetime import datetime, timezone
 
 from canonical_metrics import BUSINESS_PROFILES, yahoo_observations
+from common import load_json
 from fetch_prices import fetch_snapshot
+from peer_groups import canonical_percentiles
 from recommendation_policy_v2 import build_recommendation_v2
 from research_screens_v2 import momentum_boundary_diagnostics, momentum_factors
 from scorer import valuation_score
@@ -44,6 +46,41 @@ def _history_rows(frame):
         if price is not None and math.isfinite(float(price)):
             rows.append({"date": stamp.date().isoformat(), "adjusted_close": float(price)})
     return rows
+
+
+def _peer_pool(previous_payload, ticker, categories):
+    """The production universe's own published valuation categories, as the peer set.
+
+    ``canonical_percentiles`` needs the full cross-section a real peer claim is ranked
+    against -- one ticker's live snapshot alone can never supply that. The ticker under
+    validation is ranked on ITS this-run categories, not whatever stale row (if any) the
+    committed universe happens to carry for it.
+    """
+    rows = {
+        row["ticker"]: {"ticker": row["ticker"],
+                        "categories": (row.get("fundamental_detail") or {}).get("categories") or {}}
+        for row in (*previous_payload.get("research", []), *previous_payload.get("screen_universe", []))
+        if row.get("ticker")
+    }
+    rows[ticker] = {"ticker": ticker, "categories": categories}
+    return list(rows.values())
+
+
+def _peer_classification(ticker, categories, previous_payload):
+    """Real peer-sample counts and percentile status for one ticker.
+
+    Previously hardcoded to ``total_peer_count=0, valid_peer_count=0,
+    percentile_status="INSUFFICIENT_VALID_PEERS"`` unconditionally -- an integration gap
+    (``peer_groups.canonical_percentiles`` was never called here), not the module's
+    deliberate ``n >= 30`` gate operating on real data.
+    """
+    entry = canonical_percentiles(_peer_pool(previous_payload, ticker, categories)).get(ticker)
+    if entry is None:
+        return {"total_peer_count": 0, "valid_peer_count": 0, "percentile_status": "NO_PEER_GROUP"}
+    status = entry["tier"].upper() if entry["tier"] else "INSUFFICIENT_VALID_PEERS"
+    return {"total_peer_count": entry["peer_count_total"],
+            "valid_peer_count": entry["peer_count_with_valid_data"],
+            "percentile_status": status}
 
 
 def _invariants(ticker, analysis, recommendation, observations):
@@ -84,6 +121,7 @@ def _invariants(ticker, analysis, recommendation, observations):
 def validate_live(output_path, raw_root, tickers=REPRESENTATIVE_UNIVERSE):
     import yfinance as yf
     fetched_at = datetime.now(timezone.utc).isoformat()
+    previous_payload = load_json("advisor.json") or {}
     results = []
     for ticker in tickers:
         try:
@@ -106,13 +144,15 @@ def validate_live(output_path, raw_root, tickers=REPRESENTATIVE_UNIVERSE):
             boundaries = momentum_boundary_diagnostics(history, as_of=fetched_at[:10])
             invariants = _invariants(ticker, analysis, recommendation, observations)
             peer_override = (BUSINESS_PROFILES.get("ticker_overrides") or {}).get(ticker, {})
+            peer_classification = _peer_classification(
+                ticker, (legacy_parts or {}).get("categories") or {}, previous_payload)
             results.append({
                 "ticker": ticker, "status": ("pass" if all(row["status"] == "pass" for row in invariants.values()) else "fail"),
                 "provider_status": "success", "raw_response": {"retention": "private_staging",
                     "path": os.path.relpath(raw_path), "sha256": hashlib.sha256(raw_json.encode()).hexdigest()},
                 "classification": {"company": analysis["company_classification"],
                     "profile_id": analysis["applicability_profile"], "peer_group": peer_override.get("peer_group_id"),
-                    "total_peer_count": 0, "valid_peer_count": 0, "percentile_status": "INSUFFICIENT_VALID_PEERS"},
+                    **peer_classification},
                 "observations": observations, "analysis": analysis,
                 "company_action": recommendation["company_action"], "portfolio_fit_state": recommendation["portfolio_fit_state"],
                 "position_action": recommendation["position_action"],
