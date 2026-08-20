@@ -51,20 +51,28 @@ state" (§9) before treating any number here as predictive.
 
 | Provider | What it supplies | Key required | Status / cadence |
 |---|---|---|---|
-| **Yahoo Finance** (`yfinance`) | Price/quote history, financial statements | none | Primary provider for price and statements; restated only — no as-reported (as-originally-filed) history |
-| **SEC EDGAR** | Form 4 insider transactions (feeds the insider-activity modifier), XBRL theme signals, canonical fundamentals fallback | `SEC_USER_AGENT` header (SEC fair-access policy) | Free; used both as a `preferred_providers` source for statement metrics (`sec_xbrl`, see `metric_registry.json`) and as the insider-trading feed |
+| **Yahoo Finance** (`yfinance`) | Price/quote history, financial statements, analyst estimate revisions (EPS revision counts, EPS trend, upgrade/downgrade history, price targets — `yahoo_estimates.py`), per-symbol company news (`yahoo_news.py`) | none | Primary provider for price and statements; restated only — no as-reported (as-originally-filed) history |
+| **SEC EDGAR** | Form 4 insider transactions (feeds the insider-activity modifier), XBRL theme signals, canonical fundamentals fallback, and — since the Inside Information screen — DEF 14A/DEFC14A/DEFA14A proxy tracking, 8-K item-code materiality, and 10-K/10-Q/NT 10-K/NT 10-Q late-filing tracking (`build_filings_screen.py`, `edgar_filing_signals.py`), all read from the same submissions API (`data.sec.gov/submissions/CIK{cik}.json`, `sec_edgar.py:247-252`) already used for Form 4 | `SEC_USER_AGENT` header (SEC fair-access policy) | Free; used as a `preferred_providers` source for statement metrics (`sec_xbrl`, see `metric_registry.json`), as the insider-trading feed, and (every 3 days) as the filings tracker. A full-text-search client (`efts.sec.gov`) and XBRL `frames`/`companyconcept` endpoints also exist in `sec_edgar.py` for theme work but are not part of the filings tracker |
 | **Alpha Vantage** | Company overview, earnings, forward estimates, macro | `ALPHA_VANTAGE_API_KEY` | Max 5 symbols per refresh (quota-limited) |
 | **Marketaux** | Entity-level news sentiment | `MARKETAUX_API_TOKEN` | Optional — feeds the 4%-weight news sentiment component (§6) |
 | **FRED** (Federal Reserve Economic Data) | Macro regime: rates, inflation, labor, yield curve (6 series feed the modifier), plus VIX-derived volatility (7th series, published informationally, not yet in the modifier) | `FRED_API_KEY` | Optional — feeds the MarketPulse backdrop (§11) and the macro-regime modifier (§8) |
-| **Financial Modeling Prep** | Congressional STOCK Act disclosures | Plan covering Congressional endpoints (HTTP 402 without it) | Weekly |
+| **Marketstack** (apilayer) | Premarket/intraday and end-of-day price bars for the top-100 published tickers; re-sorts the Stocks (movers) and Reversal screens from accumulated closes (`marketstack.py`, `collect_marketstack.py`, `resort_marketstack_screens.py`) | `MARKETSTACK_API_KEY` | Optional — two batched runs/day on a schedule (`.github/workflows/marketstack-premarket.yml`); falls back from intraday to `eod_latest` on plan restriction; the Reversal screen reports "accumulating" until 60 sessions are collected |
+| **Financial Modeling Prep** | Congressional STOCK Act disclosures (Senate/House "latest" endpoints), "since purchase" price history on the Congress trades screen | Plan covering Congressional endpoints (HTTP 402 without it) | Weekly; the screen still builds without this key via the keyless Senate eFD and House/Senate-dataset fallbacks below |
 | **Senate eFD** | Senate STOCK Act disclosures, direct from the Senate's own system | none (keyless) | Weekly |
-| **House/Senate stock-watcher datasets** | Keyless mirror of congressional disclosures — currently withdrawn (HTTP 403), overridable via `CONGRESS_HOUSE_DATASET_URL` / `CONGRESS_SENATE_DATASET_URL` | none | Weekly |
+| **House/Senate stock-watcher datasets** | Third-party mirrors of congressional disclosures. The House default now points to a live, actively-maintained mirror (`kadoa-org/congress-trading-monitor`); the Senate default mirror (a stock-watcher S3 bucket) is withdrawn (HTTP 403), which is immaterial since Senate eFD already covers that side directly. Both overridable via `CONGRESS_HOUSE_DATASET_URL` / `CONGRESS_SENATE_DATASET_URL` | none | Weekly |
 | **OpenFIGI** | CUSIP → ticker mapping for 13F institutional holdings | `OPENFIGI_API_KEY` (optional; without it, 10 CUSIPs per request instead of 100) | Monthly |
 
 **Provider preference order for canonical statement metrics** (`metric_registry.json`
 `declaration_defaults.preferred_providers`): `sec_xbrl` → `alpha_vantage` → `yahoo`. Individual
 metrics can override this — e.g., forward-looking metrics (`forward_pe`, PEG) prefer
 `alpha_vantage`/`yahoo` directly since SEC filings don't carry consensus estimates.
+
+`pipeline/providers.py`'s `REGISTRY` and `pipeline/provider_interfaces.py` are a ports/adapters
+abstraction used by parts of the scoring core, not a complete provider list — `REGISTRY` names
+only `yahoo`, `alpha_vantage`, `sec_edgar`, and `fake`. Marketaux, FRED, Marketstack, Financial
+Modeling Prep, Senate eFD, the stock-watcher datasets, and OpenFIGI are each fetched by their own
+standalone client module outside this abstraction and never appear in it; this table, not
+`REGISTRY`, is the authoritative provider list.
 
 **Availability lag:**
 - Statement-derived metrics: typically 1–3 months after fiscal period end (provider-restated,
