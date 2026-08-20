@@ -48,11 +48,15 @@ const STATE_PATH = FileManager.local().joinPath(
 
 // Simplified visual scale for the widget only — not the app's authoritative
 // percentile tier system (see src/lib/scoreBands.js), just a quick eyeball cue.
+function dynamicColor(lightHex, darkHex) {
+  return Color.dynamic(new Color(lightHex), new Color(darkHex))
+}
+
 const TIER_COLORS = [
-  { min: 85, color: new Color("#1fae7c", "#3ddba0") },
-  { min: 75, color: new Color("#2b6cc4", "#5b9be6") },
-  { min: 65, color: new Color("#c58a1f", "#e0b24f") },
-  { min: 0, color: new Color("#b83c37", "#e0655f") },
+  { min: 85, color: dynamicColor("#1fae7c", "#3ddba0") },
+  { min: 75, color: dynamicColor("#2b6cc4", "#5b9be6") },
+  { min: 65, color: dynamicColor("#c58a1f", "#e0b24f") },
+  { min: 0, color: dynamicColor("#b83c37", "#e0655f") },
 ]
 
 function colorForScore(score) {
@@ -149,7 +153,7 @@ function buildWidget({ view, data, stale }, family) {
   const spec = VIEWS[view]
   const widget = new ListWidget()
   widget.url = tapUrl()
-  widget.backgroundColor = new Color("#ffffff", "#111318")
+  widget.backgroundColor = dynamicColor("#ffffff", "#111318")
   widget.setPadding(14, 14, 12, 14)
 
   const rowCounts = { small: 3, medium: 5, large: 10 }
