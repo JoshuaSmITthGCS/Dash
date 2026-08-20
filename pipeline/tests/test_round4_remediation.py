@@ -124,6 +124,50 @@ class TestNeutralShrinkage:
         assert production < raw
 
 
+class TestFundamentalsCategoryMultiplierStillDirectional:
+    """docs/AUDIT-VERIFICATION-RESULTS.md Sec6: the top-level 0.8 + 0.2*coverage multiplier
+    (TestNeutralShrinkage.test_production_form_is_directional, above) was retired from the
+    champion score on 2026-08-12 -- advisor_engine.py's build_research() now calls
+    blend_research_components with apply_coverage_multiplier=False, so a below-neutral name
+    is no longer pushed further down by thin evidence at that layer.
+
+    The same directional multiplier still lives one layer down, unconditionally, inside the
+    fundamentals *category* score: _band_valuation_score (scorer.py, "bands" mode -- the
+    production default per settings.json's normalization_mode) and
+    _cross_sectional_valuation_score both compute
+    confidence_multiplier = 0.65 + 0.35 * coverage and multiply the category's raw score by
+    it, with no equivalent opt-out. valuation_score(snap) with no explicit mode -- exactly
+    what advisor_engine.py's champion path calls -- resolves to bands mode and inherits this.
+
+    _fixed_feature_valuation_score (mode="fixed_feature", a *challenger*, not yet promoted --
+    see TestFixedFeatureImputation.test_no_completeness_multiplier above) already has no such
+    multiplier, proving the fix pattern exists and works; it just was never applied to the
+    production "bands" path.
+
+    Per this audit's Sec21 authorization (anything touching scoring weights or confidence
+    formulas: document + failing test only, no production change without sign-off), this test
+    documents the current, still-live behavior. It is not "failing" in the sense of a bug the
+    next commit should silently patch -- flipping this assertion IS the production change, and
+    needs the same registered-challenger-then-promotion path advisor_engine.py's own docstring
+    used for the top-level fix, not a one-line edit here.
+    """
+
+    def test_partial_coverage_still_penalizes_below_raw_in_production_bands_mode(self):
+        full = _snapshot()
+        partial = _snapshot(earnings_surprise=None, net_buyback_yield=None,
+                             stock_comp_to_revenue=None, capex_to_depreciation=None,
+                             accruals_ratio=None)
+        full_score, full_detail = valuation_score(full)
+        score, detail = valuation_score(partial)
+        assert detail["coverage"] < full_detail["coverage"]
+        assert detail["coverage"] < 1.0
+        assert score < detail["raw_score"], (
+            "bands mode (production's normalization_mode default) still multiplies a "
+            "category's raw score by 0.65 + 0.35*coverage -- the same directional penalty "
+            "already retired at the top level for exactly this reason."
+        )
+
+
 class TestDataHealth:
     def test_outage_turns_critical(self):
         rows = [{"ev_to_ebitda": None, "piotroski_f": None, "altman_z": None}] * 90 + [

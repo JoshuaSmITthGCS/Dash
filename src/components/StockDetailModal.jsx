@@ -137,7 +137,7 @@ export function InsideInformationView({ info }) {
   if (!info) return null
   return (
     <div>
-      <div className="sec-label">Inside information: notable disclosed activity</div>
+      <div className="sec-label">Disclosed positioning: notable activity</div>
       <div className="congress-flag-row" aria-label="Notable institutional and Congressional activity">
         {info.institutional_flag && (
           <span className={`chip ${info.institutional_flag === 'CLUSTER_ACCUMULATION' ? 'pos' : 'neg'}`}>
@@ -149,7 +149,7 @@ export function InsideInformationView({ info }) {
         ))}
       </div>
       <p className="evidence-footnote">
-        Combined score {info.score?.toFixed(2) ?? '–'}. <Link to="/screens/inside-information">See the full Inside Information screen →</Link>
+        Combined score {info.score?.toFixed(2) ?? '–'}. <Link to="/screens/inside-information">See the full Disclosed Positioning screen →</Link>
       </p>
     </div>
   )

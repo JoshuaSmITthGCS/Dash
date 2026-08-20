@@ -68,7 +68,7 @@ describe('InsideInformationView', () => {
 
     expect(screen.getByText('Curated managers accumulating')).toBeVisible()
     expect(screen.getByText(/3.5/)).toBeVisible()
-    expect(screen.getByRole('link', { name: /Inside Information screen/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Disclosed Positioning screen/ })).toHaveAttribute(
       'href', '/screens/inside-information')
   })
 

@@ -2,7 +2,7 @@
 
 Generated from live config and source on 2026-08-20
 
-Source commit: `ba5969c3`
+Source commit: `432dff57`
 
 Application model: `3.2.0`
 
@@ -71,7 +71,7 @@ Mobile navigation has five one-tap destinations in this order: Research, Search,
 - Published ETFs: 125
 - Monthly factor observations: 756
 - Point-in-time files: 14
-- Point-in-time rows: 50858
+- Point-in-time rows: 52618
 - Mobile acceptance captures: 16
 
 Static research lives under `public/data`. Full-universe prospective snapshots live under `pipeline/pit_store/YYYY-MM-DD.jsonl`. Every scheduled refresh appends and never backfills.
@@ -118,7 +118,7 @@ The covariance matrix also produces marginal and percent contribution to portfol
 
 The factor cache refreshes monthly from the Kenneth R. French Data Library and includes market excess return, size, value, profitability, investment, momentum, and the risk-free rate. Portfolio monthly excess returns are regressed with ordinary least squares. Results require 24 observations and include loadings, standard errors, annualized alpha, alpha t-statistic, R-squared, and a plain-language summary.
 
-An alpha t-statistic under 2 in absolute value is labelled statistically meaningless. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
+The dashboard's evidence hurdle is a Newey-West HAC alpha t-statistic above 3; below that, the UI does not call the result "meaningless" — it states that the sample does not distinguish alpha from packaged factor exposure. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
 
 ## Planning and projection engine
 

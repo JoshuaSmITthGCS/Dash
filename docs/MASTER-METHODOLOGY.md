@@ -1194,9 +1194,10 @@ equity beta — only the market-shock scenarios get a holdings breakdown.
   French five factors plus momentum (market, size, value, profitability, investment,
   momentum) — refreshed monthly from the French Data Library. Requires ≥24 monthly
   observations; publishes loadings, standard errors, annualized alpha, alpha t-statistic,
-  R². An alpha t-statistic under 2 in absolute value is labeled statistically meaningless (the
-  same honesty standard as §9's model-level validation). Section: "Five factors plus momentum
-  — Portfolio factor exposure."
+  R². The dashboard's evidence hurdle is a Newey-West HAC alpha t-statistic above 3; below
+  that, the UI does not label the result "meaningless" — it states the sample does not
+  distinguish alpha from packaged factor exposure (the same honesty standard as §9's
+  model-level validation). Section: "Five factors plus momentum — Portfolio factor exposure."
 - **Theme exposure**: aggregated separately by portfolio weight, reusing the same
   `theme_exposure_score` as §14.1, and **never enters the research score**. Section:
   "Independent lens — Theme exposure."

@@ -21,7 +21,7 @@ export const SCREEN_NAV = [
   ['/screens/shadow', 'Shadow portfolios'], ['/screens/validation', 'Live validation'],
   ['/screens/politics', 'Politics trade alert'],
   ['/screens/institutional', 'Institutional accumulation'],
-  ['/screens/inside-information', 'Inside information'],
+  ['/screens/inside-information', 'Disclosed positioning'],
   ['/screens/themes', 'Theme exposure'],
 ]
 

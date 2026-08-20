@@ -151,7 +151,7 @@ The covariance matrix also produces marginal and percent contribution to portfol
 
 The factor cache refreshes monthly from the Kenneth R. French Data Library and includes market excess return, size, value, profitability, investment, momentum, and the risk-free rate. Portfolio monthly excess returns are regressed with ordinary least squares. Results require ${p.factor_minimum_monthly_observations} observations and include loadings, standard errors, annualized alpha, alpha t-statistic, R-squared, and a plain-language summary.
 
-An alpha t-statistic under 2 in absolute value is labelled statistically meaningless. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
+The dashboard's evidence hurdle is a Newey-West HAC alpha t-statistic above 3; below that, the UI does not call the result "meaningless" — it states that the sample does not distinguish alpha from packaged factor exposure. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
 
 ## Planning and projection engine
 

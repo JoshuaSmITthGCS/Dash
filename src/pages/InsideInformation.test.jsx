@@ -34,7 +34,7 @@ describe('InsideInformation page', () => {
 
     render(<MemoryRouter><InsideInformation /></MemoryRouter>)
 
-    expect(screen.getByRole('heading', { name: /Inside/ })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Disclosed/ })).toBeVisible()
     expect(screen.getAllByText('ACME').length).toBeGreaterThan(0)
     expect(screen.getAllByText('WIDGET').length).toBeGreaterThan(0)
     expect(screen.getByText('Cluster accumulation')).toBeVisible()

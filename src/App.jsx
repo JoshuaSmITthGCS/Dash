@@ -83,7 +83,7 @@ const NAV_AFTER_GROUPS = [
   { to: '/markets', label: 'Markets', icon: 'market' },
   // /market is the news reader, not a second markets page. It had no nav entry and
   // was reachable only from one Dashboard link; the label says what it actually is.
-  { to: '/market', label: 'News', icon: 'method' },
+  { to: '/news', label: 'News', icon: 'method' },
   { to: '/portfolio', label: 'Portfolio', icon: 'portfolio' },
   { to: '/watchlist', label: 'Watchlist', icon: 'watchlist' },
   { to: '/alerts', label: 'Alerts', icon: 'bell' },
@@ -285,10 +285,12 @@ function AppContent() {
         <Suspense fallback={<RouteLoading pathname={pathname} />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/hud-demo" element={<HUDDemo />} />
+          {import.meta.env.DEV && <Route path="/hud-demo" element={<HUDDemo />} />}
           <Route path="/research" element={<Picks />} />
           <Route path="/search" element={<Search />} />
-          <Route path="/market" element={<PolicyRadar />} />
+          <Route path="/news" element={<PolicyRadar />} />
+          {/* /market (singular) was easily confused with /markets (live index/sector data below) - kept as a redirect for old links */}
+          <Route path="/market" element={<Navigate to="/news" replace />} />
           <Route path="/markets" element={<Markets />} />
           <Route path="/portfolio" element={cloudPage('Portfolio', '/portfolio', <Portfolio view="summary" />)} />
           <Route path="/portfolio/performance" element={cloudPage('Portfolio performance', '/portfolio', <Portfolio view="performance" />)} />
