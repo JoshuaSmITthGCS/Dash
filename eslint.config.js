@@ -20,7 +20,10 @@ export default [
   // put 327 errors in front of the `site` job for code nobody here wrote.
   // `design/**`: Phase-0 direction mockups and their screenshot tooling — design artifacts,
   // not shipped source.
-  { ignores: ['.venv*/**', 'dist/**', 'coverage/**', 'node_modules/**', '.claude/**', 'design/**'] },
+  // `ios-widget/**`: a Scriptable (iOS home screen widget app) script. It runs against
+  // Scriptable's own globals (Request, ListWidget, FileManager, config, Script, ...), not a
+  // browser or Node environment, so this repo's globals list doesn't apply to it.
+  { ignores: ['.venv*/**', 'dist/**', 'coverage/**', 'node_modules/**', '.claude/**', 'design/**', 'ios-widget/**'] },
   {
     files: ['**/*.{js,jsx}'],
     ...js.configs.recommended,
