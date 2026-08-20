@@ -1,4 +1,22 @@
+import { useState } from 'react'
 import { useData } from '../lib/useData'
+import Icon from '../components/Icons.jsx'
+import appBreakdownMd from '../../APP-COMPLETE-BREAKDOWN.md?raw'
+import masterMethodologyMd from '../../docs/MASTER-METHODOLOGY.md?raw'
+
+const STATUS_TIMEOUT_MS = 2500
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
 
 const CATEGORIES = {
   valuation: ['Valuation', 'EV/EBITDA and EV/EBIT carry this bucket. The enterprise multiple is the best-validated single value measure in the published research, and enterprise multiples are capital-structure neutral, so a levered company cannot look cheap purely because debt flatters its equity ratios. PEG is now a minor sanity check rather than the largest input. Both book-value multiples are trimmed because book value systematically mismeasures intangible-heavy businesses.'],
@@ -38,6 +56,7 @@ function modifierRange(config = {}) {
 }
 
 export default function Methodology() {
+  const [downloadStatus, setDownloadStatus] = useState(null)
   const { data } = useData('advisor.json')
   const published = data?.research?.length
   // Read the blend from the snapshot so this page cannot drift from the config that
@@ -58,11 +77,36 @@ export default function Methodology() {
     customer_concentration_risk: { status: 'shadow_only', source: 'SEC EDGAR XBRL', note: 'ASC 280 customer concentration. Challenger-only pending tagging-coverage measurement.' },
     fx_exposure: { status: 'shadow_only', source: 'SEC EDGAR XBRL', note: 'Single-country revenue concentration. Challenger-only pending measurement.' },
   }
+  const handleDownloadDocs = () => {
+    try {
+      downloadFile('APP-COMPLETE-BREAKDOWN.md', appBreakdownMd, 'text/markdown')
+      downloadFile('MASTER-METHODOLOGY.md', masterMethodologyMd, 'text/markdown')
+      setDownloadStatus('Download started')
+    } catch {
+      setDownloadStatus('Download failed')
+    }
+    setTimeout(() => setDownloadStatus(null), STATUS_TIMEOUT_MS)
+  }
+
   return <>
-    <div className="page-head"><div>
-      <h1 className="page-title">How the <span className="accent">score works</span></h1>
-      <p className="page-sub">Transparent weights, consistent inputs, and an explicit penalty for missing evidence.</p>
-    </div></div>
+    <div className="page-head">
+      <div>
+        <h1 className="page-title">How the <span className="accent">score works</span></h1>
+        <p className="page-sub">Transparent weights, consistent inputs, and an explicit penalty for missing evidence.</p>
+      </div>
+      <div>
+        <button type="button" className="secondary-button compact" onClick={handleDownloadDocs}>
+          <Icon name="download" size={17} />Download full docs (.md)
+        </button>
+        {downloadStatus && <p className="export-metrics-status" role="status">{downloadStatus}</p>}
+      </div>
+    </div>
+    <p className="body-copy body-copy--gap">
+      Downloads the complete, unedited source: the app's full functional/calculation breakdown
+      (<code>APP-COMPLETE-BREAKDOWN.md</code>) and the master methodology reference
+      (<code>MASTER-METHODOLOGY.md</code>) — every metric, weight, data source, and screen this
+      page summarizes, with file:line citations back to the code that computes them.
+    </p>
 
     <div className="grid grid-2">
       <section className="card card-pad">
