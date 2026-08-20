@@ -2,8 +2,9 @@
 
 `valuesignal-widget.js` is a [Scriptable](https://scriptable.app) script that turns your
 deployed ValueSignal site into a home screen widget. It fetches the public
-`public/data/advisor.json` file your pipeline already publishes (no login required) and shows
-the top research-score picks.
+`public/data/advisor.json` and `public/data/etfs.json` files your pipeline already publishes
+(no login required) and shows the top research-score picks. **Tap the widget to switch it
+between top stocks and top ETFs.**
 
 ## Install
 
@@ -17,7 +18,10 @@ the top research-score picks.
 
 ## Notes
 
-- Tapping the widget opens the live site in Safari.
+- Tapping the widget switches it between **Stocks** and **ETFs**. This opens Scriptable
+  briefly (iOS widgets can't run background logic on tap) and shows a preview of the new
+  view; the actual home screen widget picks up the change on its next refresh, which iOS
+  schedules — not always instant, but usually within a few seconds to a minute.
 - Data refreshes roughly every hour (`widget.refreshAfterDate`); iOS decides the exact timing.
 - If the fetch fails (offline, site down), the widget falls back to the last successful
   response cached on-device, marked with an orange dot and "cached" timestamp.

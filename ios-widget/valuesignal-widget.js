@@ -6,21 +6,44 @@
 // Install:
 //   1. Install "Scriptable" from the App Store (https://scriptable.app).
 //   2. Open Scriptable, create a new script, paste this file's contents in.
-//   3. Name it "ValueSignal" and set SITE_URL below to your deployment.
+//   3. Name it "ValueSignal" (the script's name is used to build the tap URL
+//      below) and set SITE_URL if your deployment isn't dash1212.netlify.app.
 //   4. Long-press your home screen -> "+" -> Scriptable -> add a
 //      small/medium/large widget -> long-press it -> Edit Widget ->
 //      set "Script" to this script.
 //
-// The widget reads public/data/advisor.json, which this repo's pipeline
-// publishes as a static file (no auth) and Netlify serves at SITE_URL.
-// It shows the top research-score picks; tapping the widget opens the
-// live dashboard. Falls back to the last successful fetch when offline.
+// The widget reads public/data/advisor.json and public/data/etfs.json,
+// which this repo's pipeline publishes as static files (no auth) and
+// Netlify serves at SITE_URL. Tapping the widget switches it between
+// top stock picks and top ETF picks (the switch shows up on the widget's
+// next refresh — iOS decides that timing, so it isn't always instant).
+// Falls back to the last successful fetch per view when offline.
 
 const SITE_URL = "https://dash1212.netlify.app"
-const DATA_URL = `${SITE_URL}/data/advisor.json`
-const CACHE_PATH = FileManager.local().joinPath(
+
+const VIEWS = {
+  stocks: {
+    label: "Stocks",
+    url: `${SITE_URL}/data/advisor.json`,
+    itemsKey: "research",
+    cacheFile: "valuesignal-widget-cache-stocks.json",
+    getScore: (item) => item.score,
+    getSector: (item) => item.sector,
+  },
+  etfs: {
+    label: "ETFs",
+    url: `${SITE_URL}/data/etfs.json`,
+    itemsKey: "etfs",
+    cacheFile: "valuesignal-widget-cache-etfs.json",
+    getScore: (item) => item.scores?.overall,
+    getSector: (item) => item.category,
+  },
+}
+const VIEW_ORDER = ["stocks", "etfs"]
+
+const STATE_PATH = FileManager.local().joinPath(
   FileManager.local().documentsDirectory(),
-  "valuesignal-widget-cache.json"
+  "valuesignal-widget-state.json"
 )
 
 // Simplified visual scale for the widget only — not the app's authoritative
@@ -36,17 +59,44 @@ function colorForScore(score) {
   return (TIER_COLORS.find((t) => score >= t.min) ?? TIER_COLORS.at(-1)).color
 }
 
-async function fetchAdvisorData() {
+function readCurrentView() {
+  const fm = FileManager.local()
+  if (fm.fileExists(STATE_PATH)) {
+    try {
+      const state = JSON.parse(fm.readString(STATE_PATH))
+      if (VIEWS[state.view]) return state.view
+    } catch {
+      // fall through to default below
+    }
+  }
+  return VIEW_ORDER[0]
+}
+
+function writeCurrentView(view) {
+  FileManager.local().writeString(STATE_PATH, JSON.stringify({ view }))
+}
+
+function nextView(view) {
+  const i = VIEW_ORDER.indexOf(view)
+  return VIEW_ORDER[(i + 1) % VIEW_ORDER.length]
+}
+
+async function fetchViewData(view) {
+  const spec = VIEWS[view]
+  const cachePath = FileManager.local().joinPath(
+    FileManager.local().documentsDirectory(),
+    spec.cacheFile
+  )
   try {
-    const req = new Request(DATA_URL)
+    const req = new Request(spec.url)
     req.timeoutInterval = 15
     const data = await req.loadJSON()
-    if (!Array.isArray(data.research)) throw new Error("malformed response")
-    FileManager.local().writeString(CACHE_PATH, JSON.stringify(data))
+    if (!Array.isArray(data[spec.itemsKey])) throw new Error("malformed response")
+    FileManager.local().writeString(cachePath, JSON.stringify(data))
     return { data, stale: false }
   } catch (err) {
-    if (FileManager.local().fileExists(CACHE_PATH)) {
-      const cached = JSON.parse(FileManager.local().readString(CACHE_PATH))
+    if (FileManager.local().fileExists(cachePath)) {
+      const cached = JSON.parse(FileManager.local().readString(cachePath))
       return { data: cached, stale: true }
     }
     throw err
@@ -87,19 +137,34 @@ function addRow(container, pick, { compact } = {}) {
   scoreText.textColor = colorForScore(pick.score)
 }
 
-function buildWidget({ data, stale }, family) {
+// Tapping the widget runs this same script via Scriptable's URL scheme with
+// ?toggle=1, which flips the stored view. There's no public API to force an
+// instant WidgetKit timeline reload from inside Scriptable, so the change
+// shows up on the widget's next natural refresh rather than immediately.
+function tapUrl() {
+  return `scriptable:///run/${encodeURIComponent(Script.name())}?toggle=1`
+}
+
+function buildWidget({ view, data, stale }, family) {
+  const spec = VIEWS[view]
   const widget = new ListWidget()
-  widget.url = SITE_URL
+  widget.url = tapUrl()
   widget.backgroundColor = new Color("#ffffff", "#111318")
   widget.setPadding(14, 14, 12, 14)
 
   const rowCounts = { small: 3, medium: 5, large: 10 }
   const rowCount = rowCounts[family] ?? 5
-  const picks = (data.research ?? []).slice(0, rowCount)
+  const picks = (data[spec.itemsKey] ?? [])
+    .map((item) => ({
+      ticker: item.ticker,
+      sector: spec.getSector(item),
+      score: spec.getScore(item) ?? 0,
+    }))
+    .slice(0, rowCount)
 
   const header = widget.addStack()
   header.centerAlignContent()
-  const title = header.addText("ValueSignal")
+  const title = header.addText(`ValueSignal · ${spec.label}`)
   title.font = Font.boldSystemFont(14)
   header.addSpacer()
   if (stale) {
@@ -128,7 +193,7 @@ function buildWidget({ data, stale }, family) {
   const footer = widget.addText(
     stale
       ? `cached · ${formatGeneratedAt(data.generated_at)}`
-      : formatGeneratedAt(data.generated_at)
+      : `${formatGeneratedAt(data.generated_at)} · tap to switch`
   )
   footer.font = Font.systemFont(10)
   footer.textColor = Color.gray()
@@ -137,25 +202,38 @@ function buildWidget({ data, stale }, family) {
   return widget
 }
 
-async function run() {
-  const family = config.widgetFamily ?? "medium"
-  let widget
-
+async function widgetForView(view, family) {
   try {
-    const result = await fetchAdvisorData()
-    widget = buildWidget(result, family)
+    const result = await fetchViewData(view)
+    return buildWidget({ view, ...result }, family)
   } catch (err) {
-    widget = new ListWidget()
-    widget.url = SITE_URL
-    const text = widget.addText(`ValueSignal\nCouldn't load data.\n${err.message}`)
+    const widget = new ListWidget()
+    widget.url = tapUrl()
+    const text = widget.addText(`ValueSignal · ${VIEWS[view].label}\nCouldn't load data.\n${err.message}`)
     text.font = Font.systemFont(12)
     text.textColor = Color.red()
     widget.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000)
+    return widget
   }
+}
+
+async function run() {
+  const family = config.widgetFamily ?? "medium"
+  const toggled = args.queryParameters?.toggle === "1"
+
+  let view = readCurrentView()
+  if (toggled) {
+    view = nextView(view)
+    writeCurrentView(view)
+  }
+
+  const widget = await widgetForView(view, family)
 
   if (config.runsInWidget) {
     Script.setWidget(widget)
   } else {
+    // Opened from the widget tap (toggled) or run manually in-app: show a
+    // preview so there's visible confirmation of the current/new view.
     await widget.presentMedium()
   }
   Script.complete()
