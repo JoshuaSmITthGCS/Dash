@@ -2,7 +2,7 @@
 
 Generated from live config and source on 2026-08-20
 
-Source commit: `937eac09`
+Source commit: `ba5969c3`
 
 Application model: `3.2.0`
 
@@ -21,19 +21,19 @@ The Home route is eagerly bundled. Other routes and the stock detail sheet load 
 ## Route map
 
 - `/`: Home and Financial Report. Leads with portfolio value, daily change, Planning success probability, and action-needed count.
-- `/hud-demo`: Application route.
+- `/hud-demo`: Unlinked internal component showcase for HUD-styled visual widgets. Not a real feature; reachable only by direct URL, driven by randomized local state rather than published data.
 - `/research`: Stock and ETF research library with mobile result cards and detail sheets.
 - `/search`: Cross-dataset ticker and company discovery.
 - `/market`: Market Pulse news feed with filing and commentary labels.
-- `/markets`: Application route.
+- `/markets`: Live market-data dashboard: index performance, sector and stock daily leaders/laggards, and a ticker lookup. Descriptive only, distinct from the /market news reader.
 - `/portfolio`: Holdings, performance, risk, and account analysis for signed-in users.
-- `/portfolio/performance`: Application route.
-- `/portfolio/data-overview`: Application route.
+- `/portfolio/performance`: Time-weighted return versus the selected benchmark, plus an opportunity-cost comparison against the same cost basis held in the benchmark or in cash.
+- `/portfolio/data-overview`: Move attribution, scenario sensitivity, and the full performance-metrics suite over a selectable analytics scope.
 - `/portfolio/diversification`: HHI, effective holdings, effective bets, look-through exposures, risk decomposition, factors, and themes.
 - `/portfolio/insights`: Tracked portfolio activity and behavioral insights.
 - `/finances`: Income, spending, pools, accounts, and contribution-room tracking.
 - `/planning`: Retirement and goal probability simulator with live levers, fan chart, and sequence-risk lesson.
-- `/screens/swing`: Application route.
+- `/screens/swing`: Swing-horizon composite (2 trading days to 8 weeks) across three horizon-stratified books.
 - `/screens/fast-growth`: Application route.
 - `/screens/options`: Application route.
 - `/screens/options/short-term-trades`: Application route.
@@ -49,10 +49,10 @@ The Home route is eagerly bundled. Other routes and the stock detail sheet load 
 - `/screens/matrix`: Structural versus tactical research matrix.
 - `/screens/early-session`: Early-session research.
 - `/screens/politics`: Congressional disclosure research.
-- `/screens/institutional`: Application route.
-- `/screens/inside-information`: Application route.
-- `/screens/themes`: Application route.
-- `/screens/backtests`: Application route.
+- `/screens/institutional`: SEC Form 13F-HR institutional accumulation/distribution, shown as a factual, disclaimed screen.
+- `/screens/inside-information`: Institutional 13F and Congressional trading merged into one ranked view, filtered to the notable subset of each.
+- `/screens/themes`: Structural theme exposure, ranked by an opportunity score independent of price momentum.
+- `/screens/backtests`: Meta-comparison of every backtest result file in the repo, normalized across held-portfolio, options-trade, and ranking-quality methods.
 - `/screens/shadow`: Shadow portfolios used for prospective comparison.
 - `/screens/validation`: Live validation and challenger evidence.
 - `/watchlist`: Saved names with setup-aware guidance.
